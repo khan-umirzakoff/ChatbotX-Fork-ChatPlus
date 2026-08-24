@@ -18,7 +18,9 @@ start_server() {
   # Backward-compatible env gating (no command passed): migrate/seed, then serve.
   if [ "${RUN_DB_MIGRATE:-}" = "true" ]; then run_migrate; fi
   if [ "${RUN_DB_SEED:-}" = "true" ]; then run_seed; fi
-  NODE_OPTIONS="--no-node-snapshot --enable-source-maps" HOSTNAME="${HOSTNAME:-0.0.0.0}" PORT="${PORT:-3000}" \
+  # Docker always injects HOSTNAME=<container-id>; using it as Next's bind host
+  # makes loopback healthchecks fail. Keep an explicit app-specific override.
+  NODE_OPTIONS="--no-node-snapshot --enable-source-maps" HOSTNAME="${APP_HOSTNAME:-0.0.0.0}" PORT="${PORT:-3000}" \
     exec node apps/builder/server.js
 }
 
