@@ -1,5 +1,5 @@
 import type * as Party from "partykit/server"
-import { env } from "../env"
+import { parseRealtimeEnv } from "../env"
 import { verifyBroadcastRequest } from "../lib/realtime-auth"
 
 export default class GuestConversationParty implements Party.Server {
@@ -25,13 +25,14 @@ export default class GuestConversationParty implements Party.Server {
 
   static async onBeforeRequest(
     req: Party.Request,
-    // lobby: Party.Lobby,
+    lobby: Party.Lobby,
     // ctx: Party.ExecutionContext
   ) {
+    const env = parseRealtimeEnv(lobby.env)
     const error = await verifyBroadcastRequest(
       req,
       "guest",
-      env.REALTIME_BROADCAST_SECRET as string,
+      env.REALTIME_BROADCAST_SECRET,
     )
     return error ?? req
   }

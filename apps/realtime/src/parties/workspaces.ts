@@ -1,5 +1,5 @@
 import type * as Party from "partykit/server"
-import { env } from "../env"
+import { parseRealtimeEnv } from "../env"
 import { getAuthSession } from "../lib/auth"
 import { verifyBroadcastRequest } from "../lib/realtime-auth"
 
@@ -26,9 +26,10 @@ export default class WorkspaceParty implements Party.Server {
 
   static async onBeforeRequest(
     req: Party.Request,
-    // lobby: Party.Lobby,
+    lobby: Party.Lobby,
     // ctx: Party.ExecutionContext
   ) {
+    const env = parseRealtimeEnv(lobby.env)
     const error = await verifyBroadcastRequest(
       req,
       "workspace",
@@ -39,10 +40,11 @@ export default class WorkspaceParty implements Party.Server {
 
   static async onBeforeConnect(
     req: Party.Request,
-    // lobby: Party.Lobby,
+    lobby: Party.Lobby,
     // ctx: Party.ExecutionContext
   ) {
-    const session = await getAuthSession(req)
+    const env = parseRealtimeEnv(lobby.env)
+    const session = await getAuthSession(req, env.BETTER_AUTH_URL)
     req.headers.set("X-User-ID", session.user.id)
 
     return req

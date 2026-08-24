@@ -23,20 +23,17 @@ export const isSessionValid = (session?: Session | null): boolean =>
 
 export const getAuthSession = async (
   proxiedRequest: Party.Request,
+  betterAuthUrl: string,
 ): Promise<Session> => {
   const url = new URL(proxiedRequest.url)
-  logger.info({ proxiedRequest }, "proxiedRequest")
   const token = url.searchParams.get("token")
   if (!token) {
     throw new Error("No token provided")
   }
 
-  const headers = proxiedRequest.headers
-  const origin = headers.get("origin") ?? "https://example.com"
-  logger.info({ origin, token }, "origin")
   const verificationUrl = new URL(
     "/api/auth/one-time-token/verify",
-    origin,
+    betterAuthUrl,
   ).toString()
 
   try {
@@ -52,7 +49,10 @@ export const getAuthSession = async (
       return session
     }
   } catch (error) {
-    console.error("Failed to authenticate user", error)
+    logger.warn(
+      { errorName: error instanceof Error ? error.name : "UnknownError" },
+      "Realtime auth verification failed",
+    )
     throw new Error("Failed to authenticate user")
   }
 
