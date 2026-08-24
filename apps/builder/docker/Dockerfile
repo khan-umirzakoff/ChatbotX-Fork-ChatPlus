@@ -88,6 +88,12 @@ WORKDIR /app
 # Build the application
 FROM base AS release
 
+# Coolify's container healthcheck uses curl (and falls back to wget). The slim
+# Node runtime ships with neither, so include curl in the final image.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends curl \
+  && rm -rf /var/lib/apt/lists/*
+
 COPY apps/builder/docker/rootfs/ /
 
 # Automatically leverage output traces to reduce image size
