@@ -82,7 +82,7 @@ describe("resolveTenantSettings — enterprise entitlement gating", () => {
 
     const settings = await resolveTenantSettings({ workspaceId: "workspace-1" })
 
-    expect(settings.name).toBe("ChatbotX")
+    expect(settings.name).toBe("ChatPLUS")
     expect(settings.logoLightUrl).toBe(`${BUILDER_URL}/brand/logo_white.svg`)
     expect(settings.logoDarkUrl).toBe(`${BUILDER_URL}/brand/logo_black.svg`)
     expect(settings.faviconUrl).toBe(`${BUILDER_URL}/brand/icon_black.svg`)

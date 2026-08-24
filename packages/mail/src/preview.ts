@@ -5,7 +5,7 @@ const SAMPLE_VARS: Record<string, string> = {
   verificationUrl: "https://example.com/verify/sample-token-abc123",
   resetPasswordUrl: "https://example.com/reset/sample-token-abc123",
   magicUrl: "https://example.com/magic/sample-token-abc123",
-  brandName: "ChatbotX",
+  brandName: "ChatPLUS",
   brandLogoUrl: "https://placehold.co/150x90/f3f4f6/374151?text=Logo",
   brandUrl: "https://example.com",
 }

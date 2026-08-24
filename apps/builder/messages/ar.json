@@ -2994,8 +2994,8 @@
   },
   "coexist": {
     "title": "هل تريد مزامنة جهات الاتصال وسجل الدردشة الحاليين؟",
-    "descriptionWhatsapp": "عند التفعيل، سيستورد ChatbotX جهات الاتصال وما يصل إلى 6 أشهر من سجل الدردشة من رقم WhatsApp هذا.",
-    "descriptionMessenger": "عند التفعيل، سيستورد ChatbotX جهات اتصال Messenger الحالية وما يصل إلى 3 أشهر من سجل المحادثات من هذه الصفحة.",
+    "descriptionWhatsapp": "عند التفعيل، سيستورد ChatPLUS جهات الاتصال وما يصل إلى 6 أشهر من سجل الدردشة من رقم WhatsApp هذا.",
+    "descriptionMessenger": "عند التفعيل، سيستورد ChatPLUS جهات اتصال Messenger الحالية وما يصل إلى 3 أشهر من سجل المحادثات من هذه الصفحة.",
     "descriptionInstagram": "When enabled, existing Instagram contacts and up to 3 months of conversation history will be imported from this Instagram account.",
     "enable": "تفعيل المزامنة",
     "decline": "عدم المزامنة",
@@ -3750,8 +3750,8 @@
     "title": "سجلات الأخطاء"
   },
   "developerAccessToken": {
-    "title": "رمز الوصول إلى ChatbotX API",
-    "description": "أنشئ رمزًا للسماح لمساحة عملك بالوصول إلى واجهات ChatbotX API. احتفظ بسرية هذا الرمز ولا تشاركه مع أي شخص."
+    "title": "رمز الوصول إلى ChatPLUS API",
+    "description": "أنشئ رمزًا للسماح لمساحة عملك بالوصول إلى واجهات ChatPLUS API. احتفظ بسرية هذا الرمز ولا تشاركه مع أي شخص."
   },
   "contacts": {
     "title": "جهات الاتصال",

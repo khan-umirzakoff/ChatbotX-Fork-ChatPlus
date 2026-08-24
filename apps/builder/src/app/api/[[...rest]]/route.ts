@@ -26,7 +26,7 @@ const openAPIHandler = new OpenAPIHandler(router, {
       schemaConverters: [new ZodToJsonSchemaConverter()],
       specGenerateOptions: {
         info: {
-          title: "ChatbotX",
+          title: "ChatPLUS",
           version: "0.0.1",
         },
         commonSchemas: {

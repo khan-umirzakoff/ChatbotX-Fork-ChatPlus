@@ -141,7 +141,7 @@ export function buildMjmlTemplate(props: DynamicEmailProps): string {
 
         <mj-section>
           <mj-column>
-            <mj-text font-size="12px" color="#888" padding="16px 0 0 0">⚡ Built with chatbotx.io</mj-text>
+            <mj-text font-size="12px" color="#888" padding="16px 0 0 0">⚡ Built with ChatPLUS</mj-text>
           </mj-column>
         </mj-section>
       </mj-body>
