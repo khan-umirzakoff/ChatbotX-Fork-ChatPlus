@@ -1,4 +1,5 @@
 import type { Context } from "@chatbotx.io/sdk"
+import z from "zod"
 import { DEFAULT_API_VERSION } from "../constants"
 import { MessengerAPIException, rescue } from "../exception"
 import { facebookGraphClient } from "../lib/http-client"
@@ -25,6 +26,10 @@ export const PAGE_SUBSCRIBE_SCOPES = [
   "inbox_labels",
   "live_videos",
   "standby",
+  // Handover Protocol events (pass/take/request_thread_control, app_roles).
+  // Pages connected before this was added are re-subscribed by
+  // `apps/worker/scripts/resubscribe-messenger-webhook-fields.ts`.
+  "messaging_handovers",
 ]
 
 /**
@@ -80,7 +85,7 @@ export const exchangeLongLivedToken = (
   })
 }
 
-export const getPagePictureUrl = async (props: {
+export const getAccountPictureUrl = async (props: {
   ctx: Context<MessengerAuthValue>
 }): Promise<string | undefined> => {
   const { ctx } = props
@@ -128,6 +133,59 @@ export const subscribePageToAppWebhook = (props: {
   )
 }
 
+/**
+ * Routing fields every connected Page must carry (Conversation Routing).
+ * Subset of `PAGE_SUBSCRIBE_SCOPES`.
+ */
+export const ROUTING_PAGE_SUBSCRIBE_FIELDS = [
+  "messaging_handovers",
+  "standby",
+] as const
+
+const pageSubscribedAppsSchema = z.object({
+  data: z
+    .array(
+      z.object({
+        id: z.union([z.string(), z.number()]).optional(),
+        subscribed_fields: z.array(z.string()).optional(),
+      }),
+    )
+    .optional(),
+})
+
+/**
+ * GET `/me/subscribed_apps`: the webhook fields the Page is currently
+ * subscribed to. `POST /me/subscribed_apps` REPLACES this list, so a caller
+ * that re-subscribes must start from these to avoid dropping a field (for
+ * example `leadgen`). When `appId` is given only that app's entry is read
+ * (the list holds one entry per subscribed app); an app with no entry yields
+ * `[]`. Throws on an API failure: the caller decides the fallback.
+ */
+export const getPageSubscribedFields = async (props: {
+  accessToken: string
+  version?: string
+  appId?: string | null
+}): Promise<string[]> => {
+  const { version = DEFAULT_API_VERSION } = props
+  const endpoint = `${version}/me/subscribed_apps`
+
+  const response: unknown = await rescue(endpoint, () =>
+    facebookGraphClient.get<unknown>(endpoint, {
+      headers: { Authorization: `Bearer ${props.accessToken}` },
+    }),
+  )
+  const parsed = pageSubscribedAppsSchema.safeParse(response)
+  if (!parsed.success) {
+    throw new MessengerAPIException(
+      "Unexpected /me/subscribed_apps response shape",
+    )
+  }
+  const entries = (parsed.data.data ?? []).filter(
+    (entry) => !props.appId || String(entry.id) === props.appId,
+  )
+  return [...new Set(entries.flatMap((entry) => entry.subscribed_fields ?? []))]
+}
+
 export const unsubscribePageFromAppWebhook = (props: {
   pageId: string
   appAccessToken: string
@@ -154,7 +212,7 @@ export const unsubscribePageFromAppWebhook = (props: {
   })
 }
 
-export const updateMessengerProfile = (props: {
+export const updateProfile = (props: {
   ctx: Context<MessengerAuthValue>
   params: MessengerProfileRequest
 }): Promise<void> => {
@@ -225,7 +283,7 @@ export const ensureMessengerWhitelistedDomain = async (props: {
     return
   }
 
-  await updateMessengerProfile({
+  await updateProfile({
     ctx: props.ctx,
     params: {
       whitelisted_domains: [...whitelistedDomains, domain],
@@ -373,7 +431,89 @@ export const getPersistentMenu = (props: {
   })
 }
 
-export const deleteMessengerProfileFields = (props: {
+/** Messenger profile fields read back after the welcome setup may have changed. */
+const MESSENGER_WELCOME_PROFILE_FIELDS = [
+  "get_started",
+  "ice_breakers",
+  "greeting",
+] as const
+
+type MessengerWelcomeProfileField =
+  (typeof MESSENGER_WELCOME_PROFILE_FIELDS)[number]
+
+/**
+ * Only logged, never interpreted, so values stay `unknown`: Meta returns
+ * `ice_breakers` in either the legacy or the per-locale format depending on
+ * how they were set.
+ */
+export type MessengerWelcomeProfile = Partial<
+  Record<MessengerWelcomeProfileField, unknown>
+>
+
+/** Why the welcome profile is being read back; carried into the log line. */
+export type MessengerWelcomeProfileCheckReason =
+  | "pageConnected"
+  | "profileUpdated"
+  | "tokenRefreshed"
+
+/**
+ * GET `/me/messenger_profile` for the welcome fields. Meta wraps the result in
+ * a `data` array (Messenger Profile API reference, "Retrieve Properties").
+ *
+ * Single attempt (`retry: 0`): this is a diagnostic read, and the Messenger
+ * Profile API is limited to 10 calls per 10 minutes per Page, so retrying a
+ * 429 would only burn the page's budget and stretch the calling flow.
+ */
+export const getMessengerWelcomeProfile = (props: {
+  ctx: Pick<Context<MessengerAuthValue>, "auth">
+}): Promise<MessengerWelcomeProfile> => {
+  const { ctx } = props
+  const { version = DEFAULT_API_VERSION } = ctx.auth
+  const endpoint = `${version}/me/messenger_profile`
+
+  return rescue(endpoint, async () => {
+    const response: { data?: MessengerWelcomeProfile[] } =
+      await facebookGraphClient.get(endpoint, {
+        headers: {
+          Authorization: `Bearer ${ctx.auth.tokens.accessToken}`,
+        },
+        searchParams: {
+          fields: MESSENGER_WELCOME_PROFILE_FIELDS.join(","),
+        },
+        retry: 0,
+      })
+
+    return response.data?.[0] ?? {}
+  })
+}
+
+/**
+ * Best-effort read-back of the page's welcome profile for diagnostics. Never
+ * throws or rejects — not even on a malformed `auth` — so it can't fail the
+ * connect, settings-save, or token-refresh flow that triggered it.
+ *
+ * The failure itself is already logged once by the http client / `rescue`;
+ * this only adds the page and trigger context at debug level.
+ */
+export const logMessengerWelcomeProfile = async (props: {
+  ctx: Pick<Context<MessengerAuthValue>, "auth">
+  reason: MessengerWelcomeProfileCheckReason
+}): Promise<void> => {
+  const { ctx, reason } = props
+  const pageId = ctx.auth?.metadata?.pageId
+
+  try {
+    const profile = await getMessengerWelcomeProfile({ ctx })
+    logger.info({ pageId, reason, profile }, "Messenger welcome profile")
+  } catch (error) {
+    logger.debug(
+      { err: error, pageId, reason },
+      "Skipped Messenger welcome profile read-back",
+    )
+  }
+}
+
+export const deleteProfileFields = (props: {
   ctx: Pick<Context<MessengerAuthValue>, "auth">
   fields: string[]
 }): Promise<void> => {
@@ -404,7 +544,7 @@ export const addBranding = async (props: {
   const { persistentMenu } = await getPersistentMenu({ ctx })
 
   if (!persistentMenu || persistentMenu.length === 0) {
-    await updateMessengerProfile({
+    await updateProfile({
       ctx,
       params: {
         get_started: {
@@ -460,7 +600,7 @@ export const addBranding = async (props: {
     return menu
   })
 
-  await updateMessengerProfile({
+  await updateProfile({
     ctx,
     params: {
       persistent_menu: updatedMenu,

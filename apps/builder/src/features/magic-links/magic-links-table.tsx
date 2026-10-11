@@ -37,11 +37,12 @@ import { useTranslations } from "next-intl"
 import React, { use, useMemo } from "react"
 import { toast } from "sonner"
 import { useCopyToClipboard } from "usehooks-ts"
-import { CustomFieldStoreProvider } from "../custom-fields/provider/custom-field-store-context"
+
 import { DeleteMagicLinksDialog } from "./delete-magic-links"
+import { buildMagicLinkUrl } from "./lib/magic-link-url"
 import { MagicLinkQrDialog } from "./magic-link-qr-dialog"
 import { MagicLinksTableToolbarActions } from "./magic-links-table-toolbar-actions"
-import type { ListMagicLinkItem, ListMagicLinksResponse } from "./schemas/query"
+import type { ListMagicLinkItem, ListMagicLinksResponse } from "./schema/query"
 import { UpdateMagicLinkDialog } from "./update-magic-link"
 
 type MagicLinksTableProps = {
@@ -58,10 +59,11 @@ const getMagicLinkUrl = (magicLink: {
   workspaceId: string
   name: string
 }): string =>
-  new URL(
-    `/r/${magicLink.workspaceId}/${magicLink.name}`,
-    window.location.origin,
-  ).toString()
+  buildMagicLinkUrl({
+    origin: window.location.origin,
+    workspaceId: magicLink.workspaceId,
+    name: magicLink.name,
+  })
 
 export const MagicLinksTable = ({
   workspaceId,
@@ -242,54 +244,52 @@ export const MagicLinksTable = ({
   })
 
   return (
-    <CustomFieldStoreProvider workspaceId={workspaceId}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-bold text-xl">
-            {t("magicLinks.title")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <DataTable table={table}>
-            <DataTableToolbar table={table}>
-              <MagicLinksTableToolbarActions
-                table={table}
-                workspaceId={workspaceId}
-              />
-            </DataTableToolbar>
-          </DataTable>
+    <Card>
+      <CardHeader>
+        <CardTitle className="font-bold text-xl">
+          {t("magicLinks.title")}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <DataTable table={table}>
+          <DataTableToolbar table={table}>
+            <MagicLinksTableToolbarActions
+              table={table}
+              workspaceId={workspaceId}
+            />
+          </DataTableToolbar>
+        </DataTable>
 
-          <MagicLinkQrDialog
-            onOpenChange={() => setRowAction(null)}
-            open={rowAction?.variant === "qr"}
-            publicUrl={
-              rowAction?.row.original
-                ? getMagicLinkUrl(rowAction.row.original)
-                : null
-            }
-          />
+        <MagicLinkQrDialog
+          onOpenChange={() => setRowAction(null)}
+          open={rowAction?.variant === "qr"}
+          publicUrl={
+            rowAction?.row.original
+              ? getMagicLinkUrl(rowAction.row.original)
+              : null
+          }
+        />
 
-          <UpdateMagicLinkDialog
-            magicLink={
-              rowAction?.variant === "update" ? rowAction.row.original : null
-            }
-            onOpenChange={() => setRowAction(null)}
-            open={rowAction?.variant === "update"}
-            workspaceId={workspaceId}
-          />
+        <UpdateMagicLinkDialog
+          magicLink={
+            rowAction?.variant === "update" ? rowAction.row.original : null
+          }
+          onOpenChange={() => setRowAction(null)}
+          open={rowAction?.variant === "update"}
+          workspaceId={workspaceId}
+        />
 
-          <DeleteMagicLinksDialog
-            magicLinks={rowAction?.row.original ? [rowAction.row.original] : []}
-            onOpenChange={() => setRowAction(null)}
-            onSuccess={() => {
-              router.refresh()
-            }}
-            open={rowAction?.variant === "delete"}
-            showTrigger={false}
-            workspaceId={workspaceId}
-          />
-        </CardContent>
-      </Card>
-    </CustomFieldStoreProvider>
+        <DeleteMagicLinksDialog
+          magicLinks={rowAction?.row.original ? [rowAction.row.original] : []}
+          onOpenChange={() => setRowAction(null)}
+          onSuccess={() => {
+            router.refresh()
+          }}
+          open={rowAction?.variant === "delete"}
+          showTrigger={false}
+          workspaceId={workspaceId}
+        />
+      </CardContent>
+    </Card>
   )
 }

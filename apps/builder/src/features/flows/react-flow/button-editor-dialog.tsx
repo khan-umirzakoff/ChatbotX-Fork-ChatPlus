@@ -1,24 +1,12 @@
 "use client"
 
 import {
-  BUTTON_LABEL_MAX,
   type ButtonStepInput,
   type ButtonStepProps,
   type ButtonType,
   buttonStepSchema,
-  buttonTypes,
   type FlowNode,
-  nodeTypeSchema,
-  type OpenWebsiteStepSchema,
-  openWebsiteStepDefaultFn,
-  performActionNodeDefaultFn,
-  type StartAnotherNodeStepSchema,
-  type StartExternalFlowStepSchema,
-  type StartExternalNodeStepSchema,
-  sendMessageNodeDefaultFn,
-  startAnotherNodeStepDefaultFn,
-  startExternalFlowStepDefaultFn,
-  startExternalNodeStepDefaultFn,
+  resolveSendTextLengthLimits,
   stepTypes,
 } from "@chatbotx.io/flow-config"
 import { InputField } from "@chatbotx.io/ui/components/form/input-field"
@@ -52,6 +40,10 @@ import {
 } from "react-hook-form"
 import { setProperty } from "@/lib/object-util"
 import RecursiveDropdownMenu from "./components/recursive-dropdown-menu"
+import {
+  useCreateButtonTarget,
+  useHandleEdges,
+} from "./hooks/use-button-target"
 import { sendMessageEditorMenusWithButton } from "./nodes/send-message/menu"
 import type { MenuItem } from "./nodes/types"
 import { allSteps, DynamicStepEditor } from "./steps"
@@ -59,7 +51,20 @@ import { allButtonsConfig } from "./steps/button-config"
 import { SpreadsheetDialogProvider } from "./steps/spreadsheet/components/spreadsheet-dialog-context"
 import { useStepStore } from "./stores/step-store-provider"
 
-function AllButtonOptions({
+/**
+ * The channel a node sends on, or `undefined` for a node type that carries no
+ * `chooseChannel` beforeStep. Narrowed with `in` because `FlowNode["data"]` is
+ * a union that React Flow's `Node<Data>` does not discriminate by `type`.
+ */
+function resolveNodeChannel(node: FlowNode | null): string | undefined {
+  const details = node?.data?.details
+  const beforeStep =
+    details && "beforeStep" in details ? details.beforeStep : null
+
+  return beforeStep && "channel" in beforeStep ? beforeStep.channel : undefined
+}
+
+export function AllButtonOptions({
   onChooseButton,
   hiddenButtonTypes,
 }: {
@@ -95,18 +100,20 @@ function AllButtonOptions({
   )
 }
 
-function ActiveButton({
+export function ActiveButton({
   buttonType,
   onChooseButton,
+  beforeStepName = "beforeStep",
 }: {
   buttonType: ButtonType
   onChooseButton: (buttonType: ButtonType | null) => void
+  beforeStepName?: string
 }) {
   const t = useTranslations()
   const allButtons = useMemo(() => allButtonsConfig(t), [t])
   const activeButton = allButtons.find((bt) => bt.buttonType === buttonType)
   const { getValues } = useFormContext()
-  const beforeStep = getValues("beforeStep")
+  const beforeStep = getValues(beforeStepName)
 
   if (!activeButton) {
     return null
@@ -131,7 +138,10 @@ function ActiveButton({
       </div>
 
       {beforeStep && (
-        <DynamicStepEditor parentName="beforeStep" type={beforeStep.stepType} />
+        <DynamicStepEditor
+          parentName={beforeStepName}
+          type={beforeStep.stepType}
+        />
       )}
     </div>
   )
@@ -207,34 +217,9 @@ export function ButtonEditorDialog() {
 
   const t = useTranslations()
 
-  const { getNodes, addNodes, setEdges, updateNodeData, screenToFlowPosition } =
-    useReactFlow()
-
-  const refreshEdge = useCallback(
-    (buttonId: string, sourceNodeId: string, targetNodeId: string) => {
-      setEdges((currentEdges) => [
-        ...currentEdges.filter((edge) => edge.sourceHandle !== buttonId),
-        {
-          id: buttonId,
-          source: sourceNodeId,
-          target: targetNodeId,
-          sourceHandle: buttonId,
-          targetHandle: targetNodeId,
-          type: "buttonedge",
-        },
-      ])
-    },
-    [setEdges],
-  )
-
-  const removeEdge = useCallback(
-    (buttonId: string) => {
-      setEdges((currentEdges) =>
-        currentEdges.filter((edge) => edge.sourceHandle !== buttonId),
-      )
-    },
-    [setEdges],
-  )
+  const { getNodes, updateNodeData } = useReactFlow()
+  const { refreshEdge, removeEdge } = useHandleEdges()
+  const createButtonTarget = useCreateButtonTarget()
   const buttonPath = useStepStore((state) => state.buttonPath)
   const setButtonPath = useStepStore((state) => state.setButtonPath)
   const buttonInitialData = useStepStore((state) => state.buttonInitialData)
@@ -255,6 +240,20 @@ export function ButtonEditorDialog() {
   const { setValue, getValues, control } = form
   const buttonType = useWatch({ control, name: "buttonType" })
   const buttonId = useWatch({ control, name: "id" })
+
+  // The dialog lives outside the node's form (frame.tsx), so the channel is
+  // read off the selected node rather than watched — `buttonPath` is already
+  // rooted at `data.details`, and it also says whether this is a node-level
+  // quick reply or a button attached to a step. The visible counter sits on
+  // the button itself (steps/button/editor.tsx); this only caps the input.
+  const isQuickReply = buttonPath?.startsWith("data.details.quickReplies")
+  const labelMax = useMemo(() => {
+    const limits = resolveSendTextLengthLimits({
+      channel: resolveNodeChannel(activeNode),
+    })
+
+    return isQuickReply ? limits.quickReplyLabel : limits.buttonLabel
+  }, [activeNode, isQuickReply])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: wip
   useEffect(() => {
@@ -351,109 +350,29 @@ export function ButtonEditorDialog() {
 
   const onChooseButton = useCallback(
     (selectedButtonType: ButtonType | null) => {
-      const allNodes = getNodes() as FlowNode[]
-
       setValue("buttonType", selectedButtonType)
       setValue("steps", [])
       setValue("beforeStep", null)
-
-      const position = screenToFlowPosition({
-        x: window.innerWidth - 400,
-        y: 100,
-      })
-
-      let newNode: FlowNode | null = null
-      let beforeStep:
-        | StartAnotherNodeStepSchema
-        | OpenWebsiteStepSchema
-        | StartExternalFlowStepSchema
-        | StartExternalNodeStepSchema
-        | null = null
-
-      switch (selectedButtonType) {
-        case buttonTypes.enum.sendMessage: {
-          const nodeCount = allNodes.filter(
-            (node) => node.type === nodeTypeSchema.enum.sendMessage,
-          ).length
-          newNode = sendMessageNodeDefaultFn({
-            nodeProps: {
-              position,
-            },
-            dataProps: {
-              name: `${t("actions.sendMessage")} #${nodeCount + 1}`,
-            },
-          })
-          beforeStep = startAnotherNodeStepDefaultFn({
-            nodeId: newNode.id,
-            viewOnly: true,
-          })
-          break
-        }
-        case buttonTypes.enum.performAction: {
-          const nodeCount = allNodes.filter(
-            (node) => node.type === nodeTypeSchema.enum.performAction,
-          ).length
-          newNode = performActionNodeDefaultFn({
-            nodeProps: {
-              position,
-            },
-            dataProps: {
-              name: `${t("flows.actions.performAction")} #${nodeCount + 1}`,
-            },
-          })
-          beforeStep = startAnotherNodeStepDefaultFn({
-            nodeId: newNode.id,
-            viewOnly: true,
-          })
-          break
-        }
-        case buttonTypes.enum.startExternalFlow: {
-          beforeStep = startExternalFlowStepDefaultFn()
-          break
-        }
-        case buttonTypes.enum.openWebsite: {
-          beforeStep = openWebsiteStepDefaultFn()
-          break
-        }
-        case buttonTypes.enum.startExternalNode: {
-          beforeStep = startExternalNodeStepDefaultFn()
-          break
-        }
-        case buttonTypes.enum.startAnotherNode: {
-          beforeStep = startAnotherNodeStepDefaultFn()
-          break
-        }
-        default: {
-          return
-        }
+      if (!selectedButtonType) {
+        return
       }
 
-      if (beforeStep) {
-        setValue("beforeStep", beforeStep)
+      const created = createButtonTarget(selectedButtonType)
+      if (!created) {
+        return
       }
 
-      if (newNode) {
-        addNodes([newNode])
+      setValue("beforeStep", created.beforeStep)
 
+      if (created.newNode) {
         const currentButtonId = getValues("id") as string
         if (currentButtonId && activeNode) {
-          refreshEdge(currentButtonId, activeNode.id, newNode.id)
+          refreshEdge(currentButtonId, activeNode.id, created.newNode.id)
         }
-
         onSave()
       }
     },
-    [
-      activeNode,
-      addNodes,
-      getNodes,
-      getValues,
-      onSave,
-      refreshEdge,
-      screenToFlowPosition,
-      setValue,
-      t,
-    ],
+    [activeNode, createButtonTarget, getValues, onSave, refreshEdge, setValue],
   )
 
   return buttonId ? (
@@ -481,7 +400,7 @@ export function ButtonEditorDialog() {
               <InputField
                 disabled={!!buttonEditorConfig?.lockLabel}
                 label={t("fields.name.label")}
-                maxLength={BUTTON_LABEL_MAX}
+                maxLength={labelMax}
                 name="label"
                 required
               />

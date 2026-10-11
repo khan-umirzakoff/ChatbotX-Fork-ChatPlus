@@ -1,62 +1,47 @@
-import { messengerIntegrationService } from "@chatbotx.io/business"
-import { getUserPages } from "@chatbotx.io/integration-messenger"
-import { cookies } from "next/headers"
-import { redirect } from "next/navigation"
-import type { PickerFacebookPage } from "@/features/integration-messenger/components/messenger-pages"
-import { SelectPage } from "@/features/integration-messenger/components/select-account"
-import type { FacebookAuthCallback } from "@/lib/facebook-pending-auth"
+import { getTranslations } from "next-intl/server"
 import {
-  decryptAuth,
-  FB_MESSENGER_PENDING_AUTH_COOKIE,
-} from "@/lib/facebook-pending-auth"
+  resolveSelectSession,
+  toConnectPickerItem,
+} from "@/features/channel-connect/lib/select-page"
+import { SelectPage } from "@/features/integration-messenger/components/select-account"
 
 export const dynamic = "force-dynamic"
 
 /**
- * Picker ordering: selectable pages first, then pages already connected
- * elsewhere. Unconnected pages without connect permission are hidden.
+ * `session.targets` is already the fully-computed, admin-filtered,
+ * already-connected-marked list `ConnectionService.listAndAttachCandidates`
+ * built at authorization time — there is no live `getUserPages` re-fetch
+ * here anymore. Messenger's `listCandidates` silently drops pages the user
+ * doesn't administer before they ever become a target, so this page never
+ * sees a not-admin row to warn about, and the Business Manager lookup
+ * warning isn't part of the session's public target projection either —
+ * both were removed along with the dead props that carried them.
  */
-function rankPickerPage(page: PickerFacebookPage): number {
-  return page.isAlreadyConnected ? 1 : 0
-}
+export default async function MessengerSelectPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ session?: string }>
+}) {
+  const [{ sessionId, resolved }, t] = await Promise.all([
+    resolveSelectSession({ searchParams, expectedProvider: "messenger" }),
+    getTranslations(),
+  ])
 
-function shouldShowPickerPage(page: PickerFacebookPage): boolean {
-  return page.isConnectable || page.isAlreadyConnected
-}
-
-export default async function MessengerSelectPage() {
-  const token = (await cookies()).get(FB_MESSENGER_PENDING_AUTH_COOKIE)?.value
-
-  const auth = token ? await decryptAuth<FacebookAuthCallback>(token) : null
-
-  if (!auth) {
-    redirect("/channels/create")
-  }
-
-  const { pages, bmLookupFailed } = await getUserPages(
-    auth.userToken,
-    auth.version,
-  )
-
-  const connectedPageIds = new Set(
-    await messengerIntegrationService.findConnectedPageIds(
-      pages.map((page) => page.id),
-    ),
-  )
-  const pickerPages: PickerFacebookPage[] = pages
-    .map((page) => ({
-      ...page,
-      isAlreadyConnected: connectedPageIds.has(page.id),
-    }))
-    .filter(shouldShowPickerPage)
-    .sort((current, next) => rankPickerPage(current) - rankPickerPage(next))
+  const items = resolved.session.targets
+    .map((target) =>
+      toConnectPickerItem({
+        target,
+        channel: "messenger",
+        alreadyConnectedLabel: t("messenger.selectPage.alreadyConnectedNote"),
+      }),
+    )
+    .sort((current, next) => Number(current.disabled) - Number(next.disabled))
 
   return (
     <SelectPage
-      bmLookupFailed={bmLookupFailed}
-      pages={pickerPages}
-      referer={auth.referer}
-      workspaceId={auth.workspaceId}
+      items={items}
+      sessionId={sessionId}
+      workspaceId={resolved.workspace.id}
     />
   )
 }

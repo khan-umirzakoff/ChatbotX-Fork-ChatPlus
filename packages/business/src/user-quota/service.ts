@@ -5,14 +5,19 @@ import {
   db,
   eq,
   gt,
+  inArray,
   lte,
+  type SQL,
   sql,
   sum,
 } from "@chatbotx.io/database/client"
-import { planStatuses } from "@chatbotx.io/database/partials"
 import {
+  ACTIVE_CONNECTION_STATUSES,
+  planStatuses,
+} from "@chatbotx.io/database/partials"
+import {
+  connectionModel,
   contactModel,
-  inboxModel,
   ROOT_TENANT_ID,
   userQuotaModel,
   workspaceMacModel,
@@ -159,6 +164,16 @@ class UserQuotaService extends BaseService {
     await this.store.invalidate(userId)
   }
 
+  /**
+   * Drop the live counters and cached row for a user that no longer exists, so
+   * the quota reconcile job stops walking a stale live key (its `UserQuota` row
+   * is already gone via `ON DELETE CASCADE`). Safe to call from a future user
+   * delete flow too.
+   */
+  async clearLiveCounters(userId: string): Promise<void> {
+    await this.store.clearLive(userId)
+  }
+
   async getForUser(userId: string): Promise<UserQuotaModel | null> {
     const cached = await this.store.getCachedRow(userId)
     if (cached) {
@@ -184,6 +199,19 @@ class UserQuotaService extends BaseService {
       return quota
     }
     return null
+  }
+
+  async getPlanIdentity(
+    userId: string,
+  ): Promise<{ isOnTrial: boolean; planName: string | null }> {
+    const quota = await db.query.userQuotaModel.findFirst({
+      where: { userId },
+      columns: { planStatus: true, planName: true },
+    })
+    return {
+      isOnTrial: quota?.planStatus === planStatuses.enum.trial,
+      planName: quota?.planName ?? null,
+    }
   }
 
   private async readDefaultPlanSnapshot(
@@ -557,6 +585,9 @@ class UserQuotaService extends BaseService {
    * Current distinct humans across an owner's workspaces or a reseller's
    * tenant. `teamMembers` is intentionally read from its source tables: its
    * counter is only a reconcile snapshot and can be stale between syncs.
+   * Platform support access is a synthetic membership resolved at read time
+   * from `Workspace.supportAccessUntil` — it never creates a `WorkspaceMember`
+   * row, so it's never counted here to begin with.
    */
   private async countDistinctTeamMembers(
     scope: { ownerId: string } | { tenantId: string },
@@ -678,6 +709,19 @@ class UserQuotaService extends BaseService {
   }
 
   /**
+   * Atomically admit one live unit using a quota row already loaded by the
+   * caller. A missing row is unlimited; no quota row is fetched here.
+   */
+  admit(
+    userId: string,
+    metric: QuotaMetric,
+    quota: UserQuotaModel | null,
+  ): Promise<number | null> {
+    const { limit } = this.metricValues(quota, metric)
+    return this.store.admit(userId, metric, limit)
+  }
+
+  /**
    * Write-through a +1 usage increment to BOTH the DB column and the Redis live
    * counter, then bust the row cache — so the gate (`hasCapacity`, DB-read) and
    * the display (`getLiveUsage`, Redis-read) never disagree. The shared store
@@ -685,6 +729,17 @@ class UserQuotaService extends BaseService {
    */
   async consume(userId: string, metric: QuotaMetric): Promise<void> {
     await this.store.consume(userId, metric, 1)
+  }
+
+  /** Persist an admitted unit and invalidate the quota row cache. */
+  async commitAdmission(userId: string, metric: QuotaMetric): Promise<void> {
+    await this.store.upsertMetricBy(userId, metric, 1)
+    await this.store.invalidate(userId)
+  }
+
+  /** Best-effort release of one previously admitted live unit. */
+  async revokeAdmission(userId: string, metric: QuotaMetric): Promise<void> {
+    await this.store.decrementBy(userId, metric, 1)
   }
 
   async release(userId: string, metric: QuotaMetric): Promise<void> {
@@ -708,6 +763,59 @@ class UserQuotaService extends BaseService {
   }
 
   /**
+   * Shared `contacts ⋈ workspace` / `workspaces` / active-channel-`Connection`
+   * count block behind both `reconcileOwnerPoolUsage` (tenant-scoped `where`)
+   * and `reconcileUserSelfUsage` (owner-scoped `where`) — same three queries,
+   * differing only in which workspace predicate is applied.
+   *
+   * `channelsUsed` counts distinct `Connection` rows (`kind = "channel"` AND
+   * `status IN` {@link ACTIVE_CONNECTION_STATUSES}) joined to `workspace`,
+   * NOT raw `Inbox` rows: an `Inbox` can exist with no backing `Connection`
+   * at all (orphaned) or with one that's paused/needs_reauth/disconnected,
+   * and neither case should hold a channel-quota slot.
+   */
+  private async countWorkspaceScopedUsage(where: SQL): Promise<{
+    contactsUsed: number
+    workspacesUsed: number
+    channelsUsed: number
+  }> {
+    const [[contactsResult], [workspacesResult], [channelsResult]] =
+      await Promise.all([
+        db
+          .select({ count: count() })
+          .from(contactModel)
+          .innerJoin(
+            workspaceModel,
+            eq(contactModel.workspaceId, workspaceModel.id),
+          )
+          .where(where),
+
+        db.select({ count: count() }).from(workspaceModel).where(where),
+
+        db
+          .select({ count: countDistinct(connectionModel.id) })
+          .from(connectionModel)
+          .innerJoin(
+            workspaceModel,
+            eq(connectionModel.workspaceId, workspaceModel.id),
+          )
+          .where(
+            and(
+              where,
+              eq(connectionModel.kind, "channel"),
+              inArray(connectionModel.status, ACTIVE_CONNECTION_STATUSES),
+            ),
+          ),
+      ])
+
+    return {
+      contactsUsed: contactsResult?.count ?? 0,
+      workspacesUsed: workspacesResult?.count ?? 0,
+      channelsUsed: channelsResult?.count ?? 0,
+    }
+  }
+
+  /**
    * Reconcile a reseller owner's `UserQuota.*Used` from the source-of-truth DB
    * counts aggregated across EVERY workspace under their tenant — the owner's row
    * is the pool (owner's own resources carry the reseller tenantId too, so the
@@ -728,36 +836,13 @@ class UserQuotaService extends BaseService {
     const client = await cacheConnections.useExisting()
 
     const [
-      [contactsResult],
+      { contactsUsed, workspacesUsed, channelsUsed },
       teamMembersUsed,
-      [workspacesResult],
-      [channelsResult],
       [macResult],
     ] = await Promise.all([
-      db
-        .select({ count: count() })
-        .from(contactModel)
-        .innerJoin(
-          workspaceModel,
-          eq(contactModel.workspaceId, workspaceModel.id),
-        )
-        .where(eq(workspaceModel.tenantId, tenantId)),
+      this.countWorkspaceScopedUsage(eq(workspaceModel.tenantId, tenantId)),
 
       this.countDistinctTeamMembers({ tenantId }),
-
-      db
-        .select({ count: count() })
-        .from(workspaceModel)
-        .where(eq(workspaceModel.tenantId, tenantId)),
-
-      db
-        .select({ count: count() })
-        .from(inboxModel)
-        .innerJoin(
-          workspaceModel,
-          eq(inboxModel.workspaceId, workspaceModel.id),
-        )
-        .where(eq(workspaceModel.tenantId, tenantId)),
 
       db
         .select({ total: sum(workspaceMacModel.macCount) })
@@ -775,9 +860,6 @@ class UserQuotaService extends BaseService {
         ),
     ])
 
-    const contactsUsed = contactsResult?.count ?? 0
-    const workspacesUsed = workspacesResult?.count ?? 0
-    const channelsUsed = channelsResult?.count ?? 0
     // `sum()` returns a numeric string (or null when no rows match).
     const macUsed = Number(macResult?.total ?? 0)
 
@@ -874,6 +956,158 @@ class UserQuotaService extends BaseService {
       default:
         return { limit: null, used: 0 }
     }
+  }
+
+  /**
+   * `sync-user-quota.ts` reconcileUser (non-reseller path): re-grounds a
+   * plain user's own `UserQuota.*Used` from the source-of-truth DB counts —
+   * modeled directly on `reconcileOwnerPoolUsage` above (same `Promise.all`
+   * shape, same "assigned directly, NOT GREATEST" semantics so deletions
+   * free quota). Unlike the pool path, the live-counter `hset` here has NO
+   * `mac` field — mac is reconciled separately by the caller via
+   * `persistMacUsed`/the ledger reconcile, using the markers this method
+   * returns from one round-trip (`macUsed`, `periodStart`, `periodEnd`,
+   * `monthlyBotMessagesPeriodStart`).
+   */
+  async reconcileUserSelfUsage(userId: string): Promise<{
+    macUsed: number
+    periodStart: Date | null
+    periodEnd: Date | null
+    monthlyBotMessagesPeriodStart: Date | null
+  }> {
+    const client = await cacheConnections.useExisting()
+
+    const [{ contactsUsed, workspacesUsed, channelsUsed }, teamMembersUsed] =
+      await Promise.all([
+        this.countWorkspaceScopedUsage(eq(workspaceModel.ownerId, userId)),
+        this.countDistinctTeamMembersForOwner(userId),
+      ])
+
+    await db
+      .insert(userQuotaModel)
+      .values({
+        userId,
+        contactsUsed,
+        teamMembersUsed,
+        workspacesUsed,
+        channelsUsed,
+        syncedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: userQuotaModel.userId,
+        set: {
+          // Authoritative current count from the source tables (already
+          // reflects deletions). Assigned directly — NOT GREATEST — so
+          // removing contacts, team members, workspaces, or channels frees
+          // quota.
+          contactsUsed,
+          teamMembersUsed,
+          workspacesUsed,
+          channelsUsed,
+          syncedAt: new Date(),
+          updatedAt: sql`CURRENT_TIMESTAMP`,
+        },
+      })
+
+    // Mirror the live counters to the same authoritative current counts.
+    // No `mac` field here — this path's mac reconcile is separate.
+    await client.hset(
+      this.store.liveKey(userId),
+      "contacts",
+      String(contactsUsed),
+      "teamMembers",
+      String(teamMembersUsed),
+      "workspaces",
+      String(workspacesUsed),
+      "channels",
+      String(channelsUsed),
+    )
+
+    const stored = await db.query.userQuotaModel.findFirst({
+      where: { userId },
+      columns: {
+        macUsed: true,
+        periodStart: true,
+        periodEnd: true,
+        monthlyBotMessagesPeriodStart: true,
+      },
+    })
+
+    return {
+      macUsed: stored?.macUsed ?? 0,
+      periodStart: stored?.periodStart ?? null,
+      periodEnd: stored?.periodEnd ?? null,
+      monthlyBotMessagesPeriodStart:
+        stored?.monthlyBotMessagesPeriodStart ?? null,
+    }
+  }
+
+  /** `sync-user-quota.ts` persistMacUsed: upsert `UserQuota.macUsed` to an absolute value. */
+  async persistMacUsed(userId: string, value: number): Promise<void> {
+    await db
+      .insert(userQuotaModel)
+      .values({ userId, macUsed: value, syncedAt: new Date() })
+      .onConflictDoUpdate({
+        target: userQuotaModel.userId,
+        set: {
+          macUsed: value,
+          updatedAt: sql`CURRENT_TIMESTAMP`,
+        },
+      })
+  }
+
+  /**
+   * `sync-user-quota.ts` reconcileMonthlyBotMessages: applies the resolved
+   * reset/stamp decision. The `reset` branch zeroes `monthlyBotMessagesUsed`
+   * and stamps the period; the else branch stamps only (adopt-into-current-
+   * period for an unstamped row, without touching the counter). Ordering is
+   * load-bearing: the DB counter is zeroed BEFORE the live Redis field, so a
+   * crash between the two writes fails closed (briefly over-blocks) rather
+   * than open — the caller must still write the live
+   * `monthlyBotMessages` hash field AFTER calling this, in that order.
+   */
+  async applyMonthlyBotMessagesReset(input: {
+    userId: string
+    periodStart: Date | null
+    reset: boolean
+  }): Promise<void> {
+    const { userId, periodStart, reset } = input
+
+    if (reset) {
+      await db
+        .insert(userQuotaModel)
+        .values({
+          userId,
+          monthlyBotMessagesUsed: 0,
+          monthlyBotMessagesPeriodStart: periodStart,
+          syncedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: userQuotaModel.userId,
+          set: {
+            monthlyBotMessagesUsed: 0,
+            monthlyBotMessagesPeriodStart: periodStart,
+            updatedAt: sql`CURRENT_TIMESTAMP`,
+          },
+        })
+      return
+    }
+
+    // Unstamped row: adopt into the current period without touching the counter.
+    await db
+      .insert(userQuotaModel)
+      .values({
+        userId,
+        monthlyBotMessagesPeriodStart: periodStart,
+        syncedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: userQuotaModel.userId,
+        set: {
+          monthlyBotMessagesPeriodStart: periodStart,
+          updatedAt: sql`CURRENT_TIMESTAMP`,
+        },
+      })
   }
 }
 

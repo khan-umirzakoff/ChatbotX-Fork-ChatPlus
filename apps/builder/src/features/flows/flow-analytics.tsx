@@ -2,12 +2,12 @@
 
 import type { FlowNodeStatsResponse } from "@chatbotx.io/analytics/schemas"
 import { ReactFlowProvider } from "@xyflow/react"
-import { CustomFieldStoreProvider } from "../custom-fields/provider/custom-field-store-context"
+
 import type { FlowVersionResource } from "../flow-versions/schema/resource"
 import type { SmartDelayNodeStats } from "./analytics/smart-delay-node-stats"
 import { FlowAnalyticsFrame } from "./react-flow/flow-analytics-frame"
 import { StepStoreProvider } from "./react-flow/stores/step-store-provider"
-import type { FlowResource } from "./schemas/resource"
+import type { FlowResource } from "./schema/resource"
 
 type FlowAnalyticsProps = {
   flow: FlowResource
@@ -25,16 +25,13 @@ export function FlowAnalytics({
   return (
     <ReactFlowProvider>
       <StepStoreProvider>
-        {/* Step viewers rendered in the analytics canvas read the custom-field
-            store (e.g. WaitStepViewer resolves dynamic-date field names). */}
-        <CustomFieldStoreProvider workspaceId={flow.workspaceId}>
-          <FlowAnalyticsFrame
-            flow={flow}
-            flowVersion={flowVersion}
-            smartDelayStats={smartDelayStats}
-            stats={stats}
-          />
-        </CustomFieldStoreProvider>
+        {/* Step viewers rendered in the analytics canvas resolve dynamic-date field names. */}
+        <FlowAnalyticsFrame
+          flow={flow}
+          flowVersion={flowVersion}
+          smartDelayStats={smartDelayStats}
+          stats={stats}
+        />
       </StepStoreProvider>
     </ReactFlowProvider>
   )

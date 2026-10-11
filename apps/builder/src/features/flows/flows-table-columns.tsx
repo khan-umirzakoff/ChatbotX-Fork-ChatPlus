@@ -32,13 +32,14 @@ import { useAction } from "next-safe-action/hooks"
 import type { Dispatch, SetStateAction } from "react"
 import { updateFlowAction } from "./actions/update-flow-action"
 import { downloadFlowExport } from "./lib/download-flow-export"
-import type { FlowResource } from "./schemas/resource"
+import type { FlowResource } from "./schema/resource"
 
 type GetColumnsProps = {
   t: ReturnType<typeof useTranslations>
   setRowAction: Dispatch<
     SetStateAction<DataTableRowAction<FlowResource> | null>
   >
+  invalidateFlows: () => void
   locale: string
 }
 
@@ -46,6 +47,7 @@ export function getFlowColumns({
   t,
   setRowAction,
   locale,
+  invalidateFlows,
 }: GetColumnsProps): ColumnDef<FlowResource>[] {
   return [
     {
@@ -126,6 +128,7 @@ export function getFlowColumns({
           {
             onSuccess: () => {
               row.original.active = !row.original.active
+              invalidateFlows()
             },
           },
         )
@@ -164,6 +167,7 @@ export function getFlowColumns({
           {
             onSuccess: () => {
               row.original.enableInInbox = !row.original.enableInInbox
+              invalidateFlows()
             },
           },
         )

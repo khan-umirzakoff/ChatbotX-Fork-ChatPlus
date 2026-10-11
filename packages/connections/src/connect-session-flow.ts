@@ -1,0 +1,645 @@
+import {
+  type ConnectSessionActor,
+  connectSessionService,
+} from "@chatbotx.io/business/connect-session"
+import {
+  authExpiresAtOf,
+  type ConnectionQuotaConsumption,
+  connectionStateService,
+  isActiveConnectionStatus,
+  resolveForeignKey,
+  resolveOwnerId,
+  saveOrInsertSatellite,
+  withQuotaCompensation,
+} from "@chatbotx.io/business/connection"
+import {
+  connectionAlreadyConnectedException,
+  connectionCredentialsRejectedException,
+  connectionIdentityMismatchException,
+  connectionNoCandidatesException,
+  connectionNotConfiguredException,
+  connectionNotOAuthException,
+  connectionProviderUnavailableException,
+  connectionStateMismatchException,
+  connectSessionExpiredException,
+  notFoundException,
+  toPublicErrorMessage,
+} from "@chatbotx.io/business/errors"
+import {
+  compensateWorkspaceQuotaConsumption,
+  type WorkspaceQuotaConsumption,
+} from "@chatbotx.io/business/workspace"
+import { type DatabaseClient, db } from "@chatbotx.io/database/client"
+import type {
+  ConnectSessionPurpose,
+  IntegrationType,
+} from "@chatbotx.io/database/partials"
+import {
+  connectionRepository,
+  integrationInstagramRepository,
+} from "@chatbotx.io/database/repositories"
+import type {
+  ConnectionModel,
+  ConnectSessionModel,
+} from "@chatbotx.io/database/types"
+import { encryptUtils } from "@chatbotx.io/encryption"
+import type {
+  AuthValue,
+  ConnectionCandidate,
+  ConnectionCredential,
+  ConnectionDescriptor,
+  ConnectSessionNextAction,
+} from "@chatbotx.io/sdk"
+import { createId } from "@chatbotx.io/utils"
+import { connectFailureCauseOf } from "@chatbotx.io/utils/connection"
+import { failSession } from "./connect-targets"
+import {
+  encryptedAuthorizationSchema,
+  providerFailureStatus,
+  resolveAdapter,
+  subscribeWebhookBestEffort,
+  toConnectionProviderError,
+} from "./internal"
+import { logger } from "./logger"
+
+/**
+ * `oauth_redirect`/`oauth_popup` connect: creates a `ConnectSession`, then
+ * builds the provider's `authorizeUrl` with `state = "{sessionId}.{nonce}"`
+ * — the OAuth callback hub resolves the session from that `state` alone
+ * (`ConnectSessionService.findByNonce`), before it has any other request
+ * context. `credential`/`callbackUrl` are resolved by the app-layer caller
+ * (tenant-aware platform credential + broker/custom-domain callback URL)
+ * and passed in — this package cannot resolve them itself without
+ * depending on `apps/builder`.
+ */
+type StartSessionTarget =
+  | { workspaceId: string; createWorkspace?: never }
+  | {
+      workspaceId?: never
+      /**
+       * First-channel path only (mutually exclusive with `workspaceId`):
+       * resolves-or-creates the user's workspace and inserts this session in
+       * the SAME transaction. A failure anywhere in this call (session cap,
+       * DB error) then rolls the just-created workspace back with it, instead
+       * of leaving an empty orphan workspace behind when the connect attempt
+       * never even reaches the provider — the app-layer caller supplies
+       * this instead of a plain `workspaceId` precisely so the insert it does
+       * (`workspaceService.create`) can run against this package's `tx`.
+       */
+      createWorkspace: (
+        tx: DatabaseClient,
+        quotaConsumption: WorkspaceQuotaConsumption,
+      ) => Promise<{ id: string }>
+    }
+
+/**
+ * Narrows the actor union to exactly the one field present. Neither
+ * truthiness (an empty-string `actorUserId` is still type-`string`) nor the
+ * `in` operator (both branches declare the `actorUserId` key — one as
+ * `string`, the other as `?: never` — so `in` can't tell them apart) narrows
+ * this union; a user-defined type guard does.
+ */
+const isUserActor = (
+  actor: ConnectSessionActor,
+): actor is { actorUserId: string; actorTokenId?: never } =>
+  actor.actorUserId !== undefined
+
+export const actorRefOf = (actor: ConnectSessionActor): ConnectSessionActor =>
+  isUserActor(actor)
+    ? { actorUserId: actor.actorUserId }
+    : { actorTokenId: actor.actorTokenId }
+
+export const startSession = async (
+  input: {
+    provider: IntegrationType
+    purpose: ConnectSessionPurpose
+    credential: ConnectionCredential
+    callbackUrl: string
+    targetConnectionId?: string | null
+    platformOwnerId?: string | null
+    originHost?: string | null
+    returnUrl?: string | null
+  } & StartSessionTarget &
+    ConnectSessionActor,
+): Promise<{
+  session: ConnectSessionModel
+  nextAction: ConnectSessionNextAction
+}> => {
+  const adapter = resolveAdapter(input.provider)
+  const authorizeUrl = adapter.provider.authorizeUrl
+  if (!authorizeUrl) {
+    throw connectionNotOAuthException(input.provider)
+  }
+
+  const sessionId = createId()
+  const buildSessionInsertInput = (resolvedWorkspaceId: string) => ({
+    id: sessionId,
+    workspaceId: resolvedWorkspaceId,
+    provider: input.provider,
+    purpose: input.purpose,
+    nextAction: (nonce: string) => {
+      const url = authorizeUrl({
+        credential: input.credential,
+        callbackUrl: input.callbackUrl,
+        state: `${sessionId}.${nonce}`,
+      })
+      return { type: "open_url" as const, url }
+    },
+    targetConnectionId: input.targetConnectionId,
+    platformOwnerId: input.platformOwnerId,
+    originHost: input.originHost,
+    returnUrl: input.returnUrl,
+    ...actorRefOf(input),
+  })
+
+  const verifyTargetOwnership = async (resolvedWorkspaceId: string) => {
+    if (!input.targetConnectionId) {
+      return
+    }
+    const target = await connectionRepository.findByIdForWorkspace({
+      id: input.targetConnectionId,
+      workspaceId: resolvedWorkspaceId,
+    })
+    if (!target) {
+      throw notFoundException("Connection not found")
+    }
+  }
+
+  let session: ConnectSessionModel
+  if (input.createWorkspace) {
+    const { createWorkspace } = input
+    // The `workspaces` seat is consumed outside SQL; a rollback below (session
+    // cap, ownership check, DB error) must hand it back from this catch.
+    const workspaceQuotaConsumption: WorkspaceQuotaConsumption = {
+      consumed: false,
+    }
+    try {
+      session = await db.transaction(async (tx) => {
+        const workspace = await createWorkspace(tx, workspaceQuotaConsumption)
+        await verifyTargetOwnership(workspace.id)
+        const created = await connectSessionService.create(
+          buildSessionInsertInput(workspace.id),
+          tx,
+        )
+        return created.session
+      })
+    } catch (err) {
+      await compensateWorkspaceQuotaConsumption(workspaceQuotaConsumption)
+      throw err
+    }
+  } else {
+    await verifyTargetOwnership(input.workspaceId)
+    const created = await connectSessionService.create(
+      buildSessionInsertInput(input.workspaceId),
+    )
+    session = created.session
+  }
+  if (!session.nextAction) {
+    throw new Error(
+      "Connect session was created without an authorization action",
+    )
+  }
+  return { session, nextAction: session.nextAction }
+}
+
+/**
+ * Narrows a session to the reconnect shape `completeReconnect` requires —
+ * `targetConnectionId` is only set for `purpose: "reconnect"` sessions.
+ */
+const isReconnectSession = (
+  session: ConnectSessionModel,
+): session is ConnectSessionModel & { targetConnectionId: string } =>
+  session.purpose === "reconnect" && !!session.targetConnectionId
+
+/**
+ * OAuth callback exchange: resolves the session by its `state` nonce,
+ * exchanges `code` for `auth`, lists connectable candidates, and persists
+ * them as session targets — `attachAuthorization` always lands on
+ * `awaiting_selection`; auto-completing a single-target/non-multi-account
+ * provider is the caller's job (it has the `ConnectionProvider` in scope
+ * to check `multiAccount` and can immediately follow with
+ * `connectTargets`).
+ */
+export const completeAuthorization = async (input: {
+  sessionId: string
+  nonce: string
+  code: string
+  callbackUrl: string
+  credential: ConnectionCredential
+}): Promise<ConnectSessionModel> => {
+  const session = await connectSessionService.findByNonce(input.nonce)
+  if (!session || session.id !== input.sessionId) {
+    throw connectionStateMismatchException()
+  }
+  const adapter = resolveAdapter(session.provider)
+  if (!adapter.provider.exchangeCode) {
+    throw connectionNotOAuthException(session.provider)
+  }
+  if (session.status === "authorized" && session.encryptedAuth) {
+    const auth = await encryptUtils.decryptObject(
+      session.encryptedAuth,
+      encryptedAuthorizationSchema,
+      `connect-session:${session.id}:authorization`,
+    )
+    return await listAndAttachCandidates(session, auth)
+  }
+  if (session.status !== "pending") {
+    throw connectSessionExpiredException(
+      "This connect session is no longer active.",
+    )
+  }
+
+  // OAuth providers consume authorization codes once. The compare-and-set
+  // immediately before the exchange permits exactly one callback to use it.
+  await connectSessionService.claimAuthorization({
+    id: session.id,
+    workspaceId: session.workspaceId,
+  })
+
+  let auth: AuthValue
+  try {
+    auth = await adapter.provider.exchangeCode({
+      code: input.code,
+      callbackUrl: input.callbackUrl,
+      credential: input.credential,
+    })
+  } catch (err) {
+    const providerError = toConnectionProviderError(err)
+    const retryStatus = providerFailureStatus(providerError)
+    logger.warn(
+      { err: providerError, sessionId: session.id, provider: session.provider },
+      "connection OAuth: authorization code exchange failed",
+    )
+    if (retryStatus) {
+      await connectSessionService.releaseAuthorization({
+        id: session.id,
+        workspaceId: session.workspaceId,
+      })
+      throw connectionProviderUnavailableException(retryStatus)
+    }
+    await failSession(session, "exchange_failed", ["authorized"])
+    const rejection = connectionCredentialsRejectedException(
+      toPublicErrorMessage(
+        providerError,
+        "The provider rejected the authorization.",
+      ),
+    )
+    // Same channel as the listing failure: a provider-specific reason (e.g. a
+    // partial OAuth consent) rides on the exception into the redirect.
+    const cause = connectFailureCauseOf(providerError)
+    if (cause) {
+      rejection.data = { cause }
+    }
+    throw rejection
+  }
+
+  if (isReconnectSession(session)) {
+    return await completeReconnect({ session, auth })
+  }
+
+  let authorizedSession: ConnectSessionModel
+  try {
+    const encryptedAuth = await encryptUtils.encryptObject(
+      auth,
+      `connect-session:${session.id}:authorization`,
+    )
+    authorizedSession = await connectSessionService.storeAuthorization({
+      id: session.id,
+      workspaceId: session.workspaceId,
+      encryptedAuth,
+    })
+  } catch (err) {
+    await failSession(session, "internal_error", ["authorized"])
+    throw err
+  }
+  return await listAndAttachCandidates(authorizedSession, auth)
+}
+
+/**
+ * Lists connectable candidates for an already-obtained `auth` and
+ * persists them as the session's `awaiting_selection` targets. Split out
+ * of `completeAuthorization` so a provider whose credential can be
+ * satisfied without a fresh OAuth round trip — Messenger's Facebook-SSO
+ * token reuse (`tryReuseFacebookSsoToken`), which skips the OAuth dialog
+ * entirely when the user's existing Facebook login already carries every
+ * required scope — can reach `awaiting_selection` directly from an
+ * app-layer-constructed `auth`, without a `code`/`nonce` to exchange.
+ */
+export const listAndAttachCandidates = async (
+  session: ConnectSessionModel,
+  auth: AuthValue,
+): Promise<ConnectSessionModel> => {
+  const adapter = resolveAdapter(session.provider)
+
+  let candidates: Awaited<
+    ReturnType<NonNullable<typeof adapter.provider.listCandidates>>
+  >
+  try {
+    candidates = adapter.provider.listCandidates
+      ? await adapter.provider.listCandidates({ auth })
+      : [{ ...adapter.provider.describe(auth), auth }]
+  } catch (err) {
+    const providerError = toConnectionProviderError(err)
+    const retryStatus = providerFailureStatus(providerError)
+    logger.warn(
+      { err: providerError, sessionId: session.id, provider: session.provider },
+      "connection OAuth: candidate listing failed",
+    )
+    if (retryStatus) {
+      throw connectionProviderUnavailableException(retryStatus)
+    }
+    await failSession(session, "provider_error")
+    const rejection = connectionCredentialsRejectedException(
+      toPublicErrorMessage(providerError, "Failed to list accounts."),
+    )
+    // The stored error code is a fixed enum; the specific reason rides on the
+    // exception so the callback can put it in the redirect.
+    const cause = connectFailureCauseOf(providerError)
+    if (cause) {
+      rejection.data = { cause }
+    }
+    throw rejection
+  }
+
+  if (candidates.length === 0) {
+    await failSession(session, "no_candidates")
+    throw connectionNoCandidatesException()
+  }
+
+  const sourceIds = candidates
+    .filter((candidate) => !candidate.alreadyConnected)
+    .map((candidate) => candidate.sourceId)
+  const existingConnections =
+    await connectionRepository.findByProviderAndSourceIdsAnyWorkspace({
+      provider: session.provider,
+      sourceIds,
+    })
+  const existingBySourceId = new Map<string, ConnectionModel>()
+  for (const existing of existingConnections) {
+    if (!existingBySourceId.has(existing.sourceId)) {
+      existingBySourceId.set(existing.sourceId, existing)
+    }
+  }
+
+  // `instagram` (native login) and `instagramFacebook` (linked via Facebook)
+  // share one physical `IntegrationInstagram.igId` identity column but are
+  // stored under distinct `Connection.provider` values, so the
+  // provider-scoped lookup above can never see a sourceId already connected
+  // under the sibling provider — even once every legacy row has been
+  // backfilled into `Connection`. Cross-check the shared satellite column
+  // directly so the picker still greys out an account connected via the
+  // other login path. A satellite row surviving a `needs_reauth`/`paused`
+  // connection must NOT grey out the candidate — only an ACTIVE sibling
+  // connection does (`findActiveWorkspacesByIgIds` joins through to the
+  // real `Connection` status so a needs_reauth/paused row stays selectable
+  // for reconnect).
+  const crossProviderWorkspaceByIgId = new Map<string, string>()
+  if (
+    (session.provider === "instagram" ||
+      session.provider === "instagramFacebook") &&
+    sourceIds.length > 0
+  ) {
+    const rows =
+      await integrationInstagramRepository.findActiveWorkspacesByIgIds({
+        igIds: sourceIds,
+      })
+    for (const row of rows) {
+      crossProviderWorkspaceByIgId.set(row.igId, row.workspaceId)
+    }
+  }
+  const targets = candidates.map((candidate) => {
+    if (candidate.alreadyConnected) {
+      return {
+        id: candidate.sourceId,
+        name: candidate.displayName,
+        avatarUrl: candidate.avatarUrl,
+        selectable: false,
+        alreadyConnected: candidate.alreadyConnected,
+      }
+    }
+    const existing = existingBySourceId.get(candidate.sourceId)
+    const crossProviderWorkspaceId = crossProviderWorkspaceByIgId.get(
+      candidate.sourceId,
+    )
+    if (
+      (existing && isActiveConnectionStatus(existing.status)) ||
+      crossProviderWorkspaceId
+    ) {
+      const connectedWorkspaceId =
+        existing?.workspaceId ?? crossProviderWorkspaceId
+      const scope: "this_workspace" | "other_workspace" =
+        connectedWorkspaceId === session.workspaceId
+          ? "this_workspace"
+          : "other_workspace"
+      return {
+        id: candidate.sourceId,
+        name: candidate.displayName,
+        avatarUrl: candidate.avatarUrl,
+        selectable: false,
+        alreadyConnected: scope,
+      }
+    }
+    return {
+      id: candidate.sourceId,
+      name: candidate.displayName,
+      avatarUrl: candidate.avatarUrl,
+      selectable: true,
+    }
+  })
+
+  // Encrypts the full candidate list — not just the exchanged `auth` — so
+  // each candidate's own distinct `auth` (a multi-account provider's
+  // per-page token, e.g. Messenger) survives to `connectTargets`. For a
+  // single-target/`describe()`-fallback provider this is a one-element
+  // array holding the same `auth` `exchangeCode` returned. AAD binds the
+  // ciphertext to this exact session so it cannot be replayed against
+  // another session's row.
+  const encryptedAuth = await encryptUtils.encryptObject(
+    candidates,
+    `connect-session:${session.id}`,
+  )
+  return await connectSessionService.attachAuthorization({
+    id: session.id,
+    workspaceId: session.workspaceId,
+    encryptedAuth,
+    targets,
+  })
+}
+
+/**
+ * `completeAuthorization`'s reconnect path: verifies the freshly
+ * re-authorized identity (`provider.describe(auth).sourceId`) matches the
+ * target `Connection`'s own `sourceId` — a user can grant access to a
+ * DIFFERENT account than the one being reconnected, which must not
+ * silently overwrite the wrong connection's auth — then saves the new
+ * auth and transitions the connection back to healthy.
+ */
+const completeReconnect = async (input: {
+  session: ConnectSessionModel & { targetConnectionId: string }
+  auth: AuthValue
+}): Promise<ConnectSessionModel> => {
+  const { session, auth } = input
+  const connection = await connectionRepository.findByIdForWorkspace({
+    id: session.targetConnectionId,
+    workspaceId: session.workspaceId,
+  })
+  if (!connection) {
+    await failSession(session, "internal_error")
+    throw notFoundException("Connection not found")
+  }
+
+  const adapter = resolveAdapter(connection.provider)
+  // A `legacy:`-prefixed `sourceId` marks a row `backfill-connections.ts`
+  // could not resolve a real sourceId for at migration time — it never
+  // equals any real candidate's `sourceId`, so a multi-account provider's
+  // exact-match lookup below would always report "no candidate" even when
+  // the user re-granted access to exactly the one account being
+  // reconnected. Accept that single candidate unambiguously; two or more
+  // candidates for a legacy row genuinely cannot be resolved to the one
+  // connection being reconnected, so that case still falls through to the
+  // identity-mismatch rejection below. The same bypass applies to the
+  // `describe()`-only (non-multi-account) path further down.
+  const isLegacySourceId = connection.sourceId.startsWith("legacy:")
+  let candidate: ConnectionCandidate | undefined
+  try {
+    if (adapter.provider.listCandidates) {
+      const candidates = await adapter.provider.listCandidates({ auth })
+      if (isLegacySourceId) {
+        candidate = candidates.length === 1 ? candidates[0] : undefined
+      } else {
+        candidate = candidates.find(
+          ({ sourceId }) => sourceId === connection.sourceId,
+        )
+      }
+    }
+  } catch (err) {
+    await failSession(session, "internal_error", ["authorized"])
+    throw err
+  }
+  if (adapter.provider.listCandidates && !candidate) {
+    await failSession(session, "provider_denied", ["authorized"])
+    throw connectionIdentityMismatchException()
+  }
+  const reconnectAuth = candidate?.auth ?? auth
+  let descriptor: ConnectionDescriptor
+  try {
+    descriptor = adapter.provider.describe(reconnectAuth)
+  } catch (err) {
+    await failSession(session, "internal_error", ["authorized"])
+    throw err
+  }
+  if (descriptor.sourceId !== connection.sourceId && !isLegacySourceId) {
+    await failSession(session, "provider_denied", ["authorized"])
+    throw connectionIdentityMismatchException()
+  }
+  if (isLegacySourceId) {
+    const existing = await connectionRepository.findByProviderSourceId({
+      workspaceId: connection.workspaceId,
+      provider: connection.provider,
+      sourceId: descriptor.sourceId,
+    })
+    if (existing && existing.id !== connection.id) {
+      await failSession(session, "provider_denied", ["authorized"])
+      throw connectionAlreadyConnectedException()
+    }
+  }
+
+  const foreignKey = resolveForeignKey(connection)
+  if (!(adapter.store && foreignKey)) {
+    await failSession(session, "internal_error")
+    throw connectionNotConfiguredException(connection.provider)
+  }
+  const store = adapter.store
+
+  const authExpiresAt = authExpiresAtOf(reconnectAuth)
+  // `connect.completed`, not `auth.saved`/`recordAuthSaved` — `auth.saved`
+  // requires the connection to already be ACTIVE (`connected`/`degraded`)
+  // and throws otherwise (`state.ts`), but reconnect's whole purpose is
+  // reviving an INACTIVE (`needs_reauth`/`disconnected`) connection.
+  // `connect.completed` is the FSM event that actually allows that edge
+  // (and consumes quota on it for a channel-kind connection) — the same
+  // event `connectFromCredentials`'s revive path uses.
+  const ownerId = await resolveOwnerId(connection)
+  const quotaConsumption: ConnectionQuotaConsumption = {
+    consumed: false,
+    workspaceUsageIncremented: false,
+  }
+  try {
+    const { session: updatedSession, connection: updatedConnection } =
+      await withQuotaCompensation(
+        {
+          ownerId,
+          quotaConsumption,
+          context: {
+            connectionId: connection.id,
+            sessionId: session.id,
+          },
+        },
+        async () =>
+          await db.transaction(async (tx) => {
+            const integrationId = await saveOrInsertSatellite({
+              tx,
+              workspaceId: connection.workspaceId,
+              kind: connection.kind,
+              inboxId: connection.inboxId,
+              auth: reconnectAuth,
+              descriptor,
+              extraConfig:
+                adapter.provider.candidateToConfig?.(reconnectAuth) ?? {},
+              existing: connection,
+              store,
+            })
+            const updatedConnectionRow = await connectionRepository.update(
+              {
+                id: connection.id,
+                workspaceId: connection.workspaceId,
+                values: {
+                  authExpiresAt,
+                  lastError: null,
+                  integrationId: integrationId ?? connection.integrationId,
+                  ...(isLegacySourceId
+                    ? { sourceId: descriptor.sourceId }
+                    : {}),
+                },
+              },
+              tx,
+            )
+            if (!updatedConnectionRow) {
+              throw notFoundException("Connection not found")
+            }
+            const transitioned = await connectionStateService.transition({
+              connectionId: connection.id,
+              event: "connect.completed",
+              ownerId,
+              tx,
+              quotaConsumption,
+            })
+            const completedSession =
+              await connectSessionService.completeReconnect({
+                id: session.id,
+                workspaceId: session.workspaceId,
+                tx,
+                result: {
+                  targetId: descriptor.sourceId,
+                  status: "connected",
+                  connectionId: connection.id,
+                },
+              })
+            return { session: completedSession, connection: transitioned }
+          }),
+      )
+    // Mirrors `connectAndPersist`'s best-effort webhook subscribe, run after
+    // the transaction commits — a subscribe failure degrades the already-
+    // persisted connection rather than rolling back a successful reconnect.
+    await subscribeWebhookBestEffort({
+      adapter,
+      auth: reconnectAuth,
+      connection: updatedConnection,
+      ownerId,
+    })
+    return updatedSession
+  } catch (err) {
+    await failSession(session, "internal_error", ["authorized"])
+    throw err
+  }
+}

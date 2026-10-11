@@ -1,6 +1,7 @@
 import type { Readable } from "node:stream"
 import { TextDecoder } from "node:util"
 import { uploader } from "@chatbotx.io/filesystem"
+import { createByteLimitedStream } from "@chatbotx.io/imports/stream-guard"
 import {
   CSV_MIME_TYPES,
   DOCX_MIME_TYPES,
@@ -79,9 +80,17 @@ function normalizeWhitespace(input: string): string {
 
 async function streamToBuffer(
   stream: AsyncIterable<Uint8Array> | Readable,
+  options?: { maxBytes?: number },
 ): Promise<Buffer> {
+  const readable =
+    options?.maxBytes == null
+      ? stream
+      : createByteLimitedStream(stream as Readable, {
+          maxBytes: options.maxBytes,
+          errorMessage: `File exceeds ${options.maxBytes} byte limit`,
+        })
   const chunks: Buffer[] = []
-  for await (const part of stream as AsyncIterable<Uint8Array>) {
+  for await (const part of readable as AsyncIterable<Uint8Array>) {
     chunks.push(Buffer.from(part))
   }
   return Buffer.concat(chunks)
@@ -90,7 +99,10 @@ async function streamToBuffer(
 export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
   try {
     const parser = await pdfParse(buffer)
-    return parser.text
+    // pdf-parse can return NUL and other control characters. PostgreSQL text
+    // values reject NUL bytes, so normalize before the text is chunked and
+    // persisted as AIEmbedding content.
+    return normalizeWhitespace(parser.text)
   } catch (error) {
     logger.warn(error, "PDF parsing failed, falling back to plain text")
     throw new Error("PDF parsing failed")
@@ -439,6 +451,10 @@ function extractTextFromXml(buffer: Buffer): string {
 export async function extractTextFromFile(
   remotePath: string,
   mimeType: string,
+  options?: {
+    maxBytes?: number
+    maxTextChars?: number
+  },
 ): Promise<string> {
   const normalizedMimeType = normalizeMimeType(mimeType || "")
 
@@ -454,64 +470,67 @@ export async function extractTextFromFile(
   }
 
   const { stream: fileStream } = await uploader.getObjectStream(remotePath)
-  const buffer = await streamToBuffer(fileStream)
+  const buffer = await streamToBuffer(fileStream, {
+    maxBytes: options?.maxBytes,
+  })
+  const maxTextChars = options?.maxTextChars ?? MAX_EXTRACTED_TEXT_CHARS
 
   if (isMimeType(finalMimeType, PDF_MIME_TYPES)) {
-    return await extractTextFromPdf(buffer)
+    return (await extractTextFromPdf(buffer)).slice(0, maxTextChars)
   }
 
   if (isMimeType(finalMimeType, DOCX_MIME_TYPES)) {
-    return extractTextFromDocx(buffer)
+    return (await extractTextFromDocx(buffer)).slice(0, maxTextChars)
   }
 
   if (isMimeType(finalMimeType, SPREADSHEET_MIME_TYPES)) {
-    return extractTextFromXlsx(buffer)
+    return extractTextFromXlsx(buffer).slice(0, maxTextChars)
   }
 
   if (isMimeType(finalMimeType, CSV_MIME_TYPES)) {
-    return extractTextFromCsv(buffer)
+    return extractTextFromCsv(buffer).slice(0, maxTextChars)
   }
 
   if (isMimeType(finalMimeType, HTML_MIME_TYPES)) {
-    return await extractTextFromHtml(buffer)
+    return (await extractTextFromHtml(buffer)).slice(0, maxTextChars)
   }
 
   if (isMimeType(finalMimeType, MARKDOWN_MIME_TYPES)) {
-    return await extractTextFromMarkdown(buffer)
+    return (await extractTextFromMarkdown(buffer)).slice(0, maxTextChars)
   }
 
   if (isMimeType(finalMimeType, RTF_MIME_TYPES)) {
-    return extractTextFromRtf(buffer)
+    return extractTextFromRtf(buffer).slice(0, maxTextChars)
   }
 
   if (isMimeType(finalMimeType, XML_MIME_TYPES)) {
-    return extractTextFromXml(buffer)
+    return extractTextFromXml(buffer).slice(0, maxTextChars)
   }
 
   if (isMimeType(finalMimeType, EMAIL_MIME_TYPES)) {
-    return await extractTextFromEmail(buffer)
+    return (await extractTextFromEmail(buffer)).slice(0, maxTextChars)
   }
 
   if (isMimeType(finalMimeType, VTT_MIME_TYPES)) {
-    return normalizeWhitespace(decodeUtf8(buffer))
+    return normalizeWhitespace(decodeUtf8(buffer)).slice(0, maxTextChars)
   }
 
   if (isMimeType(finalMimeType, PROPERTIES_MIME_TYPES)) {
-    return normalizeWhitespace(decodeUtf8(buffer))
+    return normalizeWhitespace(decodeUtf8(buffer)).slice(0, maxTextChars)
   }
 
   if (isMimeType(finalMimeType, PPTX_MIME_TYPES)) {
-    return await extractTextFromPptx(buffer)
+    return (await extractTextFromPptx(buffer)).slice(0, maxTextChars)
   }
 
   if (isMimeType(finalMimeType, PPT_MIME_TYPES)) {
-    return extractTextFromPpt(buffer)
+    return extractTextFromPpt(buffer).slice(0, maxTextChars)
   }
 
   if (isMimeType(finalMimeType, EPUB_MIME_TYPES)) {
-    return await extractTextFromEpub(buffer)
+    return (await extractTextFromEpub(buffer)).slice(0, maxTextChars)
   }
 
   // default: treat as utf-8 text stream
-  return normalizeWhitespace(decodeUtf8(buffer))
+  return normalizeWhitespace(decodeUtf8(buffer)).slice(0, maxTextChars)
 }

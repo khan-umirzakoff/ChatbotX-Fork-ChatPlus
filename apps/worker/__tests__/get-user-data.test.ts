@@ -32,6 +32,12 @@ const conversationUpdateChallenge = vi.fn(async () => undefined)
 const conversationConsumeChallenge = vi.fn(async () => true)
 const conversationRestoreChallengeIfAbsent = vi.fn(async () => true)
 const workspaceFindById = vi.fn(async () => ({ language: "en" }))
+const contactFindById = vi.fn(
+  async (): Promise<{ phoneNumber: string | null; email: string | null }> => ({
+    phoneNumber: null,
+    email: null,
+  }),
+)
 const resolveTenantSettings = vi.fn(async () => ({
   storageUrl: "https://cdn.example.com/",
   appUrl: "https://app.example.com",
@@ -42,6 +48,7 @@ vi.mock("@chatbotx.io/business", () => ({
     setValueByKey: contactCustomFieldSetValueByKey,
   },
   contactInboxService: { updateTracking: contactInboxUpdateTracking },
+  contactService: { findById: contactFindById },
   conversationService: {
     updateChallenge: conversationUpdateChallenge,
     consumeChallenge: conversationConsumeChallenge,
@@ -94,6 +101,7 @@ vi.mock("@chatbotx.io/events", () => ({
 
 const chatQueueAdd = vi.fn(async () => ({ id: "job-1" }))
 vi.mock("@chatbotx.io/worker-config", () => ({
+  BROADCAST_SEND_PRIORITY: 5,
   ChatJobAction: {
     sendChatMessage: "sendChatMessage",
     sendFlowMessage: "sendFlowMessage",
@@ -266,6 +274,7 @@ function expectCustomFieldWrite(value: string) {
     contactId: "contact-1",
     keyword: "field-1",
     value,
+    allowBotFields: true,
   })
 }
 
@@ -459,6 +468,41 @@ describe("getUserData — validation logic", () => {
     })
   })
 
+  describe("location format", () => {
+    test("location pin → returns success with lat,lng", async () => {
+      lastMessage.current = makeIncomingMessage({
+        contentType: "location",
+        text: "Received location",
+        contentAttributes: { latitude: 10.5, longitude: 106.75 },
+      })
+
+      const result = await getUserData(makeProps(ReplyFormat.location))
+
+      expect(result.status).toBe("success")
+      expectCustomFieldWrite("10.5,106.75")
+    })
+
+    test("typed coordinate pair → returns success", async () => {
+      lastMessage.current = makeIncomingMessage({
+        text: "10.5, 106.75",
+      })
+
+      const result = await getUserData(makeProps(ReplyFormat.location))
+
+      expect(result.status).toBe("success")
+      expectCustomFieldWrite("10.5,106.75")
+    })
+
+    test("plain text without coordinates → returns retry", async () => {
+      lastMessage.current = makeIncomingMessage({ text: "Received location" })
+
+      const result = await getUserData(makeProps(ReplyFormat.location))
+
+      expect(result.status).toBe("retry")
+      expect(contactCustomFieldSetValueByKey).not.toHaveBeenCalled()
+    })
+  })
+
   describe("no message", () => {
     test("no last message → returns retry", async () => {
       lastMessage.current = null
@@ -508,40 +552,48 @@ describe("getUserData — attempt counter (Bug B fix)", () => {
       ),
     )
 
-    expect(chatQueueAdd).toHaveBeenCalledWith("sendFlowMessage", {
-      type: "sendFlowMessage",
-      data: expect.objectContaining({
-        conversationId: "conv-1",
-        contactInboxId: "ci-1",
-        flowId: "flow-1",
-        flowVersionId: "fv-1",
-        metadata: {
-          type: "broadcast",
-          broadcastId: "bc-1",
+    expect(chatQueueAdd).toHaveBeenCalledWith(
+      "sendFlowMessage",
+      {
+        type: "sendFlowMessage",
+        data: expect.objectContaining({
+          conversationId: "conv-1",
           contactInboxId: "ci-1",
-        },
-        step: expect.objectContaining({
-          id: "step-1",
-          nodeId: "node-1",
-          stepType: "sendText",
-          text: "Please re-enter your email",
-          buttons: [],
+          flowId: "flow-1",
+          flowVersionId: "fv-1",
+          metadata: {
+            type: "broadcast",
+            broadcastId: "bc-1",
+            contactInboxId: "ci-1",
+          },
+          step: expect.objectContaining({
+            id: "step-1",
+            nodeId: "node-1",
+            stepType: "sendText",
+            text: "Please re-enter your email",
+            buttons: [],
+          }),
         }),
-      }),
-    })
+      },
+      { priority: 5 },
+    )
   })
 
   test("keeps the long-standing blank retry behavior for non-webview formats (sends the blank retry text unchanged)", async () => {
     await getUserData(makeProps(ReplyFormat.email, { retryMessage: "" }, 1))
 
-    expect(chatQueueAdd).toHaveBeenCalledWith("sendFlowMessage", {
-      type: "sendFlowMessage",
-      data: expect.objectContaining({
-        step: expect.objectContaining({
-          text: "",
+    expect(chatQueueAdd).toHaveBeenCalledWith(
+      "sendFlowMessage",
+      {
+        type: "sendFlowMessage",
+        data: expect.objectContaining({
+          step: expect.objectContaining({
+            text: "",
+          }),
         }),
-      }),
-    })
+      },
+      { priority: 5 },
+    )
   })
 
   test("falls back to the step message on date retry so the picker prompt is re-sent with its button", async () => {
@@ -699,27 +751,31 @@ describe("getUserData — first send (no challenge state)", () => {
     props.ctx = { variables: { conversation: {} } }
     const result = await getUserData(props)
     expect(result.status).toBe("wait")
-    expect(chatQueueAdd).toHaveBeenCalledWith("sendFlowMessage", {
-      type: "sendFlowMessage",
-      data: {
-        conversationId: "conv-1",
-        contactInboxId: "ci-1",
-        flowId: "flow-1",
-        flowVersionId: "fv-1",
-        step: {
-          id: "step-1",
-          nodeId: "node-1",
-          stepType: "sendText",
-          text: "Please enter your email, {{contact.name}}",
-          buttons: [],
-        },
-        metadata: {
-          type: "broadcast",
-          broadcastId: "bc-1",
+    expect(chatQueueAdd).toHaveBeenCalledWith(
+      "sendFlowMessage",
+      {
+        type: "sendFlowMessage",
+        data: {
+          conversationId: "conv-1",
           contactInboxId: "ci-1",
+          flowId: "flow-1",
+          flowVersionId: "fv-1",
+          step: {
+            id: "step-1",
+            nodeId: "node-1",
+            stepType: "sendText",
+            text: "Please enter your email, {{contact.name}}",
+            buttons: [],
+          },
+          metadata: {
+            type: "broadcast",
+            broadcastId: "bc-1",
+            contactInboxId: "ci-1",
+          },
         },
       },
-    })
+      { priority: 5 },
+    )
     expect(challengeClearCalls()).toHaveLength(0)
   })
 
@@ -840,6 +896,83 @@ describe("getUserData — first send (no challenge state)", () => {
   })
 })
 
+// The prompt is this step's outgoing message, so it has to carry the run's
+// comment anchor like any other message-producing step. Dropping it meant a
+// question-first flow never claimed the single comment_id-anchored DM Meta
+// grants per comment, and a question after a `sendText` reached the channel
+// with no anchor — so `assertCommentPrivateReplyFollowUpDeliverable` never ran
+// and a closed 24-hour window surfaced as an opaque Send API rejection.
+describe("getUserData — comment-triggered private reply", () => {
+  beforeEach(() => {
+    chatQueueAdd.mockClear()
+  })
+
+  function promptJobData() {
+    return findChatJobCall("sendFlowMessage").data as {
+      commentAnchor?: unknown
+    }
+  }
+
+  test("forwards an unspent anchor, so the channel can send the prompt comment-anchored", async () => {
+    const props = makeProps(ReplyFormat.email)
+    props.ctx = { variables: { conversation: {} } }
+    props.commentAnchor = {
+      commentId: "comment-1",
+      replyChannel: "private",
+    }
+
+    await getUserData(props)
+
+    expect(promptJobData().commentAnchor).toEqual({
+      commentId: "comment-1",
+      replyChannel: "private",
+    })
+  })
+
+  test("forwards a spent anchor too, so the follow-up guard can explain a closed window", async () => {
+    const props = makeProps(ReplyFormat.email)
+    props.ctx = { variables: { conversation: {} } }
+    props.commentAnchor = {
+      commentId: "comment-1",
+      replyChannel: "private",
+      spent: true,
+    }
+
+    await getUserData(props)
+
+    expect(promptJobData().commentAnchor).toEqual({
+      commentId: "comment-1",
+      replyChannel: "private",
+      spent: true,
+    })
+  })
+
+  test("forwards a public anchor, so the prompt posts as a comment reply", async () => {
+    const props = makeProps(ReplyFormat.email)
+    props.ctx = { variables: { conversation: {} } }
+    props.commentAnchor = {
+      commentId: "comment-1",
+      replyChannel: "public",
+    }
+
+    await getUserData(props)
+
+    expect(promptJobData().commentAnchor).toEqual({
+      commentId: "comment-1",
+      replyChannel: "public",
+    })
+  })
+
+  test("sends no commentAnchor key when the run did not start from a comment", async () => {
+    const props = makeProps(ReplyFormat.email)
+    props.ctx = { variables: { conversation: {} } }
+
+    await getUserData(props)
+
+    expect(Object.hasOwn(promptJobData(), "commentAnchor")).toBe(false)
+  })
+})
+
 function findChatJobCall(action: string) {
   const call = chatQueueAdd.mock.calls.find(
     ([callAction]) => callAction === action,
@@ -852,12 +985,14 @@ function findChatJobCall(action: string) {
   return call[1] as {
     type: string
     data: {
+      text?: string
       quickReplies?: {
         id: string
         label: string
         buttonType: string
         url?: string
         messengerExtensions?: boolean
+        postback?: string
       }[]
     }
   }
@@ -886,6 +1021,17 @@ describe("getUserData — date/datetime webview prompt (RF09/RF10)", () => {
         messengerExtensions: true,
       },
     ])
+  })
+
+  test("keeps an initial broadcast date prompt in bulk delivery", async () => {
+    const props = makeProps(ReplyFormat.date)
+    props.isBulkBroadcast = true
+
+    await getUserData(props)
+
+    expect(findChatJobCall("sendChatMessage").data).toMatchObject({
+      isBulkBroadcast: true,
+    })
   })
 
   test("uses the Vietnamese label when workspace.language is vi", async () => {
@@ -1285,6 +1431,7 @@ describe("getUserData — date/datetime webview channel gating (Fix 3)", () => {
     expect(chatQueueAdd).toHaveBeenCalledWith(
       "sendFlowMessage",
       expect.objectContaining({ type: "sendFlowMessage" }),
+      { priority: 5 },
     )
     expect(chatQueueAdd).not.toHaveBeenCalledWith(
       "sendChatMessage",
@@ -1319,10 +1466,288 @@ describe("getUserData — non-date replyFormats keep the text prompt path (regre
     expect(chatQueueAdd).toHaveBeenCalledWith(
       "sendFlowMessage",
       expect.objectContaining({ type: "sendFlowMessage" }),
+      { priority: 5 },
     )
     expect(chatQueueAdd).not.toHaveBeenCalledWith(
       "sendChatMessage",
       expect.anything(),
     )
+  })
+})
+
+describe("getUserData — WhatsApp native location request (RF08)", () => {
+  beforeEach(() => {
+    chatQueueAdd.mockClear()
+  })
+
+  test("whatsapp location format sends the reserved native location-request marker", async () => {
+    const props = makeProps(ReplyFormat.location, {
+      message: "Please share your location",
+    })
+    props.ctx = { variables: { conversation: {} } }
+    props.contactInbox = { ...props.contactInbox, channel: "whatsapp" }
+
+    const result = await getUserData(props)
+
+    expect(result.status).toBe("wait")
+    const job = findChatJobCall("sendChatMessage")
+    expect(job.data).toMatchObject({
+      text: "Please share your location",
+      quickReplies: [
+        {
+          id: "whatsapp:native:location_request",
+          label: "Send location",
+          buttonType: "postback",
+          postback: "whatsapp:native:location_request",
+        },
+      ],
+    })
+    expect(chatQueueAdd).not.toHaveBeenCalledWith(
+      "sendFlowMessage",
+      expect.anything(),
+    )
+    expect(waitForChatJobCompletion).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "job-1" }),
+      { conversationId: "conv-1", stepId: "step-1" },
+    )
+  })
+
+  test("uses the Vietnamese inbox label when workspace.language is vi", async () => {
+    workspaceFindById.mockResolvedValueOnce({ language: "vi" })
+    const props = makeProps(ReplyFormat.location)
+    props.ctx = { variables: { conversation: {} } }
+    props.contactInbox = { ...props.contactInbox, channel: "whatsapp" }
+
+    await getUserData(props)
+
+    const job = findChatJobCall("sendChatMessage")
+    expect(job.data.quickReplies?.[0]?.label).toBe("Gửi vị trí")
+  })
+
+  test("non-whatsapp location format keeps the text prompt path", async () => {
+    const props = makeProps(ReplyFormat.location)
+    props.ctx = { variables: { conversation: {} } }
+    props.contactInbox = { ...props.contactInbox, channel: "messenger" }
+
+    const result = await getUserData(props)
+
+    expect(result.status).toBe("wait")
+    expect(chatQueueAdd).toHaveBeenCalledWith(
+      "sendFlowMessage",
+      expect.objectContaining({ type: "sendFlowMessage" }),
+      { priority: 5 },
+    )
+    expect(chatQueueAdd).not.toHaveBeenCalledWith(
+      "sendChatMessage",
+      expect.anything(),
+    )
+  })
+})
+
+describe("getUserData — Show Hint contact quick reply (phone/email)", () => {
+  beforeEach(() => {
+    chatQueueAdd.mockClear()
+    waitForChatJobCompletion.mockClear()
+    contactFindById.mockReset()
+    contactFindById.mockResolvedValue({ phoneNumber: null, email: null })
+  })
+
+  function makeFirstSendProps(
+    replyFormat: ReplyFormat,
+    channel: string,
+    overrides: StepOverride = { showHint: true },
+  ) {
+    const props = makeProps(replyFormat, overrides)
+    props.ctx = { variables: { conversation: {} } }
+    props.contactInbox = { ...props.contactInbox, channel }
+    return props
+  }
+
+  function expectTextPromptPath() {
+    expect(chatQueueAdd).toHaveBeenCalledWith(
+      "sendFlowMessage",
+      expect.objectContaining({ type: "sendFlowMessage" }),
+      { priority: 5 },
+    )
+    expect(chatQueueAdd).not.toHaveBeenCalledWith(
+      "sendChatMessage",
+      expect.anything(),
+    )
+  }
+
+  test("messenger offers the stored contact phone with the full value in the payload", async () => {
+    contactFindById.mockResolvedValueOnce({
+      phoneNumber: "0708122593",
+      email: null,
+    })
+
+    const result = await getUserData(
+      makeFirstSendProps(ReplyFormat.phone, "messenger"),
+    )
+
+    expect(result.status).toBe("wait")
+    expect(contactFindById).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      id: "contact-1",
+    })
+    const job = findChatJobCall("sendChatMessage")
+    expect(job.data.quickReplies).toEqual([
+      {
+        id: "test-id",
+        label: "0708122593",
+        buttonType: "postback",
+        postback: "GET_USER_DATA_CONTACT_HINT|0708122593",
+      },
+    ])
+    expect(waitForChatJobCompletion).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "job-1" }),
+      { conversationId: "conv-1", stepId: "step-1" },
+    )
+  })
+
+  test("a value longer than 20 characters gets a shortened title and the full payload", async () => {
+    contactFindById.mockResolvedValueOnce({
+      phoneNumber: null,
+      email: "taubancam171995.1@gmail.com",
+    })
+
+    await getUserData(makeFirstSendProps(ReplyFormat.email, "messenger"))
+
+    const job = findChatJobCall("sendChatMessage")
+    expect(job.data.quickReplies?.[0]).toMatchObject({
+      label: "taubancam171995.1@g…",
+      postback: "GET_USER_DATA_CONTACT_HINT|taubancam171995.1@gmail.com",
+    })
+    expect(job.data.quickReplies?.[0]?.label).toHaveLength(20)
+  })
+
+  test("messenger without a stored phone falls back to the native user_phone_number quick reply", async () => {
+    await getUserData(makeFirstSendProps(ReplyFormat.phone, "messenger"))
+
+    const job = findChatJobCall("sendChatMessage")
+    expect(job.data.quickReplies).toEqual([
+      {
+        id: "messenger:native-quick-reply:user_phone_number",
+        label: "Phone",
+        buttonType: "postback",
+        postback: "messenger:native-quick-reply:user_phone_number",
+      },
+    ])
+  })
+
+  test("messenger without a stored email falls back to the native user_email quick reply", async () => {
+    await getUserData(makeFirstSendProps(ReplyFormat.email, "messenger"))
+
+    const job = findChatJobCall("sendChatMessage")
+    expect(job.data.quickReplies?.[0]?.postback).toBe(
+      "messenger:native-quick-reply:user_email",
+    )
+  })
+
+  test("instagram offers the stored contact value", async () => {
+    contactFindById.mockResolvedValueOnce({
+      phoneNumber: null,
+      email: "an@example.com",
+    })
+
+    await getUserData(makeFirstSendProps(ReplyFormat.email, "instagram"))
+
+    const job = findChatJobCall("sendChatMessage")
+    expect(job.data.quickReplies?.[0]).toMatchObject({
+      label: "an@example.com",
+      postback: "GET_USER_DATA_CONTACT_HINT|an@example.com",
+    })
+  })
+
+  test("messenger with an invalid stored phone falls back to the native quick reply", async () => {
+    contactFindById.mockResolvedValueOnce({
+      phoneNumber: "call me maybe",
+      email: null,
+    })
+
+    await getUserData(makeFirstSendProps(ReplyFormat.phone, "messenger"))
+
+    const job = findChatJobCall("sendChatMessage")
+    expect(job.data.quickReplies?.[0]?.postback).toBe(
+      "messenger:native-quick-reply:user_phone_number",
+    )
+  })
+
+  test("instagram with an invalid stored email keeps the text prompt path", async () => {
+    contactFindById.mockResolvedValueOnce({
+      phoneNumber: null,
+      email: "not-an-email",
+    })
+
+    await getUserData(makeFirstSendProps(ReplyFormat.email, "instagram"))
+
+    expectTextPromptPath()
+  })
+
+  test("trims the stored value before offering it", async () => {
+    contactFindById.mockResolvedValueOnce({
+      phoneNumber: "  0708122593  ",
+      email: null,
+    })
+
+    await getUserData(makeFirstSendProps(ReplyFormat.phone, "instagram"))
+
+    const job = findChatJobCall("sendChatMessage")
+    expect(job.data.quickReplies?.[0]).toMatchObject({
+      label: "0708122593",
+      postback: "GET_USER_DATA_CONTACT_HINT|0708122593",
+    })
+  })
+
+  test("a comment-triggered run keeps the text prompt path", async () => {
+    contactFindById.mockResolvedValueOnce({
+      phoneNumber: "0708122593",
+      email: null,
+    })
+    const props = makeFirstSendProps(ReplyFormat.phone, "messenger")
+    props.commentAnchor = {
+      commentId: "comment-1",
+      replyChannel: "private",
+    }
+
+    await getUserData(props)
+
+    expect(contactFindById).not.toHaveBeenCalled()
+    expect(chatQueueAdd).not.toHaveBeenCalledWith(
+      "sendChatMessage",
+      expect.anything(),
+    )
+  })
+
+  test("instagram without a stored value keeps the text prompt path", async () => {
+    await getUserData(makeFirstSendProps(ReplyFormat.phone, "instagram"))
+
+    expectTextPromptPath()
+  })
+
+  test.each([
+    "whatsapp",
+    "zalo",
+    "telegram",
+    "tiktok",
+    "webchat",
+  ])("%s keeps the text prompt path", async (channel) => {
+    await getUserData(makeFirstSendProps(ReplyFormat.phone, channel))
+
+    expectTextPromptPath()
+  })
+
+  test("showHint off keeps the text prompt path", async () => {
+    await getUserData(
+      makeFirstSendProps(ReplyFormat.phone, "messenger", { showHint: false }),
+    )
+
+    expectTextPromptPath()
+  })
+
+  test("showHint is ignored for non phone/email formats", async () => {
+    await getUserData(makeFirstSendProps(ReplyFormat.text, "messenger"))
+
+    expectTextPromptPath()
   })
 })

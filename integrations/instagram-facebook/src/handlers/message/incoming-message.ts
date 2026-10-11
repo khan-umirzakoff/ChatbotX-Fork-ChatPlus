@@ -1,14 +1,17 @@
+import { normalizeMetaAdReferral } from "@chatbotx.io/business/referral"
 import {
   type Context,
   contentTypes,
   type IncomingAttachment,
   type IncomingContact,
   type IncomingMessage,
+  type MessageHandlers,
+  type MessageReferral,
   messageTypes,
   type ReceivedMessageResult,
 } from "@chatbotx.io/sdk"
 
-import { getMessageAttachmentEntity } from "../../apis/page"
+import { getMessageAttachmentEntity } from "../../apis/attachment"
 import { InstagramException } from "../../exception"
 import { logger } from "../../lib/logger"
 import {
@@ -16,7 +19,7 @@ import {
   type InstagramMessage,
   type InstagramMessagingEvent,
   instagramWebhookEventSchema,
-} from "../../schemas"
+} from "../../schema"
 
 const getMessageAttachments = async (
   ctx: Context<InstagramAuthValue>,
@@ -49,32 +52,23 @@ const getMessageAttachments = async (
   }
 }
 
-export const receiveMessage = async ({
-  ctx,
-  data,
-}: {
-  ctx: Context<InstagramAuthValue>
-  data: {
-    integrationType: string
-    integrationIdentifier: string
-    payload: unknown
+export const receiveMessage: MessageHandlers<InstagramAuthValue>["receiveMessage"] =
+  async ({ ctx, data }) => {
+    const validatedData = instagramWebhookEventSchema.parse(data.payload)
+
+    const entry = validatedData.entry[0]
+
+    if (!entry.messaging?.[0]) {
+      throw new InstagramException("No messaging found")
+    }
+
+    const messaging = entry.messaging[0]
+    if (!(messaging.message || messaging.postback || messaging.referral)) {
+      throw new InstagramException("No message found")
+    }
+
+    return await getMessageEntity(ctx, messaging)
   }
-}): Promise<ReceivedMessageResult> => {
-  const validatedData = instagramWebhookEventSchema.parse(data.payload)
-
-  const entry = validatedData.entry[0]
-
-  if (!entry.messaging?.[0]) {
-    throw new InstagramException("No messaging found")
-  }
-
-  const messaging = entry.messaging[0]
-  if (!(messaging.message || messaging.postback)) {
-    throw new InstagramException("No message found")
-  }
-
-  return await getMessageEntity(ctx, messaging)
-}
 
 const getMessageEntity = async (
   ctx: Context<InstagramAuthValue>,
@@ -84,6 +78,8 @@ const getMessageEntity = async (
   let postbackAction: string | null = null
   let quickReplyAction: string | null = null
   let ref: string | null = null
+  let referralSource: string | null = null
+  let referral: MessageReferral | null = null
 
   const contactSourceId =
     messaging.sender.id === ctx.auth.metadata.igId
@@ -121,9 +117,39 @@ const getMessageEntity = async (
     postbackAction = messaging.postback.payload
   }
 
-  if (messaging.referral) {
-    ref = messaging.referral.ref
+  // Meta delivers the SAME ad referral through three different slots depending
+  // on the thread's state, and only ever one of them per event:
+  //   - `messaging.referral`          -> `messaging_referral`, existing thread
+  //   - `messaging.message.referral`  -> `messages`, NEW thread opened by a CTD
+  //                                      ad where the user sends a message
+  //                                      straight away (the common CTD case)
+  //   - `messaging.postback.referral` -> NEW thread opened via an icebreaker
+  // Resolving all three in one place (rather than assigning at each parse site)
+  // keeps the precedence explicit: an explicit referral event outranks one that
+  // merely rode along with a message or a postback.
+  // Order matters only for a payload carrying more than one of them, which
+  // Meta does not send — but it is pinned deliberately rather than left to
+  // chance: `postback.referral` stays ahead of `message.referral` so this
+  // change adds the missing slot WITHOUT altering what an existing
+  // postback-carrying payload resolves to.
+  const rawReferral =
+    messaging.referral ??
+    messaging.postback?.referral ??
+    messaging.message?.referral
+
+  if (rawReferral) {
+    ref = rawReferral.ref ?? null
+    referralSource = rawReferral.source
+    referral = normalizeMetaAdReferral(rawReferral)
   }
 
-  return { message, postbackAction, quickReplyAction, ref, contact }
+  return {
+    message,
+    postbackAction,
+    quickReplyAction,
+    ref,
+    referralSource,
+    referral,
+    contact,
+  }
 }

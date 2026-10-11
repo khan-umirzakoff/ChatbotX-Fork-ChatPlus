@@ -2,21 +2,29 @@ import {
   HandleRequestType,
   Integration,
   type IntegrationDefinition,
+  probeVerify,
   SdkException,
 } from "@chatbotx.io/sdk"
 import { exchangeLongLivedToken } from "./api/auth"
-import { getFlowAssets } from "./api/flow"
+import { getCallingSettings, updateCallingSettings } from "./api/calling"
+import {
+  deleteFlow,
+  getFlowAssets,
+  getFlowResponseFields,
+  publishFlowJson,
+} from "./api/flow"
 import {
   findConversationalAutomation,
   updateConversationalAutomation,
 } from "./api/phone-number"
 import { listFlows, listMessageTemplates } from "./api/waba"
-import { unsubscribeWebhook } from "./api/webhook"
+import { subscribeWebhook, unsubscribeWebhook } from "./api/webhook"
 import { uploadMedia, verifyAccessToken } from "./client"
 import { botHandlers } from "./handlers/bot"
 import { conversationHandlers } from "./handlers/conversation"
 import { messageHandlers } from "./handlers/message"
 import { webhookHandler } from "./handlers/webhook"
+import { isRevokedTokenError } from "./lib/error-mapper"
 import type {
   WhatsappActions,
   WhatsappAuthValue,
@@ -37,7 +45,7 @@ const config: IntegrationDefinition<
     },
   },
   actions: {
-    verifyAccessToken: async ({ ctx }) => await verifyAccessToken(ctx),
+    verifyAccessToken: async ({ ctx }) => await verifyAccessToken(ctx.auth),
     uploadMedia: async ({ ctx, file }) => await uploadMedia(ctx.auth, file),
     listMessageTemplates: async ({ ctx }) =>
       await listMessageTemplates(ctx.auth),
@@ -47,10 +55,46 @@ const config: IntegrationDefinition<
         auth: ctx.auth,
         flowSourceId: params.flowSourceId,
       }),
+    getFlowResponseFields: async ({ ctx, params }) =>
+      await getFlowResponseFields({
+        auth: ctx.auth,
+        flowSourceId: params.flowSourceId,
+      }),
+    publishFlowJson: async ({ ctx, params }) =>
+      await publishFlowJson({ auth: ctx.auth, params }),
+    deleteFlow: async ({ ctx, params }) =>
+      await deleteFlow({ auth: ctx.auth, flowId: params.flowSourceId }),
     findConversationalAutomation: async ({ ctx }) =>
       await findConversationalAutomation(ctx.auth),
     updateConversationalAutomation: async ({ ctx, data }) =>
       await updateConversationalAutomation(ctx.auth, data),
+    getCallingSettings: async ({ ctx }) => await getCallingSettings(ctx.auth),
+    updateCallingSettings: async ({ ctx, data }) =>
+      await updateCallingSettings(ctx.auth, data),
+  },
+  connection: {
+    kind: "channel",
+    strategy: "self_serve",
+    multiAccount: false,
+    configFields: [],
+    describe: (auth) => ({
+      sourceId: auth.metadata.phoneNumber.id,
+      displayName:
+        auth.metadata.phoneNumber.verified_name ||
+        auth.metadata.phoneNumber.display_phone_number ||
+        "WhatsApp",
+    }),
+    verify: async ({ auth }) =>
+      await probeVerify(() => verifyAccessToken(auth), {
+        label: "WhatsApp connection",
+        expiresAt: auth.tokens.expiresAt,
+        isRevoked: isRevokedTokenError,
+      }),
+    isRevokedTokenError,
+    webhook: {
+      subscribe: async ({ auth }) => await subscribeWebhook({ auth }),
+      unsubscribe: async ({ auth }) => await unsubscribeWebhook({ auth }),
+    },
   },
   handleRequest: async (props) => {
     const segments = new URL(props.req.url).pathname.split("/")

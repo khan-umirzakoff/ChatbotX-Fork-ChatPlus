@@ -1,7 +1,12 @@
+import {
+  COEXIST_CHANNELS,
+  type CoexistChannel,
+} from "@chatbotx.io/utils/channel"
 import { sql } from "drizzle-orm"
 import {
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -9,10 +14,15 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 import {
+  type CoexistRunType,
+  coexistRunTypes,
+} from "../partials/coexist-sync-run"
+import {
   bigintAsString,
   sharedColumns,
   timestampConfig,
 } from "../partials/shared"
+import { userModel } from "./auth-user"
 
 /**
  * Aggregate sync log for WhatsApp and Messenger coexistence history imports.
@@ -26,19 +36,94 @@ import {
  * 3. UPDATE importedContactCount/importedMessageCount/skippedCount/failedCount in batches
  * 4. UPDATE status/finishedAt/currentError on finish
  */
-export const coexistChannel = pgEnum("coexistChannel", [
-  "whatsapp",
-  "messenger",
-  "instagram",
-])
+// Values come from `@chatbotx.io/utils/channel` (`COEXIST_CHANNELS`) so this
+// enum can never drift from the shared list other layers (e.g.
+// `@chatbotx.io/business`) key off of. Same three values as before this
+// change — verified to emit no migration SQL.
+//
+// Cast to the literal union (not `[string, ...string[]]` like e.g.
+// `whatsappRegistrationStatus`): `COEXIST_CHANNELS` is a plain
+// `CoexistChannel[]` at the type level (zod's `.options` doesn't preserve
+// tuple-ness), and widening the cast to `string` would widen
+// `coexistChannel`'s inferred column type too, breaking every
+// `Record<CoexistChannel, ...>` consumer (e.g. `apps/worker`'s
+// `scan-coexist-runs.ts`).
+export const coexistChannel = pgEnum(
+  "coexistChannel",
+  COEXIST_CHANNELS as [CoexistChannel, ...CoexistChannel[]],
+)
 
+// `waiting` is WhatsApp-only and NON-terminal: the run has drained everything
+// staged so far and is waiting for Meta to push the next history chunk (which
+// can take up to 24h). `finishedAt` stays NULL while waiting. Messenger and
+// Instagram runs never enter it.
 export const coexistRunStatus = pgEnum("coexistRunStatus", [
   "init",
   "running",
   "succeeded",
   "failed",
   "partial",
+  "waiting",
 ])
+
+// Discriminates the two kinds of run this shared table now carries: a
+// WhatsApp/Messenger/Instagram coexistence history import (`coexist`, the
+// original/default kind — existing rows backfill to it) or an Automatic
+// Customer Scan (`contact_scan`). Every existing coexist set-query MUST
+// filter `type = 'coexist'` and every scan set-query MUST filter
+// `type = 'contact_scan'` — see `coexist-sync-run/repository.ts`'s method
+// table. By-id methods are safe as-is (the PK is unique across types).
+export const coexistRunType = pgEnum(
+  "coexistRunType",
+  coexistRunTypes.options as [CoexistRunType, ...CoexistRunType[]],
+)
+
+/**
+ * Post-batch patches (media follow-up, edit, revoke) that could not be applied
+ * because Meta delivered them BEFORE the message they target. They are carried
+ * on the run and retried at the start of every later flush batch instead of
+ * being dropped — the staging rows that carried them are still marked
+ * processed, so dropping them lost the media for good.
+ *
+ * Structurally compatible with the SDK's `IncomingAttachment` in both
+ * directions, without `packages/database` depending on `@chatbotx.io/sdk`.
+ */
+export type PendingCoexistAttachment = {
+  sourceId: string
+  fileType: "image" | "audio" | "video" | "gif" | "file"
+  mimeType: string
+  originPath: string
+  size: number
+  url?: string
+  width?: number | null
+  height?: number | null
+  name?: string
+}
+
+type PendingCoexistPatchBase = {
+  /** Customer wa_id (or BSUID fallback) the patched message belongs to. */
+  contactWaId: string
+  /** wamid of the message being patched. */
+  sourceId: string
+  /** ISO timestamp of the first flush that failed to resolve this patch. */
+  stagedAt: string
+}
+
+export type PendingCoexistPatch =
+  | (PendingCoexistPatchBase & {
+      kind: "media"
+      attachment: PendingCoexistAttachment
+    })
+  | (PendingCoexistPatchBase & {
+      kind: "edit"
+      text: string | null
+      attachment: PendingCoexistAttachment | null
+    })
+  | (PendingCoexistPatchBase & { kind: "revoke" })
+
+export type PendingCoexistPatches = {
+  entries: PendingCoexistPatch[]
+}
 
 // Messenger 2-phase sync: phase 1 walks /conversations and upserts contacts;
 // phase 2 walks /conversations again per conv to fetch and persist messages.
@@ -56,6 +141,10 @@ export const coexistSyncRunModel = pgTable(
     workspaceId: bigintAsString().notNull(),
     integrationId: bigintAsString().notNull(),
     channel: coexistChannel().notNull(),
+    // Discriminates a coexist history import from an Automatic Customer
+    // Scan. Existing rows backfill to "coexist". See the `coexistRunType`
+    // comment above for the scoping invariant this enforces.
+    type: coexistRunType().notNull().default("coexist"),
     status: coexistRunStatus().notNull().default("init"),
     // "popup-enable" | "buffer-chain" | "sweep-cron" | "manual"
     triggerSource: text().notNull(),
@@ -109,6 +198,40 @@ export const coexistSyncRunModel = pgTable(
     messengerSyncPhase: coexistMessengerSyncPhase()
       .notNull()
       .default("contacts"),
+
+    // WhatsApp coexist: patches Meta delivered before the message they target.
+    // Nullable with NO `.default()` on purpose (see AGENTS.md "phantom jsonb
+    // defaults") — every insert path writes it explicitly.
+    pendingPatches: jsonb().$type<PendingCoexistPatches>(),
+
+    // Exclusive-ownership token, re-minted by every claim. `status = 'running'`
+    // cannot distinguish the worker that holds the run from one whose claim was
+    // taken over after a stale heartbeat — both see `running`. Every write a
+    // claim holder makes is additionally conditional on this token, so the
+    // moment a second worker claims, the first worker's writes affect 0 rows
+    // and it abandons (see `coexistWhatsappFlush`).
+    //
+    // Nullable with NO `.default()` on purpose (AGENTS.md "phantom defaults")
+    // — `createRun` writes it explicitly. NULL means "never claimed".
+    claimToken: text(),
+
+    // Contact-scan-only columns below. NULL for `type = 'coexist'` rows.
+
+    // Scan lower bound: the operator-picked "scan inbox from" time, and the
+    // walk ceiling the engine stops at (the same role `startedAt`/prior-run
+    // `lastSyncedAt` plays for coexist's `findResumeCeiling`).
+    scanFromAt: timestamp(timestampConfig),
+    // The user who requested the scan (v1's `user_id`). `set null` so
+    // deleting the user does not cascade into losing scan history.
+    requestedByUserId: bigintAsString().references(() => userModel.id, {
+      onDelete: "set null",
+      onUpdate: "cascade",
+    }),
+    // Provider `after` cursor of the next page, persisted every progress
+    // write so a continuation resumes from where it left off instead of
+    // re-walking page 1. Cleared on terminal write. Coexist keeps its cursor
+    // in memory, unchanged — this column is scan-only.
+    resumeCursor: text(),
   },
   (t) => [
     index("CoexistSyncRun_workspace_idx").on(t.workspaceId),
@@ -125,9 +248,21 @@ export const coexistSyncRunModel = pgTable(
       .where(sql`status IN ('succeeded', 'partial')`),
     // Prevent duplicate init rows when coexist is toggled rapidly on the same
     // (integration, channel). Scheduler INSERT race → second row would never
-    // get claimed and would clutter the table.
+    // get claimed and would clutter the table. Scoped to `type = 'coexist'`
+    // so a scan `init` row on the same (integrationId, messenger) does not
+    // collide with a coexist `init` row — they are independent lifecycles
+    // sharing this table.
     uniqueIndex("CoexistSyncRun_integration_init_uq")
       .on(t.integrationId, t.channel)
-      .where(sql`status = 'init'`),
+      .where(sql`status = 'init' AND type = 'coexist'`),
+    // v1's one-active-scan rule: at most one live (init/running) scan per
+    // integration (inbox ↔ integration is 1:1 per channel).
+    uniqueIndex("CoexistSyncRun_contact_scan_active_uq")
+      .on(t.integrationId)
+      .where(sql`type = 'contact_scan' AND status IN ('init', 'running')`),
+    // Powers the scan sweeper's `pickDueRuns({ type: 'contact_scan' })`.
+    index("CoexistSyncRun_contact_scan_due_idx")
+      .on(t.type, t.status, t.createdAt)
+      .where(sql`type = 'contact_scan'`),
   ],
 )

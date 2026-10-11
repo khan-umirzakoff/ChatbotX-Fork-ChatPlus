@@ -19,27 +19,31 @@ import { Loader2Icon } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { type ReactElement, useState } from "react"
 import { toast } from "sonner"
-import { useTagOptions } from "@/features/tags/provider/tag-hook"
-import { useTagStore } from "@/features/tags/provider/tag-store-context"
+import {
+  useInvalidateTags,
+  useTagOptions,
+} from "@/features/tags/provider/tag-hook"
 import { useWorkspaceId } from "@/hooks/routing"
 import { addContactTagAction } from "../actions/add-contact-tag.action"
-import { addContactTagRequest } from "../schemas/contact-tag"
+import { addContactTagRequest } from "../schema/contact-tag"
 
 type AddContactTagDialogProps = {
   trigger: ReactElement
   ids: string[]
+  onSuccess?: () => void
 }
 
 export default function AddContactTagDialog({
   trigger,
   ids,
+  onSuccess,
 }: AddContactTagDialogProps) {
   const t = useTranslations()
   const [open, setOpen] = useState(false)
   const workspaceId = useWorkspaceId()
 
   const tagOptions = useTagOptions()
-  const { getAllActiveTags } = useTagStore((state) => state)
+  const invalidateTags = useInvalidateTags()
 
   const { form, handleSubmitWithAction, resetFormAndAction } =
     useHookFormAction(
@@ -53,9 +57,10 @@ export default function AddContactTagDialog({
                 feature: t("fields.contact.label"),
               }),
             )
-            getAllActiveTags()
+            invalidateTags()
             setOpen(false)
             resetFormAndAction()
+            onSuccess?.()
           },
           onError: ({ error }) => {
             if (error.serverError) {

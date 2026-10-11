@@ -4,11 +4,9 @@ import type { ConditionStepSchema } from "@chatbotx.io/flow-config"
 import { useTranslations } from "next-intl"
 import {
   type FieldConfig,
-  formatConditionValueDisplay,
+  formatFilterConditionValue,
 } from "@/features/contact-filter/components/contact-filter-config"
 import { useContactFilterConfigs } from "@/features/contact-filter/components/use-contact-filter-configs"
-import { SequenceStoreProvider } from "@/features/sequences/provider/sequence-store-context"
-import { useWorkspaceId } from "@/hooks/routing"
 import { StateHandle } from "../base/step-state-handles"
 
 type ConditionStepViewerProps = {
@@ -32,21 +30,33 @@ const ConditionRow = ({
   const t = useTranslations()
 
   const isCustomField = condition.field === "customField"
-  const fieldConfig = configs.find((config) =>
-    isCustomField && condition.customFieldId !== undefined
-      ? String(config.customFieldId) === String(condition.customFieldId)
-      : config.name === condition.field,
-  )
+  const isBotField = condition.field === "botField"
+  const fieldConfig = configs.find((config) => {
+    if (isCustomField && condition.customFieldId !== undefined) {
+      return String(config.customFieldId) === String(condition.customFieldId)
+    }
+    if (isBotField && condition.botFieldId !== undefined) {
+      return String(config.botFieldId) === String(condition.botFieldId)
+    }
+    return config.name === condition.field
+  })
   const fieldLabel =
     fieldConfig?.label ??
-    (isCustomField
-      ? t("fields.customField.label")
-      : t(`condition.fields.${condition.field}`))
+    (() => {
+      if (isCustomField) {
+        return t("fields.customField.label")
+      }
+      if (isBotField) {
+        return t("fields.botField.label")
+      }
+      return t(`condition.fields.${condition.field}`)
+    })()
   const operatorLabel =
     operatorLabelByValue.get(condition.operator) ?? condition.operator
-  const valueDisplay = formatConditionValueDisplay(
+  const valueDisplay = formatFilterConditionValue(
     condition.value,
-    fieldConfig?.options,
+    fieldConfig,
+    t,
   )
 
   return (
@@ -65,7 +75,11 @@ const ConditionRow = ({
 
 const ConditionStepViewerContent = ({ data }: ConditionStepViewerProps) => {
   const t = useTranslations()
-  const { configs, operatorLabelByValue } = useContactFilterConfigs()
+  const { configs, operatorLabelByValue } = useContactFilterConfigs(
+    undefined,
+    true,
+    data.cases.flatMap((conditionCase) => conditionCase.conditions),
+  )
 
   return (
     <div className="flex flex-col gap-3">
@@ -79,6 +93,7 @@ const ConditionStepViewerContent = ({ data }: ConditionStepViewerProps) => {
                 const baseKey = [
                   condition.field,
                   condition.customFieldId ?? "",
+                  condition.botFieldId ?? "",
                   condition.operator,
                   Array.isArray(condition.value)
                     ? condition.value.join(",")
@@ -121,14 +136,8 @@ const ConditionStepViewerContent = ({ data }: ConditionStepViewerProps) => {
   )
 }
 
-const ConditionStepViewer = ({ data }: ConditionStepViewerProps) => {
-  const workspaceId = useWorkspaceId()
-
-  return (
-    <SequenceStoreProvider autoInitialize={true} workspaceId={workspaceId}>
-      <ConditionStepViewerContent data={data} />
-    </SequenceStoreProvider>
-  )
-}
+const ConditionStepViewer = ({ data }: ConditionStepViewerProps) => (
+  <ConditionStepViewerContent data={data} />
+)
 
 export default ConditionStepViewer

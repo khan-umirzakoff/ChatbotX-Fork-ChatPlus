@@ -2,7 +2,7 @@
  * Meta Graph API surfaces per-business quota usage via the
  * `X-Business-Use-Case-Usage` response header. Parsing it lets the historical
  * sync proactively throttle concurrency before hitting 429 — the universal
- * pattern in mature bot platforms (Chatwoot, Respond.io, Sleekflow, ManyChat).
+ * pattern in mature bot platforms.
  *
  * Header shape (JSON-encoded):
  *   { "<businessId>": [{ call_count, total_cputime, total_time,
@@ -43,6 +43,30 @@ export const parseBucHeader = (header: string | null): BucUsage | null => {
     }
   } catch {
     return null
+  }
+}
+
+/**
+ * The worst of several readings of the same Page's quota (a batch carries one
+ * per sub-request, plus the call's own): the highest of each figure, so the
+ * caller backs off for the most pressed reading. `null` when none was sent.
+ */
+export const mergeBucUsage = (
+  readings: readonly (BucUsage | null)[],
+): BucUsage | null => {
+  const present = readings.filter(
+    (reading): reading is BucUsage => reading !== null,
+  )
+  if (present.length === 0) {
+    return null
+  }
+  return {
+    callCount: Math.max(...present.map((usage) => usage.callCount)),
+    totalCpuTime: Math.max(...present.map((usage) => usage.totalCpuTime)),
+    totalTime: Math.max(...present.map((usage) => usage.totalTime)),
+    estimatedTimeToRegainAccess: Math.max(
+      ...present.map((usage) => usage.estimatedTimeToRegainAccess),
+    ),
   }
 }
 

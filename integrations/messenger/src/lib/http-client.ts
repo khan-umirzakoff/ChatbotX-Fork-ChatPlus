@@ -1,5 +1,5 @@
 import { UNKNOWN_ERROR } from "@chatbotx.io/sdk"
-import ky, { isHTTPError, type KyInstance } from "ky"
+import ky, { isHTTPError, type KyInstance, type ShouldRetryState } from "ky"
 import {
   type ChannelErrorSource,
   MessengerAPIException,
@@ -28,6 +28,47 @@ export function isExpectedPolicyError(
       entry.code === code &&
       (entry.subCode === undefined || entry.subCode === subCode),
   )
+}
+
+/**
+ * Meta's "Please reduce the amount of data you're asking for, then retry your
+ * request" reply. It shares error code 1 with the generic "API Unknown"
+ * failure that Meta documents as transient ("wait and retry"), so the code
+ * alone is not enough: only the combination of code 1, no subcode and this
+ * sentence identifies it. It arrives as a 5xx, but re-sending the identical
+ * request never succeeds — only a smaller page does — so it is excluded from
+ * the client's status-code retry and left to the caller (`fetchDirectPages`
+ * in `apis/auth.ts`) to shrink the page.
+ *
+ * @see https://developers.facebook.com/docs/graph-api/guides/error-handling
+ */
+const GRAPH_DATA_TOO_LARGE_CODE = 1
+const GRAPH_DATA_TOO_LARGE_MESSAGE = /reduce the amount of data/i
+
+export function isDataTooLargeGraphError(
+  source: Pick<ChannelErrorSource, "code" | "subCode" | "message">,
+): boolean {
+  return (
+    Number(source.code) === GRAPH_DATA_TOO_LARGE_CODE &&
+    (source.subCode === null || source.subCode === undefined) &&
+    GRAPH_DATA_TOO_LARGE_MESSAGE.test(source.message ?? "")
+  )
+}
+
+/**
+ * `false` short-circuits ky's retry; `undefined` defers to its default
+ * status-code policy. Only the request shape decides — `error.data` is
+ * already populated when ky calls this.
+ */
+export function shouldRetryGraphRequest({
+  error,
+}: Pick<ShouldRetryState, "error" | "retryCount">): Promise<
+  boolean | undefined
+> {
+  if (isHTTPError(error) && isDataTooLargeGraphError(parseOriginError(error))) {
+    return Promise.resolve(false)
+  }
+  return Promise.resolve(undefined)
 }
 
 function sanitizeRequestUrl(url: string | undefined): string | undefined {
@@ -76,12 +117,19 @@ type HttpClientConfig = {
 type GetOptions = {
   headers?: Record<string, string>
   searchParams?: Record<string, string>
+  retry?: number
+  /** Overrides the client's timeout for this call (ms). */
+  timeout?: number
 }
 
 type PostOptions = {
   headers?: Record<string, string>
   json?: unknown
+  /** Form-encoded body (Graph batch sub-requests carry their own encoding). */
+  body?: URLSearchParams
   retry?: number
+  /** Overrides the client's timeout for this call (ms). */
+  timeout?: number
 }
 
 type DeleteOptions = {
@@ -102,6 +150,7 @@ class MessengerHttpClient {
         methods: ["get", "post", "put", "delete"],
         statusCodes: [408, 413, 429, 500, 502, 503, 504],
         backoffLimit: config.retryDelay ?? 1000,
+        shouldRetry: shouldRetryGraphRequest,
       },
     })
   }
@@ -156,6 +205,18 @@ class MessengerHttpClient {
     return this.request(() => this.client.post(url, options).json<T>())
   }
 
+  /** Like `post` but also returns the response `Headers` (quota headers). */
+  postWithHeaders<T>(
+    url: string,
+    options?: PostOptions,
+  ): Promise<{ data: T; headers: Headers }> {
+    return this.request(async () => {
+      const response = await this.client.post(url, options)
+      const data = await response.json<T>()
+      return { data, headers: response.headers }
+    })
+  }
+
   delete<T>(url: string, options?: DeleteOptions): Promise<T> {
     return this.request(() => this.client.delete(url, options).json<T>())
   }
@@ -182,6 +243,14 @@ export const facebookAttachmentClient = new MessengerHttpClient({
  */
 export const facebookCoexistGraphClient = new MessengerHttpClient({
   baseUrl: "https://graph.facebook.com",
-  timeout: 30_000,
+  // 60s, not the 30s default: a `/conversations` page is requested at Graph's
+  // ~499-per-page ceiling with `participants` expanded (v1 used the same page
+  // size against a client with no short timeout), and Graph regularly needs
+  // longer than 30s to answer one for a large Page. A genuine hang is bounded
+  // per request by this timeout and per run by the handler's own
+  // `withInlineRetry` plus the run's capped scheduler attempts; the walk as a
+  // whole stays inside its job lock through the handler's chunk budget and
+  // BullMQ's lock renewal, not through this value.
+  timeout: 60_000,
   retries: 0,
 })

@@ -15,11 +15,19 @@ export const flowValidationCodes = {
   whatsappCarouselButtonsMismatch: "whatsappCarouselButtonsMismatch",
   whatsappCarouselLinkButtonNotAlone: "whatsappCarouselLinkButtonNotAlone",
   tiktokCardTitleTooLong: "tiktokCardTitleTooLong",
+  sendTextTooLongForChannel: "sendTextTooLongForChannel",
+  mediaButtonsUnsupported: "mediaButtonsUnsupported",
+  unsupportedBlock: "unsupportedBlock",
+  constraintExceeded: "constraintExceeded",
   waTemplateMpmNoProducts: "waTemplateMpmNoProducts",
   waTemplateMpmTooManySections: "waTemplateMpmTooManySections",
   waTemplateMpmTooManyProducts: "waTemplateMpmTooManyProducts",
   waTemplateLtoExpirationRequired: "waTemplateLtoExpirationRequired",
   waTemplateMpmIncompleteProducts: "waTemplateMpmIncompleteProducts",
+  quickReplyNextStepRequired: "quickReplyNextStepRequired",
+  quickReplyRetryMessageRequired: "quickReplyRetryMessageRequired",
+  quickReplyRetryWithGetUserData: "quickReplyRetryWithGetUserData",
+  whatsappFlowIncomplete: "whatsappFlowIncomplete",
 } as const
 
 export type FlowValidationCode =

@@ -54,6 +54,11 @@ export const updateWorkspaceAdvancedRequest = z.object({
   timezone: z.enum(allTimezoneCodes as [string, ...string[]]),
   brandColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   developmentMode: z.boolean(),
+  // Meta Conversions API Limited Data Use (plan #3) — optional so a stale
+  // client (form rendered before this field shipped) can still submit;
+  // `undefined` is skipped by Drizzle's `.set()`, leaving the stored value
+  // untouched, mirroring `defaultReplyFrequency` above. Default off.
+  capiLimitedDataUse: z.boolean().optional(),
 })
 export type UpdateWorkspaceAdvancedRequest = z.infer<
   typeof updateWorkspaceAdvancedRequest
@@ -85,3 +90,7 @@ export const updateWorkspaceStatusRequest = z
 export type UpdateWorkspaceStatusRequest = z.infer<
   typeof updateWorkspaceStatusRequest
 >
+
+export const toggleSupportAccessRequest = z.object({
+  enabled: z.boolean(),
+})

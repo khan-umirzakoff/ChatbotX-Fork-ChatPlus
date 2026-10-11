@@ -17,16 +17,17 @@ import {
 import { Form } from "@chatbotx.io/ui/components/ui/form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useHookFormAction } from "@next-safe-action/adapter-react-hook-form/hooks"
-import ky from "ky"
 import { Loader2Icon, MoveRightIcon, PlusIcon, TrashIcon } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { useEffect, useMemo, useState } from "react"
 import { useFieldArray, useWatch } from "react-hook-form"
 import { toast } from "sonner"
+import { PlainTextEditorField } from "@/components/tiptap/plain-text-editor-field"
+import { client } from "@/lib/orpc/orpc"
 import { createAIMcpServerAction } from "./actions/create-ai-mcp-server.action"
 import { updateAIMcpServerAction } from "./actions/update-ai-mcp-server.action"
-import { createAIMcpServerRequest } from "./schemas/action"
-import type { AIMcpServerResource } from "./schemas/resource"
+import { createPrivateAIMcpServerRequest } from "./schema/action"
+import type { AIMcpServerResource } from "./schema/resource"
 
 type ToolInfo = { name: string; description?: string }
 
@@ -82,7 +83,7 @@ export function AIMcpServersCreate({
       : createAIMcpServerAction.bind(null, workspaceId)
 
   const { form, handleSubmitWithAction, resetFormAndAction } =
-    useHookFormAction(action, zodResolver(createAIMcpServerRequest), {
+    useHookFormAction(action, zodResolver(createPrivateAIMcpServerRequest), {
       formProps: {
         mode: "onChange",
         defaultValues: {
@@ -169,15 +170,11 @@ export function AIMcpServersCreate({
   const validateMcpServer = async () => {
     try {
       setIsMcpServerValidating(true)
-      const data = await ky
-        .post<Record<string, { description?: string }>>(
-          `/api/workspaces/${workspaceId}/ai-mcp-servers/validate`,
-          {
-            json: form.getValues(),
-            timeout: 15_000,
-          },
-        )
-        .json()
+      const data =
+        (await client.aiMcpServerAPIs.validateAIMcpServerAuthenticatedAPI(
+          { ...form.getValues(), workspaceId },
+          { signal: AbortSignal.timeout(15_000) },
+        )) as Record<string, { description?: string }>
 
       const toolInfos = Object.keys(data).map((key) => ({
         name: key,
@@ -228,11 +225,10 @@ export function AIMcpServersCreate({
     name: "auth.type",
     control: form.control,
   })
-
   return (
     <Dialog onOpenChange={setIsOpen} open={isOpen}>
       {trigger}
-      <DialogContent className={"max-h-screen max-w-lg overflow-y-scroll"}>
+      <DialogContent className="max-h-[90vh] w-[92vw] overflow-y-auto sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -251,10 +247,15 @@ export function AIMcpServersCreate({
               required
             />
             {watchAuthType === aiMcpServerAuthTypes.enum.token && (
-              <InputField
+              <PlainTextEditorField
+                botFieldsOnly
+                editorClassName="tiptap-plain-text-inline"
+                includeBotFieldVariables
+                inline
                 label={t("fields.authToken.label")}
                 name="auth.token"
                 required
+                showEmojiPicker={false}
               />
             )}
             {watchAuthType === aiMcpServerAuthTypes.enum.header && fields && (

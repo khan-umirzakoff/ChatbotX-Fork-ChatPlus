@@ -11,10 +11,23 @@ import { stepTypes } from "./step-action"
 import type { ParameterInfo } from "./wa-template-utils"
 
 export const messengerTemplateButtonParamSchema = z.object({
-  sub_type: z.enum(["url", "phone_number"]),
-  index: z.number().optional(),
-  text: z.string().optional(),
-  payload: z.string().optional(),
+  sub_type: z
+    .enum(["url", "phone_number"])
+    .describe("Button kind: `url` or `phone_number`."),
+  index: z
+    .number()
+    .optional()
+    .describe("Zero-based position of the button in the template."),
+  text: z
+    .string()
+    .optional()
+    .describe("Variable value for a `url` button (the dynamic URL suffix)."),
+  payload: z
+    .string()
+    .optional()
+    .describe(
+      "Legacy; ignored by the sender. POSTBACK payloads come from the step's `buttons` configuration, so configure buttons there.",
+    ),
 })
 export type MessengerTemplateButtonParam = z.infer<
   typeof messengerTemplateButtonParamSchema
@@ -24,22 +37,43 @@ export const messengerTemplateParamsSchema = z.object({
   header: z
     .array(
       z.object({
-        type: z.enum(["text", "image"]),
-        text: z.string().optional(),
-        parameter_name: z.string().optional(),
-        image: z.object({ link: z.string() }).optional(),
+        type: z
+          .enum(["text", "image"])
+          .describe("Header parameter kind; fill the matching field."),
+        text: z
+          .string()
+          .optional()
+          .describe("Value for a `text` header variable."),
+        parameter_name: z
+          .string()
+          .optional()
+          .describe("Placeholder name, only for NAMED templates."),
+        image: z
+          .object({
+            link: z.string().describe("Public https URL of the image."),
+          })
+          .optional()
+          .describe("Image for an `image` header."),
       }),
     )
-    .optional(),
+    .optional()
+    .describe("Header parameters; one entry for a templated header."),
   body: z
     .array(
       z.object({
-        text: z.string(),
-        parameter_name: z.string().optional(),
+        text: z.string().describe("Value that replaces the variable."),
+        parameter_name: z
+          .string()
+          .optional()
+          .describe("Placeholder name, only for NAMED templates."),
       }),
     )
-    .optional(),
-  button: z.array(messengerTemplateButtonParamSchema).optional(),
+    .optional()
+    .describe("Body variables in order: {{1}}, {{2}}, ..."),
+  button: z
+    .array(messengerTemplateButtonParamSchema)
+    .optional()
+    .describe("Parameters for the template's dynamic buttons, by `index`."),
 })
 export type MessengerTemplateParams = z.infer<
   typeof messengerTemplateParamsSchema
@@ -63,7 +97,9 @@ export type MessengerTemplateComponentButton = {
 }
 
 export const sendMessengerTemplateMessageStepSchema = baseStepSchema.extend({
-  stepType: z.literal(stepTypes.enum.sendMessengerTemplateMessage),
+  stepType: z
+    .literal(stepTypes.enum.sendMessengerTemplateMessage)
+    .describe('Step type discriminator: "sendMessengerTemplateMessage".'),
   template: z.object({
     id: z.string().trim().min(1),
     name: z.string(),
@@ -106,9 +142,36 @@ export const sendMessengerTemplateMessageStepDefaultFn = (
   }
 }
 
+type MessengerParameterFormat = "POSITIONAL" | "NAMED"
+
+// Matches a positional ({{1}}) or named ({{order_id}}) placeholder. `.match()`
+// resets lastIndex per call, so a shared global regex is safe under concurrent
+// sends.
+const TEMPLATE_PLACEHOLDER_REGEX = /\{\{(\d+|[a-zA-Z_]+)\}\}/g
+const PLACEHOLDER_BRACES_REGEX = /\{\{|\}\}/g
+
+function extractPlaceholderNames(text: string | undefined): string[] {
+  return (text?.match(TEMPLATE_PLACEHOLDER_REGEX) ?? []).map((match) =>
+    match.replace(PLACEHOLDER_BRACES_REGEX, ""),
+  )
+}
+
+function hasPlaceholder(text: string | undefined): boolean {
+  return extractPlaceholderNames(text).length > 0
+}
+
+// NAMED templates echo each placeholder back as `parameter_name`; POSITIONAL
+// ones must omit the key entirely.
+function toParameterName(
+  name: string,
+  parameterFormat: MessengerParameterFormat,
+): { parameter_name?: string } {
+  return parameterFormat === "NAMED" ? { parameter_name: name } : {}
+}
+
 export function extractMessengerTemplateParams(
   components: MessengerTemplateComponent[],
-  parameterFormat: "POSITIONAL" | "NAMED",
+  parameterFormat: MessengerParameterFormat,
 ): MessengerTemplateParams {
   const params: MessengerTemplateParams = {}
 
@@ -118,40 +181,26 @@ export function extractMessengerTemplateParams(
 
   for (const component of components) {
     if (component.type === "HEADER") {
-      if (component.format === "TEXT" && component.text) {
-        const matches = component.text.match(/\{\{(\d+|[a-zA-Z_]+)\}\}/g)
-        if (matches) {
-          params.header = matches.map((match) => {
-            const paramName = match.replace(/\{\{|\}\}/g, "")
-            const item: MessengerTemplateParams["header"] extends
-              | (infer T)[]
-              | undefined
-              ? T
-              : never = { type: "text", text: "" }
-            if (parameterFormat === "NAMED") {
-              item.parameter_name = paramName
-            }
-            return item
-          })
-        }
+      // Placeholders in a header's text are send-time parameters whatever the
+      // format: a "text and image" template is an IMAGE header with text, and
+      // Meta rejects the send with (#100 - 1893029) "Missing one or more
+      // header params" when its variable is left out. The image itself is
+      // fixed at template creation via header_handle and is never a parameter.
+      const names = extractPlaceholderNames(component.text)
+      if (names.length > 0) {
+        params.header = names.map((name) => ({
+          type: "text",
+          text: "",
+          ...toParameterName(name, parameterFormat),
+        }))
       }
-      // IMAGE headers are fixed at template creation time via header_handle;
-      // no parameter is collected or sent at send-time.
-    } else if (component.type === "BODY" && component.text) {
-      const matches = component.text.match(/\{\{(\d+|[a-zA-Z_]+)\}\}/g)
-      if (matches) {
-        params.body = matches.map((match) => {
-          const paramName = match.replace(/\{\{|\}\}/g, "")
-          const item: MessengerTemplateParams["body"] extends
-            | (infer T)[]
-            | undefined
-            ? T
-            : never = { text: "" }
-          if (parameterFormat === "NAMED") {
-            item.parameter_name = paramName
-          }
-          return item
-        })
+    } else if (component.type === "BODY") {
+      const names = extractPlaceholderNames(component.text)
+      if (names.length > 0) {
+        params.body = names.map((name) => ({
+          text: "",
+          ...toParameterName(name, parameterFormat),
+        }))
       }
     } else if (component.type === "BUTTONS" && component.buttons) {
       const buttonParams: MessengerTemplateButtonParam[] = []
@@ -160,10 +209,13 @@ export function extractMessengerTemplateParams(
         const buttonType = button.type.toUpperCase()
 
         if (buttonType === "URL" && button.url) {
+          // A dynamic URL ends in one suffix placeholder — {{1}}, or a named
+          // one like {{url_suffix}} in NAMED templates — whose value the user
+          // fills in; a static URL is sent as is.
           buttonParams.push({
             sub_type: "url",
             index: idx,
-            text: button.url.includes("{{1}}") ? "" : button.url,
+            text: hasPlaceholder(button.url) ? "" : button.url,
           })
         }
         if (buttonType === "PHONE_NUMBER") {
@@ -187,7 +239,7 @@ export function extractMessengerTemplateParams(
 
 export function extractMessengerParameterInfos(
   components: MessengerTemplateComponent[],
-  parameterFormat: "POSITIONAL" | "NAMED",
+  parameterFormat: MessengerParameterFormat,
 ): ParameterInfo[] {
   const params: ParameterInfo[] = []
 
@@ -195,46 +247,43 @@ export function extractMessengerParameterInfos(
     return params
   }
 
+  const toDisplayName = (name: string, idx: number) =>
+    parameterFormat === "NAMED" ? name : String(idx + 1)
+
   for (const component of components) {
     if (component.type === "HEADER") {
-      if (component.format === "TEXT" && component.text) {
-        const matches = component.text.match(/\{\{(\d+|[a-zA-Z_]+)\}\}/g)
-        if (matches) {
-          for (const [idx, match] of matches.entries()) {
-            const paramName = match.replace(/\{\{|\}\}/g, "")
-            params.push({
-              type: "header",
-              index: idx,
-              paramName:
-                parameterFormat === "NAMED" ? paramName : String(idx + 1),
-              format: "text",
-            })
-          }
-        }
+      // Same rule as extractMessengerTemplateParams: header placeholders are
+      // send-time parameters in any header format (TEXT or IMAGE).
+      for (const [idx, name] of extractPlaceholderNames(
+        component.text,
+      ).entries()) {
+        params.push({
+          type: "header",
+          index: idx,
+          paramName: toDisplayName(name, idx),
+          format: "text",
+        })
       }
-      // IMAGE headers are fixed at template creation; no send-time ParameterInfo.
-    } else if (component.type === "BODY" && component.text) {
-      const matches = component.text.match(/\{\{(\d+|[a-zA-Z_]+)\}\}/g)
-      if (matches) {
-        for (const [idx, match] of matches.entries()) {
-          const paramName = match.replace(/\{\{|\}\}/g, "")
-          params.push({
-            type: "body",
-            index: idx,
-            paramName:
-              parameterFormat === "NAMED" ? paramName : String(idx + 1),
-          })
-        }
+    } else if (component.type === "BODY") {
+      for (const [idx, name] of extractPlaceholderNames(
+        component.text,
+      ).entries()) {
+        params.push({
+          type: "body",
+          index: idx,
+          paramName: toDisplayName(name, idx),
+        })
       }
     } else if (component.type === "BUTTONS" && component.buttons) {
       for (const [buttonIdx, button] of component.buttons.entries()) {
         const buttonType = button.type.toUpperCase()
 
-        if (buttonType === "URL" && button.url?.includes("{{1}}")) {
+        const [urlSuffixName] = extractPlaceholderNames(button.url)
+        if (buttonType === "URL" && urlSuffixName) {
           params.push({
             type: "button",
             index: 0,
-            paramName: "1",
+            paramName: toDisplayName(urlSuffixName, 0),
             buttonIndex: buttonIdx,
             buttonSubType: "url",
           })

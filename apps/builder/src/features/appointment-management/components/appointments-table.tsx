@@ -15,7 +15,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { use, useMemo, useState } from "react"
 import type { listAppointments } from "../queries"
-import type { AppointmentManagementTab } from "../schemas/query"
+import type { AppointmentManagementTab } from "../schema/query"
 import {
   type AppointmentRowAction,
   getAppointmentColumns,
@@ -46,7 +46,10 @@ export function AppointmentsTable({ workspaceId, tab, promises }: Props) {
   const getTabHref = useTabHref()
   const [{ data, pageCount }] = use(promises)
   const [rowAction, setRowAction] = useState<AppointmentRowAction | null>(null)
-  const columns = useMemo(() => getAppointmentColumns({ t, setRowAction }), [t])
+  const columns = useMemo(
+    () => getAppointmentColumns({ t, setRowAction, workspaceId }),
+    [t, workspaceId],
+  )
   const { table } = useDataTable({
     data,
     columns,

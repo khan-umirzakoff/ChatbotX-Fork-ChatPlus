@@ -19,6 +19,95 @@ import type {
 import { BaseRepository } from "./base.repository"
 
 export class SequenceStatsRepository extends BaseRepository {
+  async findDispatchesForUpdate(input: {
+    workspaceIds: string[]
+    sequenceIds: string[]
+    stepIds: string[]
+    contactInboxIds: string[]
+    knownStatus?: "completed"
+  }): Promise<
+    {
+      id: string
+      workspaceId: string
+      sequenceId: string
+      stepId: string
+      contactInboxId: string
+    }[]
+  > {
+    return await db.query.sequenceDispatchModel.findMany({
+      where: {
+        workspaceId: { in: input.workspaceIds },
+        sequenceId: { in: input.sequenceIds },
+        stepId: { in: input.stepIds },
+        contactInboxId: { in: input.contactInboxIds },
+        ...(input.knownStatus ? { status: input.knownStatus } : {}),
+      },
+      columns: {
+        id: true,
+        workspaceId: true,
+        sequenceId: true,
+        stepId: true,
+        contactInboxId: true,
+      },
+    })
+  }
+
+  async updateOccurredAtBulk(
+    items: { id: string; workspaceId: string; timestamp: Date }[],
+    updateField: "deliveredAt" | "seenAt" | "clickedAt",
+    knownStatus?: "completed",
+  ): Promise<void> {
+    if (items.length === 0) {
+      return
+    }
+
+    const cases = items.map(
+      (item) =>
+        sql`WHEN "id" = ${item.id} AND "workspaceId" = ${item.workspaceId} THEN ${item.timestamp.toISOString()}`,
+    )
+    const predicates = items.map((item) =>
+      knownStatus
+        ? sql`("id" = ${item.id} AND "workspaceId" = ${item.workspaceId} AND "status" = ${knownStatus})`
+        : sql`("id" = ${item.id} AND "workspaceId" = ${item.workspaceId})`,
+    )
+
+    await db.execute(sql`
+      UPDATE "SequenceDispatch"
+      SET ${sql.identifier(updateField)} = CASE ${sql.join(cases, sql` `)} ELSE ${sql.identifier(updateField)} END
+      WHERE ${sql.join(predicates, sql` OR `)}
+    `)
+  }
+
+  async findCompletedUnseenDispatches(input: {
+    workspaceId: string
+    contactInboxIds: string[]
+  }): Promise<
+    { sequenceId: string; stepId: string; contactInboxId: string }[]
+  > {
+    return await db.query.sequenceDispatchModel.findMany({
+      where: {
+        workspaceId: input.workspaceId,
+        contactInboxId: { in: input.contactInboxIds },
+        status: { in: ["completed"] },
+        seenAt: { isNull: true },
+      },
+      columns: {
+        sequenceId: true,
+        stepId: true,
+        contactInboxId: true,
+      },
+    })
+  }
+
+  async findSequenceStepsByIds(
+    stepIds: string[],
+  ): Promise<{ id: string; sequenceId: string }[]> {
+    return await db.query.sequenceStepModel.findMany({
+      where: { id: { in: stepIds } },
+      columns: { id: true, sequenceId: true },
+    })
+  }
+
   async getStepStats(input: {
     workspaceId: string
     sequenceId: string
@@ -99,30 +188,33 @@ export class SequenceStatsRepository extends BaseRepository {
   }): Promise<{
     contactInboxIds: string[]
     contactEventMap: Map<string, ContactEventData>
+    total: number
   }> {
     const { workspaceId, sequenceId, stepId, eventType, page, perPage } = input
     const offset = (page - 1) * perPage
     const t = sequenceDispatchModel
 
     const { eventCondition, orderColumn } = this.buildEventFilter(eventType)
+    const whereCondition = sql`${t.workspaceId} = ${workspaceId} AND ${t.sequenceId} = ${sequenceId} AND ${t.stepId} = ${stepId} AND ${eventCondition}`
 
-    const rows = await db
-      .select({
-        contactInboxId: t.contactInboxId,
-        contactId: t.contactId,
-        deliveredAt: t.deliveredAt,
-        seenAt: t.seenAt,
-        failedAt: t.failedAt,
-        clickedAt: t.clickedAt,
-        errorContent: t.errorContent,
-      })
-      .from(t)
-      .where(
-        sql`${t.workspaceId} = ${workspaceId} AND ${t.sequenceId} = ${sequenceId} AND ${t.stepId} = ${stepId} AND ${eventCondition}`,
-      )
-      .orderBy(sql`${orderColumn} DESC NULLS LAST`)
-      .limit(perPage)
-      .offset(offset)
+    const [rows, [totalRow]] = await Promise.all([
+      db
+        .select({
+          contactInboxId: t.contactInboxId,
+          contactId: t.contactId,
+          deliveredAt: t.deliveredAt,
+          seenAt: t.seenAt,
+          failedAt: t.failedAt,
+          clickedAt: t.clickedAt,
+          errorContent: t.errorContent,
+        })
+        .from(t)
+        .where(whereCondition)
+        .orderBy(sql`${orderColumn} DESC NULLS LAST`)
+        .limit(perPage)
+        .offset(offset),
+      db.select({ total: count() }).from(t).where(whereCondition),
+    ])
 
     const contactInboxIds = rows.map((r) => r.contactInboxId)
     const contactEventMap = new Map<string, ContactEventData>()
@@ -136,7 +228,7 @@ export class SequenceStatsRepository extends BaseRepository {
       })
     }
 
-    return { contactInboxIds, contactEventMap }
+    return { contactInboxIds, contactEventMap, total: totalRow?.total ?? 0 }
   }
 
   async getContactIdsPage(input: {

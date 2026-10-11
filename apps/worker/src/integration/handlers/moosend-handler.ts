@@ -14,6 +14,7 @@ import { normalizeError } from "universal-error-normalizer"
 import { logger } from "../../lib/logger"
 import { getContactFieldMap } from "./contact-field-map"
 import type { ExecuteStepProps } from "./flow"
+import { logStepProviderError } from "./flow-utils"
 import {
   acquireMoosendSubscribePermit,
   MoosendRateLimitError,
@@ -121,6 +122,7 @@ export const addOrUpdateMoosendContact = async (
       { ...logContext, ...provider, err: normalized },
       "Moosend contact sync failed",
     )
+    await logStepProviderError("moosend", props, error)
     return { status: "error", result: null, errorMessage: normalized.message }
   }
 }

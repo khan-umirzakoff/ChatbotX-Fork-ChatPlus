@@ -41,6 +41,10 @@ export const inboxRelations = defineRelationsPart(schema, (r) => ({
       from: r.inboxModel.id,
       to: r.contactInboxModel.inboxId,
     }),
+    broadcastTargets: r.many.broadcastTargetModel({
+      from: r.inboxModel.id,
+      to: r.broadcastTargetModel.inboxId,
+    }),
     contactStats: r.one.inboxContactStatsModel({
       from: r.inboxModel.id,
       to: r.inboxContactStatsModel.inboxId,
@@ -48,6 +52,15 @@ export const inboxRelations = defineRelationsPart(schema, (r) => ({
     integrationInstagram: r.one.integrationInstagramModel({
       from: r.inboxModel.id,
       to: r.integrationInstagramModel.inboxId,
+    }),
+    integrationThreads: r.one.integrationThreadsModel({
+      from: r.inboxModel.id,
+      to: r.integrationThreadsModel.inboxId,
+    }),
+    connection: r.one.connectionModel({
+      from: r.inboxModel.id,
+      to: r.connectionModel.inboxId,
+      optional: true,
     }),
   },
 }))

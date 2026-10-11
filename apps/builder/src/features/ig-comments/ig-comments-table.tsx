@@ -1,6 +1,9 @@
 "use client"
 
-import { folderTypes } from "@chatbotx.io/database/partials"
+import {
+  canProcessMissedComments,
+  folderTypes,
+} from "@chatbotx.io/database/partials"
 import { DataTable } from "@chatbotx.io/ui/components/data-table/data-table"
 import { DataTableColumnHeader } from "@chatbotx.io/ui/components/data-table/data-table-column-header"
 import { DataTableToolbar } from "@chatbotx.io/ui/components/data-table/data-table-toolbar"
@@ -22,7 +25,9 @@ import { useDataTable } from "@chatbotx.io/ui/hooks/use-data-table"
 import type { DataTableRowAction } from "@chatbotx.io/ui/types/data-table"
 import type { ColumnDef } from "@tanstack/react-table"
 import {
+  ChartColumnIcon,
   FolderUpIcon,
+  HistoryIcon,
   MoreHorizontalIcon,
   PencilIcon,
   TextIcon,
@@ -37,8 +42,13 @@ import { ChangeFolderDialog } from "../folders/change-folder"
 import { BulkDeleteCommentAutomationsDialog } from "../shared/comment-automation/bulk-delete-comment-automations-dialog"
 import { BulkMoveCommentAutomationFolderDialog } from "../shared/comment-automation/bulk-move-comment-automation-folder-dialog"
 import { CommentAutomationScheduleDialog } from "../shared/comment-automation/comment-automation-schedule-dialog"
+import { buildCommentAutomationStatColumns } from "../shared/comment-automation/comment-automation-stat-columns"
 import { DeleteCommentAutomationDialog } from "../shared/comment-automation/delete-comment-automation-dialog"
+import { LiveAutomationBadge } from "../shared/comment-automation/live-automation-badge"
+import { MissedCommentsProcessingLabel } from "../shared/comment-automation/missed-comments-processing-label"
+import { ProcessMissedCommentsDialog } from "../shared/comment-automation/process-missed-comments-dialog"
 import { RenameCommentAutomationDialog } from "../shared/comment-automation/rename-comment-automation-dialog"
+import { useMissedCommentsInProgress } from "../shared/comment-automation/use-missed-comments-in-progress"
 import { deleteIgCommentAction } from "./actions/delete-ig-comment.action"
 import { updateIgCommentAction } from "./actions/update-ig-comment.action"
 import { SelectInstagramConnectionTypeDialog } from "./components/select-instagram-connection-type-dialog"
@@ -62,6 +72,18 @@ export function IgCommentsTable({
   const [rowAction, setRowAction] = React.useState<DataTableRowAction<
     ListIgCommentsResponse["data"][number]
   > | null>(null)
+
+  const [missedCommentsItem, setMissedCommentsItem] = React.useState<
+    ListIgCommentsResponse["data"][number] | null
+  >(null)
+
+  const {
+    inProgress: missedCommentsInProgress,
+    refresh: refreshMissedCommentsInProgress,
+  } = useMissedCommentsInProgress(
+    workspaceId,
+    data.map((automation) => automation.id),
+  )
 
   const [scheduleDialogItem, setScheduleDialogItem] = React.useState<
     ListIgCommentsResponse["data"][number] | null
@@ -129,19 +151,23 @@ export function IgCommentsTable({
           <div className="max-w-75 truncate">
             <Tooltip>
               <TooltipTrigger
-                render={() => (
+                render={
                   <Link
                     className="truncate"
                     href={`/space/${workspaceId}/ig-comments/${row.original.id}`}
                   >
                     {row.original.name ?? ""}
                   </Link>
-                )}
+                }
               />
               <TooltipContent>
                 <p>{row.original.name}</p>
               </TooltipContent>
             </Tooltip>
+            <LiveAutomationBadge post={row.original.post} />
+            {missedCommentsInProgress.has(row.original.id) ? (
+              <MissedCommentsProcessingLabel />
+            ) : null}
           </div>
         ),
         meta: {
@@ -186,6 +212,11 @@ export function IgCommentsTable({
         ),
         size: 100,
       },
+      // See the Facebook table: `repliesCount` counts comments answered, these
+      // count reply attempts and their outcomes.
+      ...buildCommentAutomationStatColumns<
+        ListIgCommentsResponse["data"][number]
+      >({ workspaceId, t }),
       {
         id: "actions",
         header: () => (
@@ -195,14 +226,14 @@ export function IgCommentsTable({
           <div className="flex justify-center">
             <DropdownMenu>
               <DropdownMenuTrigger
-                render={() => (
+                render={
                   <Button size="icon" variant="ghost">
                     <MoreHorizontalIcon className="h-4 w-4" />
                     <span className="sr-only">Open menu</span>
                   </Button>
-                )}
+                }
               />
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-auto">
                 <DropdownMenuItem
                   onClick={() =>
                     router.push(
@@ -214,11 +245,30 @@ export function IgCommentsTable({
                   {t("actions.edit")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  onClick={() =>
+                    router.push(
+                      `/space/${workspaceId}/ig-comments/${row.original.id}/analytics`,
+                    )
+                  }
+                >
+                  <ChartColumnIcon className="me-2" />
+                  {t("actions.viewAnalytics")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
                   onClick={() => setRowAction({ row, variant: "update" })}
                 >
                   <TextIcon className="me-2" />
                   {t("actions.rename")}
                 </DropdownMenuItem>
+                {canProcessMissedComments(row.original.post) ? (
+                  <DropdownMenuItem
+                    disabled={missedCommentsInProgress.has(row.original.id)}
+                    onClick={() => setMissedCommentsItem(row.original)}
+                  >
+                    <HistoryIcon className="me-2" />
+                    {t("commentAutomationMissedComments.action")}
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuItem
                   onClick={() => setRowAction({ row, variant: "move" })}
                 >
@@ -241,7 +291,7 @@ export function IgCommentsTable({
         enableHiding: false,
       },
     ],
-    [t, workspaceId, handleToggleStatus, router],
+    [t, workspaceId, handleToggleStatus, router, missedCommentsInProgress],
   )
 
   const { table } = useDataTable({
@@ -348,6 +398,15 @@ export function IgCommentsTable({
         open={!!scheduleDialogItem}
         resource={scheduleDialogItem}
         translationNamespace="instagramCommentAutomation"
+      />
+
+      <ProcessMissedCommentsDialog
+        onOpenChange={() => setMissedCommentsItem(null)}
+        onSuccess={() => {
+          refreshMissedCommentsInProgress()
+          router.refresh()
+        }}
+        resource={missedCommentsItem}
       />
     </>
   )

@@ -1,4 +1,8 @@
-import { db } from "@chatbotx.io/database/client"
+import {
+  inboxService,
+  messengerMessageTemplateService,
+} from "@chatbotx.io/business"
+import type { MessengerMessageTemplateModel } from "@chatbotx.io/database/types"
 import type { MessengerTemplateParams } from "@chatbotx.io/flow-config"
 import {
   contactVariableService,
@@ -45,11 +49,24 @@ export async function replaceMessengerTemplateVariables(props: {
   return replacedParams
 }
 
-export type ValidatedMessengerTemplate = {
-  inbox: NonNullable<Awaited<ReturnType<typeof db.query.inboxModel.findFirst>>>
-  template: NonNullable<
-    Awaited<ReturnType<typeof db.query.messengerMessageTemplateModel.findFirst>>
+type InboxWithIntegrationMessenger = NonNullable<
+  Awaited<
+    ReturnType<typeof inboxService.findWithIntegrationMessengerByIdUnscoped>
   >
+>
+
+export type ValidatedMessengerTemplate = {
+  // `integrationMessenger` is re-narrowed non-null here: `validateMessengerTemplate`
+  // already guards `!inbox?.integrationMessenger` before returning, so every
+  // caller of this type (e.g. `send-messenger-template.ts`'s ads-conversion
+  // enqueue, Amendment A1) can read `validated.inbox.integrationMessenger.id`
+  // without an extra null check.
+  inbox: Omit<InboxWithIntegrationMessenger, "integrationMessenger"> & {
+    integrationMessenger: NonNullable<
+      InboxWithIntegrationMessenger["integrationMessenger"]
+    >
+  }
+  template: MessengerMessageTemplateModel
 }
 
 // Accepts templateId string — returns fetched entities so caller avoids re-querying.
@@ -58,26 +75,32 @@ export async function validateMessengerTemplate(
   templateId: string,
   inboxId: string,
 ): Promise<ValidatedMessengerTemplate | null> {
-  const inbox = await db.query.inboxModel.findFirst({
-    where: { id: inboxId },
-    with: { integrationMessenger: true },
+  const inbox = await inboxService.findWithIntegrationMessengerByIdUnscoped({
+    id: inboxId,
   })
 
   if (!inbox?.integrationMessenger) {
     return null
   }
 
-  const template = await db.query.messengerMessageTemplateModel.findFirst({
-    where: {
+  const template =
+    await messengerMessageTemplateService.findApprovedByIdForIntegration({
       id: templateId,
       integrationMessengerId: inbox.integrationMessenger.id,
-      status: "APPROVED",
-    },
-  })
+      workspaceId: inbox.workspaceId,
+    })
 
   if (!template) {
     return null
   }
 
-  return { inbox, template }
+  // Re-reads `inbox.integrationMessenger` (rather than spreading the bare
+  // `inbox` variable) so TS's narrowing from the guard above actually
+  // applies to the returned object's `integrationMessenger` field — a
+  // narrowed property access doesn't propagate through the whole-object
+  // reference otherwise.
+  return {
+    inbox: { ...inbox, integrationMessenger: inbox.integrationMessenger },
+    template,
+  }
 }

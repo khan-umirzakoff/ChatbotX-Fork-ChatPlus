@@ -6,12 +6,12 @@ import {
   facebookAdsAuthSchema,
   integration as integrationFacebookAds,
 } from "@chatbotx.io/integration-facebook-ads"
-import { workspaceIdrequestParams } from "@/features/common/schemas"
+import { workspaceIdrequestParams } from "@/features/common/schema"
 import { assertWorkspaceSuperAdmin } from "@/lib/auth/assert-workspace-super-admin"
 import { logger } from "@/lib/log"
-import { workspaceActionClient } from "@/lib/safe-action"
+import { workspaceActionClientAllowExpired } from "@/lib/safe-action"
 
-export const disconnectFacebookAdsAction = workspaceActionClient
+export const disconnectFacebookAdsAction = workspaceActionClientAllowExpired
   .bindArgsSchemas(workspaceIdrequestParams)
   .action(
     async ({

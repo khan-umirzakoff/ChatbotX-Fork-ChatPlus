@@ -1,0 +1,299 @@
+// @vitest-environment node
+
+import { beforeEach, describe, expect, test, vi } from "vitest"
+
+const mocks = vi.hoisted(() => {
+  const repo = {
+    findLastByConversation: vi.fn().mockResolvedValue([]),
+  }
+  return {
+    assertCurrentUserCanAccessChatbot: vi.fn().mockResolvedValue(undefined),
+    buildConversationWhere: vi.fn().mockReturnValue({}),
+    createMessageRepository: vi.fn().mockResolvedValue(repo),
+    findManyQuery: vi.fn().mockResolvedValue([]),
+    findWithFullRelations: vi.fn().mockResolvedValue(null),
+    getSafeSinceTime: vi.fn((value: Date | undefined) => value),
+    notFoundException: (message: string) => new Error(message),
+    resolveMediaUrl: vi.fn(
+      async (
+        ref: {
+          avatar?: string | null
+          channel?: string
+          contactInboxId?: string
+          kind: "attachment" | "avatar"
+        },
+        finalize: (key: string) => string | Promise<string>,
+      ) => {
+        if (ref.kind !== "avatar") {
+          return null
+        }
+        if (ref.avatar) {
+          return await finalize(ref.avatar)
+        }
+        return ref.channel && ["messenger", "instagram"].includes(ref.channel)
+          ? `https://app.example.com/media/avatar/${ref.contactInboxId}`
+          : null
+      },
+    ),
+    resolveTenantSettings: vi
+      .fn()
+      .mockResolvedValue({ storageUrl: "https://storage.example.com" }),
+    repo,
+  }
+})
+
+vi.mock("@chatbotx.io/business", () => ({
+  AVATAR_HYDRATION_CHANNELS: new Set(["messenger", "instagram"]),
+  conversationService: {
+    findManyQuery: mocks.findManyQuery,
+    findWithFullRelations: mocks.findWithFullRelations,
+  },
+  resolveMediaUrl: mocks.resolveMediaUrl,
+  resolveTenantSettings: mocks.resolveTenantSettings,
+}))
+
+vi.mock("@chatbotx.io/business/errors", () => ({
+  notFoundException: mocks.notFoundException,
+}))
+
+vi.mock("@chatbotx.io/database/repositories", () => ({
+  contactInboxOperationalColumns: { sourceIdentityHistory: false },
+  createMessageRepository: mocks.createMessageRepository,
+  getSafeSinceTime: mocks.getSafeSinceTime,
+}))
+
+vi.mock("@/lib/auth/utils", () => ({
+  assertCurrentUserCanAccessChatbot: mocks.assertCurrentUserCanAccessChatbot,
+}))
+
+vi.mock(
+  "../src/features/conversations/queries/build-conversation-where",
+  () => ({
+    buildConversationWhere: mocks.buildConversationWhere,
+  }),
+)
+
+const { listConversations, findConversation } = await import(
+  "../src/features/conversations/queries/list-conversations.query"
+)
+
+const adAttributedContactInbox = {
+  id: "ci-ad",
+  contactId: "contact-1",
+  inboxId: "inbox-1",
+  channel: "whatsapp",
+  source: "whatsapp",
+  sourceId: "source-1",
+  language: null,
+  lastIncomingMessageAt: null,
+  contactLastReadAt: null,
+  inbox: { name: "WhatsApp Inbox" },
+  sourceIdentityHistory: [
+    {
+      sourceId: "old-source-1",
+      sourceUserId: null,
+      sourceParentUserId: null,
+      changedAt: "2026-09-28T05:00:00.000Z",
+      reason: "userIdChanged",
+    },
+  ],
+  referral: {
+    ctwaClid: "clid-123",
+    adTitle: "Summer Sale",
+    sourceUrl: "https://fb.com/ad/xyz",
+    raw: { secret: "should-never-leave-the-server" },
+  },
+}
+
+const organicContactInbox = {
+  id: "ci-organic",
+  contactId: "contact-1",
+  inboxId: "inbox-1",
+  channel: "messenger",
+  source: "messenger",
+  sourceId: "source-2",
+  language: null,
+  lastIncomingMessageAt: null,
+  contactLastReadAt: null,
+  inbox: { name: "Messenger Inbox" },
+  referral: null,
+}
+
+describe("listConversations / findConversation adReferral mapping", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.createMessageRepository.mockResolvedValue(mocks.repo)
+    mocks.repo.findLastByConversation.mockResolvedValue([])
+    mocks.buildConversationWhere.mockReturnValue({})
+  })
+
+  test("listConversations maps an ad-attributed contactInbox to a non-null adReferral", async () => {
+    const conversation = {
+      id: "conv-1",
+      contactId: "contact-1",
+      lastActivityAt: new Date("2026-01-01T00:00:00Z"),
+      contactInboxes: [adAttributedContactInbox, organicContactInbox],
+      contact: null,
+      assignedUser: null,
+      assignedInboxTeam: null,
+    }
+    mocks.findManyQuery.mockResolvedValue([conversation])
+
+    const result = await listConversations(
+      { workspaceId: "ws-1" },
+      { includeEmailAndPhone: true },
+    )
+
+    const mappedContactInboxes = result.data[0]?.contactInboxes ?? []
+    expect(mappedContactInboxes[0]?.adReferral).toEqual({
+      adTitle: "Summer Sale",
+      sourceUrl: "https://fb.com/ad/xyz",
+    })
+    expect(mappedContactInboxes[1]?.adReferral).toBeNull()
+  })
+
+  test("listConversations strips internal jsonb fields from the mapped output", async () => {
+    const conversation = {
+      id: "conv-1",
+      contactId: "contact-1",
+      lastActivityAt: new Date("2026-01-01T00:00:00Z"),
+      contactInboxes: [adAttributedContactInbox],
+      contact: null,
+      assignedUser: null,
+      assignedInboxTeam: null,
+    }
+    mocks.findManyQuery.mockResolvedValue([conversation])
+
+    const result = await listConversations(
+      { workspaceId: "ws-1" },
+      { includeEmailAndPhone: true },
+    )
+
+    const mappedContactInbox = result.data[0]?.contactInboxes[0]
+    expect(mappedContactInbox).not.toHaveProperty("referral")
+    expect(mappedContactInbox).not.toHaveProperty("sourceIdentityHistory")
+  })
+
+  test("findConversation maps an ad-attributed contactInbox to a non-null adReferral", async () => {
+    const conversation = {
+      id: "conv-1",
+      workspaceId: "ws-1",
+      contactId: "contact-1",
+      lastActivityAt: new Date("2026-01-01T00:00:00Z"),
+      contactInboxes: [adAttributedContactInbox, organicContactInbox],
+    }
+    mocks.findWithFullRelations.mockResolvedValue(conversation)
+
+    const result = await findConversation({ id: "conv-1", workspaceId: "ws-1" })
+
+    const mappedContactInboxes = result.data.contactInboxes
+    expect(mappedContactInboxes[0]?.adReferral).toEqual({
+      adTitle: "Summer Sale",
+      sourceUrl: "https://fb.com/ad/xyz",
+    })
+    expect(mappedContactInboxes[1]?.adReferral).toBeNull()
+  })
+
+  test("findConversation strips internal jsonb fields from the mapped output", async () => {
+    const conversation = {
+      id: "conv-1",
+      workspaceId: "ws-1",
+      contactId: "contact-1",
+      lastActivityAt: new Date("2026-01-01T00:00:00Z"),
+      contactInboxes: [adAttributedContactInbox],
+    }
+    mocks.findWithFullRelations.mockResolvedValue(conversation)
+
+    const result = await findConversation({ id: "conv-1", workspaceId: "ws-1" })
+
+    const mappedContactInbox = result.data.contactInboxes[0]
+    expect(mappedContactInbox).not.toHaveProperty("referral")
+    expect(mappedContactInbox).not.toHaveProperty("sourceIdentityHistory")
+  })
+
+  test("produces the identical contactInbox shape on both the list and find paths", async () => {
+    const listConversation = {
+      id: "conv-1",
+      contactId: "contact-1",
+      lastActivityAt: new Date("2026-01-01T00:00:00Z"),
+      contactInboxes: [adAttributedContactInbox],
+      contact: null,
+      assignedUser: null,
+      assignedInboxTeam: null,
+    }
+    mocks.findManyQuery.mockResolvedValue([listConversation])
+    const listResult = await listConversations(
+      { workspaceId: "ws-1" },
+      { includeEmailAndPhone: true },
+    )
+
+    const findConversationRow = {
+      id: "conv-1",
+      workspaceId: "ws-1",
+      contactId: "contact-1",
+      lastActivityAt: new Date("2026-01-01T00:00:00Z"),
+      contactInboxes: [adAttributedContactInbox],
+    }
+    mocks.findWithFullRelations.mockResolvedValue(findConversationRow)
+    const findResult = await findConversation({
+      id: "conv-1",
+      workspaceId: "ws-1",
+    })
+
+    expect(
+      Object.keys(listResult.data[0]?.contactInboxes[0] ?? {}).sort(),
+    ).toEqual(Object.keys(findResult.data.contactInboxes[0] ?? {}).sort())
+  })
+})
+
+const googleClickContactInbox = {
+  ...organicContactInbox,
+  id: "ci-google",
+  channel: "whatsapp",
+  referral: {
+    gclid: "SECRET-GCLID-VALUE",
+    googleClickReceivedAt: "2026-10-05T01:00:00.000Z",
+  },
+}
+
+describe("listConversations / findConversation googleAdsClick mapping", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mocks.createMessageRepository.mockResolvedValue(mocks.repo)
+    mocks.repo.findLastByConversation.mockResolvedValue([])
+    mocks.buildConversationWhere.mockReturnValue({})
+  })
+
+  test("maps the click type and time on both paths and never leaks the click id", async () => {
+    const conversation = {
+      id: "conv-1",
+      workspaceId: "ws-1",
+      contactId: "contact-1",
+      lastActivityAt: new Date("2026-01-01T00:00:00Z"),
+      contactInboxes: [googleClickContactInbox, organicContactInbox],
+      contact: null,
+      assignedUser: null,
+      assignedInboxTeam: null,
+    }
+    mocks.findManyQuery.mockResolvedValue([conversation])
+    mocks.findWithFullRelations.mockResolvedValue(conversation)
+
+    const listed = await listConversations(
+      { workspaceId: "ws-1" },
+      { includeEmailAndPhone: true },
+    )
+    const found = await findConversation({ id: "conv-1", workspaceId: "ws-1" })
+
+    for (const inboxes of [
+      listed.data[0]?.contactInboxes ?? [],
+      found.data.contactInboxes,
+    ]) {
+      expect(inboxes[0]?.googleAdsClick).toEqual({
+        clickIdType: "gclid",
+        receivedAt: "2026-10-05T01:00:00.000Z",
+      })
+      expect(inboxes[1]?.googleAdsClick).toBeNull()
+      expect(JSON.stringify(inboxes)).not.toContain("SECRET-GCLID-VALUE")
+    }
+  })
+})

@@ -8,6 +8,7 @@ interface OpenAPISpec {
 }
 
 interface OpenAPIOperation {
+  deprecated?: boolean
   description?: string
   operationId?: string
   parameters?: OpenAPIParameter[]
@@ -19,7 +20,37 @@ interface OpenAPIOperation {
       }
     }
   }
+  security?: Record<string, string[]>[]
   summary?: string
+}
+
+// Workspace-token security schemes only — a channel-token op (or any scheme
+// this list doesn't know about) is deliberately excluded so a token type the
+// CLI client doesn't hold never becomes a command that always 401s.
+const WORKSPACE_TOKEN_SECURITY_SCHEMES = new Set([
+  "bearerAuth",
+  "developerAccessToken",
+  "tokenInSearchParams",
+])
+
+/**
+ * `undefined` security means the document-level default applies (workspace
+ * token, in this API) — true. An explicit `security` array is true only if
+ * at least one alternative names a workspace-token scheme; `[]` (no auth) or
+ * an array of non-workspace schemes (e.g. `channelApiToken`) is false.
+ */
+export function isWorkspaceTokenOperation(
+  operation: OpenAPIOperation,
+): boolean {
+  if (!operation.security) {
+    return true
+  }
+
+  return operation.security.some((requirement) =>
+    Object.keys(requirement).some((scheme) =>
+      WORKSPACE_TOKEN_SECURITY_SCHEMES.has(scheme),
+    ),
+  )
 }
 
 interface OpenAPIParameter {
@@ -78,9 +109,27 @@ const POST_VERB_OVERRIDES: Record<string, string> = {
 }
 
 // Sub-paths that are actions themselves (not nouns), collapse to group:action (2-level)
-const ACTION_SUBPATHS = new Set(["block", "unblock"])
+const ACTION_SUBPATHS = new Set(["block", "unblock", "reset"])
 // Singleton resources — GET on the collection returns a single object, use "get" not "list"
 const SINGLETON_RESOURCES = new Set(["workspaces"])
+// Two-segment singleton resources that have a read AND a write route on the
+// same path (`GET`/`PATCH /v1/workspace/settings`): the method picks the verb,
+// otherwise both would derive the same command name and one would be dropped.
+const METHOD_VERBED_SINGLETON_PATHS = new Set([
+  "workspace/settings",
+  "messenger/templates/{id}",
+  "products/meta-catalog",
+])
+// Collections under a resource that take both a list (GET) and a create (POST)
+// on the same path, which the generic naming would collapse into one command.
+const METHOD_VERBED_COLLECTION_PATHS = new Set(["products/imports"])
+const SINGLETON_VERBS: Record<string, string> = {
+  get: "get",
+  delete: "delete",
+  post: "create",
+  put: "update",
+  patch: "update",
+}
 const V1_PREFIX_RE = /^\/v1\//
 const LEADING_SLASH_RE = /^\//
 
@@ -125,10 +174,45 @@ function extractPathParamNames(pathTemplate: string): string[] {
   return matches ? matches.map((m) => m.slice(1, -1)) : []
 }
 
+/**
+ * Explicit names for operations the generic derivation below would collapse
+ * onto a sibling's command. A collision silently drops one operation, and for
+ * `DELETE .../custom-fields` it left `contacts custom-field delete` clearing
+ * every custom field instead of one — so each colliding operation gets its own
+ * unambiguous verb here. Keyed by `METHOD path`.
+ */
+const COMMAND_NAME_OVERRIDES: Readonly<Record<string, string>> = {
+  "DELETE /v1/contacts/{identifier}/custom-fields":
+    "contacts:clear-all-custom-fields",
+  "PUT /v1/contacts/{identifier}/custom-fields/{idOrName}":
+    "contacts:set-custom-field",
+  "PUT /v1/bot-fields/{idOrName}": "bot-fields:set",
+  "PATCH /v1/messenger-channels/{id}/settings":
+    "messenger-channels:settings:edit",
+  "PATCH /v1/instagram-channels/{id}/settings":
+    "instagram-channels:settings:edit",
+  "PATCH /v1/inboxes/{inboxId}/ai-handover/settings": "inboxes:settings:edit",
+  "PATCH /v1/bot-fields/{idOrName}": "bot-fields:edit",
+  "DELETE /v1/analytics/flows/{flowId}/stats": "analytics:reset-flow-stats",
+  "POST /v1/ads/campaigns": "ads:create-campaign",
+  "POST /v1/ads/conversion-rules": "ads:create-conversion-rule",
+  "PATCH /v1/ads/conversion-rules/{id}": "ads:update-conversion-rule",
+  "DELETE /v1/ads/conversion-rules/{id}": "ads:delete-conversion-rule",
+  "POST /v1/mini-apps/{id}/publish-whatsapp": "mini-apps:publish-whatsapp",
+  "GET /v1/mini-apps/{id}/flow-json": "mini-apps:flow-json",
+  "GET /v1/conversations/{conversationId}/messages/{messageId}/flow-response":
+    "conversations:flow-response:get",
+}
+
 export function pathAndMethodToCommandName(
   pathTemplate: string,
   method: string,
 ): string {
+  const override =
+    COMMAND_NAME_OVERRIDES[`${method.toUpperCase()} ${pathTemplate}`]
+  if (override) {
+    return override
+  }
   const normalized = pathTemplate
     .replace(V1_PREFIX_RE, "")
     .replace(LEADING_SLASH_RE, "")
@@ -149,8 +233,18 @@ export function pathAndMethodToCommandName(
 
   const secondIsParam = segments[1].startsWith("{")
 
+  if (!secondIsParam && METHOD_VERBED_SINGLETON_PATHS.has(normalized)) {
+    const verb = segments[2] && m === "get" ? "get" : (SINGLETON_VERBS[m] ?? m)
+    return `${group}:${segments[1]}:${verb}`
+  }
+
+  if (!secondIsParam && METHOD_VERBED_COLLECTION_PATHS.has(normalized)) {
+    const verb = m === "get" ? "list" : (SINGLETON_VERBS[m] ?? m)
+    return `${group}:${segments[1]}:${verb}`
+  }
+
   if (!secondIsParam) {
-    // Filter/variant on collection: /v1/contacts/find-by-custom-field or /v1/tags/name/{name}
+    // Filter/variant on collection: /v1/integrations/status/token-errors or /v1/tags/name/{name}
     const nonParamTail = segments.slice(1).filter((s) => !s.startsWith("{"))
     const isLastParam = segments.at(-1)?.startsWith("{") ?? false
     const action = nonParamTail.join("-")
@@ -264,7 +358,12 @@ export async function loadOpenApiSpecForCli(
   if (!forceRefresh) {
     const cached = readCache(specUrl)
     if (cached) {
-      return cached
+      // Names are re-derived on every load so a cache written by an older CLI
+      // picks up naming changes (e.g. COMMAND_NAME_OVERRIDES) immediately.
+      return cached.map((tool) => ({
+        ...tool,
+        commandName: pathAndMethodToCommandName(tool.pathTemplate, tool.method),
+      }))
     }
   }
 
@@ -288,6 +387,12 @@ export async function loadOpenApiSpecForCli(
         continue
       }
       if (!operation.operationId) {
+        continue
+      }
+      if (operation.deprecated) {
+        continue
+      }
+      if (!isWorkspaceTokenOperation(operation)) {
         continue
       }
 

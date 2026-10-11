@@ -17,8 +17,10 @@ import { useTranslations } from "next-intl"
 import { useCallback, useMemo } from "react"
 import { useWorkspaceId } from "@/hooks/routing"
 import { CreateCustomFieldDialog } from "./create-custom-field"
-import { useCustomFieldSelectOptions } from "./provider/custom-field-hook"
-import { useCustomFieldStore } from "./provider/custom-field-store-context"
+import {
+  useCustomFieldSelectOptions,
+  useInvalidateCustomFields,
+} from "./provider/custom-field-hook"
 
 type CustomFieldSelectProps = {
   name: string
@@ -38,6 +40,11 @@ type CustomFieldSelectProps = {
    * when the field is optional and picking nothing is a valid choice.
    */
   clearable?: boolean
+  /**
+   * Also offers Account Fields (bot fields) in a separate group. Allowlisted
+   * v1 surfaces only — see `useCustomFieldSelectOptions`.
+   */
+  includeBotFields?: boolean
 }
 
 // Language-neutral marker for the "no selection" option.
@@ -59,6 +66,7 @@ export const CustomFieldSelect = (props: CustomFieldSelectProps) => {
     portal,
     createDefaultType,
     clearable,
+    includeBotFields,
   } = props
 
   const workspaceId = useWorkspaceId()
@@ -67,6 +75,7 @@ export const CustomFieldSelect = (props: CustomFieldSelectProps) => {
     includeReserved,
     channels,
     reservedFieldIds,
+    includeBotFields,
   })
 
   const options = useMemo(
@@ -80,13 +89,11 @@ export const CustomFieldSelect = (props: CustomFieldSelectProps) => {
     [clearable, customFieldSelectOptions],
   )
 
-  const getAllCustomFields = useCustomFieldStore(
-    (state) => state.getAllCustomFields,
-  )
+  const invalidateCustomFields = useInvalidateCustomFields()
 
   const handleSuccess = useCallback(() => {
-    getAllCustomFields()
-  }, [getAllCustomFields])
+    invalidateCustomFields()
+  }, [invalidateCustomFields])
 
   const showLabel = label && label !== ""
 
@@ -98,7 +105,7 @@ export const CustomFieldSelect = (props: CustomFieldSelectProps) => {
             {label}
             {!required && (
               <span className="self-start font-normal text-xxs">
-                (optional)
+                {t("fields.optionalHint")}
               </span>
             )}
           </FormLabel>

@@ -1,12 +1,13 @@
 "use server"
 
 import { conversationService } from "@chatbotx.io/business"
+import type { UserModel } from "@chatbotx.io/database/types"
 import {
   type BulkUpdateIdsRequest,
   bulkUpdateIdsRequest,
   type WorkspaceIdRequestParams,
   workspaceIdrequestParams,
-} from "@/features/common/schemas"
+} from "@/features/common/schema"
 import { workspaceActionClient } from "@/lib/safe-action"
 
 export const unarchiveConversationAction = workspaceActionClient
@@ -16,19 +17,16 @@ export const unarchiveConversationAction = workspaceActionClient
     async ({
       bindArgsParsedInputs: [workspaceId],
       parsedInput,
+      ctx,
     }: {
       bindArgsParsedInputs: WorkspaceIdRequestParams
       parsedInput: BulkUpdateIdsRequest
+      ctx: { user: UserModel }
     }) => {
-      const conversations = await conversationService.findManyByIds({
+      await conversationService.unarchiveByIds({
         workspaceId,
         ids: parsedInput.ids,
-      })
-
-      await conversationService.updateArchived({
-        workspaceId,
-        conversations,
-        archivedAt: null,
+        userId: ctx.user.id,
         triggerContext: {
           triggerSource: "api",
           triggerHandler: "unarchiveConversationAction",

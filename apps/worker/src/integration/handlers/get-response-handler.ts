@@ -17,6 +17,7 @@ import { normalizeError } from "universal-error-normalizer"
 import { logger } from "../../lib/logger"
 import { getContactFieldMap } from "./contact-field-map"
 import type { ExecuteStepProps } from "./flow"
+import { logStepProviderError } from "./flow-utils"
 import type { ExecuteStepResult } from "./step"
 
 export const GET_RESPONSE_LOCK_TIMEOUT_SECONDS = 30
@@ -126,6 +127,7 @@ export const addGetResponseContact = async (
       { ...logContext, ...provider, err: normalized },
       "GetResponse contact sync failed",
     )
+    await logStepProviderError("get-response", props, error)
     return { status: "error", result: null, errorMessage: normalized.message }
   }
 }

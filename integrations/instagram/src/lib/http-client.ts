@@ -1,6 +1,7 @@
+import { scrubSecretsInString } from "@chatbotx.io/logger"
 import { UNKNOWN_ERROR } from "@chatbotx.io/sdk"
 import ky, { isHTTPError, type KyInstance } from "ky"
-import { INSTAGRAM_API_URL, INSTAGRAM_OAUTH_URL } from "../constants"
+import { API_URL, INSTAGRAM_OAUTH_URL } from "../constants"
 import {
   type ChannelErrorSource,
   InstagramAPIException,
@@ -59,12 +60,15 @@ export function logChannelError(
   if (isExpectedPolicyError(source)) {
     logger.warn(
       payload,
-      `Instagram API expected policy error: ${source.message ?? "unknown"}`,
+      `Instagram API expected policy error: ${scrubSecretsInString(source.message ?? "unknown")}`,
     )
     return
   }
 
-  logger.error(payload, `Instagram API error: ${source.message ?? "unknown"}`)
+  logger.error(
+    payload,
+    `Instagram API error: ${scrubSecretsInString(source.message ?? "unknown")}`,
+  )
 }
 
 type HttpClientConfig = {
@@ -160,7 +164,7 @@ class InstagramHttpClient {
 }
 
 export const instagramBusinessClient = new InstagramHttpClient({
-  baseUrl: INSTAGRAM_API_URL,
+  baseUrl: API_URL,
   timeout: 30_000,
   retries: 3,
   retryDelay: 1000,
@@ -174,7 +178,11 @@ export const instagramOAuthClient = new InstagramHttpClient({
 })
 
 export const instagramCoexistGraphClient = new InstagramHttpClient({
-  baseUrl: INSTAGRAM_API_URL,
-  timeout: 30_000,
+  baseUrl: API_URL,
+  // 60s, matching `facebookCoexistGraphClient`: the coexist/contact-scan walk
+  // pulls conversation pages at Graph's page-size ceiling, which routinely
+  // takes longer than the 30s default on a large account. Retry stays with the
+  // handler (`withInlineRetry` + bounded scheduler attempts).
+  timeout: 60_000,
   retries: 0,
 })

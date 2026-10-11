@@ -4,7 +4,7 @@ import { z } from "zod"
 import {
   defaultJobOptions,
   fakeQueue,
-  getRedisConnection,
+  getQueueConnection,
   isNoRedisEnv,
 } from "../../lib/connection"
 import { queueNames } from "../../lib/types"
@@ -26,14 +26,27 @@ export const ScheduleJobData = {
   reconcileMac: "reconcileMac",
   maintainMacPartitions: "maintainMacPartitions",
   scanCoexistRuns: "scanCoexistRuns",
+  scanContactScans: "scanContactScans",
+  scanAiHandoverBulkRuns: "scanAiHandoverBulkRuns",
   reconcileMetaCatalogSyncs: "reconcileMetaCatalogSyncs",
   purgeCoexistStaging: "purgeCoexistStaging",
   purgeWhatsappSignupSessions: "purgeWhatsappSignupSessions",
+  purgeExpiredConnectSessions: "purgeExpiredConnectSessions",
   purgeWorkspaces: "purgeWorkspaces",
+  clearExpiredSupportAccess: "clearExpiredSupportAccess",
+  googleAdsHousekeeping: "googleAdsHousekeeping",
+  googleAdsSyncSetups: "googleAdsSyncSetups",
+  purgeBroadcasts: "purgeBroadcasts",
   purgeAutomationThrottle: "purgeAutomationThrottle",
+  purgeErrorLogs: "purgeErrorLogs",
+  purgeCommentAutomationEvents: "purgeCommentAutomationEvents",
   refreshChannelTokens: "refreshChannelTokens",
   unsubscribeExpiredTrials: "unsubscribeExpiredTrials",
   teardownExpiredTrial: "teardownExpiredTrial",
+  // WhatsApp calling.
+  purgeExpiredCallRecordings: "purgeExpiredCallRecordings",
+  sweepStaleWhatsappCalls: "sweepStaleWhatsappCalls",
+  dispatchProfileSnapshots: "dispatchProfileSnapshots",
 } as const
 
 /**
@@ -46,6 +59,24 @@ export const ScheduleJobData = {
  * the derived every-N-minutes cron pattern remains valid.
  */
 export const PURGE_WORKSPACES_INTERVAL_MINUTES = 30
+
+/**
+ * Cadence (minutes) of the `purgeBroadcasts` cron. The cron pattern in
+ * `apps/worker/src/schedule/handlers/register-schedules.ts` is derived from
+ * this value. Keep it a divisor of 60 so the derived every-N-minutes cron
+ * pattern remains valid.
+ */
+export const PURGE_BROADCASTS_INTERVAL_MINUTES = 5
+
+/**
+ * Per-run concurrency for `purgeBroadcasts`: how many broadcasts have their
+ * `ContactOnBroadcast` rows purged in parallel inside one schedule-worker
+ * slot. Each stream is its own chunked delete loop
+ * (`purgeBroadcastRecipients`), so this bounds concurrent DB purge streams,
+ * not BullMQ worker slots — the cron itself still occupies exactly one of
+ * the schedule worker's shared slots.
+ */
+export const PURGE_BROADCAST_CONCURRENCY = 5
 
 export const broadcastSendJobId = (broadcastId: string) =>
   `broadcast-send-${broadcastId}`
@@ -132,6 +163,16 @@ export type ScheduleJobScanCoexistRuns = {
   data: Record<string, never>
 }
 
+export type ScheduleJobScanContactScans = {
+  type: typeof ScheduleJobData.scanContactScans
+  data: Record<string, never>
+}
+
+export type ScheduleJobScanAiHandoverBulkRuns = {
+  type: typeof ScheduleJobData.scanAiHandoverBulkRuns
+  data: Record<string, never>
+}
+
 export type ScheduleJobReconcileMetaCatalogSyncs = {
   type: typeof ScheduleJobData.reconcileMetaCatalogSyncs
   data: Record<string, never>
@@ -156,14 +197,53 @@ export type ScheduleJobPurgeWhatsappSignupSessions = {
   type: typeof ScheduleJobData.purgeWhatsappSignupSessions
   data: Record<string, never>
 }
+export type ScheduleJobPurgeExpiredConnectSessions = {
+  type: typeof ScheduleJobData.purgeExpiredConnectSessions
+  data: Record<string, never>
+}
 
 export type ScheduleJobPurgeWorkspaces = {
   type: typeof ScheduleJobData.purgeWorkspaces
   data: Record<string, never>
 }
 
+export type ScheduleJobClearExpiredSupportAccess = {
+  type: typeof ScheduleJobData.clearExpiredSupportAccess
+  data: Record<string, never>
+}
+
+export type ScheduleJobGoogleAdsHousekeeping = {
+  type: typeof ScheduleJobData.googleAdsHousekeeping
+  data: Record<string, never>
+}
+
+export type ScheduleJobGoogleAdsSyncSetups = {
+  type: typeof ScheduleJobData.googleAdsSyncSetups
+  data: Record<string, never>
+}
+
+export type ScheduleJobDispatchProfileSnapshots = {
+  type: typeof ScheduleJobData.dispatchProfileSnapshots
+  data: Record<string, never>
+}
+
+export type ScheduleJobPurgeBroadcasts = {
+  type: typeof ScheduleJobData.purgeBroadcasts
+  data: Record<string, never>
+}
+
 export type ScheduleJobPurgeAutomationThrottle = {
   type: typeof ScheduleJobData.purgeAutomationThrottle
+  data: Record<string, never>
+}
+
+export type ScheduleJobPurgeErrorLogs = {
+  type: typeof ScheduleJobData.purgeErrorLogs
+  data: Record<string, never>
+}
+
+export type ScheduleJobPurgeCommentAutomationEvents = {
+  type: typeof ScheduleJobData.purgeCommentAutomationEvents
   data: Record<string, never>
 }
 
@@ -184,6 +264,18 @@ export type ScheduleJobTeardownExpiredTrial = {
   data: { userId: string }
 }
 
+/** Daily retention sweep: deletes expired call recordings' S3 objects and clears the columns. */
+export type ScheduleJobPurgeExpiredCallRecordings = {
+  type: typeof ScheduleJobData.purgeExpiredCallRecordings
+  data: Record<string, never>
+}
+
+/** Every 5 minutes: `ringing` call rows older than 90s that were never finalized -> `failed`. */
+export type ScheduleJobSweepStaleWhatsappCalls = {
+  type: typeof ScheduleJobData.sweepStaleWhatsappCalls
+  data: Record<string, never>
+}
+
 export type ScheduleJobData =
   | ScheduleJobBroadcast
   | ScheduleJobEnqueueBroadcast
@@ -201,18 +293,30 @@ export type ScheduleJobData =
   | ScheduleJobReconcileMac
   | ScheduleJobMaintainMacPartitions
   | ScheduleJobScanCoexistRuns
+  | ScheduleJobScanContactScans
+  | ScheduleJobScanAiHandoverBulkRuns
   | ScheduleJobReconcileMetaCatalogSyncs
   | ScheduleJobPurgeCoexistStaging
   | ScheduleJobPurgeWhatsappSignupSessions
+  | ScheduleJobPurgeExpiredConnectSessions
   | ScheduleJobPurgeWorkspaces
+  | ScheduleJobClearExpiredSupportAccess
+  | ScheduleJobGoogleAdsHousekeeping
+  | ScheduleJobGoogleAdsSyncSetups
+  | ScheduleJobDispatchProfileSnapshots
+  | ScheduleJobPurgeBroadcasts
   | ScheduleJobPurgeAutomationThrottle
+  | ScheduleJobPurgeErrorLogs
+  | ScheduleJobPurgeCommentAutomationEvents
   | ScheduleJobRefreshChannelTokens
   | ScheduleJobUnsubscribeExpiredTrials
   | ScheduleJobTeardownExpiredTrial
+  | ScheduleJobPurgeExpiredCallRecordings
+  | ScheduleJobSweepStaleWhatsappCalls
 
 export const scheduleQueue = isNoRedisEnv()
   ? fakeQueue
   : new Queue<ScheduleJobData>(queueNames.enum.schedule, {
-      connection: getRedisConnection(),
+      connection: getQueueConnection(queueNames.enum.schedule),
       defaultJobOptions,
     })

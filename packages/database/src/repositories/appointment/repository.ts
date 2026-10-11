@@ -40,12 +40,15 @@ export type CreateAppointmentInput = {
   calendarId: string
   contactId: string
   conversationId?: string | null
+  contactInboxId?: string | null
   startAt: Date
   endAt: Date
   inviteeTimezone: string
   locationType: (typeof appointmentModel.$inferInsert)["locationType"]
   locationDetail?: string | null
   externalSyncStatus?: (typeof appointmentModel.$inferInsert)["externalSyncStatus"]
+  externalEventIntegrationId?: string | null
+  externalEventProviderCalendarId?: string | null
 }
 
 const appointmentWhere = (input: AppointmentListInput, now = new Date()) =>
@@ -68,6 +71,7 @@ const appointmentWhere = (input: AppointmentListInput, now = new Date()) =>
   )
 
 type AppointmentListRow = typeof appointmentModel.$inferSelect & {
+  contactAvatar: string | null
   calendarName: string
   contactFirstName: string | null
   contactLastName: string | null
@@ -95,6 +99,7 @@ export const appointmentRepository = {
           calendarId: appointmentModel.calendarId,
           contactId: appointmentModel.contactId,
           conversationId: appointmentModel.conversationId,
+          contactInboxId: appointmentModel.contactInboxId,
           startAt: appointmentModel.startAt,
           endAt: appointmentModel.endAt,
           inviteeTimezone: appointmentModel.inviteeTimezone,
@@ -102,10 +107,15 @@ export const appointmentRepository = {
           locationType: appointmentModel.locationType,
           locationDetail: appointmentModel.locationDetail,
           externalEventId: appointmentModel.externalEventId,
+          externalEventIntegrationId:
+            appointmentModel.externalEventIntegrationId,
+          externalEventProviderCalendarId:
+            appointmentModel.externalEventProviderCalendarId,
           externalSyncStatus: appointmentModel.externalSyncStatus,
           cancelledAt: appointmentModel.cancelledAt,
           deletedAt: appointmentModel.deletedAt,
           calendarName: appointmentCalendarModel.name,
+          contactAvatar: contactModel.avatar,
           contactFirstName: contactModel.firstName,
           contactLastName: contactModel.lastName,
           contactFullName: contactModel.fullName,
@@ -159,6 +169,7 @@ export const appointmentRepository = {
         calendar: true,
         contact: true,
         conversation: true,
+        contactInbox: true,
       },
     })
   },
@@ -179,6 +190,7 @@ export const appointmentRepository = {
         calendar: true,
         contact: true,
         conversation: true,
+        contactInbox: true,
       },
     })
   },
@@ -192,12 +204,16 @@ export const appointmentRepository = {
         calendarId: input.calendarId,
         contactId: input.contactId,
         conversationId: input.conversationId ?? null,
+        contactInboxId: input.contactInboxId ?? null,
         startAt: input.startAt,
         endAt: input.endAt,
         inviteeTimezone: input.inviteeTimezone,
         locationType: input.locationType,
         locationDetail: input.locationDetail ?? null,
         externalSyncStatus: input.externalSyncStatus,
+        externalEventIntegrationId: input.externalEventIntegrationId ?? null,
+        externalEventProviderCalendarId:
+          input.externalEventProviderCalendarId ?? null,
       })
       .returning()
     return row
@@ -341,6 +357,112 @@ export const appointmentRepository = {
           eq(appointmentModel.workspaceId, input.workspaceId),
           eq(appointmentModel.status, "scheduled"),
           gt(appointmentModel.startAt, new Date()),
+          isNull(appointmentModel.deletedAt),
+        ),
+      )
+      .returning()
+    return row
+  },
+
+  async persistExternalDestinationIfScheduled(
+    input: {
+      workspaceId: string
+      id: string
+      integrationId: string
+      providerCalendarId: string
+    },
+    tx: DatabaseClient = db,
+  ) {
+    const [row] = await tx
+      .update(appointmentModel)
+      .set({
+        externalEventIntegrationId: input.integrationId,
+        externalEventProviderCalendarId: input.providerCalendarId,
+      })
+      .where(
+        and(
+          eq(appointmentModel.id, input.id),
+          eq(appointmentModel.workspaceId, input.workspaceId),
+          eq(appointmentModel.status, "scheduled"),
+          isNull(appointmentModel.deletedAt),
+        ),
+      )
+      .returning()
+    return row
+  },
+
+  async markExternalCreateSucceededIfScheduled(
+    input: { workspaceId: string; id: string; externalEventId: string },
+    tx: DatabaseClient = db,
+  ) {
+    const [row] = await tx
+      .update(appointmentModel)
+      .set({
+        externalEventId: input.externalEventId,
+        externalSyncStatus: "synced",
+      })
+      .where(
+        and(
+          eq(appointmentModel.id, input.id),
+          eq(appointmentModel.workspaceId, input.workspaceId),
+          eq(appointmentModel.status, "scheduled"),
+          isNull(appointmentModel.deletedAt),
+        ),
+      )
+      .returning()
+    return row
+  },
+
+  async markExternalCreateFailedIfScheduled(
+    input: { workspaceId: string; id: string },
+    tx: DatabaseClient = db,
+  ) {
+    const [row] = await tx
+      .update(appointmentModel)
+      .set({ externalSyncStatus: "failed" })
+      .where(
+        and(
+          eq(appointmentModel.id, input.id),
+          eq(appointmentModel.workspaceId, input.workspaceId),
+          eq(appointmentModel.status, "scheduled"),
+          isNull(appointmentModel.deletedAt),
+        ),
+      )
+      .returning()
+    return row
+  },
+
+  async markExternalCancelSucceededIfCancelled(
+    input: { workspaceId: string; id: string },
+    tx: DatabaseClient = db,
+  ) {
+    const [row] = await tx
+      .update(appointmentModel)
+      .set({ externalSyncStatus: "synced" })
+      .where(
+        and(
+          eq(appointmentModel.id, input.id),
+          eq(appointmentModel.workspaceId, input.workspaceId),
+          eq(appointmentModel.status, "cancelled"),
+          isNull(appointmentModel.deletedAt),
+        ),
+      )
+      .returning()
+    return row
+  },
+
+  async markExternalCancelFailedIfCancelled(
+    input: { workspaceId: string; id: string },
+    tx: DatabaseClient = db,
+  ) {
+    const [row] = await tx
+      .update(appointmentModel)
+      .set({ externalSyncStatus: "failed" })
+      .where(
+        and(
+          eq(appointmentModel.id, input.id),
+          eq(appointmentModel.workspaceId, input.workspaceId),
+          eq(appointmentModel.status, "cancelled"),
           isNull(appointmentModel.deletedAt),
         ),
       )

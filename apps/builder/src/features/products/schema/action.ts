@@ -4,69 +4,189 @@ import { DEFAULT_PRODUCT_CURRENCY } from "../constants"
 const CURRENCY_CODE_LENGTH = 3
 
 export const productFormRequest = z.object({
-  name: z.string().trim().min(1).max(255).default(""),
-  shortDescription: z.string().nullish().default(""),
-  longDescription: z.string().max(840).nullish().default(""),
-  price: z.coerce.number().min(0).default(0),
-  taxes: z.coerce.number().min(0).max(100).default(0),
-  discount: z.coerce.number().min(0).max(100).default(0),
+  name: z.string().trim().min(1).max(255).default("").describe("Product name."),
+  shortDescription: z
+    .string()
+    .nullish()
+    .default("")
+    .describe("Short summary shown in listings."),
+  longDescription: z
+    .string()
+    .max(840)
+    .nullish()
+    .default("")
+    .describe("Full product description."),
+  price: z.coerce
+    .number()
+    .min(0)
+    .default(0)
+    .describe("Base price, in the product's currency."),
+  taxes: z.coerce
+    .number()
+    .min(0)
+    .max(100)
+    .default(0)
+    .describe("Tax rate, as a percentage."),
+  discount: z.coerce
+    .number()
+    .min(0)
+    .max(100)
+    .default(0)
+    .describe("Discount rate, as a percentage."),
   currency: z
     .string()
     .trim()
     .length(CURRENCY_CODE_LENGTH)
-    .default(DEFAULT_PRODUCT_CURRENCY),
+    .default(DEFAULT_PRODUCT_CURRENCY)
+    .describe("ISO 4217 currency code."),
   productUrl: z
     .union([z.url(), z.literal("")])
     .nullish()
-    .default(""),
-  sku: z.string().nullish().default(""),
-  inventoryPolicy: z.enum(["dont_track", "track"]).default("dont_track"),
-  inventoryQuantity: z.coerce.number().int().min(0).default(0),
-  allowOutOfStockPurchase: z.boolean().default(false),
+    .default("")
+    .describe("External product page URL, if any."),
+  sku: z.string().nullish().default("").describe("Stock keeping unit code."),
+  inventoryPolicy: z
+    .enum(["dont_track", "track"])
+    .default("dont_track")
+    .describe("Whether inventoryQuantity is tracked and enforced."),
+  inventoryQuantity: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .default(0)
+    .describe("Units in stock, used when inventoryPolicy is `track`."),
+  allowOutOfStockPurchase: z
+    .boolean()
+    .default(false)
+    .describe("Whether the product can still be purchased once out of stock."),
   images: z
     .array(
       z.object({
-        id: z.string().optional(),
-        mode: z.enum(["link", "file"]).default("file"),
-        url: z.string().default(""),
+        id: z
+          .string()
+          .optional()
+          .describe(
+            "Existing image id when echoing a stored image back; omit for new images. Ignored on save.",
+          ),
+        mode: z
+          .enum(["link", "file"])
+          .default("file")
+          .describe(
+            "`file` for an image uploaded to the workspace storage or media library, `link` for an external image URL.",
+          ),
+        url: z
+          .string()
+          .default("")
+          .describe("Public image URL (https), matching `mode`."),
       }),
     )
-    .default([]),
+    .default([])
+    .describe("Product images, each a link or an uploaded file."),
   variantOptions: z
     .array(
       z.object({
-        name: z.string(),
-        values: z.array(z.string()),
-        position: z.coerce.number().default(0),
+        name: z
+          .string()
+          .describe(
+            "Option axis name, e.g. `Size`. Used as a key in variant combinations.",
+          ),
+        values: z
+          .array(z.string())
+          .describe("Allowed values for this option, e.g. `S`, `M`, `L`."),
+        position: z.coerce
+          .number()
+          .default(0)
+          .describe("Display order of this option; lower comes first."),
       }),
     )
-    .default([]),
+    .default([])
+    .describe("Option axes (e.g. size, color) used to generate variants."),
   variants: z
     .array(
       z.object({
-        combination: z.record(z.string(), z.string()),
-        price: z.coerce.number().min(0).default(0),
-        isEnabled: z.boolean().default(true),
+        combination: z
+          .record(z.string(), z.string())
+          .describe(
+            'Map of option name to chosen value, e.g. {"Size":"M","Color":"Red"}; names and values must come from `variantOptions`.',
+          ),
+        price: z.coerce
+          .number()
+          .min(0)
+          .default(0)
+          .describe("Price of this variant in the product's currency."),
+        isEnabled: z
+          .boolean()
+          .default(true)
+          .describe("Whether this variant can be purchased."),
       }),
     )
-    .default([]),
+    .default([])
+    .describe(
+      "Purchasable combinations of variantOptions, each with its own price.",
+    ),
   addons: z
     .array(
       z.object({
-        name: z.string().default(""),
-        maxSelections: z.coerce.number().int().min(1).default(1),
-        addonProductIds: z.array(z.string()).default([]),
+        name: z
+          .string()
+          .default("")
+          .describe(
+            "Add-on group title shown to the customer, e.g. `Toppings`.",
+          ),
+        maxSelections: z.coerce
+          .number()
+          .int()
+          .min(1)
+          .default(1)
+          .describe(
+            "Maximum number of add-on products the customer may pick from this group.",
+          ),
+        addonProductIds: z
+          .array(z.string())
+          .default([])
+          .describe(
+            "Ids of the products offered in this group. Get them from `products.list`; they are usually products with `isAddonOnly` true.",
+          ),
       }),
     )
-    .default([]),
-  tags: z.array(z.string()).default([]),
-  vendor: z.string().nullish(),
-  rank: z.coerce.number().int().default(10),
-  categoryId: z.string().regex(/^\d+$/).nullish(),
-  subcategoryId: z.string().regex(/^\d+$/).nullish(),
-  isSearchable: z.boolean().default(true),
-  allowSpecialRequest: z.boolean().default(false),
-  isAddonOnly: z.boolean().default(false),
+    .default([])
+    .describe("Optional add-on groups offered alongside the product."),
+  tags: z
+    .array(z.string())
+    .default([])
+    .describe("Freeform labels for filtering/search."),
+  vendor: z.string().nullish().describe("Vendor or brand name."),
+  rank: z.coerce
+    .number()
+    .int()
+    .default(10)
+    .describe("Sort order among products."),
+  categoryId: z
+    .string()
+    .regex(/^\d+$/)
+    .nullish()
+    .describe("Category id. Get it from `productCategories.list`."),
+  subcategoryId: z
+    .string()
+    .regex(/^\d+$/)
+    .nullish()
+    .describe("Sub-category id, must be a child of categoryId."),
+  isSearchable: z
+    .boolean()
+    .default(true)
+    .describe("Whether the product appears in search/listing."),
+  allowSpecialRequest: z
+    .boolean()
+    .default(false)
+    .describe(
+      "Whether customers can attach a special request note when ordering.",
+    ),
+  isAddonOnly: z
+    .boolean()
+    .default(false)
+    .describe(
+      "Whether the product is only purchasable as an addon to another product.",
+    ),
 })
 
 export type ProductFormRequest = z.infer<typeof productFormRequest>

@@ -1,7 +1,7 @@
 import type { SendCarouselStepSchema } from "@chatbotx.io/flow-config"
 import type { SendFlowStepProps } from "@chatbotx.io/sdk"
 import { chunk } from "remeda"
-import type { InstagramAuthValue } from "../../../schemas"
+import type { InstagramAuthValue } from "../../../schema"
 import { getButtonTemplate } from "./send-button"
 
 const MAX_CAROUSEL_ELEMENTS = 10
@@ -31,6 +31,7 @@ export function* convertFlowStepCarousel(
                       flowId: props.data.flowId,
                       flowVersionId: props.data.flowVersionId,
                       button,
+                      metadata: props.data.metadata,
                     }),
                   )
                 : undefined,

@@ -8,8 +8,13 @@ export const listSavedRepliesRequest = z.object({
 export type ListSavedRepliesRequest = z.infer<typeof listSavedRepliesRequest>
 
 export const createSavedReplyRequest = z.object({
-  shortcut: z.string().trim().min(1).max(100),
-  text: z.string().trim().min(1).max(2000),
+  shortcut: z
+    .string()
+    .trim()
+    .min(1)
+    .max(100)
+    .describe("Trigger text agents type to insert this reply."),
+  text: z.string().trim().min(1).max(2000).describe("Reply text to insert."),
 })
 export type CreateSavedReplyRequest = z.infer<typeof createSavedReplyRequest>
 
@@ -25,3 +30,8 @@ export const listSavedReplyResponse = z.object({
   data: z.array(savedReplyResource),
 })
 export type ListSavedReplyResponse = z.infer<typeof listSavedReplyResponse>
+
+export const publicListSavedReplyResponse = z.object({
+  data: z.array(savedReplyResource),
+  pageCount: z.number().int(),
+})

@@ -8,6 +8,7 @@ import {
 } from "@icons-pack/react-simple-icons"
 import {
   ArchiveIcon,
+  ArrowRightLeftIcon,
   BellOffIcon,
   BellRingIcon,
   BotIcon,
@@ -26,6 +27,7 @@ import {
   Layers2,
   LayersPlus,
   MailIcon,
+  MailOpenIcon,
   MegaphoneIcon,
   MessageCircleMoreIcon,
   MessageCirclePlusIcon,
@@ -327,6 +329,11 @@ export const performActionMenus = (t: TranslationFn): MenuItem[] => [
         stepType: stepTypes.enum.enableBot,
       },
       {
+        label: t("flows.actions.threadControl"),
+        icon: ArrowRightLeftIcon,
+        stepType: stepTypes.enum.threadControl,
+      },
+      {
         label: t("flows.actions.assignConversation"),
         icon: MessageCirclePlusIcon,
         stepType: stepTypes.enum.assignConversation,
@@ -340,6 +347,16 @@ export const performActionMenus = (t: TranslationFn): MenuItem[] => [
         label: t("flows.actions.unassignConversation"),
         icon: MessageCircleXIcon,
         stepType: stepTypes.enum.unassignConversation,
+      },
+      {
+        label: t("flows.actions.markConversationAsUnread"),
+        icon: MailIcon,
+        stepType: stepTypes.enum.markConversationAsUnread,
+      },
+      {
+        label: t("flows.actions.markConversationAsRead"),
+        icon: MailOpenIcon,
+        stepType: stepTypes.enum.markConversationAsRead,
       },
       {
         label: t("flows.actions.followConversation"),
@@ -619,16 +636,14 @@ export const performActionMenus = (t: TranslationFn): MenuItem[] => [
     ],
   },
   {
-    label: t("flows.actions.metaConversions"),
+    label: t("flows.actions.sendMetaCapiEvent"),
     icon: MegaphoneIcon,
-    stepType: null,
-    children: [
-      {
-        label: t("flows.actions.sendMetaCapiEvent"),
-        icon: MegaphoneIcon,
-        stepType: stepTypes.enum.sendMetaCapiEvent,
-      },
-    ],
+    stepType: stepTypes.enum.sendMetaCapiEvent,
+  },
+  {
+    label: t("flows.actions.sendGoogleAdsConversion"),
+    icon: MegaphoneIcon,
+    stepType: stepTypes.enum.sendGoogleAdsConversion,
   },
   {
     label: t("flows.actions.triggers"),

@@ -12,34 +12,53 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@chatbotx.io/ui/components/ui/tooltip"
+import type { AdsEligibleChannelType } from "@chatbotx.io/utils/channel"
+import { useQuery } from "@tanstack/react-query"
 import { InfoIcon } from "lucide-react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useMemo } from "react"
-import useSWR from "swr"
-import { client } from "@/lib/orpc/orpc"
-import type { AdsAnalyticsSearchParams } from "../schemas/analytics"
-
-type AdAccountsResponse = Awaited<
-  ReturnType<typeof client.integrationFacebookAdsAPI.listAdAccounts>
->
+import { orpc } from "@/lib/orpc/query"
+import type { AdsAnalyticsSearchParams } from "../schema/analytics"
 
 export function AdAccountFilter({
+  channel,
   range,
+  selectedChannelIntegrationId,
   workspaceId,
 }: {
+  channel: AdsEligibleChannelType
   range: AdsAnalyticsSearchParams
+  /** Narrows the ad-account list (and its cache key) to one channel
+   * integration's own messaging-ads connection; `null` unions across every
+   * connected integration for the channel plus the workspace-wide fallback
+   * ("All accounts" — see `resolveChannelAdAccountSources`). */
+  selectedChannelIntegrationId: string | null
   workspaceId: string
 }) {
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations()
-  const adAccounts = useSWR<AdAccountsResponse>(
-    ["facebook-ads-ad-accounts", workspaceId] as const,
-    () => client.integrationFacebookAdsAPI.listAdAccounts({ workspaceId }),
+  const adAccounts = useQuery(
+    orpc.adsAPI.listChannelAdAccounts.queryOptions({
+      input: {
+        workspaceId,
+        channel,
+        integrationId: selectedChannelIntegrationId ?? undefined,
+      },
+    }),
   )
   const accounts = adAccounts.data?.data ?? []
+  // The previously selected ad account may not exist in a newly narrowed
+  // list (e.g. after switching the integration filter) — fall back to "All
+  // ad accounts" instead of handing the Select an unknown value; the stale
+  // `adAccount` URL param drops on the next interaction with either filter.
+  const selectedAdAccount = accounts.some(
+    (account) => account.id === range.adAccount,
+  )
+    ? range.adAccount
+    : ""
   const options = useMemo(
     () => [
       {
@@ -54,32 +73,19 @@ export function AdAccountFilter({
     [accounts, t],
   )
 
-  if (adAccounts.isLoading || adAccounts.error || !adAccounts.data) {
+  // Only hide during the initial load (avoids a layout flash). A FAILED load
+  // must NOT silently remove the filter — render it disabled with the
+  // unavailable note instead, so the user can see the control exists and why
+  // it cannot be used (e.g. the Facebook Ads connection needs attention).
+  if (adAccounts.isLoading) {
     return null
   }
+  const isUnavailable = adAccounts.isError || !adAccounts.data
 
   return (
-    <div className="grid gap-2">
-      <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
-        {t("ads.analytics.adAccountFilter.label")}
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <span
-                aria-label={t("ads.analytics.adAccountFilter.note")}
-                className="inline-flex text-muted-foreground"
-                role="img"
-              >
-                <InfoIcon className="size-3.5" />
-              </span>
-            }
-          />
-          <TooltipContent className="max-w-xs">
-            {t("ads.analytics.adAccountFilter.note")}
-          </TooltipContent>
-        </Tooltip>
-      </div>
+    <div className="flex items-center gap-1.5">
       <Select
+        disabled={isUnavailable}
         items={options}
         onValueChange={(value) => {
           const nextAdAccount = value as string
@@ -93,14 +99,14 @@ export function AdAccountFilter({
           }
           router.push(`${pathname}?${params.toString()}`)
         }}
-        value={range.adAccount}
+        value={selectedAdAccount}
       >
         <SelectTrigger
           aria-label={t("ads.analytics.adAccountFilter.label")}
           className="w-full min-w-56"
           id="ads-analytics-ad-account"
         >
-          <SelectValue placeholder={t("ads.analytics.adAccountFilter.label")} />
+          <SelectValue placeholder={t("ads.analytics.adAccountFilter.all")} />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="">
@@ -113,6 +119,26 @@ export function AdAccountFilter({
           ))}
         </SelectContent>
       </Select>
+      {/* Info tooltip appears ONLY in the unavailable state — it explains why
+          the control is disabled. The healthy state carries no note. */}
+      {isUnavailable ? (
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <span
+                aria-label={t("ads.analytics.adAccountFilter.unavailable")}
+                className="inline-flex text-muted-foreground"
+                role="img"
+              >
+                <InfoIcon className="size-3.5" />
+              </span>
+            }
+          />
+          <TooltipContent className="max-w-xs">
+            {t("ads.analytics.adAccountFilter.unavailable")}
+          </TooltipContent>
+        </Tooltip>
+      ) : null}
     </div>
   )
 }

@@ -10,6 +10,11 @@ import type {
   ConversationModel,
   WorkspaceModel,
 } from "@chatbotx.io/database/types"
+import {
+  FieldReferenceKind,
+  parseFieldReference,
+} from "@chatbotx.io/flow-config"
+import { loadBotFields } from "./bot-field-variable-resolver"
 import { isCouponVariable, resolveCouponVariable } from "./coupon-variable"
 import { logger } from "./logger"
 import type { ContactCustomFieldValue, ReplaceVariableProps } from "./schema"
@@ -57,6 +62,38 @@ const customFieldResolver: VariableResolver = {
   },
 }
 
+// Bot fields (Account Fields) are workspace-level, referenced by the
+// `bot_field:<id>` token (see `@chatbotx.io/flow-config`'s
+// `parseFieldReference`/`formatBotFieldReference`) rather than by name, so
+// they never collide with a contact custom field of the same name. `matches`
+// requires the id to actually be present in `botFieldsMap` — mirroring
+// `customFieldResolver` — so a deleted/unknown bot field id is left as
+// literal `{{bot_field:<id>}}` text, exactly like an unknown custom field
+// name today.
+const botFieldResolver: VariableResolver = {
+  matches: (variable, context) => {
+    const parsed = parseFieldReference(variable)
+    return (
+      parsed.kind === FieldReferenceKind.botField &&
+      Boolean(context.botFieldsMap?.has(parsed.id))
+    )
+  },
+  resolve: (variable, context, timezone) => {
+    const parsed = parseFieldReference(variable)
+    if (parsed.kind !== FieldReferenceKind.botField) {
+      return ""
+    }
+    const fieldValue = context.botFieldsMap?.get(parsed.id)
+    return fieldValue
+      ? renderCustomFieldValue(
+          fieldValue.type,
+          fieldValue.value ?? "",
+          timezone,
+        )
+      : ""
+  },
+}
+
 const couponResolver: VariableResolver = {
   matches: (variable) => isCouponVariable(variable),
   resolve: async (variable, context) =>
@@ -66,13 +103,15 @@ const couponResolver: VariableResolver = {
 const variableResolvers = [
   systemFieldResolver,
   rawCustomFieldResolver,
+  botFieldResolver,
   customFieldResolver,
   couponResolver,
 ] as const satisfies readonly VariableResolver[]
 
 type GetAllProps = {
   contactId: string
-  contactInbox: ContactInboxModel | string
+  /** `null` when the contact has no inbox: inbox-based variables then resolve empty. */
+  contactInbox: ContactInboxModel | string | null
   conversation?: ConversationModel | null
   appointmentId?: string
   workspace?: WorkspaceModel
@@ -92,9 +131,9 @@ const loadContact = async (contactId: string): Promise<ContactModel> => {
 }
 
 const loadInbox = async (
-  contactInbox: ContactInboxModel | string,
+  contactInbox: ContactInboxModel | string | null,
 ): Promise<ContactInboxModel | null> => {
-  if (typeof contactInbox !== "string") {
+  if (contactInbox === null || typeof contactInbox !== "string") {
     return contactInbox
   }
 
@@ -148,10 +187,13 @@ export const contactVariableService = {
       loadInbox(input.contactInbox),
       loadFields(input.contactId),
     ])
-    const workspace = await loadWorkspace({
-      contact,
-      workspace: input.workspace,
-    })
+    const [workspace, botFieldsMap] = await Promise.all([
+      loadWorkspace({
+        contact,
+        workspace: input.workspace,
+      }),
+      loadBotFields(contact.workspaceId),
+    ])
 
     return {
       contact,
@@ -159,6 +201,7 @@ export const contactVariableService = {
       conversation: input.conversation ?? null,
       appointmentId: input.appointmentId,
       customFieldsMap,
+      botFieldsMap,
       workspace,
     }
   },
@@ -166,8 +209,10 @@ export const contactVariableService = {
   replaceAll: async (props: {
     text: string
     variables: ReplaceVariableProps
+    /** Escapes each resolved value before it is put into `text`. */
+    escapeValue?: (value: string) => string
   }): Promise<string> => {
-    const { variables: context, text } = props
+    const { variables: context, text, escapeValue } = props
     // Temporal custom fields render in the contact's timezone, falling back to
     // the workspace timezone (then UTC) — an outgoing message should read in the
     // recipient's local time when we know it. See getContactTimezone.
@@ -181,11 +226,12 @@ export const contactVariableService = {
           candidate.matches(variable, context),
         )
         if (resolver) {
-          mapping[variable] = await resolver.resolve(
+          const value = await resolver.resolve(
             variable,
             context,
             renderTimezone,
           )
+          mapping[variable] = escapeValue ? escapeValue(value) : value
         }
       }
 

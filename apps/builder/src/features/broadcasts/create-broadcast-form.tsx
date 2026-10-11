@@ -1,7 +1,7 @@
 "use client"
 
 import {
-  type BroadcastFlowType,
+  type BroadcastPlanPolicy,
   type BroadcastScheduleType,
   type BroadcastSubaction,
   broadcastChannelCapabilities,
@@ -9,17 +9,9 @@ import {
   broadcastSubactions,
   type ChannelType,
   findBroadcastChannelCapability,
+  isTemplateBroadcastSubaction,
 } from "@chatbotx.io/database/partials"
-import {
-  extractMessengerFlowButtons,
-  extractMessengerTemplateParams,
-  extractTemplateParams,
-  type MessengerTemplateComponent,
-  type MessengerTemplateParams,
-  stepTypes,
-  type TemplateComponent,
-  type WaTemplateParams,
-} from "@chatbotx.io/flow-config"
+import { stepTypes } from "@chatbotx.io/flow-config"
 import { ComboboxField } from "@chatbotx.io/ui/components/form/combobox-field"
 import { DateTimePickerField } from "@chatbotx.io/ui/components/form/date-picker-field"
 import { SelectField } from "@chatbotx.io/ui/components/form/select-field"
@@ -31,6 +23,7 @@ import {
   CardTitle,
 } from "@chatbotx.io/ui/components/ui/card"
 import { Form } from "@chatbotx.io/ui/components/ui/form"
+import { Separator } from "@chatbotx.io/ui/components/ui/separator"
 import { useDebouncedCallback } from "@chatbotx.io/ui/hooks/use-debounced-callback"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useHookFormAction } from "@next-safe-action/adapter-react-hook-form/hooks"
@@ -42,25 +35,41 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useFormContext, useWatch } from "react-hook-form"
 import { toast } from "sonner"
 import { createBroadcastAction } from "@/features/broadcasts/actions/create-broadcast.action"
+import { updateDraftBroadcastAction } from "@/features/broadcasts/actions/update-draft-broadcast.action"
 import { BroadcastAudiencePreviewDialog } from "@/features/broadcasts/components/broadcast-audience-preview-dialog"
 import { BroadcastConfirmDialog } from "@/features/broadcasts/components/broadcast-confirm-dialog"
-import { createBroadcastRequest } from "@/features/broadcasts/schemas/action"
+import { BroadcastPlanLimitDialog } from "@/features/broadcasts/components/broadcast-plan-limit-dialog"
+import { useBroadcastPlanLimit } from "@/features/broadcasts/hooks/use-broadcast-plan-limit"
+import { isBroadcastPlanLimitOutcome } from "@/features/broadcasts/lib/broadcast-plan-limit"
+import {
+  type BroadcastTargetRequest,
+  createBroadcastRequest,
+} from "@/features/broadcasts/schema/action"
 import { useWorkspaceId } from "@/hooks/routing"
 import { ContactFilter } from "../contact-filter"
-import type { ContactFilterCriteria } from "../contact-filter/schemas"
+import type { ContactFilterCriteria } from "../contact-filter/schema"
 import { useContactStore } from "../contacts/provider/contact-store-context"
-import { useFlowStore } from "../flows/provider/flow-store-context"
-import { useFlowTemplate } from "../flows/react-flow/stores/flow-template-store-provider"
+import { type FlowStateFilter, useFlows } from "../flows/provider/flow-hook"
 import { InboxIcon } from "../inboxes/components/inbox-icon"
-import { MessengerTemplateParamsForm } from "../integration-messenger/message-templates/components/template-params-form"
-import { MessengerTemplatePreview } from "../integration-messenger/message-templates/components/template-preview"
-import { TemplateParamsForm } from "../integration-whatsapp/message-templates/components/template-params-form"
-import { TemplatePreview } from "../integration-whatsapp/message-templates/components/template-preview"
-import type { MessageTemplateWithComponents } from "../integration-whatsapp/message-templates/schema/resource"
-import { useIntegrationStore } from "../integration-whatsapp/provider/integration-store-context"
-import { MessengerBroadcastFlowButtons } from "./components/messenger-broadcast-flow-buttons"
+import { useInboxList } from "../inboxes/provider/inbox-hook"
+import { BroadcastFlowTargets } from "./components/broadcast-flow-targets"
+import { BroadcastFlowTypeSelector } from "./components/broadcast-flow-type-selector"
+import { BroadcastInboxMultiSelect } from "./components/broadcast-inbox-multi-select"
+import { BroadcastSendLimitFields } from "./components/broadcast-send-limit-fields"
+import { BroadcastTemplateTargets } from "./components/broadcast-template-targets"
 import { getBroadcastExcludedFilterFields } from "./lib/broadcast-filter-fields"
-import { buildCreateBroadcastDefaultValues } from "./lib/create-broadcast-defaults"
+import type { FlowForTargets } from "./lib/broadcast-flow-targets"
+import { resolveWindowedReceiversCount } from "./lib/broadcast-send-limit"
+import {
+  hasSameTargetReferences,
+  resolveAudienceInboxIds,
+  syncTargetsWithInboxIds,
+} from "./lib/broadcast-targets"
+import {
+  buildCreateBroadcastDefaultValues,
+  type EditBroadcastDraft,
+} from "./lib/create-broadcast-defaults"
+import { buildBroadcastScheduleTypeOptions } from "./lib/schedule-type-options"
 
 type BroadcastConfig = {
   value: ChannelType
@@ -70,6 +79,22 @@ type BroadcastConfig = {
     name: string
     description: string
   }[]
+}
+
+export const buildBroadcastFlowFilter = (
+  subaction: BroadcastSubaction | undefined,
+  integrationWhatsappIds: string[],
+): FlowStateFilter => {
+  if (subaction === broadcastSubactions.enum.whatsappTemplateMessage) {
+    return {
+      startType: stepTypes.enum.sendWaTemplateMessage,
+      integrationWhatsappIds,
+    }
+  }
+  if (subaction === broadcastSubactions.enum.messengerTemplateMessage) {
+    return { startType: stepTypes.enum.sendMessengerTemplateMessage }
+  }
+  return {}
 }
 
 const getConfigs = (t: ReturnType<typeof useTranslations>) =>
@@ -98,34 +123,59 @@ type CreateBroadcastFormProps = {
    * step is skipped since `watchedChannel` is already non-empty.
    */
   initialChannel?: ChannelType
-  initialIntegrationWhatsappId?: string
+  /** Pages preselected by a deep-link (resolved server-side from the integration). */
+  initialInboxIds?: string[]
   initialContactFilter?: ContactFilterCriteria
+  /**
+   * Edit mode: an existing `draft` reopened from the list. The same schema and
+   * footer apply — "Save as draft" keeps it a draft, "Confirm" schedules it —
+   * only the bound action and the success toast differ.
+   */
+  editDraft?: EditBroadcastDraft
+  planPolicy: BroadcastPlanPolicy
 }
 
 export function CreateBroadcastForm({
   canViewEmailAndPhone = true,
   workspaceId,
   initialChannel,
-  initialIntegrationWhatsappId,
+  initialInboxIds,
   initialContactFilter,
+  editDraft,
+  planPolicy,
 }: CreateBroadcastFormProps) {
   const t = useTranslations()
   const router = useRouter()
 
-  const { appendFilter, resetFilter, getAllActiveFlows } = useFlowStore(
-    (state) => state,
-  )
+  const isEditing = Boolean(editDraft)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const planLimit = useBroadcastPlanLimit()
 
   const { form, handleSubmitWithAction } = useHookFormAction(
-    createBroadcastAction.bind(null, workspaceId),
+    editDraft
+      ? updateDraftBroadcastAction.bind(null, workspaceId, editDraft.id)
+      : createBroadcastAction.bind(null, workspaceId),
     zodResolver(createBroadcastRequest),
     {
       actionProps: {
-        onSuccess: () => {
+        onSuccess: ({ data }) => {
+          if (isBroadcastPlanLimitOutcome(data)) {
+            setConfirmOpen(false)
+            planLimit.show(data)
+            return
+          }
+          const status = data && "status" in data ? data.status : undefined
           toast.success(
-            t("messages.createdSuccess", {
-              feature: t("fields.broadcast.label"),
-            }),
+            t(
+              isEditing ? "messages.updatedSuccess" : "messages.createdSuccess",
+              {
+                feature: t(
+                  status === "draft"
+                    ? "broadcasts.status.draft"
+                    : "fields.broadcast.label",
+                ),
+              },
+            ),
           )
           router.push(`/space/${workspaceId}/broadcasts`)
         },
@@ -137,15 +187,30 @@ export function CreateBroadcastForm({
       },
       formProps: {
         mode: "onChange",
-        defaultValues: buildCreateBroadcastDefaultValues({
-          initialChannel,
-          initialIntegrationWhatsappId,
-          initialContactFilter,
-        }),
+        defaultValues:
+          editDraft?.defaultValues ??
+          buildCreateBroadcastDefaultValues({
+            initialChannel,
+            initialInboxIds,
+            initialContactFilter,
+          }),
       },
       errorMapProps: {},
     },
   )
+
+  const handleSaveAsDraft = async (): Promise<void> => {
+    form.setValue("saveAsDraft", true, { shouldDirty: false })
+    try {
+      await handleSubmitWithAction()
+    } finally {
+      // If validation or the action itself fails, `saveAsDraft` must not
+      // stay `true` — otherwise a later Enter-key submit (which reuses this
+      // same form's onSubmit) would silently create a draft instead of
+      // sending.
+      form.setValue("saveAsDraft", false, { shouldDirty: false })
+    }
+  }
 
   const watchedSubAction = useWatch({
     control: form.control,
@@ -155,37 +220,25 @@ export function CreateBroadcastForm({
     control: form.control,
     name: "channel",
   })
-  const watchedIntegrationWhatsappId = useWatch({
+  const watchedInboxIds = useWatch({
     control: form.control,
-    name: "integrationWhatsappId",
-  })
+    name: "inboxIds",
+  }) as string[] | undefined
+  const selectedWhatsappIntegrationIds = useSelectedWhatsappIntegrationIds(
+    watchedInboxIds ?? [],
+  )
 
-  useEffect(() => {
-    if (watchedSubAction === broadcastSubactions.enum.whatsappTemplateMessage) {
-      appendFilter({
-        startType: stepTypes.enum.sendWaTemplateMessage,
-        integrationWhatsappId: watchedIntegrationWhatsappId,
-      })
-      getAllActiveFlows()
-    } else if (
-      watchedSubAction === broadcastSubactions.enum.messengerTemplateMessage
-    ) {
-      appendFilter({
-        startType: stepTypes.enum.sendMessengerTemplateMessage,
-      })
-      getAllActiveFlows()
-    } else {
-      resetFilter()
-      getAllActiveFlows()
-    }
-    return
-  }, [
-    watchedSubAction,
-    watchedIntegrationWhatsappId,
-    appendFilter,
-    resetFilter,
-    getAllActiveFlows,
-  ])
+  // Deriving the whole filter replaces the old merge-based store filter:
+  // Messenger must not retain WhatsApp integration ids after a subaction switch.
+  const flowFilter = useMemo(
+    () =>
+      buildBroadcastFlowFilter(
+        watchedSubAction,
+        selectedWhatsappIntegrationIds,
+      ),
+    [watchedSubAction, selectedWhatsappIntegrationIds],
+  )
+  const { data: flows = [] } = useFlows(workspaceId, { filter: flowFilter })
 
   return (
     <div className="flex flex-col items-center overflow-y-auto px-10 py-10">
@@ -205,12 +258,44 @@ export function CreateBroadcastForm({
             <CreateBroadcastChooseFlow
               canViewEmailAndPhone={canViewEmailAndPhone}
               channel={watchedChannel}
+              confirmOpen={confirmOpen}
+              flows={flows}
+              hydrated={
+                editDraft && { targets: editDraft.defaultValues.targets }
+              }
+              onConfirmOpenChange={setConfirmOpen}
+              onSaveAsDraft={handleSaveAsDraft}
+              planPolicy={planPolicy}
               subaction={watchedSubAction}
             />
           )}
         </form>
       </Form>
+      <BroadcastPlanLimitDialog
+        onDismiss={planLimit.dismiss}
+        onOpenPricing={planLimit.openPricing}
+        state={planLimit.state}
+      />
     </div>
+  )
+}
+
+/**
+ * WhatsApp integration ids of the selected pages, memoised by value so the
+ * derived flow filter only changes when the selection actually changes.
+ */
+function useSelectedWhatsappIntegrationIds(inboxIds: string[]): string[] {
+  const inboxes = useInboxList()
+  const key = inboxIds.join(",")
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `key` stands in for `inboxIds` by value
+  return useMemo(
+    () =>
+      inboxes.flatMap((inbox) =>
+        inboxIds.includes(inbox.id) && inbox.integrationWhatsapp
+          ? [inbox.integrationWhatsapp.id]
+          : [],
+      ),
+    [inboxes, key],
   )
 }
 
@@ -337,101 +422,20 @@ function CreateBroadcastChooseSubaction({ channel }: { channel: ChannelType }) {
   )
 }
 
-function BroadcastFlowTypeSelector({
-  subaction,
-}: {
-  subaction: BroadcastSubaction | null
-}) {
-  const t = useTranslations()
-  const { setValue } = useFormContext()
-  const flowTypes: Array<{
-    value: BroadcastFlowType
-    label: string
-    description: string
-  }> = [
-    {
-      value: broadcastFlowTypes.enum.flow,
-      label: t("broadcasts.flowType.flow.title"),
-      description: t("broadcasts.flowType.flow.description"),
-    },
-    {
-      value: broadcastFlowTypes.enum.template,
-      label: t("broadcasts.flowType.template.title"),
-      description: t("broadcasts.flowType.template.description"),
-    },
-  ]
-
-  const [selectedType, setSelectedType] = useState<BroadcastFlowType>(
-    broadcastFlowTypes.enum.flow,
-  )
-
-  const handleTypeChange = useCallback(
-    (type: BroadcastFlowType) => {
-      setSelectedType(type)
-      setValue("templateType", type)
-
-      if (type === broadcastFlowTypes.enum.flow) {
-        setValue("templateId", undefined)
-        setValue("buttons", [])
-      } else {
-        setValue("flowId", undefined)
-      }
-    },
-    [setValue],
-  )
-
-  if (
-    subaction !== broadcastSubactions.enum.whatsappTemplateMessage &&
-    subaction !== broadcastSubactions.enum.messengerTemplateMessage
-  ) {
-    return null
-  }
-
-  return (
-    <div className="grid grid-cols-2 gap-3">
-      {flowTypes.map((flowType) => (
-        // biome-ignore lint/a11y/useSemanticElements: complex styling requires div
-        <div
-          className={`flex cursor-pointer items-center gap-3 rounded-lg border p-4 transition-colors ${
-            selectedType === flowType.value
-              ? "border-primary bg-primary/5"
-              : "border-gray-200 hover:border-gray-300"
-          }`}
-          key={flowType.value}
-          onClick={() => handleTypeChange(flowType.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault()
-              handleTypeChange(flowType.value)
-            }
-          }}
-          role="button"
-          tabIndex={0}
-        >
-          <div
-            className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
-              selectedType === flowType.value
-                ? "border-primary bg-primary"
-                : "border-gray-300"
-            }`}
-          >
-            {selectedType === flowType.value && (
-              <div className="h-2 w-2 rounded-full bg-white" />
-            )}
-          </div>
-          <div className="flex-1">
-            <div className="font-medium text-sm">{flowType.label}</div>
-            <div className="text-gray-500 text-xs">{flowType.description}</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 type CreateBroadcastChooseFlowProps = {
   canViewEmailAndPhone: boolean
   channel: ChannelType
+  flows: FlowForTargets[]
+  /**
+   * Targets an edited draft was hydrated with, so each page's template effect
+   * can tell a still-hydrated selection from one the user changed. Absent when
+   * creating.
+   */
+  hydrated?: { targets: BroadcastTargetRequest[] }
+  confirmOpen: boolean
+  onConfirmOpenChange: (open: boolean) => void
+  onSaveAsDraft: () => Promise<void>
+  planPolicy: BroadcastPlanPolicy
   subaction: BroadcastSubaction
 }
 
@@ -451,20 +455,9 @@ function CreateBroadcastChooseFlow(props: CreateBroadcastChooseFlowProps) {
   const workspaceId = useWorkspaceId()
 
   const schedulesOptions = useMemo(
-    () => [
-      {
-        value: "now",
-        label: t("fields.schedule.now"),
-      },
-      {
-        value: "future",
-        label: t("fields.schedule.scheduled"),
-      },
-    ],
+    () => buildBroadcastScheduleTypeOptions(t),
     [t],
   )
-
-  const { flows } = useFlowStore((state) => state)
   const [subactionInfo, setSubactionInfo] = useState<{
     value: BroadcastSubaction
     name: string
@@ -475,7 +468,7 @@ function CreateBroadcastChooseFlow(props: CreateBroadcastChooseFlowProps) {
     description: "",
   })
 
-  const { control, setValue, formState } = useFormContext()
+  const { control, setValue, getValues, formState } = useFormContext()
   const watchedTemplateType = useWatch({ control, name: "templateType" })
   const watchedSchedulesType = useWatch({ control, name: "schedulesType" })
   const watchedIntegrationWhatsappId = useWatch({
@@ -486,19 +479,55 @@ function CreateBroadcastChooseFlow(props: CreateBroadcastChooseFlowProps) {
     control,
     name: "integrationMessengerId",
   })
-  const watchedTemplateId = useWatch({ control, name: "templateId" })
+  const watchedInboxIds = (useWatch({ control, name: "inboxIds" }) ??
+    []) as string[]
+  const watchedTargets = (useWatch({ control, name: "targets" }) ??
+    []) as BroadcastTargetRequest[]
   const watchedContactFilter = useWatch({ control, name: "contactFilter" })
-  const watchedTemplateData = useWatch({ control, name: "templateData" }) as
-    | WaTemplateParams
-    | undefined
-  const watchedMessengerTemplateData = watchedTemplateData as
-    | MessengerTemplateParams
-    | undefined
+  const watchedAudienceRangeStart = useWatch({
+    control,
+    name: "audienceRangeStart",
+  }) as number | undefined
+  const watchedAudienceRangeEnd = useWatch({
+    control,
+    name: "audienceRangeEnd",
+  }) as number | undefined
+
+  const isTemplateSubaction = isTemplateBroadcastSubaction(props.subaction)
+  const sendsTemplate = watchedTemplateType === broadcastFlowTypes.enum.template
+
+  // `targets` mirrors the page multi-select: keyed by value so the effect
+  // only runs when the selection changes, not on every render.
+  const inboxIdsKey = watchedInboxIds.join(",")
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `inboxIdsKey` stands in for `watchedInboxIds` by value
+  useEffect(() => {
+    if (!isTemplateSubaction) {
+      return
+    }
+    const currentTargets = (getValues("targets") ??
+      []) as BroadcastTargetRequest[]
+    const synced = syncTargetsWithInboxIds(currentTargets, watchedInboxIds)
+    if (!hasSameTargetReferences(currentTargets, synced)) {
+      setValue("targets", synced, { shouldValidate: true })
+    }
+  }, [inboxIdsKey, isTemplateSubaction, getValues, setValue])
+
+  const audienceInboxIds = useMemo(
+    () =>
+      resolveAudienceInboxIds({
+        isTemplateSubaction,
+        sendsTemplate,
+        inboxIds: watchedInboxIds,
+        targets: watchedTargets,
+      }),
+    [isTemplateSubaction, sendsTemplate, watchedInboxIds, watchedTargets],
+  )
 
   const receiversCountParams = useMemo(
     () => ({
       contactFilter: watchedContactFilter,
       channel: props.channel,
+      inboxIds: audienceInboxIds,
       integrationWhatsappId: watchedIntegrationWhatsappId,
       integrationMessengerId: watchedIntegrationMessengerId,
       subaction: props.subaction,
@@ -507,6 +536,7 @@ function CreateBroadcastChooseFlow(props: CreateBroadcastChooseFlowProps) {
       watchedContactFilter,
       props.channel,
       props.subaction,
+      audienceInboxIds,
       watchedIntegrationWhatsappId,
       watchedIntegrationMessengerId,
     ],
@@ -535,46 +565,18 @@ function CreateBroadcastChooseFlow(props: CreateBroadcastChooseFlowProps) {
     loadingInboxesCount ||
     completedReceiversCountQueryKey !== receiversCountQueryKey
 
-  const [selectedTemplate, setSelectedTemplate] =
-    useState<MessageTemplateWithComponents | null>(null)
-
-  const { integrations } = useIntegrationStore((state) => state)
-  const whatsappTemplates = useFlowTemplate((s) => s.whatsappTemplates)
-  const setIntegrationWhatsappId = useFlowTemplate(
-    (s) => s.setIntegrationWhatsappId,
-  )
-
-  const messengerTemplatesData = useFlowTemplate(
-    (state) => state.messengerTemplates,
-  )
-
-  const messengerIntegrationOptions = useMemo(() => {
-    const map = new Map<string, string>()
-    for (const template of messengerTemplatesData) {
-      if (template.integrationMessenger) {
-        map.set(
-          template.integrationMessenger.id,
-          template.integrationMessenger.name,
-        )
-      }
-    }
-    return [...map.entries()].map(([value, label]) => ({ value, label }))
-  }, [messengerTemplatesData])
-
-  const filteredMessengerTemplates = useMemo(
+  // The range fields never change *which* rows match — only how many are
+  // taken — so they are never sent to the (expensive) count route; the
+  // unwindowed total above is fetched exactly as before, and clamped to the
+  // range here. Typing in the range fields costs zero requests.
+  const windowedReceiversCount = useMemo(
     () =>
-      messengerTemplatesData.filter(
-        (template) =>
-          template.integrationMessengerId === watchedIntegrationMessengerId,
-      ),
-    [messengerTemplatesData, watchedIntegrationMessengerId],
+      resolveWindowedReceiversCount(count || 0, {
+        audienceRangeStart: watchedAudienceRangeStart,
+        audienceRangeEnd: watchedAudienceRangeEnd,
+      }),
+    [count, watchedAudienceRangeStart, watchedAudienceRangeEnd],
   )
-
-  const [selectedMessengerTemplate, setSelectedMessengerTemplate] = useState<
-    (typeof messengerTemplatesData)[number] | null
-  >(null)
-
-  const [confirmOpen, setConfirmOpen] = useState(false)
 
   const excludeFields = useMemo(
     () =>
@@ -593,7 +595,11 @@ function CreateBroadcastChooseFlow(props: CreateBroadcastChooseFlowProps) {
   const handleScheduleTypeChange = useCallback(
     (value: BroadcastScheduleType) => {
       if (value === "now") {
-        setValue("schedulesAt", null)
+        // Revalidate: clearing an expired `future` time must refresh
+        // `formState.isValid` (mode "onChange" only recomputes on a validated
+        // change), otherwise the submit buttons stay disabled on a stale
+        // schedule error.
+        setValue("schedulesAt", null, { shouldValidate: true })
       }
     },
     [setValue],
@@ -626,71 +632,10 @@ function CreateBroadcastChooseFlow(props: CreateBroadcastChooseFlowProps) {
   }, [props.channel, props.subaction, t])
 
   useEffect(() => {
-    if (watchedIntegrationWhatsappId) {
-      setIntegrationWhatsappId(watchedIntegrationWhatsappId)
-      // Clear stale template selection from previous integration
-      setValue("templateId", undefined)
-      setValue("templateData", undefined)
-      setSelectedTemplate(null)
-    }
-  }, [watchedIntegrationWhatsappId, setIntegrationWhatsappId, setValue])
-
-  useEffect(() => {
     latestReceiversCountQueryKeyRef.current = receiversCountQueryKey
     setCompletedReceiversCountQueryKey(null)
     fetchReceiversCount(receiversCountParams, receiversCountQueryKey)
   }, [fetchReceiversCount, receiversCountParams, receiversCountQueryKey])
-
-  useEffect(() => {
-    if (watchedTemplateId && whatsappTemplates.length > 0) {
-      const template = whatsappTemplates.find(
-        (t) => t.id === watchedTemplateId,
-      ) as MessageTemplateWithComponents | undefined
-      if (template) {
-        setSelectedTemplate(template)
-        const initialParams = extractTemplateParams(
-          template.components as TemplateComponent[],
-        )
-        setValue("templateData", initialParams)
-      } else {
-        setSelectedTemplate(null)
-        setValue("templateData", undefined)
-      }
-    }
-  }, [watchedTemplateId, whatsappTemplates, setValue])
-
-  useEffect(() => {
-    if (
-      props.subaction !== broadcastSubactions.enum.messengerTemplateMessage ||
-      !watchedTemplateId ||
-      messengerTemplatesData.length === 0
-    ) {
-      return
-    }
-
-    const template = messengerTemplatesData.find(
-      (t) => t.id === watchedTemplateId,
-    )
-    if (template) {
-      setSelectedMessengerTemplate(template)
-      const initialParams = extractMessengerTemplateParams(
-        template.components as MessengerTemplateComponent[],
-        template.parameterFormat as "POSITIONAL" | "NAMED",
-      )
-      setValue("templateData", initialParams)
-      // seed flow buttons from template
-      setValue(
-        "buttons",
-        extractMessengerFlowButtons(
-          template.components as MessengerTemplateComponent[],
-        ).map((b) => ({ id: b.id, label: b.label, flowId: "" })),
-      )
-    } else {
-      setSelectedMessengerTemplate(null)
-      setValue("templateData", undefined)
-      setValue("buttons", []) // clear buttons
-    }
-  }, [props.subaction, watchedTemplateId, messengerTemplatesData, setValue])
 
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
@@ -721,142 +666,21 @@ function CreateBroadcastChooseFlow(props: CreateBroadcastChooseFlowProps) {
         <CardContent className="flex flex-col gap-6">
           <BroadcastFlowTypeSelector subaction={props.subaction} />
 
-          {props.subaction ===
-            broadcastSubactions.enum.whatsappTemplateMessage && (
-            <>
-              <ComboboxField
-                emptyText={t("actions.noRecordFound")}
-                key="integrationWhatsappId"
-                label={t("fields.whatsappChannel.label")}
-                name="integrationWhatsappId"
-                options={integrations.map((integration) => ({
-                  label: integration.name,
-                  value: integration.id,
-                }))}
-                placeholder={t("actions.pleaseSelect")}
-                required={true}
-              />
-
-              {watchedTemplateType === broadcastFlowTypes.enum.template && (
-                <>
-                  <ComboboxField
-                    emptyText={t("actions.noRecordFound")}
-                    key="templateId"
-                    label={t("fields.templateId.label")}
-                    name="templateId"
-                    options={whatsappTemplates.map((template) => ({
-                      label: `${template.name} (${template.language})`,
-                      value: template.id,
-                    }))}
-                    placeholder={t("actions.pleaseSelect")}
-                    required={true}
-                  />
-
-                  {selectedTemplate && (
-                    <div className="space-y-4">
-                      <TemplateParamsForm
-                        components={
-                          selectedTemplate.components as TemplateComponent[]
-                        }
-                        parentName="templateData"
-                      />
-                      <div>
-                        <div className="mb-2 font-medium text-xs">
-                          {t("flows.fields.preview")}
-                        </div>
-                        <TemplatePreview
-                          bodyParams={watchedTemplateData?.body || []}
-                          buttonParams={watchedTemplateData?.button || []}
-                          components={
-                            selectedTemplate.components as TemplateComponent[]
-                          }
-                          headerParams={watchedTemplateData?.header || []}
-                          limitedTimeOfferParam={
-                            watchedTemplateData?.limited_time_offer
-                          }
-                        />
-                      </div>
-                    </div>
-                  )}
-                </>
-              )}
-            </>
+          {isTemplateSubaction && (
+            <BroadcastInboxMultiSelect channel={props.channel} />
           )}
 
-          {props.subaction ===
-            broadcastSubactions.enum.messengerTemplateMessage && (
-            <>
-              <ComboboxField
-                emptyText={t("actions.noRecordFound")}
-                key="integrationMessengerId"
-                label={t("fields.messengerChannel.label")}
-                name="integrationMessengerId"
-                options={messengerIntegrationOptions}
-                placeholder={t("actions.pleaseSelect")}
-                required={true}
-              />
-
-              {watchedTemplateType === broadcastFlowTypes.enum.template && (
-                <>
-                  <ComboboxField
-                    emptyText={t("actions.noRecordFound")}
-                    key="messengerTemplateId"
-                    label={t("fields.messengerTemplateId.label")}
-                    name="templateId"
-                    options={filteredMessengerTemplates.map((template) => ({
-                      label: `${template.name} (${template.language})`,
-                      value: template.id,
-                    }))}
-                    placeholder={t("actions.pleaseSelect")}
-                    required={true}
-                  />
-
-                  {selectedMessengerTemplate && (
-                    <div className="space-y-4">
-                      <MessengerTemplateParamsForm
-                        components={
-                          selectedMessengerTemplate.components as MessengerTemplateComponent[]
-                        }
-                        parameterFormat={
-                          selectedMessengerTemplate.parameterFormat as
-                            | "POSITIONAL"
-                            | "NAMED"
-                        }
-                        parentName="templateData"
-                      />
-                      <div>
-                        <div className="mb-2 font-medium text-xs">
-                          {t("flows.fields.preview")}
-                        </div>
-                        <MessengerTemplatePreview
-                          bodyParams={watchedMessengerTemplateData?.body || []}
-                          buttonParams={
-                            watchedMessengerTemplateData?.button || []
-                          }
-                          components={
-                            selectedMessengerTemplate.components as MessengerTemplateComponent[]
-                          }
-                          headerParams={
-                            watchedMessengerTemplateData?.header || []
-                          }
-                        />
-                      </div>
-                      <MessengerBroadcastFlowButtons />
-                    </div>
-                  )}
-                </>
-              )}
-            </>
+          {isTemplateSubaction && !sendsTemplate && (
+            <BroadcastFlowTargets channel={props.channel} flows={props.flows} />
           )}
 
-          {(!watchedTemplateType ||
-            watchedTemplateType !== broadcastFlowTypes.enum.template) && (
+          {!(isTemplateSubaction || sendsTemplate) && (
             <ComboboxField
               emptyText={t("actions.noRecordFound")}
               key="flowId"
               label={t("fields.flowId.label")}
               name="flowId"
-              options={flows.map((flow) => ({
+              options={props.flows.map((flow) => ({
                 label: flow.name,
                 value: flow.id,
               }))}
@@ -866,6 +690,14 @@ function CreateBroadcastChooseFlow(props: CreateBroadcastChooseFlowProps) {
           )}
         </CardContent>
       </Card>
+
+      {isTemplateSubaction && sendsTemplate && (
+        <BroadcastTemplateTargets
+          channel={props.channel}
+          hydratedTargets={props.hydrated?.targets}
+          subaction={props.subaction}
+        />
+      )}
 
       <Card>
         <CardContent className="flex flex-col gap-6">
@@ -890,6 +722,12 @@ function CreateBroadcastChooseFlow(props: CreateBroadcastChooseFlowProps) {
               label={t("fields.chooseTime.label")}
               name="schedulesAt"
               required
+              // ISO, never a bare "yyyy-MM-dd HH:mm:ss" wall-clock string: the
+              // picked time is a wall-clock time in the OPERATOR's zone, and
+              // only an ISO instant carries that offset to the server. A bare
+              // string is re-read with `new Date(...)` in the server's own zone
+              // (UTC in production), which silently shifts the send time.
+              saveFormat="iso"
               value={defaultDateTime}
             />
           )}
@@ -903,13 +741,17 @@ function CreateBroadcastChooseFlow(props: CreateBroadcastChooseFlowProps) {
             inboxChannel={props.channel}
             parentName="contactFilter"
           />
+
+          <Separator />
+
+          <BroadcastSendLimitFields planPolicy={props.planPolicy} />
         </CardContent>
       </Card>
 
       <div className="flex items-center justify-between">
         <Button
           className="h-auto px-0 text-gray-500 text-sm"
-          disabled={isReceiversCountLoading || !count}
+          disabled={isReceiversCountLoading || !windowedReceiversCount}
           onClick={() => setAudiencePreviewOpen(true)}
           type="button"
           variant="link"
@@ -921,7 +763,7 @@ function CreateBroadcastChooseFlow(props: CreateBroadcastChooseFlowProps) {
             </span>
           ) : (
             t("broadcasts.receiversCount", {
-              count: count || 0,
+              count: windowedReceiversCount,
             })
           )}
         </Button>
@@ -932,7 +774,19 @@ function CreateBroadcastChooseFlow(props: CreateBroadcastChooseFlowProps) {
 
           <Button
             disabled={!formState.isValid || formState.isSubmitting}
-            onClick={() => setConfirmOpen(true)}
+            onClick={() => props.onSaveAsDraft()}
+            type="button"
+            variant="secondary"
+          >
+            {t("actions.saveAsDraft")}
+          </Button>
+
+          <Button
+            disabled={!formState.isValid || formState.isSubmitting}
+            onClick={() => {
+              setValue("saveAsDraft", false, { shouldDirty: false })
+              props.onConfirmOpenChange(true)
+            }}
             type="button"
           >
             {formState.isSubmitting && <Loader2Icon className="animate-spin" />}
@@ -940,22 +794,26 @@ function CreateBroadcastChooseFlow(props: CreateBroadcastChooseFlowProps) {
           </Button>
 
           <BroadcastConfirmDialog
-            count={count || 0}
+            count={windowedReceiversCount}
             isReceiversCountLoading={isReceiversCountLoading}
             isSubmitting={formState.isSubmitting}
-            onOpenChange={setConfirmOpen}
+            isValid={formState.isValid}
+            onOpenChange={props.onConfirmOpenChange}
             onPreviewReceivers={() => setAudiencePreviewOpen(true)}
-            open={confirmOpen}
+            open={props.confirmOpen}
           />
           <BroadcastAudiencePreviewDialog
+            audienceRangeEnd={watchedAudienceRangeEnd}
+            audienceRangeStart={watchedAudienceRangeStart}
             channel={props.channel}
             contactFilter={watchedContactFilter}
+            inboxIds={audienceInboxIds}
             integrationMessengerId={watchedIntegrationMessengerId}
             integrationWhatsappId={watchedIntegrationWhatsappId}
             onOpenChange={setAudiencePreviewOpen}
             open={audiencePreviewOpen}
             subaction={props.subaction}
-            total={count || 0}
+            total={windowedReceiversCount}
             workspaceId={workspaceId}
           />
         </div>

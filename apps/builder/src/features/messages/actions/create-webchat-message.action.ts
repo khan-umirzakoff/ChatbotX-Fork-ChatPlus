@@ -2,6 +2,7 @@
 
 import { automatedResponseService } from "@chatbotx.io/automated-response"
 import {
+  broadcastToWorkspaceParty,
   contactInboxService,
   contactService,
   conversationService,
@@ -38,16 +39,18 @@ import { messageEventTypeSchema } from "@chatbotx.io/flow-config"
 import { RealtimeEventType } from "@chatbotx.io/partysocket-config"
 import { createId } from "@chatbotx.io/utils"
 import {
-  ChatJobAction,
-  chatQueue,
   IntegrationJobAction,
   integrationQueue,
 } from "@chatbotx.io/worker-config"
 import { headers } from "next/headers"
 import { getTranslations } from "next-intl/server"
 import { randomString } from "remeda"
-import { isOriginAuthorized } from "@/features/integration-webchat/lib/authorized-domain"
+import {
+  isFirstPartyOrigin,
+  isOriginAuthorized,
+} from "@/features/integration-webchat/lib/authorized-domain"
 import { verifyWebchatAccessToken } from "@/features/integration-webchat/lib/webchat-access-token"
+import { shouldRunWebchatChallenge } from "@/features/messages/lib/should-run-webchat-challenge"
 import { logger } from "@/lib/log"
 import {
   checkGuestRateLimit,
@@ -116,8 +119,13 @@ export async function handleCreateWebchatMessage({
     throw new ChatbotXException(t("description"), "forbidden", 403)
   }
 
+  const requestHeaders = await getRequestHeaders()
   if (
     integrationWebchat.authorizedDomains.length > 0 &&
+    !isFirstPartyOrigin(
+      parsedInput.parentOrigin,
+      requestHeaders.get("x-domain") ?? "",
+    ) &&
     !isOriginAuthorized(
       parsedInput.parentOrigin,
       integrationWebchat.authorizedDomains,
@@ -127,7 +135,6 @@ export async function handleCreateWebchatMessage({
     throw new ChatbotXException(t("description"), "forbidden", 403)
   }
 
-  const requestHeaders = await getRequestHeaders()
   const rateLimit = await checkGuestRateLimit({
     clientIp: getGuestClientIp(requestHeaders),
     guestConversationId: parsedInput.guestConversationId,
@@ -315,27 +322,25 @@ export async function handleCreateWebchatMessage({
       sourceId: newMessage.sourceId ?? undefined,
     })
 
+    await broadcastToWorkspaceParty(newMessage.workspaceId, {
+      eventType: RealtimeEventType.messageCreated,
+      data: {
+        ...newMessage,
+        clientId: parsedInput.clientId,
+      },
+    })
+
     const promises: Promise<unknown>[] = []
-    promises.push(
-      chatQueue.add(ChatJobAction.broadcastEvent, {
-        type: ChatJobAction.broadcastEvent,
-        data: {
-          workspaceId: newMessage.workspaceId,
-          event: {
-            eventType: RealtimeEventType.messageCreated,
-            data: {
-              ...newMessage,
-              clientId: parsedInput.clientId,
-            },
-          },
-        },
-      }),
-    )
 
     const additionalAttributes =
       conversation.additionalAttributes as unknown as ConversationAttributes
 
-    if (additionalAttributes?.challenge) {
+    const hasPostback = Boolean(
+      "postback" in parsedInput && parsedInput.postback,
+    )
+    if (
+      shouldRunWebchatChallenge(additionalAttributes?.challenge, hasPostback)
+    ) {
       promises.push(
         integrationQueue.add(
           IntegrationJobAction.runChallenge,
@@ -356,17 +361,25 @@ export async function handleCreateWebchatMessage({
       )
     } else if (
       newMessage.text &&
-      !("postback" in parsedInput && parsedInput.postback) &&
-      (await conversationService.ensureActive(conversation))
+      !("postback" in parsedInput && parsedInput.postback)
     ) {
+      const isConversationActive =
+        await conversationService.ensureActive(conversation)
       promises.push(
-        automatedResponseService.enqueue({
-          conversationId: conversation.id,
-          contactInboxId: contactInbox.id,
-          messageId: newMessage.id,
-          messageText: newMessage.text,
-          workspaceId: conversation.workspaceId,
-        }),
+        isConversationActive
+          ? automatedResponseService.enqueue({
+              conversationId: conversation.id,
+              contactInboxId: contactInbox.id,
+              messageId: newMessage.id,
+              messageText: newMessage.text,
+              workspaceId: conversation.workspaceId,
+            })
+          : automatedResponseService.enqueueHandoffReentry({
+              conversationId: conversation.id,
+              contactInboxId: contactInbox.id,
+              messageId: newMessage.id,
+              workspaceId: conversation.workspaceId,
+            }),
       )
     }
 
@@ -440,12 +453,14 @@ async function getConversationFromInput(
   }
 
   // New contact. Resolve the owner (owner-derived, never request-derived) and
-  // gate on MAC — the billing hard limit — atomically with the insert so
-  // concurrent first-message requests cannot both pass the gate and overrun the
-  // limit. MAC is consumed here (not via the async message event) and the
-  // `ContactActiveMonthly` presence row written inside the same transaction so
-  // the later `message:received` event dedups instead of double-counting. The
-  // info-only `contacts` metric is recorded inside `createNewContactWithMac`.
+  // gate on MAC for billing. It is a soft cap on resetting plans: admit
+  // atomically in Redis, create in a separate transaction, then commit or
+  // revoke the slot. Lifetime / period-less owners and
+  // `QUOTA_MAC_ADMISSION=lock` keep the distributed-lock gate. MAC is consumed
+  // here (not via the async message event) and the
+  // `ContactActiveMonthly` presence row is written inside the same transaction
+  // so the later `message:received` event dedups instead of double-counting.
+  // The info-only `contacts` metric is recorded inside `createNewContactWithMac`.
   const ws = workspace
   if (!ws) {
     throw new ChatbotXException("Workspace not found", "notFound", 404)
@@ -536,6 +551,7 @@ async function getConversationFromInput(
     result.value.contact.firstName || undefined,
     result.value.contact.phoneNumber || undefined,
     result.value.contact.email || undefined,
+    result.value.contactInbox.id,
   )
 
   return {

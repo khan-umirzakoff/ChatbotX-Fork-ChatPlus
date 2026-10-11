@@ -1,11 +1,16 @@
 import { createId, zodBigintAsString } from "@chatbotx.io/utils"
 import { z } from "zod"
+import { zodFieldReference } from "../field-reference"
 import { stepTypes } from "./step-action"
 
 export const clearCustomFieldStepSchema = z.object({
-  id: zodBigintAsString(),
-  stepType: z.literal(stepTypes.enum.clearCustomField),
-  inputFieldId: z.string().trim().min(1),
+  id: zodBigintAsString().describe(
+    "Step id (numeric string), unique within the flow.",
+  ),
+  stepType: z
+    .literal(stepTypes.enum.clearCustomField)
+    .describe('Step type discriminator: "clearCustomField".'),
+  inputFieldId: zodFieldReference(),
 })
 
 export type ClearCustomFieldStepSchema = z.infer<

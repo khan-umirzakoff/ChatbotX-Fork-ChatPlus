@@ -1,0 +1,150 @@
+import type { WorkspaceMemberPermissions } from "@chatbotx.io/database/partials"
+import { describe, expect, test } from "vitest"
+import { buildMessagingAdsToolPath } from "@/features/ads-campaign/lib/tool-path"
+import { canShowTool, TOOLS_CONFIG } from "@/features/tools/tools-list"
+
+/**
+ * The `permissions` jsonb column defaults to `{}` at runtime even though
+ * `WorkspaceMemberPermissions` declares every flag required — `canShowTool`
+ * (via `hasWorkspacePermission`) must fail closed on a partial object. Cast
+ * through the real type (not `any`) so these tests exercise that runtime
+ * shape without weakening type safety elsewhere.
+ */
+const permissions = (
+  value: Partial<WorkspaceMemberPermissions>,
+): WorkspaceMemberPermissions => value as WorkspaceMemberPermissions
+
+describe("TOOLS_CONFIG — click-to-message-ads entry", () => {
+  test("exists in the config", () => {
+    const entry = TOOLS_CONFIG.find(
+      (config) => config.id === "click-to-message-ads",
+    )
+
+    expect(entry).toBeDefined()
+  })
+
+  test("sits two after facebook-lead-ads", () => {
+    const leadAdsIndex = TOOLS_CONFIG.findIndex(
+      (config) => config.id === "facebook-lead-ads",
+    )
+    const clickToMessageAdsIndex = TOOLS_CONFIG.findIndex(
+      (config) => config.id === "click-to-message-ads",
+    )
+
+    // `facebook-marketing-messages` now sits between them.
+    expect(clickToMessageAdsIndex).toBe(leadAdsIndex + 2)
+  })
+
+  test("has permission: superAdmin", () => {
+    const entry = TOOLS_CONFIG.find(
+      (config) => config.id === "click-to-message-ads",
+    )
+
+    expect(entry && "permission" in entry ? entry.permission : undefined).toBe(
+      "superAdmin",
+    )
+  })
+
+  test("has labelKey and descriptionKey under clickToMessageAds.*", () => {
+    const entry = TOOLS_CONFIG.find(
+      (config) => config.id === "click-to-message-ads",
+    )
+
+    expect(entry?.labelKey).toBe("clickToMessageAds.title")
+    expect(entry?.descriptionKey).toBe("clickToMessageAds.description")
+  })
+
+  test("getLink(workspaceId) equals buildMessagingAdsToolPath({ workspaceId })", () => {
+    const entry = TOOLS_CONFIG.find(
+      (config) => config.id === "click-to-message-ads",
+    )
+
+    expect(entry?.getLink("ws_1")).toBe(
+      buildMessagingAdsToolPath({ workspaceId: "ws_1" }),
+    )
+  })
+})
+
+describe("TOOLS_CONFIG — permission gating", () => {
+  test("no entry other than click-to-message-ads declares a permission", () => {
+    const gatedEntries = TOOLS_CONFIG.filter(
+      (config) => "permission" in config,
+    ).map((config) => config.id)
+
+    expect(gatedEntries).toEqual(["click-to-message-ads"])
+  })
+})
+
+describe("canShowTool", () => {
+  test("is visible when the entry declares no permission", () => {
+    expect(canShowTool(undefined, permissions({}))).toBe(true)
+  })
+
+  test("is visible for a superAdmin permission when permissions.superAdmin is true", () => {
+    expect(canShowTool("superAdmin", permissions({ superAdmin: true }))).toBe(
+      true,
+    )
+  })
+
+  test("is hidden for a superAdmin permission when permissions.superAdmin is false", () => {
+    expect(canShowTool("superAdmin", permissions({ superAdmin: false }))).toBe(
+      false,
+    )
+  })
+
+  test("is hidden (fail-closed) for a superAdmin permission when permissions is an empty partial object", () => {
+    expect(canShowTool("superAdmin", permissions({}))).toBe(false)
+  })
+})
+
+describe("TOOLS_CONFIG — facebook-marketing-messages entry", () => {
+  test("exists in the config", () => {
+    const entry = TOOLS_CONFIG.find(
+      (config) => config.id === "facebook-marketing-messages",
+    )
+
+    expect(entry).toBeDefined()
+  })
+
+  test("sits immediately after facebook-lead-ads", () => {
+    const leadAdsIndex = TOOLS_CONFIG.findIndex(
+      (config) => config.id === "facebook-lead-ads",
+    )
+    const marketingMessagesIndex = TOOLS_CONFIG.findIndex(
+      (config) => config.id === "facebook-marketing-messages",
+    )
+
+    expect(marketingMessagesIndex).toBe(leadAdsIndex + 1)
+  })
+
+  test("links to the tool route", () => {
+    const entry = TOOLS_CONFIG.find(
+      (config) => config.id === "facebook-marketing-messages",
+    )
+
+    expect(entry && "getLink" in entry && entry.getLink?.("42")).toBe(
+      "/space/42/fb-marketing-messages",
+    )
+  })
+
+  test("is visible to a member with no permissions set", () => {
+    const entry = TOOLS_CONFIG.find(
+      (config) => config.id === "facebook-marketing-messages",
+    )
+    const permission =
+      entry && "permission" in entry
+        ? (entry.permission as Parameters<typeof canShowTool>[0])
+        : undefined
+
+    expect(canShowTool(permission, permissions({}))).toBe(true)
+  })
+})
+
+describe("TOOLS_CONFIG — mini-apps entry", () => {
+  test("links to the Mini Apps list with miniApps.* labels", () => {
+    const entry = TOOLS_CONFIG.find((config) => config.id === "mini-apps")
+    expect(entry?.labelKey).toBe("miniApps.title")
+    expect(entry?.descriptionKey).toBe("miniApps.description")
+    expect(entry?.getLink?.("42")).toBe("/space/42/mini-apps")
+  })
+})

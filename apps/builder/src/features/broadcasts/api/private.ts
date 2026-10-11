@@ -4,8 +4,9 @@ import {
   listBroadcastContactsRequest,
   listBroadcastContactsResponse,
 } from "@chatbotx.io/analytics/schemas"
-import { broadcastService, contactInboxService } from "@chatbotx.io/business"
-import { type ChannelType, channelTypes } from "@chatbotx.io/database/partials"
+import { broadcastService } from "@chatbotx.io/business"
+import { notFoundException } from "@chatbotx.io/business/errors"
+import { channelTypes } from "@chatbotx.io/database/partials"
 import { z } from "zod"
 import { workspaceAuthorizedMidddleware } from "@/middlewares/auth"
 import { authorizedAPI } from "@/orpc"
@@ -39,31 +40,36 @@ const getBroadcastTemplateDetailRequest = z.object({
   broadcastId: z.string(),
 })
 
-const broadcastTemplateDetailResponse = z
-  .discriminatedUnion("channel", [
-    z.object({
-      channel: z.literal("whatsapp"),
-      id: z.string(),
-      name: z.string(),
-      language: z.string(),
-      category: z.string(),
-      status: z.string(),
-      components: z.unknown(),
-      integrationName: z.string().nullable(),
-    }),
-    z.object({
-      channel: z.literal("messenger"),
-      id: z.string(),
-      name: z.string(),
-      language: z.string(),
-      category: z.string(),
-      status: z.string(),
-      parameterFormat: z.string(),
-      components: z.unknown(),
-      integrationName: z.string().nullable(),
-    }),
-  ])
-  .nullable()
+const broadcastTemplateDetailResource = z.discriminatedUnion("channel", [
+  z.object({
+    channel: z.literal("whatsapp"),
+    id: z.string(),
+    name: z.string(),
+    language: z.string(),
+    category: z.string(),
+    status: z.string(),
+    components: z.unknown(),
+    inboxId: z.string(),
+    integrationName: z.string().nullable(),
+  }),
+  z.object({
+    channel: z.literal("messenger"),
+    id: z.string(),
+    name: z.string(),
+    language: z.string(),
+    category: z.string(),
+    status: z.string(),
+    parameterFormat: z.string(),
+    components: z.unknown(),
+    inboxId: z.string(),
+    integrationName: z.string().nullable(),
+  }),
+])
+
+/** One entry per page the broadcast sends a template from; empty for flow sends. */
+const listBroadcastTemplateDetailsResponse = z.array(
+  broadcastTemplateDetailResource,
+)
 
 export const broadcastPrivateAPIs = {
   privateListBroadcastOptionsAPI: authorizedAPI
@@ -90,26 +96,31 @@ export const broadcastPrivateAPIs = {
     .input(getBatchBroadcastStatsRequest)
     .output(getBatchBroadcastStatsResponse)
     .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
-    .handler(
-      async ({ input }) =>
-        await broadcastAnalyticsService.getBatchStats({
-          workspaceId: input.workspaceId,
-          broadcastIds: input.broadcastIds,
-        }),
-    ),
+    .handler(async ({ input }) => {
+      // A soft-deleted broadcast reads as "not found": its id is silently
+      // dropped rather than surfacing stale stats.
+      const existingIds = await broadcastService.listExistingIds({
+        workspaceId: input.workspaceId,
+        ids: input.broadcastIds,
+      })
+      return await broadcastAnalyticsService.getBatchStats({
+        workspaceId: input.workspaceId,
+        broadcastIds: existingIds,
+      })
+    }),
 
-  privateGetBroadcastTemplateDetailAPI: authorizedAPI
+  privateListBroadcastTemplateDetailsAPI: authorizedAPI
     .route({
       method: "GET",
-      path: "/workspaces/{workspaceId}/broadcasts/{broadcastId}/template-detail",
-      summary: "Get broadcast template detail",
+      path: "/workspaces/{workspaceId}/broadcasts/{broadcastId}/template-details",
+      summary: "List broadcast template details (one per page)",
       tags: ["Broadcasts"],
     })
     .input(getBroadcastTemplateDetailRequest)
-    .output(broadcastTemplateDetailResponse)
+    .output(listBroadcastTemplateDetailsResponse)
     .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
     .handler(
-      async ({ input }) => await broadcastService.getTemplateDetail(input),
+      async ({ input }) => await broadcastService.listTemplateDetails(input),
     ),
 
   privateListBroadcastContactsAPI: authorizedAPI
@@ -123,16 +134,21 @@ export const broadcastPrivateAPIs = {
     .output(listBroadcastContactsResponse)
     .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
     .handler(async ({ input }) => {
-      const { workspaceId, broadcastId, eventType, total, page, perPage } =
-        input
-      const totalValue = total ?? 0
+      const { workspaceId, broadcastId, eventType, page, perPage } = input
 
       if (!eventType) {
-        return { data: [], total: totalValue, page, pageCount: 0 }
+        const [existingId] = await broadcastService.listExistingIds({
+          workspaceId,
+          ids: [broadcastId],
+        })
+        if (!existingId) {
+          throw notFoundException("Broadcast not found")
+        }
+        return { data: [], total: 0, page, pageCount: 0 }
       }
 
-      const { contactInboxIds, contactEventMap } =
-        await broadcastAnalyticsService.getContacts({
+      const { data, total, pageCount } =
+        await broadcastService.listContactsPage({
           workspaceId,
           broadcastId,
           eventType,
@@ -140,48 +156,6 @@ export const broadcastPrivateAPIs = {
           perPage,
         })
 
-      if (contactInboxIds.length === 0) {
-        return {
-          data: [],
-          total: totalValue,
-          page,
-          pageCount: Math.ceil(totalValue / perPage),
-        }
-      }
-
-      const contactInboxes =
-        await contactInboxService.findManyByIds(contactInboxIds)
-
-      const contactMap = new Map(contactInboxes.map((c) => [c.id, c]))
-      const pageCount = Math.ceil(totalValue / perPage)
-
-      const data = contactInboxIds
-        .map((contactInboxId) => {
-          const eventData = contactEventMap.get(contactInboxId)
-          if (!eventData) {
-            return null
-          }
-
-          const contactInbox = contactMap.get(contactInboxId)
-          if (!contactInbox) {
-            return null
-          }
-          return {
-            contactId: contactInbox.id,
-            contactInboxId,
-            firstName: contactInbox.contact.firstName ?? null,
-            lastName: contactInbox.contact.lastName ?? null,
-            fullName: contactInbox.contact.fullName ?? null,
-            sourceId: contactInbox.sourceId,
-            avatar: contactInbox.contact.avatar ?? null,
-            channel: contactInbox.channel as ChannelType,
-            conversationId: contactInbox.conversation?.id ?? "",
-            errorContent: eventData.errorContent ?? null,
-            occurredAt: eventData.occurredAt,
-          }
-        })
-        .filter((c) => c !== null)
-
-      return { data, total: totalValue, page, pageCount }
+      return { data, total, page, pageCount }
     }),
 }

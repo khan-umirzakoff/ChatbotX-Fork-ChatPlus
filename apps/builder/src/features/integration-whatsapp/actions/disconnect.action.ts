@@ -1,19 +1,18 @@
 "use server"
 
-import { inboxService, workspaceService } from "@chatbotx.io/business"
-import { and, db, eq, findOrFail, inArray } from "@chatbotx.io/database/client"
-import { metaCapiEventRepository } from "@chatbotx.io/database/repositories"
 import {
-  coexistSyncRunModel,
-  integrationWhatsappModel,
-  whatsappCoexistStagingModel,
-} from "@chatbotx.io/database/schema"
+  integrationWhatsappService,
+  workspaceService,
+} from "@chatbotx.io/business"
+import { auditService } from "@chatbotx.io/business/audit"
+import { db, findOrFail } from "@chatbotx.io/database/client"
+import { integrationWhatsappModel } from "@chatbotx.io/database/schema"
 import type { WhatsappAuthValue } from "@chatbotx.io/integration-whatsapp"
 import { isRevokedTokenError } from "@chatbotx.io/integration-whatsapp"
 import {
   type WorkspaceIdAndIdRequestParams,
   workspaceIdAndIdRequestParams,
-} from "@/features/common/schemas"
+} from "@/features/common/schema"
 import { integrations } from "@/integration"
 import { workspaceActionClientAllowExpired } from "@/lib/safe-action"
 
@@ -47,56 +46,18 @@ export const disconnectWhatsappAction = workspaceActionClientAllowExpired
         }
       }
 
-      await db.transaction(async (tx) => {
-        // Preserve sync history (importedCount / lastSyncedAt / etc.) for
-        // audit and so reconnect can resume from prior watermark. Only abandon
-        // ACTIVE runs so the scheduler stops trying to drive them forward
-        // against a now-missing integration.
-        await tx
-          .update(coexistSyncRunModel)
-          .set({
-            status: "failed",
-            finishedAt: new Date(),
-            currentError: "Integration disconnected",
-          })
-          .where(
-            and(
-              eq(coexistSyncRunModel.integrationId, integrationWhatsapp.id),
-              inArray(coexistSyncRunModel.status, ["init", "running"]),
-            ),
-          )
-
-        await tx
-          .delete(whatsappCoexistStagingModel)
-          .where(
-            eq(
-              whatsappCoexistStagingModel.phoneNumberId,
-              integrationWhatsapp.phoneNumberId,
-            ),
-          )
-
-        // Polymorphic FK cleanup — no DB-level cascade for
-        // MetaCapiEvent.integrationId; stale rows would keep occupying the
-        // (workspaceId, channel, sourceKey) dedup slot after a reconnect.
-        await metaCapiEventRepository.deleteByIntegration(
-          {
-            workspaceId,
-            channel: "whatsapp",
-            integrationId: integrationWhatsapp.id,
-          },
-          tx,
-        )
-
-        await tx
-          .delete(integrationWhatsappModel)
-          .where(eq(integrationWhatsappModel.id, integrationWhatsapp.id))
-
-        await inboxService.disconnect({
-          inboxId: integrationWhatsapp.inboxId,
+      await db.transaction((tx) =>
+        integrationWhatsappService.disconnect({
+          integrationWhatsapp,
           ownerId: workspace.ownerId,
           workspaceId,
           tx,
-        })
+        }),
+      )
+
+      await auditService.record({
+        action: "disconnect",
+        detail: `disconnected the WhatsApp channel (#${integrationWhatsapp.id})`,
       })
     },
   )

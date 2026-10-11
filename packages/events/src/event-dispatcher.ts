@@ -1,5 +1,11 @@
 import type { ContactInfoType } from "@chatbotx.io/database/partials"
-import type { BaseEventEmitter } from "./base-emitter"
+import type {
+  BaseEventEmitter,
+  CallEndedMetadata,
+  CallRecordedMetadata,
+  CallTranscribedMetadata,
+  IncomingCallMetadata,
+} from "./base-emitter"
 import { logger } from "./logger"
 import { TriggerEventEmitter } from "./trigger/emitter"
 import { WebhookEventEmitter } from "./webhook/emitter"
@@ -46,6 +52,7 @@ export const emitContactCreated = async (
   name?: string,
   phone?: string,
   email?: string,
+  contactInboxId?: string,
 ) =>
   await emitToAllEmitters(
     "contactCreated",
@@ -54,6 +61,7 @@ export const emitContactCreated = async (
     name,
     phone,
     email,
+    contactInboxId,
   )
 
 export const emitContactReferredANewContact = async (
@@ -61,6 +69,7 @@ export const emitContactReferredANewContact = async (
   contactId: string,
   refName?: string,
   reflinkId?: string,
+  contactInboxId?: string,
 ) =>
   await emitToAllEmitters(
     "contactReferredANewContact",
@@ -68,6 +77,7 @@ export const emitContactReferredANewContact = async (
     contactId,
     refName,
     reflinkId,
+    contactInboxId,
   )
 
 export const emitContactReferredExistingContact = async (
@@ -75,6 +85,7 @@ export const emitContactReferredExistingContact = async (
   contactId: string,
   refName?: string,
   reflinkId?: string,
+  contactInboxId?: string,
 ) =>
   await emitToAllEmitters(
     "contactReferredExistingContact",
@@ -82,6 +93,7 @@ export const emitContactReferredExistingContact = async (
     contactId,
     refName,
     reflinkId,
+    contactInboxId,
   )
 
 // Tag events
@@ -89,13 +101,29 @@ export const emitTagApplied = async (
   workspaceId: string,
   contactId: string,
   tagId: string,
-) => await emitToAllEmitters("tagApplied", workspaceId, contactId, tagId)
+  contactInboxId?: string,
+) =>
+  await emitToAllEmitters(
+    "tagApplied",
+    workspaceId,
+    contactId,
+    tagId,
+    contactInboxId,
+  )
 
 export const emitTagRemoved = async (
   workspaceId: string,
   contactId: string,
   tagId: string,
-) => await emitToAllEmitters("tagRemoved", workspaceId, contactId, tagId)
+  contactInboxId?: string,
+) =>
+  await emitToAllEmitters(
+    "tagRemoved",
+    workspaceId,
+    contactId,
+    tagId,
+    contactInboxId,
+  )
 
 // Custom field events
 export const emitCustomFieldChanged = async (
@@ -105,6 +133,7 @@ export const emitCustomFieldChanged = async (
   customFieldName: string,
   oldValue: unknown,
   newValue: unknown,
+  contactInboxId?: string,
 ) =>
   await emitToAllEmitters(
     "customFieldChanged",
@@ -114,6 +143,7 @@ export const emitCustomFieldChanged = async (
     customFieldName,
     oldValue,
     newValue,
+    contactInboxId,
   )
 
 // Contact info events
@@ -165,7 +195,14 @@ export const emitConversationTransferredToBot = async (
 export const emitContactUnsubscribed = async (
   workspaceId: string,
   contactId: string,
-) => await emitToAllEmitters("contactUnsubscribed", workspaceId, contactId)
+  contactInboxId?: string,
+) =>
+  await emitToAllEmitters(
+    "contactUnsubscribed",
+    workspaceId,
+    contactId,
+    contactInboxId,
+  )
 
 export const emitConversationArchived = async (
   workspaceId: string,
@@ -225,12 +262,46 @@ export const emitConversationUnassigned = async (
     unassignedBy,
   )
 
+// Voice-call events (channel-neutral — `metadata.callId` is the provider id)
+export const emitIncomingCall = async (
+  workspaceId: string,
+  contactId: string,
+  metadata: IncomingCallMetadata,
+) => await emitToAllEmitters("incomingCall", workspaceId, contactId, metadata)
+
+export const emitMissedAudioCall = async (
+  workspaceId: string,
+  contactId: string,
+  metadata: IncomingCallMetadata,
+) =>
+  await emitToAllEmitters("missedAudioCall", workspaceId, contactId, metadata)
+
+export const emitCallEnded = async (
+  workspaceId: string,
+  contactId: string,
+  metadata: CallEndedMetadata,
+) => await emitToAllEmitters("callEnded", workspaceId, contactId, metadata)
+
+export const emitCallRecorded = async (
+  workspaceId: string,
+  contactId: string,
+  metadata: CallRecordedMetadata,
+) => await emitToAllEmitters("callRecorded", workspaceId, contactId, metadata)
+
+export const emitCallTranscribed = async (
+  workspaceId: string,
+  contactId: string,
+  metadata: CallTranscribedMetadata,
+) =>
+  await emitToAllEmitters("callTranscribed", workspaceId, contactId, metadata)
+
 // Sequence events
 export const emitSequenceSubscribed = async (
   workspaceId: string,
   contactId: string,
   sequenceId: string,
   sequenceName: string,
+  contactInboxId?: string,
 ) =>
   await emitToAllEmitters(
     "sequenceSubscribed",
@@ -238,6 +309,7 @@ export const emitSequenceSubscribed = async (
     contactId,
     sequenceId,
     sequenceName,
+    contactInboxId,
   )
 
 export const emitSequenceUnsubscribed = async (
@@ -245,6 +317,7 @@ export const emitSequenceUnsubscribed = async (
   contactId: string,
   sequenceId: string,
   sequenceName: string,
+  contactInboxId?: string,
 ) =>
   await emitToAllEmitters(
     "sequenceUnsubscribed",
@@ -252,4 +325,5 @@ export const emitSequenceUnsubscribed = async (
     contactId,
     sequenceId,
     sequenceName,
+    contactInboxId,
   )

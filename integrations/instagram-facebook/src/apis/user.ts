@@ -1,10 +1,11 @@
 import type { Context, IncomingContact } from "@chatbotx.io/sdk"
 import { createId } from "@chatbotx.io/utils"
+import { fetchMediaWithLimits } from "@chatbotx.io/utils/media-download"
 import { API_URL } from "../constants"
 import { InstagramAPIException, rescue } from "../exception"
 import { instagramGraphClient } from "../lib/http-client"
 import { logger } from "../lib/logger"
-import type { InstagramAuthValue, InstagramUserProfile } from "../schemas"
+import type { InstagramAuthValue, InstagramUserProfile } from "../schema"
 
 const GRAPH_NONEXISTING_FIELD_ERROR_CODE = 100
 
@@ -25,14 +26,14 @@ const fetchProfileFields = async ({
   const fields = includeProfilePic
     ? "name,username,profile_pic"
     : "name,username"
-  const queries = new URLSearchParams({
-    fields,
-    access_token: ctx.auth.tokens.accessToken,
-  })
+  // Auth in the Authorization header, not the query string — a query token
+  // leaks through the request URL captured on HTTP-client errors and logs.
+  const queries = new URLSearchParams({ fields })
 
   try {
     return await instagramGraphClient.get<InstagramUserProfile>(
       `${ctx.auth.metadata.version}/${psid}?${queries.toString()}`,
+      { headers: { Authorization: `Bearer ${ctx.auth.tokens.accessToken}` } },
     )
   } catch (error) {
     // Graph rejects `profile_pic` on some nodes (e.g. the business account's
@@ -68,6 +69,9 @@ export const getUserProfile = ({
     const result: IncomingContact = {
       sourceId: psid,
       firstName: response.name,
+      // Persisted so `@handle` mentions inside a comment can be resolved back
+      // to a known contact — Instagram gives no tagged-user ids, only handles.
+      sourceUsername: response.username,
     }
 
     if (response.profile_pic) {
@@ -85,6 +89,24 @@ export const getUserProfile = ({
   })
 }
 
+export const getContactProfilePicUrl = ({
+  ctx,
+  psid,
+}: {
+  ctx: Context<InstagramAuthValue>
+  psid: string
+}): Promise<string | null> => {
+  const endpoint = `${API_URL}/${ctx.auth.metadata.version}/${psid}`
+  return rescue(endpoint, async () => {
+    const response = await fetchProfileFields({
+      ctx,
+      psid,
+      includeProfilePic: true,
+    })
+    return response.profile_pic ?? null
+  })
+}
+
 export const getUserProfilePicture = async ({
   ctx,
   pictureUrl,
@@ -92,22 +114,20 @@ export const getUserProfilePicture = async ({
   ctx: Context<InstagramAuthValue>
   pictureUrl: string
 }): Promise<string | undefined> => {
-  const response = await fetch(pictureUrl, {
+  const media = await fetchMediaWithLimits(pictureUrl, {
     headers: {
       Authorization: `Bearer ${ctx.auth.tokens.accessToken}`,
       "User-Agent": "node",
     },
   })
-  if (response.ok && response.body) {
-    const originPath = `${ctx.storagePrefix}/avatars/${createId()}`
-    const bytes = await response.arrayBuffer()
-    const mimeType = response.headers.get("content-type") ?? "image/png"
-
-    await ctx.uploader?.putObject(originPath, Buffer.from(bytes), {
-      ACL: "public-read",
-      ContentType: mimeType,
-    })
-
-    return originPath
+  if (!media) {
+    return
   }
+  const originPath = `${ctx.storagePrefix}/avatars/${createId()}`
+  await ctx.uploader?.putObject(originPath, Buffer.from(media.bytes), {
+    ACL: "public-read",
+    ContentType: media.mimeType,
+  })
+
+  return originPath
 }

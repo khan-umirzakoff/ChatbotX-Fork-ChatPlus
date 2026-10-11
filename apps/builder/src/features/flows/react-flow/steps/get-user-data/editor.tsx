@@ -47,6 +47,10 @@ function resolveOutputFieldTypes(
   return
 }
 
+function supportsContactHint(replyFormat: string): boolean {
+  return replyFormat === ReplyFormat.phone || replyFormat === ReplyFormat.email
+}
+
 const GetUserDataStepForm = ({
   parentName,
   onSuccess,
@@ -81,6 +85,7 @@ const GetUserDataStepForm = ({
   const autoSkip = useWatch({ name: "autoSkip", control: form.control })
   const replyFormat = useWatch({ name: "replyFormat", control: form.control })
   const outputFieldTypes = resolveOutputFieldTypes(replyFormat)
+  const showHintAvailable = supportsContactHint(replyFormat)
 
   const handleCancel = () => {
     form.reset()
@@ -93,9 +98,17 @@ const GetUserDataStepForm = ({
     setParentValue(`${parentName}.outputFieldId`, data.outputFieldId)
     setParentValue(`${parentName}.retryMessage`, data.retryMessage)
     setParentValue(`${parentName}.skipButtonLabel`, data.skipButtonLabel)
+    setParentValue(
+      `${parentName}.showHint`,
+      supportsContactHint(data.replyFormat) && Boolean(data.showHint),
+    )
     setParentValue(`${parentName}.autoSkip`, data.autoSkip)
     setParentValue(`${parentName}.autoSkipTimeValue`, data.autoSkipTimeValue)
     setParentValue(`${parentName}.autoSkipTimeUnit`, data.autoSkipTimeUnit)
+    setParentValue(
+      `${parentName}.autoSkipFailAttempts`,
+      data.autoSkipFailAttempts,
+    )
     onSuccess?.()
   }
 
@@ -106,6 +119,11 @@ const GetUserDataStepForm = ({
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <SelectField
+          description={
+            replyFormat === ReplyFormat.location
+              ? t("fields.replyFormat.locationDescription")
+              : undefined
+          }
           label={t("fields.replyFormat.label")}
           name="replyFormat"
           options={replyFormatOptions}
@@ -115,6 +133,7 @@ const GetUserDataStepForm = ({
         <CustomFieldField
           customFieldTypes={outputFieldTypes}
           emptyText={t("actions.noRecordFound")}
+          includeBotFields
           label={t("fields.outputCustomField.label")}
           name="outputFieldId"
           placeholder={t("actions.pleaseSelect")}
@@ -122,6 +141,7 @@ const GetUserDataStepForm = ({
         />
 
         <TiptapEditorField
+          includeBotFieldVariables
           label={t("fields.retryMessage.label")}
           name="retryMessage"
         />
@@ -130,6 +150,14 @@ const GetUserDataStepForm = ({
           label={t("fields.skipButtonLabel.label")}
           name="skipButtonLabel"
         />
+
+        {showHintAvailable && (
+          <SwitchField
+            description={t("fields.showHint.description")}
+            label={t("fields.showHint.label")}
+            name="showHint"
+          />
+        )}
 
         <SwitchField label={t("fields.autoSkip.label")} name="autoSkip" />
 
@@ -189,6 +217,7 @@ const GetUserDataStepEditor = ({ parentName }: { parentName: string }) => {
     <BaseStepEditor icon={KeyboardIcon} title={t("flows.actions.getUserData")}>
       <div className="flex flex-col gap-3">
         <TiptapEditorField
+          includeBotFieldVariables
           label={t("fields.messages.label")}
           name={`${parentName}.message`}
           required

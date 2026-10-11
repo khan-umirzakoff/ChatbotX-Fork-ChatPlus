@@ -9,7 +9,8 @@ import { useTranslations } from "next-intl"
 import { SetCustomField } from "@/features/contacts/components/add-custom-field-dialog"
 import { CustomFieldSelect } from "@/features/custom-fields/custom-field-select"
 import { useFlowSelectOptions } from "@/features/flows/provider/flow-hook"
-import { CapiEventFields } from "@/features/meta-conversions/components/capi-event-fields"
+import { GoogleAdsConversionFields } from "@/features/integration-google-ads/components/google-ads-conversion-fields"
+import { MetaCapiEventFields } from "@/features/meta-conversions/components/meta-capi-event-fields"
 import { useTagSelectOptions } from "@/features/tags/provider/tag-hook"
 import { GoogleSheetAction } from "./run-google-sheet"
 
@@ -38,11 +39,17 @@ export const ActionEditor = ({
     case triggerActions.enum.setCustomField:
       return (
         <div className="flex flex-col gap-4">
-          <SetCustomField parentName={parentName} />
+          <SetCustomField includeBotFields parentName={parentName} />
         </div>
       )
     case triggerActions.enum.clearCustomField:
-      return <CustomFieldSelect label="" name={`${parentName}.customFieldId`} />
+      return (
+        <CustomFieldSelect
+          includeBotFields
+          label=""
+          name={`${parentName}.customFieldId`}
+        />
+      )
     case triggerActions.enum.startAnotherFlow:
       return (
         <ComboboxField
@@ -64,7 +71,9 @@ export const ActionEditor = ({
     case triggerActions.enum.runGoogleSheet:
       return <GoogleSheetAction parentName={parentName} />
     case triggerActions.enum.sendMetaCapiEvent:
-      return <CapiEventFields parentName={parentName} />
+      return <MetaCapiEventFields parentName={parentName} />
+    case triggerActions.enum.sendGoogleAdsConversion:
+      return <GoogleAdsConversionFields parentName={parentName} />
     default:
       return null
   }

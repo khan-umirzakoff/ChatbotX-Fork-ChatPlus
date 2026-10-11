@@ -1,0 +1,22 @@
+import { zodBigintAsString } from "@chatbotx.io/utils"
+import { z } from "zod"
+import {
+  createUserPersistentMenuRequest,
+  updateUserPersistentMenuRequest,
+} from "./action"
+import { userPersistentMenuResource } from "./resource"
+export const userPersistentMenuPublicResource = userPersistentMenuResource.omit(
+  { workspaceId: true },
+)
+
+export const createUserPersistentMenuPublicRequest =
+  createUserPersistentMenuRequest
+
+export const updateUserPersistentMenuPublicRequest =
+  updateUserPersistentMenuRequest.and(
+    z.object({
+      id: zodBigintAsString().describe(
+        "User persistent menu id. Get it from `userPersistentMenus.list`.",
+      ),
+    }),
+  )

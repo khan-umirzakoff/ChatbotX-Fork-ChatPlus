@@ -60,7 +60,8 @@ vi.mock("@chatbotx.io/events", () => ({
   emitCustomFieldChanged: mocks.emitCustomFieldChanged,
 }))
 
-vi.mock("@chatbotx.io/redis", () => ({
+vi.mock("@chatbotx.io/redis", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
   invalidateCacheByTags: mocks.invalidateCacheByTags,
 }))
 
@@ -114,6 +115,7 @@ describe("contactCustomFieldService.setValues — timezone resolution", () => {
       "booking_at",
       null,
       "2026-07-22T08:30:00.000Z",
+      undefined,
     )
   })
 
@@ -181,6 +183,7 @@ describe("contactCustomFieldService.setValues — timezone resolution", () => {
       "birthday",
       null,
       "2026-07-22T00:00:00+07:00",
+      undefined,
     )
   })
 })
@@ -262,6 +265,7 @@ describe("contactCustomFieldService.setValues — write/emit contract", () => {
       "booking_at",
       "2020-01-01T00:00:00.000Z",
       "2026-07-22T08:30:00.000Z",
+      undefined,
     )
   })
 
@@ -523,6 +527,7 @@ describe("contactCustomFieldService.emitCustomFieldChanges — post-commit fan-o
           newValue: "2026-07-22T00:00:00+07:00",
         },
       ],
+      contactInboxId: "ci-1",
     })
 
     expect(mocks.emitCustomFieldChanged).toHaveBeenCalledTimes(2)
@@ -534,6 +539,7 @@ describe("contactCustomFieldService.emitCustomFieldChanges — post-commit fan-o
       "booking_at",
       "2020-01-01T00:00:00.000Z",
       "2026-07-22T08:30:00.000Z",
+      "ci-1",
     )
     expect(mocks.emitCustomFieldChanged).toHaveBeenNthCalledWith(
       2,
@@ -543,6 +549,7 @@ describe("contactCustomFieldService.emitCustomFieldChanges — post-commit fan-o
       "birthday",
       null,
       "2026-07-22T00:00:00+07:00",
+      "ci-1",
     )
     expect(mocks.invalidateCacheByTags).toHaveBeenCalledOnce()
   })

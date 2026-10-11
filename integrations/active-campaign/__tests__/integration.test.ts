@@ -1,4 +1,5 @@
 import type { Context } from "@chatbotx.io/sdk"
+import { jsonResponse } from "@chatbotx.io/vitest-config/test-utils"
 import { afterEach, describe, expect, test, vi } from "vitest"
 import { ActiveCampaignApiError } from "../src/error"
 import { integration } from "../src/integration"
@@ -7,12 +8,6 @@ import {
   createActiveCampaignAuth,
 } from "../src/schemas"
 
-const jsonResponse = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json" },
-  })
-
 const createContext = (
   auth: ActiveCampaignAuthValue,
 ): Context<ActiveCampaignAuthValue> => ({
@@ -20,9 +15,10 @@ const createContext = (
   storagePrefix: "",
   platform: {
     appUrl: "",
-    wsUrl: "",
+    publicRealtimeUrl: "",
+    internalRealtimeUrl: "",
     storageUrl: "",
-    getRealtimeAuthHeaders: async () => ({}),
+    getRealtimeBroadcastAuthHeaders: async () => ({}),
   },
 })
 

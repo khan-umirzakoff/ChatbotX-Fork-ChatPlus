@@ -8,9 +8,12 @@ import {
 } from "@chatbotx.io/ui/components/ui/popover"
 import { Loader2Icon, MessageSquareMoreIcon, PlusIcon } from "lucide-react"
 import { useTranslations } from "next-intl"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { useWorkspaceId } from "@/hooks/routing"
-import { useSavedReplyStore } from "./provider/saved-reply-store-context"
+import {
+  useSavedReplies,
+  useSavedReplyCache,
+} from "./provider/saved-reply-hook"
 import { SavedReplyCreateForm } from "./saved-reply-create-form"
 import { SavedReplyEditForm } from "./saved-reply-edit-form"
 import { SavedReplyItem } from "./saved-reply-item"
@@ -27,14 +30,11 @@ const SavedReplyManage = (props: { onSelect: (text: string) => void }) => {
 
   const [open, setOpen] = useState(false)
   const [view, setView] = useState<ViewState>({ type: "list" })
-  const {
-    savedReplies,
-    isLoading: isLoadingSavedReplies,
-    getAllSavedReplies,
-    deleteSavedReply: deleteSavedReplyFromStore,
-  } = useSavedReplyStore((state) => state)
-
-  const upsertSavedReply = useSavedReplyStore((state) => state.upsertSavedReply)
+  const { data: savedReplies = [], isLoading } = useSavedReplies(workspaceId, {
+    enabled: open,
+  })
+  const { remove: deleteSavedReplyFromStore, upsert: upsertSavedReply } =
+    useSavedReplyCache(workspaceId)
 
   const editingSavedReply = useMemo(
     () => (view.type === "edit" ? view.item : null),
@@ -54,12 +54,6 @@ const SavedReplyManage = (props: { onSelect: (text: string) => void }) => {
     }
   }
 
-  useEffect(() => {
-    if (open) {
-      getAllSavedReplies()
-    }
-  }, [open, getAllSavedReplies])
-
   return (
     <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger
@@ -69,7 +63,7 @@ const SavedReplyManage = (props: { onSelect: (text: string) => void }) => {
           </Button>
         }
       />
-      <PopoverContent align="end" className="w-100 p-0">
+      <PopoverContent align="end" className="w-[min(100vw-2rem,25rem)] p-0">
         {view.type === "create" ? (
           <SavedReplyCreateForm
             onCancel={() => setView({ type: "list" })}
@@ -104,19 +98,19 @@ const SavedReplyManage = (props: { onSelect: (text: string) => void }) => {
             </div>
 
             <div className="max-h-75 overflow-y-auto">
-              {isLoadingSavedReplies ? (
+              {isLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2Icon className="animate-spin" />
                 </div>
               ) : null}
 
-              {!isLoadingSavedReplies && savedReplies.length === 0 ? (
+              {!isLoading && savedReplies.length === 0 ? (
                 <div className="px-4 py-8 text-center text-muted-foreground text-sm">
                   {t("messages.noDataAvailable")}
                 </div>
               ) : null}
 
-              {isLoadingSavedReplies
+              {isLoading
                 ? null
                 : savedReplies.map((item, index) => (
                     <SavedReplyItem

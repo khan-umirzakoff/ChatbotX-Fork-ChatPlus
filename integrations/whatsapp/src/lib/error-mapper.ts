@@ -3,6 +3,8 @@ import {
   ChannelErrorCategory,
   UNKNOWN_ERROR,
 } from "@chatbotx.io/sdk"
+import { formatGraphErrorMessage } from "@chatbotx.io/utils/graph-error"
+import { WHATSAPP_CALLING_ERROR_CODES } from "../constants"
 import {
   type ChannelErrorSource,
   parseOriginError,
@@ -35,6 +37,9 @@ const AUTH_FAILED_CODES = new Set([
   133_009, // PIN entered too quickly
 ])
 
+/** `take` refused: the caller is not the escalation partner. */
+export const THREAD_CONTROL_NOT_ESCALATION_CODE = 2_494_191
+
 const PERMISSION_DENIED_CODES = new Set([
   3, // Capability disabled
   10, // Permission denied
@@ -49,7 +54,26 @@ const PERMISSION_DENIED_CODES = new Set([
   133_006, // Phone verification required
   133_010, // Phone not registered
   133_015, // Wait before re-registering
+  THREAD_CONTROL_NOT_ESCALATION_CODE, // Thread control: only escalation may `take`
 ])
+
+/**
+ * Codes Meta returns when a non-owner sends a Service message. Meta has not
+ * published the code (plan risk R1), so this stays empty until one is captured
+ * from a real rejection; the local send gate covers known-standby threads.
+ */
+export const THREAD_CONTROL_REJECTION_CODES: ReadonlySet<number> =
+  new Set<number>([])
+
+/**
+ * Matched before the generic `OAuthException` branch in `categorize`, which
+ * would otherwise read these as a credential problem. Kept as its own set
+ * rather than reordering that function, since codes like 100 legitimately rely
+ * on the OAuth branch winning over their own set.
+ */
+const CALLING_INELIGIBLE_CODES = new Set<number>(
+  Object.values(WHATSAPP_CALLING_ERROR_CODES),
+)
 
 const RATE_LIMITED_CODES = new Set([
   4, // App API rate limit
@@ -120,6 +144,17 @@ function categorize(
       : ChannelErrorCategory.UNKNOWN
   }
 
+  // Checked before the OAuth branch, like calling eligibility: these are an
+  // ownership refusal, never a credential problem, and must not flag the
+  // integration as needing re-auth whatever `type` Meta attaches.
+  if (
+    CALLING_INELIGIBLE_CODES.has(code) ||
+    THREAD_CONTROL_REJECTION_CODES.has(code) ||
+    code === THREAD_CONTROL_NOT_ESCALATION_CODE
+  ) {
+    return ChannelErrorCategory.PERMISSION_DENIED
+  }
+
   if (AUTH_FAILED_CODES.has(code) || type === "OAuthException") {
     return ChannelErrorCategory.AUTH_FAILED
   }
@@ -177,7 +212,12 @@ function mapApiFields(fields: ChannelErrorSource): ChannelError {
   const category = categorize(numCode, fields.type)
 
   const channelError = new ChannelError(
-    fields.message ?? "WhatsApp API call failed",
+    formatGraphErrorMessage({
+      code: fields.code,
+      subCode: fields.subCode,
+      message: fields.message,
+      userMessage: fields.userMessage ?? fields.userTitle,
+    }) ?? "WhatsApp API call failed",
     category,
     {
       code: fields.code ?? UNKNOWN_ERROR.code,
@@ -227,8 +267,8 @@ export function isRevokedTokenError(error: unknown): boolean {
   const isOAuthRevoked =
     mappedError.category === ChannelErrorCategory.AUTH_FAILED &&
     mappedError.code === 190 &&
-    mappedError.subCode !== null &&
-    REVOKED_TOKEN_SUBCODES.has(Number(mappedError.subCode))
+    (mappedError.subCode === null ||
+      REVOKED_TOKEN_SUBCODES.has(Number(mappedError.subCode)))
 
   return isGraphMethodRevoked || isOAuthRevoked
 }

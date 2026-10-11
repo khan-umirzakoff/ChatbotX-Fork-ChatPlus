@@ -36,6 +36,12 @@ export type AuthStore<AO extends AuthValue = AuthValue> = {
 
 export type Context<AO extends AuthValue, ID = Record<string, unknown>> = {
   storagePrefix: string
+  /**
+   * Channel-scoped prefix for media received from the channel. Read it through
+   * `getMediaStoragePrefix`, which falls back to `storagePrefix` for contexts
+   * built without a channel.
+   */
+  mediaStoragePrefix?: string
   uploader?: ContextUploader
   auth: AO
   authStore?: AuthStore<AO>
@@ -43,11 +49,20 @@ export type Context<AO extends AuthValue, ID = Record<string, unknown>> = {
   integrationDetail?: ID
   platform: {
     appUrl: string
-    wsUrl: string
+    /**
+     * Internal server-to-server realtime broadcast base URL. Never expose this
+     * deployment-wide URL to clients.
+     */
+    internalRealtimeUrl: string
+    publicRealtimeUrl: string
     storageUrl: string
-    getRealtimeAuthHeaders: (target: {
+    getRealtimeBroadcastAuthHeaders: (target: {
       kind: "guest" | "workspace" | "user"
       id: string
     }) => Promise<Record<string, string>>
   }
 }
+
+export const getMediaStoragePrefix = (
+  ctx: Pick<Context<AuthValue>, "storagePrefix" | "mediaStoragePrefix">,
+): string => ctx.mediaStoragePrefix ?? ctx.storagePrefix

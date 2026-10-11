@@ -1,17 +1,26 @@
 import type * as schema from "./schema"
 
+export type ConnectionModel = typeof schema.connectionModel.$inferSelect
+export type ConnectSessionModel = typeof schema.connectSessionModel.$inferSelect
 export type IntegrationWebchatModel =
   typeof schema.integrationWebchatModel.$inferSelect
 export type IntegrationApiModel = typeof schema.integrationApiModel.$inferSelect
 export type UserModel = typeof schema.userModel.$inferSelect
+export type UserDeviceTokenModel =
+  typeof schema.userDeviceTokenModel.$inferSelect
 export type AIAgentModel = typeof schema.aiAgentModel.$inferSelect
 export type AIFunctionModel = typeof schema.aiFunctionModel.$inferSelect
 export type AIMCPServerModel = typeof schema.aiMCPServerModel.$inferSelect
-export type AITriggerModel = typeof schema.aiTriggerModel.$inferSelect
 export type AdsConversionRuleModel =
   typeof schema.adsConversionRuleModel.$inferSelect
 export type AdsConversionEventModel =
   typeof schema.adsConversionEventModel.$inferSelect
+export type GoogleAdsConversionEventModel =
+  typeof schema.googleAdsConversionEventModel.$inferSelect
+export type GoogleAdsSettingsModel =
+  typeof schema.googleAdsSettingsModel.$inferSelect
+export type IntegrationGoogleAdsModel =
+  typeof schema.integrationGoogleAdsModel.$inferSelect
 export type MetaCapiEventModel = typeof schema.metaCapiEventModel.$inferSelect
 export type FieldModel = typeof schema.customFieldModel.$inferSelect
 export type AutomatedResponseModel =
@@ -28,6 +37,11 @@ export type AppointmentReminderDispatchModel =
 export type FlowModel = typeof schema.flowModel.$inferSelect
 export type FolderModel = typeof schema.folderModel.$inferSelect
 export type TagModel = typeof schema.tagModel.$inferSelect
+export type TemplateModel = typeof schema.templateModel.$inferSelect
+export type TemplateInstallationModel =
+  typeof schema.templateInstallationModel.$inferSelect
+export type TemplateInstalledResourceModel =
+  typeof schema.templateInstalledResourceModel.$inferSelect
 export type EmailTopicModel = typeof schema.emailTopicModel.$inferSelect
 export type AnalyticsEmailTopicModel =
   typeof schema.analyticsEmailTopicModel.$inferSelect
@@ -37,8 +51,12 @@ export type ContactToTagChannelModel =
 export type FlowVersionModel = typeof schema.flowVersionModel.$inferSelect
 export type InvitationModel = typeof schema.invitationModel.$inferSelect
 export type BroadcastModel = typeof schema.broadcastModel.$inferSelect
+export type BroadcastTargetModel =
+  typeof schema.broadcastTargetModel.$inferSelect
 export type WorkspaceMemberModel =
   typeof schema.workspaceMemberModel.$inferSelect
+export type WorkspaceApiTokenModel =
+  typeof schema.workspaceApiTokenModel.$inferSelect
 export type UserQuotaModel = typeof schema.userQuotaModel.$inferSelect
 export type WorkspaceUsageModel = typeof schema.workspaceUsageModel.$inferSelect
 export type ContactModel = typeof schema.contactModel.$inferSelect
@@ -85,6 +103,8 @@ export type IntegrationOutlookCalendarModel =
   typeof schema.integrationOutlookCalendarModel.$inferSelect
 export type IntegrationWhatsappModel =
   typeof schema.integrationWhatsappModel.$inferSelect
+export type WhatsappBusinessAccountModel =
+  typeof schema.whatsappBusinessAccountModel.$inferSelect
 export type IntegrationZaloModel =
   typeof schema.integrationZaloModel.$inferSelect
 export type IntegrationTelegramModel =
@@ -101,6 +121,7 @@ export type AIConversationEmbeddingModel =
   typeof schema.aiConversationEmbeddingModel.$inferSelect
 export type AIEmbeddingModel = typeof schema.aiEmbeddingModel.$inferSelect
 export type AIFileModel = typeof schema.aiFileModel.$inferSelect
+export type FileModel = typeof schema.fileModel.$inferSelect
 export type ContactCustomFieldModel =
   typeof schema.contactCustomFieldModel.$inferSelect
 export type WorkspaceModel = typeof schema.workspaceModel.$inferSelect
@@ -118,10 +139,22 @@ export type FacebookLeadAdsAutomationModel =
   typeof schema.facebookLeadAdsAutomationModel.$inferSelect
 export type FacebookLeadAdsLeadModel =
   typeof schema.facebookLeadAdsLeadModel.$inferSelect
-export type FBCommentAutomationModel =
-  typeof schema.fbCommentAutomationModel.$inferSelect
-export type FBCommentAutomationReplyModel =
-  typeof schema.fbCommentAutomationReplyModel.$inferSelect
+export type FacebookMarketingMessageModel =
+  typeof schema.facebookMarketingMessageModel.$inferSelect
+export type FacebookMarketingMessagesAuthModel =
+  typeof schema.facebookMarketingMessagesAuthModel.$inferSelect
+export type CommentAutomationModel =
+  typeof schema.commentAutomationModel.$inferSelect
+export type CommentAutomationReplyModel =
+  typeof schema.commentAutomationReplyModel.$inferSelect
+export type CommentAutomationEventModel =
+  typeof schema.commentAutomationEventModel.$inferSelect
+export type CommentAutomationEventInsert =
+  typeof schema.commentAutomationEventModel.$inferInsert
+export type CommentAutomationMissModel =
+  typeof schema.commentAutomationMissModel.$inferSelect
+export type CommentAutomationMissInsert =
+  typeof schema.commentAutomationMissModel.$inferInsert
 export type IgStoryAutomationModel =
   typeof schema.igStoryAutomationModel.$inferSelect
 export type AuditLogModel = typeof schema.auditLogModel.$inferSelect
@@ -144,16 +177,44 @@ export type WebhookExecutionModel =
 export type ExternalWebhookModel =
   typeof schema.externalWebhookModel.$inferSelect
 export type ContactInboxModel = typeof schema.contactInboxModel.$inferSelect
+export type ContactInboxPostModel =
+  typeof schema.contactInboxPostModel.$inferSelect
+export type ChannelPostModel = typeof schema.channelPostModel.$inferSelect
+export type ContactInboxOperationalModel = Omit<
+  ContactInboxModel,
+  "sourceIdentityHistory"
+>
 export type CustomFieldModel = typeof schema.customFieldModel.$inferSelect
 export type BotFieldModel = typeof schema.botFieldModel.$inferSelect
 export type ReflinkModel = typeof schema.reflinkModel.$inferSelect
 export type DynamicImageModel = typeof schema.dynamicImageModel.$inferSelect
+export type MiniAppModel = typeof schema.miniAppModel.$inferSelect
+export type MiniAppPublicationModel =
+  typeof schema.miniAppPublicationModel.$inferSelect
+export type MiniAppSubmissionModel =
+  typeof schema.miniAppSubmissionModel.$inferSelect
+export type MiniAppUploadModel = typeof schema.miniAppUploadModel.$inferSelect
+export type MinigameModel = typeof schema.minigameModel.$inferSelect
+export type MinigameContactModel =
+  typeof schema.minigameContactModel.$inferSelect
+export type MinigamePlayModel = typeof schema.minigamePlayModel.$inferSelect
 export type MagicLinkModel = typeof schema.magicLinkModel.$inferSelect
 export type IntegrationInstagramModel =
   typeof schema.integrationInstagramModel.$inferSelect
+export type IntegrationThreadsModel =
+  typeof schema.integrationThreadsModel.$inferSelect
 export type WhatsappMessageTemplateModel =
   typeof schema.whatsappMessageTemplateModel.$inferSelect
+export type AiHandoverBulkRunModel =
+  typeof schema.aiHandoverBulkRunModel.$inferSelect
+export type AiHandoverSettingsModel =
+  typeof schema.aiHandoverSettingsModel.$inferSelect
+export type MessengerMessageTemplateModel =
+  typeof schema.messengerMessageTemplateModel.$inferSelect
 export type WhatsappFlowModel = typeof schema.whatsappFlowModel.$inferSelect
+export type WhatsappCallModel = typeof schema.whatsappCallModel.$inferSelect
+export type WhatsappCallPermissionModel =
+  typeof schema.whatsappCallPermissionModel.$inferSelect
 export type FlowAnalyticsSessionModel =
   typeof schema.flowAnalyticsSessionModel.$inferSelect
 export type FlowNodeStatModel = typeof schema.flowNodeStatModel.$inferSelect
@@ -168,6 +229,7 @@ export type WhatsappSignupSessionModel =
 export type InboxWithIntegrations = InboxModel & {
   integrationApi?: IntegrationApiModel | null
   integrationInstagram?: IntegrationInstagramModel | null
+  integrationThreads?: IntegrationThreadsModel | null
   integrationMessenger?: IntegrationMessengerModel | null
   integrationTelegram?: IntegrationTelegramModel | null
   integrationWebchat?: IntegrationWebchatModel | null
@@ -180,6 +242,10 @@ export type InboxWithIntegrations = InboxModel & {
 export type ContactOnSmartDelayModel =
   typeof schema.contactOnSmartDelayModel.$inferSelect
 export type MessageCleanupModel = typeof schema.messageCleanupModel.$inferSelect
+export type MessagingAdOperationModel =
+  typeof schema.messagingAdOperationModel.$inferSelect
+export type MessagingAdsConnectionModel =
+  typeof schema.messagingAdsConnectionModel.$inferSelect
 export type AnalyticsContactEventModel =
   typeof schema.analyticsContactEventModel.$inferSelect
 export type AnalyticsBotMessageEventModel =
@@ -217,3 +283,7 @@ export type ContactActiveHourlyModel =
   typeof schema.contactActiveHourlyModel.$inferSelect
 export type AutomationThrottleModel =
   typeof schema.automationThrottleModel.$inferSelect
+export type MediaLibraryFolderModel =
+  typeof schema.mediaLibraryFolderModel.$inferSelect
+export type MediaLibraryFileModel =
+  typeof schema.mediaLibraryFileModel.$inferSelect

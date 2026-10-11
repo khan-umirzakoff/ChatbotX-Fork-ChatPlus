@@ -4,8 +4,12 @@ const { mockSendInstagramMessage } = vi.hoisted(() => ({
   mockSendInstagramMessage: vi.fn(),
 }))
 
+vi.mock("../src/apis/message", () => ({
+  sendMessage: mockSendInstagramMessage,
+}))
+
 vi.mock("../src/apis/page", () => ({
-  sendInstagramMessage: mockSendInstagramMessage,
+  takeThreadControl: vi.fn(),
 }))
 
 vi.mock("../src/lib/logger", () => ({
@@ -38,7 +42,7 @@ describe("instagram-facebook outgoing handlers return provider message ids", () 
     } as never)
 
     expect(mockSendInstagramMessage).toHaveBeenCalledTimes(1)
-    expect(result).toEqual({ messageIds: ["ig_provider-1"] })
+    expect(result).toEqual({ messageIds: ["ig_provider-1"], sentCount: 1 })
   })
 
   test("sendFlowStep (sendText) returns the Send API message_id", async () => {
@@ -57,6 +61,6 @@ describe("instagram-facebook outgoing handlers return provider message ids", () 
     } as never)
 
     expect(mockSendInstagramMessage).toHaveBeenCalledTimes(1)
-    expect(result).toEqual({ messageIds: ["ig_provider-1"] })
+    expect(result).toEqual({ messageIds: ["ig_provider-1"], sentCount: 1 })
   })
 })

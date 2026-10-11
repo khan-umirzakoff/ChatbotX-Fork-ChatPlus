@@ -1,20 +1,19 @@
+import {
+  broadcastPlanPolicyService,
+  integrationWhatsappService,
+} from "@chatbotx.io/business"
 import { getIdFromParams } from "@chatbotx.io/utils"
 import { notFound } from "next/navigation"
 import type { SearchParams } from "nuqs/server"
 import { CreateBroadcastForm } from "@/features/broadcasts/create-broadcast-form"
-import { parseCreateBroadcastPrefill } from "@/features/broadcasts/schemas/create-broadcast-prefill"
+import { parseCreateBroadcastPrefill } from "@/features/broadcasts/schema/create-broadcast-prefill"
 import { canViewContactEmailAndPhone } from "@/features/contacts/permissions"
 import { ContactStoreProvider } from "@/features/contacts/provider/contact-store-context"
-import { CustomFieldStoreProvider } from "@/features/custom-fields/provider/custom-field-store-context"
-import { FlowStoreProvider } from "@/features/flows/provider/flow-store-context"
+
 import { FlowTemplateStoreProvider } from "@/features/flows/react-flow/stores/flow-template-store-provider"
 import { WhatsappFlowStoreProvider } from "@/features/flows/react-flow/stores/whatsapp-flow-store-provider"
-import { InboxStoreProvider } from "@/features/inboxes/provider/inbox-store-context"
 import { listIntegrationOpenaiCompatible } from "@/features/integration-openai-compatible/queries"
 import { IntegrationStoreProvider } from "@/features/integration-whatsapp/provider/integration-store-context"
-import { SequenceStoreProvider } from "@/features/sequences/provider/sequence-store-context"
-import { TagStoreProvider } from "@/features/tags/provider/tag-store-context"
-import { UserStoreProvider } from "@/features/users/provider/user-store-context"
 import { getCurrentUserAndTargetWorkspace } from "@/lib/auth/utils"
 
 export default async function CreateBroadcastPage({
@@ -38,46 +37,47 @@ export default async function CreateBroadcastPage({
   )
 
   const prefill = parseCreateBroadcastPrefill(await searchParams)
+  // The Ads deep-link names a WhatsApp integration; the form targets pages
+  // (inboxes), so resolve it here — a foreign or deleted id preselects nothing.
+  const prefilledIntegration = prefill.integrationWhatsappId
+    ? await integrationWhatsappService.findByIdForWorkspace({
+        id: prefill.integrationWhatsappId,
+        workspaceId,
+      })
+    : null
+  const initialInboxIds = prefilledIntegration
+    ? [prefilledIntegration.inboxId]
+    : undefined
 
   const openaiCompatibleIntegrations = await listIntegrationOpenaiCompatible({
     workspaceId,
   })
+  const { policy: planPolicy } =
+    await broadcastPlanPolicyService.resolveForWorkspace(workspaceId)
 
   return (
-    <FlowStoreProvider workspaceId={workspaceId}>
-      <CustomFieldStoreProvider workspaceId={workspaceId}>
-        <IntegrationStoreProvider workspaceId={workspaceId}>
-          <TagStoreProvider workspaceId={workspaceId}>
-            <FlowTemplateStoreProvider
-              openaiCompatibleIntegrations={openaiCompatibleIntegrations}
+    <IntegrationStoreProvider workspaceId={workspaceId}>
+      <FlowTemplateStoreProvider
+        includeAllTemplateStatuses
+        openaiCompatibleIntegrations={openaiCompatibleIntegrations}
+        workspaceId={workspaceId}
+      >
+        <WhatsappFlowStoreProvider workspaceId={workspaceId}>
+          <ContactStoreProvider
+            autoInitialize={false}
+            workspaceId={workspaceId}
+          >
+            <CreateBroadcastForm
+              canViewEmailAndPhone={canViewEmailAndPhone}
+              initialChannel={prefill.channel}
+              initialContactFilter={prefill.contactFilter}
+              initialInboxIds={initialInboxIds}
+              planPolicy={planPolicy}
               workspaceId={workspaceId}
-            >
-              <WhatsappFlowStoreProvider workspaceId={workspaceId}>
-                <InboxStoreProvider workspaceId={workspaceId}>
-                  <UserStoreProvider workspaceId={workspaceId}>
-                    <SequenceStoreProvider workspaceId={workspaceId}>
-                      <ContactStoreProvider
-                        autoInitialize={false}
-                        workspaceId={workspaceId}
-                      >
-                        <CreateBroadcastForm
-                          canViewEmailAndPhone={canViewEmailAndPhone}
-                          initialChannel={prefill.channel}
-                          initialContactFilter={prefill.contactFilter}
-                          initialIntegrationWhatsappId={
-                            prefill.integrationWhatsappId
-                          }
-                          workspaceId={workspaceId}
-                        />
-                      </ContactStoreProvider>
-                    </SequenceStoreProvider>
-                  </UserStoreProvider>
-                </InboxStoreProvider>
-              </WhatsappFlowStoreProvider>
-            </FlowTemplateStoreProvider>
-          </TagStoreProvider>
-        </IntegrationStoreProvider>
-      </CustomFieldStoreProvider>
-    </FlowStoreProvider>
+            />
+          </ContactStoreProvider>
+        </WhatsappFlowStoreProvider>
+      </FlowTemplateStoreProvider>
+    </IntegrationStoreProvider>
   )
 }

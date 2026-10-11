@@ -1,6 +1,7 @@
 import { createId, zodBigintAsString } from "@chatbotx.io/utils"
 import { z } from "zod"
 
+import { zodFieldReference } from "../field-reference"
 import {
   errorStateDefaultFn,
   errorStateSchema,
@@ -10,12 +11,16 @@ import {
 import { stepTypes } from "./step-action"
 
 export const aiSpeechToTextSchema = z.object({
-  id: zodBigintAsString(),
-  stepType: z.literal(stepTypes.enum.aiSpeechToText),
+  id: zodBigintAsString().describe(
+    "Step id (numeric string), unique within the flow.",
+  ),
+  stepType: z
+    .literal(stepTypes.enum.aiSpeechToText)
+    .describe('Step type discriminator: "aiSpeechToText".'),
   provider: z.literal("openai"),
   model: z.string().trim().min(1),
   inputFieldId: z.string().trim().min(1),
-  outputFieldId: z.string().trim().min(1),
+  outputFieldId: zodFieldReference(),
   states: z.tuple([successStateSchema, errorStateSchema]).optional(),
 })
 export type AISpeechToTextSchema = z.infer<typeof aiSpeechToTextSchema>

@@ -6,6 +6,13 @@ import type {
 } from "@chatbotx.io/sdk"
 import type { ServerMessage } from "whatsapp-api-js/types"
 import z from "zod"
+import type { WhatsappCallingSettings } from "./api/calling"
+import type {
+  DeleteFlowResult,
+  PublishFlowJsonParams,
+  PublishFlowJsonResult,
+  WhatsappFlowResponseField,
+} from "./api/flow"
 import type {
   ConversationalAutomation,
   WhatsappPhoneNumber,
@@ -14,6 +21,22 @@ import type {
 export type WhatsappConfig = BaseConfig & {
   verifyToken?: string
   clientSecret?: string
+  /**
+   * Set by the manual-integration webhook route. Manual integrations may or may
+   * not carry a clientSecret (populated only when the owner supplied a Meta App
+   * Secret on manual connect). Combined with an empty clientSecret, this
+   * selects the legacy-unverified signature policy.
+   */
+  manualIntegration?: boolean
+  /** Set by the manual-integration webhook route, for log correlation only. */
+  integrationId?: string
+  /**
+   * Set by the manual-integration webhook route to the loaded integration's own
+   * phone number id. When present, every parsed change whose
+   * metadata.phone_number_id differs is dropped before enqueue, so a manual
+   * endpoint can only ever deliver events for its own number.
+   */
+  phoneNumberId?: string
 }
 
 export type WhatsappAuthValue = Oauth2AuthValue & {
@@ -225,8 +248,66 @@ export type InteractiveCarouselMessage = {
   }
 }
 
+/**
+ * Cloud API `location_request_message` — Meta's native "Send location"
+ * button. `whatsapp-api-js` does not model this interactive type, so it is
+ * posted raw like templates and carousels.
+ *
+ * @see https://developers.facebook.com/docs/whatsapp/cloud-api/messages/interactive-location-request-messages
+ */
+export type LocationRequestMessage = {
+  _type: "location_request"
+  type: "interactive"
+  interactive: {
+    type: "location_request_message"
+    body: { text: string }
+    action: { name: "send_location" }
+  }
+}
+
+/**
+ * Meta's voice_call interactive — body text plus one "Call on WhatsApp" button.
+ * Not modeled by whatsapp-api-js, so it's posted raw.
+ */
+export type InteractiveVoiceCallMessage = {
+  _type: "interactive_voice_call"
+  type: "interactive"
+  interactive: {
+    type: "voice_call"
+    body: { text: string }
+    action: {
+      name: "voice_call"
+      parameters: {
+        display_text: string
+        ttl_minutes?: number
+        payload?: string
+      }
+    }
+  }
+}
+
+/**
+ * Meta's call_permission_request interactive — asks the customer to allow
+ * business-initiated WhatsApp calls. Not modeled by whatsapp-api-js, so it's
+ * posted raw.
+ */
+export type InteractiveCallPermissionRequestMessage = {
+  _type: "interactive_call_permission_request"
+  type: "interactive"
+  interactive: {
+    type: "call_permission_request"
+    body: { text: string }
+    action: { name: "call_permission_request" }
+  }
+}
+
 /** Messages posted raw because whatsapp-api-js does not model their payloads. */
-export type RawWhatsappMessage = InteractiveCarouselMessage | TemplateMessage
+export type RawWhatsappMessage =
+  | InteractiveCallPermissionRequestMessage
+  | InteractiveCarouselMessage
+  | InteractiveVoiceCallMessage
+  | LocationRequestMessage
+  | TemplateMessage
 
 export type WhatsappActions = {
   verifyAccessToken: Handler<
@@ -256,6 +337,27 @@ export type WhatsappActions = {
     },
     WhatsappFlowScreen[]
   >
+  getFlowResponseFields: Handler<
+    {
+      ctx: Context<WhatsappAuthValue>
+      params: { flowSourceId: string }
+    },
+    WhatsappFlowResponseField[]
+  >
+  publishFlowJson: Handler<
+    {
+      ctx: Context<WhatsappAuthValue>
+      params: PublishFlowJsonParams
+    },
+    PublishFlowJsonResult
+  >
+  deleteFlow: Handler<
+    {
+      ctx: Context<WhatsappAuthValue>
+      params: { flowSourceId: string }
+    },
+    DeleteFlowResult
+  >
   findConversationalAutomation: Handler<
     {
       ctx: Context<WhatsappAuthValue>
@@ -266,6 +368,19 @@ export type WhatsappActions = {
     {
       ctx: Context<WhatsappAuthValue>
       data: ConversationalAutomation
+    },
+    void
+  >
+  getCallingSettings: Handler<
+    {
+      ctx: Context<WhatsappAuthValue>
+    },
+    WhatsappCallingSettings
+  >
+  updateCallingSettings: Handler<
+    {
+      ctx: Context<WhatsappAuthValue>
+      data: Partial<WhatsappCallingSettings>
     },
     void
   >

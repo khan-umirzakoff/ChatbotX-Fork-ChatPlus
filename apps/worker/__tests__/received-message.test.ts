@@ -1,5 +1,14 @@
 import { UnrecoverableError } from "bullmq"
-import { beforeEach, describe, expect, test, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
+
+const AVATAR_STORAGE_PATH_PATTERN = /^public\/space\/ws-1\/avatars\//
+
+const mockLockContentionPolicy = vi.hoisted(() => ({
+  lockWaitSeconds: 10,
+  maxDeferrals: 8,
+  baseDelayMs: 2000,
+  maxDelayMs: 30_000,
+}))
 
 // ---------------------------------------------------------------------------
 // Hoist mock references
@@ -8,9 +17,8 @@ import { beforeEach, describe, expect, test, vi } from "vitest"
 const {
   mockCreateOrUpdate,
   mockCreateOrUpdateWithAttachments,
+  mockFindLastByConversation,
   mockCreateMessageRepository,
-  mockDbUpdate,
-  mockFindOrFail,
   mockFindContactInbox,
   mockRunChannelHandler,
   mockBroadcast,
@@ -22,55 +30,94 @@ const {
   mockConversationFindOrCreate,
   mockAutomatedResponseEnqueueFlowAction,
   mockIntegrationQueueAdd,
-  mockDbSet,
-  mockDbTransaction,
-  mockDbCount,
   mockCreateNewContactWithMac,
   mockWorkspaceFind,
   mockQuotaIncrement,
   mockContactUpdate,
+  mockAdoptPhoneNumberIfSafe,
+  mockSetAvatarIfEmptyOrSentinel,
   mockUpdateTracking,
   mockInvalidateTracking,
+  mockRecordInboundActivity,
   mockWorkspaceIsActiveNow,
   mockAppointmentCancelByToken,
   mockParseAppointmentCancelPostback,
   mockVerifyAppointmentCancelPostback,
   mockChatQueueAdd,
   mockSyncScopedIdentity,
+  mockSyncExistingContactIdentity,
   mockIsUniqueViolationError,
   mockDetectFlowVersion,
+  mockContactProfileRefresh,
+  mockRecordProfileRefreshFailure,
+  mockResolveIntegrationContextFromContactInbox,
+  mockUploaderPutObject,
+  mockMarkReadByOutbound,
+  mockRecordInboundDelivery,
+  mockPromoteStandbyDelivery,
+  mockDistributedLockRunExclusive,
+  mockResolveChannelPostForComment,
+  mockRecordContactInboxPostComment,
 } = vi.hoisted(() => {
-  const mockDbSet = vi.fn()
-  const updateChain = { set: mockDbSet, where: vi.fn() }
-  updateChain.set.mockReturnValue(updateChain)
-  updateChain.where.mockResolvedValue(undefined)
-  const mockDbUpdate = vi.fn().mockReturnValue(updateChain)
-  const mockDbTransaction = vi
-    .fn()
-    .mockImplementation((fn: (tx: unknown) => unknown) =>
-      fn({ update: mockDbUpdate }),
-    )
-  const mockDbCount = vi.fn().mockResolvedValue(1)
-
   const mockFindContactInbox = vi.fn()
-  const mockFindOrFail = vi.fn()
 
   const mockRunChannelHandler = vi.fn()
 
   const mockCreateOrUpdate = vi.fn()
   const mockCreateOrUpdateWithAttachments = vi.fn()
+  const mockFindLastByConversation = vi.fn().mockResolvedValue([])
   const mockCreateMessageRepository = vi.fn().mockResolvedValue({
     createOrUpdate: mockCreateOrUpdate,
     createOrUpdateWithAttachments: mockCreateOrUpdateWithAttachments,
+    findLastByConversation: mockFindLastByConversation,
   })
+  const mockAdoptPhoneNumberIfSafe = vi.fn().mockResolvedValue(undefined)
+  const mockSyncScopedIdentity = vi.fn(
+    async ({ contactInbox }: { contactInbox: unknown }) => ({
+      contactInbox,
+      learnedPrimaryIdentity: undefined,
+    }),
+  )
+  const mockSyncExistingContactIdentity = vi.fn(
+    async (props: {
+      contact: unknown
+      contactInbox: unknown
+      incomingContact: unknown
+      matchedBy: string
+      workspaceId: string
+    }) => {
+      const sync = await mockSyncScopedIdentity({
+        contactInbox: props.contactInbox,
+        incomingContact: props.incomingContact,
+        matchedBy: props.matchedBy,
+      })
+      if (sync.phoneTransition) {
+        const updated = await mockAdoptPhoneNumberIfSafe({
+          workspaceId: props.workspaceId,
+          id: (props.contact as { id: string }).id,
+          previousPhone: sync.phoneTransition.previousPhone,
+          newPhone: sync.phoneTransition.newPhone,
+        })
+        return {
+          contactInbox: sync.contactInbox,
+          contact: updated ?? props.contact,
+          learnedPrimaryIdentity: undefined,
+        }
+      }
+      return {
+        contactInbox: sync.contactInbox,
+        contact: props.contact,
+        learnedPrimaryIdentity: sync.learnedPrimaryIdentity,
+      }
+    },
+  )
 
   return {
     mockCreateOrUpdate,
     mockCreateOrUpdateWithAttachments,
+    mockFindLastByConversation,
     mockCreateMessageRepository,
-    mockDbUpdate,
     mockFindContactInbox,
-    mockFindOrFail,
     mockRunChannelHandler,
     mockBroadcast: vi.fn(),
     mockEmit: vi.fn().mockResolvedValue(undefined),
@@ -81,14 +128,13 @@ const {
     mockUpdateContactFromMessage: vi.fn().mockResolvedValue(undefined),
     mockContactUnblockIfBlocked: vi.fn().mockResolvedValue(null),
     mockContactUpdate: vi.fn().mockResolvedValue({}),
+    mockAdoptPhoneNumberIfSafe,
+    mockSetAvatarIfEmptyOrSentinel: vi.fn().mockResolvedValue(undefined),
     mockConversationFindOrCreate: vi.fn(),
     mockAutomatedResponseEnqueueFlowAction: vi
       .fn()
       .mockResolvedValue(undefined),
     mockIntegrationQueueAdd: vi.fn().mockResolvedValue(undefined),
-    mockDbSet,
-    mockDbTransaction,
-    mockDbCount,
     mockCreateNewContactWithMac: vi.fn(),
     mockWorkspaceFind: vi.fn().mockResolvedValue(null),
     mockWorkspaceIsActiveNow: vi.fn().mockReturnValue(true),
@@ -97,6 +143,16 @@ const {
       .fn()
       .mockResolvedValue({ cacheTags: ["contacts:contact-1:contact-inboxes"] }),
     mockInvalidateTracking: vi.fn().mockResolvedValue(undefined),
+    // `conversationService.recordInboundActivity` now owns the transaction
+    // that used to be `contactInboxService.updateTracking` + a raw
+    // `db.transaction`/`db.update` on Conversation.lastActivityAt (see
+    // `persistNewMessageSideEffects`/`recordInboundActivity` in
+    // packages/business/src/conversation/service.ts). Default resolves a
+    // tracking invalidation handle so `contactInboxService.invalidateTracking`
+    // is exercised the same way the real code path does.
+    mockRecordInboundActivity: vi
+      .fn()
+      .mockResolvedValue({ cacheTags: ["contacts:contact-1:contact-inboxes"] }),
     mockAppointmentCancelByToken: vi.fn().mockResolvedValue({
       cancellable: true,
     }),
@@ -105,14 +161,35 @@ const {
     mockChatQueueAdd: vi.fn().mockResolvedValue(undefined),
     // Pass-through by default: returns the matched contactInbox unchanged so
     // existing (pre-BSUID) tests keep their exact expected shape.
-    mockSyncScopedIdentity: vi.fn(
-      async ({ contactInbox }: { contactInbox: unknown }) => ({
-        contactInbox,
-        learnedPrimaryIdentity: undefined,
-      }),
-    ),
+    mockSyncScopedIdentity,
+    mockSyncExistingContactIdentity,
     mockIsUniqueViolationError: vi.fn().mockReturnValue(false),
     mockDetectFlowVersion: vi.fn(),
+    // Default: a safe no-op result that never invokes `fetchProfile`, so
+    // unrelated tests (most of which now have a nameless `fakeContact` and
+    // therefore ARE eligible per `shouldRefreshContactProfile`) never
+    // trigger a Graph call or touch `resolveIntegrationContextFromContactInbox`
+    // unless a test explicitly overrides this mock to exercise the wiring.
+    mockContactProfileRefresh: vi
+      .fn()
+      .mockResolvedValue({ status: "skipped", reason: "profileComplete" }),
+    mockRecordProfileRefreshFailure: vi.fn().mockResolvedValue(undefined),
+    mockResolveIntegrationContextFromContactInbox: vi.fn().mockResolvedValue({
+      integration: { runChannelHandler: mockRunChannelHandler },
+      ctx: { workspaceId: "ws-1" },
+    }),
+    mockUploaderPutObject: vi.fn().mockResolvedValue(undefined),
+    mockMarkReadByOutbound: vi.fn().mockResolvedValue(true),
+    mockRecordInboundDelivery: vi.fn().mockResolvedValue(null),
+    mockPromoteStandbyDelivery: vi.fn().mockResolvedValue(false),
+    // Pass-through by default: `saveAndBroadcastMessage` wraps its critical
+    // section in this lock; tests exercise persistence behavior, not lock
+    // contention, unless they explicitly override this mock.
+    mockDistributedLockRunExclusive: vi.fn(
+      async ({ fn }: { fn: () => Promise<unknown> }) => await fn(),
+    ),
+    mockResolveChannelPostForComment: vi.fn().mockResolvedValue("post-row-1"),
+    mockRecordContactInboxPostComment: vi.fn().mockResolvedValue(true),
   }
 })
 
@@ -122,6 +199,9 @@ const {
 
 vi.mock("@chatbotx.io/database/repositories", () => ({
   createMessageRepository: mockCreateMessageRepository,
+  contactInboxRepository: {
+    findWithContact: mockFindContactInbox,
+  },
 }))
 
 vi.mock("@chatbotx.io/automated-response", () => ({
@@ -130,22 +210,18 @@ vi.mock("@chatbotx.io/automated-response", () => ({
   },
 }))
 
+vi.mock("@chatbotx.io/filesystem", () => ({
+  uploader: { putObject: mockUploaderPutObject },
+}))
+
 vi.mock("@chatbotx.io/database/client", () => ({
-  db: {
-    update: mockDbUpdate,
-    query: {
-      contactInboxModel: { findFirst: mockFindContactInbox },
-    },
-    $count: mockDbCount,
-    transaction: mockDbTransaction,
-  },
-  eq: vi.fn((col: unknown, val: unknown) => ({ __eq: [col, val] })),
-  findOrFail: mockFindOrFail,
   isUniqueViolationError: mockIsUniqueViolationError,
 }))
 
 vi.mock("@chatbotx.io/database/schema", () => ({
   CONTACT_INBOX_SOURCE_ID_KEY: "ContactInbox_inboxId_sourceId_key",
+  CONTACT_INBOX_SOURCE_PARENT_USER_ID_KEY:
+    "ContactInbox_inboxId_sourceParentUserId_key",
   CONTACT_INBOX_SOURCE_USER_ID_KEY: "ContactInbox_inboxId_sourceUserId_key",
   contactInboxModel: {
     id: "id",
@@ -161,24 +237,96 @@ vi.mock("@chatbotx.io/database/schema", () => ({
   },
 }))
 
+// Mirror of the real capability table
+// (packages/business/src/contact/profile-refresh/rules.ts) — pure, so
+// re-implemented here rather than partially importing the real (heavy)
+// `@chatbotx.io/business` barrel, matching this file's existing convention
+// for `@chatbotx.io/sdk`'s pure helpers above.
+//
+// Tried switching to `vi.mock("@chatbotx.io/business", async (importOriginal)
+// => ...)` (as done in contact-profile-refresh.test.ts, which has no
+// `@chatbotx.io/database/schema` mock to conflict with) — it breaks here: the
+// real barrel's module graph reaches `ads-conversion/schema.ts`, which calls
+// `createSelectSchema` from `@chatbotx.io/database/schema` at import time,
+// and this file's `@chatbotx.io/database/schema` mock above is deliberately
+// minimal (a handful of table shapes) and has no such export. Keeping the
+// mirror here rather than widening that mock (and whatever else the real
+// barrel transitively touches) to stay a small, scoped fix.
+const CONTACT_PROFILE_NAME_CAPABILITIES: Record<
+  string,
+  { inbound: "payload" | "channelApi" | null; onDemand: boolean }
+> = {
+  messenger: { inbound: "channelApi", onDemand: true },
+  instagram: { inbound: "channelApi", onDemand: true },
+  zalo: { inbound: "channelApi", onDemand: true },
+  telegram: { inbound: "channelApi", onDemand: true },
+  whatsapp: { inbound: "payload", onDemand: false },
+  tiktok: { inbound: null, onDemand: false },
+  api: { inbound: "payload", onDemand: false },
+  webchat: { inbound: null, onDemand: false },
+  smtp: { inbound: null, onDemand: false },
+  omnichannel: { inbound: null, onDemand: false },
+}
+
+const mockReserveLiveCommentWindow = vi.hoisted(() => vi.fn())
+
 vi.mock("@chatbotx.io/business", () => ({
+  commentAutomationService: {
+    reserveLiveCommentWindow: mockReserveLiveCommentWindow,
+  },
   appointmentService: {
     cancelAppointmentByToken: mockAppointmentCancelByToken,
   },
   broadcastToWorkspaceParty: mockBroadcast,
+  publishToWorkspaceParty: mockBroadcast,
   buildContext: mockBuildContext,
   resolveTenantSettings: mockresolveTenantSettings,
   updateContactFromMessage: mockUpdateContactFromMessage,
+  hasOnDemandProfileApi: (channel: string) =>
+    CONTACT_PROFILE_NAME_CAPABILITIES[channel]?.onDemand ?? false,
+  hasRealAvatar: (avatar: string | null | undefined) =>
+    !!avatar && !avatar.startsWith("public/img/no_avatar.jpg?time="),
+  resolveInboundProfileNameSource: (channel: string) =>
+    CONTACT_PROFILE_NAME_CAPABILITIES[channel]?.inbound ?? null,
+  hasEmptyProfileName: (contact: {
+    firstName?: string | null
+    lastName?: string | null
+  }) => !(contact.firstName?.trim() || contact.lastName?.trim()),
+  contactProfileRefreshService: { refresh: mockContactProfileRefresh },
+  recordProfileRefreshFailure: mockRecordProfileRefreshFailure,
+  syncExistingContactIdentity: mockSyncExistingContactIdentity,
   contactInboxService: {
     updateTracking: mockUpdateTracking,
     invalidateTracking: mockInvalidateTracking,
     syncScopedIdentity: mockSyncScopedIdentity,
   },
+  channelPostService: {
+    resolveForComment: mockResolveChannelPostForComment,
+  },
+  contactInboxPostService: {
+    recordComment: mockRecordContactInboxPostComment,
+  },
+  getContactInboxIdentityConflictConstraint: (error: unknown) => {
+    const constraints = [
+      "ContactInbox_inboxId_sourceId_key",
+      "ContactInbox_inboxId_sourceUserId_key",
+      "ContactInbox_inboxId_sourceParentUserId_key",
+    ] as const
+    return constraints.find((constraint) =>
+      mockIsUniqueViolationError(error, constraint),
+    )
+  },
   contactService: {
+    adoptPhoneNumberIfSafe: mockAdoptPhoneNumberIfSafe,
     unblockIfBlocked: mockContactUnblockIfBlocked,
     update: mockContactUpdate,
+    setAvatarIfEmptyOrSentinel: mockSetAvatarIfEmptyOrSentinel,
   },
-  conversationService: { findOrCreate: mockConversationFindOrCreate },
+  conversationService: {
+    findOrCreate: mockConversationFindOrCreate,
+    markReadByOutbound: mockMarkReadByOutbound,
+    recordInboundActivity: mockRecordInboundActivity,
+  },
   workspaceService: {
     find: mockWorkspaceFind,
     findById: vi.fn().mockResolvedValue({
@@ -200,6 +348,29 @@ vi.mock("@chatbotx.io/business", () => ({
   messageCleanupService: {
     cancelByInboxSource: vi.fn().mockResolvedValue(undefined),
   },
+  threadControlService: {
+    recordInboundDelivery: mockRecordInboundDelivery,
+    promoteStandbyDelivery: mockPromoteStandbyDelivery,
+  },
+  THREAD_CONTROL_DELIVERY_KEY: "threadControlDelivery",
+  THREAD_CONTROL_STANDBY_DELIVERY: "standby",
+  // Same pure rule as the service: a standby copy not yet promoted.
+  isUnpromotedStandbyCopy: (message: {
+    contentAttributes?: Record<string, unknown> | null
+  }) =>
+    message.contentAttributes?.threadControlDelivery === "standby" &&
+    message.contentAttributes?.threadControlPromoted === undefined,
+}))
+
+vi.mock("@chatbotx.io/redis", () => ({
+  distributedLock: { runExclusive: mockDistributedLockRunExclusive },
+  isLockAcquisitionError: () => false,
+  // `resolveLiveComment` remembers Facebook live posts here; no post is known
+  // live in these tests.
+  distributedStore: {
+    get: vi.fn().mockResolvedValue(null),
+    put: vi.fn().mockResolvedValue(undefined),
+  },
 }))
 
 vi.mock("@chatbotx.io/event-bus", () => ({
@@ -218,19 +389,46 @@ vi.mock("@chatbotx.io/partysocket-config", () => ({
 vi.mock("@chatbotx.io/sdk", () => ({
   contentTypes: { enum: { text: "text", location: "location" } },
   // Mirror of the real pure helper — the module is fully mocked here.
-  resolveWithSourceUserIdFallback: async <T>(
-    identity: { sourceId: string; sourceUserId?: string | null },
+  resolveSourceScopedIdentityMatch: async <T>(
+    identity: {
+      sourceId: string
+      sourceUserId?: string | null
+      sourceParentUserId?: string | null
+    },
     lookup: (
-      where: { sourceId: string } | { sourceUserId: string },
+      where:
+        | { sourceId: string }
+        | { sourceUserId: string }
+        | { sourceParentUserId: string },
     ) => Promise<T | undefined>,
-  ): Promise<T | undefined> => {
+  ) => {
     const bySourceId = await lookup({ sourceId: identity.sourceId })
-    if (bySourceId || !identity.sourceUserId) {
-      return bySourceId
+    if (bySourceId) {
+      return { row: bySourceId, matchedBy: "sourceId" as const }
     }
-    return await lookup({ sourceUserId: identity.sourceUserId })
+    if (identity.sourceUserId) {
+      const bySourceUserId = await lookup({
+        sourceUserId: identity.sourceUserId,
+      })
+      if (bySourceUserId) {
+        return { row: bySourceUserId, matchedBy: "sourceUserId" as const }
+      }
+    }
+    if (identity.sourceParentUserId) {
+      const bySourceParentUserId = await lookup({
+        sourceParentUserId: identity.sourceParentUserId,
+      })
+      if (bySourceParentUserId) {
+        return {
+          row: bySourceParentUserId,
+          matchedBy: "sourceParentUserId" as const,
+        }
+      }
+    }
+    return
   },
   messageTypes: { enum: { incoming: "incoming", outgoing: "outgoing" } },
+  echoOrigins: { enum: { firstParty: "firstParty", thirdParty: "thirdParty" } },
   SdkException: class SdkException extends Error {},
   // Mirror of the real pure predicate — the module is fully mocked, so the
   // actual one-liner is restated here.
@@ -270,8 +468,11 @@ vi.mock("@chatbotx.io/encryption", () => ({
 }))
 
 vi.mock("@chatbotx.io/worker-config", () => ({
+  // `logProviderError` short-circuits on this, as `defaultQueue` does.
+  isNoRedisEnv: () => true,
   ChatJobAction: {
     sendChatMessage: "sendChatMessage",
+    checkOutboundAutomatedResponse: "checkOutboundAutomatedResponse",
   },
   chatQueue: {
     add: mockChatQueueAdd,
@@ -280,6 +481,7 @@ vi.mock("@chatbotx.io/worker-config", () => ({
     runFlowPostback: "runFlowPostback",
     runFlowQuickReply: "runFlowQuickReply",
     runRef: "runRef",
+    processCommentAutomation: "processCommentAutomation",
   },
   integrationQueue: {
     add: mockIntegrationQueueAdd,
@@ -291,6 +493,10 @@ vi.mock("../src/lib/logger", () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }))
 
+vi.mock("../src/lib/lock-contention-deferral", () => ({
+  LOCK_CONTENTION_POLICY: mockLockContentionPolicy,
+}))
+
 vi.mock("../src/lib/db", () => ({
   detectFlowVersion: mockDetectFlowVersion,
 }))
@@ -300,7 +506,13 @@ vi.mock("../src/services/integrations", () => ({
     messenger: {
       runChannelHandler: mockRunChannelHandler,
       // Messenger comment path fetches the comment attachment; no attachment here.
-      runAction: vi.fn().mockResolvedValue(undefined),
+      runAction: vi.fn((action: string) =>
+        Promise.resolve(
+          action === "getPostDetails"
+            ? { created_time: "2026-01-01T00:00:00.000Z" }
+            : undefined,
+        ),
+      ),
     },
     telegram: {
       runChannelHandler: mockRunChannelHandler,
@@ -311,11 +523,68 @@ vi.mock("../src/services/integrations", () => ({
     zalo: {
       runChannelHandler: mockRunChannelHandler,
     },
+    instagram: {
+      runChannelHandler: mockRunChannelHandler,
+      runAction: vi.fn(),
+    },
+    instagramFacebook: {
+      runChannelHandler: mockRunChannelHandler,
+      runAction: vi.fn(),
+    },
+    tiktok: {
+      runChannelHandler: mockRunChannelHandler,
+    },
+    webchat: {
+      runChannelHandler: mockRunChannelHandler,
+    },
+    api: {
+      runChannelHandler: mockRunChannelHandler,
+    },
   },
   integrationService: {
     identifyInboxAndIntegrationAuthFromIdentifier: vi.fn(),
   },
+  // Mirror of the real one-liner (apps/worker/src/services/integrations.ts).
+  isInstagramViaFacebook: (row: { type?: string }) => row.type === "facebook",
+  resolveIntegrationContextFromContactInbox:
+    mockResolveIntegrationContextFromContactInbox,
 }))
+
+const mockResolveTiktokCommenterIdentity = vi.fn()
+vi.mock("../src/integration/handlers/tiktok-comment-identity", () => ({
+  resolveTiktokCommenterIdentity: mockResolveTiktokCommenterIdentity,
+}))
+
+const mockFetchThreadsCommentAttachments = vi.fn().mockResolvedValue([])
+const mockDownloadCommentMediaAttachment = vi.fn()
+vi.mock("../src/integration/handlers/comment-media-attachment", () => ({
+  downloadCommentMediaAttachment: mockDownloadCommentMediaAttachment,
+  fetchThreadsCommentAttachments: mockFetchThreadsCommentAttachments,
+}))
+
+const mockSyncAdLabelsIfAdReferred = vi.fn().mockResolvedValue(undefined)
+const mockTagAdReferralOnlyContact = vi.fn().mockResolvedValue(undefined)
+vi.mock("../src/integration/handlers/sync-ad-labels", () => ({
+  syncAdLabelsIfAdReferred: (...args: unknown[]) =>
+    mockSyncAdLabelsIfAdReferred(...args),
+  tagAdReferralOnlyContact: (...args: unknown[]) =>
+    mockTagAdReferralOnlyContact(...args),
+}))
+
+const mockProcessCommentAutomation = vi.fn().mockResolvedValue(undefined)
+vi.mock("../src/integration/handlers/comment-automation", () => ({
+  processCommentAutomation: mockProcessCommentAutomation,
+}))
+
+const mockRunAsMissedCommentReplay = vi.fn((callback: () => Promise<unknown>) =>
+  callback(),
+)
+vi.mock(
+  "../src/integration/handlers/comment-automation/replay-priority",
+  () => ({
+    runAsMissedCommentReplay: mockRunAsMissedCommentReplay,
+  }),
+)
 
 // ---------------------------------------------------------------------------
 // Import after mocks
@@ -454,7 +723,6 @@ describe("receiveMessage — message repository branch", () => {
       ...fakeContactInbox,
       contact: fakeContact,
     })
-    mockFindOrFail.mockResolvedValue(fakeConversation)
     mockConversationFindOrCreate.mockResolvedValue(fakeConversation)
 
     vi.mocked(
@@ -471,10 +739,15 @@ describe("receiveMessage — message repository branch", () => {
     mockCreateMessageRepository.mockResolvedValue({
       createOrUpdate: mockCreateOrUpdate,
       createOrUpdateWithAttachments: mockCreateOrUpdateWithAttachments,
+      findLastByConversation: mockFindLastByConversation,
     })
     mockCreateOrUpdate.mockResolvedValue({
       message: fakeCreatedMessage,
       isNew: true,
+    })
+    mockCreateOrUpdateWithAttachments.mockResolvedValue({
+      isNew: true,
+      result: { ...fakeCreatedMessage, attachments: [] },
     })
     mockCreateOrUpdateWithAttachments.mockResolvedValue({
       result: { ...fakeCreatedMessage, attachments: [] },
@@ -493,6 +766,7 @@ describe("receiveMessage — message repository branch", () => {
       contactInboxId: "ci-1",
     })
     mockWorkspaceIsActiveNow.mockReturnValue(true)
+    mockMarkReadByOutbound.mockResolvedValue(true)
   })
 
   test("calls repository.createOrUpdate() when message has no attachments", async () => {
@@ -508,6 +782,75 @@ describe("receiveMessage — message repository branch", () => {
 
     expect(mockCreateOrUpdate).toHaveBeenCalledTimes(1)
     expect(mockCreateOrUpdateWithAttachments).not.toHaveBeenCalled()
+  })
+
+  describe("Google click referral persistence", () => {
+    const googleReferral = {
+      gclid: "ABCDEFGHIJ1234567890",
+      gbraid: null,
+      googleCampaignId: "123",
+      googleAdGroupId: "456",
+      googleAdId: "789",
+      googleClickReceivedAt: "2026-06-21T00:00:00.000Z",
+    }
+
+    test("passes the six Google keys in tracking.referral to recordInboundActivity", async () => {
+      mockRunChannelHandler.mockResolvedValue({
+        message: { ...baseIncomingMessage, attachments: [] },
+        contact: { sourceId: "psid-123", firstName: "Test" },
+        postbackAction: null,
+        quickReplyAction: null,
+        ref: null,
+        referral: googleReferral,
+      })
+
+      await receiveMessage(baseProps)
+
+      expect(mockRecordInboundActivity).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tracking: expect.objectContaining({
+            referral: expect.objectContaining(googleReferral),
+          }),
+        }),
+      )
+    })
+
+    test("persists the Google keys via updateTracking when message is null", async () => {
+      mockRunChannelHandler.mockResolvedValue({
+        message: null,
+        contact: { sourceId: "psid-123" },
+        postbackAction: null,
+        quickReplyAction: null,
+        ref: null,
+        referral: googleReferral,
+      })
+
+      await receiveMessage(baseProps)
+
+      expect(mockUpdateTracking).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { referral: expect.objectContaining(googleReferral) },
+        }),
+      )
+    })
+
+    test("does not enqueue runRef when ref is null for a Google referral", async () => {
+      mockRunChannelHandler.mockResolvedValue({
+        message: { ...baseIncomingMessage, attachments: [] },
+        contact: { sourceId: "psid-123", firstName: "Test" },
+        postbackAction: null,
+        quickReplyAction: null,
+        ref: null,
+        referral: googleReferral,
+      })
+
+      await receiveMessage(baseProps)
+
+      expect(mockIntegrationQueueAdd).not.toHaveBeenCalledWith(
+        "runRef",
+        expect.anything(),
+      )
+    })
   })
 
   test("auto-unblocks on inbound messages using the loaded contact", async () => {
@@ -553,7 +896,7 @@ describe("receiveMessage — message repository branch", () => {
     expect(mockCreateOrUpdate).not.toHaveBeenCalled()
   })
 
-  test("updates contact inbox and conversation activity timestamps when incoming message is new", async () => {
+  test("records activity without marking read when an inbound message is new", async () => {
     mockRunChannelHandler.mockResolvedValue({
       message: { ...baseIncomingMessage, attachments: [] },
       contact: { sourceId: "psid-123", firstName: "Test" },
@@ -568,22 +911,28 @@ describe("receiveMessage — message repository branch", () => {
 
     await receiveMessage(baseProps)
 
-    expect(mockUpdateTracking).toHaveBeenCalledWith({
-      tx: expect.any(Object),
+    // `recordInboundActivity` owns the transaction that used to be a
+    // standalone `contactInboxService.updateTracking` call plus a raw
+    // `db.update(conversationModel).set({ lastActivityAt })` — both are now
+    // internal to the service, so assert the equivalent arguments were
+    // passed to it (same ids, same tracking values, same activity time).
+    expect(mockRecordInboundActivity).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      conversationId: "conv-1",
       contactInboxId: "ci-1",
       contactId: "contact-1",
-      workspaceId: "ws-1",
-      data: {
+      tracking: {
         firstInteractionAt: fakeCreatedMessage.createdAt,
         lastMessageAt: fakeCreatedMessage.createdAt,
         lastIncomingMessageAt: fakeCreatedMessage.createdAt,
         lastUserInput: "hello",
         lastUserInputType: "text",
       },
+      contactLocation: null,
+      at: fakeCreatedMessage.createdAt,
+      contactRepliedAt: fakeCreatedMessage.createdAt,
     })
-    expect(mockDbSet).toHaveBeenCalledWith({
-      lastActivityAt: fakeCreatedMessage.createdAt,
-    })
+    expect(mockMarkReadByOutbound).not.toHaveBeenCalled()
   })
 
   test("emits message:received with origin: 'inbound' and isFirstIncomingMessage: true for a contact's first inbound message", async () => {
@@ -642,7 +991,8 @@ describe("receiveMessage — message repository branch", () => {
     )
   })
 
-  test("updates conversation activity but not lastIncomingMessageAt for outgoing webhook echo", async () => {
+  test("marks a new outgoing echo read when no recent outgoing row matches", async () => {
+    mockFindLastByConversation.mockResolvedValueOnce([])
     mockRunChannelHandler.mockResolvedValue({
       message: {
         ...baseIncomingMessage,
@@ -662,25 +1012,27 @@ describe("receiveMessage — message repository branch", () => {
     await receiveMessage(baseProps)
 
     expect(mockContactUnblockIfBlocked).not.toHaveBeenCalled()
-    expect(mockUpdateTracking).toHaveBeenCalledWith({
-      tx: expect.any(Object),
+    expect(mockRecordInboundActivity).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      conversationId: "conv-1",
       contactInboxId: "ci-1",
       contactId: "contact-1",
-      workspaceId: "ws-1",
-      data: {
+      tracking: {
         firstInteractionAt: fakeCreatedMessage.createdAt,
         lastMessageAt: fakeCreatedMessage.createdAt,
       },
+      contactLocation: null,
+      at: fakeCreatedMessage.createdAt,
     })
-    expect(mockDbSet).toHaveBeenCalledWith({
-      lastActivityAt: fakeCreatedMessage.createdAt,
-    })
-    expect(mockUpdateTracking).not.toHaveBeenCalledWith(
+    expect(mockRecordInboundActivity).not.toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
+        tracking: expect.objectContaining({
           lastIncomingMessageAt: expect.any(Date),
         }),
       }),
+    )
+    expect(mockRecordInboundActivity).not.toHaveBeenCalledWith(
+      expect.objectContaining({ contactRepliedAt: expect.any(Date) }),
     )
     // An outgoing webhook echo (e.g. an agent's native-app reply synced back
     // in) is not a genuine contact-authored message, so it must not carry the
@@ -689,6 +1041,393 @@ describe("receiveMessage — message repository branch", () => {
     expect(mockEmit).toHaveBeenCalledWith(
       "message:received",
       expect.not.objectContaining({ origin: "inbound" }),
+    )
+    expect(mockMarkReadByOutbound).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      conversationId: "conv-1",
+      inboxId: "inbox-1",
+      readAt: fakeCreatedMessage.createdAt,
+    })
+    expect(mockBroadcast).toHaveBeenCalledWith("ws-1", {
+      eventType: "messageCreated",
+      data: expect.objectContaining({
+        id: fakeCreatedMessage.id,
+        messageType: "outgoing",
+      }),
+    })
+  })
+
+  test("keeps the conversation unread for a Business-AI standby reply (records activity, no mark-read)", async () => {
+    mockFindLastByConversation.mockResolvedValueOnce([])
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        attachments: [],
+      },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+      // Business AI reply arriving on standby.
+      threadControl: { delivery: "standby", ownerRole: "ai_agent" },
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: { ...fakeCreatedMessage, messageType: "outgoing" },
+      isNew: true,
+    })
+
+    await receiveMessage(baseProps)
+
+    // Activity is still recorded, but the conversation stays unread so a human
+    // agent is nudged to monitor the AI (Integration Guide §5.3).
+    expect(mockRecordInboundActivity).toHaveBeenCalled()
+    expect(mockMarkReadByOutbound).not.toHaveBeenCalled()
+  })
+
+  test("logs and swallows mark-read failures for outgoing echoes", async () => {
+    const error = new Error("database unavailable")
+    mockFindLastByConversation.mockResolvedValueOnce([])
+    mockMarkReadByOutbound.mockRejectedValueOnce(error)
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        attachments: [],
+      },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: { ...fakeCreatedMessage, messageType: "outgoing" },
+      isNew: true,
+    })
+
+    await expect(receiveMessage(baseProps)).resolves.toBeDefined()
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      {
+        err: error,
+        workspaceId: "ws-1",
+        conversationId: "conv-1",
+        inboxId: "inbox-1",
+        readAt: fakeCreatedMessage.createdAt,
+      },
+      "markReadByOutbound after an outgoing echo failed",
+    )
+  })
+
+  test("treats matching text with a provider source id as a native outgoing echo", async () => {
+    mockFindLastByConversation.mockResolvedValue([
+      {
+        id: "msg-native-send",
+        sourceId: "provider-message-id",
+        text: fakeCreatedMessage.text,
+      },
+    ])
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        attachments: [],
+      },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: { ...fakeCreatedMessage, messageType: "outgoing" },
+      isNew: true,
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockRecordInboundActivity).toHaveBeenCalledTimes(1)
+    expect(mockMarkReadByOutbound).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      conversationId: "conv-1",
+      inboxId: "inbox-1",
+      readAt: fakeCreatedMessage.createdAt,
+    })
+    expect(mockBroadcast).toHaveBeenCalledWith("ws-1", {
+      eventType: "messageCreated",
+      data: expect.objectContaining({
+        id: fakeCreatedMessage.id,
+        messageType: "outgoing",
+      }),
+    })
+  })
+
+  test("skips activity and mark-read for a pending own media send with the same attachment types", async () => {
+    mockFindLastByConversation.mockResolvedValue([
+      {
+        id: "msg-media-send",
+        sourceId: null,
+        text: null,
+        attachments: [{ fileType: "image" }],
+      },
+    ])
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        text: undefined,
+        contentType: "image",
+        attachments: [{ url: "https://cdn.example/echo.jpg", type: "image" }],
+      },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockCreateOrUpdateWithAttachments.mockResolvedValue({
+      result: {
+        ...fakeCreatedMessage,
+        messageType: "outgoing",
+        text: null,
+        contentType: "image",
+        attachments: [{ fileType: "image" }],
+      },
+      isNew: true,
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockRecordInboundActivity).not.toHaveBeenCalled()
+    expect(mockMarkReadByOutbound).not.toHaveBeenCalled()
+    expect(mockBroadcast).not.toHaveBeenCalledWith(
+      "ws-1",
+      expect.objectContaining({ eventType: "messageCreated" }),
+    )
+  })
+
+  test("treats a media echo whose attachment types differ from the pending own send as native", async () => {
+    mockFindLastByConversation.mockResolvedValue([
+      {
+        id: "msg-media-send",
+        sourceId: null,
+        text: null,
+        attachments: [{ fileType: "video" }],
+      },
+    ])
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        text: undefined,
+        contentType: "image",
+        attachments: [{ url: "https://cdn.example/echo.jpg", type: "image" }],
+      },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockCreateOrUpdateWithAttachments.mockResolvedValue({
+      result: {
+        ...fakeCreatedMessage,
+        messageType: "outgoing",
+        text: null,
+        contentType: "image",
+        attachments: [{ fileType: "image" }],
+      },
+      isNew: true,
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockRecordInboundActivity).toHaveBeenCalledTimes(1)
+    expect(mockMarkReadByOutbound).toHaveBeenCalledTimes(1)
+  })
+
+  test("treats matching null text without attachments as a native outgoing echo", async () => {
+    mockFindLastByConversation.mockResolvedValue([
+      { id: "msg-media-send", sourceId: null, text: null, attachments: [] },
+    ])
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        text: undefined,
+        contentType: "image",
+        attachments: [],
+      },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: {
+        ...fakeCreatedMessage,
+        messageType: "outgoing",
+        text: null,
+        contentType: "image",
+      },
+      isNew: true,
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockRecordInboundActivity).toHaveBeenCalledTimes(1)
+    expect(mockMarkReadByOutbound).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      conversationId: "conv-1",
+      inboxId: "inbox-1",
+      readAt: fakeCreatedMessage.createdAt,
+    })
+  })
+
+  test("skips activity and mark-read for matching text with no provider source id", async () => {
+    const matchingOwnSend = {
+      id: "msg-chatbotx-send",
+      sourceId: null,
+      text: fakeCreatedMessage.text,
+    }
+    mockFindLastByConversation
+      .mockResolvedValueOnce([matchingOwnSend])
+      .mockResolvedValueOnce([matchingOwnSend])
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        attachments: [],
+      },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: { ...fakeCreatedMessage, messageType: "outgoing" },
+      isNew: true,
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockCreateOrUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: expect.any(String),
+        messageType: "outgoing",
+      }),
+    )
+    expect(mockRecordInboundActivity).not.toHaveBeenCalled()
+    expect(mockInvalidateTracking).not.toHaveBeenCalled()
+    expect(mockMarkReadByOutbound).not.toHaveBeenCalled()
+    expect(mockBroadcast).not.toHaveBeenCalledWith(
+      "ws-1",
+      expect.objectContaining({ eventType: "messageCreated" }),
+    )
+  })
+
+  test("does not mark the conversation read for a duplicate outgoing echo", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        attachments: [],
+      },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: { ...fakeCreatedMessage, messageType: "outgoing" },
+      isNew: false,
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockFindLastByConversation).not.toHaveBeenCalled()
+    expect(mockRecordInboundActivity).not.toHaveBeenCalled()
+    expect(mockMarkReadByOutbound).not.toHaveBeenCalled()
+  })
+
+  test("does not mark the conversation read for an outgoing comment echo", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        type: "comment",
+        attachments: [],
+      },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: {
+        ...fakeCreatedMessage,
+        messageType: "outgoing",
+        type: "comment",
+      },
+      isNew: true,
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockRecordInboundActivity).toHaveBeenCalledTimes(1)
+    expect(mockMarkReadByOutbound).not.toHaveBeenCalled()
+  })
+
+  test("logs a self-send lookup failure, keeps activity, and fails closed on mark-read", async () => {
+    const error = new Error("shard unavailable")
+    mockFindLastByConversation.mockRejectedValueOnce(error)
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        attachments: [],
+      },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: { ...fakeCreatedMessage, messageType: "outgoing" },
+      isNew: true,
+    })
+
+    await expect(receiveMessage(baseProps)).resolves.toBeDefined()
+
+    expect(mockRecordInboundActivity).toHaveBeenCalledTimes(1)
+    expect(mockMarkReadByOutbound).not.toHaveBeenCalled()
+    expect(logger.warn).toHaveBeenCalledWith(
+      {
+        err: error,
+        workspaceId: "ws-1",
+        conversationId: "conv-1",
+        messageId: fakeCreatedMessage.id,
+      },
+      "Unable to match outgoing echo to an own send",
+    )
+  })
+
+  test("a contact comment also stamps contactRepliedAt on its comment-thread conversation", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, type: "comment", attachments: [] },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: fakeCreatedMessage,
+      isNew: true,
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockRecordInboundActivity).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contactRepliedAt: fakeCreatedMessage.createdAt,
+      }),
     )
   })
 
@@ -745,8 +1484,9 @@ describe("receiveMessage — message repository branch", () => {
 
     await receiveMessage(baseProps)
 
-    expect(mockDbUpdate).not.toHaveBeenCalled()
+    expect(mockRecordInboundActivity).not.toHaveBeenCalled()
     expect(mockUpdateTracking).not.toHaveBeenCalled()
+    expect(mockBroadcast).not.toHaveBeenCalled()
   })
 
   test("does NOT call createMessageRepository when message is null", async () => {
@@ -786,6 +1526,67 @@ describe("receiveMessage — message repository branch", () => {
       },
       "Dropping undecodable flow action from channel webhook",
     )
+  })
+
+  test("treats a native phone quick reply (payload equals text) as a typed reply, not a bare flow ID", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        text: "8490123456789",
+        attachments: [],
+      },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: "8490123456789",
+      ref: null,
+    })
+
+    const result = await receiveMessage(baseProps)
+
+    expect(result.quickReplyAction).toBeNull()
+    expect(mockAutomatedResponseEnqueueFlowAction).not.toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "quickReply" }),
+    )
+  })
+
+  test("replaces a shortened Show Hint title with the full value from the payload", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        text: "taubancam171995.1@g…",
+        attachments: [],
+      },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction:
+        "GET_USER_DATA_CONTACT_HINT|taubancam171995.1@gmail.com",
+      ref: null,
+    })
+
+    const result = await receiveMessage(baseProps)
+
+    expect(result.quickReplyAction).toBeNull()
+    expect(mockCreateOrUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ text: "taubancam171995.1@gmail.com" }),
+    )
+    expect(logger.warn).not.toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "quickReply" }),
+      expect.anything(),
+    )
+  })
+
+  test("keeps a bare flow ID quick reply whose payload differs from the text", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, text: "Get started", attachments: [] },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: "1234567890123",
+      ref: null,
+    })
+
+    const result = await receiveMessage(baseProps)
+
+    expect(result.quickReplyAction).toBe("1234567890123")
   })
 
   test("keeps valid postback action and enqueues the postback flow job", async () => {
@@ -859,9 +1660,9 @@ describe("receiveMessage — message repository branch", () => {
     expect(mockCreateOrUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ text: "Xem sản phẩm" }),
     )
-    expect(mockUpdateTracking).toHaveBeenCalledWith(
+    expect(mockRecordInboundActivity).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ lastBtnTitle: "Xem sản phẩm" }),
+        tracking: expect.objectContaining({ lastBtnTitle: "Xem sản phẩm" }),
       }),
     )
     expect(mockAutomatedResponseEnqueueFlowAction).toHaveBeenCalledWith({
@@ -1043,7 +1844,6 @@ describe("receiveMessage — new contact MAC gate", () => {
     vi.clearAllMocks()
     // No existing contact inbox → new-contact creation path.
     mockFindContactInbox.mockResolvedValue(undefined)
-    mockFindOrFail.mockResolvedValue(fakeConversation)
     mockConversationFindOrCreate.mockResolvedValue(fakeConversation)
     mockWorkspaceFind.mockResolvedValue({ ownerId: "owner-1" })
     vi.mocked(
@@ -1066,6 +1866,7 @@ describe("receiveMessage — new contact MAC gate", () => {
     mockCreateMessageRepository.mockResolvedValue({
       createOrUpdate: mockCreateOrUpdate,
       createOrUpdateWithAttachments: mockCreateOrUpdateWithAttachments,
+      findLastByConversation: mockFindLastByConversation,
     })
     mockCreateOrUpdate.mockResolvedValue({
       message: fakeCreatedMessage,
@@ -1100,6 +1901,10 @@ describe("receiveMessage — new contact MAC gate", () => {
       id: "ci-new",
       contactId: "contact-new",
     }
+    mockCreateOrUpdateWithAttachments.mockResolvedValue({
+      isNew: true,
+      result: { ...fakeCreatedMessage, attachments: [] },
+    })
     mockCreateNewContactWithMac.mockResolvedValue({
       ok: true,
       value: { newContact, contactInbox, conversation: fakeConversation },
@@ -1112,26 +1917,39 @@ describe("receiveMessage — new contact MAC gate", () => {
       newContact,
     )
     expect(mockCreateNewContactWithMac).toHaveBeenCalledWith(
-      expect.objectContaining({ ownerId: "owner-1", workspaceId: "ws-1" }),
+      expect.objectContaining({
+        ownerId: "owner-1",
+        workspaceId: "ws-1",
+        lockWaitSeconds: mockLockContentionPolicy.lockWaitSeconds,
+      }),
     )
     // `contacts` is recorded inside createNewContactWithMac now, so the handler
     // must not increment it separately (avoids double-counting).
     expect(mockQuotaIncrement).not.toHaveBeenCalled()
+    // Threads the freshly-created ContactInbox id — not merely the contact
+    // id — so a Trigger action reacting to newContact attributes to THIS
+    // channel instead of falling back to most-recent-inbox.
+    const { emitContactCreated } = await import("@chatbotx.io/events")
+    expect(emitContactCreated).toHaveBeenCalledWith(
+      "ws-1",
+      "contact-new",
+      "Test",
+      undefined,
+      undefined,
+      "ci-new",
+    )
   })
 
-  test("still fetches getProfile for an outgoing webhook echo when creating a new contact", async () => {
-    // A page-initiated echo (e.g. an agent replying to a story mention
-    // directly on Instagram) can be the FIRST time we see that contact.
-    // Skipping getProfile here would leave the contact without a name/avatar
-    // forever, since later inbound messages reuse the existing contactInbox
-    // and never re-fetch the profile.
+  test("skips a third-party echo for an unknown contact without creating a contact, fetching a profile, or writing a message", async () => {
+    // A third-party tool broadcasting from the same page fans out one echo
+    // per recipient. Creating a contact for each costs a Graph profile call
+    // plus three inserts and backed up the queue, so an echo the channel
+    // classified as third-party for a contact this inbox has never seen is
+    // dropped; the contact is created on their first inbound message instead.
     mockRunChannelHandler.mockImplementation(
       (_domain: string, action: string) => {
         if (action === "getProfile") {
-          return Promise.resolve({
-            firstName: "Story Replier",
-            avatar: "https://example.com/avatar.jpg",
-          })
+          return Promise.resolve({ firstName: "Should not be fetched" })
         }
         return Promise.resolve({
           message: {
@@ -1143,6 +1961,41 @@ describe("receiveMessage — new contact MAC gate", () => {
           postbackAction: null,
           quickReplyAction: null,
           ref: null,
+          echoOrigin: "thirdParty",
+        })
+      },
+    )
+
+    const result = await receiveMessage(baseProps)
+
+    expect(result).toBeNull()
+    expect(mockRunChannelHandler).not.toHaveBeenCalledWith(
+      "contact",
+      "getProfile",
+      expect.anything(),
+    )
+    expect(mockCreateNewContactWithMac).not.toHaveBeenCalled()
+    expect(mockCreateMessageRepository).not.toHaveBeenCalled()
+    expect(mockCreateOrUpdate).not.toHaveBeenCalled()
+  })
+
+  test("still creates the contact for a first-party echo (echoOrigin: firstParty) to an unknown contact", async () => {
+    mockRunChannelHandler.mockImplementation(
+      (_domain: string, action: string) => {
+        if (action === "getProfile") {
+          return Promise.resolve({ firstName: "Agent Thread" })
+        }
+        return Promise.resolve({
+          message: {
+            ...baseIncomingMessage,
+            messageType: "outgoing",
+            attachments: [],
+          },
+          contact: { sourceId: "psid-123" },
+          postbackAction: null,
+          quickReplyAction: null,
+          ref: null,
+          echoOrigin: "firstParty",
         })
       },
     )
@@ -1150,11 +2003,150 @@ describe("receiveMessage — new contact MAC gate", () => {
       ok: true,
       value: {
         newContact: {
+          ...fakeContact,
           id: "contact-new",
-          workspaceId: "ws-1",
-          firstName: "Story Replier",
-          phoneNumber: null,
-          email: null,
+          firstName: "Agent Thread",
+          blockedAt: null,
+          createdAt: new Date("2026-06-21T00:00:00Z"),
+        },
+        contactInbox: {
+          ...fakeContactInbox,
+          id: "ci-new",
+          contactId: "contact-new",
+        },
+        conversation: fakeConversation,
+      },
+    })
+    const result = await receiveMessage(baseProps)
+
+    expect(result).not.toBeNull()
+    expect(mockRunChannelHandler).toHaveBeenCalledWith(
+      "contact",
+      "getProfile",
+      expect.objectContaining({
+        data: expect.objectContaining({ sourceId: "psid-123" }),
+      }),
+    )
+    expect(mockCreateNewContactWithMac).toHaveBeenCalled()
+    expect(mockCreateOrUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ messageType: "outgoing" }),
+    )
+  })
+
+  describe("parser → worker contract with the real Messenger parser", () => {
+    const messengerEchoPayload = (appId: number) => ({
+      object: "page",
+      entry: [
+        {
+          id: "page-1",
+          time: 1,
+          messaging: [
+            {
+              sender: { id: "page-1" },
+              recipient: { id: "psid-123" },
+              timestamp: 1,
+              message: {
+                mid: "mid-echo-1",
+                is_echo: true,
+                app_id: appId,
+                text: "hi",
+              },
+            },
+          ],
+        },
+      ],
+    })
+
+    beforeEach(async () => {
+      const { receiveMessage: parseMessengerMessage } = await import(
+        "../../../integrations/messenger/src/handlers/message/incoming-message"
+      )
+      mockBuildContext.mockResolvedValue({
+        workspaceId: "ws-1",
+        auth: { metadata: { pageId: "page-1" } },
+      })
+      mockRunChannelHandler.mockImplementation(
+        (_domain: string, action: string, props: unknown) => {
+          if (action === "receiveMessage") {
+            return parseMessengerMessage(props as never)
+          }
+          if (action === "getProfile") {
+            return Promise.resolve({ firstName: "Page Inbox Agent" })
+          }
+          return Promise.resolve(undefined)
+        },
+      )
+      mockCreateNewContactWithMac.mockResolvedValue({
+        ok: true,
+        value: {
+          newContact: {
+            ...fakeContact,
+            id: "contact-new",
+            blockedAt: null,
+            createdAt: new Date("2026-06-21T00:00:00Z"),
+          },
+          contactInbox: {
+            ...fakeContactInbox,
+            id: "ci-new",
+            contactId: "contact-new",
+          },
+          conversation: fakeConversation,
+        },
+      })
+    })
+
+    test("a real Page Inbox echo (app_id 26390203743090) still creates the contact", async () => {
+      const result = await receiveMessage({
+        ...baseProps,
+        payload: messengerEchoPayload(26_390_203_743_090),
+      })
+
+      expect(result).not.toBeNull()
+      expect(mockCreateNewContactWithMac).toHaveBeenCalled()
+      expect(mockCreateOrUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({ messageType: "outgoing", text: "hi" }),
+      )
+    })
+
+    test("a real third-party echo for an unknown contact is dropped", async () => {
+      const result = await receiveMessage({
+        ...baseProps,
+        payload: messengerEchoPayload(1_517_776_481_860_111),
+      })
+
+      expect(result).toBeNull()
+      expect(mockCreateNewContactWithMac).not.toHaveBeenCalled()
+      expect(mockCreateOrUpdate).not.toHaveBeenCalled()
+    })
+  })
+
+  test("still creates the contact for an unclassified outgoing echo (channel parser sets no echoOrigin)", async () => {
+    // Channels that do not classify echoes (e.g. a Zalo OA send) keep the
+    // create path; the harness only registers messenger + telegram, so
+    // telegram stands in for them.
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: { ...fakeInbox, channel: "telegram" },
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        attachments: [],
+      },
+      contact: { sourceId: "tg-user-1" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockCreateNewContactWithMac.mockResolvedValue({
+      ok: true,
+      value: {
+        newContact: {
+          ...fakeContact,
+          id: "contact-new",
           blockedAt: null,
           createdAt: new Date("2026-06-21T00:00:00Z"),
         },
@@ -1167,19 +2159,124 @@ describe("receiveMessage — new contact MAC gate", () => {
       },
     })
 
+    const result = await receiveMessage({
+      ...baseProps,
+      integrationType: "telegram",
+    })
+
+    expect(result).not.toBeNull()
+    expect(mockCreateNewContactWithMac).toHaveBeenCalled()
+    expect(mockCreateOrUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ messageType: "outgoing" }),
+    )
+  })
+
+  test("still processes a third-party echo when the contact already exists", async () => {
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      contact: fakeContact,
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        attachments: [],
+      },
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+      echoOrigin: "thirdParty",
+    })
+
+    const result = await receiveMessage(baseProps)
+
+    expect(result).not.toBeNull()
+    expect(mockCreateNewContactWithMac).not.toHaveBeenCalled()
+    // The gate's lookup is reused by contact detection: one query, not two.
+    expect(mockFindContactInbox).toHaveBeenCalledTimes(1)
+    expect(mockCreateOrUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ messageType: "outgoing" }),
+    )
+  })
+
+  test("passes a pre-resolved parent identity match through as one match object", async () => {
+    const parentMatchedContactInbox = {
+      ...fakeContactInbox,
+      sourceId: "84900000099",
+      sourceParentUserId: "parent.bsuid-1",
+      sourceUserId: "user.bsuid-old",
+      contact: fakeContact,
+    }
+    mockFindContactInbox
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(parentMatchedContactInbox)
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        attachments: [],
+      },
+      contact: {
+        sourceId: "84900000099",
+        sourceParentUserId: "parent.bsuid-1",
+        sourceUserId: "user.bsuid-new",
+      },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+      echoOrigin: "thirdParty",
+    })
+
     await receiveMessage(baseProps)
 
-    expect(mockRunChannelHandler).toHaveBeenCalledWith(
-      "contact",
-      "getProfile",
-      expect.objectContaining({ data: { sourceId: "psid-123" } }),
+    expect(mockFindContactInbox).toHaveBeenCalledTimes(3)
+    expect(mockSyncScopedIdentity).toHaveBeenCalledWith(
+      expect.objectContaining({ matchedBy: "sourceParentUserId" }),
     )
-    const rows = await runCapturedNewContactCreate()
-    expect(rows).toContainEqual(
-      expect.objectContaining({
-        firstName: "Story Replier",
-        avatar: "https://example.com/avatar.jpg",
-      }),
+  })
+
+  test("still creates the contact for a third-party story-reply echo (direction is flipped to incoming)", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        contentAttributes: {
+          type: "story_reply",
+          story: { id: "story-1", url: "https://example.com/story-1" },
+        },
+        attachments: [],
+      },
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+      echoOrigin: "thirdParty",
+    })
+    mockCreateNewContactWithMac.mockResolvedValue({
+      ok: true,
+      value: {
+        newContact: {
+          ...fakeContact,
+          id: "contact-new",
+          blockedAt: null,
+          createdAt: new Date("2026-06-21T00:00:00Z"),
+        },
+        contactInbox: {
+          ...fakeContactInbox,
+          id: "ci-new",
+          contactId: "contact-new",
+        },
+        conversation: fakeConversation,
+      },
+    })
+
+    const result = await receiveMessage(baseProps)
+
+    expect(result).not.toBeNull()
+    expect(mockCreateOrUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ messageType: "incoming" }),
     )
   })
 
@@ -1346,6 +2443,90 @@ describe("receiveMessage — new contact MAC gate", () => {
 
     const rows = await runCapturedNewContactCreate()
     expect(rows).toContainEqual(expect.objectContaining({ source: "botLink" }))
+  })
+
+  describe("contact source with a Google click", () => {
+    const runWith = async (extra: Record<string, unknown>) => {
+      mockRunChannelHandler.mockResolvedValue({
+        message: { ...baseIncomingMessage, attachments: [] },
+        contact: { sourceId: "psid-123", firstName: "Test" },
+        postbackAction: null,
+        quickReplyAction: null,
+        ref: null,
+        ...extra,
+      })
+      mockCreateNewContactWithMac.mockResolvedValue({
+        ok: true,
+        value: {
+          newContact: {
+            id: "contact-new",
+            workspaceId: "ws-1",
+            firstName: "Test",
+            phoneNumber: null,
+            email: null,
+            blockedAt: null,
+            createdAt: new Date("2026-06-21T00:00:00Z"),
+          },
+          contactInbox: {
+            ...fakeContactInbox,
+            id: "ci-new",
+            contactId: "contact-new",
+          },
+          conversation: fakeConversation,
+        },
+      })
+      await receiveMessage(baseProps)
+      return runCapturedNewContactCreate()
+    }
+
+    test("uses ads for a gclid referral even when referralSource is SHORTLINK", async () => {
+      const rows = await runWith({
+        referralSource: "SHORTLINK",
+        referral: { gclid: "ABCDEFGHIJ1234567890", gbraid: null },
+      })
+      expect(rows).toContainEqual(expect.objectContaining({ source: "ads" }))
+    })
+
+    test("uses ads for a gbraid referral even when referralSource is SHORTLINK", async () => {
+      const rows = await runWith({
+        referralSource: "SHORTLINK",
+        referral: { gclid: null, gbraid: "ABCDEFGHIJ1234567890" },
+      })
+      expect(rows).toContainEqual(expect.objectContaining({ source: "ads" }))
+    })
+
+    test("uses ads for a Google click with no Meta referralSource", async () => {
+      const rows = await runWith({
+        referralSource: null,
+        referral: { gclid: "ABCDEFGHIJ1234567890" },
+      })
+      expect(rows).toContainEqual(expect.objectContaining({ source: "ads" }))
+    })
+
+    test("keeps botLink for SHORTLINK without a Google click", async () => {
+      const rows = await runWith({
+        referralSource: "SHORTLINK",
+        referral: { gclid: null, gbraid: null },
+      })
+      expect(rows).toContainEqual(
+        expect.objectContaining({ source: "botLink" }),
+      )
+    })
+
+    test("keeps ads for ADS without a Google click", async () => {
+      const rows = await runWith({
+        referralSource: "ADS",
+        referral: { adId: "ad-1" },
+      })
+      expect(rows).toContainEqual(expect.objectContaining({ source: "ads" }))
+    })
+
+    test("defaults to inboundMessage with no referral at all", async () => {
+      const rows = await runWith({ referralSource: null, referral: null })
+      expect(rows).toContainEqual(
+        expect.objectContaining({ source: "inboundMessage" }),
+      )
+    })
   })
 
   test("derives WhatsApp locale, timezone, and language from the wa_id phone country", async () => {
@@ -1528,13 +2709,18 @@ describe("receiveMessage — new contact MAC gate", () => {
 
     await receiveMessage(baseProps)
 
-    expect(mockUpdateTracking).toHaveBeenCalledTimes(1)
-    expect(mockUpdateTracking).toHaveBeenCalledWith({
-      tx: expect.any(Object),
+    // The location write is now internal to `recordInboundActivity` (see
+    // `packages/business/src/conversation/service.ts`), which persists the
+    // tracking fields AND `Contact.location` in one transaction — assert the
+    // equivalent arguments were passed to it, rather than reaching into the
+    // service's own internal `contactService.update` call.
+    expect(mockRecordInboundActivity).toHaveBeenCalledTimes(1)
+    expect(mockRecordInboundActivity).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      conversationId: "conv-1",
       contactInboxId: "ci-new",
       contactId: "contact-new",
-      workspaceId: "ws-1",
-      data: {
+      tracking: {
         firstInteractionAt: fakeCreatedMessage.createdAt,
         lastMessageAt: fakeCreatedMessage.createdAt,
         lastIncomingMessageAt: fakeCreatedMessage.createdAt,
@@ -1546,15 +2732,19 @@ describe("receiveMessage — new contact MAC gate", () => {
         },
         lastBtnTitle: "Choose plan",
       },
+      contactLocation: { latitude: 10.75, longitude: 106.66 },
+      at: fakeCreatedMessage.createdAt,
+      contactRepliedAt: fakeCreatedMessage.createdAt,
     })
-    expect(mockContactUpdate).toHaveBeenCalledWith(
-      { workspaceId: "ws-1", id: "contact-new" },
-      { location: { latitude: 10.75, longitude: 106.66 } },
-      expect.any(Object),
-    )
   })
 
   test("does not persist location from outgoing channel echoes", async () => {
+    // Echoes for unknown contacts are dropped outright (see the skip test
+    // above), so exercise the known-contact path to cover location handling.
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      contact: fakeContact,
+    })
     mockRunChannelHandler.mockResolvedValue({
       message: {
         ...baseIncomingMessage,
@@ -1589,6 +2779,1328 @@ describe("receiveMessage — new contact MAC gate", () => {
     await receiveMessage(baseProps)
 
     expect(mockContactUpdate).not.toHaveBeenCalled()
+    expect(mockRecordInboundActivity).toHaveBeenCalledWith(
+      expect.objectContaining({ contactLocation: null }),
+    )
+  })
+})
+
+describe("receiveMessage — referral-only events", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+
+    // Existing contact inbox (returning contact receiving a standalone
+    // `messaging_referrals` webhook on an already-open thread) — no new
+    // contact/MAC gate involved.
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      contact: fakeContact,
+    })
+    mockConversationFindOrCreate.mockResolvedValue(fakeConversation)
+
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: fakeInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+
+    mockBuildContext.mockResolvedValue({ workspaceId: "ws-1" })
+    mockresolveTenantSettings.mockResolvedValue({
+      storageUrl: "https://files.example.test",
+    })
+    mockWorkspaceIsActiveNow.mockReturnValue(true)
+  })
+
+  test("persists ContactInbox.referral without creating a Message row", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: null,
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: "ad-ref",
+      referralSource: "ADS",
+      referral: {
+        ref: "ad-ref",
+        source: "ADS",
+        type: "OPEN_THREAD",
+        adId: "ad-9",
+      },
+    })
+
+    const result = await receiveMessage(baseProps)
+
+    expect(mockCreateMessageRepository).not.toHaveBeenCalled()
+    expect(result.message).toBeNull()
+    expect(mockUpdateTracking).toHaveBeenCalledWith({
+      contactInboxId: "ci-1",
+      contactId: "contact-1",
+      workspaceId: "ws-1",
+      data: {
+        referral: {
+          ref: "ad-ref",
+          source: "ADS",
+          type: "OPEN_THREAD",
+          adId: "ad-9",
+        },
+      },
+    })
+    // Distinguishes this call from the `persistNewMessageSideEffects` path,
+    // which always passes `tx` — this call runs standalone and
+    // self-invalidates the tracking cache.
+    expect(mockUpdateTracking).not.toHaveBeenCalledWith(
+      expect.objectContaining({ tx: expect.anything() }),
+    )
+  })
+
+  test("propagates a referral-only tracking persist failure instead of swallowing it", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: null,
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: "ad-ref",
+      referralSource: "ADS",
+      referral: {
+        ref: "ad-ref",
+        source: "ADS",
+        type: "OPEN_THREAD",
+        adId: "ad-9",
+      },
+    })
+    mockUpdateTracking.mockRejectedValueOnce(new Error("db unavailable"))
+
+    // A transient `updateTracking` failure here must fail the BullMQ job so
+    // it retries — otherwise CTM/CTID referral attribution is silently lost
+    // forever (the job "succeeds" with no persisted referral). It must NOT
+    // be caught and downgraded to a warning.
+    await expect(receiveMessage(baseProps)).rejects.toThrow("db unavailable")
+  })
+
+  test("does not persist tracking when there is no referral and no message", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: null,
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockUpdateTracking).not.toHaveBeenCalled()
+  })
+
+  test("still enqueues the ref job for a referral-only event on an active workspace", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: null,
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: "ad-ref",
+      referralSource: "ADS",
+      referral: { ref: "ad-ref", source: "ADS", type: "OPEN_THREAD" },
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockIntegrationQueueAdd).toHaveBeenCalledWith(
+      "runRef",
+      expect.objectContaining({
+        type: "runRef",
+        data: expect.objectContaining({ ref: "ad-ref" }),
+      }),
+    )
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Existing-contact profile refresh — post-save, all channels (Task 2 of
+// .superpowers/sdd/2026-08-31-messenger-ctm-profile-backfill). The business
+// rules (capability table, cooldown) are Task 1's, tested in
+// packages/business/__tests__/contact-profile-refresh.test.ts; this suite
+// only exercises the WORKER's wiring through the real `receiveMessage`
+// pipeline: eligibility, fetcher selection per channel, and the never-throws
+// guarantee.
+// ---------------------------------------------------------------------------
+
+describe("receiveMessage — ad label sync (Meta auto labels on CTM referrals)", () => {
+  const adsReferral = { source: "ADS", type: "OPEN_THREAD", adId: "ad-9" }
+
+  const parsed = (overrides: Record<string, unknown> = {}) => ({
+    message: baseIncomingMessage,
+    contact: { sourceId: "psid-123" },
+    postbackAction: null,
+    quickReplyAction: null,
+    ref: null,
+    referralSource: "ADS",
+    referral: adsReferral,
+    ...overrides,
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: fakeInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      contact: fakeContact,
+    })
+    mockConversationFindOrCreate.mockResolvedValue(fakeConversation)
+    mockBuildContext.mockResolvedValue({ workspaceId: "ws-1" })
+    mockresolveTenantSettings.mockResolvedValue({
+      storageUrl: "https://files.example.test",
+    })
+    mockCreateMessageRepository.mockResolvedValue({
+      createOrUpdate: mockCreateOrUpdate,
+      createOrUpdateWithAttachments: mockCreateOrUpdateWithAttachments,
+      findLastByConversation: mockFindLastByConversation,
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: fakeCreatedMessage,
+      isNew: true,
+    })
+    mockEmit.mockResolvedValue(undefined)
+    mockIntegrationQueueAdd.mockResolvedValue(undefined)
+    mockWorkspaceIsActiveNow.mockReturnValue(true)
+  })
+
+  test("hands the newly stored message to the ad label sync, inline (no queue job)", async () => {
+    mockRunChannelHandler.mockResolvedValue(parsed())
+
+    await receiveMessage(baseProps)
+
+    expect(mockSyncAdLabelsIfAdReferred).toHaveBeenCalledTimes(1)
+    expect(mockSyncAdLabelsIfAdReferred).toHaveBeenCalledWith({
+      canAutomate: true,
+      inbox: fakeInbox,
+      integrationRow: fakeIntegrationRow,
+      referral: adsReferral,
+      newMessageType: "incoming",
+      sourceId: "psid-123",
+      listLabels: expect.any(Function),
+    })
+    const queuedJobNames = mockIntegrationQueueAdd.mock.calls.map(
+      (call) => call[0],
+    )
+    expect(queuedJobNames).not.toContain("syncAdLabels")
+  })
+
+  test("passes no new message for a redelivered (already stored) message", async () => {
+    mockCreateOrUpdate.mockResolvedValue({
+      message: fakeCreatedMessage,
+      isNew: false,
+    })
+    mockRunChannelHandler.mockResolvedValue(parsed())
+
+    await receiveMessage(baseProps)
+
+    expect(mockSyncAdLabelsIfAdReferred).toHaveBeenCalledWith(
+      expect.objectContaining({ newMessageType: undefined }),
+    )
+  })
+
+  test("passes no new message for the referral-only webhook", async () => {
+    mockRunChannelHandler.mockResolvedValue(parsed({ message: null }))
+
+    await receiveMessage(baseProps)
+
+    expect(mockSyncAdLabelsIfAdReferred).toHaveBeenCalledWith(
+      expect.objectContaining({ newMessageType: undefined }),
+    )
+  })
+
+  test("tags the contact with the ad for the referral-only webhook", async () => {
+    mockRunChannelHandler.mockResolvedValue(parsed({ message: null }))
+
+    await receiveMessage(baseProps)
+
+    expect(mockTagAdReferralOnlyContact).toHaveBeenCalledWith({
+      canAutomate: true,
+      inbox: fakeInbox,
+      integrationRow: fakeIntegrationRow,
+      referral: adsReferral,
+      isReferralOnly: true,
+      contactInbox: {
+        id: fakeContactInbox.id,
+        contactId: fakeContactInbox.contactId,
+      },
+    })
+  })
+
+  test("tags the contact before the ref job is enqueued", async () => {
+    mockRunChannelHandler.mockResolvedValue(
+      parsed({ message: null, ref: "promo" }),
+    )
+
+    await receiveMessage(baseProps)
+
+    const runRefCall = mockIntegrationQueueAdd.mock.calls.findIndex(
+      (call) => call[0] === "runRef",
+    )
+    expect(runRefCall).toBeGreaterThanOrEqual(0)
+    expect(
+      mockTagAdReferralOnlyContact.mock.invocationCallOrder[0],
+    ).toBeLessThan(mockIntegrationQueueAdd.mock.invocationCallOrder[runRefCall])
+  })
+
+  test("marks a delivery with a message as not referral-only", async () => {
+    mockRunChannelHandler.mockResolvedValue(parsed())
+
+    await receiveMessage(baseProps)
+
+    expect(mockTagAdReferralOnlyContact).toHaveBeenCalledWith(
+      expect.objectContaining({ isReferralOnly: false }),
+    )
+  })
+
+  test("passes canAutomate false for an expired workspace", async () => {
+    mockWorkspaceIsActiveNow.mockReturnValue(false)
+    mockRunChannelHandler.mockResolvedValue(parsed())
+
+    await receiveMessage(baseProps)
+
+    expect(mockSyncAdLabelsIfAdReferred).toHaveBeenCalledWith(
+      expect.objectContaining({ canAutomate: false }),
+    )
+  })
+
+  test("listLabels reads the person's labels through the channel handler with the given deadline", async () => {
+    mockRunChannelHandler.mockResolvedValue(parsed())
+
+    await receiveMessage(baseProps)
+
+    const { listLabels } = mockSyncAdLabelsIfAdReferred.mock.calls[0][0] as {
+      listLabels: (requestTimeoutMs: number) => Promise<unknown>
+    }
+    mockRunChannelHandler.mockResolvedValueOnce([])
+    await listLabels(5000)
+    expect(mockRunChannelHandler).toHaveBeenLastCalledWith(
+      "bot",
+      "listLabels",
+      expect.objectContaining({
+        data: { sourceId: "psid-123", requestTimeoutMs: 5000 },
+      }),
+    )
+  })
+})
+
+describe("receiveMessage — existing contact profile refresh (post-save)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      contact: fakeContact,
+    })
+    mockConversationFindOrCreate.mockResolvedValue(fakeConversation)
+
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: fakeInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+
+    mockBuildContext.mockResolvedValue({ workspaceId: "ws-1" })
+    mockresolveTenantSettings.mockResolvedValue({
+      storageUrl: "https://files.example.test",
+    })
+    mockCreateMessageRepository.mockResolvedValue({
+      createOrUpdate: mockCreateOrUpdate,
+      createOrUpdateWithAttachments: mockCreateOrUpdateWithAttachments,
+      findLastByConversation: mockFindLastByConversation,
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: fakeCreatedMessage,
+      isNew: true,
+    })
+    mockWorkspaceIsActiveNow.mockReturnValue(true)
+    mockResolveIntegrationContextFromContactInbox.mockResolvedValue({
+      integration: { runChannelHandler: mockRunChannelHandler },
+      ctx: { workspaceId: "ws-1" },
+    })
+  })
+
+  test("named contact (has a name already) → refresh not called", async () => {
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      contact: { ...fakeContact, firstName: "Jane" },
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockContactProfileRefresh).not.toHaveBeenCalled()
+  })
+
+  test("outgoing echo on an existing nameless contact → refresh not called", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: {
+        ...baseIncomingMessage,
+        messageType: "outgoing",
+        attachments: [],
+      },
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockContactProfileRefresh).not.toHaveBeenCalled()
+  })
+
+  test("channel with inbound: null (webchat) → refresh not called even for a nameless existing contact", async () => {
+    const webchatInbox = { ...fakeInbox, channel: "webchat" }
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: webchatInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      channel: "webchat",
+      contact: fakeContact,
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "webchat" })
+
+    expect(mockContactProfileRefresh).not.toHaveBeenCalled()
+    expect(mockResolveIntegrationContextFromContactInbox).not.toHaveBeenCalled()
+  })
+
+  test("unknown/legacy channel string on the inbox row → message still persists, refresh not called, receiveMessage never throws", async () => {
+    // Simulates a legacy/unknown `Inbox.channel` value (a plain text()
+    // column) reaching the capability table — regression guard for
+    // resolveInboundProfileNameSource/hasOnDemandProfileApi throwing a
+    // TypeError on an unrecognized channel and rejecting the whole receive
+    // job (which BullMQ would then retry, replaying postback/quickReply/
+    // runRef enqueue for an already-saved message).
+    const legacyInbox = { ...fakeInbox, channel: "legacy" }
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: legacyInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      channel: "legacy",
+      contact: fakeContact,
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    // `integrationType` (webhook dispatch key) stays a registered value —
+    // only `Inbox.channel` (the capability-table lookup key) is the
+    // legacy/unknown string, matching how a real corrupted/legacy row would
+    // reach `shouldRefreshContactProfile` independent of webhook routing.
+    await receiveMessage(baseProps)
+
+    expect(mockCreateOrUpdate).toHaveBeenCalled()
+    expect(mockContactProfileRefresh).not.toHaveBeenCalled()
+    expect(mockResolveIntegrationContextFromContactInbox).not.toHaveBeenCalled()
+  })
+
+  test("tiktok nameless existing contact → refresh not called (inbound: null); a sourceId is never treated as a name", async () => {
+    const tiktokInbox = { ...fakeInbox, channel: "tiktok" }
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: tiktokInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      channel: "tiktok",
+      contact: fakeContact,
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: { sourceId: "tiktok-openid-1" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "tiktok" })
+
+    expect(mockContactProfileRefresh).not.toHaveBeenCalled()
+  })
+
+  test("whatsapp payload with contacts[0].profile.name → applies it directly, no integration resolution and no Graph call", async () => {
+    const whatsappInbox = { ...fakeInbox, channel: "whatsapp" }
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: whatsappInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      channel: "whatsapp",
+      contact: fakeContact,
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      // The channel already parsed contacts[0].profile.name into the SDK
+      // IncomingContact — this is the payload the fetcher must apply as-is.
+      contact: { sourceId: "psid-123", firstName: "Maria" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockContactProfileRefresh.mockImplementation(async (input) => {
+      const profile = await input.fetchProfile()
+      return profile?.firstName
+        ? { status: "updated", contact: {} }
+        : { status: "unavailable" }
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "whatsapp" })
+
+    expect(mockContactProfileRefresh).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "payload" }),
+    )
+    expect(mockResolveIntegrationContextFromContactInbox).not.toHaveBeenCalled()
+    expect(mockRunChannelHandler).not.toHaveBeenCalledWith(
+      "contact",
+      "getProfile",
+      expect.anything(),
+    )
+  })
+
+  test("whatsapp payload without a name → unavailable, no local cooldown gate; a later message tries again", async () => {
+    const whatsappInbox = { ...fakeInbox, channel: "whatsapp" }
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: whatsappInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      channel: "whatsapp",
+      contact: fakeContact,
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: { sourceId: "psid-123" }, // no name in the payload
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockContactProfileRefresh.mockResolvedValue({ status: "unavailable" })
+
+    await receiveMessage({ ...baseProps, integrationType: "whatsapp" })
+    expect(mockContactProfileRefresh).toHaveBeenCalledTimes(1)
+
+    // The worker adds no gate of its own — a later message is still a
+    // candidate; the service (Task 1, tested there) owns the cooldown.
+    await receiveMessage({ ...baseProps, integrationType: "whatsapp" })
+    expect(mockContactProfileRefresh).toHaveBeenCalledTimes(2)
+  })
+
+  test("api channel: payload source, same as whatsapp", async () => {
+    const apiInbox = { ...fakeInbox, channel: "api" }
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: apiInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      channel: "api",
+      contact: fakeContact,
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: { sourceId: "psid-123", firstName: "API Contact" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "api" })
+
+    expect(mockContactProfileRefresh).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "payload" }),
+    )
+    expect(mockResolveIntegrationContextFromContactInbox).not.toHaveBeenCalled()
+  })
+
+  test("telegram nameless existing contact → getProfile (getChat) called with the contactInbox's own sourceId, ignoring any name on the payload", async () => {
+    const telegramInbox = { ...fakeInbox, channel: "telegram" }
+    const telegramContactInbox = {
+      ...fakeContactInbox,
+      channel: "telegram",
+      sourceId: "tg-chat-1",
+    }
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: telegramInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockFindContactInbox.mockResolvedValue({
+      ...telegramContactInbox,
+      contact: fakeContact,
+    })
+    mockRunChannelHandler.mockImplementation(
+      (_domain: string, action: string) => {
+        if (action === "getProfile") {
+          return Promise.resolve({ firstName: "Alex" })
+        }
+        return Promise.resolve({
+          message: { ...baseIncomingMessage, attachments: [] },
+          // A group-chat callback query names the clicking user here, not
+          // the chat's own identity — the payload source must never be
+          // used for telegram (capability table: inbound = "channelApi").
+          contact: { sourceId: "tg-chat-1", firstName: "Whoever Clicked" },
+          postbackAction: null,
+          quickReplyAction: null,
+          ref: null,
+        })
+      },
+    )
+    mockContactProfileRefresh.mockImplementation(async (input) => {
+      await input.fetchProfile()
+      return { status: "updated", contact: {} }
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "telegram" })
+
+    expect(mockContactProfileRefresh).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "channelApi" }),
+    )
+    expect(mockResolveIntegrationContextFromContactInbox).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      contactInbox: expect.objectContaining({ sourceId: "tg-chat-1" }),
+    })
+    expect(mockRunChannelHandler).toHaveBeenCalledWith(
+      "contact",
+      "getProfile",
+      {
+        ctx: { workspaceId: "ws-1" },
+        data: expect.objectContaining({ sourceId: "tg-chat-1" }),
+      },
+    )
+  })
+
+  test("instagram: the channelApi fetcher delegates registry dispatch to resolveIntegrationContextFromContactInbox (direct vs via-Facebook is invisible here)", async () => {
+    const instagramInbox = { ...fakeInbox, channel: "instagram" }
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: instagramInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      channel: "instagram",
+      contact: fakeContact,
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    // Standing in for `resolveIntegrationContextFromContactInbox` picking
+    // the `instagramFacebook` registry (its own existing, unit-tested
+    // behaviour) — this test only proves our fetcher uses whatever it
+    // resolves rather than re-implementing the dispatch itself.
+    const instagramFacebookRunChannelHandler = vi
+      .fn()
+      .mockResolvedValue({ firstName: "Via FB" })
+    mockResolveIntegrationContextFromContactInbox.mockResolvedValue({
+      integration: { runChannelHandler: instagramFacebookRunChannelHandler },
+      ctx: { workspaceId: "ws-1" },
+    })
+    mockContactProfileRefresh.mockImplementation(async (input) => {
+      await input.fetchProfile()
+      return { status: "updated", contact: {} }
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "instagram" })
+
+    expect(mockResolveIntegrationContextFromContactInbox).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      contactInbox: expect.objectContaining({ channel: "instagram" }),
+    })
+    expect(instagramFacebookRunChannelHandler).toHaveBeenCalledWith(
+      "contact",
+      "getProfile",
+      expect.objectContaining({
+        data: expect.objectContaining({ sourceId: "psid-123" }),
+      }),
+    )
+  })
+
+  test("zalo nameless existing contact → getProfile called, display_name applied", async () => {
+    const zaloInbox = { ...fakeInbox, channel: "zalo" }
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: zaloInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      channel: "zalo",
+      contact: fakeContact,
+    })
+    mockRunChannelHandler.mockImplementation(
+      (_domain: string, action: string) => {
+        if (action === "getProfile") {
+          // The zalo integration maps `display_name` onto `firstName`.
+          return Promise.resolve({ firstName: "Nguyen Van A" })
+        }
+        return Promise.resolve({
+          message: { ...baseIncomingMessage, attachments: [] },
+          contact: { sourceId: "psid-123" },
+          postbackAction: null,
+          quickReplyAction: null,
+          ref: null,
+        })
+      },
+    )
+    mockContactProfileRefresh.mockImplementation(async (input) => {
+      const profile = await input.fetchProfile()
+      return profile?.firstName
+        ? { status: "updated", contact: {} }
+        : { status: "unavailable" }
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "zalo" })
+
+    expect(mockContactProfileRefresh).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "channelApi" }),
+    )
+    expect(mockRunChannelHandler).toHaveBeenCalledWith(
+      "contact",
+      "getProfile",
+      {
+        ctx: { workspaceId: "ws-1" },
+        data: expect.objectContaining({ sourceId: "psid-123" }),
+      },
+    )
+  })
+
+  test("zalo display_name blank → unavailable (cooldown remains the service's responsibility)", async () => {
+    const zaloInbox = { ...fakeInbox, channel: "zalo" }
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: zaloInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      channel: "zalo",
+      contact: fakeContact,
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockContactProfileRefresh.mockResolvedValue({ status: "unavailable" })
+
+    await receiveMessage({ ...baseProps, integrationType: "zalo" })
+
+    expect(mockContactProfileRefresh).toHaveBeenCalledWith(
+      expect.objectContaining({ source: "channelApi" }),
+    )
+  })
+
+  test("duplicate webhook (isNewMessage === false) → the service is still called (owner decision)", async () => {
+    mockCreateOrUpdate.mockResolvedValue({
+      message: fakeCreatedMessage,
+      isNew: false,
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockContactProfileRefresh).toHaveBeenCalled()
+  })
+
+  test("a new contact created by a text message whose creation-path getProfile failed still gets a refresh attempt in the same job (owner decision)", async () => {
+    mockFindContactInbox.mockResolvedValue(undefined)
+    mockWorkspaceFind.mockResolvedValue({ ownerId: "owner-1" })
+    mockRunChannelHandler.mockImplementation(
+      (_domain: string, action: string) => {
+        if (action === "getProfile") {
+          return Promise.reject(new Error("consent required"))
+        }
+        return Promise.resolve({
+          message: { ...baseIncomingMessage, attachments: [] },
+          contact: { sourceId: "psid-123" },
+          postbackAction: null,
+          quickReplyAction: null,
+          ref: null,
+        })
+      },
+    )
+    mockCreateNewContactWithMac.mockResolvedValue({
+      ok: true,
+      value: {
+        newContact: {
+          id: "contact-new",
+          workspaceId: "ws-1",
+          firstName: null,
+          lastName: null,
+          phoneNumber: null,
+          email: null,
+          blockedAt: null,
+          createdAt: new Date("2026-06-21T00:00:00Z"),
+        },
+        contactInbox: {
+          ...fakeContactInbox,
+          id: "ci-new",
+          contactId: "contact-new",
+        },
+        conversation: fakeConversation,
+      },
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: { ...fakeCreatedMessage, contactInboxId: "ci-new" },
+      isNew: true,
+    })
+
+    await receiveMessage(baseProps)
+
+    // The creation-path failure is attributed by the channel-side id alone:
+    // there is no `Contact` row yet, so `sourceId` is the row's only identity.
+    expect(mockRecordProfileRefreshFailure).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceId: "psid-123",
+        workspaceId: "ws-1",
+      }),
+    )
+    expect(
+      mockRecordProfileRefreshFailure.mock.calls[0]?.[0],
+    ).not.toHaveProperty("contactId")
+    expect(mockContactProfileRefresh).toHaveBeenCalledWith(
+      expect.objectContaining({ contactId: "contact-new" }),
+    )
+  })
+
+  test("if the profile-refresh service throws unexpectedly, receiveMessage still resolves and a warning is logged", async () => {
+    mockContactProfileRefresh.mockRejectedValue(new Error("boom"))
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await expect(receiveMessage(baseProps)).resolves.toBeDefined()
+    expect(logger.warn).toHaveBeenCalled()
+  })
+
+  test("two concurrent inbound messages from the same nameless contact → both persist, refresh runs for both (no lock)", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockContactProfileRefresh.mockImplementation(async (input) => {
+      await input.fetchProfile()
+      return { status: "updated", contact: {} }
+    })
+
+    await Promise.all([receiveMessage(baseProps), receiveMessage(baseProps)])
+
+    expect(mockCreateOrUpdate).toHaveBeenCalledTimes(2)
+    expect(mockContactProfileRefresh).toHaveBeenCalledTimes(2)
+  })
+
+  test("no worker-side cooldown gate: the service is called on every eligible message, even immediately after a failed/cooling-down attempt", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: { sourceId: "psid-123" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockContactProfileRefresh
+      .mockResolvedValueOnce({ status: "failed" })
+      .mockResolvedValueOnce({ status: "skipped", reason: "coolingDown" })
+      .mockResolvedValueOnce({ status: "updated", contact: {} })
+
+    await receiveMessage(baseProps)
+    await receiveMessage(baseProps)
+    await receiveMessage(baseProps)
+
+    expect(mockContactProfileRefresh).toHaveBeenCalledTimes(3)
+  })
+
+  test("instagram: a referral-only event still fetches getProfile at creation time via hasOnDemandProfileApi (replaces canGetUserProfileIfNeeded)", async () => {
+    const instagramInbox = { ...fakeInbox, channel: "instagram" }
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: instagramInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockFindContactInbox.mockResolvedValue(undefined)
+    mockWorkspaceFind.mockResolvedValue({ ownerId: "owner-1" })
+    mockRunChannelHandler.mockImplementation(
+      (_domain: string, action: string) => {
+        if (action === "getProfile") {
+          return Promise.resolve({ firstName: "IG Contact" })
+        }
+        return Promise.resolve({
+          message: null,
+          contact: { sourceId: "ig-psid-1" },
+          postbackAction: null,
+          quickReplyAction: null,
+          ref: "ad-ref",
+          referralSource: "ADS",
+          referral: { ref: "ad-ref", source: "ADS", type: "OPEN_THREAD" },
+        })
+      },
+    )
+    mockCreateNewContactWithMac.mockResolvedValue({
+      ok: true,
+      value: {
+        newContact: {
+          id: "contact-ig-new",
+          workspaceId: "ws-1",
+          firstName: "IG Contact",
+          phoneNumber: null,
+          email: null,
+          blockedAt: null,
+          createdAt: new Date("2026-06-21T00:00:00Z"),
+        },
+        contactInbox: {
+          ...fakeContactInbox,
+          id: "ci-ig-new",
+          contactId: "contact-ig-new",
+          channel: "instagram",
+        },
+        conversation: fakeConversation,
+      },
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "instagram" })
+
+    expect(mockRunChannelHandler).toHaveBeenCalledWith(
+      "contact",
+      "getProfile",
+      expect.objectContaining({
+        data: { includeProfileSnapshot: true, sourceId: "ig-psid-1" },
+      }),
+    )
+  })
+
+  describe("instagram: profile snapshot and handle persisted on the new contact inbox", () => {
+    const newInstagramContactInboxInsert = async (
+      profileResult: Record<string, unknown>,
+    ) => {
+      const instagramInbox = { ...fakeInbox, channel: "instagram" }
+      vi.mocked(
+        integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+      ).mockResolvedValue({
+        inbox: instagramInbox,
+        integrationRow: fakeIntegrationRow,
+      } as never)
+      mockFindContactInbox.mockResolvedValue(undefined)
+      mockWorkspaceFind.mockResolvedValue({ ownerId: "owner-1" })
+      mockRunChannelHandler.mockImplementation(
+        (_domain: string, action: string) => {
+          if (action === "getProfile") {
+            return Promise.resolve(profileResult)
+          }
+          return Promise.resolve({
+            message: { ...baseIncomingMessage, attachments: [] },
+            contact: { sourceId: "ig-psid-1" },
+            postbackAction: null,
+            quickReplyAction: null,
+            ref: null,
+          })
+        },
+      )
+      const inserted: Record<string, unknown>[] = []
+      const tx = {
+        insert: () => ({
+          values: (values: Record<string, unknown>) => {
+            inserted.push(values)
+            return { returning: () => Promise.resolve([values]) }
+          },
+        }),
+      }
+      mockCreateNewContactWithMac.mockImplementation(
+        async (input: {
+          create: (tx: unknown) => Promise<{ value: unknown }>
+        }) => ({
+          ok: true,
+          value: (await input.create(tx)).value,
+        }),
+      )
+      mockCreateOrUpdate.mockResolvedValue({
+        message: fakeCreatedMessage,
+        isNew: true,
+      })
+
+      await receiveMessage({ ...baseProps, integrationType: "instagram" })
+
+      // inserted[0] is the Contact row, inserted[1] the ContactInbox row.
+      return inserted[1]
+    }
+
+    test("stores the snapshot columns and the handle from the profile lookup", async () => {
+      const contactInboxInsert = await newInstagramContactInboxInsert({
+        firstName: "IG Contact",
+        sourceUsername: "ig_handle",
+        profileSnapshot: {
+          followsBusiness: true,
+          businessFollowsContact: false,
+          accountVerified: false,
+          followerCount: 0,
+          username: "snapshot_handle",
+        },
+      })
+
+      expect(contactInboxInsert).toMatchObject({
+        sourceUsername: "ig_handle",
+        followsBusiness: true,
+        businessFollowsContact: false,
+        accountVerified: false,
+        followerCount: 0,
+      })
+    })
+
+    test("keeps the handle from the snapshot when the profile lookup failed", async () => {
+      const contactInboxInsert = await newInstagramContactInboxInsert({
+        sourceId: "ig-psid-1",
+        profileSnapshot: {
+          followsBusiness: false,
+          businessFollowsContact: false,
+          accountVerified: true,
+          followerCount: 12,
+          username: "snapshot_handle",
+        },
+      })
+
+      expect(contactInboxInsert).toMatchObject({
+        sourceUsername: "snapshot_handle",
+        followerCount: 12,
+        accountVerified: true,
+      })
+    })
+
+    test("writes null (unknown) for every snapshot column when none was returned", async () => {
+      const contactInboxInsert = await newInstagramContactInboxInsert({
+        firstName: "IG Contact",
+        profileSnapshot: null,
+      })
+
+      expect(contactInboxInsert).toMatchObject({
+        sourceUsername: null,
+        followsBusiness: null,
+        businessFollowsContact: null,
+        accountVerified: null,
+        followerCount: null,
+      })
+    })
+  })
+
+  test("zalo: a new contact creation still fetches getProfile at creation time via hasOnDemandProfileApi", async () => {
+    mockFindContactInbox.mockResolvedValue(undefined)
+    mockWorkspaceFind.mockResolvedValue({ ownerId: "owner-1" })
+    const zaloInbox = { ...fakeInbox, channel: "zalo" }
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: zaloInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockRunChannelHandler.mockImplementation(
+      (_domain: string, action: string) => {
+        if (action === "getProfile") {
+          return Promise.resolve({ firstName: "Zalo Contact" })
+        }
+        return Promise.resolve({
+          message: { ...baseIncomingMessage, attachments: [] },
+          contact: { sourceId: "zalo-psid-1" },
+          postbackAction: null,
+          quickReplyAction: null,
+          ref: null,
+        })
+      },
+    )
+    mockCreateNewContactWithMac.mockResolvedValue({
+      ok: true,
+      value: {
+        newContact: {
+          id: "contact-zalo-new",
+          workspaceId: "ws-1",
+          firstName: "Zalo Contact",
+          phoneNumber: null,
+          email: null,
+          blockedAt: null,
+          createdAt: new Date("2026-06-21T00:00:00Z"),
+        },
+        contactInbox: {
+          ...fakeContactInbox,
+          id: "ci-zalo-new",
+          contactId: "contact-zalo-new",
+          channel: "zalo",
+        },
+        conversation: fakeConversation,
+      },
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: { ...fakeCreatedMessage, contactInboxId: "ci-zalo-new" },
+      isNew: true,
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "zalo" })
+
+    expect(mockRunChannelHandler).toHaveBeenCalledWith(
+      "contact",
+      "getProfile",
+      expect.objectContaining({
+        data: { includeProfileSnapshot: false, sourceId: "zalo-psid-1" },
+      }),
+    )
+  })
+
+  test("telegram: a new contact creation still fetches getProfile at creation time via hasOnDemandProfileApi", async () => {
+    mockFindContactInbox.mockResolvedValue(undefined)
+    mockWorkspaceFind.mockResolvedValue({ ownerId: "owner-1" })
+    const telegramInbox = { ...fakeInbox, channel: "telegram" }
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: telegramInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockRunChannelHandler.mockImplementation(
+      (_domain: string, action: string) => {
+        if (action === "getProfile") {
+          return Promise.resolve({ firstName: "Telegram Contact" })
+        }
+        return Promise.resolve({
+          message: { ...baseIncomingMessage, attachments: [] },
+          contact: { sourceId: "telegram-chat-1" },
+          postbackAction: null,
+          quickReplyAction: null,
+          ref: null,
+        })
+      },
+    )
+    mockCreateNewContactWithMac.mockResolvedValue({
+      ok: true,
+      value: {
+        newContact: {
+          id: "contact-telegram-new",
+          workspaceId: "ws-1",
+          firstName: "Telegram Contact",
+          phoneNumber: null,
+          email: null,
+          blockedAt: null,
+          createdAt: new Date("2026-06-21T00:00:00Z"),
+        },
+        contactInbox: {
+          ...fakeContactInbox,
+          id: "ci-telegram-new",
+          contactId: "contact-telegram-new",
+          channel: "telegram",
+        },
+        conversation: fakeConversation,
+      },
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: { ...fakeCreatedMessage, contactInboxId: "ci-telegram-new" },
+      isNew: true,
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "telegram" })
+
+    expect(mockRunChannelHandler).toHaveBeenCalledWith(
+      "contact",
+      "getProfile",
+      expect.objectContaining({
+        data: { includeProfileSnapshot: false, sourceId: "telegram-chat-1" },
+      }),
+    )
+  })
+
+  test("CTM sequence: a referral-only creation whose getProfile fetch failed, then a text message from the same PSID triggers the refresh after the message is persisted", async () => {
+    // --- Call 1: referral-only event, brand-new contact -------------------
+    mockFindContactInbox.mockResolvedValueOnce(undefined)
+    mockWorkspaceFind.mockResolvedValue({ ownerId: "owner-1" })
+    mockRunChannelHandler.mockImplementation(
+      (_domain: string, action: string) => {
+        if (action === "getProfile") {
+          return Promise.reject({
+            code: 2_018_218,
+            message: "consent required",
+          })
+        }
+        return Promise.resolve({
+          message: null,
+          contact: { sourceId: "psid-ctm" },
+          postbackAction: null,
+          quickReplyAction: null,
+          ref: "ad-ref",
+          referralSource: "ADS",
+          referral: {
+            ref: "ad-ref",
+            source: "ADS",
+            type: "OPEN_THREAD",
+            adId: "ad-1",
+          },
+        })
+      },
+    )
+    mockCreateNewContactWithMac.mockResolvedValue({
+      ok: true,
+      value: {
+        newContact: {
+          id: "contact-ctm",
+          workspaceId: "ws-1",
+          firstName: null,
+          lastName: null,
+          phoneNumber: null,
+          email: null,
+          blockedAt: null,
+          createdAt: new Date("2026-06-21T00:00:00Z"),
+        },
+        contactInbox: {
+          ...fakeContactInbox,
+          id: "ci-ctm",
+          contactId: "contact-ctm",
+          sourceId: "psid-ctm",
+        },
+        conversation: fakeConversation,
+      },
+    })
+
+    await receiveMessage(baseProps)
+
+    // No message on a referral-only event → the `if (incomingMessage)`
+    // block (where the refresh call lives) never runs; only the
+    // creation-path failure is recorded, with no cooldown possible from
+    // this path (the service, and therefore the cooldown, is never called).
+    expect(mockContactProfileRefresh).not.toHaveBeenCalled()
+    expect(mockRecordProfileRefreshFailure).toHaveBeenCalled()
+
+    // --- Call 2: a real text message from the same PSID --------------------
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      id: "ci-ctm",
+      contactId: "contact-ctm",
+      sourceId: "psid-ctm",
+      contact: {
+        id: "contact-ctm",
+        workspaceId: "ws-1",
+        firstName: null,
+        lastName: null,
+      },
+    })
+    mockRunChannelHandler.mockImplementation(
+      (_domain: string, action: string) => {
+        if (action === "getProfile") {
+          return Promise.resolve({ firstName: "Jane", lastName: "Doe" })
+        }
+        return Promise.resolve({
+          message: {
+            ...baseIncomingMessage,
+            sourceId: "msg-ctm-2",
+            attachments: [],
+          },
+          contact: { sourceId: "psid-ctm" },
+          postbackAction: null,
+          quickReplyAction: null,
+          ref: null,
+        })
+      },
+    )
+    mockCreateOrUpdate.mockResolvedValue({
+      message: {
+        ...fakeCreatedMessage,
+        id: "msg-ctm-2",
+        contactInboxId: "ci-ctm",
+      },
+      isNew: true,
+    })
+    mockContactProfileRefresh.mockImplementation(async (input) => {
+      await input.fetchProfile()
+      return {
+        status: "updated",
+        contact: { id: "contact-ctm", firstName: "Jane", lastName: "Doe" },
+      }
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockContactProfileRefresh).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contactId: "contact-ctm",
+        source: "channelApi",
+      }),
+    )
+    expect(mockRunChannelHandler).toHaveBeenCalledWith(
+      "contact",
+      "getProfile",
+      {
+        ctx: { workspaceId: "ws-1" },
+        data: expect.objectContaining({ sourceId: "psid-ctm" }),
+      },
+    )
+    // The message row is persisted before the refresh runs — both happen
+    // inside the same `receiveMessage` call, and the refresh is awaited
+    // before it returns, so `receiveMessage` resolving already proves the
+    // refresh (and therefore the mocked `contactService.update` inside it)
+    // completed before anything `worker.ts`'s `incomingMessage` case does
+    // afterwards (e.g. enqueueing `processAutomatedResponse`) — see
+    // apps/worker/src/integration/worker.ts:82-160.
+    expect(mockCreateOrUpdate.mock.invocationCallOrder[0]).toBeLessThan(
+      mockContactProfileRefresh.mock.invocationCallOrder[0],
+    )
   })
 })
 
@@ -1596,7 +4108,6 @@ describe("contact source taxonomy", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockFindContactInbox.mockResolvedValue(undefined)
-    mockFindOrFail.mockResolvedValue(fakeConversation)
     mockConversationFindOrCreate.mockResolvedValue(fakeConversation)
     mockWorkspaceFind.mockResolvedValue({ ownerId: "owner-1" })
     vi.mocked(
@@ -1609,10 +4120,15 @@ describe("contact source taxonomy", () => {
     mockCreateMessageRepository.mockResolvedValue({
       createOrUpdate: mockCreateOrUpdate,
       createOrUpdateWithAttachments: mockCreateOrUpdateWithAttachments,
+      findLastByConversation: mockFindLastByConversation,
     })
     mockCreateOrUpdate.mockResolvedValue({
       message: fakeCreatedMessage,
       isNew: true,
+    })
+    mockCreateOrUpdateWithAttachments.mockResolvedValue({
+      isNew: true,
+      result: { ...fakeCreatedMessage, attachments: [] },
     })
     mockCreateNewContactWithMac.mockResolvedValue({
       ok: true,
@@ -1631,6 +4147,20 @@ describe("contact source taxonomy", () => {
         conversation: fakeConversation,
       },
     })
+    vi.mocked(allIntegrations.messenger?.runAction)?.mockImplementation(
+      (action: string) =>
+        Promise.resolve(
+          action === "getPostDetails"
+            ? { created_time: "2026-01-01T00:00:00.000Z" }
+            : undefined,
+        ),
+    )
+    mockResolveChannelPostForComment.mockResolvedValue("post-row-1")
+    mockRecordContactInboxPostComment.mockResolvedValue(true)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   test("maps Meta referral source buckets", () => {
@@ -1653,29 +4183,759 @@ describe("contact source taxonomy", () => {
         fromName: "Commenter",
         message: "hello",
         postId: "post-1",
+        createdTime: 0,
       },
     })
 
     const rows = await runCapturedNewContactCreate()
     expect(rows).toContainEqual(expect.objectContaining({ source: "comments" }))
-    expect(mockUpdateTracking).toHaveBeenCalledWith({
-      tx: expect.any(Object),
+    expect(mockRecordInboundActivity).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      conversationId: "conv-1",
       contactInboxId: "ci-new",
       contactId: "contact-new",
-      workspaceId: "ws-1",
-      data: {
+      tracking: {
         firstInteractionAt: fakeCreatedMessage.createdAt,
         lastMessageAt: fakeCreatedMessage.createdAt,
         lastCommentMessageId: fakeCreatedMessage.id,
         lastCommentMessageAt: fakeCreatedMessage.createdAt,
       },
+      contactLocation: undefined,
+      at: fakeCreatedMessage.createdAt,
+      contactRepliedAt: fakeCreatedMessage.createdAt,
     })
-    expect(mockDbCount).not.toHaveBeenCalled()
-    expect(
-      vi
-        .mocked(allIntegrations.messenger?.runAction)
-        .mock.calls.some(([action]) => action === "getPostDetails"),
-    ).toBe(false)
+    expect(mockResolveChannelPostForComment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channel: "messenger",
+        workspaceId: "ws-1",
+      }),
+    )
+    expect(mockRecordContactInboxPostComment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        commentedAt: new Date(0),
+        contactInboxId: "ci-new",
+        postId: "post-row-1",
+        workspaceId: "ws-1",
+      }),
+    )
+  })
+
+  test("propagates a post-persistence failure so the job retries", async () => {
+    // A transient failure resolving/recording the commented post must propagate
+    // (not be swallowed) so BullMQ retries the job. The writes are idempotent
+    // and run before the message insert, so a retry records the relationship
+    // exactly once. Matches plan §5 ("errors propagate; retry is idempotent").
+    mockResolveChannelPostForComment.mockRejectedValueOnce(
+      new Error("channel post lookup failed"),
+    )
+
+    await expect(
+      receiveComment({
+        integrationType: "messenger",
+        integrationIdentifier: "inbox-1",
+        commentData: {
+          commentId: "comment-1",
+          fromId: "commenter-1",
+          fromName: "Commenter",
+          message: "hello",
+          postId: "post-1",
+          createdTime: 0,
+        },
+      }),
+    ).rejects.toThrow("channel post lookup failed")
+  })
+
+  test("fetches post details through the channel's neutral getPostDetails handler", async () => {
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: { ...fakeInbox, channel: "instagram" },
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    const details = {
+      caption: "A photo",
+      mediaType: "IMAGE",
+      permalink: "https://instagram.example/p/1",
+      publishedAt: new Date("2026-01-01T00:00:00.000Z"),
+      thumbnailUrl: "https://cdn.example/photo.jpg",
+    }
+    mockRunChannelHandler.mockResolvedValue(details)
+    mockResolveChannelPostForComment.mockImplementationOnce(
+      async ({ fetchDetails }) => {
+        // The worker holds no vendor field mapping: whatever the channel
+        // handler returns is passed through unchanged.
+        await expect(fetchDetails()).resolves.toBe(details)
+        return "post-row-1"
+      },
+    )
+
+    await receiveComment({
+      integrationType: "instagram",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-instagram-1",
+        fromId: "commenter-1",
+        postId: "post-1",
+        createdTime: 1_783_674_105,
+      },
+    })
+
+    expect(mockResolveIntegrationContextFromContactInbox).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      contactInbox: { channel: "instagram", inboxId: "inbox-1" },
+    })
+    expect(mockRunChannelHandler).toHaveBeenCalledWith(
+      "contact",
+      "getPostDetails",
+      { ctx: { workspaceId: "ws-1" }, data: { postId: "post-1" } },
+    )
+  })
+
+  test("does not track posts for a channel outside postTrackingChannels", async () => {
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: { ...fakeInbox, channel: "telegram" },
+      integrationRow: fakeIntegrationRow,
+    } as never)
+
+    await receiveComment({
+      integrationType: "messenger",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-untracked-1",
+        fromId: "commenter-1",
+        fromName: "Commenter",
+        message: "hello",
+        postId: "post-1",
+        createdTime: 0,
+      },
+    })
+
+    expect(mockResolveChannelPostForComment).not.toHaveBeenCalled()
+    expect(mockRecordContactInboxPostComment).not.toHaveBeenCalled()
+  })
+
+  test("saves a Facebook video comment with the webhook's video attached", async () => {
+    mockDownloadCommentMediaAttachment.mockResolvedValueOnce({
+      sourceId: "attachment-video-1",
+      fileType: "video",
+      mimeType: "video/mp4",
+      originPath: "public/ws/ws-1/video",
+      size: 3,
+    })
+
+    await receiveComment({
+      integrationType: "messenger",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-video-1",
+        fromId: "commenter-1",
+        fromName: "Commenter",
+        postId: "post-1",
+        videoUrl: "https://video.xx.fbcdn.test/comment-video.mp4",
+      },
+    })
+
+    expect(mockDownloadCommentMediaAttachment).toHaveBeenCalledWith({
+      url: "https://video.xx.fbcdn.test/comment-video.mp4",
+      channel: "messenger",
+      workspaceId: "ws-1",
+      integrationId: "integration-1",
+      commentId: "comment-video-1",
+    })
+    expect(mockCreateOrUpdateWithAttachments).toHaveBeenCalledTimes(1)
+  })
+
+  test("keeps the Graph attachment and skips the video URL when both exist", async () => {
+    vi.mocked(allIntegrations.messenger?.runAction)?.mockImplementation(
+      (action: string) =>
+        Promise.resolve(
+          action === "getCommentAttachment"
+            ? {
+                type: "photo",
+                attachment: {
+                  sourceId: "attachment-photo-1",
+                  fileType: "image",
+                  mimeType: "image/jpeg",
+                  originPath: "public/ws/ws-1/photo",
+                  size: 3,
+                },
+              }
+            : { created_time: "2026-01-01T00:00:00.000Z" },
+        ),
+    )
+
+    await receiveComment({
+      integrationType: "messenger",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-photo-1",
+        fromId: "commenter-1",
+        postId: "post-1",
+        videoUrl: "https://video.xx.fbcdn.test/comment-video.mp4",
+      },
+    })
+
+    expect(mockDownloadCommentMediaAttachment).not.toHaveBeenCalled()
+    expect(mockCreateOrUpdateWithAttachments).toHaveBeenCalledTimes(1)
+  })
+
+  test("still saves a Facebook video comment when the video download fails", async () => {
+    mockDownloadCommentMediaAttachment.mockResolvedValueOnce(undefined)
+
+    await receiveComment({
+      integrationType: "messenger",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-video-fail-1",
+        fromId: "commenter-1",
+        postId: "post-1",
+        videoUrl: "https://video.xx.fbcdn.test/comment-video.mp4",
+      },
+    })
+
+    expect(mockCreateOrUpdateWithAttachments).not.toHaveBeenCalled()
+    expect(mockCreateOrUpdate).toHaveBeenCalledTimes(1)
+  })
+
+  // A retry of this job after the message save already committed always sees
+  // `isNew: false`; skipping the enqueue there would silently drop the
+  // auto-reply. De-duplication is the queue's job (`jobId` + retained
+  // completed jobs), not this handler's.
+  test("still enqueues comment automation when the save result is isNew=false (job retry)", async () => {
+    mockCreateOrUpdate.mockResolvedValue({
+      message: fakeCreatedMessage,
+      isNew: false,
+    })
+
+    await receiveComment({
+      integrationType: "messenger",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-dup-1",
+        fromId: "commenter-1",
+        fromName: "Commenter",
+        message: "hello again",
+        postId: "post-1",
+      },
+    })
+
+    expect(mockIntegrationQueueAdd).toHaveBeenCalledWith(
+      "processCommentAutomation",
+      expect.objectContaining({ type: "processCommentAutomation" }),
+      {
+        jobId: "comment-auto-comment-dup-1",
+        removeOnComplete: { age: 86_400 },
+      },
+    )
+  })
+
+  test("enqueues comment automation for new comments when save result isNew=true", async () => {
+    await receiveComment({
+      integrationType: "messenger",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-new-1",
+        fromId: "commenter-1",
+        fromName: "Commenter",
+        message: "hello",
+        postId: "post-1",
+        createdTime: 1_783_674_105,
+      },
+    })
+
+    expect(mockIntegrationQueueAdd).toHaveBeenCalledWith(
+      "processCommentAutomation",
+      {
+        type: "processCommentAutomation",
+        data: {
+          integrationType: "messenger",
+          integrationIdentifier: "inbox-1",
+          workspaceId: "ws-1",
+          conversationId: "conv-1",
+          contactInboxId: "ci-new",
+          commentId: "comment-new-1",
+          postId: "post-1",
+          parentId: undefined,
+          fromId: "commenter-1",
+          message: "hello",
+          createdTime: 1_783_674_105,
+        },
+      },
+      {
+        jobId: "comment-auto-comment-new-1",
+        removeOnComplete: { age: 86_400 },
+      },
+    )
+  })
+
+  test("a live Instagram comment is flagged and paced on the account's timeline", async () => {
+    vi.useFakeTimers({ now: new Date("2026-10-01T00:00:00Z") })
+    mockReserveLiveCommentWindow.mockResolvedValue(Date.now() + 400)
+    try {
+      await receiveComment({
+        integrationType: "instagram",
+        integrationIdentifier: "inbox-1",
+        commentData: {
+          commentId: "comment-live-1",
+          fromId: "commenter-1",
+          message: "price?",
+          postId: "live-media-1",
+          createdTime: 1_783_674_105,
+          isLive: true,
+        },
+      })
+    } finally {
+      vi.useRealTimers()
+    }
+
+    expect(mockReserveLiveCommentWindow).toHaveBeenCalledWith({
+      channelType: "instagram",
+      integrationIdentifier: "inbox-1",
+      spanMs: 50,
+    })
+    expect(mockIntegrationQueueAdd).toHaveBeenCalledWith(
+      "processCommentAutomation",
+      expect.objectContaining({
+        data: expect.objectContaining({ isLive: true }),
+      }),
+      {
+        jobId: "comment-auto-comment-live-1",
+        removeOnComplete: { age: 86_400 },
+        delay: 400,
+      },
+    )
+  })
+
+  test("a pacing failure processes the live comment immediately", async () => {
+    mockReserveLiveCommentWindow.mockRejectedValue(new Error("redis down"))
+
+    await receiveComment({
+      integrationType: "instagram",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-live-2",
+        fromId: "commenter-1",
+        postId: "live-media-1",
+        isLive: true,
+      },
+    })
+
+    expect(mockIntegrationQueueAdd).toHaveBeenCalledWith(
+      "processCommentAutomation",
+      expect.anything(),
+      {
+        jobId: "comment-auto-comment-live-2",
+        removeOnComplete: { age: 86_400 },
+        delay: 0,
+      },
+    )
+  })
+
+  // A missed-comment replay already runs on the `low` queue, paced by its run:
+  // it must date the message at the comment (so the source-id dedup finds the
+  // webhook's row), run its one automation inline under the replay marker, and
+  // never put a job on the `integration` queue.
+  test("a missed-comment replay runs its one automation inline, off the integration queue", async () => {
+    await receiveComment({
+      integrationType: "messenger",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-old-1",
+        fromId: "commenter-1",
+        fromName: "Commenter",
+        message: "hello",
+        postId: "post-1",
+        createdTime: 1_783_674_105,
+      },
+      replay: { automationId: "automation-9" },
+    })
+
+    expect(mockCreateOrUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceId: "comment-old-1",
+        createdAt: new Date(1_783_674_105 * 1000),
+      }),
+    )
+    expect(mockRunAsMissedCommentReplay).toHaveBeenCalledTimes(1)
+    expect(mockProcessCommentAutomation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        commentId: "comment-old-1",
+        onlyAutomationId: "automation-9",
+      }),
+    )
+    expect(mockIntegrationQueueAdd).not.toHaveBeenCalledWith(
+      "processCommentAutomation",
+      expect.anything(),
+      expect.anything(),
+    )
+  })
+
+  test("uses attempts=1 when enqueueing Threads comment automation", async () => {
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: { ...fakeInbox, channel: "threads" },
+      integrationRow: fakeIntegrationRow,
+    } as never)
+
+    await receiveComment({
+      integrationType: "threads",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-threads-1",
+        fromId: "commenter-1",
+        fromName: "Commenter",
+        message: "hello from threads",
+        postId: "post-1",
+        createdTime: 1_783_674_105,
+      },
+    })
+
+    expect(mockIntegrationQueueAdd).toHaveBeenCalledWith(
+      "processCommentAutomation",
+      {
+        type: "processCommentAutomation",
+        data: {
+          integrationType: "threads",
+          integrationIdentifier: "inbox-1",
+          workspaceId: "ws-1",
+          conversationId: "conv-1",
+          contactInboxId: "ci-new",
+          commentId: "comment-threads-1",
+          postId: "post-1",
+          parentId: undefined,
+          fromId: "commenter-1",
+          message: "hello from threads",
+          createdTime: 1_783_674_105,
+        },
+      },
+      {
+        jobId: "comment-auto-comment-threads-1",
+        removeOnComplete: { age: 86_400 },
+        attempts: 1,
+      },
+    )
+  })
+
+  test("saves a Threads GIF reply with its GIF attached", async () => {
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: { ...fakeInbox, channel: "threads" },
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockFetchThreadsCommentAttachments.mockResolvedValueOnce([
+      {
+        sourceId: "attachment-1",
+        fileType: "image",
+        mimeType: "image/gif",
+        originPath: "public/ws/ws-1/gif",
+        size: 3,
+      },
+    ])
+
+    await receiveComment({
+      integrationType: "threads",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-threads-gif-1",
+        fromId: "commenter-1",
+        fromName: "Commenter",
+        postId: "post-1",
+      },
+    })
+
+    expect(mockFetchThreadsCommentAttachments).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      commentId: "comment-threads-gif-1",
+      integrationRow: fakeIntegrationRow,
+    })
+    expect(mockCreateOrUpdateWithAttachments).toHaveBeenCalledTimes(1)
+    expect(mockCreateOrUpdate).not.toHaveBeenCalled()
+  })
+
+  // TikTok's public reply is not idempotent either: a retry posts a second
+  // visible reply under the same comment, with no id to resume from.
+  test("uses attempts=1 when enqueueing TikTok comment automation", async () => {
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: { ...fakeInbox, channel: "tiktok" },
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockResolveTiktokCommenterIdentity.mockResolvedValue({
+      displayName: "Commenter",
+      username: "commenter",
+      isOwner: false,
+    })
+
+    await receiveComment({
+      integrationType: "tiktok",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-tiktok-1",
+        fromId: "+ABc1D2/E0fGhijkl",
+        fromName: "Commenter",
+        message: "hello from tiktok",
+        postId: "video-1",
+        createdTime: 1_783_674_105,
+      },
+    })
+
+    expect(mockIntegrationQueueAdd).toHaveBeenCalledWith(
+      "processCommentAutomation",
+      expect.anything(),
+      {
+        jobId: "comment-auto-comment-tiktok-1",
+        removeOnComplete: { age: 86_400 },
+        attempts: 1,
+      },
+    )
+  })
+
+  test("saves a TikTok image comment with its image attached", async () => {
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: { ...fakeInbox, channel: "tiktok" },
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockResolveTiktokCommenterIdentity.mockResolvedValue({
+      displayName: "Commenter",
+      isOwner: false,
+      imageUrl: "https://p16.tiktokcdn.test/comment-image.jpeg",
+    })
+    mockDownloadCommentMediaAttachment.mockResolvedValueOnce({
+      sourceId: "attachment-1",
+      fileType: "image",
+      mimeType: "image/jpeg",
+      originPath: "public/ws/ws-1/image",
+      size: 3,
+    })
+
+    await receiveComment({
+      integrationType: "tiktok",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-tiktok-image-1",
+        fromId: "+ABc1D2/E0fGhijkl",
+        postId: "video-1",
+      },
+    })
+
+    expect(mockDownloadCommentMediaAttachment).toHaveBeenCalledWith({
+      url: "https://p16.tiktokcdn.test/comment-image.jpeg",
+      channel: "tiktok",
+      workspaceId: "ws-1",
+      integrationId: "integration-1",
+      commentId: "comment-tiktok-image-1",
+    })
+    expect(mockCreateOrUpdateWithAttachments).toHaveBeenCalledTimes(1)
+  })
+
+  test("does not download anything for a TikTok comment without an image", async () => {
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: { ...fakeInbox, channel: "tiktok" },
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockResolveTiktokCommenterIdentity.mockResolvedValue({
+      displayName: "Commenter",
+      isOwner: false,
+    })
+
+    await receiveComment({
+      integrationType: "tiktok",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-tiktok-text-1",
+        fromId: "+ABc1D2/E0fGhijkl",
+        message: "text only",
+        postId: "video-1",
+      },
+    })
+
+    expect(mockDownloadCommentMediaAttachment).not.toHaveBeenCalled()
+    expect(mockCreateOrUpdateWithAttachments).not.toHaveBeenCalled()
+  })
+
+  // `owner` is the only self-authorship signal TikTok has — `fromId` and the
+  // integration identifier are different id spaces and can never match. An
+  // unresolved lookup therefore means "might be our own comment", and answering
+  // it would have the account replying to itself on a channel where the reply
+  // cannot be retracted by a retry policy.
+  test("ingests the comment but withholds automation when the TikTok identity is unresolved", async () => {
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: { ...fakeInbox, channel: "tiktok" },
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockResolveTiktokCommenterIdentity.mockResolvedValue(undefined)
+
+    await receiveComment({
+      integrationType: "tiktok",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-tiktok-2",
+        fromId: "+ABc1D2/E0fGhijkl",
+        fromName: "Commenter",
+        message: "hello from tiktok",
+        postId: "video-1",
+        createdTime: 1_783_674_105,
+      },
+    })
+
+    expect(mockIntegrationQueueAdd).not.toHaveBeenCalledWith(
+      "processCommentAutomation",
+      expect.anything(),
+      expect.anything(),
+    )
+    // The comment itself still reaches the inbox — a missing display name must
+    // not cost the workspace a comment.
+    expect(mockCreateMessageRepository).toHaveBeenCalled()
+  })
+
+  test("downloads and re-hosts a Threads commenter's avatar from the webhook payload", async () => {
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: { ...fakeInbox, channel: "threads" },
+      integrationRow: {
+        ...fakeIntegrationRow,
+        auth: { tokens: { accessToken: "threads-token" } },
+      },
+    } as never)
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(new Uint8Array([1, 2, 3]), {
+          status: 200,
+          headers: { "content-type": "image/jpeg" },
+        }),
+      ),
+    )
+
+    await receiveComment({
+      integrationType: "threads",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-threads-avatar-1",
+        fromId: "commenter-1",
+        fromName: "Commenter",
+        fromAvatarUrl: "https://scontent.cdninstagram.com/avatar.jpg",
+        message: "hello from threads",
+        postId: "post-1",
+        createdTime: 1_783_674_105,
+      },
+    })
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://scontent.cdninstagram.com/avatar.jpg",
+      { headers: { Authorization: "Bearer threads-token" } },
+    )
+    expect(mockUploaderPutObject).toHaveBeenCalledWith(
+      expect.stringMatching(AVATAR_STORAGE_PATH_PATTERN),
+      expect.anything(),
+      { ACL: "public-read", ContentType: "image/jpeg" },
+    )
+    expect(mockSetAvatarIfEmptyOrSentinel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: "ws-1",
+        avatar: expect.stringMatching(AVATAR_STORAGE_PATH_PATTERN),
+      }),
+    )
+  })
+
+  // The re-host is pure waste for a returning commenter:
+  // `buildExistingContactMatch` never reads `incomingContact.avatar`, so every
+  // repeat comment would leave one orphaned public object behind.
+  test("does not re-host the avatar when the contact already has one", async () => {
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: { ...fakeInbox, channel: "threads" },
+      integrationRow: {
+        ...fakeIntegrationRow,
+        auth: { tokens: { accessToken: "threads-token" } },
+      },
+    } as never)
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      contact: { ...fakeContact, avatar: "public/space/ws-1/avatars/existing" },
+    })
+    vi.stubGlobal("fetch", vi.fn())
+
+    await receiveComment({
+      integrationType: "threads",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-threads-avatar-2",
+        fromId: "commenter-1",
+        fromName: "Commenter",
+        fromAvatarUrl: "https://scontent.cdninstagram.com/avatar.jpg",
+        message: "hello again",
+        postId: "post-1",
+        createdTime: 1_783_674_105,
+      },
+    })
+
+    expect(fetch).not.toHaveBeenCalled()
+    expect(mockUploaderPutObject).not.toHaveBeenCalled()
+  })
+
+  test("re-hosts the avatar when the contact has a no-avatar sentinel", async () => {
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: { ...fakeInbox, channel: "threads" },
+      integrationRow: {
+        ...fakeIntegrationRow,
+        auth: { tokens: { accessToken: "threads-token" } },
+      },
+    } as never)
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      contact: {
+        ...fakeContact,
+        avatar: "public/img/no_avatar.jpg?time=1234",
+      },
+    })
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(new Uint8Array([1, 2, 3]), {
+          status: 200,
+          headers: { "content-type": "image/jpeg" },
+        }),
+      ),
+    )
+
+    await receiveComment({
+      integrationType: "threads",
+      integrationIdentifier: "inbox-1",
+      commentData: {
+        commentId: "comment-threads-avatar-sentinel",
+        fromId: "commenter-1",
+        fromName: "Commenter",
+        fromAvatarUrl: "https://scontent.cdninstagram.com/avatar.jpg",
+        message: "hello again",
+        postId: "post-1",
+        createdTime: 1_783_674_105,
+      },
+    })
+
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(mockUploaderPutObject).toHaveBeenCalledTimes(1)
+    expect(mockSetAvatarIfEmptyOrSentinel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: "ws-1",
+        avatar: expect.stringMatching(AVATAR_STORAGE_PATH_PATTERN),
+      }),
+    )
   })
 })
 
@@ -1686,7 +4946,6 @@ describe("contact source taxonomy", () => {
 describe("receiveMessage — BSUID resolver chain (D3)", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFindOrFail.mockResolvedValue(fakeConversation)
     mockConversationFindOrCreate.mockResolvedValue(fakeConversation)
     vi.mocked(
       integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
@@ -1701,6 +4960,7 @@ describe("receiveMessage — BSUID resolver chain (D3)", () => {
     mockCreateMessageRepository.mockResolvedValue({
       createOrUpdate: mockCreateOrUpdate,
       createOrUpdateWithAttachments: mockCreateOrUpdateWithAttachments,
+      findLastByConversation: mockFindLastByConversation,
     })
     mockCreateOrUpdate.mockResolvedValue({
       message: fakeCreatedMessage,
@@ -1741,6 +5001,326 @@ describe("receiveMessage — BSUID resolver chain (D3)", () => {
     expect(mockFindContactInbox).toHaveBeenCalledTimes(2)
     expect(mockCreateOrUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ contactInboxId: "ci-bsuid" }),
+    )
+  })
+
+  test("falls back to matching by sourceParentUserId after both earlier probes miss", async () => {
+    const parentMatchedContactInbox = {
+      ...fakeContactInbox,
+      id: "ci-parent",
+      contactId: "contact-parent",
+      sourceId: "84900000099",
+      sourceUserId: "user.bsuid-old",
+      sourceParentUserId: "parent.bsuid-1",
+      channel: "whatsapp",
+      contact: { ...fakeContact, id: "contact-parent" },
+    }
+    mockFindContactInbox
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(parentMatchedContactInbox)
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: {
+        sourceId: "84900000099",
+        sourceUserId: "user.bsuid-new",
+        sourceParentUserId: "parent.bsuid-1",
+        firstName: "Test",
+      },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "whatsapp" })
+
+    expect(mockFindContactInbox).toHaveBeenCalledTimes(3)
+    expect(mockSyncScopedIdentity).toHaveBeenCalledWith(
+      expect.objectContaining({ matchedBy: "sourceParentUserId" }),
+    )
+    expect(mockCreateOrUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ contactInboxId: "ci-parent" }),
+    )
+  })
+
+  test("adopts a parent-repaired phone transition with the observed old phone", async () => {
+    const parentMatchedContactInbox = {
+      ...fakeContactInbox,
+      id: "ci-parent-phone",
+      contactId: "contact-parent-phone",
+      sourceId: "84900000001",
+      sourceUserId: "user.bsuid-old",
+      sourceParentUserId: "parent.bsuid-1",
+      channel: "whatsapp",
+      contact: { ...fakeContact, id: "contact-parent-phone" },
+    }
+    const repairedContactInbox = {
+      ...parentMatchedContactInbox,
+      sourceId: "84900000002",
+      sourceUserId: "user.bsuid-new",
+    }
+    mockFindContactInbox
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(parentMatchedContactInbox)
+    mockSyncScopedIdentity.mockResolvedValueOnce({
+      contactInbox: repairedContactInbox,
+      phoneTransition: {
+        previousPhone: "84900000001",
+        newPhone: "84900000002",
+      },
+    })
+    mockAdoptPhoneNumberIfSafe.mockResolvedValueOnce({
+      ...fakeContact,
+      id: "contact-parent-phone",
+      phoneNumber: "+84900000002",
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: {
+        sourceId: "84900000002",
+        sourceUserId: "user.bsuid-new",
+        sourceParentUserId: "parent.bsuid-1",
+        firstName: "Test",
+      },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "whatsapp" })
+
+    expect(mockAdoptPhoneNumberIfSafe).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      id: "contact-parent-phone",
+      previousPhone: "84900000001",
+      newPhone: "84900000002",
+    })
+    expect(mockContactUpdate).not.toHaveBeenCalled()
+  })
+
+  test("does not adopt a hidden BSUID after a parent-matched route repair", async () => {
+    const parentMatchedContactInbox = {
+      ...fakeContactInbox,
+      id: "ci-parent-hidden",
+      contactId: "contact-parent-hidden",
+      sourceId: "84900000001",
+      sourceUserId: "user.bsuid-old",
+      sourceParentUserId: "parent.bsuid-1",
+      channel: "whatsapp",
+      contact: { ...fakeContact, id: "contact-parent-hidden" },
+    }
+    const repairedContactInbox = {
+      ...parentMatchedContactInbox,
+      sourceId: "user.bsuid-new",
+      sourceUserId: "user.bsuid-new",
+    }
+    mockFindContactInbox
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(parentMatchedContactInbox)
+    mockSyncScopedIdentity.mockResolvedValueOnce({
+      contactInbox: repairedContactInbox,
+      learnedPrimaryIdentity: undefined,
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: {
+        sourceId: "user.bsuid-new",
+        sourceUserId: "user.bsuid-new",
+        sourceParentUserId: "parent.bsuid-1",
+        firstName: "Test",
+      },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "whatsapp" })
+
+    expect(mockSyncScopedIdentity).toHaveBeenCalledWith(
+      expect.objectContaining({ matchedBy: "sourceParentUserId" }),
+    )
+    expect(mockAdoptPhoneNumberIfSafe).not.toHaveBeenCalled()
+    expect(mockContactUpdate).not.toHaveBeenCalled()
+  })
+
+  test.each([
+    "conflict",
+    "stale",
+  ])("does not write Contact.phoneNumber after a parent-fallback D6 %s", async () => {
+    const parentMatchedContactInbox = {
+      ...fakeContactInbox,
+      id: "ci-parent-failed-rotation",
+      contactId: "contact-parent-failed-rotation",
+      sourceId: "user.bsuid-old",
+      sourceUserId: "user.bsuid-old",
+      sourceParentUserId: "parent.bsuid-1",
+      channel: "whatsapp",
+      contact: {
+        ...fakeContact,
+        id: "contact-parent-failed-rotation",
+      },
+    }
+    mockFindContactInbox
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(parentMatchedContactInbox)
+    mockSyncScopedIdentity.mockResolvedValueOnce({
+      contactInbox: parentMatchedContactInbox,
+      learnedPrimaryIdentity: undefined,
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: {
+        sourceId: "84900000002",
+        sourceUserId: "user.bsuid-new",
+        sourceParentUserId: "parent.bsuid-1",
+        firstName: "Test",
+      },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "whatsapp" })
+
+    expect(mockAdoptPhoneNumberIfSafe).not.toHaveBeenCalled()
+    expect(mockContactUpdate).not.toHaveBeenCalled()
+  })
+
+  test("writes a revealed phone on a sourceUserId-keyed row with the main-branch update path", async () => {
+    const bsuidMatchedContactInbox = {
+      ...fakeContactInbox,
+      id: "ci-bsuid-phone",
+      contactId: "contact-bsuid-phone",
+      sourceId: "user.bsuid-1",
+      sourceUserId: "user.bsuid-1",
+      channel: "whatsapp",
+      contact: { ...fakeContact, id: "contact-bsuid-phone" },
+    }
+    mockFindContactInbox
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(bsuidMatchedContactInbox)
+    mockSyncScopedIdentity.mockResolvedValueOnce({
+      contactInbox: bsuidMatchedContactInbox,
+      learnedPrimaryIdentity: { value: "84900000002" },
+    })
+    mockContactUpdate.mockResolvedValueOnce({
+      ...fakeContact,
+      id: "contact-bsuid-phone",
+      phoneNumber: "+84900000002",
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: {
+        sourceId: "84900000002",
+        sourceUserId: "user.bsuid-1",
+        firstName: "Test",
+      },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "whatsapp" })
+
+    expect(mockContactUpdate).toHaveBeenCalledWith(
+      { workspaceId: "ws-1", id: "contact-bsuid-phone" },
+      { phoneNumber: "84900000002" },
+    )
+    expect(mockAdoptPhoneNumberIfSafe).not.toHaveBeenCalled()
+  })
+
+  test("replaces an existing phone when Meta reveals the phone for a sourceUserId-keyed row", async () => {
+    const bsuidMatchedContactInbox = {
+      ...fakeContactInbox,
+      id: "ci-bsuid-operator-phone",
+      contactId: "contact-bsuid-operator-phone",
+      sourceId: "user.bsuid-1",
+      sourceUserId: "user.bsuid-1",
+      channel: "whatsapp",
+      contact: {
+        ...fakeContact,
+        id: "contact-bsuid-operator-phone",
+        phoneNumber: "+84888888888",
+      },
+    }
+    mockFindContactInbox
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(bsuidMatchedContactInbox)
+    mockSyncScopedIdentity.mockResolvedValueOnce({
+      contactInbox: bsuidMatchedContactInbox,
+      learnedPrimaryIdentity: { value: "84900000002" },
+    })
+    mockContactUpdate.mockResolvedValueOnce({
+      ...fakeContact,
+      id: "contact-bsuid-operator-phone",
+      phoneNumber: "84900000002",
+    })
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: {
+        sourceId: "84900000002",
+        sourceUserId: "user.bsuid-1",
+        firstName: "Test",
+      },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "whatsapp" })
+
+    expect(mockContactUpdate).toHaveBeenCalledWith(
+      { workspaceId: "ws-1", id: "contact-bsuid-operator-phone" },
+      { phoneNumber: "84900000002" },
+    )
+    expect(mockAdoptPhoneNumberIfSafe).not.toHaveBeenCalled()
+  })
+
+  test("logs and keeps processing when a revealed-phone update fails", async () => {
+    const updateError = new Error("contact update failed")
+    const bsuidMatchedContactInbox = {
+      ...fakeContactInbox,
+      id: "ci-bsuid-phone-failure",
+      contactId: "contact-bsuid-phone-failure",
+      sourceId: "user.bsuid-1",
+      sourceUserId: "user.bsuid-1",
+      channel: "whatsapp",
+      contact: { ...fakeContact, id: "contact-bsuid-phone-failure" },
+    }
+    mockFindContactInbox
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(bsuidMatchedContactInbox)
+    mockSyncScopedIdentity.mockResolvedValueOnce({
+      contactInbox: bsuidMatchedContactInbox,
+      learnedPrimaryIdentity: { value: "84900000002" },
+    })
+    mockContactUpdate.mockRejectedValueOnce(updateError)
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: {
+        sourceId: "84900000002",
+        sourceUserId: "user.bsuid-1",
+        firstName: "Test",
+      },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await expect(
+      receiveMessage({ ...baseProps, integrationType: "whatsapp" }),
+    ).resolves.toBeDefined()
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      {
+        err: updateError,
+        contactId: "contact-bsuid-phone-failure",
+        contactInboxId: "ci-bsuid-phone-failure",
+      },
+      "Contact.phoneNumber backfill from newly-learned identity failed",
     )
   })
 
@@ -1806,7 +5386,6 @@ describe("receiveMessage — BSUID resolver chain (D3)", () => {
 describe("receiveMessage — new BSUID-keyed contact creation (D2/D8/§8.1)", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockFindOrFail.mockResolvedValue(fakeConversation)
     mockConversationFindOrCreate.mockResolvedValue(fakeConversation)
     mockWorkspaceFind.mockResolvedValue({ ownerId: "owner-1" })
     vi.mocked(
@@ -1822,6 +5401,7 @@ describe("receiveMessage — new BSUID-keyed contact creation (D2/D8/§8.1)", ()
     mockCreateMessageRepository.mockResolvedValue({
       createOrUpdate: mockCreateOrUpdate,
       createOrUpdateWithAttachments: mockCreateOrUpdateWithAttachments,
+      findLastByConversation: mockFindLastByConversation,
     })
     mockCreateOrUpdate.mockResolvedValue({
       message: fakeCreatedMessage,
@@ -1873,6 +5453,49 @@ describe("receiveMessage — new BSUID-keyed contact creation (D2/D8/§8.1)", ()
         sourceId: "user.bsuid-4",
         sourceUserId: "user.bsuid-4",
         sourceUsername: "@adopter",
+      }),
+    )
+  })
+
+  test("persists sourceParentUserId when creating a contact inbox", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: {
+        sourceId: "84901234567",
+        sourceUserId: "user.bsuid-parent",
+        sourceParentUserId: "parent.bsuid-parent",
+        firstName: "Adopter",
+      },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockCreateNewContactWithMac.mockResolvedValue({
+      ok: true,
+      value: {
+        newContact: {
+          ...fakeContact,
+          id: "contact-new",
+          blockedAt: null,
+          createdAt: new Date("2026-06-21T00:00:00Z"),
+        },
+        contactInbox: {
+          ...fakeContactInbox,
+          id: "ci-new",
+          contactId: "contact-new",
+          sourceParentUserId: "parent.bsuid-parent",
+          channel: "whatsapp",
+        },
+        conversation: fakeConversation,
+      },
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "whatsapp" })
+
+    const rows = await runCapturedNewContactCreate()
+    expect(rows).toContainEqual(
+      expect.objectContaining({
+        sourceParentUserId: "parent.bsuid-parent",
       }),
     )
   })
@@ -1970,6 +5593,55 @@ describe("receiveMessage — new BSUID-keyed contact creation (D2/D8/§8.1)", ()
     )
   })
 
+  test("recovers when contact creation loses the sourceParentUserId unique-constraint race", async () => {
+    const winnerContactInbox = {
+      ...fakeContactInbox,
+      id: "ci-parent-winner",
+      contactId: "contact-parent-winner",
+      sourceId: "84901234567",
+      sourceUserId: "user.bsuid-new",
+      sourceParentUserId: "parent.bsuid-shared",
+      channel: "whatsapp",
+      contact: { ...fakeContact, id: "contact-parent-winner" },
+    }
+    mockFindContactInbox
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(winnerContactInbox)
+    const raceError = new Error("duplicate parent identity")
+    mockCreateNewContactWithMac.mockRejectedValueOnce(raceError)
+    mockIsUniqueViolationError.mockImplementation(
+      (error: unknown, constraint?: string) =>
+        error === raceError &&
+        constraint === "ContactInbox_inboxId_sourceParentUserId_key",
+    )
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: {
+        sourceId: "84901234567",
+        sourceUserId: "user.bsuid-new",
+        sourceParentUserId: "parent.bsuid-shared",
+        firstName: "Adopter",
+      },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+
+    await receiveMessage({ ...baseProps, integrationType: "whatsapp" })
+
+    expect(mockIsUniqueViolationError).toHaveBeenCalledWith(
+      raceError,
+      "ContactInbox_inboxId_sourceParentUserId_key",
+    )
+    expect(mockCreateOrUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ contactInboxId: "ci-parent-winner" }),
+    )
+  })
+
   test("rethrows a creation error that is not a unique-violation race", async () => {
     mockIsUniqueViolationError.mockReturnValue(false)
     mockCreateNewContactWithMac.mockRejectedValueOnce(
@@ -1986,5 +5658,702 @@ describe("receiveMessage — new BSUID-keyed contact creation (D2/D8/§8.1)", ()
     await expect(
       receiveMessage({ ...baseProps, integrationType: "whatsapp" }),
     ).rejects.toThrow("connection reset")
+  })
+})
+
+describe("receiveMessage — outbound automated response on message echoes", () => {
+  const echoMessage = {
+    ...baseIncomingMessage,
+    sourceId: "echo-src-1",
+    messageType: "outgoing" as const,
+    text: "shipping info",
+    attachments: [],
+  }
+
+  const echoCreatedMessage = {
+    ...fakeCreatedMessage,
+    id: "msg-echo",
+    sourceId: "echo-src-1",
+    messageType: "outgoing",
+    senderType: "user",
+    text: "shipping info",
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+
+    mockFindContactInbox.mockResolvedValue({
+      ...fakeContactInbox,
+      contact: fakeContact,
+    })
+    mockConversationFindOrCreate.mockResolvedValue(fakeConversation)
+
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: fakeInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+
+    mockBuildContext.mockResolvedValue({ workspaceId: "ws-1" })
+    mockresolveTenantSettings.mockResolvedValue({
+      storageUrl: "https://files.example.test",
+    })
+    mockCreateMessageRepository.mockResolvedValue({
+      createOrUpdate: mockCreateOrUpdate,
+      createOrUpdateWithAttachments: mockCreateOrUpdateWithAttachments,
+      findLastByConversation: mockFindLastByConversation,
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: echoCreatedMessage,
+      isNew: true,
+    })
+    mockFindLastByConversation.mockResolvedValue([])
+    mockParseAppointmentCancelPostback.mockReturnValue(null)
+    mockWorkspaceIsActiveNow.mockReturnValue(true)
+    mockRunChannelHandler.mockResolvedValue({
+      message: echoMessage,
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+  })
+
+  const outboundCheckCalls = () =>
+    mockChatQueueAdd.mock.calls.filter(
+      ([action]) => action === "checkOutboundAutomatedResponse",
+    )
+
+  test("enqueues the check for an echo of a human agent's own reply", async () => {
+    await receiveMessage(baseProps)
+
+    expect(mockFindLastByConversation).toHaveBeenCalledWith(
+      "conv-1",
+      expect.objectContaining({
+        messageTypes: ["outgoing"],
+        workspaceId: "ws-1",
+      }),
+    )
+    expect(outboundCheckCalls()).toHaveLength(1)
+    expect(outboundCheckCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          message: { id: "msg-echo", text: "shipping info" },
+        }),
+      }),
+    )
+  })
+
+  test("skips the check when the echo duplicates a message ChatbotX itself sent", async () => {
+    // A sourceId dedupe miss: our own row is already there, so the echo was
+    // inserted a second time. Running keyword automation over it would let an
+    // outbound rule match the bot's own reply.
+    mockFindLastByConversation.mockResolvedValue([
+      { id: "msg-bot-send", text: "shipping info" },
+    ])
+
+    await receiveMessage(baseProps)
+
+    expect(outboundCheckCalls()).toHaveLength(0)
+  })
+
+  test("does not treat the echo's own row as a duplicate of itself", async () => {
+    mockFindLastByConversation.mockResolvedValue([
+      { id: "msg-echo", text: "shipping info" },
+      { id: "msg-other", text: "something else" },
+    ])
+
+    await receiveMessage(baseProps)
+
+    expect(outboundCheckCalls()).toHaveLength(1)
+  })
+
+  test("fails closed when the self-send lookup throws", async () => {
+    mockFindLastByConversation.mockRejectedValue(new Error("shard down"))
+
+    await receiveMessage(baseProps)
+
+    expect(outboundCheckCalls()).toHaveLength(0)
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ conversationId: "conv-1" }),
+      "Skipped outbound automated response check after an error",
+    )
+  })
+
+  test("does not run for inbound messages", async () => {
+    mockRunChannelHandler.mockResolvedValue({
+      message: { ...baseIncomingMessage, attachments: [] },
+      contact: { sourceId: "psid-123", firstName: "Test" },
+      postbackAction: null,
+      quickReplyAction: null,
+      ref: null,
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: fakeCreatedMessage,
+      isNew: true,
+    })
+
+    await receiveMessage(baseProps)
+
+    expect(mockFindLastByConversation).not.toHaveBeenCalled()
+    expect(outboundCheckCalls()).toHaveLength(0)
+  })
+
+  test("does not run for an inactive workspace", async () => {
+    mockWorkspaceIsActiveNow.mockReturnValue(false)
+
+    await receiveMessage(baseProps)
+
+    expect(mockFindLastByConversation).toHaveBeenCalledTimes(1)
+    expect(outboundCheckCalls()).toHaveLength(0)
+  })
+})
+
+describe("receiveMessage — conversation routing (thread control)", () => {
+  const routingInbox = {
+    ...fakeInbox,
+    channel: "whatsapp",
+    threadControlSeenAt: null,
+  }
+  const routingContactInbox = {
+    ...fakeContactInbox,
+    channel: "whatsapp",
+    threadControlState: null,
+    lastIncomingMessageAt: null,
+  }
+  const META_TIME = new Date("2026-09-29T09:00:00.000Z")
+  const summary = { type: "summary" as const, text: "Wants a refund" }
+
+  const parsed = (
+    overrides: Record<string, unknown> = {},
+    threadControl?: Record<string, unknown>,
+  ) => ({
+    message: { ...baseIncomingMessage, attachments: [] },
+    contact: { sourceId: "psid-123", firstName: "Test" },
+    postbackAction: encodeButtonPayload({ flowId: "42" }),
+    quickReplyAction: null,
+    ref: null,
+    ...(threadControl ? { threadControl } : {}),
+    ...overrides,
+  })
+
+  const whatsappProps = { ...baseProps, integrationType: "whatsapp" }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockFindContactInbox.mockResolvedValue({
+      ...routingContactInbox,
+      contact: fakeContact,
+    })
+    mockConversationFindOrCreate.mockResolvedValue(fakeConversation)
+    vi.mocked(
+      integrationService.identifyInboxAndIntegrationAuthFromIdentifier,
+    ).mockResolvedValue({
+      inbox: routingInbox,
+      integrationRow: fakeIntegrationRow,
+    } as never)
+    mockBuildContext.mockResolvedValue({ workspaceId: "ws-1" })
+    mockresolveTenantSettings.mockResolvedValue({
+      storageUrl: "https://files.example.test",
+    })
+    mockCreateMessageRepository.mockResolvedValue({
+      createOrUpdate: mockCreateOrUpdate,
+      createOrUpdateWithAttachments: mockCreateOrUpdateWithAttachments,
+      findLastByConversation: mockFindLastByConversation,
+    })
+    mockCreateOrUpdate.mockResolvedValue({
+      message: fakeCreatedMessage,
+      isNew: true,
+    })
+    mockFindLastByConversation.mockResolvedValue([])
+    mockParseAppointmentCancelPostback.mockReturnValue(null)
+    mockWorkspaceIsActiveNow.mockReturnValue(true)
+    mockRecordInboundDelivery.mockResolvedValue(null)
+    mockAutomatedResponseEnqueueFlowAction.mockReset()
+    mockAutomatedResponseEnqueueFlowAction.mockResolvedValue(undefined)
+    mockIntegrationQueueAdd.mockResolvedValue(undefined)
+  })
+
+  describe("no routing info on the parse result (no threadControl)", () => {
+    test("never touches conversation routing and keeps every automation", async () => {
+      mockRunChannelHandler.mockResolvedValue(parsed())
+
+      const result = await receiveMessage(whatsappProps)
+
+      expect(mockRecordInboundDelivery).not.toHaveBeenCalled()
+      expect(result?.suppressAutomation).toBe(false)
+      expect(mockAutomatedResponseEnqueueFlowAction).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe("T-1: owner delivery (we receive the customer message)", () => {
+    test("records the owner delivery with Meta's timestamp and context before any automation", async () => {
+      const callOrder: string[] = []
+      mockRecordInboundDelivery.mockImplementation(() => {
+        callOrder.push("recordInboundDelivery")
+        return Promise.resolve(null)
+      })
+      mockAutomatedResponseEnqueueFlowAction.mockImplementation(() => {
+        callOrder.push("automation")
+        return Promise.resolve(undefined)
+      })
+      mockRunChannelHandler.mockResolvedValue(
+        parsed(
+          {},
+          { delivery: "owner", context: summary, occurredAt: META_TIME },
+        ),
+      )
+
+      const result = await receiveMessage(whatsappProps)
+
+      expect(result?.suppressAutomation).toBe(false)
+      expect(mockRecordInboundDelivery).toHaveBeenCalledWith({
+        workspaceId: "ws-1",
+        inbox: routingInbox,
+        contactInbox: expect.objectContaining({ id: "ci-1" }),
+        conversationId: "conv-1",
+        delivery: "owner",
+        context: summary,
+        occurredAt: META_TIME,
+      })
+      expect(callOrder).toEqual(["recordInboundDelivery", "automation"])
+    })
+
+    test("falls back to the receive time when the channel gave no timestamp", async () => {
+      mockRunChannelHandler.mockResolvedValue(parsed({}, { delivery: "owner" }))
+
+      await receiveMessage(whatsappProps)
+
+      expect(mockRecordInboundDelivery).toHaveBeenCalledWith(
+        expect.objectContaining({
+          occurredAt: expect.any(Date),
+          context: undefined,
+        }),
+      )
+    })
+
+    test("records the owner transition before the message is saved", async () => {
+      const callOrder: string[] = []
+      mockRecordInboundDelivery.mockImplementation(() => {
+        callOrder.push("recordInboundDelivery")
+        return Promise.resolve(null)
+      })
+      mockCreateOrUpdate.mockImplementation(() => {
+        callOrder.push("save")
+        return Promise.resolve({ message: fakeCreatedMessage, isNew: true })
+      })
+      mockRunChannelHandler.mockResolvedValue(parsed({}, { delivery: "owner" }))
+
+      await receiveMessage(whatsappProps)
+
+      expect(callOrder.slice(0, 2)).toEqual(["recordInboundDelivery", "save"])
+    })
+
+    test("a failed owner transition queues no automation and rethrows; the retry automates exactly once", async () => {
+      mockRecordInboundDelivery.mockRejectedValueOnce(new Error("db down"))
+      mockRunChannelHandler.mockResolvedValue(parsed({}, { delivery: "owner" }))
+
+      // Attempt 1: nothing is saved, nothing is automated, the job fails.
+      await expect(receiveMessage(whatsappProps)).rejects.toThrow("db down")
+      expect(mockCreateOrUpdate).not.toHaveBeenCalled()
+      expect(mockAutomatedResponseEnqueueFlowAction).not.toHaveBeenCalled()
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ err: expect.any(Error), delivery: "owner" }),
+        expect.stringContaining("conversation routing state"),
+      )
+
+      // Attempt 2 (BullMQ retry): the message is still new.
+      const result = await receiveMessage(whatsappProps)
+
+      expect(result?.message).not.toBeNull()
+      expect(mockRecordInboundDelivery).toHaveBeenCalledTimes(2)
+      expect(mockCreateOrUpdate).toHaveBeenCalledTimes(1)
+      expect(mockAutomatedResponseEnqueueFlowAction).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe("T-5: standby delivery (another responder owns the thread)", () => {
+    const storedStandbyCopy = {
+      ...fakeCreatedMessage,
+      contentAttributes: { threadControlDelivery: "standby" },
+    }
+
+    test("a failed standby transition after the save rethrows; the retry records it and runs no automation", async () => {
+      mockRecordInboundDelivery.mockRejectedValueOnce(new Error("db down"))
+      mockCreateOrUpdate
+        .mockResolvedValueOnce({ message: storedStandbyCopy, isNew: true })
+        .mockResolvedValueOnce({ message: storedStandbyCopy, isNew: false })
+      mockRunChannelHandler.mockResolvedValue(
+        parsed({}, { delivery: "standby", occurredAt: META_TIME }),
+      )
+
+      // Attempt 1: stored, then the standby write fails and the job fails.
+      await expect(receiveMessage(whatsappProps)).rejects.toThrow("db down")
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ delivery: "standby" }),
+        expect.stringContaining("conversation routing state"),
+      )
+
+      // Attempt 2: the copy already exists, still standby and unpromoted.
+      const retry = await receiveMessage(whatsappProps)
+
+      expect(mockRecordInboundDelivery).toHaveBeenCalledTimes(2)
+      expect(mockRecordInboundDelivery).toHaveBeenLastCalledWith(
+        expect.objectContaining({ delivery: "standby", occurredAt: META_TIME }),
+      )
+      expect(retry?.suppressAutomation).toBe(true)
+      expect(retry?.message).toBeNull()
+      // The stored copy is handed back so the call-permission answer is
+      // still recorded on the retry.
+      expect(retry?.standbyCopy).toMatchObject(storedStandbyCopy)
+      expect(mockAutomatedResponseEnqueueFlowAction).not.toHaveBeenCalled()
+      expect(mockIntegrationQueueAdd).not.toHaveBeenCalled()
+    })
+
+    test("a plain standby redelivery goes through the guarded service call only (idempotent, no automation)", async () => {
+      mockCreateOrUpdate.mockResolvedValue({
+        message: storedStandbyCopy,
+        isNew: false,
+      })
+      mockRunChannelHandler.mockResolvedValue(
+        parsed({}, { delivery: "standby", occurredAt: META_TIME }),
+      )
+
+      const result = await receiveMessage(whatsappProps)
+
+      // The service returns null without a query for an already-standby thread.
+      expect(mockRecordInboundDelivery).toHaveBeenCalledTimes(1)
+      expect(result?.message).toBeNull()
+      expect(mockPromoteStandbyDelivery).not.toHaveBeenCalled()
+      expect(mockAutomatedResponseEnqueueFlowAction).not.toHaveBeenCalled()
+    })
+
+    test("a standby redelivery of a message held as owner is never recorded", async () => {
+      mockCreateOrUpdate.mockResolvedValue({
+        message: {
+          ...fakeCreatedMessage,
+          contentAttributes: {
+            threadControlDelivery: "standby",
+            threadControlPromoted: true,
+          },
+        },
+        isNew: false,
+      })
+      mockRunChannelHandler.mockResolvedValue(
+        parsed({}, { delivery: "standby" }),
+      )
+
+      const result = await receiveMessage(whatsappProps)
+
+      expect(mockRecordInboundDelivery).not.toHaveBeenCalled()
+      expect(result?.standbyCopy).toBeNull()
+    })
+
+    test("stores the message, records standby and runs no automation of any kind", async () => {
+      mockRunChannelHandler.mockResolvedValue(
+        parsed(
+          {
+            quickReplyAction: encodeButtonPayload({ flowId: "43" }),
+            ref: "campaign-1",
+          },
+          { delivery: "standby", occurredAt: META_TIME },
+        ),
+      )
+
+      const result = await receiveMessage(whatsappProps)
+
+      expect(result?.suppressAutomation).toBe(true)
+      expect(mockCreateOrUpdate).toHaveBeenCalledTimes(1)
+      expect(mockRecordInboundDelivery).toHaveBeenCalledWith(
+        expect.objectContaining({ delivery: "standby", occurredAt: META_TIME }),
+      )
+      expect(mockAutomatedResponseEnqueueFlowAction).not.toHaveBeenCalled()
+      expect(mockIntegrationQueueAdd).not.toHaveBeenCalled()
+    })
+
+    test("a WhatsApp Flow response on standby starts no template-flow capture", async () => {
+      mockRunChannelHandler.mockResolvedValue({
+        ...parsed({ postbackAction: null }, { delivery: "standby" }),
+        templateFlowToken: "token-1",
+      })
+
+      await receiveMessage(whatsappProps)
+
+      expect(mockIntegrationQueueAdd).not.toHaveBeenCalled()
+    })
+
+    test("a partner's standby echo starts no outbound keyword automation", async () => {
+      mockRunChannelHandler.mockResolvedValue({
+        message: {
+          ...baseIncomingMessage,
+          sourceId: "wamid.echo",
+          messageType: "outgoing" as const,
+          text: "shipping info",
+          attachments: [],
+        },
+        contact: { sourceId: "psid-123" },
+        postbackAction: null,
+        quickReplyAction: null,
+        ref: null,
+        echoOrigin: "thirdParty",
+        threadControl: { delivery: "standby" },
+      })
+      mockCreateOrUpdate.mockResolvedValue({
+        message: {
+          ...fakeCreatedMessage,
+          messageType: "outgoing",
+          senderType: "user",
+          text: "shipping info",
+        },
+        isNew: true,
+      })
+
+      const result = await receiveMessage(whatsappProps)
+
+      expect(result?.suppressAutomation).toBe(true)
+      expect(
+        mockChatQueueAdd.mock.calls.filter(
+          ([action]) => action === "checkOutboundAutomatedResponse",
+        ),
+      ).toHaveLength(0)
+    })
+
+    test("a standby echo for a contact this inbox has never seen is dropped before any write", async () => {
+      mockFindContactInbox.mockResolvedValue(undefined)
+      mockRunChannelHandler.mockResolvedValue({
+        message: {
+          ...baseIncomingMessage,
+          messageType: "outgoing" as const,
+          attachments: [],
+        },
+        contact: { sourceId: "unknown" },
+        postbackAction: null,
+        quickReplyAction: null,
+        ref: null,
+        echoOrigin: "thirdParty",
+        threadControl: { delivery: "standby" },
+      })
+
+      const result = await receiveMessage(whatsappProps)
+
+      expect(result).toBeNull()
+      expect(mockCreateOrUpdate).not.toHaveBeenCalled()
+      expect(mockRecordInboundDelivery).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("T-7: standby then messages for the same wamid, both arrival orders", () => {
+    const owner = parsed({}, { delivery: "owner", occurredAt: META_TIME })
+    const standby = parsed({}, { delivery: "standby", occurredAt: META_TIME })
+    const standbyCopy = {
+      ...fakeCreatedMessage,
+      contentAttributes: { threadControlDelivery: "standby" },
+    }
+
+    /**
+     * Mirrors the service's guarded promotion: only a standby copy can be
+     * promoted, and the promoted-key claim succeeds only once.
+     */
+    const installAtomicPromotion = () => {
+      let isClaimed = false
+      mockPromoteStandbyDelivery.mockImplementation(
+        ({
+          message,
+        }: {
+          message: { contentAttributes?: Record<string, unknown> }
+        }) => {
+          const isStandbyCopy =
+            message.contentAttributes?.threadControlDelivery === "standby"
+          if (!isStandbyCopy || isClaimed) {
+            return Promise.resolve(false)
+          }
+          isClaimed = true
+          return Promise.resolve(true)
+        },
+      )
+    }
+
+    beforeEach(() => {
+      installAtomicPromotion()
+    })
+
+    test("standby first, then owner: the owner delivery is promoted, recorded and automated exactly once", async () => {
+      mockCreateOrUpdate
+        .mockResolvedValueOnce({ message: standbyCopy, isNew: true })
+        .mockResolvedValueOnce({ message: standbyCopy, isNew: false })
+
+      mockRunChannelHandler.mockResolvedValueOnce(standby)
+      const first = await receiveMessage(whatsappProps)
+      mockRunChannelHandler.mockResolvedValueOnce(owner)
+      const second = await receiveMessage(whatsappProps)
+
+      // The standby copy is stored with the marker the owner copy promotes.
+      expect(mockCreateOrUpdate.mock.calls[0]?.[0]).toMatchObject({
+        contentAttributes: { threadControlDelivery: "standby" },
+      })
+      expect(first?.suppressAutomation).toBe(true)
+      expect(first?.message).not.toBeNull()
+      expect(second?.suppressAutomation).toBe(false)
+      // Promoted: worker.ts sees a message and runs keyword/AI routing once.
+      expect(second?.message).not.toBeNull()
+      expect(mockRecordInboundDelivery).toHaveBeenCalledTimes(3)
+      expect(mockRecordInboundDelivery).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ delivery: "standby", occurredAt: META_TIME }),
+      )
+      // Pre-save owner record at the same second (loses the tie, a no-op in
+      // the service), then the promotion at the standby copy's own time: the
+      // event time is never advanced.
+      expect(mockRecordInboundDelivery).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ delivery: "owner", occurredAt: META_TIME }),
+      )
+      expect(mockRecordInboundDelivery).toHaveBeenNthCalledWith(
+        3,
+        expect.objectContaining({
+          delivery: "owner",
+          occurredAt: META_TIME,
+          // Applied by the dedicated write against the standby copy it promotes.
+          supersedesStandbyAt: META_TIME,
+        }),
+      )
+      // Only the supersede carries the guard; the plain owner record does not.
+      expect(mockRecordInboundDelivery.mock.calls[1]?.[0]).not.toHaveProperty(
+        "supersedesStandbyAt",
+      )
+      expect(mockAutomatedResponseEnqueueFlowAction).toHaveBeenCalledTimes(1)
+    })
+
+    test("a supersede that loses to a later same-second handover still spends the promotion claim exactly once (no double processing)", async () => {
+      mockCreateOrUpdate.mockResolvedValue({
+        message: standbyCopy,
+        isNew: false,
+      })
+      mockRunChannelHandler.mockResolvedValue(owner)
+      // The service rejects every owner write: the takeover (same second as
+      // the standby copy) is authoritative, so the supersede is not applied.
+      mockRecordInboundDelivery.mockResolvedValue({
+        eventApplied: false,
+        stateChanged: false,
+        isRedelivery: false,
+        row: null,
+      })
+
+      await receiveMessage(whatsappProps)
+      await receiveMessage(whatsappProps)
+
+      expect(mockRecordInboundDelivery).toHaveBeenCalledWith(
+        expect.objectContaining({ supersedesStandbyAt: META_TIME }),
+      )
+      // The claim is per-message, independent of the routing write.
+      expect(mockPromoteStandbyDelivery).toHaveBeenCalledTimes(2)
+    })
+
+    test("take-back replay: after our own take the owner replay of an unpromoted standby copy automates exactly once, even when replayed twice", async () => {
+      mockCreateOrUpdate.mockResolvedValue({
+        message: standbyCopy,
+        isNew: false,
+      })
+      mockRunChannelHandler.mockResolvedValue(owner)
+      // The thread is already ours (the take is later than the standby copy):
+      // the service applies nothing for the replay, yet the one-time promotion
+      // claim alone decides who automates.
+      mockRecordInboundDelivery.mockResolvedValue({
+        eventApplied: false,
+        stateChanged: false,
+        isRedelivery: false,
+        row: null,
+      })
+
+      const first = await receiveMessage(whatsappProps)
+      const second = await receiveMessage(whatsappProps)
+
+      expect(first?.suppressAutomation).toBe(false)
+      expect(first?.message).not.toBeNull()
+      // The second replay (a retried or duplicated take-back job) loses the claim.
+      expect(second?.message).toBeNull()
+      expect(mockAutomatedResponseEnqueueFlowAction).toHaveBeenCalledTimes(1)
+    })
+
+    test("owner first, then standby: automation runs exactly once, for the owner delivery", async () => {
+      mockCreateOrUpdate
+        .mockResolvedValueOnce({ message: fakeCreatedMessage, isNew: true })
+        .mockResolvedValueOnce({ message: fakeCreatedMessage, isNew: false })
+
+      mockRunChannelHandler.mockResolvedValueOnce(owner)
+      const first = await receiveMessage(whatsappProps)
+      mockRunChannelHandler.mockResolvedValueOnce(standby)
+      const second = await receiveMessage(whatsappProps)
+
+      expect(first?.suppressAutomation).toBe(false)
+      expect(second?.suppressAutomation).toBe(true)
+      expect(second?.message).toBeNull()
+      // The owner copy was stored unmarked; a standby duplicate is never
+      // recorded and never promotes anything.
+      expect(mockCreateOrUpdate.mock.calls[0]?.[0]).not.toHaveProperty(
+        "contentAttributes.threadControlDelivery",
+      )
+      expect(mockPromoteStandbyDelivery).not.toHaveBeenCalled()
+      expect(mockRecordInboundDelivery).toHaveBeenCalledTimes(1)
+      expect(mockRecordInboundDelivery).toHaveBeenCalledWith(
+        expect.objectContaining({ delivery: "owner" }),
+      )
+      expect(mockAutomatedResponseEnqueueFlowAction).toHaveBeenCalledTimes(1)
+    })
+
+    test("a failed supersede record spends no promotion claim; the retry promotes and automates once", async () => {
+      mockCreateOrUpdate.mockResolvedValue({
+        message: standbyCopy,
+        isNew: false,
+      })
+      mockRunChannelHandler.mockResolvedValue(owner)
+      mockRecordInboundDelivery
+        .mockResolvedValueOnce(null) // pre-save owner record (tie no-op)
+        .mockRejectedValueOnce(new Error("db down")) // supersede record
+
+      await expect(receiveMessage(whatsappProps)).rejects.toThrow("db down")
+      expect(mockPromoteStandbyDelivery).not.toHaveBeenCalled()
+      expect(mockAutomatedResponseEnqueueFlowAction).not.toHaveBeenCalled()
+
+      const retry = await receiveMessage(whatsappProps)
+
+      expect(retry?.message).not.toBeNull()
+      expect(mockPromoteStandbyDelivery).toHaveBeenCalledTimes(1)
+      expect(mockAutomatedResponseEnqueueFlowAction).toHaveBeenCalledTimes(1)
+    })
+
+    test("two concurrent owner redeliveries of a standby copy promote and automate exactly once", async () => {
+      mockCreateOrUpdate.mockResolvedValue({
+        message: standbyCopy,
+        isNew: false,
+      })
+      mockRunChannelHandler.mockResolvedValue(owner)
+
+      const results = await Promise.all([
+        receiveMessage(whatsappProps),
+        receiveMessage(whatsappProps),
+      ])
+
+      expect(mockPromoteStandbyDelivery).toHaveBeenCalledTimes(2)
+      expect(results.filter((result) => result?.message)).toHaveLength(1)
+      expect(mockAutomatedResponseEnqueueFlowAction).toHaveBeenCalledTimes(1)
+    })
+
+    test("an owner redelivery of an owner-stored message is recorded (guarded) but automates nothing", async () => {
+      mockCreateOrUpdate.mockResolvedValue({
+        message: fakeCreatedMessage,
+        isNew: false,
+      })
+      mockRunChannelHandler.mockResolvedValue(owner)
+
+      const result = await receiveMessage(whatsappProps)
+
+      expect(result?.message).toBeNull()
+      expect(mockRecordInboundDelivery).toHaveBeenCalledWith(
+        expect.objectContaining({ delivery: "owner", occurredAt: META_TIME }),
+      )
+      expect(mockAutomatedResponseEnqueueFlowAction).not.toHaveBeenCalled()
+    })
   })
 })

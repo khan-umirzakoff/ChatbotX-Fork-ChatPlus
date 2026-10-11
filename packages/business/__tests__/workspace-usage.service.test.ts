@@ -100,6 +100,49 @@ describe("workspaceUsageService.increment (mac)", () => {
   })
 })
 
+describe("workspaceUsageService.increment (caller-owned transaction)", () => {
+  // Regression: a workspace created earlier in the SAME uncommitted transaction
+  // (`integrationWebchatService.createWithWorkspace`) is invisible to a second
+  // connection, so writing the WorkspaceUsage row through the global `db` hit
+  // `WorkspaceUsage_workspaceId_Workspace_id_fkey`. The durable write must
+  // run on the caller's `tx`.
+  test("writes the durable row through the supplied tx, never the global db", async () => {
+    const txBuilder = {
+      values: vi.fn(),
+      onConflictDoUpdate: vi.fn(),
+    }
+    txBuilder.values.mockReturnValue(txBuilder)
+    txBuilder.onConflictDoUpdate.mockResolvedValue(undefined)
+    const txInsert = vi.fn(() => txBuilder)
+    const tx = { insert: txInsert } as never
+
+    await workspaceUsageService.increment(WORKSPACE, "channels", 1, tx)
+
+    expect(txInsert).toHaveBeenCalledTimes(1)
+    expect(txBuilder.values).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId: WORKSPACE, channelsUsed: 1 }),
+    )
+    expect(dbInsert).not.toHaveBeenCalled()
+  })
+
+  test("reports whether the live counter took the increment", async () => {
+    await expect(
+      workspaceUsageService.increment(WORKSPACE, "channels", 1),
+    ).resolves.toBe(true)
+
+    redisClient.hincrby.mockRejectedValueOnce(new Error("redis down"))
+    await expect(
+      workspaceUsageService.increment(WORKSPACE, "channels", 1),
+    ).resolves.toBe(false)
+  })
+
+  test("still writes through the global db when no tx is supplied", async () => {
+    await workspaceUsageService.increment(WORKSPACE, "channels", 1)
+
+    expect(dbInsert).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe("workspaceUsageService.getUsage", () => {
   test("surfaces macUsed from the live counters alongside the other metrics", async () => {
     redisClient.hmget.mockResolvedValue(["1", "2", "3", "4", "5"])
@@ -129,5 +172,36 @@ describe("workspaceUsageService.getUsage", () => {
     const usage = await workspaceUsageService.getUsage(WORKSPACE)
 
     expect(usage.macUsed).toBe(50)
+  })
+})
+
+describe("workspaceUsageService.upsertReconciled", () => {
+  test("upserts onConflictDoUpdate target workspaceId with direct-assign set and CURRENT_TIMESTAMP", async () => {
+    await workspaceUsageService.upsertReconciled({
+      workspaceId: WORKSPACE,
+      contactsUsed: 10,
+      channelsUsed: 2,
+      teamMembersUsed: 3,
+      macUsed: 40,
+    })
+
+    expect(insertBuilder.values).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: WORKSPACE,
+        contactsUsed: 10,
+        channelsUsed: 2,
+        teamMembersUsed: 3,
+        macUsed: 40,
+      }),
+    )
+    const [{ target, set }] = insertBuilder.onConflictDoUpdate.mock.calls[0]
+    expect(target).toBe("workspaceId-column")
+    expect(set).toMatchObject({
+      contactsUsed: 10,
+      channelsUsed: 2,
+      teamMembersUsed: 3,
+      macUsed: 40,
+    })
+    expect(set).toHaveProperty("updatedAt")
   })
 })

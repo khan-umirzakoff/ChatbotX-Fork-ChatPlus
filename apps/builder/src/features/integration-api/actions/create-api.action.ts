@@ -2,15 +2,17 @@
 
 import {
   assertPublicUrl,
+  hasWorkspaceAccess,
   integrationApiService,
   workspaceService,
 } from "@chatbotx.io/business"
-import type { ApiAuthValue } from "@chatbotx.io/integration-api"
-import { authActionClient } from "@/lib/safe-action"
+import { ChatbotXException } from "@chatbotx.io/business/errors"
 import {
   generateApiChannelToken,
   generateSigningSecret,
-} from "../lib/generate-credentials"
+} from "@chatbotx.io/business/workspace-api-token/credentials"
+import type { ApiAuthValue } from "@chatbotx.io/integration-api"
+import { authActionClient } from "@/lib/safe-action"
 import { createApiRequest } from "../schema/mutation"
 
 export const createApiAction = authActionClient
@@ -24,6 +26,9 @@ export const createApiAction = authActionClient
     let ownerId = ctx.user.id
 
     if (workspaceId) {
+      if (!(await hasWorkspaceAccess({ workspaceId, user: ctx.user }))) {
+        throw new ChatbotXException("Workspace not found", "notFound", 404)
+      }
       const workspace = await workspaceService.findOrFail({
         where: { id: workspaceId },
       })
@@ -40,13 +45,14 @@ export const createApiAction = authActionClient
 
     const result = await integrationApiService.connect({
       ownerId,
+      actorUserId: ctx.user.id,
       workspaceId,
       name: parsedInput.name,
       auth,
       tokenHash,
       tokenPrefix,
       callbackUrl: parsedInput.callbackUrl ?? null,
-      createWorkspace: async (tx) => {
+      createWorkspace: async (tx, quotaConsumption) => {
         const workspace = await workspaceService.create({
           tx,
           createdBy: ownerId,
@@ -55,6 +61,7 @@ export const createApiAction = authActionClient
             timezone: "UTC",
             ownerId,
           },
+          quotaConsumption,
         })
         return workspace.id
       },

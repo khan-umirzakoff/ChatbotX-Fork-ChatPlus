@@ -1,16 +1,6 @@
-import {
-  and,
-  type DatabaseClient,
-  db,
-  eq,
-  isNull,
-} from "@chatbotx.io/database/client"
-import {
-  workspaceMemberModel,
-  workspaceModel,
-} from "@chatbotx.io/database/schema"
+import { workspaceService } from "@chatbotx.io/business"
+import type { DatabaseClient } from "@chatbotx.io/database/client"
 import { uploadFileFromUrl } from "@chatbotx.io/filesystem"
-import { invalidateCacheByTags } from "@chatbotx.io/redis"
 import type { AuthValue, Context } from "@chatbotx.io/sdk"
 import { createId } from "@chatbotx.io/utils"
 
@@ -28,13 +18,10 @@ export async function updateWorkspaceLogo<A extends AuthValue>(props: {
   ctx: Context<A>
   tx?: DatabaseClient
 }): Promise<void> {
-  const { id, integration, ctx, tx = db } = props
+  const { id, integration, ctx, tx } = props
 
-  const workspace = await tx.query.workspaceModel.findFirst({
-    where: { id },
-    columns: { logo: true },
-  })
-  if (!workspace || workspace.logo) {
+  const currentLogo = await workspaceService.findLogo({ id, tx })
+  if (currentLogo === undefined || currentLogo) {
     return
   }
 
@@ -64,24 +51,5 @@ export async function updateWorkspaceLogo<A extends AuthValue>(props: {
     return
   }
 
-  const updated = await tx
-    .update(workspaceModel)
-    .set({ logo })
-    .where(and(eq(workspaceModel.id, id), isNull(workspaceModel.logo)))
-    .returning({ id: workspaceModel.id })
-
-  if (updated.length > 0) {
-    const workspaceMembers = await tx
-      .select({ userId: workspaceMemberModel.userId })
-      .from(workspaceMemberModel)
-      .where(eq(workspaceMemberModel.workspaceId, id))
-
-    await invalidateCacheByTags([
-      `workspaces:${id}`,
-      ...workspaceMembers.map(
-        (workspaceMember) =>
-          `users:${workspaceMember.userId}:workspace-members`,
-      ),
-    ])
-  }
+  await workspaceService.setLogoIfEmpty({ id, logo, tx })
 }

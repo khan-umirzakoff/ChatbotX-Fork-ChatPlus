@@ -85,6 +85,10 @@ export type AppointmentExternalProviderType = z.infer<
   typeof appointmentExternalProviderTypes
 >
 
+export const defaultAppointmentExternalEventTitleTemplate =
+  "Appointment: {{booking_calendar}}"
+export const defaultAppointmentExternalEventAttendeesTemplate = "{{email}}"
+
 /**
  * `scheduleWindowConfig` is stored as free-form jsonb (no DB-level shape
  * constraint); this schema is the single source of truth for validating it
@@ -95,32 +99,80 @@ export type AppointmentExternalProviderType = z.infer<
 export const appointmentScheduleWindowConfigSchema = z
   .discriminatedUnion("scheduleWindowType", [
     z.object({
-      scheduleWindowType: z.literal(
-        appointmentScheduleWindowTypes.enum.rollingDays,
-      ),
-      rollingDays: z.number().int().min(1).max(365).default(30),
-      minAdvanceDays: z.number().int().min(0).default(0),
+      scheduleWindowType: z
+        .literal(appointmentScheduleWindowTypes.enum.rollingDays)
+        .describe("Bookable from now through the next `rollingDays` days."),
+      rollingDays: z
+        .number()
+        .int()
+        .min(1)
+        .max(365)
+        .default(30)
+        .describe(
+          "Bookable window length in days counted from now, 1-365 (default 30).",
+        ),
+      minAdvanceDays: z
+        .number()
+        .int()
+        .min(0)
+        .default(0)
+        .describe(
+          "Minimum notice in days: slots earlier than now + this many days are not bookable. 0 = no minimum.",
+        ),
     }),
     z.object({
-      scheduleWindowType: z.literal(
-        appointmentScheduleWindowTypes.enum.dateRange,
-      ),
-      startDate: z.iso.date(),
-      endDate: z.iso.date(),
-      minAdvanceDays: z.number().int().min(0).default(0),
+      scheduleWindowType: z
+        .literal(appointmentScheduleWindowTypes.enum.dateRange)
+        .describe("Bookable between `startDate` and `endDate`."),
+      startDate: z.iso
+        .date()
+        .describe(
+          "First bookable date, YYYY-MM-DD, in the calendar's timezone.",
+        ),
+      endDate: z.iso
+        .date()
+        .describe(
+          "Last bookable date (inclusive), YYYY-MM-DD; must be on or after startDate.",
+        ),
+      minAdvanceDays: z
+        .number()
+        .int()
+        .min(0)
+        .default(0)
+        .describe(
+          "Minimum notice in days: slots earlier than now + this many days are not bookable. 0 = no minimum.",
+        ),
     }),
     z.object({
-      scheduleWindowType: z.literal(
-        appointmentScheduleWindowTypes.enum.specificDay,
-      ),
-      date: z.iso.date(),
-      minAdvanceDays: z.number().int().min(0).default(0),
+      scheduleWindowType: z
+        .literal(appointmentScheduleWindowTypes.enum.specificDay)
+        .describe("Bookable on a single `date`."),
+      date: z.iso
+        .date()
+        .describe(
+          "The only bookable date, YYYY-MM-DD, in the calendar's timezone.",
+        ),
+      minAdvanceDays: z
+        .number()
+        .int()
+        .min(0)
+        .default(0)
+        .describe(
+          "Minimum notice in days: slots earlier than now + this many days are not bookable. 0 = no minimum.",
+        ),
     }),
     z.object({
-      scheduleWindowType: z.literal(
-        appointmentScheduleWindowTypes.enum.anyFutureDate,
-      ),
-      minAdvanceDays: z.number().int().min(0).default(0),
+      scheduleWindowType: z
+        .literal(appointmentScheduleWindowTypes.enum.anyFutureDate)
+        .describe("Any future date is bookable (no end limit)."),
+      minAdvanceDays: z
+        .number()
+        .int()
+        .min(0)
+        .default(0)
+        .describe(
+          "Minimum notice in days: slots earlier than now + this many days are not bookable. 0 = no minimum.",
+        ),
     }),
   ])
   .refine(

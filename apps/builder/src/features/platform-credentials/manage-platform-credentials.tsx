@@ -11,12 +11,14 @@ import {
 } from "@/lib/provider-origin"
 import { GiphySettings } from "./giphy/giphy-settings"
 import { GoogleSettings } from "./google/google-settings"
+import { GoogleAdsSettings } from "./google-ads/google-ads-settings"
 import { InstagramSettings } from "./instagram/instagram-settings"
 import { InstagramFacebookSettings } from "./instagram-facebook/instagram-facebook-settings"
 import { MakeSettings } from "./make/make-settings"
 import { MessengerSettings } from "./messenger/messenger-settings"
 import { CredentialScopeProvider } from "./provider/credential-scope-context"
 import type { CredentialScope } from "./scope"
+import { ThreadsSettings } from "./threads/threads-settings"
 import { TiktokSettings } from "./tiktok/tiktok-settings"
 import { WhatsappSettings } from "./whatsapp/whatsapp-settings"
 import { ZaloSettings } from "./zalo/zalo-settings"
@@ -50,8 +52,10 @@ async function resolveCard<T extends CredentialType>(
   type: T,
 ): Promise<ResolvedCredential<T>> {
   if (scopedUserId === undefined) {
-    const row = await platformCredentialService.findPlatform({ type })
-    return { publicConfig: row?.publicConfig ?? null, isInherited: false }
+    const publicConfig = await platformCredentialService.findPlatformPublic({
+      type,
+    })
+    return { publicConfig: publicConfig ?? null, isInherited: false }
   }
 
   const resolved = await platformCredentialService.resolvePublicForUser({
@@ -79,7 +83,9 @@ export async function ManagePlatformCredentials({
     messengerResult,
     instagramResult,
     instagramFacebookResult,
+    threadsResult,
     googleResult,
+    googleAdsResult,
     zaloResult,
     giphyResult,
     tiktokResult,
@@ -89,7 +95,9 @@ export async function ManagePlatformCredentials({
     resolveCard(scopedUserId, "messenger"),
     resolveCard(scopedUserId, "instagram"),
     resolveCard(scopedUserId, "instagramFacebook"),
+    resolveCard(scopedUserId, "threads"),
     resolveCard(scopedUserId, "google"),
+    resolveCard(scopedUserId, "googleAds"),
     resolveCard(scopedUserId, "zalo"),
     resolveCard(scopedUserId, "giphy"),
     resolveCard(scopedUserId, "tiktok"),
@@ -107,8 +115,12 @@ export async function ManagePlatformCredentials({
     instagramFacebookResult.status === "fulfilled"
       ? instagramFacebookResult.value
       : emptyCard
+  const threads =
+    threadsResult.status === "fulfilled" ? threadsResult.value : emptyCard
   const google =
     googleResult.status === "fulfilled" ? googleResult.value : emptyCard
+  const googleAds =
+    googleAdsResult.status === "fulfilled" ? googleAdsResult.value : emptyCard
   const zalo = zaloResult.status === "fulfilled" ? zaloResult.value : emptyCard
   const giphy =
     giphyResult.status === "fulfilled" ? giphyResult.value : emptyCard
@@ -148,10 +160,20 @@ export async function ManagePlatformCredentials({
           isInherited={instagramFacebook.isInherited}
           publicConfig={instagramFacebook.publicConfig}
         />
+        <ThreadsSettings
+          callbackOrigin={callbackOriginFor(threads.isInherited)}
+          isInherited={threads.isInherited}
+          publicConfig={threads.publicConfig}
+        />
         <GoogleSettings
           callbackOrigin={callbackOriginFor(google.isInherited)}
           isInherited={google.isInherited}
           publicConfig={google.publicConfig}
+        />
+        <GoogleAdsSettings
+          callbackOrigin={callbackOriginFor(googleAds.isInherited)}
+          isInherited={googleAds.isInherited}
+          publicConfig={googleAds.publicConfig}
         />
         <WhatsappSettings
           callbackOrigin={callbackOriginFor(whatsapp.isInherited)}

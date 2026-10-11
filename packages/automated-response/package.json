@@ -14,9 +14,11 @@
     "@chatbotx.io/events": "workspace:*",
     "@chatbotx.io/logger": "workspace:*",
     "@chatbotx.io/redis": "workspace:*",
+    "@chatbotx.io/utils": "workspace:*",
     "@chatbotx.io/variables": "workspace:*",
     "@chatbotx.io/worker-config": "workspace:*",
     "@t3-oss/env-core": "^0.13.11",
+    "universal-error-normalizer": "^1.0.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

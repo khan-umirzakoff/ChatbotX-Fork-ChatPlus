@@ -1,9 +1,10 @@
 "use server"
 
+import { integrationSmtpService } from "@chatbotx.io/business"
 import { zodBigintAsString } from "@chatbotx.io/utils"
 import { workspaceActionClient } from "@/lib/safe-action"
-import { updateSmtpRequest } from "../schemas/mutation"
-import { updateSmtp } from "../services/smtp.service"
+import { prepareSmtpAuth } from "../lib/prepare-smtp-auth"
+import { updateSmtpRequest } from "../schema/mutation"
 
 export const updateSmtpAction = workspaceActionClient
   .bindArgsSchemas([zodBigintAsString(), zodBigintAsString()])
@@ -14,5 +15,13 @@ export const updateSmtpAction = workspaceActionClient
       parsedInput,
     } = props
 
-    return await updateSmtp(workspaceId, id, parsedInput)
+    // Merging against the stored auth, the change diff, and the audit record
+    // all live in the service.
+    const { host, port } = await prepareSmtpAuth(parsedInput)
+
+    return await integrationSmtpService.update({
+      workspaceId,
+      id,
+      data: { ...parsedInput, host, port },
+    })
   })

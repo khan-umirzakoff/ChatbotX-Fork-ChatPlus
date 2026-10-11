@@ -5,11 +5,13 @@ const fakeTx = { __tx: true }
 const dbTransaction = vi.fn(
   async (fn: (tx: unknown) => Promise<unknown>) => await fn(fakeTx),
 )
+const setLocalStatementTimeout = vi.fn(async () => undefined)
 vi.mock("@chatbotx.io/database/client", () => ({
   db: {
     query: { userModel: { findFirst: findFirstUser } },
     transaction: dbTransaction,
   },
+  setLocalStatementTimeout,
 }))
 vi.mock("@chatbotx.io/database/schema", () => ({
   ROOT_TENANT_ID: "1",
@@ -45,7 +47,12 @@ const distributedLock = {
     async ({ fn }: { fn: () => Promise<unknown> }) => await fn(),
   ),
 }
-vi.mock("@chatbotx.io/redis", () => ({ distributedLock }))
+// withCache just calls through — resolveContext's tenantId cache is not
+// under test here, only its downstream behavior.
+const withCache = vi.fn(
+  async (_key: string, fn: () => unknown, _options?: unknown) => fn(),
+)
+vi.mock("@chatbotx.io/redis", () => ({ distributedLock, withCache }))
 
 const tenantService = {
   findByOwner: vi.fn(async () => undefined as unknown),
@@ -217,6 +224,21 @@ describe("quotaEnforcementService.tryConsume", () => {
 
     expect(result).toEqual({ ok: false, level: "user" })
     expect(userQuotaService.consume).not.toHaveBeenCalled()
+  })
+
+  test("caches the actor's tenantId lookup under a per-user key with a 60s TTL", async () => {
+    asRootUser()
+
+    await quotaEnforcementService.tryConsume({
+      userId: ROOT_USER,
+      metric: "workspaces",
+    })
+
+    expect(withCache).toHaveBeenCalledWith(
+      `users:${ROOT_USER}:tenant-id`,
+      expect.any(Function),
+      expect.objectContaining({ ttl: 60 }),
+    )
   })
 })
 
@@ -445,6 +467,90 @@ describe("quotaEnforcementService.createNewContactWithMac", () => {
       "contacts",
       1,
     )
+  })
+
+  test("waits the full lock TTL for the MAC lock by default (synchronous callers)", async () => {
+    asRootUser()
+    userQuotaService.getRemainingSlots.mockResolvedValue(5)
+    userQuotaService.getForUser.mockResolvedValue({ periodStart: null })
+
+    await quotaEnforcementService.createNewContactWithMac({
+      ownerId: ROOT_USER,
+      workspaceId: "ws-1",
+      create: makeCreate(),
+    })
+
+    expect(distributedLock.runExclusive).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: `quota:user:${ROOT_USER}:mac`,
+        timeoutInSeconds: 30,
+        retryTimeoutInSeconds: 30,
+      }),
+    )
+  })
+
+  test("lets a caller that can defer itself bound the lock wait", async () => {
+    asRootUser()
+    userQuotaService.getRemainingSlots.mockResolvedValue(5)
+    userQuotaService.getForUser.mockResolvedValue({ periodStart: null })
+
+    await quotaEnforcementService.createNewContactWithMac({
+      ownerId: ROOT_USER,
+      workspaceId: "ws-1",
+      lockWaitSeconds: 10,
+      create: makeCreate(),
+    })
+
+    expect(distributedLock.runExclusive).toHaveBeenCalledWith(
+      expect.objectContaining({
+        key: `quota:user:${ROOT_USER}:mac`,
+        timeoutInSeconds: 30,
+        retryTimeoutInSeconds: 10,
+      }),
+    )
+  })
+
+  test("caps statement time inside the create transaction before any insert", async () => {
+    asRootUser()
+    userQuotaService.getRemainingSlots.mockResolvedValue(5)
+    userQuotaService.getForUser.mockResolvedValue({ periodStart: null })
+    const create = makeCreate()
+
+    await quotaEnforcementService.createNewContactWithMac({
+      ownerId: ROOT_USER,
+      workspaceId: "ws-1",
+      create,
+    })
+
+    expect(setLocalStatementTimeout).toHaveBeenCalledWith(fakeTx, "30s")
+    // The cap must be in place before the callback runs its inserts.
+    expect(setLocalStatementTimeout.mock.invocationCallOrder[0]).toBeLessThan(
+      create.mock.invocationCallOrder[0] as number,
+    )
+  })
+
+  test("propagates a create failure (e.g. a cancelled statement) and consumes nothing", async () => {
+    asRootUser()
+    userQuotaService.getRemainingSlots.mockResolvedValue(5)
+    userQuotaService.getForUser.mockResolvedValue({
+      periodStart: new Date("2026-06-01T00:00:00Z"),
+    })
+    const timedOut = new Error("canceling statement due to statement timeout")
+    const create = vi.fn(() => Promise.reject(timedOut))
+
+    await expect(
+      quotaEnforcementService.createNewContactWithMac({
+        ownerId: ROOT_USER,
+        workspaceId: "ws-1",
+        create,
+      }),
+    ).rejects.toBe(timedOut)
+
+    // The transaction rolled back: no presence row, no counter, no cache bump.
+    expect(macTrackingService.claimNewActiveContact).not.toHaveBeenCalled()
+    expect(userQuotaService.incrementBy).not.toHaveBeenCalled()
+    expect(macTrackingService.incrementWorkspaceMacCache).not.toHaveBeenCalled()
+    expect(workspaceUsageService.increment).not.toHaveBeenCalled()
   })
 
   test("customer: consumes MAC at both the owner pool and their own row", async () => {

@@ -1,7 +1,5 @@
-import { inboxesAuthenticatedAPI } from "./authenticated"
-import inboxesWorkspaceTokenAPIs from "./workspace-token"
+import { inboxesAuthenticatedAPI } from "./private"
 
 export const inboxesAPI = {
   ...inboxesAuthenticatedAPI,
-  ...inboxesWorkspaceTokenAPIs,
 }

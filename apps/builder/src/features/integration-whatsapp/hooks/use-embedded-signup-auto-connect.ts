@@ -8,7 +8,7 @@ import {
   type WhatsappOAuthRelayResult,
 } from "../libs/embedded-signup"
 import { FORM_FIELDS } from "../libs/form-fields"
-import type { ConnectWhatsappSchema } from "../schemas"
+import type { ConnectWhatsappSchema } from "../schema"
 
 type UseEmbeddedSignupAutoConnectParams = {
   /** A failed connect hands the flow back to the user for a fresh signup. */
@@ -89,7 +89,17 @@ export function useEmbeddedSignupAutoConnect({
     }
     setValue(FORM_FIELDS.CODE, "")
     setValue(FORM_FIELDS.WABA_ID, "")
-    setValue(FORM_FIELDS.PHONE_NUMBER_ID, "")
+    // `undefined`, NOT `[]`. The picker's field is 1..max when it holds a
+    // value, so `[]` fails the resolver while `undefined` passes its
+    // `.nullish()` — and writing `[]` here left the form permanently
+    // unsubmittable: the next relay's `handleSubmit` failed validation, so
+    // the retry never reached the action and the card stayed frozen on
+    // "connecting" (proven by the regression test in
+    // `whatsapp-connect-card.test.tsx`). `handleSubmit` stores resolver
+    // errors for every field, mounted or not, so a picker rendered later in
+    // the same session would also have shown that field's message.
+    // `undefined` is the value this field starts life with.
+    setValue(FORM_FIELDS.PHONE_NUMBER_IDS, undefined)
     setValue(FORM_FIELDS.SIGNUP_SESSION_ID, "")
   }, [hasFailed, setValue])
 

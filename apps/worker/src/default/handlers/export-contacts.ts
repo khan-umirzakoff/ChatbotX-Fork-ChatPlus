@@ -1,7 +1,11 @@
 import type { PassThrough } from "node:stream"
-import { workspaceService } from "@chatbotx.io/business"
+import {
+  customFieldService,
+  tagService,
+  workspaceService,
+} from "@chatbotx.io/business"
+import { auditService } from "@chatbotx.io/business/audit"
 import { normalizeStoredTimezone } from "@chatbotx.io/business/contact-locale"
-import { and, db, eq } from "@chatbotx.io/database/client"
 import {
   type CustomFieldType,
   fileStatuses,
@@ -11,9 +15,10 @@ import {
   pruneEmailPhoneFilterConditions,
 } from "@chatbotx.io/database/queries"
 import {
-  type contactCustomFieldModel,
-  fileModel,
-} from "@chatbotx.io/database/schema"
+  contactRepository,
+  fileRepository,
+} from "@chatbotx.io/database/repositories"
+import type { contactCustomFieldModel } from "@chatbotx.io/database/schema"
 import { chunkById } from "@chatbotx.io/database/utils"
 import { createUpload } from "@chatbotx.io/filesystem/node-upload"
 import { SOURCE_USER_ID_EXPORT_HEADER } from "@chatbotx.io/imports/modules/contacts"
@@ -23,6 +28,7 @@ import {
   loopableItemsCount,
 } from "@chatbotx.io/worker-config"
 import { stripContactPIIFields } from "@chatbotx.io/worker-config/contact-pii"
+import { runJobWithAuditContext } from "../../lib/run-job-with-audit-context"
 
 type ExportData = JobExportContacts["data"]
 
@@ -276,10 +282,7 @@ const loadCustomFieldMap = async (
     return {}
   }
 
-  const rows = await db.query.customFieldModel.findMany({
-    where: { id: { in: ids }, workspaceId },
-    columns: { id: true, name: true, type: true },
-  })
+  const rows = await customFieldService.findManyByIds({ workspaceId, ids })
 
   return Object.fromEntries(
     rows.map((row) => [
@@ -307,13 +310,7 @@ export const buildSelectedFields = async (
 
   const [tagNameById, customFieldById] = await Promise.all([
     loadNameMap(idsOfType("tag"), (ids) =>
-      db.query.tagModel.findMany({
-        where: {
-          id: { in: ids },
-          workspaceId,
-          deletedAt: { isNull: true as const },
-        },
-      }),
+      tagService.findManyByIds({ workspaceId, ids }),
     ),
     loadCustomFieldMap(idsOfType("custom"), workspaceId),
   ])
@@ -363,40 +360,22 @@ const fetchContactPage = (
   lastId: string | null,
   options: { includeSourceUserId: boolean },
 ) =>
-  db.query.contactModel.findMany({
+  contactRepository.listForExportPage({
     where: lastId ? { AND: [baseWhere, { id: { gt: lastId } }] } : baseWhere,
-    with: {
-      contactCustomFields: true,
-      tags: true,
-      // The Contact Id column only needs the earliest row's sourceId. The
-      // WhatsApp User ID column must scan every inbox connection for the row
-      // that actually carries a sourceUserId (see `resolveSourceUserId`), so
-      // the earliest-row limit is lifted ONLY when that column is selected —
-      // ordinary exports keep the single-row load.
-      contactInboxes: {
-        columns: { sourceId: true, sourceUserId: true },
-        orderBy: { id: "asc" },
-        ...(options.includeSourceUserId ? {} : { limit: 1 }),
-      },
-    },
     limit: loopableItemsCount,
-    orderBy: { id: "asc" },
+    includeSourceUserId: options.includeSourceUserId,
   })
 
 /** Updates the export's File row, scoped to its workspace. */
 const updateExportFile = (
   ids: { fileId: string; workspaceId: string },
-  values: Partial<typeof fileModel.$inferInsert>,
+  values: Parameters<typeof fileRepository.updateForWorkspace>[0]["values"],
 ): Promise<unknown> =>
-  db
-    .update(fileModel)
-    .set(values)
-    .where(
-      and(
-        eq(fileModel.id, ids.fileId),
-        eq(fileModel.workspaceId, ids.workspaceId),
-      ),
-    )
+  fileRepository.updateForWorkspace({
+    id: ids.fileId,
+    workspaceId: ids.workspaceId,
+    values,
+  })
 
 // H-3: Cap exports to avoid a single job monopolising a worker slot for hours
 // on large workspaces. Users who need more should use filtered exports or
@@ -405,7 +384,19 @@ const MAX_EXPORT_ROWS = 500_000
 
 // ── Handler ───────────────────────────────────────────────────────────────────
 
-export const loopableExportContacts = async (data: ExportData) => {
+export const loopableExportContacts = async (data: ExportData) =>
+  runJobWithAuditContext(
+    {
+      requestedUserId: data.requestedUserId,
+      workspaceId: data.workspaceId,
+      source: "default:exportContacts",
+      ipAddress: data.ipAddress,
+      userAgent: data.userAgent,
+    },
+    () => loopableExportContactsInner(data),
+  )
+
+const loopableExportContactsInner = async (data: ExportData) => {
   const { workspaceId, fileId, fields, outputPath, outputFormat } = data
   const fileIds = { fileId, workspaceId }
 
@@ -490,6 +481,16 @@ export const loopableExportContacts = async (data: ExportData) => {
       fileSize: String(totalBytes),
       meta: { totalRecords },
     })
+
+    if (finalStatus === fileStatuses.enum.uploaded) {
+      await auditService.record({
+        action: "export",
+        detail: "exported contacts",
+        userId: data.requestedUserId,
+        workspaceId: data.workspaceId,
+        source: "default:exportContacts",
+      })
+    }
   } catch (error) {
     // Destroy the source stream and wait for the multipart upload to settle so
     // lib-storage aborts the partial upload (default leavePartsOnError=false)

@@ -1,6 +1,9 @@
 "use client"
 
-import { folderTypes } from "@chatbotx.io/database/partials"
+import {
+  canProcessMissedComments,
+  folderTypes,
+} from "@chatbotx.io/database/partials"
 import { DataTable } from "@chatbotx.io/ui/components/data-table/data-table"
 import { DataTableColumnHeader } from "@chatbotx.io/ui/components/data-table/data-table-column-header"
 import { DataTableToolbar } from "@chatbotx.io/ui/components/data-table/data-table-toolbar"
@@ -22,7 +25,9 @@ import { useDataTable } from "@chatbotx.io/ui/hooks/use-data-table"
 import type { DataTableRowAction } from "@chatbotx.io/ui/types/data-table"
 import type { ColumnDef } from "@tanstack/react-table"
 import {
+  ChartColumnIcon,
   FolderUpIcon,
+  HistoryIcon,
   MoreHorizontalIcon,
   PencilIcon,
   TextIcon,
@@ -37,10 +42,16 @@ import { ChangeFolderDialog } from "../folders/change-folder"
 import { BulkDeleteCommentAutomationsDialog } from "../shared/comment-automation/bulk-delete-comment-automations-dialog"
 import { BulkMoveCommentAutomationFolderDialog } from "../shared/comment-automation/bulk-move-comment-automation-folder-dialog"
 import { CommentAutomationScheduleDialog } from "../shared/comment-automation/comment-automation-schedule-dialog"
+import { buildCommentAutomationStatColumns } from "../shared/comment-automation/comment-automation-stat-columns"
 import { DeleteCommentAutomationDialog } from "../shared/comment-automation/delete-comment-automation-dialog"
+import { LiveAutomationBadge } from "../shared/comment-automation/live-automation-badge"
+import { MissedCommentsProcessingLabel } from "../shared/comment-automation/missed-comments-processing-label"
+import { ProcessMissedCommentsDialog } from "../shared/comment-automation/process-missed-comments-dialog"
 import { RenameCommentAutomationDialog } from "../shared/comment-automation/rename-comment-automation-dialog"
+import { useMissedCommentsInProgress } from "../shared/comment-automation/use-missed-comments-in-progress"
 import { deleteFbCommentAction } from "./actions/delete-fb-comment.action"
 import { updateFbCommentAction } from "./actions/update-fb-comment.action"
+import { SelectFacebookPostTypeDialog } from "./components/select-facebook-post-type-dialog"
 import type { listFbComments } from "./queries"
 import type { ListFbCommentsResponse } from "./schema/action"
 
@@ -62,9 +73,23 @@ export function FbCommentsTable({
     ListFbCommentsResponse["data"][number]
   > | null>(null)
 
+  const [missedCommentsItem, setMissedCommentsItem] = React.useState<
+    ListFbCommentsResponse["data"][number] | null
+  >(null)
+
+  const {
+    inProgress: missedCommentsInProgress,
+    refresh: refreshMissedCommentsInProgress,
+  } = useMissedCommentsInProgress(
+    workspaceId,
+    data.map((automation) => automation.id),
+  )
+
   const [scheduleDialogItem, setScheduleDialogItem] = React.useState<
     ListFbCommentsResponse["data"][number] | null
   >(null)
+
+  const [postTypeOpen, setPostTypeOpen] = React.useState(false)
 
   const handleToggleStatus = useCallback(
     async (item: ListFbCommentsResponse["data"][number]) => {
@@ -139,6 +164,10 @@ export function FbCommentsTable({
                 <p>{row.original.name}</p>
               </TooltipContent>
             </Tooltip>
+            <LiveAutomationBadge post={row.original.post} />
+            {missedCommentsInProgress.has(row.original.id) ? (
+              <MissedCommentsProcessingLabel />
+            ) : null}
           </div>
         ),
         meta: {
@@ -183,6 +212,12 @@ export function FbCommentsTable({
         ),
         size: 100,
       },
+      // `repliesCount` above counts comments answered; these count reply
+      // attempts and their outcomes. One comment answered both publicly and
+      // privately is 1 reply but 2 attempts, so the two never have to agree.
+      ...buildCommentAutomationStatColumns<
+        ListFbCommentsResponse["data"][number]
+      >({ workspaceId, t }),
       {
         id: "actions",
         header: () => (
@@ -199,7 +234,7 @@ export function FbCommentsTable({
                   </Button>
                 }
               />
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-auto">
                 <DropdownMenuItem
                   onClick={() =>
                     router.push(
@@ -211,11 +246,30 @@ export function FbCommentsTable({
                   {t("actions.edit")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  onClick={() =>
+                    router.push(
+                      `/space/${workspaceId}/fb-comments/${row.original.id}/analytics`,
+                    )
+                  }
+                >
+                  <ChartColumnIcon className="me-2" />
+                  {t("actions.viewAnalytics")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
                   onClick={() => setRowAction({ row, variant: "update" })}
                 >
                   <TextIcon className="me-2" />
                   {t("actions.rename")}
                 </DropdownMenuItem>
+                {canProcessMissedComments(row.original.post) ? (
+                  <DropdownMenuItem
+                    disabled={missedCommentsInProgress.has(row.original.id)}
+                    onClick={() => setMissedCommentsItem(row.original)}
+                  >
+                    <HistoryIcon className="me-2" />
+                    {t("commentAutomationMissedComments.action")}
+                  </DropdownMenuItem>
+                ) : null}
                 <DropdownMenuItem
                   onClick={() => setRowAction({ row, variant: "move" })}
                 >
@@ -238,7 +292,7 @@ export function FbCommentsTable({
         enableHiding: false,
       },
     ],
-    [t, workspaceId, handleToggleStatus, router],
+    [t, workspaceId, handleToggleStatus, router, missedCommentsInProgress],
   )
 
   const { table } = useDataTable({
@@ -286,17 +340,18 @@ export function FbCommentsTable({
                 />
               </>
             ) : null}
-            <Button
-              render={
-                <Link href={`/space/${workspaceId}/fb-comments/create`}>
-                  {t("facebookCommentAutomation.create")}
-                </Link>
-              }
-              size="sm"
-            />
+            <Button onClick={() => setPostTypeOpen(true)} size="sm">
+              {t("facebookCommentAutomation.create")}
+            </Button>
           </div>
         </DataTableToolbar>
       </DataTable>
+
+      <SelectFacebookPostTypeDialog
+        onOpenChange={setPostTypeOpen}
+        open={postTypeOpen}
+        workspaceId={workspaceId}
+      />
 
       <RenameCommentAutomationDialog
         action={updateFbCommentAction.bind(
@@ -344,6 +399,15 @@ export function FbCommentsTable({
         open={!!scheduleDialogItem}
         resource={scheduleDialogItem}
         translationNamespace="facebookCommentAutomation"
+      />
+
+      <ProcessMissedCommentsDialog
+        onOpenChange={() => setMissedCommentsItem(null)}
+        onSuccess={() => {
+          refreshMissedCommentsInProgress()
+          router.refresh()
+        }}
+        resource={missedCommentsItem}
       />
     </>
   )

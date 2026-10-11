@@ -1,6 +1,6 @@
 "use client"
 
-import type { WhatsappCredentialPublic } from "@chatbotx.io/database/partials"
+import { isCapiScopeRequired } from "@chatbotx.io/business/meta-conversions/capi-scope-policy"
 import type { IntegrationWhatsappModel } from "@chatbotx.io/database/types"
 import { Badge } from "@chatbotx.io/ui/components/ui/badge"
 import {
@@ -14,6 +14,7 @@ import { cn } from "@chatbotx.io/ui/lib/utils"
 import { useTranslations } from "next-intl"
 import { CapiConnectedCard } from "@/features/meta-conversions/components/capi-connected-card"
 import { CapiMethodChooser } from "@/features/meta-conversions/components/capi-method-chooser"
+import { CapiTestEventCard } from "@/features/meta-conversions/components/capi-test-event-card"
 import {
   type CapiConnectionState,
   getCapiConnectionState,
@@ -28,28 +29,21 @@ import { connectWhatsappCustomCapiAction } from "../actions/connect-custom-capi.
 import { disconnectWhatsappCapiAction } from "../actions/disconnect-capi.action"
 import { provisionWhatsappCapiDatasetAction } from "../actions/provision-capi-dataset.action"
 import { setWhatsappCapiDatasetAction } from "../actions/set-capi-dataset.action"
-import { WhatsappAutomaticEventsCard } from "./whatsapp-automatic-events-card"
 
 type WhatsappCapiTabProps = {
   integrationWhatsapp: Pick<
     IntegrationWhatsappModel,
-    | "id"
-    | "name"
-    | "displayPhoneNumber"
-    | "wabaId"
-    | "hasCapiScope"
-    | "datasetId"
+    "id" | "hasCapiScope" | "datasetId" | "capiTestEventCode"
   >
   hasManualCapiAccessToken: boolean
   capiDisconnected: boolean
   credentialAvailable: boolean
-  whatsappCredentialPublic: WhatsappCredentialPublic | null
-  oauthCallbackUrl: string
 }
 
 const statusDescriptionKey = {
   ready: "metaConversions.statusDescriptions.ready",
   notConnected: "metaConversions.statusDescriptions.notConnected",
+  missingPermission: "metaConversions.statusDescriptions.missingPermission",
   unverified: "metaConversions.statusDescriptions.unverified",
   unsupported: "metaConversions.statusDescriptions.unsupported",
 } as const satisfies Record<CapiStatus, string>
@@ -79,12 +73,21 @@ function renderConnectionContent({
     )
   }
   return (
-    <CapiConnectedCard
-      datasetId={integrationWhatsapp.datasetId}
-      disconnectAction={disconnectWhatsappCapiAction}
-      integrationId={integrationWhatsapp.id}
-      workspaceId={workspaceId}
-    />
+    <>
+      <CapiConnectedCard
+        datasetId={integrationWhatsapp.datasetId}
+        disconnectAction={disconnectWhatsappCapiAction}
+        integrationId={integrationWhatsapp.id}
+        workspaceId={workspaceId}
+      />
+      <CapiTestEventCard
+        channel="whatsapp"
+        datasetId={integrationWhatsapp.datasetId}
+        integrationId={integrationWhatsapp.id}
+        testEventCode={integrationWhatsapp.capiTestEventCode}
+        workspaceId={workspaceId}
+      />
+    </>
   )
 }
 
@@ -93,22 +96,24 @@ export function WhatsappCapiTab({
   hasManualCapiAccessToken,
   capiDisconnected,
   credentialAvailable,
-  whatsappCredentialPublic,
-  oauthCallbackUrl,
 }: WhatsappCapiTabProps) {
   const t = useTranslations()
   const workspaceId = useWorkspaceId()
+  const capiScopeRequired = isCapiScopeRequired("whatsapp")
   const connectionState = getCapiConnectionState({
     capiDisconnected,
     hasManualCapiAccessToken,
     hasCapiScope: integrationWhatsapp.hasCapiScope,
     hasDatasetId: Boolean(integrationWhatsapp.datasetId),
+    capiScopeRequired,
   })
   const status = getCapiStatus({
-    hasCapiScope: !capiDisconnected && integrationWhatsapp.hasCapiScope,
+    hasCapiScope: integrationWhatsapp.hasCapiScope,
+    capiDisconnected,
     hasManualCapiAccessToken,
     hasDatasetId: Boolean(integrationWhatsapp.datasetId),
     credentialAvailable,
+    capiScopeRequired,
   })
   const statusConfig = capiStatusConfig[status]
 
@@ -142,12 +147,6 @@ export function WhatsappCapiTab({
           </p>
         </CardContent>
       </Card>
-      <WhatsappAutomaticEventsCard
-        integrationWhatsapp={integrationWhatsapp}
-        oauthCallbackUrl={oauthCallbackUrl}
-        whatsappCredentialPublic={whatsappCredentialPublic}
-        workspaceId={workspaceId}
-      />
     </div>
   )
 }

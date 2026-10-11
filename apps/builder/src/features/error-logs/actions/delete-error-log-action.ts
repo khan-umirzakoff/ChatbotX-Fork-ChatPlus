@@ -1,13 +1,12 @@
 "use server"
 
-import { and, db, eq, inArray } from "@chatbotx.io/database/client"
-import { errorLogModel } from "@chatbotx.io/database/schema"
+import { deleteErrorLogs } from "@chatbotx.io/business/error-log"
 import {
   type BulkUpdateIdsRequest,
   bulkUpdateIdsRequest,
   type WorkspaceIdRequestParams,
   workspaceIdrequestParams,
-} from "@/features/common/schemas"
+} from "@/features/common/schema"
 import { workspaceActionClient } from "@/lib/safe-action"
 
 export const deleteErrorLogAction = workspaceActionClient
@@ -21,13 +20,6 @@ export const deleteErrorLogAction = workspaceActionClient
       bindArgsParsedInputs: WorkspaceIdRequestParams
       parsedInput: BulkUpdateIdsRequest
     }) => {
-      await db
-        .delete(errorLogModel)
-        .where(
-          and(
-            eq(errorLogModel.workspaceId, workspaceId),
-            inArray(errorLogModel.id, parsedInput.ids),
-          ),
-        )
+      await deleteErrorLogs({ workspaceId, ids: parsedInput.ids })
     },
   )

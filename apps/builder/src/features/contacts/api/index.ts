@@ -1,7 +1,5 @@
-import { contactsAuthenticatedAPI } from "./authenticated"
-import workspaceTokenAuthAPIs from "./workspace-token"
+import { contactsAuthenticatedAPI } from "./private"
 
 export const contactsAPIs = {
-  ...workspaceTokenAuthAPIs,
   ...contactsAuthenticatedAPI,
 }

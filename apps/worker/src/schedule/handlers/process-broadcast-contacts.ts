@@ -1,9 +1,18 @@
-import { and, db, eq, sql } from "@chatbotx.io/database/client"
-import { broadcastStatuses, channelTypes } from "@chatbotx.io/database/partials"
 import {
-  broadcastModel,
-  contactsOnBroadcastsModel,
-} from "@chatbotx.io/database/schema"
+  type BroadcastForSend,
+  type BroadcastRecipientForSend,
+  broadcastService,
+} from "@chatbotx.io/business"
+import {
+  broadcastSendsFlow,
+  broadcastSendsTemplate,
+  channelTypes,
+  hasBroadcastSendForInbox,
+  resolveBroadcastFlowSend,
+  resolveBroadcastSendRatePerMinute,
+  resolveBroadcastTemplateSend,
+  usesBroadcastTargets,
+} from "@chatbotx.io/database/partials"
 import type {
   ContactInboxModel,
   ConversationModel,
@@ -13,7 +22,9 @@ import {
   type MessengerTemplateParams,
   type WaTemplateParams,
 } from "@chatbotx.io/flow-config"
+import { mapWithConcurrency } from "@chatbotx.io/utils"
 import {
+  BROADCAST_SEND_PRIORITY,
   ChatJobAction,
   chatQueue,
   IntegrationJobAction,
@@ -22,103 +33,145 @@ import {
 import { isBlockedWorkspace } from "../../lib/is-blocked-workspace"
 import { logger } from "../../lib/logger"
 
-const DEFAULT_BROADCAST_RATE_LIMIT = 500
 const BROADCAST_SEND_JOB_RETENTION_SECONDS = 3600
+// Caps the fan-out of one hand-off batch's queue adds + markContactSentIfSending
+// updates. The pg pool is `max: 10` connections; at up to 1000 recipients an
+// unbounded Promise.all can queue far more concurrent connection requests
+// than the pool has slots and a waiter can time out instead of getting a
+// connection. See docs/plans/2026-09-20-broadcast-send-limit.md.
+const BROADCAST_HANDOFF_CONCURRENCY = 100
 
-type BroadcastForSend = Awaited<
-  ReturnType<(typeof db.query.broadcastModel)["findMany"]>
->[number]
+/** The reasons a recipient cannot be enqueued; stored as the row's `errorContent`. */
+const NO_TEMPLATE_FOR_PAGE_REASON =
+  "no template selected for the contact's page"
+const NO_FLOW_FOR_PAGE_REASON = "no flow selected for the contact's page"
+const NO_SEND_FOR_PAGE_REASON =
+  "no flow or template selected for the contact's page"
 
-type ContactOnBroadcastForSend = Awaited<
-  ReturnType<(typeof db.query.contactsOnBroadcastsModel)["findMany"]>
->[number] & {
-  conversation?: ConversationModel | null
-  contactInbox?: ContactInboxModel | null
-}
+type ContactOnBroadcastForSend = BroadcastRecipientForSend
 
 const downstreamJobOptions = (jobId: string) => ({
   jobId,
+  priority: BROADCAST_SEND_PRIORITY,
   removeOnComplete: {
     age: BROADCAST_SEND_JOB_RETENTION_SECONDS,
     count: 100_000,
   },
 })
 
+// Suffixed with the broadcast's dispatch epoch (`resumeCount`) so a resumed
+// run's jobIds never collide with a completed job from the pre-stop epoch
+// still sitting in the queue's 1-hour removeOnComplete retention window —
+// see `resumeSending` in broadcast/service.ts.
 const broadcastContactSendJobId = (
   broadcastId: string,
   contactId: string,
   type: "flow" | "template",
-) => `broadcast-send-contact-${broadcastId}-${contactId}-${type}`
+  resumeCount: number,
+) =>
+  `broadcast-send-contact-${broadcastId}-${contactId}-${type}-r${resumeCount}`
+
+/** One reason a recipient cannot be handed to its send job, checked in order. */
+type RecipientRule = {
+  violated: (
+    contactOnBroadcast: ContactOnBroadcastForSend,
+    broadcast: BroadcastForSend,
+  ) => boolean
+  reason: string
+}
+
+const inboxIdOf = (contactOnBroadcast: ContactOnBroadcastForSend) =>
+  contactOnBroadcast.contactInbox?.inboxId
+
+// A multi-page broadcast delivers each page with its own flow or template; a
+// page that ended up without one (a deleted flow, a contact outside every
+// target) is a per-recipient failure, never a reason to stall the broadcast.
+const recipientRules: readonly RecipientRule[] = [
+  {
+    violated: (contact, broadcast) =>
+      broadcastSendsFlow(broadcast) && !contact.conversationId,
+    reason: "missing conversation for flow send",
+  },
+  {
+    violated: (contact, broadcast) => {
+      const inboxId = inboxIdOf(contact)
+      return (
+        broadcastSendsFlow(broadcast) &&
+        !(inboxId && resolveBroadcastFlowSend(broadcast, inboxId))
+      )
+    },
+    reason: NO_FLOW_FOR_PAGE_REASON,
+  },
+  {
+    violated: (contact, broadcast) =>
+      broadcastSendsTemplate(broadcast) &&
+      !(contact.conversation && contact.contactInbox),
+    reason: "missing conversation/contactInbox for template send",
+  },
+  {
+    violated: (contact, broadcast) => {
+      const inboxId = inboxIdOf(contact)
+      return (
+        broadcastSendsTemplate(broadcast) &&
+        !(inboxId && resolveBroadcastTemplateSend(broadcast, inboxId))
+      )
+    },
+    reason: NO_TEMPLATE_FOR_PAGE_REASON,
+  },
+  // Last: nothing left to send for this page at all (every flow deleted,
+  // no template) — the specific reasons above did not apply.
+  {
+    violated: (contact, broadcast) => {
+      const inboxId = inboxIdOf(contact)
+      return (
+        usesBroadcastTargets(broadcast) &&
+        !(inboxId && hasBroadcastSendForInbox(broadcast, inboxId))
+      )
+    },
+    reason: NO_SEND_FOR_PAGE_REASON,
+  },
+]
 
 const invalidBroadcastContact = (
   contactOnBroadcast: ContactOnBroadcastForSend,
   broadcast: BroadcastForSend,
-): string | null => {
-  if (broadcast.flowId && !contactOnBroadcast.conversationId) {
-    return "missing conversation for flow send"
-  }
-
-  if (
-    broadcast.templateId &&
-    !(contactOnBroadcast.conversation && contactOnBroadcast.contactInbox)
-  ) {
-    return "missing conversation/contactInbox for template send"
-  }
-
-  return null
-}
+): string | null =>
+  recipientRules.find((rule) => rule.violated(contactOnBroadcast, broadcast))
+    ?.reason ?? null
 
 const markContactFailed = async (
   contactOnBroadcast: ContactOnBroadcastForSend,
   reason: string,
 ) => {
-  await db
-    .update(contactsOnBroadcastsModel)
-    .set({
-      failedAt: sql`CURRENT_TIMESTAMP`,
-      errorContent: reason,
-    })
-    .where(
-      and(
-        eq(
-          contactsOnBroadcastsModel.broadcastId,
-          contactOnBroadcast.broadcastId,
-        ),
-        eq(contactsOnBroadcastsModel.contactId, contactOnBroadcast.contactId),
-      ),
-    )
-}
-
-const markContactSent = async (
-  contactOnBroadcast: ContactOnBroadcastForSend,
-) => {
-  await db
-    .update(contactsOnBroadcastsModel)
-    .set({ sent: true })
-    .where(
-      and(
-        eq(
-          contactsOnBroadcastsModel.broadcastId,
-          contactOnBroadcast.broadcastId,
-        ),
-        eq(contactsOnBroadcastsModel.contactId, contactOnBroadcast.contactId),
-      ),
-    )
+  await broadcastService.markContactFailed({
+    broadcastId: contactOnBroadcast.broadcastId,
+    contactId: contactOnBroadcast.contactId,
+    reason,
+  })
 }
 
 const enqueueBroadcastContact = async (
   broadcast: BroadcastForSend,
   contactOnBroadcast: ContactOnBroadcastForSend,
 ) => {
-  if (broadcast.flowId) {
+  const contactInbox = contactOnBroadcast.contactInbox as ContactInboxModel
+  const flowId = broadcastSendsFlow(broadcast)
+    ? resolveBroadcastFlowSend(broadcast, contactInbox.inboxId)
+    : null
+  if (flowId) {
     await integrationQueue.add(
       IntegrationJobAction.sendFlow,
       {
         type: IntegrationJobAction.sendFlow,
         data: {
-          flowId: broadcast.flowId,
+          flowId,
           conversationId: contactOnBroadcast.conversationId,
           contactInboxId: contactOnBroadcast.contactInboxId,
+          // The flow stop/resume guard's ONE authoritative "initial
+          // broadcast dispatch" marker (see the field's doc comment in
+          // worker-config). Every re-dispatch downstream of this one must
+          // leave it unset.
+          initialBroadcastDispatch: true,
           metadata: {
             type: BROADCAST_PAYLOAD_TYPE,
             broadcastId: broadcast.id,
@@ -131,12 +184,16 @@ const enqueueBroadcastContact = async (
           broadcast.id,
           contactOnBroadcast.contactId,
           "flow",
+          broadcast.resumeCount,
         ),
       ),
     )
   }
 
-  if (!broadcast.templateId) {
+  const templateSend = broadcastSendsTemplate(broadcast)
+    ? resolveBroadcastTemplateSend(broadcast, contactInbox.inboxId)
+    : null
+  if (!templateSend) {
     return
   }
 
@@ -146,7 +203,7 @@ const enqueueBroadcastContact = async (
     type RawMessengerData = MessengerTemplateParams & {
       buttons?: Array<{ id: string; label: string; flowId?: string }>
     }
-    const rawMessengerData = broadcast.templateData as
+    const rawMessengerData = templateSend.templateData as
       | RawMessengerData
       | undefined
     const { buttons: broadcastButtons, ...cleanMessengerParams } =
@@ -158,8 +215,8 @@ const enqueueBroadcastContact = async (
         type: ChatJobAction.sendMessengerTemplateMessage,
         data: {
           conversation: contactOnBroadcast.conversation as ConversationModel,
-          contactInbox: contactOnBroadcast.contactInbox as ContactInboxModel,
-          templateId: broadcast.templateId,
+          contactInbox,
+          templateId: templateSend.templateId,
           broadcastId: broadcast.id,
           templateData:
             Object.keys(cleanMessengerParams).length > 0
@@ -178,6 +235,7 @@ const enqueueBroadcastContact = async (
           broadcast.id,
           contactOnBroadcast.contactId,
           "template",
+          broadcast.resumeCount,
         ),
       ),
     )
@@ -190,10 +248,10 @@ const enqueueBroadcastContact = async (
       type: ChatJobAction.sendWhatsappTemplateMessage,
       data: {
         conversation: contactOnBroadcast.conversation as ConversationModel,
-        contactInbox: contactOnBroadcast.contactInbox as ContactInboxModel,
-        templateId: broadcast.templateId,
+        contactInbox,
+        templateId: templateSend.templateId,
         broadcastId: broadcast.id,
-        templateData: broadcast.templateData as WaTemplateParams | undefined,
+        templateData: templateSend.templateData as WaTemplateParams | undefined,
         metadata: {
           type: BROADCAST_PAYLOAD_TYPE,
           broadcastId: broadcast.id,
@@ -206,18 +264,14 @@ const enqueueBroadcastContact = async (
         broadcast.id,
         contactOnBroadcast.contactId,
         "template",
+        broadcast.resumeCount,
       ),
     ),
   )
 }
 
 export const processBroadcastContacts = async (broadcastId: string) => {
-  const broadcasts = await db.query.broadcastModel.findMany({
-    where: {
-      id: broadcastId,
-      status: broadcastStatuses.enum.sending,
-    },
-  })
+  const broadcasts = await broadcastService.listSendableById({ broadcastId })
 
   if (broadcasts.length === 0) {
     return { processed: 0 }
@@ -230,63 +284,94 @@ export const processBroadcastContacts = async (broadcastId: string) => {
   let totalProcessed = 0
 
   for (const broadcast of broadcasts) {
-    const contactsOnBroadcasts =
-      await db.query.contactsOnBroadcastsModel.findMany({
-        where: {
-          broadcastId: broadcast.id,
-          sent: false,
-          failedAt: { isNull: true },
-        },
-        with: {
-          conversation: true,
-          contactInbox: true,
-        },
-        limit: DEFAULT_BROADCAST_RATE_LIMIT,
-      })
+    // Claims a lease that keeps two successful hand-off batches of the same
+    // broadcast at least 55s apart (see docs/plans/2026-09-20-broadcast-send-limit.md).
+    // The claim runs BEFORE the fetch on purpose: a refused tick must cost
+    // one Redis command and nothing else, since most ticks for a
+    // fast-cadenced broadcast will be refused. A refused claim hands off
+    // nothing this tick; the next reconcileBroadcasts tick (≤ 60s later)
+    // retries because handoffCompletedAt is still null.
+    const claimed = await broadcastService.claimDispatchWindow({
+      broadcastId: broadcast.id,
+    })
+
+    if (!claimed) {
+      logger.debug(
+        { broadcastId: broadcast.id },
+        "processBroadcastContacts: dispatch window lease still held, skipping this tick",
+      )
+      continue
+    }
+
+    const batchSize = resolveBroadcastSendRatePerMinute(broadcast)
+
+    const contactsOnBroadcasts = await broadcastService.listPendingRecipients({
+      broadcastId: broadcast.id,
+      limit: batchSize,
+    })
 
     if (contactsOnBroadcasts.length === 0) {
-      await db
-        .update(broadcastModel)
-        .set({ status: broadcastStatuses.enum.sent })
-        .where(eq(broadcastModel.id, broadcast.id))
+      // Everything has been handed to the channel; finalizeBroadcasts resolves sent|failed.
+      await broadcastService.markHandoffCompleted({ broadcastId: broadcast.id })
       continue
     }
 
     let retryableFailure: unknown = null
 
-    await Promise.all(
-      contactsOnBroadcasts.map(async (contactOnBroadcast) => {
-        try {
-          const invalidReason = invalidBroadcastContact(
-            contactOnBroadcast,
-            broadcast,
-          )
+    const handOffRecipient = async (
+      contactOnBroadcast: ContactOnBroadcastForSend,
+    ): Promise<boolean> => {
+      const invalidReason = invalidBroadcastContact(
+        contactOnBroadcast,
+        broadcast,
+      )
 
-          if (invalidReason) {
-            await markContactFailed(contactOnBroadcast, invalidReason)
-            return
-          }
+      if (invalidReason) {
+        await markContactFailed(contactOnBroadcast, invalidReason)
+        return false
+      }
 
-          await enqueueBroadcastContact(broadcast, contactOnBroadcast)
-          await markContactSent(contactOnBroadcast)
+      await enqueueBroadcastContact(broadcast, contactOnBroadcast)
+      // Conditioned on the broadcast still being `sending` (I1 lost-update
+      // fix): a stale in-flight job from a stopped/resumed run cannot
+      // resurrect a row that resume/cleanup has since reset or purged.
+      await broadcastService.markContactSentIfSending({
+        broadcastId: broadcast.id,
+        contactId: contactOnBroadcast.contactId,
+      })
 
-          totalProcessed++
-        } catch (error) {
-          retryableFailure ??= error
-          logger.error(
-            { err: error, contactOnBroadcast },
-            "Retryable error sending broadcast contact",
-          )
-        }
-      }),
+      return true
+    }
+
+    const settledResults = await mapWithConcurrency(
+      contactsOnBroadcasts,
+      BROADCAST_HANDOFF_CONCURRENCY,
+      handOffRecipient,
     )
+
+    for (const [index, result] of settledResults.entries()) {
+      if (result.status === "rejected") {
+        retryableFailure ??= result.reason
+        logger.error(
+          {
+            err: result.reason,
+            contactOnBroadcast: contactsOnBroadcasts[index],
+          },
+          "Retryable error sending broadcast contact",
+        )
+        continue
+      }
+
+      if (result.value) {
+        totalProcessed++
+      }
+    }
 
     if (retryableFailure) {
       throw retryableFailure
     }
 
-    const fetchedFull =
-      contactsOnBroadcasts.length === DEFAULT_BROADCAST_RATE_LIMIT
+    const fetchedFull = contactsOnBroadcasts.length === batchSize
 
     // More rows remain; reconcileBroadcasts cron drives the next batch.
     // Keep a single driver so kick + cron share one jobId and cannot multiply.
@@ -294,10 +379,7 @@ export const processBroadcastContacts = async (broadcastId: string) => {
       continue
     }
 
-    await db
-      .update(broadcastModel)
-      .set({ status: broadcastStatuses.enum.sent })
-      .where(eq(broadcastModel.id, broadcast.id))
+    await broadcastService.markHandoffCompleted({ broadcastId: broadcast.id })
   }
 
   return { processed: totalProcessed }

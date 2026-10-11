@@ -13,6 +13,7 @@ import {
   integrationMessengerModel,
   integrationMetaCatalogModel,
   integrationModel,
+  integrationThreadsModel,
   integrationTiktokModel,
   integrationWhatsappModel,
   integrationZaloModel,
@@ -27,6 +28,7 @@ export type TokenRefreshErrorChannel =
   | "instagramFacebook"
   | "messenger"
   | "whatsapp"
+  | "threads"
 
 export type TokenRefreshErrorIntegration = {
   id: string
@@ -36,6 +38,15 @@ export type TokenRefreshErrorIntegration = {
 }
 
 class IntegrationService extends BaseService {
+  findByIdForWorkspace(props: {
+    id: string
+    workspaceId: string
+  }): Promise<IntegrationModel | undefined> {
+    return db.query.integrationModel.findFirst({
+      where: { id: props.id, workspaceId: props.workspaceId },
+    })
+  }
+
   async listByWorkspaceId(workspaceId: string): Promise<IntegrationModel[]> {
     return await db
       .select()
@@ -66,14 +77,19 @@ class IntegrationService extends BaseService {
 
   /**
    * Channel integrations whose daily token-refresh cron last failed
-   * (`tokenRefreshError` set), across every channel that supports automatic
-   * refresh. Used to warn the workspace owner that a channel needs a manual
-   * reconnect before it silently stops sending/receiving messages.
+   * (`tokenRefreshError` set on the channel's own satellite row), across
+   * every channel that supports automatic refresh. Deliberately reads each
+   * `Integration<Channel>.tokenRefreshError` column directly rather than
+   * `Connection.lastError`: the refresh crons write the satellite column,
+   * while `Connection.lastError` also represents other lifecycle failures.
+   * The returned `id` is therefore the channel's own
+   * `Integration<Channel>.id` — the public contract this deprecated
+   * endpoint has always returned, not `Connection.id`.
    */
   async findTokenRefreshErrorsByWorkspaceId(
     workspaceId: string,
   ): Promise<TokenRefreshErrorIntegration[]> {
-    const [zalos, tiktoks, instagrams, messengers, whatsapps] =
+    const [zalos, tiktoks, instagrams, messengers, whatsapps, threads] =
       await Promise.all([
         db
           .select({
@@ -141,6 +157,19 @@ class IntegrationService extends BaseService {
               isNotNull(integrationWhatsappModel.tokenRefreshError),
             ),
           ),
+        db
+          .select({
+            id: integrationThreadsModel.id,
+            name: integrationThreadsModel.name,
+            error: integrationThreadsModel.tokenRefreshError,
+          })
+          .from(integrationThreadsModel)
+          .where(
+            and(
+              eq(integrationThreadsModel.workspaceId, workspaceId),
+              isNotNull(integrationThreadsModel.tokenRefreshError),
+            ),
+          ),
       ])
 
     return [
@@ -177,7 +206,32 @@ class IntegrationService extends BaseService {
         name: row.name,
         error: row.error as string,
       })),
+      ...threads.map((row) => ({
+        id: row.id,
+        channel: "threads" as const,
+        name: row.name,
+        error: row.error as string,
+      })),
     ]
+  }
+
+  /**
+   * Boolean gate for whether a workspace has any integration whose type is
+   * in `integrationTypes` (e.g. an AI provider). The caller supplies the
+   * type list — business does not depend on `@chatbotx.io/ai`.
+   */
+  async hasIntegrationOfTypes(props: {
+    workspaceId: string
+    integrationTypes: string[]
+  }): Promise<boolean> {
+    const existing = await db.query.integrationModel.findFirst({
+      where: {
+        integrationType: { in: props.integrationTypes },
+        workspaceId: props.workspaceId,
+      },
+    })
+
+    return !!existing
   }
 }
 

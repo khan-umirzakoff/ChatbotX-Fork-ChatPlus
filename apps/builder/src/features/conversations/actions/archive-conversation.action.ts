@@ -7,7 +7,7 @@ import {
   bulkUpdateIdsRequest,
   type WorkspaceIdRequestParams,
   workspaceIdrequestParams,
-} from "@/features/common/schemas"
+} from "@/features/common/schema"
 import { workspaceActionClient } from "@/lib/safe-action"
 
 export const archiveConversationAction = workspaceActionClient
@@ -23,15 +23,9 @@ export const archiveConversationAction = workspaceActionClient
       parsedInput: BulkUpdateIdsRequest
       ctx: { user: UserModel }
     }) => {
-      const conversations = await conversationService.findManyByIds({
+      await conversationService.archiveByIds({
         workspaceId,
         ids: parsedInput.ids,
-      })
-
-      await conversationService.updateArchived({
-        workspaceId,
-        conversations,
-        archivedAt: new Date(),
         userId: ctx.user.id,
         triggerContext: {
           triggerSource: "api",

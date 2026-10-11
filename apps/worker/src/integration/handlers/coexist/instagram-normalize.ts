@@ -98,13 +98,16 @@ const toIncomingAttachment = (
     raw.video_data?.url ??
     raw.file_url ??
     null
-  if (!url) {
+  if (!(url && raw.id)) {
+    // Require both a URL and a provider id: on-demand hydration re-derives and
+    // matches media by id, so an id-less row can never be lazily mirrored and
+    // would only become a dead-end pending attachment.
     return null
   }
   const mimeType = raw.mime_type ?? "application/octet-stream"
   const dimensions = raw.image_data ?? raw.video_data
   return {
-    sourceId: raw.id ?? url,
+    sourceId: raw.id,
     fileType: guessFileTypeFromMimeType(mimeType),
     mimeType,
     originPath: url,
@@ -159,6 +162,9 @@ export const toIncomingContact = (
     sourceId: participant.id,
     firstName: name.firstName ?? participant.username ?? participant.id,
     lastName: name.lastName,
+    // Persisted on ContactInbox so `{{ig_user_name}}` and `@mention` matching
+    // resolve without a live Graph call.
+    sourceUsername: participant.username,
   }
 }
 

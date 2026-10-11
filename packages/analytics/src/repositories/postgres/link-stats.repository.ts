@@ -1,4 +1,15 @@
-import { type Column, db, sql, type Table } from "@chatbotx.io/database/client"
+import {
+  type Column,
+  db,
+  type PgTable,
+  sql,
+  type Table,
+} from "@chatbotx.io/database/client"
+// Narrow subpath, NOT the `queries` barrel: that barrel re-exports the
+// contact-filter modules, which dereference schema tables at module scope
+// and therefore crash any suite that mocks `@chatbotx.io/database/schema`
+// narrowly. Analytics only needs the one timezone helper.
+import { resolvedTimezone } from "@chatbotx.io/database/queries/date-bucket"
 import { BaseRepository } from "./base.repository"
 
 type LinkStatColumns = {
@@ -23,6 +34,32 @@ export class LinkStatsRepository extends BaseRepository {
     this.columns = columns
   }
 
+  /**
+   * Append-only insert for click/attribution events, deduplicated on the
+   * table's natural key (workspace + link + contact inbox + occurrence).
+   */
+  async insertStats<T extends Record<string, unknown>>(
+    items: T[],
+  ): Promise<void> {
+    if (items.length === 0) {
+      return
+    }
+
+    const { workspaceId, linkId, contactInboxId, occurredAt } = this.columns
+
+    // `this.table` is typed as the generic drizzle-orm `Table` (to keep the
+    // constructor callable with any pg model shape); `db.insert()` needs the
+    // concrete `PgTable` the runtime object already is.
+    await db
+      .insert(this.table as PgTable)
+      .values(items)
+      .onConflictDoNothing({
+        // Same generic-`Column`-vs-concrete-`PgColumn` friction as the table
+        // cast above — these are the real columns of the real `PgTable`.
+        target: [workspaceId, linkId, contactInboxId, occurredAt] as never,
+      })
+  }
+
   async getStatsByDateRange(input: {
     workspaceId: string
     linkId: string
@@ -35,7 +72,7 @@ export class LinkStatsRepository extends BaseRepository {
 
     const result = await db.execute(sql`
       SELECT
-        TO_CHAR((${occurredAt} AT TIME ZONE ${timezone})::date, 'YYYY-MM-DD') AS "dateReport",
+        TO_CHAR((${occurredAt} AT TIME ZONE ${resolvedTimezone(timezone)})::date, 'YYYY-MM-DD') AS "dateReport",
         COUNT(*)::int AS count
       FROM ${this.table}
       WHERE ${wsCol} = ${workspaceId}

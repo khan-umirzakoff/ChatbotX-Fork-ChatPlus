@@ -19,6 +19,38 @@ describe("perform action SendGrid registration", () => {
   })
 })
 
+describe("perform action Meta CAPI menu", () => {
+  test("exposes sendMetaCapiEvent as a top-level entry, not inside a group", () => {
+    const menus = performActionMenus(t)
+
+    expect(menus).toContainEqual(
+      expect.objectContaining({
+        label: "flows.actions.sendMetaCapiEvent",
+        stepType: stepTypes.enum.sendMetaCapiEvent,
+      }),
+    )
+    expect(
+      menus.some((item) =>
+        [
+          "flows.actions.adsConversions",
+          "flows.actions.metaConversions",
+        ].includes(item.label),
+      ),
+    ).toBe(false)
+  })
+})
+
+describe("perform action Google Ads conversion menu", () => {
+  test("exposes sendGoogleAdsConversion as a top-level entry", () => {
+    expect(performActionMenus(t)).toContainEqual(
+      expect.objectContaining({
+        label: "flows.actions.sendGoogleAdsConversion",
+        stepType: stepTypes.enum.sendGoogleAdsConversion,
+      }),
+    )
+  })
+})
+
 describe("perform action coupon menu", () => {
   test("exposes topic coupon under tools as the create path", () => {
     const tools = performActionMenus(t).find(

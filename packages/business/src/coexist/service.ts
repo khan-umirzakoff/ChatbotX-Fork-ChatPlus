@@ -1,17 +1,25 @@
 import { type DatabaseClient, db } from "@chatbotx.io/database/client"
+import type { CoexistRunType } from "@chatbotx.io/database/partials"
 import {
   type CoexistChannel,
   type CoexistIntegrationRow,
   type CoexistRunCreateInput,
   type CoexistRunProgressInput,
+  type CoexistRunStatus,
+  type CoexistRunWriteGuard,
   type CoexistTriggerSource,
   coexistSyncRunRepository,
+  type IncrementProgressCounters,
   type PickedCoexistRun,
   type PullCoexistChannel,
 } from "@chatbotx.io/database/repositories"
 import type { CoexistSyncRunModel } from "@chatbotx.io/database/types"
 import { IntegrationJobAction } from "@chatbotx.io/worker-config"
 import { BaseService } from "../base.service"
+import {
+  COEXIST_HISTORY_TIMEOUT_ERROR,
+  WHATSAPP_COEXIST_HISTORY_WINDOW_MS,
+} from "./history-window"
 
 export type CoexistEnableInput = {
   workspaceId: string
@@ -26,7 +34,11 @@ export type CoexistEnableInput = {
 }
 
 export type CoexistEnableResult =
-  | { success: true; runId?: string }
+  | { success: true; runId: string }
+  | { success: false; reason: "not_found" }
+
+export type CoexistDisableResult =
+  | { success: true }
   | { success: false; reason: "not_found" }
 
 export type CoexistJobStrategy =
@@ -75,6 +87,20 @@ class CoexistService extends BaseService {
         tx,
       })
 
+      // Reuse a run that is still alive rather than opening a second one.
+      // `CoexistSyncRun_integration_init_uq` only dedups `init`, so without
+      // this a user re-confirming the popup while a WhatsApp run is parked in
+      // `waiting` got two live runs: the buffer flush picks the newest and the
+      // older one lingers until the 24h timeout closes it `partial`.
+      const liveRun = await coexistSyncRunRepository.findLiveRun({
+        integrationId: input.integrationId,
+        channel: input.channel,
+        tx,
+      })
+      if (liveRun) {
+        return { success: true, runId: liveRun.id } as const
+      }
+
       const run = await coexistSyncRunRepository.createRun({
         workspaceId: input.workspaceId,
         integrationId: input.integrationId,
@@ -93,7 +119,7 @@ class CoexistService extends BaseService {
     workspaceId: string
     integrationId: string
     channel: CoexistChannel
-  }): Promise<CoexistEnableResult> {
+  }): Promise<CoexistDisableResult> {
     const result = await db.transaction(async (tx) => {
       const integration =
         await coexistSyncRunRepository.setIntegrationCoexistEnabled({
@@ -129,23 +155,64 @@ class CoexistService extends BaseService {
     await coexistSyncRunRepository.tearDownActiveRunsForIntegration(input)
   }
 
-  markMaxAttemptsFailed(input: { maxAttempts: number }): Promise<void> {
+  /**
+   * `type` has no default — see `PickDueRunsInput.type` on the repository —
+   * so this coexist-only service always passes `"coexist"` explicitly, the
+   * same discipline the caller (`scanCoexistRuns`) is required to follow.
+   */
+  markMaxAttemptsFailed(input: {
+    type: CoexistRunType
+    maxAttempts: number
+  }): Promise<void> {
     return coexistSyncRunRepository.markMaxAttemptsFailed(input)
   }
 
   pickDueRuns(input: {
+    type: CoexistRunType
     batchSize: number
     maxAttempts: number
   }): Promise<PickedCoexistRun[]> {
     return coexistSyncRunRepository.pickDueRuns(input)
   }
 
-  claimRun(input: { runId: string }): Promise<CoexistSyncRunModel | null> {
-    return coexistSyncRunRepository.claimRun(input)
+  /**
+   * Claims a run for this worker and mints a fresh ownership token, returned on
+   * the row as `claimToken`. Pass it back in the `expect` guard of every later
+   * write so a worker whose claim was taken over cannot keep writing.
+   *
+   * `fromStatuses` defaults to the pull channels' `init | running`; the
+   * WhatsApp flush passes `LIVE_RUN_STATUSES` so a run parked in `waiting` is
+   * claimable too.
+   */
+  claimRunWithNewToken(input: {
+    runId: string
+    fromStatuses?: CoexistRunStatus[]
+  }): Promise<CoexistSyncRunModel | null> {
+    return coexistSyncRunRepository.claimRunWithNewToken(input)
   }
 
   findRunById(input: { runId: string }): Promise<CoexistSyncRunModel | null> {
     return coexistSyncRunRepository.findRunById(input)
+  }
+
+  /**
+   * Newest run for this integration that is still alive
+   * (`init | running | waiting`). The WhatsApp flush uses it when the job
+   * payload carries no `runId` (webhook-driven enqueues omit it).
+   */
+  findLiveRun(input: {
+    integrationId: string
+    channel: CoexistChannel
+  }): Promise<CoexistSyncRunModel | null> {
+    return coexistSyncRunRepository.findLiveRun(input)
+  }
+
+  findLatestRun(input: {
+    workspaceId: string
+    integrationId: string
+    channel: CoexistChannel
+  }): Promise<CoexistSyncRunModel | null> {
+    return coexistSyncRunRepository.findLatestRun(input)
   }
 
   findIntegrationForCoexist(input: {
@@ -157,19 +224,55 @@ class CoexistService extends BaseService {
     return coexistSyncRunRepository.findIntegrationForCoexist(input)
   }
 
-  updateProgress(input: CoexistRunProgressInput): Promise<void> {
+  /** @returns rows written — 0 means the `expect` guard did not hold. */
+  updateProgress(input: CoexistRunProgressInput): Promise<number> {
     return coexistSyncRunRepository.updateProgress(input)
   }
 
-  markFailed(input: { runId: string; currentError: string }): Promise<void> {
+  /**
+   * Hands a run back to the scheduler after a TRANSIENT failure: `init` with a
+   * fresh heartbeat, counters and pending patches preserved, `finishedAt`
+   * untouched. Never terminalizes — `pickDueRuns` + `markMaxAttemptsFailed`
+   * own the eventual `failed`.
+   */
+  resetForRetry(input: {
+    runId: string
+    currentError: string
+    fields?: CoexistRunProgressInput["fields"]
+    expect?: CoexistRunWriteGuard
+  }): Promise<number> {
+    return coexistSyncRunRepository.updateProgress({
+      runId: input.runId,
+      fields: {
+        ...input.fields,
+        status: "init",
+        currentError: input.currentError,
+        lastHeartbeatAt: new Date(),
+      },
+      expect: input.expect,
+    })
+  }
+
+  markFailed(input: {
+    runId: string
+    currentError: string
+    expect?: CoexistRunWriteGuard
+  }): Promise<number> {
     return coexistSyncRunRepository.markFailed(input)
   }
 
-  markPartial(input: { runId: string; currentError?: string }): Promise<void> {
+  markPartial(input: {
+    runId: string
+    currentError?: string
+    expect?: CoexistRunWriteGuard
+  }): Promise<number> {
     return coexistSyncRunRepository.markPartial(input)
   }
 
-  markSucceeded(input: { runId: string }): Promise<void> {
+  markSucceeded(input: {
+    runId: string
+    expect?: CoexistRunWriteGuard
+  }): Promise<number> {
     return coexistSyncRunRepository.markSucceeded(input)
   }
 
@@ -183,6 +286,100 @@ class CoexistService extends BaseService {
 
   createRun(input: CoexistRunCreateInput): Promise<CoexistSyncRunModel> {
     return coexistSyncRunRepository.createRun(input)
+  }
+
+  /**
+   * WhatsApp-only recovery: a run parked in `waiting` that has staging rows
+   * again goes back to `init` (without burning an attempt) so the normal
+   * pick/enqueue path drains it.
+   */
+  reviveWaitingRunsWithPendingStaging(input: {
+    batchSize: number
+  }): Promise<PickedCoexistRun[]> {
+    return coexistSyncRunRepository.reviveWaitingRunsWithPendingStaging(input)
+  }
+
+  /**
+   * WhatsApp-only recovery: a run that waited past Meta's history window with
+   * nothing left to drain is closed as `partial` + `history_timeout`.
+   */
+  finalizeTimedOutWaitingRuns(input: {
+    batchSize: number
+    windowMs?: number
+    currentError?: string
+  }): Promise<{ id: string }[]> {
+    return coexistSyncRunRepository.finalizeTimedOutWaitingRuns({
+      batchSize: input.batchSize,
+      windowMs: input.windowMs ?? WHATSAPP_COEXIST_HISTORY_WINDOW_MS,
+      currentError: input.currentError ?? COEXIST_HISTORY_TIMEOUT_ERROR,
+    })
+  }
+
+  /**
+   * WhatsApp-only recovery: coexist-enabled integrations holding staging rows
+   * with no live run left to drain them.
+   */
+  findStrandedCoexistWhatsappIntegrations(input: {
+    limit: number
+  }): Promise<{ integrationId: string; workspaceId: string }[]> {
+    return coexistSyncRunRepository.findStrandedCoexistWhatsappIntegrations(
+      input,
+    )
+  }
+
+  findLastSyncedAt(input: {
+    runId: string
+  }): ReturnType<typeof coexistSyncRunRepository.findLastSyncedAt> {
+    return coexistSyncRunRepository.findLastSyncedAt(input)
+  }
+
+  /**
+   * Mirrors the repository's overloads by hand rather than
+   * `Parameters<typeof coexistSyncRunRepository.incrementProgress>[0]` —
+   * that utility type resolves to an overloaded function's LAST signature
+   * only, which would have silently forced every coexist caller (none of
+   * which pass `expect`) onto the `expect`-required overload.
+   */
+  incrementProgress(input: {
+    runId: string
+    increments: IncrementProgressCounters
+    fields?: CoexistRunProgressInput["fields"]
+    tx?: DatabaseClient
+  }): Promise<undefined>
+  incrementProgress(input: {
+    runId: string
+    increments: IncrementProgressCounters
+    fields?: CoexistRunProgressInput["fields"]
+    expect: CoexistRunWriteGuard
+    tx?: DatabaseClient
+  }): Promise<number>
+  incrementProgress(input: {
+    runId: string
+    increments: IncrementProgressCounters
+    fields?: CoexistRunProgressInput["fields"]
+    expect?: CoexistRunWriteGuard
+    tx?: DatabaseClient
+  }): Promise<number | undefined> {
+    return coexistSyncRunRepository.incrementProgress(input)
+  }
+
+  findInitState(input: {
+    runId: string
+  }): ReturnType<typeof coexistSyncRunRepository.findInitState> {
+    return coexistSyncRunRepository.findInitState(input)
+  }
+
+  reclaimRunForRetry(input: {
+    runId: string
+    touchUpdatedAt: boolean
+  }): Promise<CoexistSyncRunModel | null> {
+    return coexistSyncRunRepository.reclaimRunForRetry(input)
+  }
+
+  findTerminalCounters(input: {
+    runId: string
+  }): ReturnType<typeof coexistSyncRunRepository.findTerminalCounters> {
+    return coexistSyncRunRepository.findTerminalCounters(input)
   }
 }
 

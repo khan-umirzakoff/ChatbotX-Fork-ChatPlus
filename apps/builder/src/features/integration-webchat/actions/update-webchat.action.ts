@@ -1,14 +1,11 @@
 "use server"
 
-import { ensureBrandingMenuEntry } from "@chatbotx.io/business/branding"
-import { db, eq, findOrFail } from "@chatbotx.io/database/client"
-import { integrationWebchatModel } from "@chatbotx.io/database/schema"
+import { inboxService, integrationWebchatService } from "@chatbotx.io/business"
 import { zodBigintAsString } from "@chatbotx.io/utils"
-import { isCommunity } from "@/env"
 import { getTenantSettings } from "@/features/tenant/utils"
 import { hasWorkspacePermission } from "@/lib/auth/permission-routes"
 import { workspaceActionClient } from "@/lib/safe-action"
-import { BRANDING_TITLE, getBrandingUrl } from "../lib"
+import { applyWebchatBranding } from "../lib"
 import { updateWebchatRequest } from "../schema/mutation"
 
 export const updateWebchatAction = workspaceActionClient
@@ -20,7 +17,7 @@ export const updateWebchatAction = workspaceActionClient
       parsedInput,
       ctx,
     } = props
-    const { authorizedDomains, welcomeFlowId, ...rest } = parsedInput
+    const { authorizedDomains, markReadOnOutbound, ...rest } = parsedInput
 
     // The edit page gates entry with requireWorkspacePermission(workspaceId,
     // "superAdmin"), but workspaceActionClient only verifies membership — a
@@ -32,37 +29,38 @@ export const updateWebchatAction = workspaceActionClient
       throw new Error("You need to be a super admin to update this webchat")
     }
 
-    const integration = await findOrFail({
-      table: integrationWebchatModel,
-      where: {
-        id,
-        workspaceId,
+    const integration = await integrationWebchatService.findByIdForWorkspace({
+      id,
+      workspaceId,
+    })
+
+    const persistentMenus = rest.persistentMenus
+      ? applyWebchatBranding(
+          rest.persistentMenus,
+          (await getTenantSettings()).appUrl,
+        )
+      : rest.persistentMenus
+
+    await integrationWebchatService.update({
+      workspaceId,
+      id: integration.id,
+      data: {
+        ...rest,
+        persistentMenus,
+        // Normalization (falsy -> null) and workspace-ownership validation
+        // now live in `integrationWebchatService.update` so this action and
+        // the public API handler cannot drift on this field.
+        authorizedDomains: authorizedDomains
+          ? authorizedDomains.map((domain) => domain.value)
+          : undefined,
       },
-      message: "Webchat integration not found",
     })
 
-    // Community keeps the "Built with" branding entry; silently re-add it
-    // (same precedent as moveBrandingMenuLast in the messenger action).
-    const persistentMenus =
-      isCommunity() && rest.persistentMenus
-        ? ensureBrandingMenuEntry(rest.persistentMenus, {
-            label: BRANDING_TITLE,
-            url: getBrandingUrl("webchat", (await getTenantSettings()).appUrl),
-          })
-        : rest.persistentMenus
-
-    await db.transaction(async (tx) => {
-      await tx
-        .update(integrationWebchatModel)
-        .set({
-          ...rest,
-          persistentMenus,
-          workspaceId,
-          welcomeFlowId: welcomeFlowId?.length ? welcomeFlowId : null,
-          authorizedDomains: authorizedDomains
-            ? authorizedDomains.map((domain) => domain.value)
-            : undefined,
-        })
-        .where(eq(integrationWebchatModel.id, integration.id))
-    })
+    if (markReadOnOutbound !== undefined) {
+      await inboxService.updateMarkReadOnOutbound({
+        workspaceId,
+        id: integration.inboxId,
+        enabled: markReadOnOutbound,
+      })
+    }
   })

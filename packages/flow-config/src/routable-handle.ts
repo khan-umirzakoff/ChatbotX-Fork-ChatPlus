@@ -1,6 +1,7 @@
 import type { FlowNode } from "./nodes/index"
 import { type ButtonStepProps, buttonTypes } from "./steps/button"
 import { type PageElementSchema, pageElementTypes } from "./steps/email"
+import type { QuickReplySettings } from "./steps/quick-reply-settings"
 import { startAnotherNodeStepDefaultFn } from "./steps/start-another-node"
 
 export const routableHandleKinds = {
@@ -8,6 +9,7 @@ export const routableHandleKinds = {
   cardButtons: "cardButtons",
   listOptions: "listOptions",
   pageElements: "pageElements",
+  quickReplySettings: "quickReplySettings",
 } as const
 
 export type RoutableHandleKind =
@@ -322,11 +324,67 @@ const pageElementsAccessor: RoutableHandleAccessor = {
     }),
 }
 
+/**
+ * The two node-level handles under the quick replies. Their id belongs to the
+ * section, not the target, so clearing a route keeps the handle drawable.
+ * `stepIndex` is past every real step so a colliding step handle still wins,
+ * matching {@link findButtonInNodes}'s earliest-step rule.
+ */
+const quickReplySettingsAccessor: RoutableHandleAccessor = {
+  kind: routableHandleKinds.quickReplySettings,
+  findButton: () => null,
+  applyRoute: (node, handleId, route) => {
+    const details = node.data.details as {
+      quickReplySettings?: QuickReplySettings | null
+    }
+    const settings = details.quickReplySettings
+    if (!settings) {
+      return null
+    }
+
+    for (const key of ["followUp", "retry"] as const) {
+      if (settings[key]?.id !== handleId) {
+        continue
+      }
+
+      const target = route
+        ? {
+            buttonType: buttonTypes.enum.startAnotherNode,
+            beforeStep: startAnotherNodeStepDefaultFn({
+              nodeId: route.targetNodeId,
+              viewOnly: true,
+            }),
+          }
+        : null
+
+      return {
+        node: {
+          ...node,
+          data: {
+            ...node.data,
+            details: {
+              ...node.data.details,
+              quickReplySettings: {
+                ...settings,
+                [key]: { ...settings[key], target },
+              },
+            },
+          },
+        } as FlowNode,
+        stepIndex: Number.MAX_SAFE_INTEGER,
+      }
+    }
+
+    return null
+  },
+}
+
 const routableHandleAccessors: readonly RoutableHandleAccessor[] = [
   stepButtonsAccessor,
   cardButtonsAccessor,
   listOptionsAccessor,
   pageElementsAccessor,
+  quickReplySettingsAccessor,
 ]
 
 export const findButtonInNodes = (
@@ -375,10 +433,10 @@ export const applyRouteInNode = (
   return firstUpdate?.node ?? null
 }
 
-export const applyRouteUpdatesInNodes = (
-  nodes: FlowNode[],
+export const applyRouteUpdatesInNodes = <N extends FlowNode>(
+  nodes: readonly N[],
   updates: readonly FlowRouteUpdate[],
-): FlowNode[] => {
+): N[] => {
   const updatesBySourceNode = new Map<string, FlowRouteUpdate[]>()
   for (const update of updates) {
     const sourceUpdates = updatesBySourceNode.get(update.sourceNodeId)
@@ -390,13 +448,13 @@ export const applyRouteUpdatesInNodes = (
   }
 
   let hasChanges = false
-  const updatedNodes = nodes.map((node) => {
+  const updatedNodes = nodes.map((node): N => {
     const sourceUpdates = updatesBySourceNode.get(node.id)
     if (!sourceUpdates) {
       return node
     }
 
-    let updatedNode = node
+    let updatedNode: FlowNode = node
     for (const update of sourceUpdates) {
       const nextNode = applyRouteInNode(
         updatedNode,
@@ -409,8 +467,9 @@ export const applyRouteUpdatesInNodes = (
       }
     }
 
-    return updatedNode
+    // Route replacement changes only data nested in the same concrete node.
+    return updatedNode as N
   })
 
-  return hasChanges ? updatedNodes : nodes
+  return hasChanges ? updatedNodes : (nodes as N[])
 }

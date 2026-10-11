@@ -1,0 +1,483 @@
+import { beforeEach, describe, expect, test, vi } from "vitest"
+
+type RouteConfig = {
+  method: string
+  path: string
+  summary: string
+  tags: string[]
+  successStatus?: number
+}
+
+type CapturedProcedure = {
+  route: RouteConfig
+  handler?: (...args: any[]) => any
+}
+
+const { workspaceTokenAuthAPIForScope, capturedProcedures } = vi.hoisted(() => {
+  const capturedProcedures: CapturedProcedure[] = []
+
+  const makeProcedure = (route: RouteConfig) => {
+    const record: CapturedProcedure = { route }
+    capturedProcedures.push(record)
+
+    const chain = {
+      input: vi.fn(() => chain),
+      output: vi.fn(() => chain),
+      errors: vi.fn(() => chain),
+      handler: vi.fn((fn: (...args: any[]) => any) => {
+        record.handler = fn
+        return { handler: fn }
+      }),
+    }
+    return chain
+  }
+
+  const workspaceTokenAuthAPI = {
+    route: vi.fn((config: RouteConfig) => makeProcedure(config)),
+  }
+
+  return {
+    workspaceTokenAuthAPIForScope: vi.fn(
+      (_scope: string) => workspaceTokenAuthAPI,
+    ),
+    capturedProcedures,
+  }
+})
+
+vi.mock("@/orpc", () => ({ workspaceTokenAuthAPIForScope }))
+
+const conversationService = {
+  findByOrFail: vi.fn(),
+  resolveContactInboxForConversation: vi.fn(),
+}
+const messageService = {
+  findByIdWithUrls: vi.fn(),
+  createOutgoing: vi.fn(),
+}
+const resolveTemplateParams = vi.fn()
+vi.mock("@chatbotx.io/business", () => ({
+  conversationService,
+  messageService,
+  resolveTemplateParams,
+}))
+
+vi.mock("@chatbotx.io/business/errors", () => ({
+  BROADCAST_PLAN_LIMIT_CODE: "broadcastPlanLimit",
+  notFoundException: (message: string) => new Error(message),
+}))
+
+const listMessages = vi.fn()
+vi.mock("@/features/messages/queries", () => ({ listMessages }))
+
+const requestCallPermission = vi.fn()
+vi.mock(
+  "@/features/integration-whatsapp/calling/lib/request-call-permission",
+  () => ({
+    ENGLISH_CALL_PERMISSION_MESSAGES: { notFound: "nf" },
+    requestWhatsappCallPermission: requestCallPermission,
+  }),
+)
+
+const sendTemplate = vi.fn()
+vi.mock("@/features/messages/lib/send-whatsapp-template", () => ({
+  sendWhatsappTemplateToConversation: sendTemplate,
+}))
+
+const editMessage = vi.fn()
+vi.mock("@/features/messages/actions/edit-message.action", () => ({
+  editMessage,
+}))
+
+const deleteMessage = vi.fn()
+vi.mock("@/features/messages/actions/delete-message.action", () => ({
+  deleteMessage,
+}))
+
+const changeMessageAttributes = vi.fn()
+vi.mock("@/features/messages/actions/change-message-attributes.action", () => ({
+  changeMessageAttributes,
+}))
+
+const getWhatsappFlowResponseView = vi.fn()
+vi.mock("@/features/messages/lib/get-whatsapp-flow-response", () => ({
+  getWhatsappFlowResponseView,
+}))
+
+vi.mock("@/lib/workspace-quota", () => ({
+  assertWorkspaceNotBlocked: vi.fn(),
+}))
+
+await import("@/features/messages/api/public")
+
+const findProcedure = (method: string, path: string) => {
+  const found = capturedProcedures.find(
+    (p) => p.route.method === method && p.route.path === path,
+  )
+  if (!found) {
+    throw new Error(`No procedure registered for ${method} ${path}`)
+  }
+  return found
+}
+
+const scopeArgAtImport = workspaceTokenAuthAPIForScope.mock.calls[0]?.[0]
+const context = { workspace: { id: "ws-1", ownerId: "owner-1" } }
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
+
+test("registers the messages public router under the inbox scope", () => {
+  expect(scopeArgAtImport).toBe("inbox")
+})
+
+describe("GET /v1/conversations/{conversationId}/messages", () => {
+  const procedure = findProcedure(
+    "GET",
+    "/v1/conversations/{conversationId}/messages",
+  )
+
+  test("validates the conversation exists, then delegates to listMessages", async () => {
+    conversationService.findByOrFail.mockResolvedValueOnce({ id: "conv-1" })
+    listMessages.mockResolvedValueOnce({
+      data: [],
+      nextCursor: null,
+      prevCursor: null,
+    })
+
+    const result = await procedure.handler?.({
+      context,
+      input: { conversationId: "conv-1", perPage: 20 },
+    })
+
+    expect(conversationService.findByOrFail).toHaveBeenCalledWith({
+      where: { id: "conv-1", workspaceId: "ws-1" },
+    })
+    expect(listMessages).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      conversationId: "conv-1",
+      perPage: 20,
+      cursor: undefined,
+    })
+    expect(result).toEqual({ data: [], nextCursor: null, prevCursor: null })
+  })
+
+  test("propagates the 404 when the conversation does not exist", async () => {
+    conversationService.findByOrFail.mockRejectedValueOnce(
+      new Error("Conversation not found"),
+    )
+
+    await expect(
+      procedure.handler?.({
+        context,
+        input: { conversationId: "conv-missing", perPage: 20 },
+      }),
+    ).rejects.toThrow("Conversation not found")
+    expect(listMessages).not.toHaveBeenCalled()
+  })
+})
+
+describe("GET /v1/conversations/{conversationId}/messages/{messageId}", () => {
+  const procedure = findProcedure(
+    "GET",
+    "/v1/conversations/{conversationId}/messages/{messageId}",
+  )
+
+  test("delegates to messageService.findByIdWithUrls", async () => {
+    const createdAt = new Date("2026-01-01T00:00:00Z")
+    messageService.findByIdWithUrls.mockResolvedValueOnce({
+      id: "msg-1",
+      conversationId: "conv-1",
+    })
+
+    const result = await procedure.handler?.({
+      context,
+      input: { conversationId: "conv-1", messageId: "msg-1", createdAt },
+    })
+
+    expect(messageService.findByIdWithUrls).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      id: "msg-1",
+      createdAt,
+    })
+    expect(result).toEqual({ id: "msg-1", conversationId: "conv-1" })
+  })
+
+  test("404s when the message belongs to a different conversation", async () => {
+    const createdAt = new Date("2026-01-01T00:00:00Z")
+    messageService.findByIdWithUrls.mockResolvedValueOnce({
+      id: "msg-1",
+      conversationId: "conv-other",
+    })
+
+    await expect(
+      procedure.handler?.({
+        context,
+        input: { conversationId: "conv-1", messageId: "msg-1", createdAt },
+      }),
+    ).rejects.toThrow("Message not found")
+  })
+})
+
+describe("GET /v1/conversations/{conversationId}/messages/{messageId}/flow-response", () => {
+  const procedure = findProcedure(
+    "GET",
+    "/v1/conversations/{conversationId}/messages/{messageId}/flow-response",
+  )
+
+  test("labels the response through the shared lib, scoped to the token's workspace", async () => {
+    const createdAt = new Date("2026-10-01T00:00:00Z")
+    const view = {
+      fields: [{ key: "name", label: "Name", kind: "text", value: "An" }],
+      labelSource: "whatsappFlow",
+    }
+    getWhatsappFlowResponseView.mockResolvedValueOnce(view)
+
+    const result = await procedure.handler?.({
+      context,
+      input: { conversationId: "conv-1", messageId: "msg-1", createdAt },
+    })
+
+    expect(getWhatsappFlowResponseView).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      conversationId: "conv-1",
+      messageId: "msg-1",
+      createdAt,
+    })
+    expect(result).toBe(view)
+  })
+})
+
+describe("POST /v1/conversations/{conversationId}/messages", () => {
+  const procedure = findProcedure(
+    "POST",
+    "/v1/conversations/{conversationId}/messages",
+  )
+
+  test("sends without a user — a workspace token has no user", async () => {
+    conversationService.findByOrFail.mockResolvedValueOnce({
+      id: "conv-1",
+      contactId: "contact-1",
+    })
+    conversationService.resolveContactInboxForConversation.mockResolvedValueOnce(
+      { id: "contact-inbox-1" },
+    )
+    messageService.createOutgoing.mockResolvedValueOnce({ id: "msg-1" })
+
+    const input = { conversationId: "conv-1", text: "hello" }
+    const result = await procedure.handler?.({ context, input })
+
+    expect(
+      conversationService.resolveContactInboxForConversation,
+    ).toHaveBeenCalledWith({
+      conversation: { id: "conv-1", contactId: "contact-1" },
+      workspaceId: "ws-1",
+      inboxId: undefined,
+    })
+    expect(messageService.createOutgoing).toHaveBeenCalledWith({
+      conversation: { id: "conv-1", contactId: "contact-1" },
+      contactInbox: { id: "contact-inbox-1" },
+      input,
+    })
+    expect(messageService.createOutgoing.mock.calls[0][0]).not.toHaveProperty(
+      "user",
+    )
+    expect(result).toEqual({ id: "msg-1" })
+  })
+})
+
+describe("PUT /v1/conversations/{conversationId}/messages/{messageId}", () => {
+  const procedure = findProcedure(
+    "PUT",
+    "/v1/conversations/{conversationId}/messages/{messageId}",
+  )
+
+  test("delegates to editMessage", async () => {
+    editMessage.mockResolvedValueOnce({ success: true })
+
+    const createdAt = new Date("2026-01-01T00:00:00Z")
+    const result = await procedure.handler?.({
+      context,
+      input: {
+        conversationId: "conv-1",
+        messageId: "msg-1",
+        createdAt,
+        newText: "edited",
+      },
+    })
+
+    expect(editMessage).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      conversationId: "conv-1",
+      parsedInput: {
+        conversationId: "conv-1",
+        messageId: "msg-1",
+        createdAt,
+        newText: "edited",
+      },
+    })
+    expect(result).toEqual({ success: true })
+  })
+})
+
+describe("DELETE /v1/conversations/{conversationId}/messages/{messageId}", () => {
+  const procedure = findProcedure(
+    "DELETE",
+    "/v1/conversations/{conversationId}/messages/{messageId}",
+  )
+
+  test("delegates to deleteMessage with the id field it expects", async () => {
+    // The route's input is `messageIdWithCreatedAtParam` — the handler maps
+    // its `messageId` field onto the `id` field `deleteMessage` expects.
+    const createdAt = new Date("2026-01-01T00:00:00Z")
+
+    await procedure.handler?.({
+      context,
+      input: { conversationId: "conv-1", messageId: "msg-1", createdAt },
+    })
+
+    expect(deleteMessage).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      conversationId: "conv-1",
+      parsedInput: { id: "msg-1", createdAt },
+    })
+  })
+})
+
+describe("POST /v1/conversations/{conversationId}/messages/{messageId}/attributes", () => {
+  const procedure = findProcedure(
+    "POST",
+    "/v1/conversations/{conversationId}/messages/{messageId}/attributes",
+  )
+
+  test("delegates to changeMessageAttributes", async () => {
+    const createdAt = new Date("2026-01-01T00:00:00Z")
+
+    await procedure.handler?.({
+      context,
+      input: {
+        conversationId: "conv-1",
+        messageId: "msg-1",
+        createdAt,
+        liked: true,
+      },
+    })
+
+    expect(changeMessageAttributes).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      conversationId: "conv-1",
+      parsedInput: {
+        conversationId: "conv-1",
+        messageId: "msg-1",
+        createdAt,
+        liked: true,
+      },
+    })
+  })
+})
+
+describe("POST /v1/conversations/{conversationId}/whatsapp-template", () => {
+  const procedure = findProcedure(
+    "POST",
+    "/v1/conversations/{conversationId}/whatsapp-template",
+  )
+
+  test("queues the template for a conversation of the token's workspace", async () => {
+    sendTemplate.mockResolvedValue(undefined)
+
+    await procedure.handler?.({
+      context: { workspace: { id: "workspace-1" } },
+      input: {
+        conversationId: "9",
+        templateId: "5",
+        templateData: { params: [] },
+        inboxId: "3",
+      },
+    })
+
+    expect(sendTemplate).toHaveBeenCalledWith({
+      workspaceId: "workspace-1",
+      conversationId: "9",
+      request: { templateId: "5", templateData: { params: [] }, inboxId: "3" },
+    })
+  })
+
+  test("answers 202 because delivery is asynchronous", () => {
+    expect(procedure.route.successStatus).toBe(202)
+  })
+
+  test("builds templateData from flat templateParams", async () => {
+    const nested = { body: [{ type: "text", text: "Ada" }] }
+    resolveTemplateParams.mockResolvedValueOnce(nested)
+    sendTemplate.mockResolvedValue(undefined)
+
+    await procedure.handler?.({
+      context: { workspace: { id: "workspace-1" } },
+      input: {
+        conversationId: "9",
+        templateId: "5",
+        templateParams: { "body.1": "Ada" },
+      },
+    })
+
+    expect(resolveTemplateParams).toHaveBeenCalledWith({
+      workspaceId: "workspace-1",
+      channel: "whatsapp",
+      templateId: "5",
+      values: { "body.1": "Ada" },
+      field: "templateParams",
+    })
+    expect(sendTemplate).toHaveBeenCalledWith({
+      workspaceId: "workspace-1",
+      conversationId: "9",
+      request: { templateId: "5", templateData: nested },
+    })
+  })
+
+  test("a template outside the workspace is not queued", async () => {
+    resolveTemplateParams.mockRejectedValueOnce(
+      Object.assign(new Error("Template not found"), { code: "notFound" }),
+    )
+
+    await expect(
+      procedure.handler?.({
+        context: { workspace: { id: "workspace-1" } },
+        input: {
+          conversationId: "9",
+          templateId: "x",
+          templateParams: { "body.1": "Ada" },
+        },
+      }),
+    ).rejects.toMatchObject({ code: "notFound" })
+    expect(sendTemplate).not.toHaveBeenCalled()
+  })
+})
+
+describe("POST /v1/conversations/{conversationId}/whatsapp-call-permission", () => {
+  const procedure = findProcedure(
+    "POST",
+    "/v1/conversations/{conversationId}/whatsapp-call-permission",
+  )
+
+  test("sends the request for a conversation of the workspace, with no agent", async () => {
+    conversationService.findByOrFail.mockResolvedValue({ id: "9" })
+    requestCallPermission.mockResolvedValue(undefined)
+
+    const result = await procedure.handler?.({
+      context: { workspace: { id: "workspace-1" } },
+      input: { conversationId: "9", text: "May we call you?", inboxId: "3" },
+    })
+
+    expect(conversationService.findByOrFail).toHaveBeenCalledWith({
+      where: { id: "9", workspaceId: "workspace-1" },
+    })
+    expect(requestCallPermission).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: "workspace-1",
+        text: "May we call you?",
+        inboxId: "3",
+      }),
+    )
+    expect(requestCallPermission.mock.calls[0]?.[0]).not.toHaveProperty("user")
+    expect(result).toEqual({ queued: true })
+  })
+})

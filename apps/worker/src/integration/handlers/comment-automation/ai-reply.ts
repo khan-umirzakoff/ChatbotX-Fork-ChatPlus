@@ -1,3 +1,4 @@
+import { commentAutomationAnalyticsService } from "@chatbotx.io/analytics"
 import {
   aiAgentService,
   contactInboxService,
@@ -5,15 +6,34 @@ import {
   workspaceService,
 } from "@chatbotx.io/business"
 import type { IntegrationType } from "@chatbotx.io/database/partials"
-import type { IntegrationJobCommentAIReply } from "@chatbotx.io/worker-config"
+import type { ContactInboxModel } from "@chatbotx.io/database/types"
+import type { AIJobCommentAIReply } from "@chatbotx.io/worker-config"
 import { logger } from "../../../lib/logger"
 import { integrationService } from "../../../services/integrations"
-import { generateAIReplyText } from "../automated-response/replies"
+import { IntegrationNotFoundError } from "../../../services/orphaned-integration-cleanup"
+import {
+  createGuardedCommentInputMessage,
+  generateAIReplyText,
+} from "../automated-response/replies"
+import type { CommentAutomationChannelType } from "./channel-type"
+import { rollbackCommentDedup } from "./dedup"
 import {
   PRIVATE_REPLY_TEXT_SENDERS,
   type PrivateReplyAuth,
+  recordInlinePrivateReply,
 } from "./private-reply"
 import { postPublicCommentReply } from "./public-reply"
+
+/**
+ * Channels whose comments reach the agent inside an explicit untrusted-data
+ * envelope. Meta-channel comments keep the raw shape they have always been sent
+ * with, so this stays an allowlist rather than a negated check — a new channel
+ * defaults to the guarded path only once someone decides it should.
+ */
+const GUARDED_COMMENT_CHANNELS = new Set<CommentAutomationChannelType>([
+  "threads",
+  "tiktok",
+])
 
 /**
  * Generate an AI agent reply for a Facebook comment and deliver it on the
@@ -22,12 +42,129 @@ import { postPublicCommentReply } from "./public-reply"
  * the DM auto-responder pipeline) so the selected agent and the public/private
  * channel are both honoured. Runs as its own delayed job so the AI call never
  * blocks the comment-automation loop.
+ *
+ * Every bail-out below releases the dedup row the dispatcher wrote when it
+ * enqueued this job (`data.commentDedup`) — otherwise a comment that never got
+ * an answer would still count as replied and `replyOncePerUserPerPost` would
+ * block the contact for good. A *thrown* failure deliberately keeps the row:
+ * BullMQ retries the job, and releasing it mid-retry would let the contact's
+ * next comment trigger a second reply.
+ *
+ * Each bail-out also closes out the analytics event the dispatcher opened with
+ * a null `replyText` (see `CommentReplyOutcome`), and `outcome` decides how:
+ *
+ * - `failed` — something went wrong the workspace needs to see (missing agent,
+ *   agent produced nothing). The row becomes a `failed` one carrying the
+ *   reason. Without this, an AI reply that silently produced nothing would show
+ *   on the analytics page as a successful reply — the exact class of failure
+ *   the Error Logs panel exists to surface.
+ * - `skipped` — the automation deliberately declined (outside business hours,
+ *   nothing to answer). The row is DELETED. `CommentAutomationEvent` only
+ *   counts work the automation actually attempted (see the partial's docblock),
+ *   so a skip must leave no trace rather than one Error Logs row per off-hours
+ *   comment.
  */
+async function abandonAIReply(props: {
+  data: AIJobCommentAIReply["data"]
+  reason: string
+  outcome: "skipped" | "failed"
+}): Promise<void> {
+  await Promise.all([
+    rollbackCommentDedup({
+      dedup: props.data.commentDedup,
+      commentId: props.data.commentId,
+      reason: props.reason,
+    }),
+    props.outcome === "skipped"
+      ? commentAutomationAnalyticsService.discardEvent({
+          automationId: props.data.automationId,
+          commentId: props.data.commentId,
+          replyChannel: props.data.replyChannel,
+        })
+      : commentAutomationAnalyticsService.settleEvent({
+          automationId: props.data.automationId,
+          commentId: props.data.commentId,
+          replyChannel: props.data.replyChannel,
+          status: "failed",
+          errorDetail: props.reason,
+        }),
+  ])
+}
+
 export async function processCommentAIReply(
-  data: IntegrationJobCommentAIReply["data"],
+  data: AIJobCommentAIReply["data"],
+  // Whether rethrowing from here leaves BullMQ another attempt. Defaults to
+  // terminal so an unaware caller records the failure rather than losing it —
+  // same contract as `sendMessageToChannel`.
+  willRetryOnThrow = false,
 ): Promise<void> {
-  if (!data.message?.trim()) {
+  // Filled in as soon as the agent produces text, so a failure in the *send*
+  // still records what the customer was supposed to receive while a failure
+  // before generation records no text at all.
+  const generatedTextRef: { text?: string } = {}
+
+  try {
+    await generateAndDeliverAIReply(data, generatedTextRef)
+  } catch (err) {
+    // Rethrown either way so BullMQ keeps its retry and the dedup row stays put
+    // (see the docblock above). Only a terminal failure records the row —
+    // otherwise one dead-lettering job writes an Error Logs row per attempt.
+    //
+    // The whole body is covered, not just the send: a lookup or a generation
+    // that throws (a bad provider key reaching `createReplyModel`, a variable
+    // lookup failing) used to leave the row at `sent` with a null `replyText`
+    // forever, which is the exact failure class `abandonAIReply` exists for.
+    if (isTerminalAIReplyFailure(err, willRetryOnThrow)) {
+      await settleAIReplyFailed({
+        data,
+        text: generatedTextRef.text,
+        error: err,
+      })
+    }
+    throw err
+  }
+}
+
+/**
+ * BullMQ will not run this job again after the current attempt.
+ *
+ * `willRetryOnThrow` alone is not enough. `runWithOrphanedIntegrationCleanup`
+ * turns an `IntegrationNotFoundError` into a BullMQ `UnrecoverableError`, but it
+ * wraps this handler from the *outside* (`ai-agent/worker.ts`), so the catch
+ * here only ever sees the original error — and an attempt that is nominally
+ * "1 of 2" is in fact the last one.
+ */
+function isTerminalAIReplyFailure(
+  error: unknown,
+  willRetryOnThrow: boolean,
+): boolean {
+  return !willRetryOnThrow || error instanceof IntegrationNotFoundError
+}
+
+/** The body of `processCommentAIReply`, so one catch covers every step. */
+async function generateAndDeliverAIReply(
+  data: AIJobCommentAIReply["data"],
+  generatedTextRef: { text?: string },
+): Promise<void> {
+  const message = data.message?.trim()
+  if (!message) {
     // Image/sticker-only comment: nothing for the agent to answer.
+    await abandonAIReply({
+      data,
+      reason: "comment has no text",
+      outcome: "skipped",
+    })
+    return
+  }
+
+  // Resolved before generation so an undeliverable private reply (Threads has
+  // no private-reply API) skips without burning an AI call.
+  const sendPrivateReplyText = PRIVATE_REPLY_TEXT_SENDERS[data.channelType]
+  if (data.replyChannel === "private" && !sendPrivateReplyText) {
+    logger.info(
+      { commentId: data.commentId, capability: "private reply unsupported" },
+      "comment AI reply skipped: unsupported capability",
+    )
     return
   }
 
@@ -45,6 +182,12 @@ export async function processCommentAIReply(
       { workspaceId: data.workspaceId, commentId: data.commentId },
       "comment AI reply skipped: workspace outside active hours",
     )
+    // A deliberate business-hours skip, not a failure: no event row survives.
+    await abandonAIReply({
+      data,
+      reason: "workspace outside active hours",
+      outcome: "skipped",
+    })
     return
   }
 
@@ -57,6 +200,11 @@ export async function processCommentAIReply(
       },
       "comment AI reply skipped: agent not found",
     )
+    await abandonAIReply({
+      data,
+      reason: "agent not found",
+      outcome: "failed",
+    })
     return
   }
 
@@ -65,6 +213,11 @@ export async function processCommentAIReply(
       { contactInboxId: data.contactInboxId, commentId: data.commentId },
       "comment AI reply skipped: contactInbox not found",
     )
+    await abandonAIReply({
+      data,
+      reason: "contactInbox not found",
+      outcome: "failed",
+    })
     return
   }
 
@@ -73,13 +226,28 @@ export async function processCommentAIReply(
       { conversationId: data.conversationId, commentId: data.commentId },
       "comment AI reply skipped: conversation not found",
     )
+    await abandonAIReply({
+      data,
+      reason: "conversation not found",
+      outcome: "failed",
+    })
     return
   }
 
   const generated = await generateAIReplyText({
     conversation,
     contactInbox,
-    messages: [{ role: "user", content: data.message }],
+    messages: [
+      // Threads and TikTok comments are wrapped in an explicit untrusted-data
+      // envelope before reaching the agent. Meta-channel comments keep the raw
+      // shape they have always been sent with.
+      GUARDED_COMMENT_CHANNELS.has(data.channelType)
+        ? createGuardedCommentInputMessage({
+            channel: data.channelType,
+            comment: message,
+          })
+        : { role: "user", content: message },
+    ],
     aiAgent: agent,
   })
   if (!generated?.text) {
@@ -91,12 +259,23 @@ export async function processCommentAIReply(
       },
       "comment AI reply skipped: no text produced",
     )
+    await abandonAIReply({
+      data,
+      reason: "agent produced no text",
+      outcome: "failed",
+    })
     return
   }
+  generatedTextRef.text = generated.text
 
   if (data.replyChannel === "public") {
+    // Only writes the message row and enqueues the send — the Graph API call
+    // happens in the chat worker, which settles this same event row itself if
+    // the send terminally fails (`settleCommentAutomationFailure`). A throw here
+    // is therefore the local half only.
     await postPublicCommentReply({
       text: generated.text,
+      automationId: data.automationId,
       commentId: data.commentId,
       conversationId: data.conversationId,
       contactInboxId: data.contactInboxId,
@@ -107,19 +286,129 @@ export async function processCommentAIReply(
         ? new Date(data.parentMessageCreatedAt)
         : null,
     })
+  } else {
+    // Private DM: sent inline, so a throw here IS the delivery failure.
+    // Unreachable without a sender in practice — the early guard above
+    // already skips before generation — but re-checked here in case a future
+    // call site skips that gate, the same defence-in-depth `executePrivateReply`
+    // applies to its own checks.
+    if (!sendPrivateReplyText) {
+      return
+    }
+
+    const { integrationRow } =
+      await integrationService.identifyInboxAndIntegrationAuthFromIdentifier(
+        data.integrationType as IntegrationType,
+        data.integrationIdentifier,
+      )
+
+    const sendResult = await sendPrivateReplyText(
+      integrationRow.auth as PrivateReplyAuth,
+      data.commentId,
+      generated.text,
+    )
+    await settleDeliveredPrivateAIReply({
+      data,
+      contactInbox,
+      text: generated.text,
+      sendResult,
+    })
     return
   }
 
-  // Private DM.
-  const { integrationRow } =
-    await integrationService.identifyInboxAndIntegrationAuthFromIdentifier(
-      data.integrationType as IntegrationType,
-      data.integrationIdentifier,
-    )
+  await settleAIReplySent({ data, text: generated.text })
+}
 
-  await PRIVATE_REPLY_TEXT_SENDERS[data.channelType](
-    integrationRow.auth as PrivateReplyAuth,
-    data.commentId,
-    generated.text,
-  )
+/**
+ * Bookkeeping for a private DM that already left. None of it may fail the
+ * job: a throw here would make BullMQ retry, regenerate the text and send the
+ * contact a second DM (with a second inbox row). A step that fails is logged
+ * and the rest still run — a stale analytics row beats a duplicate DM.
+ */
+async function settleDeliveredPrivateAIReply(props: {
+  data: AIJobCommentAIReply["data"]
+  contactInbox: ContactInboxModel
+  text: string
+  sendResult: unknown
+}): Promise<void> {
+  const { data, contactInbox, text, sendResult } = props
+  const logContext = {
+    automationId: data.automationId,
+    commentId: data.commentId,
+    workspaceId: data.workspaceId,
+  }
+
+  try {
+    // Inline send that no webhook settles: same reason `executePrivateReply`
+    // settles delivery here. The public branch is settled by the chat worker
+    // instead, once the Graph call lands.
+    await commentAutomationAnalyticsService.markDelivered({
+      automationId: data.automationId,
+      commentId: data.commentId,
+      replyChannel: "private",
+    })
+  } catch (err) {
+    logger.error(
+      { err, ...logContext },
+      "Failed to mark a sent AI private reply delivered",
+    )
+  }
+
+  try {
+    await settleAIReplySent({ data, text })
+  } catch (err) {
+    logger.error(
+      { err, ...logContext },
+      "Failed to settle a sent AI private reply",
+    )
+  }
+
+  await recordInlinePrivateReply({
+    channelType: data.channelType,
+    commentId: data.commentId,
+    contactInbox,
+    workspaceId: data.workspaceId,
+    text,
+    sendResult,
+  })
+}
+
+/** Lands the generated text on the event row the dispatcher opened. */
+function settleAIReplySent(props: {
+  data: AIJobCommentAIReply["data"]
+  text: string
+}): Promise<void> {
+  return commentAutomationAnalyticsService.settleEvent({
+    automationId: props.data.automationId,
+    commentId: props.data.commentId,
+    replyChannel: props.data.replyChannel,
+    status: "sent",
+    replyText: props.text,
+  })
+}
+
+/**
+ * A step that threw on the last attempt.
+ *
+ * `text` is omitted when the failure happened before generation produced
+ * anything — `settleEvent` is a partial update, so the row keeps its null
+ * `replyText` instead of being handed a fabricated empty one. When there IS
+ * text, it is written: an Error Logs row showing what the customer never
+ * received beats one with an empty reply, which reads as "the agent produced
+ * nothing" and hides that generation actually succeeded.
+ */
+function settleAIReplyFailed(props: {
+  data: AIJobCommentAIReply["data"]
+  text?: string
+  error: unknown
+}): Promise<void> {
+  return commentAutomationAnalyticsService.settleEvent({
+    automationId: props.data.automationId,
+    commentId: props.data.commentId,
+    replyChannel: props.data.replyChannel,
+    status: "failed",
+    ...(props.text === undefined ? {} : { replyText: props.text }),
+    errorDetail:
+      props.error instanceof Error ? props.error.message : String(props.error),
+  })
 }

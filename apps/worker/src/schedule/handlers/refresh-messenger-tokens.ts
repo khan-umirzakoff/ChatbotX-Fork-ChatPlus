@@ -1,10 +1,11 @@
 import { messengerIntegrationService } from "@chatbotx.io/business"
 import {
   integration as integrationMessenger,
+  isRevokedTokenError,
   type MessengerAuthValue,
 } from "@chatbotx.io/integration-messenger"
-import { distributedLock } from "@chatbotx.io/redis"
 import { logger } from "../../lib/logger"
+import { refreshWithErrorHandling, runRefreshBatch } from "./refresh-runner"
 
 const BATCH_SIZE = 50
 const REFRESH_LOCK_TIMEOUT_SECONDS = 10
@@ -17,38 +18,43 @@ async function refreshOne(integration: {
     return
   }
 
-  await distributedLock.runExclusive({
-    key: `auth:refresh:messenger:${integration.id}`,
-    timeoutInSeconds: REFRESH_LOCK_TIMEOUT_SECONDS,
-    fn: async () => {
-      try {
-        const current = await messengerIntegrationService.findByIdForWorkspace({
-          id: integration.id,
-          workspaceId: integration.workspaceId,
-        })
-        if (!current) {
-          return
-        }
-
-        const auth = current.auth as MessengerAuthValue
-        const newAuth = await integrationMessenger.refreshAuth?.({ auth })
-
-        await messengerIntegrationService.updateAuth({
-          id: integration.id,
-          workspaceId: integration.workspaceId,
-          auth: newAuth as MessengerAuthValue,
-        })
-      } catch (error) {
-        logger.error(
-          error,
-          `[refreshMessengerTokens] id=${integration.id} failed`,
-        )
-        await messengerIntegrationService.markTokenRefreshError(
-          integration.id,
-          error instanceof Error ? error.message : String(error),
-        )
+  await refreshWithErrorHandling<MessengerAuthValue>({
+    id: integration.id,
+    workspaceId: integration.workspaceId,
+    provider: "messenger",
+    label: "refreshMessengerTokens",
+    lockKey: `auth:refresh:messenger:${integration.id}`,
+    lockTimeout: REFRESH_LOCK_TIMEOUT_SECONDS,
+    refresh: async () => {
+      const current = await messengerIntegrationService.findByIdForWorkspace({
+        id: integration.id,
+        workspaceId: integration.workspaceId,
+      })
+      if (!current) {
+        return
       }
+
+      const auth = current.auth as MessengerAuthValue
+      const refreshedAuth = await integrationMessenger.refreshAuth?.({ auth })
+      if (!refreshedAuth) {
+        throw new Error("Messenger refreshAuth returned no auth")
+      }
+      return refreshedAuth
     },
+    apply: (newAuth) =>
+      messengerIntegrationService.updateAuth({
+        id: integration.id,
+        workspaceId: integration.workspaceId,
+        auth: newAuth,
+      }),
+    markError: (error) =>
+      messengerIntegrationService.markTokenRefreshError({
+        id: integration.id,
+        workspaceId: integration.workspaceId,
+        error: error instanceof Error ? error.message : String(error),
+        isRevoked: isRevokedTokenError(error),
+      }),
+    auditDetail: "auto-refreshed the Messenger channel token",
   })
 }
 
@@ -61,8 +67,5 @@ export async function refreshMessengerTokens(): Promise<void> {
   const integrations =
     await messengerIntegrationService.findAllForTokenRefresh()
 
-  for (let i = 0; i < integrations.length; i += BATCH_SIZE) {
-    const batch = integrations.slice(i, i + BATCH_SIZE)
-    await Promise.all(batch.map(refreshOne))
-  }
+  await runRefreshBatch(integrations, refreshOne, BATCH_SIZE)
 }

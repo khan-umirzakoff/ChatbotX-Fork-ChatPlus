@@ -78,4 +78,82 @@ describe("getCapiConnectionState", () => {
       }),
     ).toBe("disconnected")
   })
+
+  test("dataset saved but scope missing and no manual token awaits scope", () => {
+    expect(
+      getCapiConnectionState({
+        capiDisconnected: false,
+        hasManualCapiAccessToken: false,
+        hasCapiScope: false,
+        hasDatasetId: true,
+      }),
+    ).toBe("awaitingScope")
+  })
+
+  test("user disconnect overrides an awaiting-scope dataset", () => {
+    expect(
+      getCapiConnectionState({
+        capiDisconnected: true,
+        hasManualCapiAccessToken: false,
+        hasCapiScope: false,
+        hasDatasetId: true,
+      }),
+    ).toBe("disconnected")
+  })
+
+  test("manual token with dataset stays connectedCustom even without scope", () => {
+    expect(
+      getCapiConnectionState({
+        capiDisconnected: false,
+        hasManualCapiAccessToken: true,
+        hasCapiScope: false,
+        hasDatasetId: true,
+      }),
+    ).toBe("connectedCustom")
+  })
+
+  describe("capiScopeRequired: false", () => {
+    const base = {
+      capiDisconnected: false,
+      hasManualCapiAccessToken: false,
+      hasCapiScope: false,
+    }
+
+    test("dataset without scope is connectedOauth", () => {
+      expect(
+        getCapiConnectionState({
+          ...base,
+          hasDatasetId: true,
+          capiScopeRequired: false,
+        }),
+      ).toBe("connectedOauth")
+    })
+
+    test("no dataset stays disconnected", () => {
+      expect(
+        getCapiConnectionState({
+          ...base,
+          hasDatasetId: false,
+          capiScopeRequired: false,
+        }),
+      ).toBe("disconnected")
+    })
+
+    test("user disconnect still wins", () => {
+      expect(
+        getCapiConnectionState({
+          ...base,
+          capiDisconnected: true,
+          hasDatasetId: true,
+          capiScopeRequired: false,
+        }),
+      ).toBe("disconnected")
+    })
+
+    test("omitted keeps awaitingScope", () => {
+      expect(getCapiConnectionState({ ...base, hasDatasetId: true })).toBe(
+        "awaitingScope",
+      )
+    })
+  })
 })

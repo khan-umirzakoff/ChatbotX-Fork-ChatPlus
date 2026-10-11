@@ -11,18 +11,22 @@ import { Button } from "@chatbotx.io/ui/components/ui/button"
 import { Form } from "@chatbotx.io/ui/components/ui/form"
 import { Skeleton } from "@chatbotx.io/ui/components/ui/skeleton"
 import { SearchIcon, UserPlusIcon } from "lucide-react"
-import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useForm } from "react-hook-form"
 import { type GridComponents, Virtuoso } from "react-virtuoso"
 import { toast } from "sonner"
 import { useDebouncedCallback } from "use-debounce"
-import type { ConversationFilters } from "../chat/store/chat-store"
+import {
+  type ConversationFilters,
+  selectHasNextConversationPage,
+} from "../chat/store/chat-store"
 import { useChatStore } from "../chat/store/chat-store-provider"
 import { CreateContactDialog } from "../contacts/create-contact-dialog"
+import { useContactAssigneeOptions } from "../users/provider/user-hook"
 import { ConversationFilter } from "./conversation-filter"
 import ConversationItem from "./conversation-item"
+import { useConversationIdParam } from "./hooks/use-conversation-id-param"
 
 export default function ConversationList({
   canViewEmailAndPhone = true,
@@ -32,9 +36,7 @@ export default function ConversationList({
   workspaceId: string
 }) {
   const t = useTranslations()
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const conversationIdParam = useConversationIdParam()
   const {
     conversations,
     loadMoreConversations,
@@ -45,21 +47,35 @@ export default function ConversationList({
     isLoadingConversation,
     setActiveConversationId,
     initActiveConversationFromUrl,
+    isFirstLoadConversation,
   } = useChatStore((state) => state)
 
   const [showSearchInput, setShowSearchInput] = useState(false)
+  const contactAssigneeOptions = useContactAssigneeOptions({
+    autoGroup: false,
+  })
+  const assigneeOptionNameByValue = useMemo(
+    () =>
+      new Map(
+        contactAssigneeOptions.map((option) => [option.value, option.label]),
+      ),
+    [contactAssigneeOptions],
+  )
 
-  // Check if there are more pages to load
-  const hasNextPage =
-    conversations.length === 0 || nextCursorConversation !== null
+  const hasNextPage = selectHasNextConversationPage({
+    isFirstLoadConversation,
+    nextCursorConversation,
+  })
 
-  const [page, setPage] = useState(1)
-  // biome-ignore lint/correctness/useExhaustiveDependencies: wip
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs once on mount and is skipped entirely when the server seed already loaded the first page (isFirstLoadConversation === false)
   useEffect(() => {
+    if (!isFirstLoadConversation) {
+      return
+    }
     loadMoreConversations(workspaceId).catch(() => {
       toast.error(t("messages.errorLoadingData"))
     })
-  }, [page])
+  }, [])
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount to resolve deep-linked conversation
   useEffect(() => {
@@ -69,27 +85,16 @@ export default function ConversationList({
   // Load more items when reaching the end of the list
   const loadMoreItems = () => {
     if (!isLoadingConversation && hasNextPage) {
-      setPage((prev) => prev + 1)
+      loadMoreConversations(workspaceId).catch(() => {
+        toast.error(t("messages.errorLoadingData"))
+      })
     }
-  }
-
-  const removeConversationIdFromUrl = () => {
-    const params = new URLSearchParams(searchParams.toString())
-    if (!params.has("conversationId")) {
-      return
-    }
-
-    params.delete("conversationId")
-    const queryString = params.toString()
-    router.replace(queryString ? `?${queryString}` : pathname)
   }
 
   const handleChange = useDebouncedCallback(() => {
-    removeConversationIdFromUrl()
+    conversationIdParam.clear()
     resetState()
-    loadMoreConversations(workspaceId, {
-      respectUrlConversationId: false,
-    }).catch(() => {
+    loadMoreConversations(workspaceId).catch(() => {
       toast.error(t("messages.errorLoadingData"))
     })
   }, 300)
@@ -118,8 +123,8 @@ export default function ConversationList({
 
   return (
     <Form {...form}>
-      <form className="flex h-full flex-col">
-        <div className="mb-2 flex items-center gap-1">
+      <form className="flex h-full min-h-0 flex-col">
+        <div className="mb-2 flex shrink-0 items-center gap-1">
           <SelectField
             name="botCategory"
             options={[
@@ -153,34 +158,41 @@ export default function ConversationList({
           <ConversationFilter canViewEmailAndPhone={canViewEmailAndPhone} />
         </div>
 
-        <div className="flex-1">
-          {showSearchInput && (
-            <InputField
-              className="mb-2"
-              name="keyword"
-              placeholder={t("actions.search")}
-              {...{
-                onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault()
-                  }
-                },
-              }}
-            />
-          )}
+        {/* A sibling of the scroller, not a child of it: inside the `flex-1`
+            block this would stack on top of Virtuoso's `height: 100%` scroller
+            and overflow the pane by its own height. */}
+        {showSearchInput && (
+          <InputField
+            formItemClassName="mb-2 shrink-0"
+            name="keyword"
+            placeholder={t("actions.search")}
+            {...{
+              onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
+                if (event.key === "Enter") {
+                  event.preventDefault()
+                }
+              },
+            }}
+          />
+        )}
+
+        {/* `min-h-0` for the same reason as the message list: Virtuoso's
+            scroller is `height: 100%` and would otherwise floor this item at
+            the full list height. */}
+        <div className="min-h-0 flex-1">
           <Virtuoso
             components={{
               List: ConversationListList,
               Footer: ConversationListFooter,
             }}
+            computeItemKey={(_, item) => item.id}
             data={conversations}
             itemContent={(_, item) => (
               <ConversationItem
+                assigneeOptionNameByValue={assigneeOptionNameByValue}
                 conversation={item}
                 onSelect={() => {
-                  const params = new URLSearchParams(searchParams.toString())
-                  params.set("conversationId", item.id.toString())
-                  router.replace(`?${params.toString()}`)
+                  conversationIdParam.set(item.id.toString())
                   setActiveConversationId(item.id)
                 }}
               />

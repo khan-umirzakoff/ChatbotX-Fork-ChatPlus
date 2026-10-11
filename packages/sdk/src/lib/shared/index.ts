@@ -1,11 +1,17 @@
 import type { ContextQueue } from "./context"
-import type { IncomingContact, IncomingMessage } from "./message"
+import type {
+  EchoOrigin,
+  IncomingContact,
+  IncomingMessage,
+  ThreadControlReceiveInfo,
+} from "./message"
 
 export * from "./context"
 export * from "./message"
 export * from "./meta-messaging"
 export * from "./mime-types"
 export * from "./profile-fields"
+export * from "./recording-content-type"
 
 export type Handler<I, O> = (props: I) => Promise<O>
 
@@ -43,6 +49,12 @@ export type MessageReferral = {
   videoUrl?: string | null
   productId?: string | null
   flowId?: string | null
+  gclid?: string | null
+  gbraid?: string | null
+  googleCampaignId?: string | null
+  googleAdGroupId?: string | null
+  googleAdId?: string | null
+  googleClickReceivedAt?: string | null
   raw?: Record<string, unknown>
 }
 
@@ -56,6 +68,18 @@ export type ReceivedMessageResult = {
   referralSource?: string | null
   referral?: MessageReferral | null
   buttonTitle?: string | null
+  /**
+   * Origin of an outgoing echo, when the channel can tell. Unset or null
+   * means "not an echo" or "unknown", which the worker treats as first-party.
+   */
+  echoOrigin?: EchoOrigin | null
+  /** Sending app id on an echo, for diagnostics; null when not an echo or unknown. */
+  echoAppId?: string | null
+  /**
+   * Conversation-routing metadata of this delivery. Set only by channels that
+   * support routing (WhatsApp); absent means "no routing information".
+   */
+  threadControl?: ThreadControlReceiveInfo
 }
 
 /**
@@ -63,8 +87,8 @@ export type ReceivedMessageResult = {
  * public or private reply. Carries the triggering comment's id so the first
  * outgoing message of the run is delivered as a reply to that specific
  * comment instead of a normal flow message. Forwarded across every
- * re-enqueued sendFlow job until consumed by the first message-producing
- * step, then dropped.
+ * re-enqueued sendFlow job; a `private` one is claimed by the first
+ * message-producing step and then rides on marked `spent`.
  *
  * `replyChannel` picks the delivery mechanism for that first message:
  * - `"public"`: post it as a public comment reply (`comment.sendComment`),
@@ -79,4 +103,24 @@ export type ReceivedMessageResult = {
 export type CommentAnchor = {
   commentId: string
   replyChannel: "public" | "private"
+  /**
+   * The comment automation this reply belongs to, when one triggered it. Rides
+   * along so a `flow` reply can report its own delivery and clicks: the anchor
+   * is the only thing that survives the hop into the flow runner, and unlike a
+   * `Message` row it is also present for the private branch, which sends
+   * straight through the Send API and writes no message.
+   *
+   * Absent for a comment reply an agent sent by hand from the inbox.
+   */
+  automationId?: string
+  /**
+   * `private` only: the comment's single anchored DM has already been sent by
+   * an earlier message in this run. Every later message must go out as a normal
+   * DM, which Meta only accepts inside the 24-hour window the contact's own
+   * message opens — a comment does not open one. The anchor keeps travelling
+   * so the channel handler can tell that case apart from a plain flow send and
+   * report why the rest of the flow never arrived, instead of letting the Send
+   * API reject it into a swallowed error.
+   */
+  spent?: boolean
 }

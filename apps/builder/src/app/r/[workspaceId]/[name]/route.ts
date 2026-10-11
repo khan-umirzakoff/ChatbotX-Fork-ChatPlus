@@ -1,11 +1,17 @@
-import { flowVersionService } from "@chatbotx.io/business"
-import { db } from "@chatbotx.io/database/client"
+import {
+  flowVersionService,
+  magicLinkService,
+  resolveTenantSettings,
+} from "@chatbotx.io/business"
+import { wrapOpenLinkUrl } from "@chatbotx.io/business/open-link"
+import { contactInboxRepository } from "@chatbotx.io/database/repositories"
 import { emit } from "@chatbotx.io/event-bus"
 import {
   clickTypeSchema,
   decodeButtonPayload,
   type FlowNode,
   flowEventTypeSchema,
+  matchDeepLinkApp,
   resolveFlowActionTarget,
 } from "@chatbotx.io/flow-config"
 import { interpolate } from "@chatbotx.io/variables"
@@ -27,12 +33,7 @@ export const GET = async (
     )
   }
 
-  const row = await db.query.magicLinkModel.findFirst({
-    where: {
-      workspaceId,
-      name,
-    },
-  })
+  const row = await magicLinkService.findByName({ workspaceId, name })
 
   if (!row) {
     return NextResponse.json({ message: "Not found" }, { status: 404 })
@@ -50,10 +51,34 @@ export const GET = async (
     )
   }
 
+  /**
+   * A magic link's destination is only known at click time, and the send path
+   * deliberately leaves `/r/…` URLs unwrapped so `appendCodeToMagicLink` can
+   * still attach `?code=`. The deep-link detour therefore has to be applied
+   * here instead — otherwise a magic link pointing at `zalo.me/g/…` stays a
+   * blank page inside Messenger's webview.
+   */
+  const redirectToDestination = async (channel?: string) => {
+    if (!matchDeepLinkApp(destination)) {
+      return NextResponse.redirect(destination, 302)
+    }
+    const { appUrl } = await resolveTenantSettings({ workspaceId })
+    // Through `wrapOpenLinkUrl`, not `buildOpenLinkUrl`, so the self-channel
+    // exemption applies here too: a Zalo contact tapping a `zalo.me` magic link
+    // should keep opening it directly rather than gaining an interstitial.
+    // `channel` is only known once the button payload has resolved a contact
+    // inbox; before that the link is wrapped, which is the best available
+    // answer with no caller identity in hand.
+    return NextResponse.redirect(
+      wrapOpenLinkUrl({ appUrl, workspaceId, url: destination, channel }),
+      302,
+    )
+  }
+
   const code = request.nextUrl.searchParams.get("code")
 
   if (!code) {
-    return NextResponse.redirect(destination, 302)
+    return await redirectToDestination()
   }
 
   // Decode the button payload
@@ -68,13 +93,8 @@ export const GET = async (
     )
   }
 
-  const contactInbox = await db.query.contactInboxModel.findFirst({
-    where: {
-      id: decodedButton.contactInboxId,
-    },
-    with: {
-      conversation: true,
-    },
+  const contactInbox = await contactInboxRepository.findByIdWithConversation({
+    id: decodedButton.contactInboxId,
   })
 
   // `ContactInbox` has no `workspaceId` of its own and this id arrives inside the
@@ -98,7 +118,7 @@ export const GET = async (
       },
       "Magic link click could not be attributed: contact inbox missing or outside this workspace",
     )
-    return NextResponse.redirect(destination, 302)
+    return await redirectToDestination()
   }
 
   // The payload pins a version only when the run that sent the message was
@@ -125,7 +145,7 @@ export const GET = async (
       },
       "Magic link click could not be attributed: no flow version resolved",
     )
-    return NextResponse.redirect(destination, 302)
+    return await redirectToDestination(contactInbox.channel)
   }
 
   // Quick replies use the same editor as step buttons, so they can also carry a
@@ -147,7 +167,7 @@ export const GET = async (
       },
       "Magic link click could not be attributed: button not in the live version",
     )
-    return NextResponse.redirect(destination, 302)
+    return await redirectToDestination(contactInbox.channel)
   }
 
   await emit(flowEventTypeSchema.enum["flow:clicked"], {
@@ -164,11 +184,12 @@ export const GET = async (
       buttonId: decodedButton.buttonId,
       broadcastId: decodedButton.broadcastId,
       sequenceStepId: decodedButton.sequenceStepId,
+      commentAutomationId: decodedButton.commentAutomationId,
       magicLinkId: row.id,
       clickType: clickTypeSchema.enum.magic_link,
     },
     occurredAt: new Date(),
   })
 
-  return NextResponse.redirect(destination, 302)
+  return await redirectToDestination(contactInbox.channel)
 }

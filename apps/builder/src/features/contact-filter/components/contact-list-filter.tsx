@@ -8,7 +8,7 @@ import { useTranslations } from "next-intl"
 import { useEffect, useMemo, useState } from "react"
 import { pruneExcludedConditions } from "../lib/prune-conditions"
 import { getBrowserTimezone } from "../lib/timezone"
-import type { ContactFilterCondition, ContactFilterCriteria } from "../schemas"
+import type { ContactFilterCondition, ContactFilterCriteria } from "../schema"
 import { ContactFilterConditionEditDialog } from "./contact-filter-condition-dialog"
 import { ContactFilterConditionForm } from "./contact-filter-condition-form"
 import { ContactFilterConditionRow } from "./contact-filter-condition-row"
@@ -63,7 +63,7 @@ export function ContactListFilterPanel({
 }: ContactListFilterPanelProps) {
   const t = useTranslations()
   const { configs, conditionOptions, operatorLabelByValue } =
-    useContactFilterConfigs(inboxChannel)
+    useContactFilterConfigs(inboxChannel, false, filter.conditions)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const filteredConfigs = useMemo(
     () =>

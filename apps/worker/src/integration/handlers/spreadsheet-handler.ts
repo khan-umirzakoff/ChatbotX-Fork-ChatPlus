@@ -1,22 +1,26 @@
 import {
+  botFieldService,
   buildContext,
   contactCustomFieldService,
   integrationGoogleSheetService,
   spreadsheetService,
 } from "@chatbotx.io/business"
 import type {
+  ContactInboxModel,
   ConversationModel,
   SpreadsheetModel,
 } from "@chatbotx.io/database/types"
-import type {
-  FilterMode,
-  Operator,
-  SpreadsheetClearRowSchema,
-  SpreadsheetGetRandomRowSchema,
-  SpreadsheetGetRowSchema,
-  SpreadsheetSchema,
-  SpreadsheetSendDataSchema,
-  SpreadsheetUpdateRowSchema,
+import {
+  FieldReferenceKind,
+  type FilterMode,
+  type Operator,
+  parseFieldReference,
+  type SpreadsheetClearRowSchema,
+  type SpreadsheetGetRandomRowSchema,
+  type SpreadsheetGetRowSchema,
+  type SpreadsheetSchema,
+  type SpreadsheetSendDataSchema,
+  type SpreadsheetUpdateRowSchema,
 } from "@chatbotx.io/flow-config"
 import {
   type GoogleSheetsAuthValue,
@@ -28,6 +32,7 @@ import {
 } from "@chatbotx.io/utils/datetime"
 import { logger } from "../../lib/logger"
 import type { ExecuteStepProps } from "./flow"
+import { logStepProviderError } from "./flow-utils"
 import { isMatchedRow } from "./operator-handler"
 import { resolveSpreadsheetLookup } from "./spreadsheet-lookup-values"
 import {
@@ -35,6 +40,20 @@ import {
   buildSpreadsheetWriteData,
 } from "./spreadsheet-write-values"
 import type { ExecuteStepResult } from "./step"
+
+/**
+ * Every step in this file fails the same way — one Google Sheets call, one
+ * conversation and contact inbox in scope — so the attribution is identical at
+ * all five catch sites. Kept local rather than calling `logStepProviderError`
+ * directly: what this saves is repeating the provider constant five times.
+ */
+const logGoogleSheetsError = (
+  props: {
+    conversation: Pick<ConversationModel, "workspaceId" | "contactId">
+    contactInbox: Pick<ContactInboxModel, "sourceId">
+  },
+  error: unknown,
+) => logStepProviderError("google-sheets", props, error)
 
 const findRowType = {
   SINGLE: "single",
@@ -149,6 +168,7 @@ export const getSpreadsheetRow = async (
     return { status: "success", result: null }
   } catch (error) {
     logger.error(error, "Error in getSpreadsheetRow")
+    await logGoogleSheetsError(props, error)
     return {
       status: "error",
       errorMessage: "Failed to get spreadsheet row",
@@ -204,6 +224,7 @@ export const sendSpreadsheetData = async (
     return { status: "success", result: null }
   } catch (error) {
     logger.error(error, "Error in sendSpreadsheetData")
+    await logGoogleSheetsError(props, error)
     return {
       status: "error",
       errorMessage: "Failed to send spreadsheet data",
@@ -270,6 +291,7 @@ export const updateSpreadsheetRow = async (
     return { status: "success", result: null }
   } catch (error) {
     logger.error(error, "Error in updateSpreadsheetRow")
+    await logGoogleSheetsError(props, error)
     return {
       status: "error",
       errorMessage: "Failed to update spreadsheet row",
@@ -323,6 +345,7 @@ export const clearSpreadsheetRow = async (
     return { status: "success", result: null }
   } catch (error) {
     logger.error(error, "Error in clearSpreadsheetRow")
+    await logGoogleSheetsError(props, error)
     return {
       status: "error",
       errorMessage: "Failed to clear spreadsheet row",
@@ -355,6 +378,7 @@ export const getSpreadsheetRandomRow = async (
     return { status: "success", result: null }
   } catch (error) {
     logger.error(error, "Error in getSpreadsheetRandomRow")
+    await logGoogleSheetsError(props, error)
     return {
       status: "error",
       errorMessage: "Failed to get random spreadsheet row",
@@ -374,7 +398,7 @@ const updateContactCustomFields = async ({
   headers: string[]
   foundRow: string[]
 }) => {
-  const fields = step.map.flatMap((mapItem) => {
+  const entries = step.map.flatMap((mapItem) => {
     const headerIndex = headers.indexOf(mapItem.header)
     if (headerIndex === -1 || !mapItem.customFieldId) {
       return []
@@ -388,14 +412,49 @@ const updateContactCustomFields = async ({
     ]
   })
 
-  if (fields.length === 0) {
+  if (entries.length === 0) {
+    return
+  }
+
+  // Account Fields (`bot_field:<id>` tokens) don't live in
+  // ContactCustomField, so they can't ride `setValues`'s batched write —
+  // route each to `botFieldService.updateByKey` individually. A per-entry
+  // try/catch keeps one bad/deleted bot field from failing the whole step or
+  // blocking the real custom fields in the same mapping.
+  const customFieldEntries: { customFieldId: string; value: string }[] = []
+  for (const entry of entries) {
+    const reference = parseFieldReference(entry.customFieldId)
+    if (reference.kind !== FieldReferenceKind.botField) {
+      customFieldEntries.push(entry)
+      continue
+    }
+
+    try {
+      await botFieldService.updateByKey({
+        workspaceId: conversation.workspaceId,
+        key: reference.id,
+        data: { value: entry.value },
+      })
+    } catch (error: unknown) {
+      logger.warn(
+        {
+          err: error,
+          workspaceId: conversation.workspaceId,
+          botFieldId: reference.id,
+        },
+        "Failed to write spreadsheet value to bot field; skipping entry",
+      )
+    }
+  }
+
+  if (customFieldEntries.length === 0) {
     return
   }
 
   await contactCustomFieldService.setValues({
     workspaceId: conversation.workspaceId,
     contactId: conversation.contactId,
-    fields,
+    fields: customFieldEntries,
     // Sheet cells arrive as locale display strings or unix numbers, not ISO.
     // Anchor naive values to the workspace clock and skip the contact lookup.
     temporalInputParsing: TemporalInputParsing.Lenient,

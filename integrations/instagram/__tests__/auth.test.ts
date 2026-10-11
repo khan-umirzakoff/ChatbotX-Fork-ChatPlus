@@ -1,13 +1,14 @@
 import { HttpResponse, http, server } from "@chatbotx.io/vitest-config/msw"
 import { describe, expect, test } from "vitest"
-import { getInstagramAccount } from "../src/apis/auth"
-import { INSTAGRAM_API_URL } from "../src/constants"
+import { fetchInstagramAccount, getInstagramAccount } from "../src/apis/auth"
+import { API_URL } from "../src/constants"
+import { isRevokedTokenError } from "../src/lib/error-mapper"
 
 const ACCESS_TOKEN = "instagram-user-access-token"
 
 function mockMeResponse(accountType: string | undefined) {
   server.use(
-    http.get(`${INSTAGRAM_API_URL}/me`, ({ request }) => {
+    http.get(`${API_URL}/me`, ({ request }) => {
       expect(new URL(request.url).searchParams.get("access_token")).toBe(
         ACCESS_TOKEN,
       )
@@ -49,5 +50,47 @@ describe("getInstagramAccount", () => {
     mockMeResponse(accountType)
 
     await expect(getInstagramAccount(ACCESS_TOKEN)).resolves.toBeNull()
+  })
+
+  test("returns null for a revoked token in a legacy connect flow", async () => {
+    server.use(
+      http.get(`${API_URL}/me`, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 190,
+              error_subcode: 463,
+              message: "Error validating access token: Session has expired.",
+              type: "OAuthException",
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+
+    await expect(getInstagramAccount(ACCESS_TOKEN)).resolves.toBeNull()
+  })
+
+  test("preserves revoked-token API errors for connection verification", async () => {
+    server.use(
+      http.get(`${API_URL}/me`, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 190,
+              error_subcode: 463,
+              message: "Error validating access token: Session has expired.",
+              type: "OAuthException",
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+
+    await expect(fetchInstagramAccount(ACCESS_TOKEN)).rejects.toSatisfy(
+      isRevokedTokenError,
+    )
   })
 })

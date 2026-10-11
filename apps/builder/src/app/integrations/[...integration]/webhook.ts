@@ -1,18 +1,16 @@
 import {
+  connectionStateService,
   customDomainService,
   platformCredentialService,
-  resolveWorkspaceFreezeReason,
   tenantService,
-  userQuotaService,
-  workspaceService,
+  workspaceMemberService,
 } from "@chatbotx.io/business"
-import { db, eq } from "@chatbotx.io/database/client"
-import { inboxStatuses } from "@chatbotx.io/database/partials"
-import { inboxModel } from "@chatbotx.io/database/schema"
+import { getSafeErrorDetails } from "@chatbotx.io/integration-threads"
 import type {
   TiktokAuthValue,
   TiktokConfig,
 } from "@chatbotx.io/integration-tiktok"
+import { SdkException } from "@chatbotx.io/sdk"
 import { integrationQueue } from "@chatbotx.io/worker-config"
 import type { NextRequest } from "next/server"
 import { isCloud } from "@/env"
@@ -27,36 +25,55 @@ type CredentialType = Parameters<
   typeof platformCredentialService.resolveForOwner
 >[0]["type"]
 
-/**
- * Per-bot/per-account channels (telegram, tiktok) reach their integration
- * handler before any queue consumer runs, so they need the freeze verdict
- * in-request. Delegating to the shared resolver keeps them aligned with the
- * worker-side guard instead of re-implementing a weaker owner-only check.
- */
-const resolveWebhookFreezeReason = async (
-  workspaceId: string,
-): Promise<ReturnType<typeof resolveWorkspaceFreezeReason>> => {
-  const workspace = await workspaceService.find({ where: { id: workspaceId } })
+const WEBHOOK_PUBLIC_ERROR_HEADERS = {
+  "Content-Type": "application/json",
+} as const
 
-  // Two passes, mirroring withBlockedOwnerGuard: the Workspace row alone
-  // decides `missingWorkspace`/`scheduledForDeletion`; only `ownerBlocked`
-  // needs entitlements, and only the cloud edition can produce it, so
-  // self-hosted installs skip the quota lookup entirely.
-  const rowReason = resolveWorkspaceFreezeReason({ workspace })
-  if (rowReason || !isCloud() || !workspace) {
-    return rowReason
+const THREADS_BAD_REQUEST_MESSAGES = new Set([
+  "Empty webhook payload",
+  "Invalid webhook signature",
+  "Invalid webhook verification parameters",
+  "Missing webhook signature",
+  "Webhook app_id does not match configured clientId",
+])
+
+const createThreadsErrorResponse = (error: unknown) => {
+  const safeError = getSafeErrorDetails(error)
+
+  let status = safeError.httpStatusCode
+
+  if (status === undefined) {
+    if (safeError.message.startsWith("Unsupported HTTP method:")) {
+      status = 405
+    } else if (THREADS_BAD_REQUEST_MESSAGES.has(safeError.message)) {
+      status = 400
+    } else {
+      status = 500
+    }
   }
 
-  return resolveWorkspaceFreezeReason({
-    accessState: await userQuotaService.getAccessState(workspace.ownerId),
-    workspace,
-  })
+  if (status < 400 || status > 599) {
+    status = 500
+  }
+
+  const isClientError = status >= 400 && status < 500
+  return {
+    publicMessage: isClientError
+      ? "Invalid Threads webhook request"
+      : "Failed to process Threads webhook",
+    safeError,
+    status,
+  }
 }
 
 export const handleWebhook = async (
   integrationType: string,
   req: NextRequest,
 ) => {
+  if (integrationType === "threads") {
+    return handleThreadsWebhook(req)
+  }
+
   await logWebhookRequestBody(integrationType, req)
 
   // Telegram uses per-bot config (not org-level settings)
@@ -176,9 +193,86 @@ export const handleWebhook = async (
       { err: e, integrationType },
       "Integration handleRequest failed",
     )
+    // Respect the exception's own status (e.g. 401 from a failed inbound
+    // webhook signature check) instead of always answering 400 — every
+    // SdkException still defaults its httpStatusCode to 400, so this is a
+    // no-op for exceptions that never set one.
+    const status = e instanceof SdkException ? e.httpStatusCode : 400
     return new Response(JSON.stringify({ message }), {
-      status: 400,
+      status,
       headers: { "Content-Type": "application/json" },
+    })
+  }
+}
+
+const handleThreadsWebhook = async (req: NextRequest) => {
+  const appId = req.nextUrl.searchParams.get("appId")?.trim()
+
+  if (!appId) {
+    return new Response(
+      JSON.stringify({ message: "Integration is not configured" }),
+      { status: 404, headers: { "Content-Type": "application/json" } },
+    )
+  }
+
+  const integration = integrations.threads
+  if (!integration?.handleRequest) {
+    return new Response(
+      JSON.stringify({ message: "Method is not implemented" }),
+      { status: 400, headers: { "Content-Type": "application/json" } },
+    )
+  }
+
+  const credential =
+    await platformCredentialService.findDecryptedThreadsByClientId({
+      clientId: appId,
+    })
+
+  if (!credential) {
+    logger.debug(
+      { appId, integrationType: "threads" },
+      "No configured Threads credential for webhook appId",
+    )
+    return new Response(
+      JSON.stringify({ message: "Integration is not configured" }),
+      { status: 404, headers: { "Content-Type": "application/json" } },
+    )
+  }
+
+  const redirectUrl = new URL(
+    `/integrations/${integration.name}/callback`,
+    req.nextUrl,
+  ).toString()
+
+  try {
+    const result = await integration.handleRequest({
+      config: {
+        ...credential.config,
+        redirectUrl,
+        stateParams: {
+          workspaceId: req.nextUrl.searchParams.get("workspaceId") ?? "",
+          referer: req.nextUrl.toString(),
+        },
+        // biome-ignore lint/suspicious/noExplicitAny: safe pass value
+      } as any,
+      req,
+      queue: integrationQueue,
+    })
+
+    return new Response(result as BodyInit)
+  } catch (e: unknown) {
+    const { publicMessage, safeError, status } = createThreadsErrorResponse(e)
+    logger.error(
+      {
+        error: safeError,
+        integrationType: "threads",
+        status,
+      },
+      "Threads handleRequest failed",
+    )
+    return new Response(JSON.stringify({ message: publicMessage }), {
+      status,
+      headers: WEBHOOK_PUBLIC_ERROR_HEADERS,
     })
   }
 }
@@ -206,22 +300,6 @@ const handleTelegramWebhook = async (req: NextRequest) => {
       status: 404,
       headers: { "Content-Type": "application/json" },
     })
-  }
-
-  const telegramFreezeReason = await resolveWebhookFreezeReason(
-    integrationTelegram.workspaceId,
-  )
-  if (telegramFreezeReason) {
-    logger.info(
-      {
-        freezeReason: telegramFreezeReason,
-        integrationType: "telegram",
-        workspaceId: integrationTelegram.workspaceId,
-      },
-      "webhook skipped: frozen workspace",
-    )
-    // 200 so Telegram does not retry or disable the webhook while frozen.
-    return new Response("ok")
   }
 
   const auth = integrationTelegram.auth as {
@@ -298,31 +376,38 @@ const handleTiktokWebhook = async (req: NextRequest) => {
       { status: 404, headers: { "Content-Type": "application/json" } },
     )
   }
-
-  const tiktokFreezeReason = await resolveWebhookFreezeReason(
-    integrationTiktok.workspaceId,
-  )
-  if (tiktokFreezeReason) {
-    logger.info(
-      {
-        freezeReason: tiktokFreezeReason,
-        integrationType: "tiktok",
-        workspaceId: integrationTiktok.workspaceId,
-      },
-      "webhook skipped: frozen workspace",
-    )
-    // 200 so TikTok does not retry or revoke the subscription while frozen.
-    return new Response("ok")
-  }
-
   if (eventType === "authorization.removed") {
-    await db
-      .update(inboxModel)
-      .set({ status: inboxStatuses.enum.disconnected })
-      .where(eq(inboxModel.id, integrationTiktok.inboxId))
+    const ownerId = await workspaceMemberService.findOwnerUserIdByWorkspaceId({
+      workspaceId: integrationTiktok.workspaceId,
+    })
+    const connection = await connectionStateService.markUnhealthyByIdentifier({
+      provider: "tiktok",
+      identifier: userOpenId,
+      reason: "token_revoked",
+      ownerId,
+      workspaceId: integrationTiktok.workspaceId,
+    })
+    if (!connection) {
+      // No `Connection` row yet for this provider/workspace — the inbox
+      // predates the TikTok backfill. Mirror the legacy "set status
+      // disconnected" behavior directly on the `Inbox` row so a
+      // revoked-token inbox doesn't silently stay `connected`; never
+      // `inboxService.disconnect`, which also releases `channels` quota
+      // this un-backfilled row was never counted against.
+      await connectionStateService.markLegacyInboxUnhealthy({
+        inboxId: integrationTiktok.inboxId,
+        workspaceId: integrationTiktok.workspaceId,
+        reason: "token_revoked",
+      })
+      logger.info(
+        { openId: userOpenId, workspaceId: integrationTiktok.workspaceId },
+        "TikTok authorization removed — no Connection row; marked legacy inbox unhealthy",
+      )
+      return new Response("ok")
+    }
     logger.info(
       { openId: userOpenId },
-      "TikTok authorization removed — inbox marked disconnected",
+      "TikTok authorization removed — connection marked unhealthy",
     )
     return new Response("ok")
   }

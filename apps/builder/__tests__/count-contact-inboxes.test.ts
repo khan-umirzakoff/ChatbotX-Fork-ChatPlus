@@ -46,6 +46,7 @@ describe("countContactInboxes", () => {
     const result = await countContactInboxes({
       workspaceId: "ws-1",
       channels: ["messenger"],
+      inboxIds: ["inbox-a", "inbox-b"],
       integrationWhatsappId: "wa-1",
       integrationMessengerId: "messenger-1",
       contactFilter,
@@ -57,6 +58,7 @@ describe("countContactInboxes", () => {
     expect(mocks.countAudience).toHaveBeenCalledWith({
       workspaceId: "ws-1",
       channels: ["messenger"],
+      inboxIds: ["inbox-a", "inbox-b"],
       integrationWhatsappId: "wa-1",
       integrationMessengerId: "messenger-1",
       contactFilter,
@@ -81,6 +83,7 @@ describe("countContactInboxes", () => {
     expect(mocks.countAudience).toHaveBeenCalledWith({
       workspaceId: "ws-1",
       channels: ["messenger"],
+      inboxIds: undefined,
       integrationWhatsappId: undefined,
       integrationMessengerId: undefined,
       contactFilter: undefined,
@@ -108,6 +111,7 @@ describe("countContactInboxes", () => {
     expect(mocks.listAudiencePreview).toHaveBeenCalledWith({
       workspaceId: "ws-1",
       channels: ["messenger"],
+      inboxIds: undefined,
       integrationWhatsappId: undefined,
       integrationMessengerId: undefined,
       contactFilter: undefined,
@@ -116,7 +120,23 @@ describe("countContactInboxes", () => {
       page: 2,
       perPage: 10,
       restrictToAssignedUserId: "user-1",
+      audienceRange: null,
     })
+  })
+
+  test("resolves audienceRangeStart/audienceRangeEnd into an audienceRange for the preview listing", async () => {
+    await listAudienceInboxesPreview({
+      workspaceId: "ws-1",
+      channels: ["messenger"],
+      audienceRangeStart: 5,
+      audienceRangeEnd: 20,
+    })
+
+    expect(mocks.listAudiencePreview).toHaveBeenCalledWith(
+      expect.objectContaining({
+        audienceRange: { offset: 4, size: 16 },
+      }),
+    )
   })
 
   test("maps audience preview contact creation time to the stats dialog timestamp", async () => {

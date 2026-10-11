@@ -12,6 +12,16 @@ export const router = {
   adsAPI: lazy(() =>
     import("@/features/ads/api").then((m) => ({ default: m.adsAPI })),
   ),
+  adsCampaignAPI: lazy(() =>
+    import("@/features/ads-campaign/api").then((m) => ({
+      default: m.adsCampaignAPI,
+    })),
+  ),
+  googleAdsAPI: lazy(() =>
+    import("@/features/integration-google-ads/api").then((m) => ({
+      default: m.googleAdsAPI,
+    })),
+  ),
   appointmentCalendarsAPI: lazy(() =>
     import("@/features/appointment-calendars/api").then((m) => ({
       default: m.appointmentCalendarsAPI,
@@ -37,11 +47,6 @@ export const router = {
       default: m.broadcastAPIs,
     })),
   ),
-  channelApiAPIs: lazy(() =>
-    import("@/features/integration-api/api").then((m) => ({
-      default: m.channelApiAPIs,
-    })),
-  ),
   conversationsAPI: lazy(() =>
     import("@/features/conversations/api").then((m) => ({
       default: m.conversationsAPI,
@@ -50,9 +55,24 @@ export const router = {
   couponsAPI: lazy(() =>
     import("@/features/coupons/api").then((m) => ({ default: m.couponsAPI })),
   ),
+  deviceTokensAPI: lazy(() =>
+    import("@/features/device-tokens/api").then((m) => ({
+      default: m.deviceTokensAPI,
+    })),
+  ),
   dynamicImagesAPI: lazy(() =>
     import("@/features/dynamic-images/api").then((m) => ({
       default: m.dynamicImagesAPI,
+    })),
+  ),
+  connectionsAPI: lazy(() =>
+    import("@/features/connections/api").then((m) => ({
+      default: m.connectionsAPI,
+    })),
+  ),
+  connectSessionsAPI: lazy(() =>
+    import("@/features/connections/api").then((m) => ({
+      default: m.connectSessionsAPI,
     })),
   ),
   emailTopicsAPI: lazy(() =>
@@ -62,6 +82,11 @@ export const router = {
   ),
   tagsAPI: lazy(() =>
     import("@/features/tags/api").then((m) => ({ default: m.tagsAPI })),
+  ),
+  contactFilterAPI: lazy(() =>
+    import("@/features/contact-filter/api").then((m) => ({
+      default: m.contactFilterAPI,
+    })),
   ),
   customFieldsAPI: lazy(() =>
     import("@/features/custom-fields/api").then((m) => ({
@@ -74,6 +99,31 @@ export const router = {
   contactsAPIs: lazy(() =>
     import("@/features/contacts/api").then((m) => ({
       default: m.contactsAPIs,
+    })),
+  ),
+  contactNotesAPI: lazy(() =>
+    import("@/features/contact-notes/api/private").then((m) => ({
+      default: m.contactNotesAuthenticatedAPI,
+    })),
+  ),
+  contactSequencesAPI: lazy(() =>
+    import("@/features/contact-sequences/api/private").then((m) => ({
+      default: m.contactSequencesAuthenticatedAPI,
+    })),
+  ),
+  contactScanAPIs: lazy(() =>
+    import("@/features/contact-scan/api").then((m) => ({
+      default: m.contactScanAPIs,
+    })),
+  ),
+  aiHandoverAPIs: lazy(() =>
+    import("@/features/integration-ai-handover/api").then((m) => ({
+      default: m.aiHandoverAPIs,
+    })),
+  ),
+  channelPostAPIs: lazy(() =>
+    import("@/features/channel-posts/api").then((m) => ({
+      default: m.channelPostAPIs,
     })),
   ),
   botFieldAPIs: lazy(() =>
@@ -176,6 +226,11 @@ export const router = {
       default: m.igCommentsAPI,
     })),
   ),
+  threadsCommentsAPI: lazy(() =>
+    import("@/features/threads-comments/api").then((m) => ({
+      default: m.threadsCommentsAPI,
+    })),
+  ),
   igStoriesAPI: lazy(() =>
     import("@/features/ig-stories/api").then((m) => ({
       default: m.igStoriesAPI,
@@ -184,6 +239,11 @@ export const router = {
   facebookLeadAdsAPI: lazy(() =>
     import("@/features/facebook-lead-ad-automation/api").then((m) => ({
       default: m.facebookLeadAdsAPI,
+    })),
+  ),
+  facebookMarketingMessagesAPI: lazy(() =>
+    import("@/features/facebook-marketing-messages/api").then((m) => ({
+      default: m.facebookMarketingMessagesAPI,
     })),
   ),
   sequencesAPI: lazy(() =>
@@ -223,16 +283,6 @@ export const router = {
       default: m.personasAPIs,
     })),
   ),
-  errorLogsAPI: lazy(() =>
-    import("@/features/error-logs/api").then((m) => ({
-      default: m.errorLogsAPI,
-    })),
-  ),
-  externalWebhooksAPI: lazy(() =>
-    import("@/features/external-webhooks/api").then((m) => ({
-      default: m.externalWebhooksAPI,
-    })),
-  ),
   workspacesAPI: lazy(() =>
     import("@/features/workspaces/api").then((m) => ({
       default: m.workspacesAPI,
@@ -264,29 +314,40 @@ export const router = {
   refLinksAPI: lazy(() =>
     import("@/features/reflinks/api").then((m) => ({ default: m.refLinksAPI })),
   ),
-  keywordsAPI: lazy(() =>
-    import("@/features/automated-response/api").then((m) => ({
-      default: m.keywordsAPI,
+  realtimeAPI: lazy(() =>
+    import("@/features/realtime/api").then((m) => ({
+      default: m.realtimeAPI,
     })),
-  ),
-  integrationsAPI: lazy(() =>
-    import("@/features/integrations/api").then((m) => ({
-      default: m.integrationsAPI,
-    })),
-  ),
-  triggersAPI: lazy(() =>
-    import("@/features/triggers/api").then((m) => ({ default: m.triggersAPI })),
   ),
   userPersistentMenusAPI: lazy(() =>
     import("@/features/user-persistent-menus/api").then((m) => ({
       default: m.userPersistentMenusAPI,
     })),
   ),
-  webhooksAPI: lazy(() =>
-    import("@/features/webhooks/api").then((m) => ({ default: m.webhooksAPI })),
+  templatesAPI: lazy(() =>
+    import("@/features/templates/api").then((m) => ({
+      default: m.templatesAPI,
+    })),
   ),
   analyticsRoutes: authorizedAPI
+    // `workspaceAuthorizedMidddleware` (middlewares/auth.ts) takes an
+    // `(input) => input.workspaceId` mapper. Every other call site applies it
+    // to a single procedure whose `.input()` is already declared, so the
+    // mapper typechecks against a known input type. Here it's applied to the
+    // whole `analyticsRoutes` router before `.router()`, where oRPC has no
+    // single input type to infer from — `input` is `unknown`. The mapper is
+    // correct at runtime because every internal analytics route declares
+    // `workspaceId` in its own `.input()`. Real fix: per-procedure `.use()`
+    // across all 30 internal routes (orthogonal refactor, doubles this PR's
+    // blast radius) — deferred. The new public analytics router
+    // (features/analytics/api/public.ts) is independently typed and needs no
+    // such suppression.
     // @ts-expect-error
     .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
     .router(analyticsRoutes),
+  mediaLibraryAPI: lazy(() =>
+    import("@/features/media-library/api").then((m) => ({
+      default: m.mediaLibraryAPI,
+    })),
+  ),
 }

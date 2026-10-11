@@ -36,12 +36,15 @@ import { klaviyoSyncProfileSchema } from "./steps/klaviyo-sync-profile"
 import { mailchimpAddMemberSchema } from "./steps/mailchimp-add-member"
 import { mailerLiteAddSubscriberSchema } from "./steps/mailer-lite-add-subscriber"
 import { makeStepSchema } from "./steps/make"
+import { markConversationAsReadStepSchema } from "./steps/mark-conversation-as-read"
+import { markConversationAsUnreadStepSchema } from "./steps/mark-conversation-as-unread"
 import { markEmailVerifiedStepSchema } from "./steps/mark-email-verified"
 import { moosendCreateContactSchema } from "./steps/moosend-create-contact"
 import { optInEmailStepSchema } from "./steps/opt-in-email"
 import { optOutEmailStepSchema } from "./steps/opt-out-email"
 import { questionnairesStepSchema } from "./steps/questionnaires"
 import { removeContactTagStepSchema } from "./steps/remove-contact-tag"
+import { sendGoogleAdsConversionSchema } from "./steps/send-google-ads-conversion"
 import { sendMetaCapiEventSchema } from "./steps/send-meta-capi-event"
 import { sendGridAddContactSchema } from "./steps/sendgrid-add-contact"
 import { setCustomFieldStepSchema } from "./steps/set-custom-field"
@@ -57,6 +60,7 @@ import { startExternalFlowStepSchema } from "./steps/start-external-flow"
 import { startExternalNodeStepSchema } from "./steps/start-external-node"
 import { subscribeBroadcastStepSchema } from "./steps/subscribe-broadcast"
 import { subscribeSequenceStepSchema } from "./steps/subscribe-sequence"
+import { threadControlStepSchema } from "./steps/thread-control"
 import { triggerN8nStepSchema } from "./steps/trigger-n8n"
 import { unarchiveConversationStepSchema } from "./steps/unarchive-conversation"
 import { unassignConversationStepSchema } from "./steps/unassign-conversation"
@@ -71,10 +75,13 @@ const inboxSteps = [
   assignConversationStepSchema,
   autoAssignConversationStepSchema,
   unassignConversationStepSchema,
+  markConversationAsUnreadStepSchema,
+  markConversationAsReadStepSchema,
   followConversationStepSchema,
   unfollowConversationStepSchema,
   archiveConversationStepSchema,
   unarchiveConversationStepSchema,
+  threadControlStepSchema,
 ]
 
 const contactSteps = [
@@ -154,6 +161,8 @@ const messengerSteps = [
   updateMessengerContactDataStepSchema,
 ]
 
+const googleAdsSteps = [sendGoogleAdsConversionSchema]
+
 const googleSheetStep = [
   spreadsheetGetRowSchema,
   spreadsheetClearRowSchema,
@@ -173,5 +182,6 @@ export const actionSteps = [
   ...aiSteps,
   ...googleSheetStep,
   ...messengerSteps,
+  ...googleAdsSteps,
   ...triggerSteps,
 ]

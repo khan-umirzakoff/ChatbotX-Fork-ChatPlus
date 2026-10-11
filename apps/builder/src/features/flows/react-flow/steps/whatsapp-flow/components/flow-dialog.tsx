@@ -23,7 +23,6 @@ import {
 } from "@chatbotx.io/ui/components/ui/dialog"
 import { Input } from "@chatbotx.io/ui/components/ui/input"
 import { zodResolver } from "@hookform/resolvers/zod"
-import ky from "ky"
 import { useTranslations } from "next-intl"
 import { memo, useCallback, useEffect, useMemo, useState } from "react"
 import {
@@ -35,12 +34,10 @@ import {
 } from "react-hook-form"
 import { CreateCustomFieldDialog } from "@/features/custom-fields/create-custom-field"
 import { CustomFieldSelect } from "@/features/custom-fields/custom-field-select"
-import { useCustomFieldStore } from "@/features/custom-fields/provider/custom-field-store-context"
-import type {
-  GetWhatsappFlowScreensResponse,
-  WhatsappFlowScreenResource,
-} from "@/features/integration-whatsapp/flows/schema/query"
+import { useInvalidateCustomFields } from "@/features/custom-fields/provider/custom-field-hook"
+import type { WhatsappFlowScreenResource } from "@/features/integration-whatsapp/flows/schema/query"
 import { useWorkspaceId } from "@/hooks/routing"
+import { client } from "@/lib/orpc/orpc"
 import { useWhatsappFlow } from "../../../stores/whatsapp-flow-store-provider"
 
 type FlowDialogProps = {
@@ -134,13 +131,11 @@ function FlowDialogInner({ open, onOpenChange, parentName }: FlowDialogProps) {
     name: "flow.startScreenId",
   })
 
-  const getAllCustomFields = useCustomFieldStore(
-    (state) => state.getAllCustomFields,
-  )
+  const invalidateCustomFields = useInvalidateCustomFields()
 
   const handleCustomFieldCreated = useCallback(() => {
-    getAllCustomFields()
-  }, [getAllCustomFields])
+    invalidateCustomFields()
+  }, [invalidateCustomFields])
 
   useEffect(() => {
     if (!(open && selectedFlowId)) {
@@ -167,11 +162,11 @@ function FlowDialogInner({ open, onOpenChange, parentName }: FlowDialogProps) {
       setLoadingScreens(true)
       setScreenError(null)
       try {
-        const data = await ky
-          .get<GetWhatsappFlowScreensResponse>(
-            `/api/workspaces/${workspaceId}/whatsapp-flows/${selectedFlowId}/screens`,
-          )
-          .json()
+        const data =
+          await client.whatsappFlowAPIs.getWhatsappFlowScreensInternalAPI({
+            workspaceId,
+            flowId: selectedFlowId,
+          })
         const nextScreens = data.screens ?? []
         setScreensCache(cacheKey, {
           screens: nextScreens,

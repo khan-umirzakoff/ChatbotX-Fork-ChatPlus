@@ -16,6 +16,7 @@ import { normalizeError } from "universal-error-normalizer"
 import { logger } from "../../lib/logger"
 import { getContactFieldMap } from "./contact-field-map"
 import type { ExecuteStepProps } from "./flow"
+import { logStepProviderError } from "./flow-utils"
 import type { ExecuteStepResult } from "./step"
 
 export const ACTIVE_CAMPAIGN_LOCK_TIMEOUT_SECONDS = 30
@@ -148,6 +149,7 @@ export const syncActiveCampaignContact = async (
       { ...logContext, err: normalized },
       "ActiveCampaign sync-contact step failed",
     )
+    await logStepProviderError("active-campaign", props, error)
     return {
       status: "error",
       errorMessage: normalized.message,

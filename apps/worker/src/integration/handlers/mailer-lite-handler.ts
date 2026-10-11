@@ -17,6 +17,7 @@ import { normalizeError } from "universal-error-normalizer"
 import { logger } from "../../lib/logger"
 import { getContactFieldMap } from "./contact-field-map"
 import type { ExecuteStepProps } from "./flow"
+import { logStepProviderError } from "./flow-utils"
 import type { ExecuteStepResult } from "./step"
 
 export const MAILER_LITE_LOCK_TIMEOUT_SECONDS = 30
@@ -128,6 +129,7 @@ export const addMailerLiteSubscriber = async (
       { ...logContext, ...provider, error: normalized },
       "MailerLite subscriber sync failed",
     )
+    await logStepProviderError("mailer-lite", props, error)
     return { status: "error", result: null, errorMessage: normalized.message }
   }
 }

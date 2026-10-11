@@ -9,6 +9,7 @@ const emitTagApplied = vi.fn()
 const invalidateCacheByTags = vi.fn()
 const selectWhere = vi.fn()
 const enqueueTagAppliedEvaluationsBulk = vi.fn()
+const contactInvalidate = vi.fn()
 
 const createSelectBuilder = () => {
   const builder = {
@@ -90,6 +91,7 @@ vi.mock("@chatbotx.io/redis", () => ({
 vi.mock("../src/contact", () => ({
   contactService: {
     findManyByIds: (...args: unknown[]) => findManyByIds(...args),
+    invalidate: (...args: unknown[]) => contactInvalidate(...args),
   },
 }))
 
@@ -110,6 +112,7 @@ describe("TagService.bulkAttachToContacts", () => {
     enqueueAttachMany.mockReset()
     emitTagApplied.mockReset()
     invalidateCacheByTags.mockReset()
+    contactInvalidate.mockReset()
     selectWhere.mockReset()
     selectWhere.mockResolvedValue([])
     enqueueTagAppliedEvaluationsBulk.mockReset()
@@ -163,10 +166,13 @@ describe("TagService.bulkAttachToContacts", () => {
       pairs: [{ contactId: "contact-1", tagId: "tag-2" }],
     })
     expect(invalidateCacheByTags).toHaveBeenCalledWith([
-      "workspaces:workspace-1#contacts",
-      "workspaces:workspace-1#conversations",
-      "workspaces:workspace-1#tags",
+      "tags",
+      "tags:workspace-1",
     ])
+    expect(contactInvalidate).toHaveBeenCalledWith({
+      workspaceId: "workspace-1",
+      ids: ["contact-1"],
+    })
     expect(result).toEqual({ attachedPairCount: 1 })
   })
 
@@ -217,5 +223,85 @@ describe("TagService.bulkAttachToContacts", () => {
       pairs: [{ contactId: "contact-1", tagId: "tag-1" }],
     })
     expect(result).toEqual({ attachedPairCount: 0 })
+  })
+})
+
+describe("TagService.attachToContact", () => {
+  beforeEach(() => {
+    findTags.mockReset()
+    insertValues.mockReset()
+    insertReturning.mockReset()
+    emitTagApplied.mockReset()
+    // attachToContact fires `emitTagApplied(...).catch(...)`, so the mock must
+    // return a thenable rather than the default `undefined`.
+    emitTagApplied.mockResolvedValue(undefined)
+    enqueueTagAppliedEvaluationsBulk.mockReset()
+  })
+
+  test("threads contactInboxId into the tagApplied event when provided", async () => {
+    findTags.mockResolvedValueOnce([{ id: "tag-1" }])
+    insertReturning.mockResolvedValueOnce([{ tagId: "tag-1" }])
+
+    await tagService.attachToContact({
+      workspaceId: "workspace-1",
+      contactId: "contact-1",
+      tagIds: ["tag-1"],
+      contactInboxId: "contact-inbox-1",
+    })
+
+    expect(emitTagApplied).toHaveBeenCalledWith(
+      "workspace-1",
+      "contact-1",
+      "tag-1",
+      "contact-inbox-1",
+    )
+  })
+
+  test("passes contactInboxId as undefined when the caller has no inbox in scope", async () => {
+    findTags.mockResolvedValueOnce([{ id: "tag-1" }])
+    insertReturning.mockResolvedValueOnce([{ tagId: "tag-1" }])
+
+    await tagService.attachToContact({
+      workspaceId: "workspace-1",
+      contactId: "contact-1",
+      tagIds: ["tag-1"],
+    })
+
+    expect(emitTagApplied).toHaveBeenCalledWith(
+      "workspace-1",
+      "contact-1",
+      "tag-1",
+      undefined,
+    )
+  })
+
+  test("queues channel tag sync for newly attached pairs only", async () => {
+    findTags.mockResolvedValueOnce([{ id: "tag-1" }, { id: "tag-2" }])
+    insertReturning.mockResolvedValueOnce([{ tagId: "tag-2" }])
+    enqueueAttachMany.mockReset()
+
+    await tagService.attachToContact({
+      workspaceId: "workspace-1",
+      contactId: "contact-1",
+      tagIds: ["tag-1", "tag-2"],
+    })
+
+    expect(enqueueAttachMany).toHaveBeenCalledWith([
+      { workspaceId: "workspace-1", contactId: "contact-1", tagId: "tag-2" },
+    ])
+  })
+
+  test("does not queue tag sync when every pair already existed", async () => {
+    findTags.mockResolvedValueOnce([{ id: "tag-1" }])
+    insertReturning.mockResolvedValueOnce([])
+    enqueueAttachMany.mockReset()
+
+    await tagService.attachToContact({
+      workspaceId: "workspace-1",
+      contactId: "contact-1",
+      tagIds: ["tag-1"],
+    })
+
+    expect(enqueueAttachMany).not.toHaveBeenCalled()
   })
 })

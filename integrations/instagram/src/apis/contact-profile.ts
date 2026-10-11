@@ -1,7 +1,7 @@
 import { DEFAULT_API_VERSION } from "../constants"
 import { rescue } from "../exception"
 import { instagramBusinessClient } from "../lib/http-client"
-import type { InstagramContactProfile } from "../schemas"
+import type { InstagramContactProfile } from "../schema"
 
 type RawContactProfileResponse = {
   id: string
@@ -21,15 +21,18 @@ export const fetchInstagramContactProfile = (props: {
   const endpoint = `${version}/${igsid}`
 
   return rescue(endpoint, async () => {
+    // Auth goes in the Authorization header, never the query string: a Graph
+    // request URL is captured verbatim on HTTP-client errors (and their logs),
+    // so a query `access_token` would leak on every timeout/network failure.
     const queries = new URLSearchParams({
       fields:
         "username,follower_count,is_user_follow_business,is_business_follow_user,is_verified_user",
-      access_token: accessToken,
     })
 
     const response =
       await instagramBusinessClient.get<RawContactProfileResponse>(
         `${endpoint}?${queries.toString()}`,
+        { headers: { Authorization: `Bearer ${accessToken}` } },
       )
 
     return {

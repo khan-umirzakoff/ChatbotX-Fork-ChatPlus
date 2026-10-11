@@ -1,6 +1,6 @@
 import { aiTimeouts } from "@chatbotx.io/ai"
 import { aiContextService } from "@chatbotx.io/ai/server"
-import { db } from "@chatbotx.io/database/client"
+import { aiAgentService } from "@chatbotx.io/business"
 import { isMessageStorageError } from "@chatbotx.io/database/errors"
 import {
   type AIAgentModelConfig,
@@ -12,7 +12,9 @@ import { normalizeError } from "universal-error-normalizer"
 import { logger } from "../../../lib/logger"
 import { saveResultToCustomField } from "../../utils/contact"
 import type { ExecuteStepProps } from "../flow"
+import { logStepProviderError } from "../flow-utils"
 import { runAIAgentRunner } from "../shared/ai-agent-runner"
+import { aiErrorLogProvider } from "../shared/ai-error-log-provider"
 import type { ExecuteStepResult } from "../step"
 import { buildAIAgentMessages } from "./messages"
 
@@ -28,7 +30,7 @@ export async function handleAIGenerateTextAgent({
   const timeoutId = setTimeout(() => controller.abort(), aiTimeouts.aiTotal)
 
   try {
-    const aiAgent = await db.query.aiAgentModel.findFirst({
+    const aiAgent = await aiAgentService.findBy({
       where: {
         id: step.aiAgentId,
         workspaceId: conversation.workspaceId,
@@ -108,6 +110,7 @@ export async function handleAIGenerateTextAgent({
         customFieldId: step.outputFieldId,
         fullText: result.fullText,
         workspaceId: conversation.workspaceId,
+        contactInboxId: contactInbox.id,
       })
     }
 
@@ -126,6 +129,11 @@ export async function handleAIGenerateTextAgent({
     if (isMessageStorageError(err)) {
       throw err
     }
+    await logStepProviderError(
+      aiErrorLogProvider(step.provider),
+      { conversation, contactInbox },
+      err,
+    )
     return { status: "error", errorMessage: error.message, result: null }
   } finally {
     clearTimeout(timeoutId)

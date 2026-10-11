@@ -1,6 +1,7 @@
 import {
   and,
   count,
+  type DatabaseClient,
   db,
   desc,
   eq,
@@ -8,6 +9,7 @@ import {
   isDatabaseError,
   type SQL,
 } from "@chatbotx.io/database/client"
+import type { ContactImportMeta } from "@chatbotx.io/database/partials"
 import {
   fileContextTypes,
   fileStatuses,
@@ -17,26 +19,52 @@ import {
   importStatuses,
   importTypes,
 } from "@chatbotx.io/database/partials"
-import { fileModel, importModel } from "@chatbotx.io/database/schema"
+import {
+  fileModel,
+  type ImportErrorSample,
+  importModel,
+} from "@chatbotx.io/database/schema"
 import {
   getPaginationWithDefaults,
   likeContains,
   parseOrderBy,
 } from "@chatbotx.io/database/utils"
+import { inferImportFormat } from "@chatbotx.io/imports"
 import { resolveImportFileFormat } from "@chatbotx.io/imports/file-validation"
 import { getImportEntry } from "@chatbotx.io/imports/registry"
 import { createId } from "@chatbotx.io/utils"
+import { DefaultJobAction, defaultQueue } from "@chatbotx.io/worker-config"
 import { BaseService } from "../base.service"
 import { ChatbotXException, toPublicErrorMessage } from "../errors"
+import { inboxService } from "../inbox/service"
 
 const GENERIC_IMPORT_FAILURE =
   "The import failed. Please try again or contact support."
 
-export type ImportErrorSample = { row: number; reason: string }
+export type { ImportErrorSample } from "@chatbotx.io/database/schema"
 export type ImportCounters = {
   processed: number
   success: number
   failed: number
+}
+
+const importListSelection = {
+  id: importModel.id,
+  workspaceId: importModel.workspaceId,
+  userId: importModel.userId,
+  fileId: importModel.fileId,
+  fileName: fileModel.fileName,
+  type: importModel.type,
+  status: importModel.status,
+  totalCount: importModel.totalCount,
+  processedCount: importModel.processedCount,
+  successCount: importModel.successCount,
+  failedCount: importModel.failedCount,
+  errorMessage: importModel.errorMessage,
+  errorSample: importModel.errorSample,
+  completedAt: importModel.completedAt,
+  createdAt: importModel.createdAt,
+  updatedAt: importModel.updatedAt,
 }
 
 const ACTIVE_PRODUCT_IMPORT_CONSTRAINT = "Import_products_active_idx"
@@ -48,6 +76,112 @@ const isActiveProductImportViolation = (error: unknown): boolean =>
   error.cause.constraint === ACTIVE_PRODUCT_IMPORT_CONSTRAINT
 
 class ImportService extends BaseService {
+  async startContactImport(input: {
+    workspaceId: string
+    userId: string | null
+    inboxId: string
+    fileId: string
+    meta: ContactImportMeta
+    actor?: { ipAddress?: string; userAgent?: string }
+  }): Promise<{ importId: string }> {
+    const { workspaceId } = input
+    const file = await db.query.fileModel.findFirst({
+      where: { id: input.fileId, workspaceId },
+    })
+    if (!file) {
+      throw new ChatbotXException(
+        "File not found",
+        "contactImportFileNotFound",
+        404,
+      )
+    }
+    if (
+      file.contextType !== fileContextTypes.enum.import ||
+      file.subType !== importTypes.enum.contacts
+    ) {
+      throw new ChatbotXException(
+        "File is not a contacts import",
+        "contactImportFileTypeInvalid",
+      )
+    }
+
+    const format = inferImportFormat({
+      mimeType: file.mimeType,
+      fileName: file.fileName,
+    })
+    const contactsConfig = getImportEntry(importTypes.enum.contacts).config
+    if (!(format && contactsConfig.acceptedFormats.includes(format))) {
+      throw new ChatbotXException(
+        "Unsupported file format",
+        "contactImportUnsupportedFormat",
+      )
+    }
+
+    const inbox = await inboxService.find({
+      where: { id: input.inboxId, workspaceId },
+    })
+    if (!inbox) {
+      throw new ChatbotXException(
+        "Inbox not found",
+        "contactImportInboxNotFound",
+        404,
+      )
+    }
+
+    const activeImport = await db.query.importModel.findFirst({
+      where: {
+        workspaceId,
+        type: importTypes.enum.contacts,
+        OR: [{ status: "pending" }, { status: "processing" }],
+      },
+      columns: { id: true },
+    })
+    if (activeImport) {
+      throw new ChatbotXException(
+        "An import is already in progress for this workspace. Please wait for it to complete.",
+        "contactImportAlreadyRunning",
+        409,
+      )
+    }
+
+    const importId = createId()
+    const meta = input.meta
+
+    await db.transaction(async (tx) => {
+      await tx
+        .update(fileModel)
+        .set({ status: fileStatuses.enum.uploaded, uploadedAt: new Date() })
+        .where(
+          and(
+            eq(fileModel.id, file.id),
+            eq(fileModel.workspaceId, workspaceId),
+          ),
+        )
+      await tx.insert(importModel).values({
+        userId: input.userId,
+        id: importId,
+        workspaceId,
+        inboxId: input.inboxId,
+        fileId: file.id,
+        type: importTypes.enum.contacts,
+        format,
+        status: "pending",
+        meta,
+      })
+    })
+
+    const actor = input.actor
+    await defaultQueue.add(DefaultJobAction.runImport, {
+      type: DefaultJobAction.runImport,
+      data: {
+        importId,
+        ipAddress: actor?.ipAddress,
+        userAgent: actor?.userAgent,
+      },
+    })
+
+    return { importId }
+  }
   async findForWorker(importId: string) {
     return await db.query.importModel.findFirst({
       where: { id: importId },
@@ -69,7 +203,8 @@ class ImportService extends BaseService {
     workspaceId: string
     userId: string | null
     fileId: string
-    format: Extract<ImportFormat, "csv" | "xlsx">
+    /** Omitted: taken from the uploaded file. */
+    format?: Extract<ImportFormat, "csv" | "xlsx">
     meta: typeof importModel.$inferInsert.meta
   }) {
     const file = await this.findFile(input)
@@ -77,6 +212,7 @@ class ImportService extends BaseService {
       throw new ChatbotXException(
         "Product import file not found",
         "productImportFileNotFound",
+        404,
       )
     }
     const config = getImportEntry("products").config
@@ -85,12 +221,14 @@ class ImportService extends BaseService {
       throw new ChatbotXException(
         "Product import file type is invalid",
         "productImportFileTypeInvalid",
+        422,
       )
     }
-    if (fileFormat !== input.format) {
+    if (input.format && fileFormat !== input.format) {
       throw new ChatbotXException(
         "Product import format does not match the uploaded file",
         "productImportFormatMismatch",
+        422,
       )
     }
     const active = await db.query.importModel.findFirst({
@@ -105,6 +243,7 @@ class ImportService extends BaseService {
       throw new ChatbotXException(
         "A product import is already running",
         "productImportAlreadyRunning",
+        409,
       )
     }
 
@@ -130,7 +269,7 @@ class ImportService extends BaseService {
             userId: input.userId,
             fileId: input.fileId,
             type: "products",
-            format: input.format,
+            format: fileFormat,
             status: importStatuses.enum.pending,
             meta: input.meta,
           })
@@ -145,6 +284,7 @@ class ImportService extends BaseService {
         throw new ChatbotXException(
           "A product import is already running",
           "productImportAlreadyRunning",
+          409,
         )
       }
       throw error
@@ -158,7 +298,7 @@ class ImportService extends BaseService {
    */
   async startFlowImport(input: {
     workspaceId: string
-    userId: string
+    userId: string | null
     fileId: string
     folderId?: string | null
   }): Promise<
@@ -298,6 +438,28 @@ class ImportService extends BaseService {
       .where(eq(importModel.id, input.importId))
   }
 
+  async find(input: {
+    workspaceId: string
+    id: string
+    type: ImportType
+    tx?: DatabaseClient
+  }) {
+    const { workspaceId, id, type, tx = db } = input
+    const [result] = await tx
+      .select(importListSelection)
+      .from(importModel)
+      .innerJoin(fileModel, eq(importModel.fileId, fileModel.id))
+      .where(
+        and(
+          eq(importModel.id, id),
+          eq(importModel.workspaceId, workspaceId),
+          eq(importModel.type, type),
+        ),
+      )
+      .limit(1)
+    return result
+  }
+
   async list(input: {
     workspaceId: string
     type?: ImportType
@@ -327,24 +489,7 @@ class ImportService extends BaseService {
 
     const [data, totalResult] = await Promise.all([
       db
-        .select({
-          id: importModel.id,
-          workspaceId: importModel.workspaceId,
-          userId: importModel.userId,
-          fileId: importModel.fileId,
-          fileName: fileModel.fileName,
-          type: importModel.type,
-          status: importModel.status,
-          totalCount: importModel.totalCount,
-          processedCount: importModel.processedCount,
-          successCount: importModel.successCount,
-          failedCount: importModel.failedCount,
-          errorMessage: importModel.errorMessage,
-          errorSample: importModel.errorSample,
-          completedAt: importModel.completedAt,
-          createdAt: importModel.createdAt,
-          updatedAt: importModel.updatedAt,
-        })
+        .select(importListSelection)
         .from(importModel)
         .innerJoin(fileModel, eq(importModel.fileId, fileModel.id))
         .where(where)

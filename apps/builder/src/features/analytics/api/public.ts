@@ -1,0 +1,923 @@
+import {
+  botMessageAnalyticsService,
+  broadcastAnalyticsService,
+  type ContactsByDimension,
+  commentAutomationAnalyticsService,
+  contactAnalyticsService,
+  conversationAnalyticsService,
+  flowAnalyticsService,
+  macAnalyticsService,
+  magicLinkAnalyticsService,
+  messageAnalyticsService,
+  refLinkAnalyticsService,
+  sequenceAnalyticsService,
+} from "@chatbotx.io/analytics"
+import { flowService, smartDelayService } from "@chatbotx.io/business"
+import { notFoundException } from "@chatbotx.io/business/errors"
+import type { FlowNode } from "@chatbotx.io/flow-config"
+import { invalidateCacheByTags, withCache } from "@chatbotx.io/redis"
+import type { z } from "zod"
+import { buildSmartDelayNodeStats } from "@/features/flows/analytics/smart-delay-node-stats"
+import { mcpSpec } from "@/lib/orpc/mcp-annotations"
+import {
+  possibleErrorsOnDeletingResource,
+  possibleErrorsOnFindingResource,
+  possibleErrorsOnListingResource,
+} from "@/lib/orpc/orpc-error-helper"
+import { workspaceTokenAuthAPIForScope } from "@/orpc"
+import {
+  botMessagesAIProvidersPublicResponse,
+  botMessagesPublicResponse,
+  broadcastStatsPublicRequest,
+  broadcastStatsPublicResponse,
+  commentAutomationErrorsPublicResponse,
+  commentAutomationListPublicRequest,
+  commentAutomationReplyStatsPublicRequest,
+  commentAutomationReplyStatsPublicResponse,
+  commentAutomationTextTotalsPublicResponse,
+  contactCountsPublicResponse,
+  contactsByDimensionPublicRequest,
+  contactsByDimensionPublicResponse,
+  contactsCountPublicResponse,
+  conversationArchivedPublicResponse,
+  conversationAssignedByAdminPublicResponse,
+  conversationAssignedPublicResponse,
+  conversationFollowUpsPublicResponse,
+  conversationHandoffsPublicResponse,
+  flowSmartDelayStatsPublicResponse,
+  flowStatsPublicRequest,
+  flowStatsPublicResponse,
+  humanAgentStatsPublicResponse,
+  type linkContactPublicResource,
+  linkContactsPublicRequest,
+  linkContactsPublicResponse,
+  linkStatsPublicRequest,
+  linkStatsPublicResponse,
+  macActiveContactCountPublicResponse,
+  messagesByAdminPublicResponse,
+  messagesBySenderPublicResponse,
+  sequenceStepStatsPublicRequest,
+  sequenceStepStatsPublicResponse,
+  timeRangePublicRequest,
+  timeRangeWithGranularityDMPublicRequest,
+  timeRangeWithGranularityMHDPublicRequest,
+  uniqueConversationsByAdminPublicResponse,
+} from "../schema/public"
+import { commentAutomationAnalyticsPublicRouter } from "./public-comment-automation"
+
+const workspaceTokenAuthAPI = workspaceTokenAuthAPIForScope("analytics")
+
+// Mirrors the internal `timeRangeKey` helper in
+// `packages/analytics-nextjs/src/routes/contact.ts` (not exported from that
+// package) so the public and internal surfaces share the same cache entries
+// for identical inputs.
+const timeRangeKey = (
+  route: string,
+  workspaceId: string,
+  from: Date,
+  to: Date,
+  timezone: string,
+) =>
+  `analytics:${route}:${workspaceId}:${from.toISOString()}:${to.toISOString()}:${timezone}`
+
+const flowStatsCacheTag = (flowId: string) => `flow-stats:${flowId}`
+const flowStatsCacheKey = (workspaceId: string, flowId: string) =>
+  `flow:stats:${workspaceId}:${flowId}`
+
+const toLinkContact = (
+  row: Awaited<
+    ReturnType<typeof magicLinkAnalyticsService.getMagicLinkContactStats>
+  >["data"][number],
+): z.infer<typeof linkContactPublicResource> => ({
+  contactId: row.contactId,
+  contactInboxId: row.contactInboxId,
+  sourceId: row.sourceId,
+  channel: row.channel,
+  conversationId: row.conversationId,
+  occurredAt: row.occurredAt,
+})
+
+export const analyticsPublicRouter = {
+  contactCountsPerDay: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/contact-counts-per-day",
+      summary: "Get contact counts per day",
+      description:
+        "Charts the running total of contacts (created minus deleted, counted from the start of the workspace) at each day in the range. When `to` is more than 60 full days after `from`, the series uses monthly buckets (first day of the month) instead of daily ones. Compare it with `analytics.newContactCountsPerDay` to isolate acquisition from the running total.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(contactCountsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await contactAnalyticsService.getContactCountsPerDay({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  newContactCountsPerDay: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/new-contact-counts-per-day",
+      summary: "Get new contact counts per day",
+      description:
+        "Charts newly created contacts per day in the range. When `to` is more than 60 full days after `from`, the series uses monthly buckets (first day of the month) instead of daily ones. Compare it with `analytics.blockedContactsPerDay` to separate acquisition trends from blocked contacts.",
+      tags: ["Analytics"],
+      spec: mcpSpec({ visibility: "default" }),
+    })
+    .input(timeRangePublicRequest)
+    .output(contactCountsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await contactAnalyticsService.getNewContactsPerDay({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  blockedContactsPerDay: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/blocked-contacts-per-day",
+      summary: "Get blocked contacts per day",
+      description:
+        "Charts contacts blocked per day in the range. When `to` is more than 60 full days after `from`, the series uses monthly buckets (first day of the month) instead of daily ones. Compare it with `analytics.newContactCountsPerDay` to distinguish blocking trends from new contacts.",
+      tags: ["Analytics"],
+      spec: mcpSpec({ visibility: "default" }),
+    })
+    .input(timeRangePublicRequest)
+    .output(contactCountsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await contactAnalyticsService.getBlockedContactsPerDay({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  blockedContactsCount: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/blocked-contacts-count",
+      summary: "Get blocked contacts count",
+      description:
+        "Counts contacts blocked within the given `from`/`to` time range. Use `analytics.blockedContactsPerDay` for a daily breakdown instead of a single total.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(contactsCountPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(({ context, input }) => {
+      const workspaceId = context.workspace.id
+      return withCache(
+        timeRangeKey(
+          "blocked-contacts-count",
+          workspaceId,
+          input.from,
+          input.to,
+          input.timezone,
+        ),
+        async () => {
+          const count = await contactAnalyticsService.getBlockedContactsCount({
+            ...input,
+            workspaceId,
+          })
+          return { data: { count } }
+        },
+        { ttl: 120 },
+      )
+    }),
+
+  newContactsCount: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/new-contacts-count",
+      summary: "Get new contacts count",
+      description:
+        "Counts contacts first created within the given `from`/`to` time range.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(contactsCountPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(({ context, input }) => {
+      const workspaceId = context.workspace.id
+      return withCache(
+        timeRangeKey(
+          "new-contacts-count",
+          workspaceId,
+          input.from,
+          input.to,
+          input.timezone,
+        ),
+        async () => {
+          const count = await contactAnalyticsService.getNewContactsCount({
+            ...input,
+            workspaceId,
+          })
+          return { data: { count } }
+        },
+        { ttl: 120 },
+      )
+    }),
+
+  contactsCount: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/contacts-count",
+      summary: "Get contacts count",
+      description:
+        "Returns the current total number of contacts across the workspace's inboxes. `from`, `to` and `timezone` are accepted for consistency with the other analytics routes but do not narrow this count; use `analytics.contactCountsPerDay` or `analytics.newContactsCount` for counts over a range.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(contactsCountPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(({ context, input }) => {
+      const workspaceId = context.workspace.id
+      return withCache(
+        timeRangeKey(
+          "contacts-count",
+          workspaceId,
+          input.from,
+          input.to,
+          input.timezone,
+        ),
+        async () => {
+          const count = await contactAnalyticsService.getContactsCount({
+            ...input,
+            workspaceId,
+          })
+          return { data: { count } }
+        },
+        { ttl: 120 },
+      )
+    }),
+
+  activeContactsCount: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/active-contacts-count",
+      summary: "Get active contacts count",
+      description:
+        "Counts contacts with at least one channel interaction within the given `from`/`to` time range (monthly active contacts).",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(contactsCountPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(({ context, input }) => {
+      const workspaceId = context.workspace.id
+      return withCache(
+        timeRangeKey(
+          "active-contacts-count",
+          workspaceId,
+          input.from,
+          input.to,
+          input.timezone,
+        ),
+        async () => {
+          const count =
+            await macAnalyticsService.getActiveContactsByWorkspaceForRange({
+              ...input,
+              workspaceId,
+            })
+          return { data: { count } }
+        },
+        { ttl: 120 },
+      )
+    }),
+
+  contactsByDimension: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/contacts-by-dimension",
+      summary: "Get contacts by dimension",
+      description:
+        "Use this for a breakdown of contacts by channel, country, or source. Groups contact counts by country, channel, or source over a time range. Set `dimension` to choose the grouping.",
+      tags: ["Analytics"],
+    })
+    .input(contactsByDimensionPublicRequest)
+    .output(contactsByDimensionPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const request = { ...input, workspaceId: context.workspace.id }
+      let data: ContactsByDimension[] = []
+
+      switch (input.dimension) {
+        case "country":
+          data = await contactAnalyticsService.getContactsByCountry(request)
+          break
+        case "channel":
+          data = await contactAnalyticsService.getContactsByChannel(request)
+          break
+        case "source":
+          data = await contactAnalyticsService.getContactsBySource(request)
+          break
+        default:
+          data = []
+      }
+
+      return { data }
+    }),
+
+  messagesByAdmin: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/messages-by-admin",
+      summary: "Get messages sent by admin",
+      description:
+        "Counts outgoing messages sent by human agents over a requested time range. Compare with `analytics.messagesBySender` for a per-sender breakdown.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(messagesByAdminPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await messageAnalyticsService.getMessagesByAdmin({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  humanAgentStats: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/human-agent-stats",
+      summary: "Get human agent statistics",
+      description:
+        "Returns volume statistics per human agent over a requested time range: messages sent, unique contacts messaged and conversations assigned. It has no response-time metric.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(humanAgentStatsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await messageAnalyticsService.getHumanAgentStats({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  conversationHandoffs: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/conversation-handoffs",
+      summary: "Get conversation handoffs",
+      description:
+        "Counts conversation transfers by day over a requested time range, in both directions: bot to human agent and human agent back to bot. Each row carries its `direction` (`to_human` or `to_bot`).",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(conversationHandoffsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await conversationAnalyticsService.getHandoffsByDay({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  conversationFollowUps: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/conversation-followups",
+      summary: "Get conversation follow-ups",
+      description:
+        "Counts conversations flagged for follow-up, by day, over a requested time range.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(conversationFollowUpsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await conversationAnalyticsService.getFollowUpsByDay({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  conversationArchived: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/conversation-archived",
+      summary: "Get archived conversations",
+      description:
+        "Counts conversations archived, by day, over a requested time range. Use `analytics.conversationAssigned` for assignment trends instead.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(conversationArchivedPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await conversationAnalyticsService.getArchivedByDay({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  conversationAssigned: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/conversation-assigned",
+      summary: "Get assigned conversations",
+      description:
+        "Counts conversations assigned to an agent, by day, over a requested time range. Use `analytics.conversationAssignedByAdmin` for a per-admin breakdown.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(conversationAssignedPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await conversationAnalyticsService.getAssignedByDay({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  conversationAssignedByAdmin: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/conversation-assigned-by-admin",
+      summary: "Get assigned conversations by admin",
+      description:
+        "Counts conversation assignments over a requested time range, broken down by the member the conversation was assigned to (`toAssignee`, with that member's name and email).",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(conversationAssignedByAdminPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await conversationAnalyticsService.getAssignedByAdmin({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  uniqueConversationsByAdmin: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/unique-conversations-by-admin",
+      summary: "Get unique conversations by admin",
+      description:
+        "Counts the distinct conversations assigned to each member over a requested time range (a conversation assigned to the same member twice counts once). Use `analytics.conversationAssignedByAdmin` for the number of assignment events.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(uniqueConversationsByAdminPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data =
+        await conversationAnalyticsService.getUniqueConversationsByAdmin({
+          ...input,
+          workspaceId: context.workspace.id,
+        })
+      return { data }
+    }),
+
+  botMessagesByResult: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/bot-messages-by-result",
+      summary: "Get bot messages by result",
+      description:
+        "Counts bot messages grouped by their outcome, `success` or `fallback`, over a requested time range with `granularity` bucketing.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangeWithGranularityMHDPublicRequest)
+    .output(botMessagesPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await botMessageAnalyticsService.getMessagesByResult({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  botMessagesWithResponse: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/bot-messages-with-response",
+      summary: "Get bot messages with response",
+      description:
+        "Counts bot-received message events flagged as answered, i.e. the bot started an automated response, flow or AI agent for the inbound message, over a requested time range with `granularity` bucketing. It counts events, and does not measure whether the contact replied afterwards.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangeWithGranularityMHDPublicRequest)
+    .output(botMessagesPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await botMessageAnalyticsService.getMessagesWithResponse({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  botMessagesNoResponse: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/bot-messages-no-response",
+      summary: "Get bot messages with no response",
+      description:
+        "Counts bot-received message events for which the bot started no automated response, flow or AI agent, over a requested time range with `granularity` bucketing.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangeWithGranularityMHDPublicRequest)
+    .output(botMessagesPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await botMessageAnalyticsService.getMessagesWithNoResponse({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  botMessagesAiProviders: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/bot-messages-ai-providers",
+      summary: "Get bot messages AI providers",
+      description:
+        "Counts AI-agent replies grouped by the AI provider that generated them, with each provider's share (`percentage`), over a requested time range. Replies that did not come from an AI agent are not counted.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(botMessagesAIProvidersPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await botMessageAnalyticsService.getAIProviderStats({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  messagesBySender: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/messages-by-sender",
+      summary: "Get messages by sender",
+      description:
+        "Counts messages grouped by sender type (bot vs human agent) and channel, over a requested time range. `granularity` sets the bucket size, but when `to` is more than 60 full days after `from` monthly buckets are always used. Messages without a channel or sender type are not counted.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangeWithGranularityDMPublicRequest)
+    .output(messagesBySenderPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await messageAnalyticsService.getMessagesBySender({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  broadcastStats: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/broadcasts/{broadcastId}/stats",
+      summary: "Get broadcast stats",
+      description:
+        "Use this after resolving a broadcast with `broadcasts.get` to inspect sent, delivered, seen, and failed counts. Compare results with `analytics.flowStats` for automation performance.",
+      tags: ["Analytics"],
+      spec: mcpSpec({ visibility: "default" }),
+    })
+    .input(broadcastStatsPublicRequest)
+    .output(broadcastStatsPublicResponse)
+    .errors(possibleErrorsOnFindingResource)
+    .handler(({ context, input }) => {
+      const workspaceId = context.workspace.id
+      return withCache(
+        `analytics:broadcast-stats:${workspaceId}:${input.broadcastId}`,
+        async () =>
+          await broadcastAnalyticsService.getStats({
+            workspaceId,
+            broadcastId: input.broadcastId,
+          }),
+        { ttl: 120 },
+      )
+    }),
+
+  sequenceStepStats: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/sequences/{sequenceId}/steps/{stepId}/stats",
+      summary: "Get sequence step stats",
+      description:
+        "Use this after resolving a sequence and step to inspect delivery counts for that step. Call `sequences.get` first for step ids, or use `analytics.broadcastStats` for broadcast delivery.",
+      tags: ["Analytics"],
+      spec: mcpSpec({ visibility: "default" }),
+    })
+    .input(sequenceStepStatsPublicRequest)
+    .output(sequenceStepStatsPublicResponse)
+    .errors(possibleErrorsOnFindingResource)
+    .handler(({ context, input }) => {
+      const workspaceId = context.workspace.id
+      return withCache(
+        `analytics:sequence-step-stats:${workspaceId}:${input.sequenceId}:${input.stepId}`,
+        async () =>
+          await sequenceAnalyticsService.getStepStats({
+            workspaceId,
+            sequenceId: input.sequenceId,
+            stepId: input.stepId,
+          }),
+        { ttl: 120 },
+      )
+    }),
+
+  macActiveContactCount: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/mac/active-count",
+      summary: "Get current period MAC count",
+      description:
+        "Returns the workspace's monthly active contact count for the current billing period. Use `analytics.activeContactsCount` for an arbitrary date range instead.",
+      tags: ["Analytics"],
+    })
+    .output(macActiveContactCountPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context }) => {
+      const macCount =
+        await macAnalyticsService.getActiveContactCountByWorkspaceId({
+          workspaceId: context.workspace.id,
+        })
+      return { data: { macCount } }
+    }),
+
+  flowStats: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/flows/{flowId}/stats",
+      summary: "Get flow analytics",
+      description:
+        "Returns per-node statistics for a flow, keyed by send-message node id: `message:sent`, `message:delivered`, `message:seen`, `message:failed`, `flow:clicked` (`clicked`, and `totalUsers`, which is the delivered count) and per-button clicks, for the current analytics session (`analytics.resetFlowStats` starts a new one). Resolve the flow with `flows.get` first. Call `analytics.newContactCountsPerDay` instead for workspace contact trends.",
+      tags: ["Analytics"],
+      spec: mcpSpec({ visibility: "default" }),
+    })
+    .input(flowStatsPublicRequest)
+    .output(flowStatsPublicResponse)
+    .errors(possibleErrorsOnFindingResource)
+    .handler(({ context, input }) => {
+      const workspaceId = context.workspace.id
+      return withCache(
+        flowStatsCacheKey(workspaceId, input.flowId),
+        async () =>
+          await flowAnalyticsService.getFlowStats({
+            workspaceId,
+            flowId: input.flowId,
+          }),
+        { ttl: 120, tags: [flowStatsCacheTag(input.flowId)] },
+      )
+    }),
+
+  flowSmartDelayStats: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/flows/{flowId}/smart-delay-stats",
+      summary: "Get flow wait and follow-up counts",
+      description:
+        "Per wait or follow-up node of the flow's draft version (keyed by node id): contacts still `waiting` and contacts that were `sent` onward. These are not part of `analytics.flowStats`. Find node ids with `flows.get`.",
+      tags: ["Analytics"],
+    })
+    .input(flowStatsPublicRequest)
+    .output(flowSmartDelayStatsPublicResponse)
+    .errors(possibleErrorsOnFindingResource)
+    .handler(async ({ context, input }) => {
+      const workspaceId = context.workspace.id
+      const flow = await flowService.findById({ id: input.flowId, workspaceId })
+      const draft = flow.flowVersions?.find((version) => version.isDraft)
+      if (!draft) {
+        throw notFoundException("Flow has no draft version")
+      }
+      const rows = await smartDelayService.countByFlowStep({
+        workspaceId,
+        flowId: input.flowId,
+      })
+      return buildSmartDelayNodeStats(
+        draft.nodes as unknown as FlowNode[],
+        rows,
+      )
+    }),
+
+  commentAutomationReplyStats: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/comment-automation/replies",
+      summary: "Get comment automation reply counts",
+      description:
+        "Replies the comment automation sent per day in a range. When `to` is more than 60 full days after `from`, the series uses monthly buckets (first day of the month) instead of daily ones. Use `analytics.commentAutomationUserComments` and `analytics.commentAutomationBotReplies` for the texts behind the counts.",
+      tags: ["Analytics"],
+    })
+    .input(commentAutomationReplyStatsPublicRequest)
+    .output(commentAutomationReplyStatsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const { from, to, ...rest } = input
+      return {
+        data: await commentAutomationAnalyticsService.getReplyStatsByDateRange({
+          ...rest,
+          startDate: from,
+          endDate: to,
+          workspaceId: context.workspace.id,
+        }),
+      }
+    }),
+
+  commentAutomationUserComments: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/comment-automation/user-comments",
+      summary: "List comment automation customer comments",
+      description:
+        "Distinct customer comments the automation matched in a range, with how often each occurred, paged with `page`/`perPage` and filterable by `keyword`. The texts are customer-written and returned verbatim.",
+      tags: ["Analytics"],
+    })
+    .input(commentAutomationListPublicRequest)
+    .output(commentAutomationTextTotalsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const { from, to, ...rest } = input
+      return await commentAutomationAnalyticsService.listUserComments({
+        ...rest,
+        startDate: from,
+        endDate: to,
+        workspaceId: context.workspace.id,
+      })
+    }),
+
+  commentAutomationBotReplies: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/comment-automation/bot-replies",
+      summary: "List comment automation bot replies",
+      description:
+        "Distinct replies the automation posted in a range, with how often each was sent, paged with `page`/`perPage` and filterable by `keyword`.",
+      tags: ["Analytics"],
+    })
+    .input(commentAutomationListPublicRequest)
+    .output(commentAutomationTextTotalsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const { from, to, ...rest } = input
+      return await commentAutomationAnalyticsService.listBotReplies({
+        ...rest,
+        startDate: from,
+        endDate: to,
+        workspaceId: context.workspace.id,
+      })
+    }),
+
+  commentAutomationErrors: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/comment-automation/errors",
+      summary: "List comment automation errors",
+      description:
+        "Failed comment replies in a range with the reason and the contact's name and avatar. Failed rows are kept for 30 days only.",
+      tags: ["Analytics"],
+    })
+    .input(commentAutomationListPublicRequest)
+    .output(commentAutomationErrorsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const { from, to, ...rest } = input
+      return await commentAutomationAnalyticsService.listErrors({
+        ...rest,
+        startDate: from,
+        endDate: to,
+        workspaceId: context.workspace.id,
+      })
+    }),
+
+  magicLinkStats: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/magic-links/stats",
+      summary: "Get magic link stats",
+      description:
+        "Returns the number of recorded openings of one magic link per day over a time range (`dateReport`, `count`); repeat opens from the same contact inbox within the same second count once. There is no conversion metric. Use `analytics.magicLinkContacts` to list the contacts behind those counts.",
+      tags: ["Analytics"],
+    })
+    .input(linkStatsPublicRequest)
+    .output(linkStatsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const { from, to, ...rest } = input
+      const data = await magicLinkAnalyticsService.getMagicLinkStatsByDateRange(
+        {
+          ...rest,
+          startDate: from,
+          endDate: to,
+          workspaceId: context.workspace.id,
+        },
+      )
+      return { data }
+    }),
+
+  magicLinkContacts: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/magic-links/contacts",
+      summary: "Get magic link contacts",
+      description:
+        "Lists the contacts who clicked one magic link over a time range. Use `analytics.magicLinkStats` for aggregate counts instead.",
+      tags: ["Analytics"],
+    })
+    .input(linkContactsPublicRequest)
+    .output(linkContactsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const { from, to, ...rest } = input
+      const result = await magicLinkAnalyticsService.getMagicLinkContactStats({
+        ...rest,
+        startDate: from,
+        endDate: to,
+        workspaceId: context.workspace.id,
+      })
+      return { ...result, data: result.data.map(toLinkContact) }
+    }),
+
+  refLinkStats: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/ref-links/stats",
+      summary: "Get ref link stats",
+      description:
+        "Returns the number of processed referral events of one ref link per day over a time range (`dateReport`, `count`). There is no conversion metric. Use `analytics.refLinkContacts` to list the contacts behind those counts.",
+      tags: ["Analytics"],
+    })
+    .input(linkStatsPublicRequest)
+    .output(linkStatsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const { from, to, ...rest } = input
+      const data = await refLinkAnalyticsService.getRefLinkStatsByDateRange({
+        ...rest,
+        startDate: from,
+        endDate: to,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  refLinkContacts: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/ref-links/contacts",
+      summary: "Get ref link contacts",
+      description:
+        "Lists the contacts who clicked one ref link over a time range. Use `analytics.refLinkStats` for aggregate counts instead.",
+      tags: ["Analytics"],
+    })
+    .input(linkContactsPublicRequest)
+    .output(linkContactsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const { from, to, ...rest } = input
+      const result = await refLinkAnalyticsService.getRefLinkContactStats({
+        ...rest,
+        startDate: from,
+        endDate: to,
+        workspaceId: context.workspace.id,
+      })
+      return { ...result, data: result.data.map(toLinkContact) }
+    }),
+
+  resetFlowStats: workspaceTokenAuthAPI
+    .route({
+      method: "DELETE",
+      path: "/v1/analytics/flows/{flowId}/stats",
+      summary: "Reset flow analytics",
+      description:
+        "Clears the flow's recorded analytics sessions and counters and opens a new session; it does not delete or otherwise touch the flow itself. This cannot be undone. A flow id that is not in this workspace is a no-op (still 204). Unavailable to read_only tokens (DELETE is blocked for read_only permission).",
+      successStatus: 204,
+      tags: ["Analytics"],
+    })
+    .input(flowStatsPublicRequest)
+    .errors(possibleErrorsOnDeletingResource)
+    .handler(async ({ context, input }) => {
+      const workspaceId = context.workspace.id
+      await flowAnalyticsService.resetStatsSession({
+        workspaceId,
+        flowId: input.flowId,
+      })
+      await invalidateCacheByTags([flowStatsCacheTag(input.flowId)])
+    }),
+
+  ...commentAutomationAnalyticsPublicRouter,
+}

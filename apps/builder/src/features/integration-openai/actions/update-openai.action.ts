@@ -1,13 +1,12 @@
 "use server"
 import { aiIntegrationService } from "@chatbotx.io/ai/server"
-import { db, eq, findOrFail } from "@chatbotx.io/database/client"
-import { integrationOpenaiModel } from "@chatbotx.io/database/schema"
+import { integrationOpenAIService } from "@chatbotx.io/business"
 import { zodBigintAsString } from "@chatbotx.io/utils"
 import { workspaceActionClient } from "@/lib/safe-action"
 import {
   type UpdateOpenAIRequest,
   updateOpenAIRequest,
-} from "../schemas/request"
+} from "../schema/request"
 
 export const updateIntegrationOpenAIAction = workspaceActionClient
   .bindArgsSchemas([zodBigintAsString(), zodBigintAsString()])
@@ -28,21 +27,7 @@ export const updateIntegrationOpenAI = async (
   },
   parsedInput: UpdateOpenAIRequest,
 ) => {
-  const integrationOpenAI = await findOrFail({
-    table: integrationOpenaiModel,
-    where: {
-      id: ctx.id,
-      workspaceId: ctx.workspaceId,
-    },
-    message: "Integration OpenAI not found",
-  })
-
-  const result = await db
-    .update(integrationOpenaiModel)
-    .set(parsedInput)
-    .where(eq(integrationOpenaiModel.id, integrationOpenAI.id))
-    .returning()
-    .then((result) => result[0])
+  const result = await integrationOpenAIService.update(ctx, parsedInput)
 
   await aiIntegrationService.invalidateCache(ctx.workspaceId, "openai")
 

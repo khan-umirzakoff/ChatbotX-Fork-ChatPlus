@@ -10,7 +10,7 @@ import {
   type StatsContactRow,
   StatsContactsDialog,
 } from "@/features/common/components/stats-contacts-dialog"
-import type { ContactFilterRequest } from "@/features/contacts/schemas/query"
+import type { ContactFilterRequest } from "@/features/contacts/schema/query"
 import { client } from "@/lib/orpc/orpc"
 
 type BroadcastAudiencePreviewDialogProps = {
@@ -20,9 +20,17 @@ type BroadcastAudiencePreviewDialogProps = {
   total: number
   channel: ChannelType
   subaction: BroadcastSubaction
+  inboxIds?: string[]
   integrationWhatsappId?: string | null
   integrationMessengerId?: string | null
   contactFilter?: ContactFilterRequest["contactFilter"] | null
+  /**
+   * 1-based inclusive audience window (see `broadcast-send-limit-fields.tsx`).
+   * Only the preview dialog needs the server-side offset — the receivers
+   * count and the confirm dialog use the already-windowed total instead.
+   */
+  audienceRangeStart?: number | null
+  audienceRangeEnd?: number | null
 }
 
 export const BroadcastAudiencePreviewDialog = memo(
@@ -33,9 +41,12 @@ export const BroadcastAudiencePreviewDialog = memo(
     total,
     channel,
     subaction,
+    inboxIds,
     integrationWhatsappId,
     integrationMessengerId,
     contactFilter,
+    audienceRangeStart,
+    audienceRangeEnd,
   }: BroadcastAudiencePreviewDialogProps) {
     const t = useTranslations()
 
@@ -48,10 +59,13 @@ export const BroadcastAudiencePreviewDialog = memo(
               page,
               perPage,
               channels: [channel],
+              inboxIds,
               integrationWhatsappId: integrationWhatsappId ?? undefined,
               integrationMessengerId: integrationMessengerId ?? undefined,
               contactFilter: contactFilter ?? undefined,
               subaction,
+              audienceRangeStart: audienceRangeStart ?? undefined,
+              audienceRangeEnd: audienceRangeEnd ?? undefined,
             },
           )
 
@@ -60,10 +74,13 @@ export const BroadcastAudiencePreviewDialog = memo(
       [
         channel,
         contactFilter,
+        inboxIds,
         integrationMessengerId,
         integrationWhatsappId,
         subaction,
         workspaceId,
+        audienceRangeStart,
+        audienceRangeEnd,
       ],
     )
 

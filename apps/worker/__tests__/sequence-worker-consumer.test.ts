@@ -1,33 +1,67 @@
+import { AsyncLocalStorage } from "node:async_hooks"
+import { getAuditActor } from "@chatbotx.io/business/audit"
 import { beforeEach, describe, expect, test, vi } from "vitest"
 
-const { consumeSpy, fetchDispatchSpy, loggerInfoSpy, loggerWarnSpy } =
-  vi.hoisted(() => ({
-    consumeSpy: vi.fn(),
-    fetchDispatchSpy: vi.fn(),
-    loggerInfoSpy: vi.fn(),
-    loggerWarnSpy: vi.fn(),
-  }))
-
-vi.mock("@chatbotx.io/flow-config", () => ({
-  SEQUENCE_SCHEDULE_PAYLOAD_TYPE: "sequence_schedule",
+const {
+  fetchDispatchSpy,
+  integrationQueueAddSpy,
+  isLockAcquisitionErrorSpy,
+  loggerDebugSpy,
+  loggerErrorSpy,
+  loggerWarnSpy,
+  removeFromScheduleSpy,
+  useExistingSpy,
+  withLockSpy,
+  workerCloseSpy,
+  workerCreatedSpy,
+  workerOnSpy,
+  workerOptionsSpy,
+  workerProcessorSpy,
+  workerWaitUntilReadySpy,
+} = vi.hoisted(() => ({
+  fetchDispatchSpy: vi.fn(),
+  integrationQueueAddSpy: vi.fn(),
+  isLockAcquisitionErrorSpy: vi.fn(),
+  loggerDebugSpy: vi.fn(),
+  loggerErrorSpy: vi.fn(),
+  loggerWarnSpy: vi.fn(),
+  removeFromScheduleSpy: vi.fn(),
+  useExistingSpy: vi.fn(),
+  withLockSpy: vi.fn(),
+  workerCloseSpy: vi.fn(),
+  workerCreatedSpy: vi.fn(),
+  workerOnSpy: vi.fn(),
+  workerOptionsSpy: vi.fn(),
+  workerProcessorSpy: vi.fn(),
+  workerWaitUntilReadySpy: vi.fn(),
 }))
 
-vi.mock("@chatbotx.io/business", () => ({
-  withBlockedOwnerGuard: async (
-    _workspaceId: unknown,
-    fn: () => Promise<unknown>,
-  ) => fn(),
+const auditStorage = new AsyncLocalStorage<Record<string, unknown>>()
+
+vi.mock("@chatbotx.io/business/audit", () => ({
+  SYSTEM_ACTOR: "system",
+  auditService: { record: vi.fn() },
+  getAuditActor: () => auditStorage.getStore(),
+  withAuditContext: (actor: Record<string, unknown>, fn: () => unknown) =>
+    auditStorage.run(actor, fn),
+}))
+
+vi.mock("@chatbotx.io/flow-config", () => ({
+  SEQUENCE_SCHEDULE_PAYLOAD_TYPE: "sequenceSchedule",
 }))
 
 vi.mock("@chatbotx.io/redis", () => ({
-  sequenceConnections: { useExisting: vi.fn().mockResolvedValue({}) },
+  isLockAcquisitionError: isLockAcquisitionErrorSpy,
+  sequenceConnections: { useExisting: useExistingSpy },
 }))
 
 vi.mock("@chatbotx.io/scheduler", () => ({
   SchedulerClient: class {
     addToSchedule = vi.fn()
-    removeFromSchedule = vi.fn()
-    withLock = vi.fn()
+    getLockKey = (bucket: number, dispatchId: string) =>
+      `seq:dispatch:{${bucket}}:lock:${dispatchId}`
+    removeFromSchedule = removeFromScheduleSpy
+    withLock = withLockSpy
   },
 }))
 
@@ -37,21 +71,41 @@ vi.mock("@chatbotx.io/sequence-scheduler", () => ({
 
 vi.mock("@chatbotx.io/worker-config", () => ({
   IntegrationJobAction: { sendSequenceFlow: "sendSequenceFlow" },
-  SEQUENCE_SCHEDULER_QUEUE_NAME: "sequence-scheduler",
-  integrationQueue: { add: vi.fn() },
+  integrationQueue: { add: integrationQueueAddSpy },
+  queueNames: { enum: { sequenceScheduler: "sequence-scheduler" } },
 }))
 
-vi.mock("@chatbotx.io/worker-config/message-queue/factory", () => ({
-  createConsumer: vi.fn().mockResolvedValue({
-    close: vi.fn(),
-    consume: consumeSpy,
-  }),
+vi.mock("bullmq", () => ({
+  Worker: class {
+    constructor(
+      _queueName: string,
+      processor: (job: unknown) => Promise<void>,
+      options: unknown,
+    ) {
+      workerCreatedSpy()
+      workerOptionsSpy(options)
+      workerProcessorSpy.mockImplementation(processor)
+    }
+
+    close = workerCloseSpy
+    on = workerOnSpy
+    waitUntilReady = workerWaitUntilReadySpy
+  },
+}))
+
+vi.mock("../src/lib/bootstrap", () => ({
+  ensureBootstrapped: vi.fn(),
+}))
+
+vi.mock("../src/lib/is-blocked-workspace", () => ({
+  isBlockedWorkspace: vi.fn().mockResolvedValue(false),
 }))
 
 vi.mock("../src/lib/logger", () => ({
   logger: {
-    error: vi.fn(),
-    info: loggerInfoSpy,
+    debug: loggerDebugSpy,
+    error: loggerErrorSpy,
+    info: vi.fn(),
     warn: loggerWarnSpy,
   },
 }))
@@ -65,12 +119,19 @@ vi.mock(
   () => ({
     DispatchProcessorService: class {
       fetchDispatch = fetchDispatchSpy
-      isDispatchReady = vi.fn()
-      lockDispatch = vi.fn()
-      validateDispatch = vi.fn()
+      isDispatchReady = vi.fn(() => true)
+      lockDispatch = vi.fn(() => true)
+      validateDispatch = vi.fn(() => true)
     },
   }),
 )
+
+vi.mock("../src/sequence-scheduler/services/step-executor.service", () => ({
+  StepExecutorService: class {
+    fetchStep = vi.fn(() => ({ id: "step-1", sequenceId: "sequence-1" }))
+    validateStep = vi.fn(() => ({ valid: true }))
+  },
+}))
 
 vi.mock("../src/sequence-scheduler/services/retry-scheduler.service", () => ({
   RetrySchedulerService: class {
@@ -78,36 +139,189 @@ vi.mock("../src/sequence-scheduler/services/retry-scheduler.service", () => ({
   },
 }))
 
-vi.mock("../src/sequence-scheduler/services/step-executor.service", () => ({
-  StepExecutorService: class {
-    fetchStep = vi.fn()
-    validateStep = vi.fn()
-  },
-}))
+const startConsumer = async (): Promise<void> => {
+  // The consumer is a module-scope singleton; reset it to exercise each startup independently.
+  await import("../src/sequence-scheduler/worker-consumer")
+  await vi.waitFor(() => {
+    expect(workerCreatedSpy).toHaveBeenCalledOnce()
+  })
+}
 
-describe("sequence worker consumer", () => {
-  beforeEach(() => {
-    vi.resetModules()
-    vi.clearAllMocks()
-    consumeSpy.mockImplementation(async (handler) => {
-      await handler(JSON.stringify({ dispatchId: "dispatch-1", bucket: 1 }))
+beforeEach(() => {
+  vi.resetModules()
+  vi.clearAllMocks()
+  fetchDispatchSpy.mockResolvedValue(null)
+  isLockAcquisitionErrorSpy.mockReturnValue(false)
+  removeFromScheduleSpy.mockResolvedValue(undefined)
+  useExistingSpy.mockResolvedValue({})
+  withLockSpy.mockImplementation(
+    async (
+      _bucket: number,
+      _dispatchId: string,
+      _timeoutInSeconds: number,
+      fn: () => Promise<void>,
+    ) => await fn(),
+  )
+  workerCloseSpy.mockResolvedValue(undefined)
+  workerWaitUntilReadySpy.mockResolvedValue(undefined)
+})
+
+describe("sequence scheduler consumer", () => {
+  test("processes the legacy wrapper payload during the one-release cutover", async () => {
+    await startConsumer()
+
+    await workerProcessorSpy({
+      data: {
+        key: "dispatch-1",
+        value: JSON.stringify({
+          bucket: 3,
+          dispatchId: "dispatch-1",
+          workspaceId: "workspace-1",
+        }),
+      },
     })
+
+    expect(withLockSpy).toHaveBeenCalledWith(
+      3,
+      "dispatch-1",
+      30,
+      expect.any(Function),
+    )
+    expect(removeFromScheduleSpy).toHaveBeenCalledWith(3, "dispatch-1")
   })
 
-  test("logs and skips messages missing workspaceId", async () => {
-    await import("../src/sequence-scheduler/worker-consumer")
+  test("removes terminal jobs so the scheduler can enqueue a retried dispatch", async () => {
+    await startConsumer()
 
-    await vi.waitFor(() => {
-      expect(consumeSpy).toHaveBeenCalledOnce()
+    expect(workerOptionsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        removeOnComplete: { count: 0 },
+        removeOnFail: { count: 0 },
+      }),
+    )
+  })
+
+  test("sets the dispatch workspace audit context before enqueuing a sequence step", async () => {
+    fetchDispatchSpy.mockResolvedValue({
+      attempt: 0,
+      bucket: 3,
+      contactId: "contact-1",
+      contactInboxId: "contact-inbox-1",
+      enrollmentId: "enrollment-1",
+      id: "dispatch-1",
+      sequenceId: "sequence-1",
+      stepId: "step-1",
+      workspaceId: "workspace-1",
+    })
+    integrationQueueAddSpy.mockImplementation(() => {
+      expect(getAuditActor()).toEqual(
+        expect.objectContaining({
+          source: "sequence-scheduler:executeStep",
+          workspaceId: "workspace-1",
+        }),
+      )
+    })
+    await startConsumer()
+
+    await workerProcessorSpy({
+      data: {
+        bucket: 3,
+        claimedAt: Date.now(),
+        dispatchId: "dispatch-1",
+        workspaceId: "workspace-1",
+      },
     })
 
-    expect(loggerWarnSpy).toHaveBeenCalledWith(
-      { payload: { dispatchId: "dispatch-1", bucket: 1 } },
-      "Skipping sequence dispatch message without workspaceId",
-    )
+    expect(integrationQueueAddSpy).toHaveBeenCalledOnce()
+  })
+
+  test("discards malformed legacy payloads without retrying", async () => {
+    await startConsumer()
+
+    await expect(
+      workerProcessorSpy({ data: { key: "dispatch-1", value: "{invalid" } }),
+    ).resolves.toBeUndefined()
+
     expect(fetchDispatchSpy).not.toHaveBeenCalled()
-    expect(loggerInfoSpy).toHaveBeenCalledWith(
-      "Dispatch consumer fully operational",
+    expect(loggerErrorSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ err: expect.any(SyntaxError) }),
+      expect.stringContaining("Failed to parse"),
+    )
+  })
+
+  test("skips lock contention without failing the BullMQ job", async () => {
+    const lockError = new Error("lock held")
+    withLockSpy.mockRejectedValueOnce(lockError)
+    isLockAcquisitionErrorSpy.mockImplementation(
+      (_error: unknown, key: string) =>
+        key === "seq:dispatch:{3}:lock:dispatch-1",
+    )
+    await startConsumer()
+
+    await expect(
+      workerProcessorSpy({
+        data: {
+          bucket: 3,
+          claimedAt: Date.now(),
+          dispatchId: "dispatch-1",
+          workspaceId: "workspace-1",
+        },
+      }),
+    ).resolves.toBeUndefined()
+
+    expect(loggerDebugSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ err: lockError }),
+      expect.stringContaining("another worker owns the lock"),
+    )
+
+    expect(isLockAcquisitionErrorSpy).toHaveBeenCalledWith(
+      lockError,
+      "seq:dispatch:{3}:lock:dispatch-1",
+    )
+  })
+
+  test("propagates non-lock failures so BullMQ retries the job", async () => {
+    const processingError = new Error("database unavailable")
+    withLockSpy.mockRejectedValueOnce(processingError)
+    await startConsumer()
+
+    await expect(
+      workerProcessorSpy({
+        data: {
+          bucket: 3,
+          claimedAt: Date.now(),
+          dispatchId: "dispatch-1",
+          workspaceId: "workspace-1",
+        },
+      }),
+    ).rejects.toThrow("database unavailable")
+
+    expect(loggerErrorSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ err: processingError }),
+      expect.stringContaining("propagating for BullMQ retry"),
+    )
+  })
+
+  test("rethrows a lock error for a nested lock with a different key", async () => {
+    const nestedLockError = new Error("nested lock held")
+    withLockSpy.mockRejectedValueOnce(nestedLockError)
+    isLockAcquisitionErrorSpy.mockReturnValue(false)
+    await startConsumer()
+
+    await expect(
+      workerProcessorSpy({
+        data: {
+          bucket: 3,
+          claimedAt: Date.now(),
+          dispatchId: "dispatch-1",
+          workspaceId: "workspace-1",
+        },
+      }),
+    ).rejects.toThrow("nested lock held")
+
+    expect(isLockAcquisitionErrorSpy).toHaveBeenCalledWith(
+      nestedLockError,
+      "seq:dispatch:{3}:lock:dispatch-1",
     )
   })
 })

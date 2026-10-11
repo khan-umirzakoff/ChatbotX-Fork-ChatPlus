@@ -2,10 +2,10 @@ import type {
   BroadcastSubaction,
   ChannelType,
 } from "@chatbotx.io/database/partials"
-import { HTTPError } from "ky"
 import { createStore } from "zustand/vanilla"
+import { getClientErrorMessage } from "@/lib/orpc/client-error"
 import { client } from "@/lib/orpc/orpc"
-import type { ContactFilterRequest } from "../schemas/query"
+import type { ContactFilterRequest } from "../schema/query"
 
 export type ContactState = {
   loadingCounts: boolean
@@ -25,6 +25,7 @@ export type ContactActions = {
   getContactInboxesCount: (params?: {
     contactFilter?: ContactFilterRequest["contactFilter"]
     channel?: ChannelType
+    inboxIds?: string[]
     integrationWhatsappId?: string
     integrationMessengerId?: string
     subaction?: BroadcastSubaction
@@ -76,10 +77,7 @@ export const createContactStore = (props: Partial<ContactState>) =>
         set({ count: total, loadingCounts: false })
       } catch (error: unknown) {
         set({
-          error:
-            error instanceof HTTPError
-              ? error.message
-              : "Failed to fetch contacts count",
+          error: getClientErrorMessage(error, "Failed to fetch contacts count"),
         })
       } finally {
         set({ loadingCounts: false })
@@ -106,6 +104,7 @@ export const createContactStore = (props: Partial<ContactState>) =>
             workspaceId,
             sort: [],
             channels: params?.channel ? [params.channel] : [],
+            inboxIds: params?.inboxIds,
             integrationWhatsappId: params?.integrationWhatsappId,
             integrationMessengerId: params?.integrationMessengerId,
             contactFilter: params?.contactFilter,
@@ -123,10 +122,7 @@ export const createContactStore = (props: Partial<ContactState>) =>
         }
 
         set({
-          error:
-            error instanceof HTTPError
-              ? error.message
-              : "Failed to fetch contacts count",
+          error: getClientErrorMessage(error, "Failed to fetch contacts count"),
           loadingInboxesCount: false,
         })
       } finally {

@@ -98,11 +98,14 @@ async function syncRetargetAudiencePages(input: {
   let totalBatches = 0
 
   for (;;) {
-    const rows = await adsConversionService.listRetargetContacts({
+    const { rows, hasMore } = await adsConversionService.listRetargetContacts({
       workspaceId: input.data.workspaceId,
       segment: input.data.segment,
       adId: input.data.adId,
       integrationWhatsappId: input.data.integrationWhatsappId,
+      channel: input.data.channel,
+      integrationMessengerId: input.data.integrationMessengerId,
+      integrationInstagramId: input.data.integrationInstagramId,
       since: input.data.since,
       until: input.data.until,
       afterId,
@@ -139,7 +142,7 @@ async function syncRetargetAudiencePages(input: {
     }
 
     afterId = rows.at(-1)?.id
-    if (rows.length < RETARGET_CONTACT_PAGE_SIZE || !afterId) {
+    if (!(hasMore && afterId)) {
       break
     }
   }

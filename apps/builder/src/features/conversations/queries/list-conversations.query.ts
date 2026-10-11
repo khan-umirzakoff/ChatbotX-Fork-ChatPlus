@@ -1,19 +1,25 @@
-"use server"
-
-import { conversationService } from "@chatbotx.io/business"
+import {
+  conversationService,
+  resolveContactAvatarUrl,
+} from "@chatbotx.io/business"
+import { resolveAdReferral } from "@chatbotx.io/business/ads-conversion/channel-fields"
 import { notFoundException } from "@chatbotx.io/business/errors"
-import { createMessageRepository } from "@chatbotx.io/database/repositories"
+import { resolveGoogleAdsClick } from "@chatbotx.io/business/google-ads/click-fields"
+import {
+  contactInboxOperationalColumns,
+  createMessageRepository,
+} from "@chatbotx.io/database/repositories"
+import type {
+  ContactInboxOperationalModel,
+  InboxModel,
+} from "@chatbotx.io/database/types"
 import { zodBigintAsString } from "@chatbotx.io/utils"
 import { endOfHour } from "date-fns"
 import z from "zod"
-import { canViewContactEmailAndPhone } from "@/features/contacts/permissions"
 import type { ListConversationsRequest } from "@/features/conversations/schema/query"
-import {
-  assertCurrentUserCanAccessChatbot,
-  getCurrentUserAndTargetWorkspace,
-} from "@/lib/auth/utils"
 import { decodeCursor, encodeCursor } from "@/lib/pagination"
 import type {
+  ConversationContactInboxResource,
   FindConversationRequest,
   FindConversationResponse,
   ListConversationsResponse,
@@ -23,6 +29,67 @@ import { resolveLastMessageSinceTime } from "./last-message-window"
 
 const DEFAULT_PER_PAGE = 20
 
+// Shared by BOTH conversation query paths (`listConversations` and
+// `findConversation`) so a raw `contactInbox.referral` — an arbitrary webhook
+// payload — never reaches the oRPC response and both paths produce the exact
+// same `conversationContactInboxResource` shape (output validation requires
+// this). The explicit projection keeps internal jsonb columns out of the
+// response object entirely rather than relying on output validation to strip them.
+const mapConversationContactInboxes = (
+  contactInboxes: readonly (ContactInboxOperationalModel & {
+    inbox: InboxModel
+  })[],
+): ConversationContactInboxResource[] =>
+  contactInboxes.map((contactInbox) => ({
+    id: contactInbox.id,
+    contactId: contactInbox.contactId,
+    inboxId: contactInbox.inboxId,
+    channel: contactInbox.channel,
+    source: contactInbox.source,
+    sourceId: contactInbox.sourceId,
+    sourceUserId: contactInbox.sourceUserId,
+    sourceUsername: contactInbox.sourceUsername,
+    language: contactInbox.language,
+    lastMessageAt: contactInbox.lastMessageAt,
+    lastIncomingMessageAt: contactInbox.lastIncomingMessageAt,
+    contactLastReadAt: contactInbox.contactLastReadAt,
+    inbox: contactInbox.inbox,
+    adReferral: resolveAdReferral(contactInbox.referral),
+    googleAdsClick: resolveGoogleAdsClick(contactInbox.referral),
+    // Conversation routing (thread control): the composer's standby lock and
+    // the owner pill read these off the listed conversation, so the allow-list
+    // mapper must carry them or the lock never engages on reload.
+    threadControlState: contactInbox.threadControlState,
+    threadOwnerRole: contactInbox.threadOwnerRole,
+    threadControlUpdatedAt: contactInbox.threadControlUpdatedAt,
+    threadOwnerExpiresAt: contactInbox.threadOwnerExpiresAt,
+    threadOwnerAppId: contactInbox.threadOwnerAppId,
+    threadControlLastEvent: contactInbox.threadControlLastEvent,
+  }))
+
+const resolveConversationContact = async <T extends { avatar: string | null }>(
+  contact: T | null,
+  contactInboxes: readonly (ContactInboxOperationalModel & {
+    inbox: InboxModel
+  })[],
+  workspaceId: string,
+): Promise<T | null> => {
+  if (!contact) {
+    return null
+  }
+  return {
+    ...contact,
+    avatar: await resolveContactAvatarUrl(
+      {
+        workspaceId,
+        contact,
+        contactInboxes,
+      },
+      (key) => key,
+    ),
+  }
+}
+
 const conversationCursorSchema = z.object({
   lastActivityAt: z.coerce.date().nullable(),
   id: zodBigintAsString(),
@@ -31,9 +98,9 @@ type ConversationCursor = z.infer<typeof conversationCursorSchema>
 
 export const listConversations = async (
   data: ListConversationsRequest,
+  access: { includeEmailAndPhone: boolean },
 ): Promise<ListConversationsResponse> => {
   const { workspaceId, ...input } = data
-  await assertCurrentUserCanAccessChatbot(workspaceId)
 
   const limit = input.perPage ?? DEFAULT_PER_PAGE
   const cursor = input.cursor
@@ -41,17 +108,11 @@ export const listConversations = async (
     : null
 
   // Inbox keyword search must not become an email/phone oracle for agents who
-  // lack the emailAndPhone permission — resolve visibility from the member's
-  // permissions (independent of Contacts-section access) and thread it through.
-  const userAndWorkspace = await getCurrentUserAndTargetWorkspace(workspaceId)
-  const includeEmailAndPhone = userAndWorkspace
-    ? canViewContactEmailAndPhone(
-        userAndWorkspace.targetWorkspaceMember.permissions,
-      )
-    : false
-
+  // lack the emailAndPhone permission — the caller resolves visibility (from
+  // the member's permissions for the private path, or `true` for workspace
+  // tokens, which are workspace-level not member-scoped) and threads it through.
   const where = buildConversationWhere(workspaceId, input, cursor, {
-    includeEmailAndPhone,
+    includeEmailAndPhone: access.includeEmailAndPhone,
   })
 
   const conversations = await conversationService.findManyQuery({
@@ -64,7 +125,10 @@ export const listConversations = async (
     limit: limit + 1,
     with: {
       contact: true,
-      contactInboxes: { with: { inbox: true } },
+      contactInboxes: {
+        columns: contactInboxOperationalColumns,
+        with: { inbox: true },
+      },
       assignedUser: true,
       assignedInboxTeam: true,
     },
@@ -117,17 +181,23 @@ export const listConversations = async (
     : null
 
   return {
-    data: page.map((c) => {
-      const lastMessage = lastMessagesByConversationId.get(c.id)
-      return {
-        ...c,
-        contact: c.contact ?? null,
-        contactInboxes: c.contactInboxes,
-        assignedUser: c.assignedUser ?? null,
-        assignedInboxTeam: c.assignedInboxTeam ?? null,
-        messages: lastMessage ? [lastMessage] : [],
-      }
-    }),
+    data: await Promise.all(
+      page.map(async (c) => {
+        const lastMessage = lastMessagesByConversationId.get(c.id)
+        return {
+          ...c,
+          contact: await resolveConversationContact(
+            c.contact ?? null,
+            c.contactInboxes,
+            workspaceId,
+          ),
+          contactInboxes: mapConversationContactInboxes(c.contactInboxes),
+          assignedUser: c.assignedUser ?? null,
+          assignedInboxTeam: c.assignedInboxTeam ?? null,
+          messages: lastMessage ? [lastMessage] : [],
+        }
+      }),
+    ),
     nextCursor,
     prevCursor,
   }
@@ -138,8 +208,6 @@ export const listConversations = async (
 export const findConversation = async (
   input: FindConversationRequest,
 ): Promise<FindConversationResponse> => {
-  await assertCurrentUserCanAccessChatbot(input.workspaceId)
-
   const conversation = await conversationService.findWithFullRelations({
     where: input,
   })
@@ -170,6 +238,14 @@ export const findConversation = async (
   return {
     data: {
       ...conversation,
+      contact: await resolveConversationContact(
+        conversation.contact,
+        conversation.contactInboxes,
+        input.workspaceId,
+      ),
+      contactInboxes: mapConversationContactInboxes(
+        conversation.contactInboxes,
+      ),
       messages: lastMessages.length > 0 ? [lastMessages[0]] : [],
     },
   }

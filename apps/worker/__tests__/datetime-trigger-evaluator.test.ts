@@ -3,34 +3,26 @@ import { beforeEach, describe, expect, test, vi } from "vitest"
 
 const {
   actionExecute,
-  insertTriggerExecution,
+  listActiveWithConditionsPage,
   listContactCustomFieldsForDateTimeSweep,
   listContactCustomFieldsForDateTimeSweepContacts,
-  triggerExecutionFindMany,
-  triggerFindMany,
+  listExecutedPairs,
+  recordExecution,
 } = vi.hoisted(() => ({
   actionExecute: vi.fn(),
-  insertTriggerExecution: vi.fn(),
+  listActiveWithConditionsPage: vi.fn(),
   listContactCustomFieldsForDateTimeSweep: vi.fn(),
   listContactCustomFieldsForDateTimeSweepContacts: vi.fn(),
-  triggerExecutionFindMany: vi.fn(),
-  triggerFindMany: vi.fn(),
+  listExecutedPairs: vi.fn(),
+  recordExecution: vi.fn(),
 }))
 
-vi.mock("@chatbotx.io/database/client", () => ({
-  db: {
-    execute: vi.fn(),
-    insert: insertTriggerExecution,
-    query: {
-      triggerExecutionModel: {
-        findMany: triggerExecutionFindMany,
-      },
-      triggerModel: {
-        findMany: triggerFindMany,
-      },
-    },
+vi.mock("@chatbotx.io/business", () => ({
+  triggerService: {
+    listActiveWithConditionsPage,
+    listExecutedPairs,
+    recordExecution,
   },
-  sql: vi.fn(),
 }))
 
 vi.mock("@chatbotx.io/database/repositories", () => ({
@@ -112,12 +104,8 @@ describe("evaluateDateTimeTriggers", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     actionExecute.mockResolvedValue(undefined)
-    triggerExecutionFindMany.mockResolvedValue([])
-    insertTriggerExecution.mockReturnValue({
-      values: vi.fn().mockReturnValue({
-        onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
-      }),
-    })
+    listExecutedPairs.mockResolvedValue([])
+    recordExecution.mockResolvedValue(undefined)
     redis.get.mockResolvedValue(null)
     redis.set.mockResolvedValue("OK")
     redis.setex.mockResolvedValue("OK")
@@ -137,14 +125,20 @@ describe("evaluateDateTimeTriggers", () => {
         }),
       ),
     ]
-    triggerFindMany
-      .mockResolvedValueOnce(firstTriggerChunk)
-      .mockResolvedValueOnce([
-        triggerRow({
-          id: "trigger-101",
-          conditions: [dateTimeCondition("field-2")],
-        }),
-      ])
+    listActiveWithConditionsPage
+      .mockResolvedValueOnce({
+        triggers: firstTriggerChunk,
+        nextCursor: "trigger-100",
+      })
+      .mockResolvedValueOnce({
+        triggers: [
+          triggerRow({
+            id: "trigger-101",
+            conditions: [dateTimeCondition("field-2")],
+          }),
+        ],
+        nextCursor: undefined,
+      })
     listContactCustomFieldsForDateTimeSweep
       .mockResolvedValueOnce({
         rows: [
@@ -210,18 +204,90 @@ describe("evaluateDateTimeTriggers", () => {
       customFieldIds: ["field-2"],
     })
     expect(actionExecute).toHaveBeenCalledTimes(2)
+    // datetimeBasedTrigger never threads a contactInboxId (schema precludes
+    // attribution — Conversation has no inbox column) — ActionExecutor must
+    // fall back to the contact's most-recently-active inbox via
+    // resolveActionContactInbox's findMostRecentByContact path.
+    for (const call of actionExecute.mock.calls) {
+      expect(call[0]).not.toHaveProperty("contactInboxId")
+    }
+  })
+
+  describe("occurrence key", () => {
+    const sweep = async (value: string, sweptAt: string) => {
+      actionExecute.mockClear()
+      listActiveWithConditionsPage.mockResolvedValueOnce({
+        triggers: [
+          triggerRow({
+            id: "trigger-1",
+            conditions: [dateTimeCondition("field-1")],
+          }),
+        ],
+        nextCursor: undefined,
+      })
+      const row = contactCustomFieldRow({
+        contactId: "contact-1",
+        customFieldId: "field-1",
+        value,
+      })
+      listContactCustomFieldsForDateTimeSweep.mockResolvedValueOnce({
+        rows: [row],
+        nextCursor: undefined,
+      })
+      listContactCustomFieldsForDateTimeSweepContacts.mockResolvedValueOnce([
+        row,
+      ])
+      await evaluateDateTimeTriggers({ startOfMinute: Date.parse(sweptAt) })
+      return actionExecute.mock.calls[0]?.[0].occurrenceKey
+    }
+
+    test("changes when the contact's date is edited", async () => {
+      const first = await sweep(
+        "2026-07-11T14:00:00.000Z",
+        "2026-07-11T14:05:00.000Z",
+      )
+      const edited = await sweep(
+        "2026-07-12T14:00:00.000Z",
+        "2026-07-12T14:05:00.000Z",
+      )
+
+      expect(edited).not.toBe(first)
+    })
+
+    test("is the same when a crash re-sweeps the same scheduled date after UTC midnight", async () => {
+      vi.useFakeTimers()
+      try {
+        vi.setSystemTime(new Date("2026-07-11T23:58:00.000Z"))
+        const before = await sweep(
+          "2026-07-11T14:00:00.000Z",
+          "2026-07-11T14:05:00.000Z",
+        )
+        vi.setSystemTime(new Date("2026-07-12T00:02:00.000Z"))
+        const after = await sweep(
+          "2026-07-11T14:00:00.000Z",
+          "2026-07-11T14:05:00.000Z",
+        )
+
+        expect(after).toBe(before)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
   })
 
   test("waits for all datetime conditions before executing a trigger across cursor pages", async () => {
-    triggerFindMany.mockResolvedValueOnce([
-      triggerRow({
-        id: "trigger-001",
-        conditions: [
-          dateTimeCondition("field-1"),
-          dateTimeCondition("field-2"),
-        ],
-      }),
-    ])
+    listActiveWithConditionsPage.mockResolvedValueOnce({
+      triggers: [
+        triggerRow({
+          id: "trigger-001",
+          conditions: [
+            dateTimeCondition("field-1"),
+            dateTimeCondition("field-2"),
+          ],
+        }),
+      ],
+      nextCursor: undefined,
+    })
     listContactCustomFieldsForDateTimeSweep
       .mockResolvedValueOnce({
         rows: [
@@ -280,15 +346,18 @@ describe("evaluateDateTimeTriggers", () => {
   })
 
   test("does not execute a multi-condition trigger when only one datetime condition is present", async () => {
-    triggerFindMany.mockResolvedValueOnce([
-      triggerRow({
-        id: "trigger-001",
-        conditions: [
-          dateTimeCondition("field-1"),
-          dateTimeCondition("field-2"),
-        ],
-      }),
-    ])
+    listActiveWithConditionsPage.mockResolvedValueOnce({
+      triggers: [
+        triggerRow({
+          id: "trigger-001",
+          conditions: [
+            dateTimeCondition("field-1"),
+            dateTimeCondition("field-2"),
+          ],
+        }),
+      ],
+      nextCursor: undefined,
+    })
     listContactCustomFieldsForDateTimeSweep.mockResolvedValueOnce({
       rows: [
         contactCustomFieldRow({
@@ -317,18 +386,21 @@ describe("evaluateDateTimeTriggers", () => {
     // Workspace is UTC, but the condition was saved in Asia/Ho_Chi_Minh (+7).
     // 14:00 UTC is 21:00 in +7, so `at: "21"` only fires when the condition's
     // own zone is honored — a UTC resolution would land on hour 14 and miss.
-    triggerFindMany.mockResolvedValueOnce([
-      triggerRow({
-        id: "trigger-001",
-        timezone: "UTC",
-        conditions: [
-          dateTimeCondition("field-1", {
-            at: "21",
-            timezone: "Asia/Ho_Chi_Minh",
-          }),
-        ],
-      }),
-    ])
+    listActiveWithConditionsPage.mockResolvedValueOnce({
+      triggers: [
+        triggerRow({
+          id: "trigger-001",
+          timezone: "UTC",
+          conditions: [
+            dateTimeCondition("field-1", {
+              at: "21",
+              timezone: "Asia/Ho_Chi_Minh",
+            }),
+          ],
+        }),
+      ],
+      nextCursor: undefined,
+    })
     listContactCustomFieldsForDateTimeSweep.mockResolvedValueOnce({
       rows: [
         contactCustomFieldRow({
@@ -360,13 +432,16 @@ describe("evaluateDateTimeTriggers", () => {
   test("falls back to the workspace timezone for legacy conditions with no captured zone", async () => {
     // The condition predates timezone capture (no zone stored), so day
     // boundaries and hour-of-day must resolve in the workspace zone (+7).
-    triggerFindMany.mockResolvedValueOnce([
-      triggerRow({
-        id: "trigger-001",
-        timezone: "Asia/Ho_Chi_Minh",
-        conditions: [dateTimeCondition("field-1", { at: "21" })],
-      }),
-    ])
+    listActiveWithConditionsPage.mockResolvedValueOnce({
+      triggers: [
+        triggerRow({
+          id: "trigger-001",
+          timezone: "Asia/Ho_Chi_Minh",
+          conditions: [dateTimeCondition("field-1", { at: "21" })],
+        }),
+      ],
+      nextCursor: undefined,
+    })
     listContactCustomFieldsForDateTimeSweep.mockResolvedValueOnce({
       rows: [
         contactCustomFieldRow({

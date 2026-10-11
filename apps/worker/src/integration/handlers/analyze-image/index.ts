@@ -8,11 +8,14 @@ import {
   saveResultToCustomField,
 } from "../../utils/contact"
 import type { ExecuteStepProps } from "../flow"
+import { logStepProviderError } from "../flow-utils"
+import { aiErrorLogProvider } from "../shared/ai-error-log-provider"
 import { resolveFlowAIModel } from "../shared/flow-ai-model-resolver"
 import type { ExecuteStepResult } from "../step"
 
 export async function handleAIAnalyzeImage({
   conversation,
+  contactInbox,
   step,
 }: ExecuteStepProps<AIAnalyzeImageSchema>): Promise<ExecuteStepResult> {
   const controller = new AbortController()
@@ -95,6 +98,7 @@ export async function handleAIAnalyzeImage({
         customFieldId: step.outputFieldId,
         fullText,
         workspaceId: conversation.workspaceId,
+        contactInboxId: contactInbox.id,
       })
     }
 
@@ -102,6 +106,11 @@ export async function handleAIAnalyzeImage({
   } catch (err) {
     const error = normalizeError(err)
     logger.error(error, "[ai-analyze-image] Step failed")
+    await logStepProviderError(
+      aiErrorLogProvider(step.provider),
+      { conversation, contactInbox },
+      err,
+    )
     return { status: "error", errorMessage: error.message, result: null }
   } finally {
     clearTimeout(timeoutId)

@@ -6,6 +6,7 @@
   "dependencies": {
     "@chatbotx.io/logger": "workspace:*",
     "@chatbotx.io/sdk": "workspace:*",
+    "@chatbotx.io/utils": "workspace:*",
     "ky": "^2.0.2",
     "libphonenumber-js": "^1.12.42",
     "zod": "^4.3.6"
@@ -20,6 +21,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./apis/*": "./src/apis/*.ts",
+    "./messaging-ads/*": "./src/messaging-ads/*.ts",
     "./schemas": "./src/schemas.ts"
   },
   "scripts": {

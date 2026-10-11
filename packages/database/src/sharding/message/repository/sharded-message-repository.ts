@@ -14,6 +14,7 @@ import {
   isNull,
   lt,
   or,
+  type SQL,
   sql,
 } from "drizzle-orm"
 import {
@@ -61,12 +62,19 @@ import type { MessageShardDatabaseClient } from "../client"
 import type { MessageShardConnectionManager } from "../connection-manager"
 import type { MessageShardTimeRangeInfo } from "../registry"
 import { attachmentModel, messageModel } from "../shard-schema"
+import { withPrimaryKeyCollisionRecovery } from "./primary-key-collision"
 
 export { getSafeSinceTime } from "../../../repositories"
 
 const SHARD_RANGE_CACHE_TAG = "message-shard-range"
 const SHARD_RANGE_CACHE_TTL_S = 30
 const ATTACHMENT_FALLBACK_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000
+// Half-width of the shard window probed around a token's messageCreatedAt hint.
+// The parent message and its attachment rows share a createdAt, but a slight
+// write lag or an hour-bucket boundary can land them in adjacent shards, so the
+// window is padded a full day on each side to keep the row reachable while still
+// touching only the couple of shards that could hold it.
+const ATTACHMENT_SHARD_WINDOW_MS = 24 * 60 * 60 * 1000
 const RICH_RESPONSE_FALLBACK_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000
 // Echo dedup lookback. An outbound message we save is echoed back by the channel
 // (Instagram/Messenger) seconds later carrying the same sourceId (mid). The dedup
@@ -357,11 +365,11 @@ export class ShardedMessageRepository implements IMessageRepository {
   }
 
   create(message: CreateMessageInput): Promise<MessageModel> {
-    return withShardRetry(async () => {
-      const db = await this.shardManager.getShardForWrite(message.workspaceId)
+    return withPrimaryKeyCollisionRecovery(message, async (input) => {
+      const db = await this.shardManager.getShardForWrite(input.workspaceId)
       const [result] = await db
         .insert(messageModel)
-        .values(message as typeof messageModel.$inferInsert)
+        .values(input as typeof messageModel.$inferInsert)
         .returning()
       return result as MessageModel
     })
@@ -378,11 +386,11 @@ export class ShardedMessageRepository implements IMessageRepository {
   private insertIgnoringConflict(
     message: CreateMessageInput,
   ): Promise<MessageModel | null> {
-    return withShardRetry(async () => {
-      const db = await this.shardManager.getShardForWrite(message.workspaceId)
+    return withPrimaryKeyCollisionRecovery(message, async (input) => {
+      const db = await this.shardManager.getShardForWrite(input.workspaceId)
       const [result] = await db
         .insert(messageModel)
-        .values(message as typeof messageModel.$inferInsert)
+        .values(input as typeof messageModel.$inferInsert)
         .onConflictDoNothing({
           target: [
             messageModel.contactInboxId,
@@ -511,6 +519,21 @@ export class ShardedMessageRepository implements IMessageRepository {
     })
   }
 
+  updateContentAttributes(
+    messageId: string,
+    workspaceId: string,
+    contentAttributes: Record<string, unknown>,
+    createdAt: Date,
+  ): Promise<{ id: string } | null> {
+    return this.updateAcrossShards(
+      messageId,
+      workspaceId,
+      { contentAttributes },
+      "updateContentAttributes",
+      createdAt,
+    )
+  }
+
   updateMessageAttributes(
     messageId: string,
     workspaceId: string,
@@ -546,6 +569,36 @@ export class ShardedMessageRepository implements IMessageRepository {
     workspaceId: string,
     newText: string,
   ): Promise<{ id: string } | null> {
+    return await this.patchBySourceId(
+      sourceId,
+      workspaceId,
+      { text: newText },
+      "updateTextBySourceId",
+    )
+  }
+
+  async updateContentBySourceId(
+    sourceId: string,
+    workspaceId: string,
+    patch: {
+      text?: string | null
+      contentAttributes?: Record<string, unknown> | null
+    },
+  ): Promise<{ id: string } | null> {
+    return await this.patchBySourceId(
+      sourceId,
+      workspaceId,
+      patch,
+      "updateContentBySourceId",
+    )
+  }
+
+  private async patchBySourceId(
+    sourceId: string,
+    workspaceId: string,
+    patch: Partial<typeof messageModel.$inferInsert>,
+    caller: string,
+  ): Promise<{ id: string } | null> {
     // sourceId-based update: scan shards from the last 90 days (same window
     // used by findBySourceId for parent-comment lookups).
     const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
@@ -558,7 +611,7 @@ export class ShardedMessageRepository implements IMessageRepository {
         const client = await this.shardManager.getShardClient(shardInfo.shard)
         const [row] = await client
           .update(messageModel)
-          .set({ text: newText })
+          .set(patch)
           .where(
             and(
               eq(messageModel.sourceId, sourceId),
@@ -571,12 +624,88 @@ export class ShardedMessageRepository implements IMessageRepository {
         }
       } catch (error) {
         logger.warn(
-          { err: error, shardId: shardInfo.shard.id },
-          "Shard update failed in updateTextBySourceId",
+          { err: error, shardId: shardInfo.shard.id, caller },
+          "Shard update failed in patchBySourceId",
         )
       }
     }
     return null
+  }
+
+  async mergeContentAttributesBySourceId(
+    sourceId: string,
+    workspaceId: string,
+    overlay: Record<string, unknown>,
+  ): Promise<{
+    id: string
+    contentAttributes: Record<string, unknown> | null
+  } | null> {
+    // Same sourceId-based shard scan as `patchBySourceId` (90-day lookback
+    // plus the write shard). A single `jsonb ||` UPDATE — never a
+    // read-modify-write — so two independent writers racing on disjoint
+    // keys (e.g. `hasRecording` vs `hasTranscript`) can never clobber each
+    // other's flag.
+    const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+    const writeShard = await this.shardManager.getWriteShardInfo(workspaceId)
+    const timeShards = await this.getShardsForRange(since, new Date())
+    const shards = this.mergeWriteShard(timeShards, writeShard)
+
+    for (const shardInfo of shards) {
+      try {
+        const client = await this.shardManager.getShardClient(shardInfo.shard)
+        const [row] = await client
+          .update(messageModel)
+          .set({
+            contentAttributes: sql`COALESCE(${messageModel.contentAttributes}, '{}'::jsonb) || ${JSON.stringify(overlay)}::jsonb`,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(messageModel.sourceId, sourceId),
+              eq(messageModel.workspaceId, workspaceId),
+            ),
+          )
+          .returning({
+            id: messageModel.id,
+            contentAttributes: messageModel.contentAttributes,
+          })
+        if (row) {
+          return row as {
+            id: string
+            contentAttributes: Record<string, unknown> | null
+          }
+        }
+      } catch (error) {
+        logger.warn(
+          { err: error, shardId: shardInfo.shard.id },
+          "Shard update failed in mergeContentAttributesBySourceId",
+        )
+      }
+    }
+    return null
+  }
+
+  claimContentAttributes(params: {
+    messageId: string
+    workspaceId: string
+    createdAt: Date
+    guardKey: string
+    overlay: Record<string, unknown>
+  }): Promise<{ id: string } | null> {
+    const { messageId, workspaceId, createdAt, guardKey, overlay } = params
+    // `-> key IS NULL` rather than the `?` operator: also true when the
+    // column itself is NULL, and no driver can mistake it for a placeholder.
+    return this.updateAcrossShards(
+      messageId,
+      workspaceId,
+      {
+        contentAttributes: sql`COALESCE(${messageModel.contentAttributes}, '{}'::jsonb) || ${JSON.stringify(overlay)}::jsonb`,
+        updatedAt: new Date(),
+      },
+      "claimContentAttributes",
+      createdAt,
+      sql`${messageModel.contentAttributes} -> ${guardKey} IS NULL`,
+    )
   }
 
   // Targets the 1-2 shards covering the message's createdAt plus the write
@@ -585,9 +714,15 @@ export class ShardedMessageRepository implements IMessageRepository {
   private async updateAcrossShards(
     messageId: string,
     workspaceId: string,
-    patch: Partial<typeof messageModel.$inferInsert>,
+    // A column may be set to a SQL expression (e.g. a `jsonb ||` merge).
+    patch: {
+      [K in keyof typeof messageModel.$inferInsert]?:
+        | (typeof messageModel.$inferInsert)[K]
+        | SQL
+    },
     caller: string,
     createdAt: Date,
+    extraWhere?: SQL,
   ): Promise<{ id: string } | null> {
     const timeRangeShards = await this.getShardsForRange(createdAt, createdAt)
     const writeShard = await this.shardManager.getWriteShardInfo(workspaceId)
@@ -608,6 +743,7 @@ export class ShardedMessageRepository implements IMessageRepository {
                 eq(messageModel.id, messageId),
                 eq(messageModel.workspaceId, workspaceId),
                 eq(messageModel.createdAt, createdAt),
+                extraWhere,
               ),
             )
             .returning({ id: messageModel.id })
@@ -692,7 +828,7 @@ export class ShardedMessageRepository implements IMessageRepository {
   ): Promise<{ id: string }[]> {
     const writeShard = await this.shardManager.getWriteShardInfo(workspaceId)
 
-    // Step 1: find parent DB id — search in createdAt shard + write shard only.
+    // Step 1: find parent DB id — search in createdAt shard + write shard first.
     const parentTimeShards = await this.getShardsForRange(
       createdAt,
       endOfHour(createdAt),
@@ -700,11 +836,18 @@ export class ShardedMessageRepository implements IMessageRepository {
     const parentShards = this.mergeWriteShard(parentTimeShards, writeShard)
 
     let parentDbId: string | null = null
+    // The caller's `createdAt` is only ever a hint (e.g. "now", for a
+    // webhook-driven unsend/delete with no known original timestamp) — once
+    // the row is actually found, its real createdAt replaces it below so
+    // Step 2 searches the shard(s) the row truly lives in.
+    let realCreatedAt: Date = createdAt
+    const triedShardIds = new Set<string>()
     for (const shardInfo of parentShards) {
+      triedShardIds.add(shardInfo.shard.id)
       try {
         const client = await this.shardManager.getShardClient(shardInfo.shard)
         const [parent] = await client
-          .select({ id: messageModel.id })
+          .select({ id: messageModel.id, createdAt: messageModel.createdAt })
           .from(messageModel)
           .where(
             and(
@@ -715,6 +858,7 @@ export class ShardedMessageRepository implements IMessageRepository {
           .limit(1)
         if (parent) {
           parentDbId = parent.id
+          realCreatedAt = parent.createdAt
           break
         }
       } catch (error) {
@@ -725,10 +869,56 @@ export class ShardedMessageRepository implements IMessageRepository {
       }
     }
 
+    // The narrow, createdAt-hinted search above misses a row whenever the
+    // hint doesn't match the row's real creation time closely enough (e.g. a
+    // webhook-driven unsend/delete for a message created hours or days ago).
+    // Before giving up, fall back to every shard that has ever existed —
+    // `getShardsForRange` is cached, so this only costs extra work on the
+    // miss path, never on the already-correct-createdAt path.
+    if (!parentDbId) {
+      const allTimeShards = await this.getShardsForRange(
+        new Date(0),
+        new Date(),
+      )
+      const fallbackShards = this.mergeWriteShard(
+        allTimeShards,
+        writeShard,
+      ).filter((shardInfo) => !triedShardIds.has(shardInfo.shard.id))
+
+      for (const shardInfo of fallbackShards) {
+        try {
+          const client = await this.shardManager.getShardClient(shardInfo.shard)
+          const [parent] = await client
+            .select({ id: messageModel.id, createdAt: messageModel.createdAt })
+            .from(messageModel)
+            .where(
+              and(
+                eq(messageModel.workspaceId, workspaceId),
+                eq(messageModel.sourceId, sourceId),
+              ),
+            )
+            .limit(1)
+          if (parent) {
+            parentDbId = parent.id
+            realCreatedAt = parent.createdAt
+            break
+          }
+        } catch (error) {
+          logger.warn(
+            { err: error, shardId: shardInfo.shard.id },
+            "Shard query failed while looking up parent in deleteBySourceId (fallback scan)",
+          )
+        }
+      }
+    }
+
     // Step 2: soft-delete parent + children.
-    // Parent lives in its createdAt shard; children (replies) can be in any
-    // shard from createdAt onwards.
-    const childTimeShards = await this.getShardsForRange(createdAt, new Date())
+    // Parent lives in its (real) createdAt shard; children (replies) can be
+    // in any shard from there onwards.
+    const childTimeShards = await this.getShardsForRange(
+      realCreatedAt,
+      new Date(),
+    )
     const shards = this.mergeWriteShard(childTimeShards, writeShard)
 
     if (shards.length === 0) {
@@ -996,6 +1186,40 @@ export class ShardedMessageRepository implements IMessageRepository {
     return { attachmentPaths: [...attachmentPaths] }
   }
 
+  /**
+   * Whether a message already carries an attachment of this type. Lets a
+   * retryable pipeline re-run its attach step without producing a second
+   * copy — `bulkCreateAttachments` mints a fresh id per call, so nothing
+   * else stops a redelivery from duplicating the file.
+   */
+  async hasAttachmentOfType(props: {
+    workspaceId: string
+    messageId: string
+    messageCreatedAt: Date
+    fileType: BulkCreateAttachmentInput["fileType"]
+  }): Promise<boolean> {
+    return await withShardRetry(async () => {
+      const shardDb = await this.shardManager.getShardForWrite(
+        props.workspaceId,
+      )
+      const rows = await shardDb
+        .select({ id: attachmentModel.id })
+        .from(attachmentModel)
+        .where(
+          and(
+            eq(attachmentModel.messageId, props.messageId),
+            eq(attachmentModel.messageCreatedAt, props.messageCreatedAt),
+            eq(
+              attachmentModel.fileType,
+              props.fileType as (typeof attachmentModel.$inferInsert)["fileType"],
+            ),
+          ),
+        )
+        .limit(1)
+      return rows.length > 0
+    })
+  }
+
   async bulkCreateAttachments(
     attachments: BulkCreateAttachmentInput[],
   ): Promise<{ id: string }[]> {
@@ -1113,11 +1337,11 @@ export class ShardedMessageRepository implements IMessageRepository {
       "messageId" | "messageCreatedAt"
     >[],
   ): Promise<MessageWithAttachments> {
-    return withShardRetry(async () => {
-      // Plain create path: no ignoreConflict, so a real duplicate throws rather
-      // than returning null. A null here would be unexpected.
+    return withPrimaryKeyCollisionRecovery(message, async (input) => {
+      // Plain create path: no ignoreConflict, so a real duplicate throws
+      // rather than returning null. A null here would be unexpected.
       const created = await this.createWithAttachmentsInternal(
-        message,
+        input,
         attachments,
       )
       if (!created) {
@@ -1208,6 +1432,7 @@ export class ShardedMessageRepository implements IMessageRepository {
         const existingWithAttachments = await this.findById({
           id: existing.id,
           createdAt: existing.createdAt,
+          conversationId: message.conversationId,
           workspaceId: message.workspaceId,
         })
         return {
@@ -1242,8 +1467,8 @@ export class ShardedMessageRepository implements IMessageRepository {
         // handled below as an idempotent no-op.
         let created: MessageWithAttachments | null
         try {
-          created = await withShardRetry(() =>
-            this.createWithAttachmentsInternal(message, attachments, {
+          created = await withPrimaryKeyCollisionRecovery(message, (input) =>
+            this.createWithAttachmentsInternal(input, attachments, {
               ignoreConflict: true,
             }),
           )
@@ -1297,24 +1522,28 @@ export class ShardedMessageRepository implements IMessageRepository {
     }
     // No sourceId to dedup on: plain create path, no ignoreConflict, so a real
     // duplicate throws rather than returning null.
-    const created = await withShardRetry(async () => {
-      const result = await this.createWithAttachmentsInternal(
-        message,
-        attachments,
-      )
-      if (!result) {
-        throw new MessageShardUnavailableError(
-          "createOrUpdateWithAttachments: insert returned no row",
+    const created = await withPrimaryKeyCollisionRecovery(
+      message,
+      async (input) => {
+        const result = await this.createWithAttachmentsInternal(
+          input,
+          attachments,
         )
-      }
-      return result
-    })
+        if (!result) {
+          throw new MessageShardUnavailableError(
+            "createOrUpdateWithAttachments: insert returned no row",
+          )
+        }
+        return result
+      },
+    )
     return { result: created, isNew: true }
   }
 
   async findById({
     id,
     createdAt,
+    conversationId,
     workspaceId,
   }: FindMessageByIdParams): Promise<MessageWithAttachments | null> {
     const shards = await this.getConversationReadShards(createdAt, workspaceId)
@@ -1335,6 +1564,9 @@ export class ShardedMessageRepository implements IMessageRepository {
                   eq(messageModel.id, id),
                   eq(messageModel.createdAt, createdAt),
                   eq(messageModel.workspaceId, workspaceId),
+                  conversationId
+                    ? eq(messageModel.conversationId, conversationId)
+                    : undefined,
                 ),
               )
               .limit(1)
@@ -1864,55 +2096,55 @@ export class ShardedMessageRepository implements IMessageRepository {
     )
   }
 
-  async findAttachmentById({
-    id,
-    workspaceId,
-  }: FindAttachmentByIdParams): Promise<AttachmentLookupRow | null> {
-    const selectAttachment = async (
-      shardClient: MessageShardDatabaseClient,
-    ) => {
-      const [row] = await shardClient
-        .select({
-          id: attachmentModel.id,
-          originPath: attachmentModel.originPath,
-          mimeType: attachmentModel.mimeType,
-          createdAt: attachmentModel.createdAt,
-        })
-        .from(attachmentModel)
-        .where(
-          and(
-            eq(attachmentModel.id, id),
-            eq(attachmentModel.workspaceId, workspaceId),
-          ),
-        )
-        .limit(1)
+  private async queryAttachmentOnShard(
+    shardClient: MessageShardDatabaseClient,
+    id: string,
+    workspaceId: string,
+  ): Promise<AttachmentLookupRow | null> {
+    const [row] = await shardClient
+      .select({
+        id: attachmentModel.id,
+        messageId: attachmentModel.messageId,
+        messageCreatedAt: attachmentModel.messageCreatedAt,
+        sourceId: attachmentModel.sourceId,
+        originPath: attachmentModel.originPath,
+        mimeType: attachmentModel.mimeType,
+        createdAt: attachmentModel.createdAt,
+      })
+      .from(attachmentModel)
+      .where(
+        and(
+          eq(attachmentModel.id, id),
+          eq(attachmentModel.workspaceId, workspaceId),
+        ),
+      )
+      .limit(1)
 
-      return (row as AttachmentLookupRow | undefined) ?? null
-    }
+    return (row as AttachmentLookupRow | undefined) ?? null
+  }
 
-    const writeShardResult = await withShardRetry(async () => {
-      const shardClient = await this.shardManager.getShardForWrite(workspaceId)
-      return selectAttachment(shardClient)
-    })
-    if (writeShardResult) {
-      return writeShardResult
-    }
-
-    const fallbackSinceTime = new Date(
-      Date.now() - ATTACHMENT_FALLBACK_LOOKBACK_MS,
-    )
-    fallbackSinceTime.setMinutes(0, 0, 0)
-    const shards = await this.getConversationReadShards(
-      fallbackSinceTime,
-      workspaceId,
-    )
-
+  private async scanShardsForAttachment(
+    shards: MessageShardTimeRangeInfo[],
+    id: string,
+    workspaceId: string,
+    // Shared across the window and fallback scans so a shard that appears in
+    // both (e.g. a recent shard inside the hint window) is queried only once —
+    // matters on a true miss, where every scan would otherwise re-probe it.
+    probedShardIds: Set<string> = new Set(),
+  ): Promise<AttachmentLookupRow | null> {
     for (const shardInfo of shards) {
+      if (probedShardIds.has(shardInfo.shard.id)) {
+        continue
+      }
       try {
         const found = await this.shardManager.withShardClientForRead(
           shardInfo.shard,
-          selectAttachment,
+          (client) => this.queryAttachmentOnShard(client, id, workspaceId),
         )
+        // Record only after a completed query (a null result still counts): a
+        // shard that threw stays eligible so a later scan can retry it rather
+        // than skip it and return a false miss.
+        probedShardIds.add(shardInfo.shard.id)
         if (found) {
           return found
         }
@@ -1923,8 +2155,68 @@ export class ShardedMessageRepository implements IMessageRepository {
         )
       }
     }
-
     return null
+  }
+
+  async findAttachmentById({
+    id,
+    workspaceId,
+    messageCreatedAt,
+  }: FindAttachmentByIdParams): Promise<AttachmentLookupRow | null> {
+    // Fast path: the workspace's write shard holds every recent write, and is
+    // the single main DB when sharding is disabled — so this alone answers the
+    // common case and every non-sharded lookup.
+    const writeShardResult = await withShardRetry(async () => {
+      const shardClient = await this.shardManager.getShardForWrite(workspaceId)
+      return this.queryAttachmentOnShard(shardClient, id, workspaceId)
+    })
+    if (writeShardResult) {
+      return writeShardResult
+    }
+
+    const probedShardIds = new Set<string>()
+
+    // Targeted path: when the caller knows the parent message's createdAt (from
+    // the signed media token), probe only the shard window around it — reaching
+    // an old attachment the recent-history scan below would miss. (A back-dated
+    // import lives in the current write shard, already probed above, so it is
+    // not additionally reachable here — matching the pre-existing behavior.) A
+    // registry lookup failure falls through to the retained net rather than 500.
+    if (messageCreatedAt) {
+      try {
+        const windowShards = await this.getShardsForRange(
+          new Date(messageCreatedAt.getTime() - ATTACHMENT_SHARD_WINDOW_MS),
+          new Date(messageCreatedAt.getTime() + ATTACHMENT_SHARD_WINDOW_MS),
+        )
+        const windowed = await this.scanShardsForAttachment(
+          windowShards,
+          id,
+          workspaceId,
+          probedShardIds,
+        )
+        if (windowed) {
+          return windowed
+        }
+      } catch (error) {
+        logger.warn(
+          { err: error, workspaceId },
+          "Hinted shard-window lookup failed in findAttachmentById; using fallback",
+        )
+      }
+    }
+
+    // Safety net: scan recent-history shards for callers without a time hint
+    // (or when the hint's window missed).
+    const fallbackSinceTime = new Date(
+      Date.now() - ATTACHMENT_FALLBACK_LOOKBACK_MS,
+    )
+    fallbackSinceTime.setMinutes(0, 0, 0)
+    const shards = await this.getConversationReadShards(
+      fallbackSinceTime,
+      workspaceId,
+    )
+
+    return this.scanShardsForAttachment(shards, id, workspaceId, probedShardIds)
   }
 
   async updateAttachment({

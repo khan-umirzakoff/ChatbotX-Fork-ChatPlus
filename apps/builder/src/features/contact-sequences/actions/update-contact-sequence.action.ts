@@ -2,7 +2,7 @@
 
 import { contactService } from "@chatbotx.io/business"
 import { contactSequenceService } from "@chatbotx.io/business/contact-sequence"
-import { workspaceIdrequestParams } from "@/features/common/schemas"
+import { workspaceIdrequestParams } from "@/features/common/schema"
 import { requireContactPermissionScope } from "@/features/contacts/permissions"
 import { workspaceActionClient } from "@/lib/safe-action"
 import { updateContactSequenceRequest } from "../schema"
@@ -23,9 +23,17 @@ export const updateContactSequenceAction = workspaceActionClient
       accessScope,
     })
 
-    return await contactSequenceService.updateContactSequences({
-      workspaceId,
-      contactId: contact.id,
-      sequenceIds: parsedInput.sequences,
-    })
+    const updatedSequences =
+      await contactSequenceService.updateContactSequences({
+        workspaceId,
+        contactId: contact.id,
+        sequenceIds: parsedInput.sequences,
+      })
+
+    return updatedSequences.map(({ sequence }) => ({
+      sequence: {
+        id: sequence.id,
+        name: sequence.name,
+      },
+    }))
   })

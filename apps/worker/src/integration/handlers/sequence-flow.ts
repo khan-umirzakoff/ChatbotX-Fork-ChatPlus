@@ -1,10 +1,10 @@
-import { and, db, eq } from "@chatbotx.io/database/client"
-import { sequenceDispatchModel } from "@chatbotx.io/database/schema"
+import { contactSequenceService } from "@chatbotx.io/business/contact-sequence"
 import { sequenceConnections } from "@chatbotx.io/redis"
 import { SchedulerClient } from "@chatbotx.io/scheduler"
 import { advanceEnrollment } from "@chatbotx.io/sequence-scheduler"
 import type { IntegrationJobSendSequenceFlow } from "@chatbotx.io/worker-config"
 import type { Job } from "bullmq"
+import { isFinalAttempt } from "../../lib/job-attempts"
 import { logger } from "../../lib/logger"
 import { StepExecutorService } from "../../sequence-scheduler/services/step-executor.service"
 import { sendFlowDirect } from "./send-flow-direct"
@@ -23,12 +23,9 @@ async function getSchedulerClient(): Promise<SchedulerClient> {
 }
 
 async function fetchDispatch(dispatchId: string, workspaceId: string) {
-  return await db.query.sequenceDispatchModel.findFirst({
-    where: {
-      id: dispatchId,
-      workspaceId,
-      status: "running",
-    },
+  return await contactSequenceService.findRunningDispatch({
+    dispatchId,
+    workspaceId,
   })
 }
 
@@ -37,20 +34,11 @@ async function markDispatchCompleted(
   workspaceId: string,
   sentAt: Date,
 ): Promise<void> {
-  await db
-    .update(sequenceDispatchModel)
-    .set({
-      status: "completed",
-      completedAt: sentAt,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(sequenceDispatchModel.id, dispatchId),
-        eq(sequenceDispatchModel.workspaceId, workspaceId),
-        eq(sequenceDispatchModel.status, "running"),
-      ),
-    )
+  await contactSequenceService.markDispatchCompleted({
+    dispatchId,
+    workspaceId,
+    sentAt,
+  })
 }
 
 async function markDispatchCanceled(
@@ -58,20 +46,11 @@ async function markDispatchCanceled(
   workspaceId: string,
   reason: string,
 ): Promise<void> {
-  await db
-    .update(sequenceDispatchModel)
-    .set({
-      status: "canceled",
-      lastError: reason,
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(sequenceDispatchModel.id, dispatchId),
-        eq(sequenceDispatchModel.workspaceId, workspaceId),
-        eq(sequenceDispatchModel.status, "running"),
-      ),
-    )
+  await contactSequenceService.markDispatchCanceled({
+    dispatchId,
+    workspaceId,
+    reason,
+  })
 }
 
 async function markDispatchFailed(
@@ -79,24 +58,17 @@ async function markDispatchFailed(
   workspaceId: string,
   errorMessage: string,
 ): Promise<void> {
-  await db
-    .update(sequenceDispatchModel)
-    .set({
-      status: "failed",
-      lastError: errorMessage,
-      failedAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(sequenceDispatchModel.id, dispatchId),
-        eq(sequenceDispatchModel.workspaceId, workspaceId),
-        eq(sequenceDispatchModel.status, "running"),
-      ),
-    )
+  await contactSequenceService.markDispatchFailed({
+    dispatchId,
+    workspaceId,
+    errorMessage,
+  })
 }
 
-async function runSendSequenceFlow(data: SendSequenceFlowData): Promise<void> {
+async function runSendSequenceFlow(
+  data: SendSequenceFlowData,
+  job: Job,
+): Promise<void> {
   const { dispatchId, workspaceId, stepId, bucket, contactId, sequenceId } =
     data
 
@@ -140,6 +112,7 @@ async function runSendSequenceFlow(data: SendSequenceFlowData): Promise<void> {
       workspaceId,
       contactId: data.contactId,
       metadata: data.metadata,
+      flowExecutionKey: job.id,
     })
 
     sentAt = new Date()
@@ -192,10 +165,9 @@ export async function handleSendSequenceFlow(
   job: Job,
 ): Promise<void> {
   try {
-    await runSendSequenceFlow(data)
+    await runSendSequenceFlow(data, job)
   } catch (err) {
-    const maxAttempts = job.opts.attempts ?? 1
-    const isFinalAttempt = job.attemptsMade + 1 >= maxAttempts
+    const finalAttempt = isFinalAttempt(job)
 
     logger.error(
       {
@@ -203,12 +175,12 @@ export async function handleSendSequenceFlow(
         dispatchId: data.dispatchId,
         jobId: job.id,
         attempt: job.attemptsMade + 1,
-        isFinalAttempt,
+        isFinalAttempt: finalAttempt,
       },
       "sendSequenceFlow handler failed",
     )
 
-    if (isFinalAttempt) {
+    if (finalAttempt) {
       await safeTerminalCleanup(data, err, job)
     }
 

@@ -1,5 +1,6 @@
 import { createId, zodBigintAsString } from "@chatbotx.io/utils"
 import { z } from "zod"
+import { zodFieldReference } from "../field-reference"
 import {
   errorStateDefaultFn,
   errorStateSchema,
@@ -12,7 +13,7 @@ export const defaultAIModels = {
   openai: "gpt-5.4-mini",
   gemini: "gemini-3.5-flash",
   claude: "claude-sonnet-4-6",
-  deepseek: "deepseek-v4-flash",
+  deepseek: "deepseek-flash",
   openrouter: "openai/gpt-5.4-mini",
 } as const
 
@@ -34,14 +35,18 @@ export const aiGenerateTextProviderSchema = z.enum([
 
 export const aiGenerateTextSchema = z
   .object({
-    id: zodBigintAsString(),
-    stepType: z.literal(stepTypes.enum.aiGenerateText),
+    id: zodBigintAsString().describe(
+      "Step id (numeric string), unique within the flow.",
+    ),
+    stepType: z
+      .literal(stepTypes.enum.aiGenerateText)
+      .describe('Step type discriminator: "aiGenerateText".'),
     provider: aiGenerateTextProviderSchema,
     integrationId: z.string().trim().optional(),
     model: z.string().trim(),
     system: z.string().trim().optional(),
     text: z.string().trim().min(1),
-    outputFieldId: z.string().trim().min(1),
+    outputFieldId: zodFieldReference(),
     tools: z.array(z.string()).optional(),
     remember: z.boolean(),
     temperature: z.number().min(0).max(2),

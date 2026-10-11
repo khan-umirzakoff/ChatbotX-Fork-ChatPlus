@@ -3,96 +3,72 @@ import { beforeEach, describe, expect, test, vi } from "vitest"
 // ---------------------------------------------------------------------------
 // Mutable state holders (controlled per test)
 // ---------------------------------------------------------------------------
-const queryResults = {
-  integrationMessengerFindFirst: null as unknown,
-  integrationZaloFindFirst: null as unknown,
-  tagModelFindFirst: null as unknown,
-  tagChannelFindFirst: null as unknown,
-  contactInboxFindMany: [] as unknown[],
+const state = {
+  messengerIntegration: null as unknown,
+  zaloIntegration: null as unknown,
+  tagChannel: undefined as { id: string; tagId: string } | undefined,
+  contactInboxes: [] as { id: string; contactId: string; sourceId?: string }[],
+  ensureTagByNameResult: undefined as string | undefined,
+  ensureTagChannelResult: undefined as string | undefined,
+  linkTagToContactsReturningNewUnscopedResult: [] as { contactId: string }[],
 }
-const insertReturning = { current: [] as unknown[] }
 
 // ---------------------------------------------------------------------------
-// DB mock — chainable builder
+// Mock: @chatbotx.io/business — tagService, tagSyncService, messenger/zalo
+// integration services
 // ---------------------------------------------------------------------------
-function makeChain(): Record<string, unknown> {
-  const builder: Record<string, unknown> = {}
-  const noop = () => builder
-  builder.values = vi.fn(noop)
-  builder.onConflictDoNothing = vi.fn(noop)
-  builder.where = vi.fn(noop)
-  builder.returning = vi.fn(async () => insertReturning.current)
-  return builder
-}
-const insertChain = makeChain()
-const deleteChain = makeChain()
-;(deleteChain.where as ReturnType<typeof vi.fn>).mockImplementation(
-  async () => undefined,
+const linkTagToContactsReturningNewUnscoped = vi.fn(
+  async () => state.linkTagToContactsReturningNewUnscopedResult,
 )
+const recordTagChannelAssignmentsUnscoped = vi.fn(async () => undefined)
+const deleteTagChannelAssignmentsUnscoped = vi.fn(async () => undefined)
+const detachTagFromContactsUnscoped = vi.fn(async () => undefined)
+const findTagChannel = vi.fn(async () => state.tagChannel)
+const ensureTagByName = vi.fn(async () => state.ensureTagByNameResult)
+const ensureTagChannel = vi.fn(async () => state.ensureTagChannelResult)
+const enqueueDelete = vi.fn(async () => undefined)
+const messengerFindByPageIdUnscoped = vi.fn(
+  async () => state.messengerIntegration,
+)
+const zaloFindByOaId = vi.fn(async () => state.zaloIntegration)
 
-// Soft-delete path: db.update(tagModel).set().where().returning()
-const updateReturning = { current: [] as unknown[] }
-const updateChain: Record<string, unknown> = {}
-updateChain.set = vi.fn(() => updateChain)
-updateChain.where = vi.fn(() => updateChain)
-updateChain.returning = vi.fn(async () => updateReturning.current)
-
-vi.mock("@chatbotx.io/database/client", () => ({
-  db: {
-    query: {
-      integrationMessengerModel: {
-        findFirst: vi.fn(
-          async () => queryResults.integrationMessengerFindFirst,
-        ),
-      },
-      integrationZaloModel: {
-        findFirst: vi.fn(async () => queryResults.integrationZaloFindFirst),
-      },
-      tagModel: {
-        findFirst: vi.fn(async () => queryResults.tagModelFindFirst),
-      },
-      tagChannelModel: {
-        findFirst: vi.fn(async () => queryResults.tagChannelFindFirst),
-      },
-      contactInboxModel: {
-        findMany: vi.fn(async () => queryResults.contactInboxFindMany),
-      },
-    },
-    insert: vi.fn(() => insertChain),
-    delete: vi.fn(() => deleteChain),
-    update: vi.fn(() => updateChain),
+vi.mock("@chatbotx.io/business", () => ({
+  tagService: {
+    linkTagToContactsReturningNewUnscoped: (...args: unknown[]) =>
+      linkTagToContactsReturningNewUnscoped(...args),
+    recordTagChannelAssignmentsUnscoped: (...args: unknown[]) =>
+      recordTagChannelAssignmentsUnscoped(...args),
+    deleteTagChannelAssignmentsUnscoped: (...args: unknown[]) =>
+      deleteTagChannelAssignmentsUnscoped(...args),
+    detachTagFromContactsUnscoped: (...args: unknown[]) =>
+      detachTagFromContactsUnscoped(...args),
+    findTagChannel: (...args: unknown[]) => findTagChannel(...args),
+    ensureTagByName: (...args: unknown[]) => ensureTagByName(...args),
+    ensureTagChannel: (...args: unknown[]) => ensureTagChannel(...args),
   },
-  and: (...args: unknown[]) => args,
-  eq: (...args: unknown[]) => args,
-  inArray: (...args: unknown[]) => args,
-  isNull: (...args: unknown[]) => args,
+  tagSyncService: { enqueueDelete },
+  messengerIntegrationService: {
+    findByPageIdUnscoped: (...args: unknown[]) =>
+      messengerFindByPageIdUnscoped(...args),
+  },
+  zaloIntegrationService: {
+    findByOaId: (...args: unknown[]) => zaloFindByOaId(...args),
+  },
 }))
 
-vi.mock("@chatbotx.io/database/schema", () => ({
-  tagModel: { id: "id", workspaceId: "workspaceId", name: "name" },
-  tagChannelModel: {
-    id: "id",
-    tagId: "tagId",
-    channelType: "channelType",
-    integrationId: "integrationId",
-    workspaceId: "workspaceId",
-    externalLabelId: "externalLabelId",
-  },
-  contactsToTagsModel: { contactId: "contactId", tagId: "tagId" },
-  contactToTagChannelModel: {
-    tagId: "tagId",
-    tagChannelId: "tagChannelId",
-    contactInboxId: "contactInboxId",
+// ---------------------------------------------------------------------------
+// Mock: @chatbotx.io/database/repositories
+// ---------------------------------------------------------------------------
+const listIdsByInboxAndSourceIds = vi.fn(async () => state.contactInboxes)
+vi.mock("@chatbotx.io/database/repositories", () => ({
+  contactInboxRepository: {
+    listIdsByInboxAndSourceIds: (...args: unknown[]) =>
+      listIdsByInboxAndSourceIds(...args),
   },
 }))
 
 vi.mock("@chatbotx.io/database/partials", () => ({
   channelTypes: { enum: { messenger: "messenger", zalo: "zalo" } },
-}))
-
-const enqueueDelete = vi.fn(async () => undefined)
-vi.mock("@chatbotx.io/business", () => ({
-  tagSyncService: { enqueueDelete },
 }))
 
 const invalidateCacheByTags = vi.fn(async () => undefined)
@@ -112,6 +88,11 @@ vi.mock("../src/lib/logger", () => ({
   logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn() },
 }))
 
+const createLabelledContact = vi.fn(async () => undefined)
+vi.mock("../src/integration/handlers/inbox_labels/create-contact", () => ({
+  createLabelledContact: (...args: unknown[]) => createLabelledContact(...args),
+}))
+
 // ---------------------------------------------------------------------------
 // Lazy imports AFTER mocks
 // ---------------------------------------------------------------------------
@@ -119,23 +100,9 @@ const { handleChannelLabelWebhook } = await import(
   "../src/integration/handlers/inbox_labels"
 )
 const { logger } = await import("../src/lib/logger")
-const { db } = await import("@chatbotx.io/database/client")
-const {
-  tagModel,
-  tagChannelModel,
-  contactsToTagsModel,
-  contactToTagChannelModel,
-} = await import("@chatbotx.io/database/schema")
 
-const dbInsert = db.insert as ReturnType<typeof vi.fn>
-const dbDelete = db.delete as ReturnType<typeof vi.fn>
-const dbUpdate = db.update as ReturnType<typeof vi.fn>
 const loggerWarn = logger.warn as ReturnType<typeof vi.fn>
-const messengerFindFirst = db.query.integrationMessengerModel
-  .findFirst as ReturnType<typeof vi.fn>
-const zaloFindFirst = db.query.integrationZaloModel.findFirst as ReturnType<
-  typeof vi.fn
->
+const loggerInfo = logger.info as ReturnType<typeof vi.fn>
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -198,39 +165,28 @@ function zaloData(payload: unknown) {
 }
 
 beforeEach(() => {
-  queryResults.integrationMessengerFindFirst = null
-  queryResults.integrationZaloFindFirst = null
-  queryResults.tagModelFindFirst = null
-  queryResults.tagChannelFindFirst = null
-  queryResults.contactInboxFindMany = []
-  insertReturning.current = []
-  updateReturning.current = []
+  state.messengerIntegration = null
+  state.zaloIntegration = null
+  state.tagChannel = undefined
+  state.contactInboxes = []
+  state.ensureTagByNameResult = undefined
+  state.ensureTagChannelResult = undefined
+  state.linkTagToContactsReturningNewUnscopedResult = []
   idCounter = 0
 
   vi.clearAllMocks()
-  ;(insertChain.values as ReturnType<typeof vi.fn>).mockReturnValue(insertChain)
-  ;(
-    insertChain.onConflictDoNothing as ReturnType<typeof vi.fn>
-  ).mockReturnValue(insertChain)
-  ;(insertChain.returning as ReturnType<typeof vi.fn>).mockImplementation(
-    async () => insertReturning.current,
+  messengerFindByPageIdUnscoped.mockImplementation(
+    async () => state.messengerIntegration,
   )
-  ;(deleteChain.where as ReturnType<typeof vi.fn>).mockImplementation(
-    async () => undefined,
+  zaloFindByOaId.mockImplementation(async () => state.zaloIntegration)
+  findTagChannel.mockImplementation(async () => state.tagChannel)
+  listIdsByInboxAndSourceIds.mockImplementation(
+    async () => state.contactInboxes,
   )
-  ;(updateChain.set as ReturnType<typeof vi.fn>).mockReturnValue(updateChain)
-  ;(updateChain.where as ReturnType<typeof vi.fn>).mockReturnValue(updateChain)
-  ;(updateChain.returning as ReturnType<typeof vi.fn>).mockImplementation(
-    async () => updateReturning.current,
-  )
-  dbInsert.mockReturnValue(insertChain)
-  dbDelete.mockReturnValue(deleteChain)
-  dbUpdate.mockReturnValue(updateChain)
-  messengerFindFirst.mockImplementation(
-    async () => queryResults.integrationMessengerFindFirst,
-  )
-  zaloFindFirst.mockImplementation(
-    async () => queryResults.integrationZaloFindFirst,
+  ensureTagByName.mockImplementation(async () => state.ensureTagByNameResult)
+  ensureTagChannel.mockImplementation(async () => state.ensureTagChannelResult)
+  linkTagToContactsReturningNewUnscoped.mockImplementation(
+    async () => state.linkTagToContactsReturningNewUnscopedResult,
   )
 })
 
@@ -250,11 +206,11 @@ describe("handleChannelLabelWebhook — dispatch", () => {
       expect.objectContaining({ channel: "telegram" }),
       "inbox labels: unsupported channel",
     )
-    expect(dbInsert).not.toHaveBeenCalled()
+    expect(linkTagToContactsReturningNewUnscoped).not.toHaveBeenCalled()
   })
 
   test("stops when integration is not found", async () => {
-    queryResults.integrationMessengerFindFirst = null
+    state.messengerIntegration = null
     await handleChannelLabelWebhook(
       messengerData({
         action: "add",
@@ -262,12 +218,16 @@ describe("handleChannelLabelWebhook — dispatch", () => {
         label: { id: LABEL_ID, page_label_name: LABEL_NAME },
       }),
     )
-    expect(dbInsert).not.toHaveBeenCalled()
+    expect(linkTagToContactsReturningNewUnscoped).not.toHaveBeenCalled()
     expect(loggerWarn).not.toHaveBeenCalled()
+    expect(loggerInfo).toHaveBeenCalledWith(
+      expect.objectContaining({ channel: "messenger", pageId: PAGE_ID }),
+      "inbox labels: page not connected, label event skipped",
+    )
   })
 
   test("stops when tag sync is disabled", async () => {
-    queryResults.integrationMessengerFindFirst = messengerIntegration({
+    state.messengerIntegration = messengerIntegration({
       syncTagEnabledAt: null,
     })
     await handleChannelLabelWebhook(
@@ -277,11 +237,15 @@ describe("handleChannelLabelWebhook — dispatch", () => {
         label: { id: LABEL_ID, page_label_name: LABEL_NAME },
       }),
     )
-    expect(dbInsert).not.toHaveBeenCalled()
+    expect(linkTagToContactsReturningNewUnscoped).not.toHaveBeenCalled()
+    expect(loggerInfo).toHaveBeenCalledWith(
+      expect.objectContaining({ channel: "messenger", workspaceId: WS_ID }),
+      "inbox labels: tag sync off for page, label event skipped",
+    )
   })
 
   test("warns on invalid payload", async () => {
-    queryResults.integrationMessengerFindFirst = messengerIntegration()
+    state.messengerIntegration = messengerIntegration()
     await handleChannelLabelWebhook({
       integrationType: "messenger",
       integrationIdentifier: PAGE_ID,
@@ -299,13 +263,13 @@ describe("handleChannelLabelWebhook — dispatch", () => {
 // ===========================================================================
 describe("handleChannelLabelWebhook — messenger", () => {
   beforeEach(() => {
-    queryResults.integrationMessengerFindFirst = messengerIntegration()
+    state.messengerIntegration = messengerIntegration()
   })
 
   test("add assigns + emits applied when the tag channel already exists", async () => {
-    queryResults.tagChannelFindFirst = { id: "tc-1", tagId: "tag-1" }
-    queryResults.contactInboxFindMany = [{ id: "ci-1", contactId: "c-1" }]
-    insertReturning.current = [{ contactId: "c-1" }] // newly linked
+    state.tagChannel = { id: "tc-1", tagId: "tag-1" }
+    state.contactInboxes = [{ id: "ci-1", contactId: "c-1", sourceId: PSID }]
+    state.linkTagToContactsReturningNewUnscopedResult = [{ contactId: "c-1" }] // newly linked
 
     await handleChannelLabelWebhook(
       messengerData({
@@ -315,16 +279,24 @@ describe("handleChannelLabelWebhook — messenger", () => {
       }),
     )
 
-    expect(dbInsert).toHaveBeenCalledWith(contactsToTagsModel)
-    expect(dbInsert).toHaveBeenCalledWith(contactToTagChannelModel)
-    expect(emitTagApplied).toHaveBeenCalledWith(WS_ID, "c-1", "tag-1")
+    expect(linkTagToContactsReturningNewUnscoped).toHaveBeenCalledWith({
+      tagId: "tag-1",
+      contactIds: ["c-1"],
+    })
+    expect(recordTagChannelAssignmentsUnscoped).toHaveBeenCalledWith({
+      tagId: "tag-1",
+      tagChannelId: "tc-1",
+      contactInboxIds: ["ci-1"],
+    })
+    expect(emitTagApplied).toHaveBeenCalledWith(WS_ID, "c-1", "tag-1", "ci-1")
   })
 
   test("add creates tag + channel from page_label_name, then assigns", async () => {
-    queryResults.tagChannelFindFirst = null
-    queryResults.tagModelFindFirst = null
-    insertReturning.current = [{ id: "new-id" }]
-    queryResults.contactInboxFindMany = [{ id: "ci-1", contactId: "c-1" }]
+    state.tagChannel = undefined
+    state.ensureTagByNameResult = "tag-new"
+    state.ensureTagChannelResult = "tc-new"
+    state.linkTagToContactsReturningNewUnscopedResult = [{ contactId: "c-1" }]
+    state.contactInboxes = [{ id: "ci-1", contactId: "c-1", sourceId: PSID }]
 
     await handleChannelLabelWebhook(
       messengerData({
@@ -334,15 +306,31 @@ describe("handleChannelLabelWebhook — messenger", () => {
       }),
     )
 
-    expect(dbInsert).toHaveBeenCalledWith(tagModel)
-    expect(dbInsert).toHaveBeenCalledWith(tagChannelModel)
-    expect(dbInsert).toHaveBeenCalledWith(contactsToTagsModel)
-    expect(dbInsert).toHaveBeenCalledWith(contactToTagChannelModel)
+    expect(ensureTagByName).toHaveBeenCalledWith({
+      workspaceId: WS_ID,
+      name: LABEL_NAME,
+    })
+    expect(ensureTagChannel).toHaveBeenCalledWith({
+      workspaceId: WS_ID,
+      tagId: "tag-new",
+      channelType: "messenger",
+      integrationId: "intg-msg-1",
+      externalLabelId: LABEL_ID,
+    })
+    expect(linkTagToContactsReturningNewUnscoped).toHaveBeenCalledWith({
+      tagId: "tag-new",
+      contactIds: ["c-1"],
+    })
+    expect(recordTagChannelAssignmentsUnscoped).toHaveBeenCalledWith({
+      tagId: "tag-new",
+      tagChannelId: "tc-new",
+      contactInboxIds: ["ci-1"],
+    })
   })
 
   test("add skips when tag is missing and no name in payload", async () => {
-    queryResults.tagChannelFindFirst = null
-    queryResults.tagModelFindFirst = null
+    state.tagChannel = undefined
+    state.ensureTagByNameResult = undefined
 
     await handleChannelLabelWebhook(
       messengerData({
@@ -352,7 +340,8 @@ describe("handleChannelLabelWebhook — messenger", () => {
       }),
     )
 
-    expect(dbInsert).not.toHaveBeenCalled()
+    // page_label_name defaults to "" -> ensureTagByName is never a valid create path
+    expect(linkTagToContactsReturningNewUnscoped).not.toHaveBeenCalled()
   })
 
   test("add without user is a no-op", async () => {
@@ -362,12 +351,12 @@ describe("handleChannelLabelWebhook — messenger", () => {
         label: { id: LABEL_ID, page_label_name: LABEL_NAME },
       }),
     )
-    expect(dbInsert).not.toHaveBeenCalled()
+    expect(linkTagToContactsReturningNewUnscoped).not.toHaveBeenCalled()
   })
 
   test("remove unassigns: deletes channel mapping + contact tag + emits removed", async () => {
-    queryResults.tagChannelFindFirst = { id: "tc-1", tagId: "tag-1" }
-    queryResults.contactInboxFindMany = [{ id: "ci-1", contactId: "c-1" }]
+    state.tagChannel = { id: "tc-1", tagId: "tag-1" }
+    state.contactInboxes = [{ id: "ci-1", contactId: "c-1", sourceId: PSID }]
 
     await handleChannelLabelWebhook(
       messengerData({
@@ -377,16 +366,22 @@ describe("handleChannelLabelWebhook — messenger", () => {
       }),
     )
 
-    expect(dbDelete).toHaveBeenCalledWith(contactToTagChannelModel)
-    expect(dbDelete).toHaveBeenCalledWith(contactsToTagsModel)
-    expect(emitTagRemoved).toHaveBeenCalledWith(WS_ID, "c-1", "tag-1")
+    expect(deleteTagChannelAssignmentsUnscoped).toHaveBeenCalledWith({
+      tagChannelId: "tc-1",
+      contactInboxIds: ["ci-1"],
+    })
+    expect(detachTagFromContactsUnscoped).toHaveBeenCalledWith({
+      tagId: "tag-1",
+      contactIds: ["c-1"],
+    })
+    expect(emitTagRemoved).toHaveBeenCalledWith(WS_ID, "c-1", "tag-1", "ci-1")
   })
 
   test("remove without user is a no-op", async () => {
     await handleChannelLabelWebhook(
       messengerData({ action: "remove", label: { id: LABEL_ID } }),
     )
-    expect(dbDelete).not.toHaveBeenCalled()
+    expect(deleteTagChannelAssignmentsUnscoped).not.toHaveBeenCalled()
   })
 
   test("unknown action is a no-op", async () => {
@@ -397,8 +392,176 @@ describe("handleChannelLabelWebhook — messenger", () => {
         label: { id: LABEL_ID },
       }),
     )
-    expect(dbInsert).not.toHaveBeenCalled()
-    expect(dbDelete).not.toHaveBeenCalled()
+    expect(linkTagToContactsReturningNewUnscoped).not.toHaveBeenCalled()
+    expect(deleteTagChannelAssignmentsUnscoped).not.toHaveBeenCalled()
+  })
+
+  test("add for a user the inbox has never seen creates the contact, then assigns", async () => {
+    state.tagChannel = { id: "tc-1", tagId: "tag-1" }
+    listIdsByInboxAndSourceIds
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { id: "ci-new", contactId: "c-new", sourceId: PSID },
+      ])
+    state.linkTagToContactsReturningNewUnscopedResult = [{ contactId: "c-new" }]
+
+    await handleChannelLabelWebhook(
+      messengerData({
+        action: "add",
+        user: { id: PSID },
+        label: { id: LABEL_ID, page_label_name: LABEL_NAME },
+      }),
+    )
+
+    expect(createLabelledContact).toHaveBeenCalledTimes(1)
+    expect(createLabelledContact).toHaveBeenCalledWith({
+      integrationType: "messenger",
+      integrationIdentifier: PAGE_ID,
+      sourceId: PSID,
+    })
+    expect(linkTagToContactsReturningNewUnscoped).toHaveBeenCalledWith({
+      tagId: "tag-1",
+      contactIds: ["c-new"],
+    })
+    expect(emitTagApplied).toHaveBeenCalledWith(
+      WS_ID,
+      "c-new",
+      "tag-1",
+      "ci-new",
+    )
+  })
+
+  test("add for a known user does not create a contact", async () => {
+    state.tagChannel = { id: "tc-1", tagId: "tag-1" }
+    state.contactInboxes = [{ id: "ci-1", contactId: "c-1", sourceId: PSID }]
+
+    await handleChannelLabelWebhook(
+      messengerData({
+        action: "add",
+        user: { id: PSID },
+        label: { id: LABEL_ID, page_label_name: LABEL_NAME },
+      }),
+    )
+
+    expect(createLabelledContact).not.toHaveBeenCalled()
+    expect(linkTagToContactsReturningNewUnscoped).toHaveBeenCalled()
+  })
+
+  test("a contact creation failure fails the job so it retries", async () => {
+    state.tagChannel = { id: "tc-1", tagId: "tag-1" }
+    state.contactInboxes = []
+    const failure = new Error("db down")
+    createLabelledContact.mockRejectedValueOnce(failure)
+
+    await expect(
+      handleChannelLabelWebhook(
+        messengerData({
+          action: "add",
+          user: { id: PSID },
+          label: { id: LABEL_ID, page_label_name: LABEL_NAME },
+        }),
+      ),
+    ).rejects.toBe(failure)
+    expect(linkTagToContactsReturningNewUnscoped).not.toHaveBeenCalled()
+  })
+
+  test("logs and skips when the contact still does not exist after creation", async () => {
+    state.tagChannel = { id: "tc-1", tagId: "tag-1" }
+    state.contactInboxes = []
+
+    await handleChannelLabelWebhook(
+      messengerData({
+        action: "add",
+        user: { id: PSID },
+        label: { id: LABEL_ID, page_label_name: LABEL_NAME },
+      }),
+    )
+
+    expect(createLabelledContact).toHaveBeenCalledTimes(1)
+    expect(linkTagToContactsReturningNewUnscoped).not.toHaveBeenCalled()
+    expect(loggerInfo).toHaveBeenCalledWith(
+      expect.objectContaining({ channel: "messenger", userIds: [PSID] }),
+      "inbox labels: no contact for labelled user, assign skipped",
+    )
+  })
+
+  test("remove for an unknown user never creates a contact and logs the skip", async () => {
+    state.tagChannel = { id: "tc-1", tagId: "tag-1" }
+    state.contactInboxes = []
+
+    await handleChannelLabelWebhook(
+      messengerData({
+        action: "remove",
+        user: { id: PSID },
+        label: { id: LABEL_ID },
+      }),
+    )
+
+    expect(createLabelledContact).not.toHaveBeenCalled()
+    expect(deleteTagChannelAssignmentsUnscoped).not.toHaveBeenCalled()
+    expect(loggerInfo).toHaveBeenCalledWith(
+      expect.objectContaining({ channel: "messenger" }),
+      "inbox labels: no contact for labelled user, unassign skipped",
+    )
+  })
+
+  test("remove for a label with no mapping logs the skip", async () => {
+    state.tagChannel = undefined
+
+    await handleChannelLabelWebhook(
+      messengerData({
+        action: "remove",
+        user: { id: PSID },
+        label: { id: LABEL_ID },
+      }),
+    )
+
+    expect(loggerInfo).toHaveBeenCalledWith(
+      expect.objectContaining({ labelId: LABEL_ID }),
+      "inbox labels: label not mapped to a tag, unassign skipped",
+    )
+  })
+
+  test("a label re-created with the same name is assigned and then removed by its new id", async () => {
+    // The old mapping points at the deleted label's id; the add for the new id
+    // finds no mapping, so it resolves the tag by name and (via
+    // ensureTagChannel) repoints the mapping to the new id.
+    const NEW_LABEL_ID = "label-recreated"
+    state.tagChannel = undefined
+    state.ensureTagByNameResult = "tag-1"
+    state.ensureTagChannelResult = "tc-1"
+    state.contactInboxes = [{ id: "ci-1", contactId: "c-1", sourceId: PSID }]
+
+    await handleChannelLabelWebhook(
+      messengerData({
+        action: "add",
+        user: { id: PSID },
+        label: { id: NEW_LABEL_ID, page_label_name: LABEL_NAME },
+      }),
+    )
+    expect(ensureTagChannel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tagId: "tag-1",
+        externalLabelId: NEW_LABEL_ID,
+      }),
+    )
+
+    // After the repoint the remove for the new id resolves the mapping.
+    state.tagChannel = { id: "tc-1", tagId: "tag-1" }
+    await handleChannelLabelWebhook(
+      messengerData({
+        action: "remove",
+        user: { id: PSID },
+        label: { id: NEW_LABEL_ID },
+      }),
+    )
+    expect(findTagChannel).toHaveBeenLastCalledWith(
+      expect.objectContaining({ externalLabelId: NEW_LABEL_ID }),
+    )
+    expect(detachTagFromContactsUnscoped).toHaveBeenCalledWith({
+      tagId: "tag-1",
+      contactIds: ["c-1"],
+    })
   })
 })
 
@@ -407,14 +570,38 @@ describe("handleChannelLabelWebhook — messenger", () => {
 // ===========================================================================
 describe("handleChannelLabelWebhook — zalo", () => {
   beforeEach(() => {
-    queryResults.integrationZaloFindFirst = zaloIntegration()
+    state.zaloIntegration = zaloIntegration()
+  })
+
+  test("add_user_to_tag for unknown users keeps the Zalo behaviour: no contact is created", async () => {
+    state.tagChannel = { id: "tc-1", tagId: "tag-1" }
+    state.contactInboxes = []
+
+    await handleChannelLabelWebhook(
+      zaloData({
+        event_name: "add_user_to_tag",
+        oa_id: OA_ID,
+        tag: { name: LABEL_NAME, user_ids: ["u-1"] },
+      }),
+    )
+
+    expect(createLabelledContact).not.toHaveBeenCalled()
+    expect(linkTagToContactsReturningNewUnscoped).not.toHaveBeenCalled()
+    expect(loggerInfo).toHaveBeenCalledWith(
+      expect.objectContaining({ channel: "zalo", userIds: ["u-1"] }),
+      "inbox labels: no contact for labelled user, assign skipped",
+    )
   })
 
   test("add_user_to_tag assigns the batch of users", async () => {
-    queryResults.tagChannelFindFirst = { id: "tc-1", tagId: "tag-1" }
-    queryResults.contactInboxFindMany = [
+    state.tagChannel = { id: "tc-1", tagId: "tag-1" }
+    state.contactInboxes = [
       { id: "ci-1", contactId: "c-1" },
       { id: "ci-2", contactId: "c-2" },
+    ]
+    state.linkTagToContactsReturningNewUnscopedResult = [
+      { contactId: "c-1" },
+      { contactId: "c-2" },
     ]
 
     await handleChannelLabelWebhook(
@@ -425,14 +612,21 @@ describe("handleChannelLabelWebhook — zalo", () => {
       }),
     )
 
-    expect(dbInsert).toHaveBeenCalledWith(contactsToTagsModel)
-    expect(dbInsert).toHaveBeenCalledWith(contactToTagChannelModel)
+    expect(linkTagToContactsReturningNewUnscoped).toHaveBeenCalledWith({
+      tagId: "tag-1",
+      contactIds: ["c-1", "c-2"],
+    })
+    expect(recordTagChannelAssignmentsUnscoped).toHaveBeenCalledWith({
+      tagId: "tag-1",
+      tagChannelId: "tc-1",
+      contactInboxIds: ["ci-1", "ci-2"],
+    })
   })
 
   test("add_user_to_tag with empty user_ids ensures the label only", async () => {
-    queryResults.tagChannelFindFirst = null
-    queryResults.tagModelFindFirst = null
-    insertReturning.current = [{ id: "new-id" }]
+    state.tagChannel = undefined
+    state.ensureTagByNameResult = "tag-new"
+    state.ensureTagChannelResult = "tc-new"
 
     await handleChannelLabelWebhook(
       zaloData({
@@ -442,14 +636,23 @@ describe("handleChannelLabelWebhook — zalo", () => {
       }),
     )
 
-    expect(dbInsert).toHaveBeenCalledWith(tagModel)
-    expect(dbInsert).toHaveBeenCalledWith(tagChannelModel)
-    expect(dbInsert).not.toHaveBeenCalledWith(contactsToTagsModel)
+    expect(ensureTagByName).toHaveBeenCalledWith({
+      workspaceId: WS_ID,
+      name: LABEL_NAME,
+    })
+    expect(ensureTagChannel).toHaveBeenCalledWith({
+      workspaceId: WS_ID,
+      tagId: "tag-new",
+      channelType: "zalo",
+      integrationId: "intg-zalo-1",
+      externalLabelId: LABEL_NAME,
+    })
+    expect(linkTagToContactsReturningNewUnscoped).not.toHaveBeenCalled()
   })
 
   test("remove_user_from_tag unassigns the batch", async () => {
-    queryResults.tagChannelFindFirst = { id: "tc-1", tagId: "tag-1" }
-    queryResults.contactInboxFindMany = [
+    state.tagChannel = { id: "tc-1", tagId: "tag-1" }
+    state.contactInboxes = [
       { id: "ci-1", contactId: "c-1" },
       { id: "ci-2", contactId: "c-2" },
     ]
@@ -462,9 +665,19 @@ describe("handleChannelLabelWebhook — zalo", () => {
       }),
     )
 
-    expect(dbDelete).toHaveBeenCalledWith(contactToTagChannelModel)
-    expect(dbDelete).toHaveBeenCalledWith(contactsToTagsModel)
+    expect(deleteTagChannelAssignmentsUnscoped).toHaveBeenCalledWith({
+      tagChannelId: "tc-1",
+      contactInboxIds: ["ci-1", "ci-2"],
+    })
+    expect(detachTagFromContactsUnscoped).toHaveBeenCalledWith({
+      tagId: "tag-1",
+      contactIds: ["c-1", "c-2"],
+    })
     expect(emitTagRemoved).toHaveBeenCalledTimes(2)
+    // Each contact attributes to its OWN contactInbox from this label event,
+    // not a shared/most-recent one across the batch.
+    expect(emitTagRemoved).toHaveBeenCalledWith(WS_ID, "c-1", "tag-1", "ci-1")
+    expect(emitTagRemoved).toHaveBeenCalledWith(WS_ID, "c-2", "tag-1", "ci-2")
   })
 
   test("remove_user_from_tag with empty user_ids is a no-op", async () => {
@@ -475,11 +688,11 @@ describe("handleChannelLabelWebhook — zalo", () => {
         tag: { name: LABEL_NAME },
       }),
     )
-    expect(dbDelete).not.toHaveBeenCalled()
+    expect(deleteTagChannelAssignmentsUnscoped).not.toHaveBeenCalled()
   })
 
   test("remove_user_from_tag is a no-op when the tag channel is missing", async () => {
-    queryResults.tagChannelFindFirst = null
+    state.tagChannel = undefined
     await handleChannelLabelWebhook(
       zaloData({
         event_name: "remove_user_from_tag",
@@ -487,11 +700,11 @@ describe("handleChannelLabelWebhook — zalo", () => {
         tag: { name: LABEL_NAME, user_ids: ["u-1"] },
       }),
     )
-    expect(dbDelete).not.toHaveBeenCalled()
+    expect(deleteTagChannelAssignmentsUnscoped).not.toHaveBeenCalled()
   })
 
   test("remove_tag enqueues a channel-scoped delete + keeps the workspace tag", async () => {
-    queryResults.tagChannelFindFirst = { id: "tc-1", tagId: "tag-1" }
+    state.tagChannel = { id: "tc-1", tagId: "tag-1" }
 
     await handleChannelLabelWebhook(
       zaloData({
@@ -508,11 +721,11 @@ describe("handleChannelLabelWebhook — zalo", () => {
       integrationId: "intg-zalo-1",
     })
     // No workspace-wide tag delete from the webhook.
-    expect(dbUpdate).not.toHaveBeenCalled()
+    expect(detachTagFromContactsUnscoped).not.toHaveBeenCalled()
   })
 
   test("remove_tag is a no-op when the label is not mapped locally", async () => {
-    queryResults.tagChannelFindFirst = null
+    state.tagChannel = undefined
 
     await handleChannelLabelWebhook(
       zaloData({

@@ -2,7 +2,9 @@ import {
   type SendFileStepSchema,
   type SendGifStepSchema,
   type SendImageStepSchema,
+  type SendMultipleImagesStepSchema,
   type SendTextStepSchema,
+  type StepType,
   stepTypes,
 } from "@chatbotx.io/flow-config"
 import type {
@@ -20,8 +22,19 @@ import type {
   ZaloSendMessageRequest,
 } from "../../../schema/webhook"
 import { convertFlowStepFile } from "./send-file"
-import { convertFlowStepImage } from "./send-image"
+import {
+  convertFlowStepImage,
+  convertFlowStepMultipleImages,
+} from "./send-image"
 import { convertFlowStepText } from "./send-text"
+
+export const handledFlowStepTypes = [
+  stepTypes.enum.sendText,
+  stepTypes.enum.sendImage,
+  stepTypes.enum.sendGif,
+  stepTypes.enum.sendMultipleImages,
+  stepTypes.enum.sendFile,
+] as const satisfies readonly StepType[]
 
 export const sendMessage: MessageHandlers<ZaloAuthValue>["sendMessage"] =
   async (props) => {
@@ -30,6 +43,7 @@ export const sendMessage: MessageHandlers<ZaloAuthValue>["sendMessage"] =
       data: { contact, message },
     } = props
     const messageIds: string[] = []
+    let sentCount = 0
     try {
       for await (const zaloMessage of convertMessageToZaloMessage(
         ctx.auth,
@@ -37,6 +51,7 @@ export const sendMessage: MessageHandlers<ZaloAuthValue>["sendMessage"] =
       )) {
         const payload = buildMessagePayload(contact, zaloMessage)
         const response = await sendMessageToZaloOA(ctx.auth, payload)
+        sentCount += 1
         if (response.data?.message_id) {
           messageIds.push(response.data.message_id)
         }
@@ -51,6 +66,7 @@ export const sendMessage: MessageHandlers<ZaloAuthValue>["sendMessage"] =
     // so the oa_send_* webhook echo dedups instead of inserting a duplicate.
     return {
       messageIds,
+      sentCount,
     }
   }
 
@@ -140,13 +156,18 @@ export async function* convertFlowStepToZaloMessage(
         >,
       )
       break
+    case stepTypes.enum.sendMultipleImages:
+      yield* convertFlowStepMultipleImages(
+        props as SendFlowStepProps<ZaloAuthValue, SendMultipleImagesStepSchema>,
+      )
+      break
     case stepTypes.enum.sendFile:
       yield* await convertFlowStepFile(
         props as SendFlowStepProps<ZaloAuthValue, SendFileStepSchema>,
       )
       break
     default:
-      break
+      throw new Error(`Unsupported Zalo flow step: ${step.stepType}`)
   }
 }
 
@@ -157,12 +178,14 @@ export const sendFlowStep: MessageHandlers<ZaloAuthValue>["sendFlowStep"] =
       data: { contact },
     } = props
     const messageIds: string[] = []
+    let sentCount = 0
     try {
       for await (const zaloMessage of convertFlowStepToZaloMessage(props)) {
         const response = await sendMessageToZaloOA(
           ctx.auth,
           buildMessagePayload(contact, zaloMessage),
         )
+        sentCount += 1
         if (response.data?.message_id) {
           messageIds.push(response.data.message_id)
         }
@@ -175,5 +198,6 @@ export const sendFlowStep: MessageHandlers<ZaloAuthValue>["sendFlowStep"] =
 
     return {
       messageIds,
+      sentCount,
     }
   }

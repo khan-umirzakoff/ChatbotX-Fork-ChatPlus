@@ -1,21 +1,13 @@
 "use server"
 
-import {
-  and,
-  db,
-  eq,
-  findOrFail,
-  isDatabaseError,
-} from "@chatbotx.io/database/client"
-import { sequenceModel } from "@chatbotx.io/database/schema"
+import { ChatbotXException } from "@chatbotx.io/business/errors"
+import { sequenceService } from "@chatbotx.io/business/sequence"
 import { zodBigintAsString } from "@chatbotx.io/utils"
 import { getTranslations } from "next-intl/server"
 import { returnValidationErrors } from "next-safe-action"
+import { isValidationException } from "@/lib/errors/validation-exception"
 import { workspaceActionClient } from "@/lib/safe-action"
-import {
-  type UpdateSequenceSchema,
-  updateSequenceSchema,
-} from "../schema/action"
+import { updateSequenceSchema } from "../schema/action"
 
 export const updateSequenceAction = workspaceActionClient
   .bindArgsSchemas([zodBigintAsString(), zodBigintAsString()])
@@ -26,48 +18,27 @@ export const updateSequenceAction = workspaceActionClient
       parsedInput,
     } = props
 
-    return await updateSequence(
-      {
-        workspaceId,
-        id,
-      },
-      parsedInput,
-    )
-  })
+    const t = await getTranslations()
 
-export const updateSequence = async (
-  ctx: {
-    workspaceId: string
-    id: string
-  },
-  parsedInput: UpdateSequenceSchema,
-) => {
-  const t = await getTranslations()
+    try {
+      await sequenceService.update({ workspaceId, id }, parsedInput)
+    } catch (error) {
+      if (isValidationException(error)) {
+        return returnValidationErrors(updateSequenceSchema, {
+          _errors: [t("sequences.validation.exception")],
+          name: {
+            _errors: [t("sequences.validation.nameExists")],
+          },
+        })
+      }
 
-  await findOrFail({
-    table: sequenceModel,
-    where: {
-      id: ctx.id,
-      workspaceId: ctx.workspaceId,
-    },
-    message: "Sequence not found",
-  })
+      // A `ChatbotXException` (e.g. not-found) already carries a correct
+      // status/message — rethrow it unchanged so it doesn't get masked as
+      // a generic 500. Only genuinely unknown errors get wrapped.
+      if (error instanceof ChatbotXException) {
+        throw error
+      }
 
-  try {
-    await db
-      .update(sequenceModel)
-      .set(parsedInput)
-      .where(and(eq(sequenceModel.id, ctx.id)))
-  } catch (error) {
-    if (isDatabaseError(error) && error.cause.code === "23505") {
-      return returnValidationErrors(updateSequenceSchema, {
-        _errors: [t("sequences.validation.exception")],
-        name: {
-          _errors: [t("sequences.validation.nameExists")],
-        },
-      })
+      throw new Error("Failed to update sequence")
     }
-
-    throw new Error("Failed to update sequence")
-  }
-}
+  })

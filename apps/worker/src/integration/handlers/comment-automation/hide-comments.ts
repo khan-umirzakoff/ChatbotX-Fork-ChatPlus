@@ -1,9 +1,95 @@
-import type { FBCommentHideComments } from "@chatbotx.io/database/partials"
+import type { CommentHideComments } from "@chatbotx.io/database/partials"
 import type {
   ContactInboxModel,
   ConversationModel,
 } from "@chatbotx.io/database/types"
 import { ChatJobAction, chatQueue } from "@chatbotx.io/worker-config"
+import { normalizeForMatch } from "./automation-matching"
+import type { CommentAutomationChannelType } from "./channel-type"
+import { withReplayPriority } from "./replay-priority"
+
+/**
+ * Whether the channel can hide (and later unhide) a comment.
+ *
+ * Hiding maps to Meta's `POST /{comment-id}?is_hidden=true` for Facebook and
+ * Instagram comments, to `business/comment/hide/` on TikTok, and to
+ * `POST /{reply-id}/manage_reply` on Threads (top-level replies only — see
+ * {@link supportsHideForComment}).
+ *
+ * An allowlist rather than a chain of `!==`: a channel added without a decision
+ * here should default to "cannot", not inherit the capability by omission.
+ */
+const CHANNELS_WITH_HIDE_COMMENTS = new Set<CommentAutomationChannelType>([
+  "messenger",
+  "instagram",
+  "instagramFacebook",
+  "threads",
+  "tiktok",
+])
+
+export function supportsHideComments(
+  channelType: CommentAutomationChannelType,
+): boolean {
+  return CHANNELS_WITH_HIDE_COMMENTS.has(channelType)
+}
+
+/**
+ * Channels whose hide endpoint only accepts a top-level comment. Threads'
+ * `manage_reply` always rejects a nested reply — and the state change writes
+ * `attributes.hidden` to the DB before calling the channel, so letting one
+ * through leaves the inbox showing a hidden reply that is still public, plus a
+ * failing job and a failing unhide job later.
+ */
+const CHANNELS_HIDING_TOP_LEVEL_ONLY = new Set<CommentAutomationChannelType>([
+  "threads",
+])
+
+/** Whether this specific comment can be hidden on its channel. */
+export function supportsHideForComment(
+  channelType: CommentAutomationChannelType,
+  isReply: boolean,
+): boolean {
+  return (
+    supportsHideComments(channelType) &&
+    !(isReply && CHANNELS_HIDING_TOP_LEVEL_ONLY.has(channelType))
+  )
+}
+
+/**
+ * Any emoji that renders as one (😀, ❤️, 👍🏽 …). Not `\p{Emoji}`, which also
+ * covers the plain digits and `#`/`*` that only render as emoji inside a
+ * keycap sequence — a phone number would read as an emoji comment. Not bare
+ * `\p{Extended_Pictographic}` either, which also covers text-default symbols
+ * (©, ®, ™, ‼, ↔, ℹ) that appear in ordinary comments: those count only when
+ * followed by the U+FE0F emoji-presentation selector (e.g. ❤️ = ❤ + U+FE0F).
+ */
+const EMOJI_RE = /\p{Emoji_Presentation}|\p{Extended_Pictographic}️/u
+
+export function hasEmoji(text: string): boolean {
+  return EMOJI_RE.test(text)
+}
+
+/**
+ * Whether the automation's hide settings ask for anything at all. Lets the
+ * orchestrator skip the whole hide path (including the attachment lookup) for
+ * an all-defaults config, and lets it report the unsupported capability only
+ * when the user actually configured one.
+ */
+export function hasHideCommentAction(
+  hideComments: CommentHideComments,
+): boolean {
+  return (
+    hideComments.all ||
+    hideComments.hasPhoneNumber ||
+    hideComments.hasImage ||
+    hideComments.hasVideo ||
+    hideComments.hasLink ||
+    hideComments.hasKeywords ||
+    Boolean(hideComments.hasGif) ||
+    Boolean(hideComments.hasEmoji) ||
+    hideComments.showCommentsAfter !== "none"
+  )
+}
 
 const PHONE_RE = /\+?\d[\d\s\-().]{7,}/
 // `http(s)://`/`www.` links match case-insensitively — the scheme itself is
@@ -40,7 +126,7 @@ const UNHIDE_DELAY_MS: Record<string, number> = {
 }
 
 export async function applyHideComments(
-  hideComments: FBCommentHideComments,
+  hideComments: CommentHideComments,
   commentId: string,
   message: string | undefined,
   ctx: {
@@ -50,33 +136,43 @@ export async function applyHideComments(
     messageCreatedAt: Date
     hasImage: boolean
     hasVideo: boolean
+    hasGif: boolean
   },
 ) {
   const text = message ?? ""
-  const lowerText = text.toLowerCase()
+  const normalizedText = normalizeForMatch(text)
 
   const shouldHide =
     hideComments.all ||
     (hideComments.hasPhoneNumber && PHONE_RE.test(text)) ||
     (hideComments.hasLink && hasLink(text)) ||
     (hideComments.hasKeywords &&
-      hideComments.keywords.some((k) => lowerText.includes(k.toLowerCase()))) ||
+      hideComments.keywords.some((k) =>
+        normalizedText.includes(normalizeForMatch(k)),
+      )) ||
     (hideComments.hasImage && ctx.hasImage) ||
-    (hideComments.hasVideo && ctx.hasVideo)
+    (hideComments.hasVideo && ctx.hasVideo) ||
+    (Boolean(hideComments.hasGif) && ctx.hasGif) ||
+    (Boolean(hideComments.hasEmoji) && hasEmoji(text))
 
   if (!shouldHide) {
     return
   }
 
-  await chatQueue.add(ChatJobAction.changeChannelMessageState, {
-    type: ChatJobAction.changeChannelMessageState,
-    data: {
-      conversation: ctx.conversation,
-      contactInbox: ctx.contactInbox,
-      message: { id: ctx.messageId, createdAt: ctx.messageCreatedAt },
-      hidden: true,
+  const hideOptions = withReplayPriority()
+  await chatQueue.add(
+    ChatJobAction.changeChannelMessageState,
+    {
+      type: ChatJobAction.changeChannelMessageState,
+      data: {
+        conversation: ctx.conversation,
+        contactInbox: ctx.contactInbox,
+        message: { id: ctx.messageId, createdAt: ctx.messageCreatedAt },
+        hidden: true,
+      },
     },
-  })
+    ...(hideOptions ? [hideOptions] : []),
+  )
 
   if (hideComments.showCommentsAfter !== "none") {
     const delay = UNHIDE_DELAY_MS[hideComments.showCommentsAfter] ?? 0
@@ -91,7 +187,7 @@ export async function applyHideComments(
           hidden: false,
         },
       },
-      { delay, jobId: `unhide-comment-${commentId}` },
+      withReplayPriority({ delay, jobId: `unhide-comment-${commentId}` }),
     )
   }
 }

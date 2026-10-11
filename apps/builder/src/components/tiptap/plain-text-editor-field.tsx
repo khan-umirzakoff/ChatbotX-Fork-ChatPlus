@@ -10,39 +10,47 @@ import {
   FormMessage,
 } from "@chatbotx.io/ui/components/ui/form"
 import { cn } from "@chatbotx.io/ui/lib/utils"
+import { useTranslations } from "next-intl"
 import { useEffect, useState } from "react"
 import { useFormContext } from "react-hook-form"
 import { PlainTextTiptapEditor } from "./plain-text-tiptap-editor"
 
 export type PlainTextEditorFieldProps = {
+  botFieldsOnly?: boolean
   label?: string
   name: string
   required?: boolean
   placeholder?: string
   formItemClassName?: string
+  editorClassName?: string
   showEmojiPicker?: boolean
   channels?: ChannelType[]
   includeCouponVariables?: boolean
   includeRawCustomFieldVariables?: boolean
+  includeBotFieldVariables?: boolean
   description?: string
   /** Single-line layout with the variable picker inline (e.g. filter value inputs). */
   inline?: boolean
 }
 
 export const PlainTextEditorField = ({
+  botFieldsOnly = false,
   name,
   description,
   label,
   required = false,
   formItemClassName,
+  editorClassName,
   placeholder,
   channels,
   includeCouponVariables = false,
   includeRawCustomFieldVariables = false,
+  includeBotFieldVariables = false,
   showEmojiPicker = true,
   inline = false,
 }: PlainTextEditorFieldProps) => {
   const { control, getValues } = useFormContext()
+  const t = useTranslations("fields")
 
   const [initValue, setInitValue] = useState<string | undefined>(undefined)
 
@@ -62,14 +70,17 @@ export const PlainTextEditorField = ({
               {label}
               {!required && (
                 <span className="self-start font-normal text-xxs">
-                  (optional)
+                  {t("optionalHint")}
                 </span>
               )}
             </FormLabel>
           ) : null}
           <FormControl>
             <PlainTextTiptapEditor
+              botFieldsOnly={botFieldsOnly}
               channels={channels}
+              className={editorClassName}
+              includeBotFieldVariables={includeBotFieldVariables}
               includeCouponVariables={includeCouponVariables}
               includeRawCustomFieldVariables={includeRawCustomFieldVariables}
               initValue={initValue}

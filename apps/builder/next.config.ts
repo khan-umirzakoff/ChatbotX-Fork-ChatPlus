@@ -14,6 +14,17 @@ const storageUrl = env.NEXT_PUBLIC_STORAGE_URL ?? `${appUrl}/storage`
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   output: "standalone",
+  // These `@chatbotx.io/*` workspace packages are consumed as SOURCE (their
+  // `exports` point at `./src/*.ts`). pnpm symlinks them under node_modules, so
+  // without this Next/Turbopack treats them as vendored externals and does NOT
+  // recompile them on edit during `next dev` — server-side changes to them
+  // silently keep running the previously-compiled copy. Listing them here puts
+  // them through the compile+watch pipeline so edits actually take effect.
+  transpilePackages: [
+    "@chatbotx.io/integration-facebook-ads",
+    "@chatbotx.io/business",
+    "@chatbotx.io/analytics",
+  ],
   images: {
     remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
@@ -57,7 +68,7 @@ const nextConfig: NextConfig = {
 
     // Local dev: production routes /ws, /storage, /manage/*, and /portal/*
     // via load balancer / Caddy
-    const wsUrl = env.NEXT_PUBLIC_INTERNAL_WS_URL
+    const realtimeProxyUrl = env.REALTIME_PROXY_URL
     const s3Bucket = process.env.S3_BUCKET ?? "chatbotx"
     const s3Endpoint = process.env.S3_ENDPOINT ?? "http://localhost:9000"
     const portalUrl = process.env.PORTAL_INTERNAL_URL ?? "http://localhost:3201"
@@ -68,7 +79,7 @@ const nextConfig: NextConfig = {
     return {
       afterFiles: [
         ...alwaysRewrites,
-        { source: "/ws/:path*", destination: `${wsUrl}/:path*` },
+        { source: "/ws/:path*", destination: `${realtimeProxyUrl}/:path*` },
         {
           source: "/storage/:path*",
           destination: `${s3Endpoint}/${s3Bucket}/:path*`,
@@ -108,6 +119,24 @@ const nextConfig: NextConfig = {
   },
   headers() {
     return [
+      // `next dev` serves chunks under stable, content-independent URLs
+      // (`/_next/static/chunks/<module-path>.css`). Anyone developing through a
+      // caching proxy or tunnel (Cloudflare Tunnel in front of localhost) gets
+      // a 4-hour edge cache on those URLs by default, so a newly used Tailwind
+      // class simply never reaches the browser. Tell every cache to stay out
+      // of the way in development; production chunk names are content-hashed
+      // and keep their normal immutable caching.
+      ...(process.env.NODE_ENV === "development"
+        ? [
+            {
+              source: "/_next/static/:path*",
+              headers: [
+                { key: "Cache-Control", value: "no-store, must-revalidate" },
+                { key: "CDN-Cache-Control", value: "no-store" },
+              ],
+            },
+          ]
+        : []),
       {
         source: "/chat-widget/:path*",
         headers: [
@@ -123,6 +152,18 @@ const nextConfig: NextConfig = {
             key: "Access-Control-Allow-Headers",
             value: "Content-Type, Authorization",
           },
+        ],
+      },
+      // The ref link embed code points at this one unversioned URL, so an
+      // update must reach visitors on their next page view. Browsers
+      // revalidate every load (a cheap 304 via ETag) instead of keeping the
+      // 4-hour copy a CDN would otherwise hand out; the CDN itself holds it
+      // only briefly.
+      {
+        source: "/chat-widget/ref-widget.js",
+        headers: [
+          { key: "Cache-Control", value: "public, no-cache" },
+          { key: "CDN-Cache-Control", value: "public, max-age=60" },
         ],
       },
     ]

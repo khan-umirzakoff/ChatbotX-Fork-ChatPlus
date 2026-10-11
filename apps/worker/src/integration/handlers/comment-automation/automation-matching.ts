@@ -1,9 +1,15 @@
-import type {
-  FBCommentIncludeKeywords,
-  FBCommentPost,
-  FBCommentReply,
-  FBCommentReplyAfter,
+import {
+  type CommentAutomationType,
+  type CommentExcludeKeywordsType,
+  type CommentIncludeKeywords,
+  type CommentPost,
+  type CommentReply,
+  type CommentReplyAfter,
+  isLiveCommentAutomation,
+  liveCommentCapabilities,
+  resolveReplyTexts,
 } from "@chatbotx.io/database/partials"
+import type { CommentAutomationModel } from "@chatbotx.io/database/types"
 
 const RANDOM_DELAY_MINUTES: Record<string, number> = {
   randomWithin3Minutes: 3,
@@ -14,66 +20,176 @@ const RANDOM_DELAY_MINUTES: Record<string, number> = {
   randomWithin60Minutes: 60,
 }
 
-// Facebook post ids are composite `{pageId}_{storyId}`. The published/ads
-// pickers store that composite form, but the reels picker stores a bare id and
-// users pasting an id manually often omit the `{pageId}_` prefix. Compare on the
-// trailing story id (unique) so all three formats match the webhook `post_id`.
+// Facebook post ids are composite `{pageId}_{storyId}`. The published/ads/reels
+// pickers store that composite form (reels via the video's `post_id` — the bare
+// video id never equals the webhook's story id), but users pasting an id
+// manually often omit the `{pageId}_` prefix. Compare on the trailing story id
+// (unique) so both forms match the webhook `post_id`.
 function normalizePostId(id: string): string {
   const idx = id.indexOf("_")
   return idx === -1 ? id : id.slice(idx + 1)
 }
 
-export function matchPost(post: FBCommentPost, postId: string): boolean {
+// The leading half of a composite id — the object the comment hangs off
+// (`{objectId}_{commentId}`). A bare id (Instagram) has no leading half and so
+// answers itself, which reduces the comparison in `isCommentReply` to
+// `parentId === commentId` — something no comment can satisfy. Instagram
+// therefore never takes that branch.
+function objectIdOf(id: string): string {
+  const idx = id.indexOf("_")
+  return idx === -1 ? id : id.slice(0, idx)
+}
+
+// `café` and `cafe` are the same keyword to a commenter, but `.toLowerCase()`
+// alone leaves the accent in place, so an "include"/"exclude" keyword and the
+// comment text only match when both sides happen to use identical diacritics.
+// Same folding as `normalizeContactHeader` (packages/imports): NFD splits `é`
+// into `e` + U+0301, the Combining Diacritical Marks block (U+0300–U+036F) is
+// dropped, and `đ`, which has no decomposition, is mapped to `d`. The block is
+// deliberately narrow: `\p{Diacritic}` would also strip ASCII `^` and `` ` ``
+// (a "^^" keyword would become "" and match every comment) and kana marks.
+export function normalizeForMatch(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/gi, "d")
+    .toLowerCase()
+}
+
+/**
+ * Whether an automation's post targeting covers this comment.
+ *
+ * Live comments and post comments are disjoint audiences: a Live automation
+ * answers only comments on a live broadcast, and an `all` automation skips
+ * them, so a viewer is never answered by both. An explicit `postIds` list is
+ * the exception — a post the user pasted by id is answered whatever it is.
+ */
+export function matchPost(
+  post: CommentPost,
+  postId: string,
+  isLive: boolean,
+): boolean {
+  if (post.type === "live") {
+    return isLive
+  }
   if (post.type !== "postIds") {
-    return true
+    return !isLive
   }
   const target = normalizePostId(postId)
   return post.value.some((v) => v === postId || normalizePostId(v) === target)
 }
 
 export function matchKeywords(
-  includeKeywords: FBCommentIncludeKeywords,
+  includeKeywords: CommentIncludeKeywords,
   excludeKeywords: string[],
   message: string | undefined,
+  excludeKeywordsType: CommentExcludeKeywordsType = "contain",
 ): boolean {
-  const text = (message ?? "").toLowerCase()
-  if (includeKeywords.type !== "all" && includeKeywords.value.length > 0) {
-    const kws = includeKeywords.value.map((k) => k.toLowerCase())
-    if (includeKeywords.type === "equal" && !kws.includes(text)) {
+  const text = normalizeForMatch(message ?? "")
+  const includeType = includeKeywords.type
+  if (
+    (includeType === "equal" || includeType === "contain") &&
+    includeKeywords.value.length > 0
+  ) {
+    const kws = includeKeywords.value.map((k) => normalizeForMatch(k))
+    if (includeType === "equal" && !kws.includes(text)) {
       return false
     }
-    if (
-      includeKeywords.type === "contain" &&
-      !kws.some((k) => text.includes(k))
-    ) {
+    if (includeType === "contain" && !kws.some((k) => text.includes(k))) {
       return false
     }
   }
-  if (excludeKeywords.some((k) => text.includes(k.toLowerCase()))) {
-    return false
+  const excluded = excludeKeywords
+    .map((k) => normalizeForMatch(k.trim()))
+    .filter(Boolean)
+  if (excludeKeywordsType === "equal") {
+    // Whole comment, trimmed — "ok " is the same comment as "ok".
+    return !excluded.includes(text.trim())
   }
-  return true
+  return !excluded.some((k) => text.includes(k))
+}
+
+/**
+ * Whether the automation needs the comment's mention list to decide. Lets the
+ * orchestrator skip the (on Facebook, possibly Graph-backed) lookup for every
+ * automation that does not filter on mentions.
+ */
+export function needsMentionCount(
+  includeKeywords: CommentIncludeKeywords,
+): boolean {
+  return includeKeywords.type === "mentions"
+}
+
+/**
+ * "Comments when enough mentions": the comment must tag AT LEAST
+ * `mentionCount` accounts — two people configured means a comment tagging two
+ * or three qualifies, one tagging one does not. A `mentions` row with no count
+ * (hand-built request) defaults to 1.
+ */
+export function matchMentionCount(
+  includeKeywords: CommentIncludeKeywords,
+  mentionCount: number,
+): boolean {
+  if (includeKeywords.type !== "mentions") {
+    return true
+  }
+  return mentionCount >= (includeKeywords.mentionCount ?? 1)
 }
 
 // Facebook feed webhooks set parent_id on every comment: for a top-level
-// comment it equals the post id, and only a reply to another comment carries
+// comment it points at the post, and only a reply to another comment carries
 // that comment's id instead.
+//
+// "Points at the post" is NOT reliably the same string as `post_id` — the
+// composite Facebook puts in `parent_id` varies by post type. Two production
+// payloads from one Page (2026-09-11):
+//
+//   reel   post_id   698869923319232_122151505431003083
+//          parent_id 698869923319232_122151505431003083   identical
+//   photo  post_id   698869923319232_122101949313003083
+//          parent_id 39455509950714790_122101949313003083  leading half is the
+//                                                          ALBUM, not the Page
+//
+// So a raw `parentId !== postId` reads every top-level comment on a photo post
+// as a reply and, with the default `ignoreCommentReplies`, silently drops the
+// whole automation. Both halves agree on the trailing story id, so compare on
+// that like `matchPost` does.
+//
+// The `objectIdOf` comparison is a safety net for a bare `parent_id`, a shape
+// no observed payload sends. It cannot misfire on a reply: a reply's
+// `comment_id` stays anchored to the story (`{storyId}_{replyId}`) while its
+// `parent_id` carries the parent comment's id, whose trailing half is that
+// comment — never the story.
 export function isCommentReply(
   parentId: string | undefined,
   postId: string,
+  commentId: string,
 ): boolean {
-  return Boolean(parentId) && parentId !== postId
+  if (!parentId) {
+    return false
+  }
+  const parent = normalizePostId(parentId)
+  if (parent === normalizePostId(postId)) {
+    return false
+  }
+  return parent !== objectIdOf(commentId)
 }
 
-export function willSendReply(reply: FBCommentReply): boolean {
+export function willSendReply(reply: CommentReply): boolean {
   if (reply.type === "none") {
     return false
   }
-  // text/flow need a value; AIAgent needs the selected agent id in `value`.
+  // A `text` reply can hold several messages, so it goes through the shared
+  // resolver — reading `value` directly would call a multi-text reply empty and
+  // skip the automation without a word. `flow` needs a flow id and `AIAgent`
+  // the selected agent id, both in `value`.
+  if (reply.type === "text") {
+    return resolveReplyTexts(reply).length > 0
+  }
   return Boolean(reply.value)
 }
 
-export function computeDelayMs(replyAfter: FBCommentReplyAfter): number {
+export function computeDelayMs(replyAfter: CommentReplyAfter): number {
   if (replyAfter.type === "immediately") {
     return 0
   }
@@ -89,4 +205,52 @@ export function computeDelayMs(replyAfter: FBCommentReplyAfter): number {
   const minutes =
     RANDOM_DELAY_MINUTES[replyAfter.type as keyof typeof RANDOM_DELAY_MINUTES]
   return Math.floor(Math.random() * (minutes ?? 3) * 60_000)
+}
+
+/**
+ * Strips what a Live automation's channel cannot do on a live comment before
+ * the loop sees it, so a row written before the service normalized it — or
+ * edited straight in the database — degrades to what Meta accepts instead of
+ * firing calls Meta rejects (Instagram Live: no public reply, like, hide or
+ * reply delay). Non-live automations pass through untouched.
+ */
+export function withLiveCapabilityLimits(
+  automation: CommentAutomationModel,
+  channelType: CommentAutomationType,
+): CommentAutomationModel {
+  if (!isLiveCommentAutomation(automation.post)) {
+    return automation
+  }
+  const capabilities = liveCommentCapabilities(channelType)
+  return {
+    ...automation,
+    publicReply: capabilities.publicReply
+      ? automation.publicReply
+      : { type: "none", value: null },
+    options: {
+      ...automation.options,
+      likeUserComment: capabilities.likeComment
+        ? automation.options.likeUserComment
+        : false,
+      ignoreCommentReplies: capabilities.commentReplies
+        ? automation.options.ignoreCommentReplies
+        : false,
+    },
+    hideComments: capabilities.hideComments
+      ? automation.hideComments
+      : {
+          ...automation.hideComments,
+          all: false,
+          hasPhoneNumber: false,
+          hasImage: false,
+          hasVideo: false,
+          hasLink: false,
+          hasKeywords: false,
+          hasGif: false,
+          hasEmoji: false,
+        },
+    replyAfter: capabilities.replyDelay
+      ? automation.replyAfter
+      : { type: "immediately", value: 0 },
+  }
 }

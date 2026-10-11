@@ -6,6 +6,8 @@ const {
   insertBuilder,
   mockAutomatedResponseEnqueue,
   mockAutomatedResponseEnqueueFlowAction,
+  mockAutomatedResponseEnqueueHandoffReentry,
+  mockBroadcastToWorkspaceParty,
   mockChatQueueAdd,
   mockContactFindById,
   mockContactUnblockIfBlocked,
@@ -54,11 +56,15 @@ const {
     mockAutomatedResponseEnqueueFlowAction: vi
       .fn()
       .mockResolvedValue(undefined),
+    mockAutomatedResponseEnqueueHandoffReentry: vi
+      .fn()
+      .mockResolvedValue(undefined),
     mockContactFindById: vi.fn(),
     mockContactUnblockIfBlocked: vi.fn().mockResolvedValue(null),
     mockContactInboxFindLatest: vi.fn(),
     mockContactInboxUpdateTracking: vi.fn().mockResolvedValue(null),
     mockConversationFindBy: vi.fn(),
+    mockBroadcastToWorkspaceParty: vi.fn().mockResolvedValue(undefined),
     mockChatQueueAdd: vi.fn().mockResolvedValue(undefined),
     mockConversationEnsureActive: vi.fn().mockResolvedValue(false),
     mockCreateMessageRepository: vi.fn().mockResolvedValue({
@@ -109,10 +115,12 @@ vi.mock("@chatbotx.io/automated-response", () => ({
   automatedResponseService: {
     enqueue: mockAutomatedResponseEnqueue,
     enqueueFlowAction: mockAutomatedResponseEnqueueFlowAction,
+    enqueueHandoffReentry: mockAutomatedResponseEnqueueHandoffReentry,
   },
 }))
 
 vi.mock("@chatbotx.io/business", () => ({
+  broadcastToWorkspaceParty: mockBroadcastToWorkspaceParty,
   isWorkspaceScheduledForDeletion: (
     workspace:
       | { scheduledDeletionAt?: Date | string | null }
@@ -160,15 +168,28 @@ vi.mock("@/features/integration-webchat/lib/webchat-access-token", () => ({
 const PROTOCOL_PREFIX_REGEX = /^https?:\/\//
 const HOST_DELIMITER_REGEX = /[/:?#]/
 
-vi.mock("@/features/integration-webchat/lib/authorized-domain", () => ({
+const { mockHeaders } = vi.hoisted(() => ({
+  mockHeaders: vi.fn(() => Promise.resolve(new Headers())),
+}))
+
+vi.mock("next/headers", () => ({
+  headers: mockHeaders,
+}))
+
+vi.mock("@/features/integration-webchat/lib/authorized-domain", async () => ({
+  isFirstPartyOrigin: (
+    await vi.importActual<
+      typeof import("@/features/integration-webchat/lib/authorized-domain")
+    >("@/features/integration-webchat/lib/authorized-domain")
+  ).isFirstPartyOrigin,
   isOriginAuthorized: (
     origin: string | null | undefined,
     authorizedDomains: string[],
   ) => {
-    if (authorizedDomains.length === 0) {
+    if (!origin) {
       return true
     }
-    if (!origin) {
+    if (authorizedDomains.length === 0) {
       return false
     }
     const host = origin
@@ -330,6 +351,7 @@ const resetCommonMocks = () => {
     createWithAttachments: vi.fn(),
   })
   mockChatQueueAdd.mockResolvedValue(undefined)
+  mockBroadcastToWorkspaceParty.mockResolvedValue(undefined)
   tx.insert.mockReturnValue(insertBuilder)
   insertBuilder.values.mockReturnValue(insertBuilder)
   insertBuilder.returning.mockReset()
@@ -371,6 +393,29 @@ describe("handleCreateWebchatMessage", () => {
       lastActivityAt: messageInput.createdAt,
       contactRepliedAt: messageInput.createdAt,
     })
+  })
+
+  test("broadcasts the created message with the client's clientId for optimistic reconciliation", async () => {
+    await handleCreateWebchatMessage({
+      parsedInput: {
+        text: "hello",
+        workspaceId: "ws-1",
+        webchatId: "webchat-1",
+        guestConversationId: "guest-1",
+        clientId: "client-1",
+      },
+    })
+
+    expect(mockBroadcastToWorkspaceParty).toHaveBeenCalledWith(
+      "ws-1",
+      expect.objectContaining({
+        eventType: "messageCreated",
+        data: expect.objectContaining({
+          id: "msg-1",
+          clientId: "client-1",
+        }),
+      }),
+    )
   })
 
   test("rejects messages when the workspace is scheduled for deletion", async () => {
@@ -459,6 +504,28 @@ describe("handleCreateWebchatMessage", () => {
       messageText: "hello",
       workspaceId: "ws-1",
     })
+    expect(mockAutomatedResponseEnqueueHandoffReentry).not.toHaveBeenCalled()
+  })
+
+  test("enqueues handoff re-entry instead of automated response for inactive text messages", async () => {
+    mockConversationEnsureActive.mockResolvedValue(false)
+
+    await handleCreateWebchatMessage({
+      parsedInput: {
+        text: "hello",
+        workspaceId: "ws-1",
+        webchatId: "webchat-1",
+        guestConversationId: "guest-1",
+      },
+    })
+
+    expect(mockAutomatedResponseEnqueueHandoffReentry).toHaveBeenCalledWith({
+      conversationId: "conv-1",
+      contactInboxId: "ci-1",
+      messageId: "msg-1",
+      workspaceId: "ws-1",
+    })
+    expect(mockAutomatedResponseEnqueue).not.toHaveBeenCalled()
   })
 
   test("enqueues webchat postbacks through flow action debounce", async () => {
@@ -505,6 +572,52 @@ describe("handleCreateWebchatMessage", () => {
     })
 
     expect(mockContactInboxFindLatest).not.toHaveBeenCalled()
+  })
+
+  test("allows the app's own host even when it is not in authorizedDomains (bot simulator)", async () => {
+    // The bot simulator's widget runs on the app host, not on the simulated
+    // website, so its parentOrigin is always the app host.
+    mockFindOrFail.mockResolvedValue({
+      inboxId: "inbox-1",
+      authorizedDomains: ["example.com"],
+    })
+    mockHeaders.mockResolvedValueOnce(
+      new Headers({ "x-domain": "app.chatbotx.test" }),
+    )
+
+    await handleCreateWebchatMessage({
+      parsedInput: {
+        text: "hello",
+        workspaceId: "ws-1",
+        webchatId: "webchat-1",
+        guestConversationId: "guest-1",
+        parentOrigin: "https://app.chatbotx.test",
+      },
+    }).catch(() => undefined)
+
+    expect(mockContactInboxFindLatest).toHaveBeenCalled()
+  })
+
+  test("still rejects a third-party origin when the app host is known", async () => {
+    mockFindOrFail.mockResolvedValue({
+      inboxId: "inbox-1",
+      authorizedDomains: ["example.com"],
+    })
+    mockHeaders.mockResolvedValueOnce(
+      new Headers({ "x-domain": "app.chatbotx.test" }),
+    )
+
+    await expect(
+      handleCreateWebchatMessage({
+        parsedInput: {
+          text: "hello",
+          workspaceId: "ws-1",
+          webchatId: "webchat-1",
+          guestConversationId: "guest-1",
+          parentOrigin: "https://attacker.test",
+        },
+      }),
+    ).rejects.toMatchObject({ code: "forbidden", httpStatusCode: 403 })
   })
 
   test("rejects an invalid access token even when no authorizedDomains are configured", async () => {
@@ -668,12 +781,17 @@ describe("handleCreateWebchatMessage — MAC quota", () => {
     await handleCreateWebchatMessage({ parsedInput: input })
 
     expect(mockWorkspaceFind).toHaveBeenCalledWith({ where: { id: "ws-1" } })
-    // MAC is gated + consumed atomically with the insert (owner-derived). The
+    // MAC is the owner-derived billing gate and a soft cap on resetting plans:
+    // Redis admission, transactional create, then commit/revoke. Lifetime /
+    // period-less owners and the env lock switch use the distributed lock. The
     // info-only `contacts` counter is recorded inside this chokepoint too, so
     // the action no longer increments it separately (that would double-count).
     expect(mockCreateNewContactWithMac).toHaveBeenCalledTimes(1)
     expect(mockCreateNewContactWithMac).toHaveBeenCalledWith(
       expect.objectContaining({ ownerId: "owner-1", workspaceId: "ws-1" }),
+    )
+    expect(mockCreateNewContactWithMac.mock.calls[0]?.[0]).not.toHaveProperty(
+      "lockWaitSeconds",
     )
     expect(insertBuilder.values).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -706,6 +824,7 @@ describe("handleCreateWebchatMessage — MAC quota", () => {
       undefined,
       undefined,
       undefined,
+      "ci-new",
     )
     expect(mockIntegrationQueueAdd).toHaveBeenCalledWith(
       "sendFlow",

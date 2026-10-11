@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm"
 import {
   boolean,
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -55,6 +56,8 @@ export const contactModel = pgTable(
     subscribedAt: timestamp(timestampConfig),
     broadcastSubscribedAt: timestamp(timestampConfig),
     blockedAt: timestamp(timestampConfig),
+    totalTagged: integer().notNull().default(0),
+    totalNewTagged: integer().notNull().default(0),
     workspaceId: bigintAsString()
       .notNull()
       .references(() => workspaceModel.id, {
@@ -69,6 +72,16 @@ export const contactModel = pgTable(
     index("idx_contact_workspace_created_at").on(
       table.workspaceId,
       table.createdAt,
+    ),
+    // Covers the identifier→id equality lookup used by
+    // `packages/business/src/contact/utils.ts#parseContactIdentifier` for
+    // the public API's `identifier: "email:..."/"phone:..."` syntax —
+    // previously only the GIN trigram indexes existed, which are built for
+    // substring/similarity search, not exact-match lookups.
+    index("idx_contact_workspace_email").on(table.workspaceId, table.email),
+    index("idx_contact_workspace_phone_number").on(
+      table.workspaceId,
+      table.phoneNumber,
     ),
     index("Contact_firstName_trgm_idx").using(
       "gin",

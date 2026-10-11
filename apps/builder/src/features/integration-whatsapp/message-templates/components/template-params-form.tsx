@@ -19,7 +19,6 @@ import {
 } from "@chatbotx.io/ui/components/ui/dialog"
 import { Input } from "@chatbotx.io/ui/components/ui/input"
 import { Label } from "@chatbotx.io/ui/components/ui/label"
-import ky from "ky"
 import { Pencil } from "lucide-react"
 import { useTranslations } from "next-intl"
 import {
@@ -33,13 +32,11 @@ import { Controller, useFormContext } from "react-hook-form"
 import { TiptapEditorField } from "@/components/tiptap/tiptap-editor-field"
 import { CreateCustomFieldDialog } from "@/features/custom-fields/create-custom-field"
 import { CustomFieldSelect } from "@/features/custom-fields/custom-field-select"
-import { useCustomFieldStore } from "@/features/custom-fields/provider/custom-field-store-context"
+import { useInvalidateCustomFields } from "@/features/custom-fields/provider/custom-field-hook"
 import { useWhatsappFlow } from "@/features/flows/react-flow/stores/whatsapp-flow-store-provider"
-import type {
-  GetWhatsappFlowScreensResponse,
-  WhatsappFlowScreenResource,
-} from "@/features/integration-whatsapp/flows/schema/query"
+import type { WhatsappFlowScreenResource } from "@/features/integration-whatsapp/flows/schema/query"
 import { useWorkspaceId } from "@/hooks/routing"
+import { client } from "@/lib/orpc/orpc"
 import { buildFlowFieldMappings } from "../lib/build-flow-field-mappings"
 import {
   type MetaCatalogProductOption,
@@ -82,6 +79,12 @@ type ButtonParamFieldProps = {
 }
 
 function UrlButtonParamField({ param, fieldName }: ButtonParamFieldProps) {
+  // A carousel-card button's params live at `carousel[cardIndex].button[...]`,
+  // which `replaceWhatsappTemplateVariables` never walks (it only resolves
+  // `header`/`body`/`button` at the template's top level) — offering bot
+  // fields there would insert a token that never resolves at send time. A
+  // top-level button (no cardIndex) IS resolved, so it gets the picker.
+  const isCarouselButton = param.cardIndex !== undefined
   return (
     <div className="grid grid-cols-[90px_18px_1fr] items-start gap-2">
       <div className="flex h-7 items-center justify-center rounded-md border bg-muted text-muted-foreground text-xs">
@@ -92,6 +95,7 @@ function UrlButtonParamField({ param, fieldName }: ButtonParamFieldProps) {
       </div>
       <TiptapEditorField
         channels={["whatsapp"]}
+        includeBotFieldVariables={!isCarouselButton}
         name={`${fieldName}.text`}
         placeholder=""
         showEmojiPicker={false}
@@ -204,9 +208,7 @@ function TemplateFlowFieldMappings({
   const { getValues, setValue, watch } = useFormContext()
   const whatsappFlows = useWhatsappFlow((s) => s.whatsappFlows)
   const loadingWhatsappFlows = useWhatsappFlow((s) => s.loadingWhatsappFlows)
-  const getAllCustomFields = useCustomFieldStore(
-    (state) => state.getAllCustomFields,
-  )
+  const invalidateCustomFields = useInvalidateCustomFields()
   const [screens, setScreens] = useState<WhatsappFlowScreenResource[]>([])
   const [loadingScreens, setLoadingScreens] = useState(false)
   const [screenError, setScreenError] = useState(false)
@@ -224,8 +226,8 @@ function TemplateFlowFieldMappings({
     (watch(`${fieldName}.fieldMappings`) as WhatsappFlowFieldMapping[]) ?? []
 
   const handleCustomFieldCreated = useCallback(() => {
-    getAllCustomFields()
-  }, [getAllCustomFields])
+    invalidateCustomFields()
+  }, [invalidateCustomFields])
 
   useEffect(() => {
     if (!(workspaceId && flow?.id)) {
@@ -238,11 +240,11 @@ function TemplateFlowFieldMappings({
       setLoadingScreens(true)
       setScreenError(false)
       try {
-        const data = await ky
-          .get<GetWhatsappFlowScreensResponse>(
-            `/api/workspaces/${workspaceId}/whatsapp-flows/${flow.id}/screens`,
-          )
-          .json()
+        const data =
+          await client.whatsappFlowAPIs.getWhatsappFlowScreensInternalAPI({
+            workspaceId,
+            flowId: flow.id,
+          })
         setScreens(data.screens ?? [])
       } catch {
         setScreens([])
@@ -636,6 +638,7 @@ export function TemplateParamsForm({
             </div>
             <TiptapEditorField
               channels={["whatsapp"]}
+              includeBotFieldVariables
               name={`${fieldName}.text`}
               placeholder=""
               showEmojiPicker={false}

@@ -4,65 +4,41 @@ import {
   type DatabaseClient,
   db,
   eq,
-  gt,
   inArray,
-  isNotNull,
   isNull,
   lt,
-  lte,
   or,
   sql,
 } from "../../client"
+import { inboxStatuses, type WhatsappCallHoursSnapshot } from "../../partials"
 import {
   type IntegrationWhatsappRegistrationError,
+  inboxModel,
   integrationWhatsappModel,
-  whatsappSignupSessionModel,
 } from "../../schema"
-import type {
-  IntegrationWhatsappModel,
-  WhatsappSignupSessionModel,
-} from "../../types"
-
-/**
- * How long a phone-number selection stays usable. The user only has to pick a
- * number from a list already on screen, so this is generous; the window exists
- * to bound how long the signup access token sits at rest.
- */
-export const WHATSAPP_SIGNUP_SESSION_TTL_MS = 10 * 60 * 1000
-
-/** Caps how many rows one purge pass deletes, to keep the lock window short. */
-const SIGNUP_SESSION_PURGE_BATCH_SIZE = 500
-
-type CreateWhatsappSignupSessionInput = {
-  userId: string
-  ownerId: string
-  workspaceId?: string | null
-  wabaId: string
-  businessId: string
-  encryptedAccessToken: EncryptedData
-  apiVersion: string
-  candidatePhoneNumberIds: string[]
-  now?: Date
-}
-
-type WhatsappSignupSessionClaimInput = {
-  id: string
-  userId: string
-  ownerId: string
-  phoneNumberId: string
-  now?: Date
-  tx?: DatabaseClient
-}
-
-type PurgeWhatsappSignupSessionsInput = {
-  now?: Date
-  batchSize?: number
-  tx?: DatabaseClient
-}
+import type { IntegrationWhatsappModel } from "../../types"
 
 type WorkspaceIntegrationRef = {
   id: string
   workspaceId: string
+}
+
+export type IntegrationWhatsappClientResource = Pick<
+  IntegrationWhatsappModel,
+  | "id"
+  | "name"
+  | "inboxId"
+  | "displayPhoneNumber"
+  | "tokenRefreshError"
+  | "phoneNumberId"
+  | "wabaId"
+  | "hasCapiScope"
+  | "capiScopeCheckedAt"
+  | "datasetId"
+  | "workspaceId"
+  | "createdAt"
+> & {
+  inbox?: { id: string; name: string } | null
 }
 
 type UpdateWhatsappRegistrationInput = WorkspaceIntegrationRef & {
@@ -106,8 +82,30 @@ type UpdateDatasetIdIfNullInput = WorkspaceIntegrationRef & {
   datasetId: string
 }
 
+type UpdateCapiTestEventCodeInput = WorkspaceIntegrationRef & {
+  capiTestEventCode: string | null
+}
+
 type UpdateCapiAccessTokenInput = WorkspaceIntegrationRef & {
   capiAccessToken: EncryptedData
+}
+
+type UpdateCallSettingsInput = WorkspaceIntegrationRef & {
+  values: Partial<{
+    callRecordingEnabled: boolean
+    callRecordingRetentionDays: number
+    callTranscriptionEnabled: boolean
+    /** Mirrors of Meta's calling settings — written only once Meta accepts. */
+    callingEnabled: boolean
+    inboundCallsEnabled: boolean
+    callHours: WhatsappCallHoursSnapshot | null
+  }>
+  /**
+   * Match the number only while it records calls. The recording check and
+   * the write are then one statement, so a concurrent "recording off" can
+   * never be overtaken by a "transcription on" that read the old value.
+   */
+  onlyWhileRecording?: boolean
 }
 
 const workspaceIntegrationFilter = (input: WorkspaceIntegrationRef) =>
@@ -128,26 +126,6 @@ const capiScopeCasFilter = (
   and(
     workspaceIntegrationFilter(input),
     sql`${integrationWhatsappModel.capiScopeCheckedAt} IS NOT DISTINCT FROM ${input.expectedCapiScopeCheckedAt}`,
-  )
-
-/**
- * Matches exactly one session a caller is allowed to act on: theirs, not yet
- * consumed, not yet expired, and offering the phone number they picked.
- *
- * Shared by the read and the claim so a session can never pass the lookup and
- * then fail the update for a reason the caller was not told about.
- */
-const activeSignupSessionFilter = (
-  input: Omit<WhatsappSignupSessionClaimInput, "tx" | "now">,
-  now: Date,
-) =>
-  and(
-    eq(whatsappSignupSessionModel.id, input.id),
-    eq(whatsappSignupSessionModel.userId, input.userId),
-    eq(whatsappSignupSessionModel.ownerId, input.ownerId),
-    isNull(whatsappSignupSessionModel.consumedAt),
-    gt(whatsappSignupSessionModel.expiresAt, now),
-    sql`${input.phoneNumberId} = ANY(${whatsappSignupSessionModel.candidatePhoneNumberIds})`,
   )
 
 class IntegrationWhatsappRepository {
@@ -172,9 +150,31 @@ class IntegrationWhatsappRepository {
       .select({
         id: integrationWhatsappModel.id,
         workspaceId: integrationWhatsappModel.workspaceId,
+        wabaId: integrationWhatsappModel.wabaId,
         auth: integrationWhatsappModel.auth,
       })
       .from(integrationWhatsappModel)
+  }
+
+  /**
+   * Integrations whose inbox is still connected — the rows a webhook
+   * re-subscription may act on (a disconnected inbox has had its subscription
+   * removed on purpose).
+   */
+  findAllConnectedForWebhookSubscription(tx: DatabaseClient = db) {
+    return tx
+      .select({
+        id: integrationWhatsappModel.id,
+        workspaceId: integrationWhatsappModel.workspaceId,
+        wabaId: integrationWhatsappModel.wabaId,
+        auth: integrationWhatsappModel.auth,
+      })
+      .from(integrationWhatsappModel)
+      .innerJoin(
+        inboxModel,
+        eq(inboxModel.id, integrationWhatsappModel.inboxId),
+      )
+      .where(eq(inboxModel.status, inboxStatuses.enum.connected))
   }
 
   findForTokenRefreshByWorkspaceIds(
@@ -208,27 +208,64 @@ class IntegrationWhatsappRepository {
   }
 
   /**
+   * No workspace scope — for inbound webhook handlers that only know the
+   * integration id from the URL.
+   */
+  async findByIdUnscoped(
+    id: string,
+    tx: DatabaseClient = db,
+  ): Promise<IntegrationWhatsappModel | null> {
+    const [row] = await tx
+      .select()
+      .from(integrationWhatsappModel)
+      .where(eq(integrationWhatsappModel.id, id))
+      .limit(1)
+
+    return row ?? null
+  }
+
+  /**
    * Replace the stored OAuth credentials after a token refresh. Scoped by
    * workspace so a forged integration id can never touch another tenant's row.
    */
   async updateAuth(
     input: WorkspaceIntegrationRef & { auth: Record<string, unknown> },
     tx: DatabaseClient = db,
-  ): Promise<void> {
-    await tx
+  ): Promise<{ phoneNumberId: string } | undefined> {
+    const [row] = await tx
       .update(integrationWhatsappModel)
       .set({ auth: input.auth, tokenRefreshError: null })
       .where(workspaceIntegrationFilter(input))
+      .returning({ phoneNumberId: integrationWhatsappModel.phoneNumberId })
+
+    return row
   }
 
   async markTokenRefreshError(
+    input: WorkspaceIntegrationRef & { error: string },
+    tx: DatabaseClient = db,
+  ): Promise<{ phoneNumberId: string } | undefined> {
+    const [row] = await tx
+      .update(integrationWhatsappModel)
+      .set({ tokenRefreshError: input.error })
+      .where(workspaceIntegrationFilter(input))
+      .returning({ phoneNumberId: integrationWhatsappModel.phoneNumberId })
+
+    return row
+  }
+
+  /**
+   * No workspace scope — called from the inbound webhook-verification handler
+   * before a workspace context is resolved.
+   */
+  async updateAuthUnscoped(
     id: string,
-    error: string,
+    auth: Record<string, unknown>,
     tx: DatabaseClient = db,
   ): Promise<void> {
     await tx
       .update(integrationWhatsappModel)
-      .set({ tokenRefreshError: error })
+      .set({ auth })
       .where(eq(integrationWhatsappModel.id, id))
   }
 
@@ -284,6 +321,21 @@ class IntegrationWhatsappRepository {
     return row ?? null
   }
 
+  /**
+   * Records that the user declined chat-history sharing in the WhatsApp
+   * Business app. Terminal for coexist history on this number — Meta will
+   * never push it — so the UI hides the retry CTA.
+   */
+  async markHistoryDeclined(
+    input: { id: string },
+    tx: DatabaseClient = db,
+  ): Promise<void> {
+    await tx
+      .update(integrationWhatsappModel)
+      .set({ historyDeclined: true, updatedAt: new Date() })
+      .where(eq(integrationWhatsappModel.id, input.id))
+  }
+
   async findByPhoneNumberId(
     input: { phoneNumberId: string; wabaId?: string },
     tx: DatabaseClient = db,
@@ -321,6 +373,35 @@ class IntegrationWhatsappRepository {
             id: true,
             name: true,
           },
+        },
+      },
+    })
+  }
+
+  listClientResourcesByWorkspaceId(
+    workspaceId: string,
+    tx: DatabaseClient = db,
+  ): Promise<IntegrationWhatsappClientResource[]> {
+    return tx.query.integrationWhatsappModel.findMany({
+      columns: {
+        id: true,
+        name: true,
+        inboxId: true,
+        displayPhoneNumber: true,
+        tokenRefreshError: true,
+        phoneNumberId: true,
+        wabaId: true,
+        hasCapiScope: true,
+        capiScopeCheckedAt: true,
+        datasetId: true,
+        workspaceId: true,
+        createdAt: true,
+      },
+      where: { workspaceId },
+      orderBy: { createdAt: "asc" },
+      with: {
+        inbox: {
+          columns: { id: true, name: true },
         },
       },
     })
@@ -434,6 +515,19 @@ class IntegrationWhatsappRepository {
     const [row] = await tx
       .update(integrationWhatsappModel)
       .set({ datasetId: input.datasetId })
+      .where(workspaceIntegrationFilter(input))
+      .returning()
+
+    return row ?? null
+  }
+
+  async updateCapiTestEventCode(
+    input: UpdateCapiTestEventCodeInput,
+    tx: DatabaseClient = db,
+  ): Promise<IntegrationWhatsappModel | null> {
+    const [row] = await tx
+      .update(integrationWhatsappModel)
+      .set({ capiTestEventCode: input.capiTestEventCode })
       .where(workspaceIntegrationFilter(input))
       .returning()
 
@@ -577,103 +671,68 @@ class IntegrationWhatsappRepository {
       )
   }
 
-  async createSignupSession(
-    input: CreateWhatsappSignupSessionInput,
+  /** Whether the number backing this inbox auto-records in-app calls. */
+  async isCallRecordingEnabledForInbox(
+    input: { workspaceId: string; inboxId: string },
     tx: DatabaseClient = db,
-  ): Promise<WhatsappSignupSessionModel> {
-    const now = input.now ?? new Date()
+  ): Promise<boolean> {
     const [row] = await tx
-      .insert(whatsappSignupSessionModel)
-      .values({
-        userId: input.userId,
-        ownerId: input.ownerId,
-        workspaceId: input.workspaceId || null,
-        wabaId: input.wabaId,
-        businessId: input.businessId,
-        encryptedAccessToken: input.encryptedAccessToken,
-        apiVersion: input.apiVersion,
-        candidatePhoneNumberIds: input.candidatePhoneNumberIds,
-        expiresAt: new Date(now.getTime() + WHATSAPP_SIGNUP_SESSION_TTL_MS),
-      })
-      .returning()
-
-    if (!row) {
-      throw new Error("Failed to create WhatsApp signup session")
-    }
-
-    return row
-  }
-
-  /**
-   * Reads a session without spending it, so the connect flow can do its
-   * network work before committing to the single use.
-   */
-  async findActiveSignupSession(
-    input: WhatsappSignupSessionClaimInput,
-  ): Promise<WhatsappSignupSessionModel | null> {
-    const { tx = db, now = new Date() } = input
-    const [row] = await tx
-      .select()
-      .from(whatsappSignupSessionModel)
-      .where(activeSignupSessionFilter(input, now))
-      .limit(1)
-
-    return row ?? null
-  }
-
-  /**
-   * Spends the session. The conditional UPDATE is the single-use guarantee:
-   * concurrent connects contend on the same row and only one sees a result.
-   *
-   * Pass the connect transaction as `tx` so the session is spent only if the
-   * integration it authorizes is actually written.
-   */
-  async consumeSignupSession(
-    input: WhatsappSignupSessionClaimInput,
-  ): Promise<WhatsappSignupSessionModel | null> {
-    const { tx = db, now = new Date() } = input
-    const [row] = await tx
-      .update(whatsappSignupSessionModel)
-      .set({ consumedAt: now })
-      .where(activeSignupSessionFilter(input, now))
-      .returning()
-
-    return row ?? null
-  }
-
-  /**
-   * Drops sessions that can never be used again. Each row holds an encrypted
-   * signup access token, so this bounds how long that token is retained.
-   *
-   * Returns how many rows were removed so a scheduler can keep calling until a
-   * pass comes back empty, without having to know `batchSize`.
-   */
-  async purgeFinishedSignupSessions(
-    input: PurgeWhatsappSignupSessionsInput = {},
-  ): Promise<number> {
-    const {
-      tx = db,
-      now = new Date(),
-      batchSize = SIGNUP_SESSION_PURGE_BATCH_SIZE,
-    } = input
-
-    const finishedIds = tx
-      .select({ id: whatsappSignupSessionModel.id })
-      .from(whatsappSignupSessionModel)
+      .select({ enabled: integrationWhatsappModel.callRecordingEnabled })
+      .from(integrationWhatsappModel)
       .where(
-        or(
-          isNotNull(whatsappSignupSessionModel.consumedAt),
-          lte(whatsappSignupSessionModel.expiresAt, now),
+        and(
+          eq(integrationWhatsappModel.inboxId, input.inboxId),
+          eq(integrationWhatsappModel.workspaceId, input.workspaceId),
         ),
       )
-      .limit(batchSize)
+      .limit(1)
+    return row?.enabled === true
+  }
 
-    const deleted = await tx
-      .delete(whatsappSignupSessionModel)
-      .where(inArray(whatsappSignupSessionModel.id, finishedIds))
-      .returning({ id: whatsappSignupSessionModel.id })
+  /** Toggle auto-recording of in-app calls for this number. */
+  async updateCallRecordingEnabled(
+    input: WorkspaceIntegrationRef & { enabled: boolean },
+    tx: DatabaseClient = db,
+  ): Promise<void> {
+    await tx
+      .update(integrationWhatsappModel)
+      .set({ callRecordingEnabled: input.enabled })
+      .where(workspaceIntegrationFilter(input))
+  }
 
-    return deleted.length
+  /** Updates recording/retention/transcription settings for a number (Calls card). */
+  async updateCallSettings(
+    input: UpdateCallSettingsInput,
+    tx: DatabaseClient = db,
+  ): Promise<IntegrationWhatsappModel | null> {
+    const [row] = await tx
+      .update(integrationWhatsappModel)
+      .set(input.values)
+      .where(
+        input.onlyWhileRecording
+          ? and(
+              workspaceIntegrationFilter(input),
+              eq(integrationWhatsappModel.callRecordingEnabled, true),
+            )
+          : workspaceIntegrationFilter(input),
+      )
+      .returning()
+
+    return row ?? null
+  }
+
+  /** Sets (or clears) the flow started when Meta hands a conversation to this app. */
+  async updateHandoverResumeFlow(
+    input: WorkspaceIntegrationRef & { handoverResumeFlowId: string | null },
+    tx: DatabaseClient = db,
+  ): Promise<IntegrationWhatsappModel | null> {
+    const [row] = await tx
+      .update(integrationWhatsappModel)
+      .set({ handoverResumeFlowId: input.handoverResumeFlowId })
+      .where(workspaceIntegrationFilter(input))
+      .returning()
+
+    return row ?? null
   }
 }
 

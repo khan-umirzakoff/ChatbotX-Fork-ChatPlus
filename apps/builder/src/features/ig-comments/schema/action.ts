@@ -1,13 +1,14 @@
 import {
-  fbCommentHideCommentsSchema,
-  fbCommentIncludeKeywordsSchema,
-  fbCommentOptionsSchema,
-  fbCommentPostSchema,
-  fbCommentReplyAfterSchema,
-  fbCommentReplySchema,
+  commentExcludeKeywordsTypes,
+  commentHideCommentsSchema,
+  commentIncludeKeywordsSchema,
+  commentOptionsSchema,
+  commentPostSchema,
+  commentReplyAfterSchema,
+  commentReplySchema,
   igCommentAutomationTypes,
 } from "@chatbotx.io/database/partials"
-import type { FBCommentAutomationModel } from "@chatbotx.io/database/types"
+import type { CommentAutomationModel } from "@chatbotx.io/database/types"
 import { getSortingStateParser } from "@chatbotx.io/ui/lib/parsers"
 import { zodBigintAsString } from "@chatbotx.io/utils"
 import {
@@ -37,7 +38,7 @@ export const listIgCommentsSearchParamsCache = createSearchParamsCache({
   name: parseAsString.withDefault(""),
   isActive: parseAsBoolean,
   folderId: parseAsBigInt,
-  sort: getSortingStateParser<FBCommentAutomationModel>().withDefault([
+  sort: getSortingStateParser<CommentAutomationModel>().withDefault([
     { id: "createdAt", desc: true },
   ]),
 })
@@ -52,25 +53,66 @@ export const igCommentVariants = igCommentAutomationTypes
 export type IgCommentVariant = z.infer<typeof igCommentVariants>
 
 export const createIgCommentRequest = z.object({
-  name: z.string().trim().min(1).max(255),
-  type: igCommentVariants,
-  folderId: zodBigintAsString().nullish(),
-  post: fbCommentPostSchema,
-  privateReply: fbCommentReplySchema,
-  publicReply: fbCommentReplySchema,
-  includeKeywords: fbCommentIncludeKeywordsSchema,
-  excludeKeywords: z.array(z.string()),
-  options: fbCommentOptionsSchema,
-  hideComments: fbCommentHideCommentsSchema,
-  replyAfter: fbCommentReplyAfterSchema,
+  name: z.string().trim().min(1).max(255).describe("Automation name."),
+  type: igCommentVariants.describe(
+    "Instagram connection type, `instagram` (native login) or `instagramFacebook` (linked via a Facebook page).",
+  ),
+  folderId: zodBigintAsString()
+    .nullish()
+    .describe("Folder to place the automation in, or null for root-level."),
+  post: commentPostSchema.describe(
+    "Which comments to answer: `all` media, specific `postIds` (get them from `igComments.listMedia`), or `live` for every Instagram Live. A `live` automation is private-reply-only; public reply, like, hide and reply delay are ignored.",
+  ),
+  privateReply: commentReplySchema.describe(
+    "Private message reply sent to the commenter, if any.",
+  ),
+  publicReply: commentReplySchema.describe(
+    "Public comment reply posted under the comment, if any.",
+  ),
+  includeKeywords: commentIncludeKeywordsSchema.describe(
+    "Only trigger when the comment matches these keywords.",
+  ),
+  excludeKeywords: z
+    .array(z.string())
+    .describe("Never trigger when the comment matches these keywords."),
+  // Optional, never defaulted: `updateFbCommentRequest` is this schema made
+  // `.partial()`, and a default would reset the stored match type on every
+  // PATCH that did not mention it. The column defaults to `contain`.
+  excludeKeywordsType: commentExcludeKeywordsTypes
+    .optional()
+    .describe(
+      "How `excludeKeywords` match: `equal` (the whole comment) or `contain` (anywhere in it).",
+    ),
+  options: commentOptionsSchema.describe(
+    "Matching and trigger behavior options.",
+  ),
+  hideComments: commentHideCommentsSchema.describe(
+    "Whether to hide matching comments after replying.",
+  ),
+  replyAfter: commentReplyAfterSchema.describe(
+    "Delay before sending the reply.",
+  ),
 })
 export type CreateIgCommentRequest = z.infer<typeof createIgCommentRequest>
 
 export const updateIgCommentRequest = createIgCommentRequest.partial().and(
   z.object({
-    isActive: z.boolean().optional(),
-    startTime: z.string().nullable().optional(),
-    endTime: z.string().nullable().optional(),
+    isActive: z
+      .boolean()
+      .optional()
+      .describe("Whether the automation is enabled."),
+    startTime: z
+      .string()
+      .nullable()
+      .optional()
+      .describe(
+        "When the automation starts being active, or null for immediately.",
+      ),
+    endTime: z
+      .string()
+      .nullable()
+      .optional()
+      .describe("When the automation stops being active, or null for never."),
   }),
 )
 export type UpdateIgCommentRequest = z.infer<typeof updateIgCommentRequest>

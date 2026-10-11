@@ -1,0 +1,602 @@
+import type { TenantSettings } from "@chatbotx.io/business"
+import { act } from "react"
+import { createRoot, type Root } from "react-dom/client"
+import { afterEach, describe, expect, test, vi } from "vitest"
+import type { AttachmentResource } from "@/features/attachments/schema/resource"
+import { MessageItem } from "@/features/messages/components/message-item"
+import type { MessageResourceWithRelations } from "@/features/messages/schema/resource"
+import { TenantProvider } from "@/features/tenant/tenant-settings-provider"
+
+/** Echoes the key back so assertions never depend on the English copy. */
+vi.mock("next-intl", () => ({
+  useTranslations: () => (key: string) => key,
+}))
+
+vi.mock("next/image", () => ({
+  default: ({
+    alt,
+    onError,
+    src,
+  }: {
+    alt: string
+    onError?: () => void
+    src: string
+  }) => (
+    // biome-ignore lint/performance/noImgElement: test double exposes the src passed to Next Image
+    // biome-ignore lint/a11y/noNoninteractiveElementInteractions: forwards Next Image's load-error handler
+    <img alt={alt} height={120} onError={onError} src={src} width={120} />
+  ),
+}))
+
+// Exposes the `prefetch` prop: in production Next prefetches a visible <Link>,
+// which would execute the media proxy for every attachment on screen.
+vi.mock("next/link", () => ({
+  default: ({
+    children,
+    prefetch,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement> & {
+    prefetch?: boolean | null
+  }) => (
+    <a data-prefetch={String(prefetch)} {...props}>
+      {children}
+    </a>
+  ),
+}))
+
+// MediaLibraryTrigger imports "use server" query modules at module scope
+// that drag in a live pg Pool under vitest; stub it to keep this test about
+// attachment rendering.
+vi.mock("@/features/media-library/components/media-library-trigger", () => ({
+  MediaLibraryTrigger: () => null,
+}))
+
+// The real call card pulls in useOutboundCallMode/useWhatsappCallStarter,
+// which chain into the same "use server" calling actions — stub it for the
+// same reason (its own contents are covered by whatsapp-call-card.test.tsx).
+vi.mock("@/features/messages/components/whatsapp-call-card", () => ({
+  WhatsappCallCard: () => <div data-slot="whatsapp-call-card">audioCall</div>,
+}))
+
+// Comment bubbles render the like/hide/reply actions, which need the chat
+// store; stub them to keep this test about what the bubble itself shows.
+vi.mock("@/features/messages/components/message-actions", () => ({
+  MessageActions: () => null,
+  MessageActionsEditor: () => null,
+}))
+
+let container: HTMLDivElement | null = null
+let root: Root | null = null
+
+const tenantSettings = {
+  storageUrl: "https://cdn.example.com",
+} as unknown as TenantSettings
+
+function renderComponent(ui: React.ReactElement) {
+  container = document.createElement("div")
+  document.body.appendChild(container)
+  root = createRoot(container)
+  act(() => {
+    root?.render(
+      <TenantProvider settings={tenantSettings}>{ui}</TenantProvider>,
+    )
+  })
+  return container
+}
+
+afterEach(() => {
+  if (root) {
+    act(() => {
+      root?.unmount()
+    })
+  }
+  container?.remove()
+  container = null
+  root = null
+})
+
+const makeMessage = (overrides: Partial<MessageResourceWithRelations> = {}) =>
+  ({
+    id: "msg-1",
+    workspaceId: "ws-1",
+    conversationId: "conv-1",
+    createdAt: new Date("2024-01-01T00:00:00Z"),
+    messageType: "outgoing",
+    type: "message",
+    text: null,
+    deletedAt: null,
+    attributes: null,
+    contentAttributes: null,
+    attachments: [],
+    ...overrides,
+  }) as unknown as MessageResourceWithRelations
+
+const makeImageAttachment = (id: string) =>
+  ({
+    id,
+    fileType: "image",
+    url: `https://cdn.example.com/${id}.png`,
+    name: `${id}.png`,
+    originPath: `public/${id}.png`,
+    width: 400,
+    height: 300,
+  }) as unknown as AttachmentResource
+
+const makeFileAttachment = (id: string) =>
+  ({
+    id,
+    fileType: "file",
+    url: `https://cdn.example.com/${id}.pdf`,
+    name: `${id}.pdf`,
+    originPath: `public/${id}.pdf`,
+  }) as unknown as AttachmentResource
+
+const makeProxyAttachment = (
+  id: string,
+  fileType: AttachmentResource["fileType"],
+  mimeType: string,
+) =>
+  ({
+    id,
+    fileType,
+    mimeType,
+    url: `https://builder.example.com/media/attachment/${id}-token`,
+    name: `${id}.${fileType}`,
+    originPath: `pending/${id}`,
+    width: fileType === "image" ? 400 : null,
+    height: fileType === "image" ? 300 : null,
+  }) as unknown as AttachmentResource
+
+describe("MessageItem attachment rendering — multiple images", () => {
+  test("an explicit null server URL renders the existing placeholder instead of rebuilding the origin path", () => {
+    const attachment = {
+      ...makeImageAttachment("failed-image"),
+      originPath: "failed:unresolvable",
+      url: null,
+    } as unknown as AttachmentResource
+
+    const el = renderComponent(
+      <MessageItem
+        message={makeMessage({
+          attachments: [attachment],
+        })}
+      />,
+    )
+
+    expect(el.querySelector("img")).toBeNull()
+    expect(el.querySelector('a[href*="failed:unresolvable"]')).toBeNull()
+    expect(el.textContent).toContain("failed-image.png")
+  })
+
+  test("image, video, audio, and file render their absolute server URLs unchanged", () => {
+    const image = makeProxyAttachment("image", "image", "image/jpeg")
+    const video = makeProxyAttachment("video", "video", "video/mp4")
+    const audio = makeProxyAttachment("audio", "audio", "audio/mpeg")
+    const file = makeProxyAttachment("file", "file", "application/pdf")
+
+    const el = renderComponent(
+      <MessageItem
+        message={makeMessage({ attachments: [image, video, audio, file] })}
+      />,
+    )
+
+    expect(el.querySelector("img")?.getAttribute("src")).toBe(image.url)
+    expect(el.querySelector("video source")?.getAttribute("src")).toBe(
+      video.url,
+    )
+    expect(el.querySelector("audio source")?.getAttribute("src")).toBe(
+      audio.url,
+    )
+    expect(
+      el.querySelector(`a[href="${file.url}"]`)?.getAttribute("href"),
+    ).toBe(file.url)
+  })
+
+  test("image-grid items render their absolute server URLs unchanged", () => {
+    const first = makeProxyAttachment("image-1", "image", "image/jpeg")
+    const second = makeProxyAttachment("image-2", "image", "image/jpeg")
+
+    const el = renderComponent(
+      <MessageItem message={makeMessage({ attachments: [first, second] })} />,
+    )
+
+    expect(
+      Array.from(el.querySelectorAll("img"), (image) =>
+        image.getAttribute("src"),
+      ),
+    ).toEqual([first.url, second.url])
+  })
+
+  test("a single image without stored dimensions gets an explicit width instead of collapsing", () => {
+    // Media-library sends store no width/height. A chat bubble sizes to its
+    // content, so a box with only max-width and an aspect ratio resolves to 0×0.
+    const attachment = {
+      ...makeImageAttachment("unsized"),
+      width: null,
+      height: null,
+    } as unknown as AttachmentResource
+
+    const el = renderComponent(
+      <MessageItem message={makeMessage({ attachments: [attachment] })} />,
+    )
+
+    const frame = el.querySelector("img")?.parentElement
+    expect(frame?.className.split(" ")).toContain("w-80")
+    expect(frame?.className.split(" ")).toContain("max-w-full")
+  })
+
+  test("a single image renders without the grid wrapper", () => {
+    const el = renderComponent(
+      <MessageItem
+        message={makeMessage({
+          attachments: [makeImageAttachment("img-1")],
+        })}
+      />,
+    )
+
+    expect(el.querySelector('[data-slot="attachment-image-grid"]')).toBeNull()
+    expect(el.querySelectorAll("img")).toHaveLength(1)
+  })
+
+  test("exactly 2 images render a 2-column grid, not a 3-column grid with an empty cell", () => {
+    const el = renderComponent(
+      <MessageItem
+        message={makeMessage({
+          attachments: [
+            makeImageAttachment("img-1"),
+            makeImageAttachment("img-2"),
+          ],
+        })}
+      />,
+    )
+
+    const grid = el.querySelector('[data-slot="attachment-image-grid"]')
+    expect(grid).not.toBeNull()
+    expect(grid?.className).toContain("grid-cols-2")
+    expect(grid?.className).not.toContain("grid-cols-3")
+    expect(grid?.querySelectorAll("img")).toHaveLength(2)
+  })
+
+  test("multiple images render inside a 3-column grid", () => {
+    const el = renderComponent(
+      <MessageItem
+        message={makeMessage({
+          attachments: [
+            makeImageAttachment("img-1"),
+            makeImageAttachment("img-2"),
+            makeImageAttachment("img-3"),
+          ],
+        })}
+      />,
+    )
+
+    const grid = el.querySelector('[data-slot="attachment-image-grid"]')
+    expect(grid).not.toBeNull()
+    expect(grid?.className).toContain("grid-cols-3")
+    expect(grid?.querySelectorAll("img")).toHaveLength(3)
+  })
+
+  test("non-image attachments stay outside the image grid", () => {
+    const el = renderComponent(
+      <MessageItem
+        message={makeMessage({
+          attachments: [
+            makeImageAttachment("img-1"),
+            makeImageAttachment("img-2"),
+            makeFileAttachment("file-1"),
+          ],
+        })}
+      />,
+    )
+
+    const grid = el.querySelector('[data-slot="attachment-image-grid"]')
+    expect(grid?.querySelectorAll("img")).toHaveLength(2)
+    expect(el.textContent).toContain("file-1.pdf")
+  })
+})
+
+describe("MessageItem attachment rendering — fallback on load failure", () => {
+  const fallbackUrl = "https://builder.example.com/media/attachment/token"
+  const retryUrl = `${fallbackUrl}?retry=1`
+
+  const failLoading = (element: Element | null | undefined) => {
+    act(() => {
+      element?.dispatchEvent(new Event("error"))
+    })
+  }
+
+  test("an image that fails to load steps through the fallback URL and then its retry form", () => {
+    const attachment = {
+      ...makeImageAttachment("img-1"),
+      fallbackUrl,
+    } as unknown as AttachmentResource
+    const el = renderComponent(
+      <MessageItem message={makeMessage({ attachments: [attachment] })} />,
+    )
+
+    failLoading(el.querySelector("img"))
+    expect(el.querySelector("img")?.getAttribute("src")).toBe(fallbackUrl)
+
+    failLoading(el.querySelector("img"))
+    expect(el.querySelector("img")?.getAttribute("src")).toBe(retryUrl)
+
+    failLoading(el.querySelector("img"))
+    expect(el.querySelector("img")?.getAttribute("src")).toBe(retryUrl)
+  })
+
+  test("an image-grid item that fails to load switches to its fallback URL", () => {
+    const first = {
+      ...makeImageAttachment("img-1"),
+      fallbackUrl,
+    } as unknown as AttachmentResource
+    const second = makeImageAttachment("img-2")
+    const el = renderComponent(
+      <MessageItem message={makeMessage({ attachments: [first, second] })} />,
+    )
+
+    failLoading(el.querySelectorAll("img")[0])
+
+    expect(
+      Array.from(el.querySelectorAll("img"), (image) =>
+        image.getAttribute("src"),
+      ),
+    ).toEqual([fallbackUrl, second.url])
+  })
+
+  test("a video source that fails to load switches to its fallback URL", () => {
+    const attachment = {
+      ...makeProxyAttachment("video", "video", "video/mp4"),
+      url: "https://cdn.example.com/video.mp4",
+      fallbackUrl,
+    } as unknown as AttachmentResource
+    const el = renderComponent(
+      <MessageItem message={makeMessage({ attachments: [attachment] })} />,
+    )
+
+    failLoading(el.querySelector("video source"))
+
+    expect(el.querySelector("video source")?.getAttribute("src")).toBe(
+      fallbackUrl,
+    )
+  })
+
+  test("a mid-playback error on the video element itself switches to its fallback URL", () => {
+    const attachment = {
+      ...makeProxyAttachment("video", "video", "video/mp4"),
+      url: "https://cdn.example.com/video.mp4",
+      fallbackUrl,
+    } as unknown as AttachmentResource
+    const el = renderComponent(
+      <MessageItem message={makeMessage({ attachments: [attachment] })} />,
+    )
+
+    failLoading(el.querySelector("video"))
+
+    expect(el.querySelector("video source")?.getAttribute("src")).toBe(
+      fallbackUrl,
+    )
+  })
+
+  test("an audio element error switches to its fallback URL", () => {
+    const attachment = {
+      ...makeProxyAttachment("audio", "audio", "audio/mpeg"),
+      url: "https://cdn.example.com/audio.mp3",
+      fallbackUrl,
+    } as unknown as AttachmentResource
+    const el = renderComponent(
+      <MessageItem message={makeMessage({ attachments: [attachment] })} />,
+    )
+
+    failLoading(el.querySelector("audio"))
+
+    expect(el.querySelector("audio source")?.getAttribute("src")).toBe(
+      fallbackUrl,
+    )
+  })
+
+  test("one failure reported by both the source and the media element advances a single step", () => {
+    const attachment = {
+      ...makeProxyAttachment("video", "video", "video/mp4"),
+      url: "https://cdn.example.com/video.mp4",
+      fallbackUrl,
+    } as unknown as AttachmentResource
+    const el = renderComponent(
+      <MessageItem message={makeMessage({ attachments: [attachment] })} />,
+    )
+    const source = el.querySelector("video source")
+    const video = el.querySelector("video")
+
+    act(() => {
+      source?.dispatchEvent(new Event("error"))
+      video?.dispatchEvent(new Event("error"))
+    })
+
+    expect(el.querySelector("video source")?.getAttribute("src")).toBe(
+      fallbackUrl,
+    )
+  })
+
+  test("a video loads lazily on its primary URL but loads and plays on its own once recovering", () => {
+    const attachment = {
+      ...makeProxyAttachment("video", "video", "video/mp4"),
+      url: "https://cdn.example.com/video.mp4",
+      fallbackUrl,
+    } as unknown as AttachmentResource
+    const el = renderComponent(
+      <MessageItem message={makeMessage({ attachments: [attachment] })} />,
+    )
+
+    expect(el.querySelector("video")?.getAttribute("preload")).toBe("none")
+    expect(el.querySelector("video")?.hasAttribute("autoplay")).toBe(false)
+
+    failLoading(el.querySelector("video source"))
+
+    expect(el.querySelector("video")?.getAttribute("preload")).toBe("auto")
+    expect(el.querySelector("video")?.hasAttribute("autoplay")).toBe(true)
+  })
+
+  test("a file link downloads through the fallback URL and offers a reload from the channel", () => {
+    const attachment = {
+      ...makeFileAttachment("file-1"),
+      fallbackUrl,
+    } as unknown as AttachmentResource
+    const el = renderComponent(
+      <MessageItem message={makeMessage({ attachments: [attachment] })} />,
+    )
+
+    // The fallback re-signs the stored key on every click, so a link kept open
+    // past the presign lifetime still downloads.
+    expect(el.querySelector(`a[href="${fallbackUrl}"]`)?.textContent).toBe(
+      attachment.url,
+    )
+    const reload = el.querySelector(`a[href="${retryUrl}"]`)
+    expect(reload?.getAttribute("aria-label")).toBe("reloadAttachment")
+    expect(reload?.getAttribute("target")).toBe("_blank")
+    // Neither link may be prefetched: the reload would call the channel API
+    // and queue a restore just because the message scrolled into view.
+    expect(
+      el
+        .querySelector(`a[href="${fallbackUrl}"]`)
+        ?.getAttribute("data-prefetch"),
+    ).toBe("false")
+    expect(reload?.getAttribute("data-prefetch")).toBe("false")
+  })
+
+  test("image links never prefetch, since they can point at the media proxy", () => {
+    const single = { ...makeImageAttachment("img-1"), fallbackUrl }
+    const unsized = {
+      ...makeImageAttachment("img-2"),
+      width: null,
+      height: null,
+      fallbackUrl,
+    }
+    const grid = [makeImageAttachment("img-3"), makeImageAttachment("img-4")]
+
+    for (const attachments of [[single], [unsized], grid]) {
+      const el = renderComponent(
+        <MessageItem
+          message={makeMessage({
+            attachments: attachments as unknown as AttachmentResource[],
+          })}
+        />,
+      )
+      const links = Array.from(el.querySelectorAll("a")).filter((link) =>
+        link.querySelector("img"),
+      )
+      expect(links.length).toBeGreaterThan(0)
+      for (const link of links) {
+        expect(link.getAttribute("data-prefetch")).toBe("false")
+      }
+      act(() => root?.unmount())
+      root = null
+      container?.remove()
+    }
+  })
+
+  test("a file link without a fallback URL keeps its stored URL and no reload action", () => {
+    const attachment = makeFileAttachment("file-1")
+    const el = renderComponent(
+      <MessageItem message={makeMessage({ attachments: [attachment] })} />,
+    )
+
+    expect(el.querySelector(`a[href="${attachment.url}"]`)).not.toBeNull()
+    expect(el.querySelector('a[aria-label="reloadAttachment"]')).toBeNull()
+  })
+
+  test("an attachment without a fallback URL keeps its URL when loading fails", () => {
+    const attachment = makeImageAttachment("img-1")
+    const el = renderComponent(
+      <MessageItem message={makeMessage({ attachments: [attachment] })} />,
+    )
+
+    failLoading(el.querySelector("img"))
+
+    expect(el.querySelector("img")?.getAttribute("src")).toBe(attachment.url)
+  })
+})
+
+describe("MessageItem attachment rendering — gif", () => {
+  test("renders an image/gif attachment as an image", () => {
+    const el = renderComponent(
+      <MessageItem
+        message={makeMessage({
+          attachments: [makeProxyAttachment("gif-1", "gif", "image/gif")],
+        })}
+      />,
+    )
+
+    expect(el.querySelector("img")?.getAttribute("src")).toBe(
+      "https://builder.example.com/media/attachment/gif-1-token",
+    )
+    expect(el.querySelector("video")).toBeNull()
+  })
+
+  test("autoplays a video gif muted and on loop, without controls", () => {
+    const el = renderComponent(
+      <MessageItem
+        message={makeMessage({
+          attachments: [makeProxyAttachment("gif-2", "gif", "video/mp4")],
+        })}
+      />,
+    )
+
+    const video = el.querySelector("video")
+    expect(video).not.toBeNull()
+    expect(video?.autoplay).toBe(true)
+    expect(video?.loop).toBe(true)
+    expect(video?.muted).toBe(true)
+    expect(video?.hasAttribute("controls")).toBe(false)
+    expect(video?.querySelector("source")?.getAttribute("type")).toBe(
+      "video/mp4",
+    )
+  })
+})
+
+describe("MessageItem comment without text", () => {
+  test("shows a note for a comment whose media the channel does not expose", () => {
+    const el = renderComponent(
+      <MessageItem
+        message={makeMessage({
+          type: "comment",
+          messageType: "incoming",
+          text: null,
+          attachments: [],
+        })}
+      />,
+    )
+
+    expect(el.textContent).toContain("commentMediaUnavailable")
+  })
+
+  test("shows the attachment instead of the note when the media was downloaded", () => {
+    const el = renderComponent(
+      <MessageItem
+        message={makeMessage({
+          type: "comment",
+          messageType: "incoming",
+          text: null,
+          attachments: [makeImageAttachment("comment-gif")],
+        })}
+      />,
+    )
+
+    expect(el.textContent).not.toContain("commentMediaUnavailable")
+    expect(el.querySelector("img")).not.toBeNull()
+  })
+
+  test("keeps the deleted label for a deleted media-only comment", () => {
+    const el = renderComponent(
+      <MessageItem
+        message={makeMessage({
+          type: "comment",
+          messageType: "incoming",
+          text: null,
+          deletedAt: new Date("2024-01-02T00:00:00Z"),
+        })}
+      />,
+    )
+
+    expect(el.textContent).toContain("messageDeleted")
+    expect(el.textContent).not.toContain("commentMediaUnavailable")
+  })
+})

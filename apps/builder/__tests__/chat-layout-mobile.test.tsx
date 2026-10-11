@@ -1,0 +1,317 @@
+import type * as MobileHook from "@chatbotx.io/ui/hooks/use-mobile"
+import { setViewportWidth } from "@chatbotx.io/vitest-config/setup-dom"
+import { act } from "react"
+import { createRoot, type Root } from "react-dom/client"
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
+
+vi.mock("next-intl", () => ({
+  useTranslations: () => (key: string) => key,
+}))
+
+vi.mock("@/features/chat/chat-realtime", () => ({
+  ChatRealtime: () => <div data-testid="realtime" />,
+}))
+
+const { mockMobileState } = vi.hoisted(() => ({
+  mockMobileState: {
+    isOverridden: false,
+    value: undefined as boolean | undefined,
+  },
+}))
+
+vi.mock("@chatbotx.io/ui/hooks/use-mobile", async (importOriginal) => {
+  const actual = await importOriginal<typeof MobileHook>()
+
+  return {
+    ...actual,
+    useIsMobileState: () => {
+      const isMobile = actual.useIsMobileState()
+      return mockMobileState.isOverridden ? mockMobileState.value : isMobile
+    },
+  }
+})
+
+vi.mock("@/features/messages/store/call-playback-store", () => ({
+  useCallPlaybackStore: {
+    getState: () => ({ reset: vi.fn() }),
+  },
+}))
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/space/w1/inbox",
+  useSearchParams: () => new URLSearchParams("conversationId=c1"),
+}))
+
+vi.mock("@/features/chat/chat-panes", () => ({
+  ConversationListPane: () => <div data-testid="list-pane" />,
+  MessageThreadPane: ({
+    onBack,
+    onOpenContact,
+  }: {
+    onBack?: () => void
+    onOpenContact?: () => void
+  }) => (
+    <div data-testid="thread-pane">
+      {onBack && (
+        <button data-testid="back" onClick={onBack} type="button">
+          back
+        </button>
+      )}
+      {onOpenContact && (
+        <button
+          data-testid="open-contact"
+          onClick={onOpenContact}
+          type="button"
+        >
+          contact
+        </button>
+      )}
+    </div>
+  ),
+  ContactDetailPane: () => <div data-testid="contact-pane" />,
+}))
+
+const storeState = {
+  conversations: [] as unknown[],
+  isFirstLoadConversation: false,
+  isLoadingConversation: false,
+  isBootstrappingUrlConversation: false,
+  activeConversationId: null as string | null,
+  setActiveConversationId: vi.fn((id: string | null) => {
+    storeState.activeConversationId = id
+  }),
+}
+
+vi.mock("@/features/chat/store/chat-store-provider", () => ({
+  useChatStore: (selector: (state: typeof storeState) => unknown) =>
+    selector(storeState),
+}))
+
+const { ChatLayout } = await import("@/features/chat/chat-layout")
+
+/**
+ * Any `height` class on an inbox container is a bug, not a style choice: the
+ * height belongs to the shell (`FullBleed` grows to it), and on the desktop
+ * group a `height` class is outright dead — `PanelGroup` sets an inline
+ * `height: 100%` that no stylesheet rule can beat.
+ */
+const HEIGHT_CLASS = /(?:^|\s)h-/
+
+describe("ChatLayout", () => {
+  let container: HTMLDivElement
+  let root: Root
+
+  const render = () => {
+    act(() => {
+      root.render(<ChatLayout workspaceId="w1" />)
+    })
+  }
+
+  const find = (id: string) =>
+    container.querySelector<HTMLElement>(`[data-testid="${id}"]`)
+
+  // The sheet portals to <body> and stays mounted through its exit animation,
+  // so read its open state rather than whether its content is in the DOM.
+  const isContactSheetOpen = () =>
+    document
+      .querySelector('[data-slot="sheet-content"]')
+      ?.hasAttribute("data-open") ?? false
+
+  beforeEach(() => {
+    Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true })
+    storeState.activeConversationId = null
+    storeState.setActiveConversationId.mockClear()
+    mockMobileState.isOverridden = false
+    container = document.createElement("div")
+    document.body.append(container)
+    root = createRoot(container)
+  })
+
+  afterEach(() => {
+    act(() => {
+      root.unmount()
+    })
+    container.remove()
+    setViewportWidth(1024)
+  })
+
+  test("shows only the conversation list on mobile with nothing selected", () => {
+    setViewportWidth(375)
+    render()
+
+    expect(find("list-pane")).not.toBeNull()
+    expect(find("thread-pane")).toBeNull()
+    // The three-column group must not mount on a phone.
+    expect(
+      container.querySelector('[data-slot="resizable-panel-group"]'),
+    ).toBeNull()
+  })
+
+  test("fills the viewport, with the pane owning the whole screen", () => {
+    setViewportWidth(375)
+    render()
+
+    // The height is derived from the shell (`FullBleed` is a grown flex item),
+    // never hand-copied as a viewport unit: a `dvh` here ignores whatever else
+    // shares the shell's column, such as the trial banner.
+    const pane = find("list-pane")?.closest("div.flex")
+    expect(pane?.className).toContain("flex-1")
+    expect(pane?.className).not.toMatch(HEIGHT_CLASS)
+  })
+
+  // The layout never touches the selection on its own: with no auto-select
+  // left in the store there is nothing to suppress, and a mid-session resize
+  // across the breakpoint must not close the thread the agent is reading.
+  test("never clears the selection on its own, including across a resize to mobile", () => {
+    storeState.activeConversationId = "c1"
+    setViewportWidth(1440)
+    render()
+
+    act(() => {
+      setViewportWidth(375)
+    })
+    render()
+
+    expect(storeState.setActiveConversationId).not.toHaveBeenCalled()
+    expect(find("thread-pane")).not.toBeNull()
+  })
+
+  test("keeps a deep-linked conversation open on mobile", () => {
+    storeState.activeConversationId = "c1"
+    setViewportWidth(375)
+    render()
+
+    expect(find("thread-pane")).not.toBeNull()
+    expect(storeState.setActiveConversationId).not.toHaveBeenCalledWith(null)
+  })
+
+  test("shows the thread with a back control once a conversation is active", () => {
+    storeState.activeConversationId = "c1"
+    setViewportWidth(375)
+    render()
+
+    expect(find("thread-pane")).not.toBeNull()
+    expect(find("list-pane")).toBeNull()
+    expect(find("back")).not.toBeNull()
+  })
+
+  test("back clears the active conversation, returning to the list", () => {
+    storeState.activeConversationId = "c1"
+    setViewportWidth(375)
+    render()
+
+    act(() => {
+      find("back")?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true }),
+      )
+    })
+
+    expect(storeState.setActiveConversationId).toHaveBeenCalledWith(null)
+  })
+
+  test("back also clears the conversationId URL param, so a remount cannot resurrect it", () => {
+    storeState.activeConversationId = "c1"
+    setViewportWidth(375)
+    render()
+
+    const replaceState = vi.spyOn(window.history, "replaceState")
+    act(() => {
+      find("back")?.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true }),
+      )
+    })
+
+    expect(replaceState).toHaveBeenCalledWith(null, "", "/space/w1/inbox")
+    replaceState.mockRestore()
+  })
+
+  test("offers the contact panel behind a control instead of a third column", () => {
+    storeState.activeConversationId = "c1"
+    setViewportWidth(375)
+    render()
+
+    expect(find("open-contact")).not.toBeNull()
+    // The sheet is closed until asked for, so the panel is not mounted yet.
+    expect(find("contact-pane")).toBeNull()
+  })
+
+  test("keeps the mobile contact sheet open across conversation list updates", () => {
+    storeState.activeConversationId = "c1"
+    storeState.conversations = [{ id: "c1" }]
+    setViewportWidth(375)
+    render()
+
+    act(() => {
+      find("open-contact")?.click()
+    })
+    expect(
+      document.querySelector('[data-testid="contact-pane"]'),
+    ).not.toBeNull()
+
+    // A realtime message replaces the conversations array; the sheet is bound
+    // to the active conversation, not to the list identity.
+    storeState.conversations = [{ id: "c1" }, { id: "c2" }]
+    render()
+    expect(
+      document.querySelector('[data-testid="contact-pane"]'),
+    ).not.toBeNull()
+
+    storeState.conversations = []
+  })
+
+  test("closes the mobile contact sheet for another thread and keeps it closed on return", () => {
+    storeState.activeConversationId = "c1"
+    storeState.conversations = [{ id: "c1" }, { id: "c2" }]
+    setViewportWidth(375)
+    render()
+
+    act(() => {
+      find("open-contact")?.click()
+    })
+    storeState.activeConversationId = "c2"
+    render()
+    expect(isContactSheetOpen()).toBe(false)
+
+    storeState.activeConversationId = "c1"
+    render()
+    expect(isContactSheetOpen()).toBe(false)
+
+    storeState.conversations = []
+  })
+
+  test("renders all three panes side by side from md up", () => {
+    storeState.activeConversationId = "c1"
+    setViewportWidth(1440)
+    render()
+
+    expect(find("list-pane")).not.toBeNull()
+    expect(find("thread-pane")).not.toBeNull()
+    expect(find("contact-pane")).not.toBeNull()
+    // No mobile-only affordances leak into the desktop layout.
+    expect(find("back")).toBeNull()
+    expect(find("open-contact")).toBeNull()
+  })
+
+  test("grows the desktop group instead of giving it a dead height class", () => {
+    storeState.activeConversationId = "c1"
+    setViewportWidth(1440)
+    render()
+
+    const group = container.querySelector<HTMLElement>(
+      '[data-slot="resizable-panel-group"]',
+    )
+    expect(group?.className).toContain("flex-1")
+    expect(group?.className).not.toMatch(HEIGHT_CLASS)
+  })
+
+  test("keeps the realtime socket mounted in every layout", () => {
+    setViewportWidth(375)
+    render()
+    expect(find("realtime")).not.toBeNull()
+
+    act(() => {
+      setViewportWidth(1440)
+    })
+    expect(find("realtime")).not.toBeNull()
+  })
+})

@@ -1,5 +1,6 @@
 import { channelTypes } from "@chatbotx.io/database/partials"
 import {
+  PURGE_BROADCASTS_INTERVAL_MINUTES,
   PURGE_WORKSPACES_INTERVAL_MINUTES,
   ScheduleJobData,
   scheduleQueue,
@@ -31,6 +32,20 @@ export const registerSchedules = async () => {
       await scheduleQueue.removeJobScheduler(name)
     }
   }
+
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.dispatchProfileSnapshots,
+    {
+      pattern: "* * * * *",
+    },
+    {
+      name: ScheduleJobData.dispatchProfileSnapshots,
+      data: {
+        type: ScheduleJobData.dispatchProfileSnapshots,
+        data: {},
+      },
+    },
+  )
 
   await scheduleQueue.upsertJobScheduler(
     ScheduleJobData.enqueueBroadcast,
@@ -212,6 +227,34 @@ export const registerSchedules = async () => {
   )
 
   await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.scanContactScans,
+    {
+      pattern: "* * * * *",
+    },
+    {
+      name: ScheduleJobData.scanContactScans,
+      data: {
+        type: ScheduleJobData.scanContactScans,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.scanAiHandoverBulkRuns,
+    {
+      pattern: "* * * * *",
+    },
+    {
+      name: ScheduleJobData.scanAiHandoverBulkRuns,
+      data: {
+        type: ScheduleJobData.scanAiHandoverBulkRuns,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
     ScheduleJobData.reconcileMetaCatalogSyncs,
     {
       pattern: "* * * * *",
@@ -239,6 +282,38 @@ export const registerSchedules = async () => {
     },
   )
 
+  // Deliberately NOT in CLOUD_ONLY_SCHEDULERS — retention applies to every
+  // edition.
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.purgeErrorLogs,
+    {
+      pattern: "0 3 * * *",
+    },
+    {
+      name: ScheduleJobData.purgeErrorLogs,
+      data: {
+        type: ScheduleJobData.purgeErrorLogs,
+        data: {},
+      },
+    },
+  )
+
+  // Same "retention applies to every edition" reasoning as `purgeErrorLogs`
+  // above; offset 15 minutes so the two chunked deletes do not contend.
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.purgeCommentAutomationEvents,
+    {
+      pattern: "15 3 * * *",
+    },
+    {
+      name: ScheduleJobData.purgeCommentAutomationEvents,
+      data: {
+        type: ScheduleJobData.purgeCommentAutomationEvents,
+        data: {},
+      },
+    },
+  )
+
   await scheduleQueue.upsertJobScheduler(
     ScheduleJobData.purgeWhatsappSignupSessions,
     {
@@ -248,6 +323,19 @@ export const registerSchedules = async () => {
       name: ScheduleJobData.purgeWhatsappSignupSessions,
       data: {
         type: ScheduleJobData.purgeWhatsappSignupSessions,
+        data: {},
+      },
+    },
+  )
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.purgeExpiredConnectSessions,
+    {
+      pattern: "0 * * * *",
+    },
+    {
+      name: ScheduleJobData.purgeExpiredConnectSessions,
+      data: {
+        type: ScheduleJobData.purgeExpiredConnectSessions,
         data: {},
       },
     },
@@ -262,6 +350,63 @@ export const registerSchedules = async () => {
       name: ScheduleJobData.purgeWorkspaces,
       data: {
         type: ScheduleJobData.purgeWorkspaces,
+        data: {},
+      },
+    },
+  )
+
+  // Access is already gated by comparing `supportAccessUntil > now()` on
+  // every read, so this cron only tidies the stale timestamp for
+  // display/reporting hygiene — daily is plenty.
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.clearExpiredSupportAccess,
+    {
+      pattern: "0 3 * * *",
+    },
+    {
+      name: ScheduleJobData.clearExpiredSupportAccess,
+      data: {
+        type: ScheduleJobData.clearExpiredSupportAccess,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.googleAdsHousekeeping,
+    { pattern: "*/10 * * * *" },
+    {
+      name: ScheduleJobData.googleAdsHousekeeping,
+      data: {
+        type: ScheduleJobData.googleAdsHousekeeping,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.googleAdsSyncSetups,
+    { pattern: "30 3 * * *" },
+    {
+      name: ScheduleJobData.googleAdsSyncSetups,
+      data: {
+        type: ScheduleJobData.googleAdsSyncSetups,
+        data: {},
+      },
+    },
+  )
+
+  // Deliberately NOT in CLOUD_ONLY_SCHEDULERS — recipient-row retention
+  // applies to every edition.
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.purgeBroadcasts,
+    {
+      pattern: `*/${PURGE_BROADCASTS_INTERVAL_MINUTES} * * * *`,
+    },
+    {
+      name: ScheduleJobData.purgeBroadcasts,
+      data: {
+        type: ScheduleJobData.purgeBroadcasts,
         data: {},
       },
     },
@@ -330,4 +475,33 @@ export const registerSchedules = async () => {
       },
     )
   }
+
+  // WhatsApp calling.
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.purgeExpiredCallRecordings,
+    {
+      pattern: "0 5 * * *",
+    },
+    {
+      name: ScheduleJobData.purgeExpiredCallRecordings,
+      data: {
+        type: ScheduleJobData.purgeExpiredCallRecordings,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.sweepStaleWhatsappCalls,
+    {
+      pattern: "*/5 * * * *",
+    },
+    {
+      name: ScheduleJobData.sweepStaleWhatsappCalls,
+      data: {
+        type: ScheduleJobData.sweepStaleWhatsappCalls,
+        data: {},
+      },
+    },
+  )
 }

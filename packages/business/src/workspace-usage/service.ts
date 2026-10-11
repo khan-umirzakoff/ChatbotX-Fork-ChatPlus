@@ -1,7 +1,25 @@
-import { db } from "@chatbotx.io/database/client"
-import { workspaceUsageModel } from "@chatbotx.io/database/schema"
+import {
+  count as countFn,
+  type DatabaseClient,
+  db,
+  sql,
+} from "@chatbotx.io/database/client"
+import {
+  contactModel,
+  inboxModel,
+  workspaceMemberModel,
+  workspaceModel,
+  workspaceUsageModel,
+} from "@chatbotx.io/database/schema"
 import type { WorkspaceUsageModel } from "@chatbotx.io/database/types"
 import { LiveCounterStore } from "../quota-shared/live-counter-store"
+
+export type ReconcileWorkspaceCounts = {
+  workspaceIds: string[]
+  contactsByWorkspace: Map<string, number>
+  channelsByWorkspace: Map<string, number>
+  membersByWorkspace: Map<string, number>
+}
 
 export type WorkspaceUsageMetric =
   | "contacts"
@@ -54,12 +72,32 @@ class WorkspaceUsageService {
         .then((row) => row ?? null),
   })
 
+  /**
+   * Resolves whether the live (Redis) counter took the increment; the durable
+   * row is always written (on `tx` when given). A caller whose `tx` later
+   * rolls back passes that flag on to decide whether `rollbackLiveIncrement`
+   * has anything to undo.
+   */
   async increment(
     workspaceId: string,
     metric: WorkspaceUsageMetric,
     count = 1,
+    tx?: DatabaseClient,
+  ): Promise<boolean> {
+    return await this.store.consume(workspaceId, metric, count, tx)
+  }
+
+  /**
+   * Redis-only counterpart of `increment(..., tx)` for a rolled-back
+   * transaction: the durable row was written on that `tx` and is already
+   * undone, so only the live counter needs correcting.
+   */
+  async rollbackLiveIncrement(
+    workspaceId: string,
+    metric: WorkspaceUsageMetric,
+    count = 1,
   ): Promise<void> {
-    await this.store.consume(workspaceId, metric, count)
+    await this.store.rollbackLive(workspaceId, metric, count)
   }
 
   async decrement(
@@ -89,6 +127,86 @@ class WorkspaceUsageService {
 
   async invalidate(workspaceId: string): Promise<void> {
     await this.store.invalidate(workspaceId)
+  }
+
+  /**
+   * `sync-user-quota.ts` reconcileWorkspaceUsage: the workspace-id list plus
+   * the three grouped counts (contacts / channels / team members) the
+   * display-only `WorkspaceUsage` breakdown is re-grounded from. MAC counts
+   * come from `@chatbotx.io/analytics`'s `macRepository`, which stays called
+   * from the handler and is merged with this method's result there.
+   */
+  async loadReconcileCounts(): Promise<ReconcileWorkspaceCounts> {
+    const [workspaces, contactCounts, channelCounts, memberCounts] =
+      await Promise.all([
+        db.select({ id: workspaceModel.id }).from(workspaceModel),
+        db
+          .select({ workspaceId: contactModel.workspaceId, used: countFn() })
+          .from(contactModel)
+          .groupBy(contactModel.workspaceId),
+        db
+          .select({ workspaceId: inboxModel.workspaceId, used: countFn() })
+          .from(inboxModel)
+          .groupBy(inboxModel.workspaceId),
+        db
+          .select({
+            workspaceId: workspaceMemberModel.workspaceId,
+            used: countFn(),
+          })
+          .from(workspaceMemberModel)
+          .groupBy(workspaceMemberModel.workspaceId),
+      ])
+
+    return {
+      workspaceIds: workspaces.map((row) => row.id),
+      contactsByWorkspace: new Map(
+        contactCounts.map((row) => [row.workspaceId, row.used]),
+      ),
+      channelsByWorkspace: new Map(
+        channelCounts.map((row) => [row.workspaceId, row.used]),
+      ),
+      membersByWorkspace: new Map(
+        memberCounts.map((row) => [row.workspaceId, row.used]),
+      ),
+    }
+  }
+
+  /** `sync-user-quota.ts` reconcileWorkspaceUsage: upsert the reconciled snapshot. */
+  async upsertReconciled(input: {
+    workspaceId: string
+    contactsUsed: number
+    channelsUsed: number
+    teamMembersUsed: number
+    macUsed: number
+  }): Promise<void> {
+    const {
+      workspaceId,
+      contactsUsed,
+      channelsUsed,
+      teamMembersUsed,
+      macUsed,
+    } = input
+    await db
+      .insert(workspaceUsageModel)
+      .values({
+        workspaceId,
+        contactsUsed,
+        channelsUsed,
+        teamMembersUsed,
+        macUsed,
+        syncedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: workspaceUsageModel.workspaceId,
+        set: {
+          contactsUsed,
+          channelsUsed,
+          teamMembersUsed,
+          macUsed,
+          syncedAt: new Date(),
+          updatedAt: sql`CURRENT_TIMESTAMP`,
+        },
+      })
   }
 }
 

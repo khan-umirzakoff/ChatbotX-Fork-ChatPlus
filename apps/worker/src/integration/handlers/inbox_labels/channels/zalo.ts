@@ -1,4 +1,4 @@
-import { db } from "@chatbotx.io/database/client"
+import { zaloIntegrationService } from "@chatbotx.io/business"
 import { channelTypes } from "@chatbotx.io/database/partials"
 import { z } from "zod"
 import type { Channel } from "../types"
@@ -21,10 +21,10 @@ const zaloTagEventSchema = z.object({
 })
 
 export const zaloChannel: Channel = {
+  createsMissingContacts: false,
+
   async loadContext(oaId) {
-    const integration = await db.query.integrationZaloModel.findFirst({
-      where: { oaId },
-    })
+    const integration = await zaloIntegrationService.findByOaId({ oaId })
     if (!integration?.syncTagEnabledAt) {
       return null
     }

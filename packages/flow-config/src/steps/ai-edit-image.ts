@@ -1,6 +1,7 @@
 import { createId, zodBigintAsString } from "@chatbotx.io/utils"
 import { z } from "zod"
 
+import { zodFieldReference } from "../field-reference"
 import {
   errorStateDefaultFn,
   errorStateSchema,
@@ -9,10 +10,10 @@ import {
 } from "../states"
 import { stepTypes } from "./step-action"
 
-export const AI_EDIT_IMAGE_DEFAULT_OPENAI_MODEL = "gpt-image-1-mini" as const
+export const AI_EDIT_IMAGE_DEFAULT_OPENAI_MODEL = "gpt-image-2" as const
 export const AI_EDIT_IMAGE_FALLBACK_OPENAI_MODEL = "gpt-image-1" as const
 export const AI_EDIT_IMAGE_DEFAULT_GEMINI_MODEL =
-  "gemini-3.1-flash-image-preview" as const
+  "gemini-3.1-flash-image" as const
 
 export const AI_EDIT_IMAGE_DEFAULT_OPENAI_SIZE = "1024x1024" as const
 export const AI_EDIT_IMAGE_DEFAULT_GEMINI_SIZE = "1:1" as const
@@ -22,6 +23,19 @@ export const AI_EDIT_IMAGE_DEFAULT_GEMINI_QUALITY = "auto" as const
 
 export const aiEditImageProvider = z.enum(["openai", "gemini"])
 export type AIEditImageProvider = z.infer<typeof aiEditImageProvider>
+
+// Keep legacy UI values for existing flows, but normalize them to the
+// provider's quality values before sending a request.
+export const aiEditImageQuality = z.enum([
+  "auto",
+  "low",
+  "medium",
+  "high",
+  "ld",
+  "md",
+  "hd",
+])
+export type AIEditImageQuality = z.infer<typeof aiEditImageQuality>
 
 export const aiEditImageDefaultModels: Record<AIEditImageProvider, string> = {
   openai: AI_EDIT_IMAGE_DEFAULT_OPENAI_MODEL,
@@ -33,22 +47,28 @@ export const aiEditImageDefaultSizes: Record<AIEditImageProvider, string> = {
   gemini: AI_EDIT_IMAGE_DEFAULT_GEMINI_SIZE,
 }
 
-export const aiEditImageDefaultQualities: Record<AIEditImageProvider, string> =
-  {
-    openai: AI_EDIT_IMAGE_DEFAULT_OPENAI_QUALITY,
-    gemini: AI_EDIT_IMAGE_DEFAULT_GEMINI_QUALITY,
-  }
+export const aiEditImageDefaultQualities: Record<
+  AIEditImageProvider,
+  AIEditImageQuality
+> = {
+  openai: AI_EDIT_IMAGE_DEFAULT_OPENAI_QUALITY,
+  gemini: AI_EDIT_IMAGE_DEFAULT_GEMINI_QUALITY,
+}
 
 export const aiEditImageSchema = z.object({
-  id: zodBigintAsString(),
-  stepType: z.literal(stepTypes.enum.aiEditImage),
+  id: zodBigintAsString().describe(
+    "Step id (numeric string), unique within the flow.",
+  ),
+  stepType: z
+    .literal(stepTypes.enum.aiEditImage)
+    .describe('Step type discriminator: "aiEditImage".'),
   provider: aiEditImageProvider,
   model: z.string().trim().min(1),
   inputFieldId: z.string().trim().min(1),
   prompt: z.string().trim().min(1),
   size: z.string().trim().min(1),
-  quality: z.string().trim().min(1),
-  outputFieldId: z.string().trim().min(1),
+  quality: aiEditImageQuality,
+  outputFieldId: zodFieldReference(),
   states: z.tuple([successStateSchema, errorStateSchema]).optional(),
 })
 

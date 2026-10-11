@@ -1,13 +1,47 @@
 // Export all definitions
+export {
+  type CompiledFlow,
+  compileFlowSpec,
+  type FlowAuthoringContext,
+} from "./authoring/compile"
+export {
+  type FlowAuthoringError,
+  type FlowAuthoringErrorCode,
+  FlowAuthoringException,
+  type FlowCapability,
+  flowCapabilitySchema,
+  formatZodPathSegment,
+  zodErrorToFlowAuthoringErrors,
+} from "./authoring/errors"
+export {
+  type AuthoredEdgeInput,
+  type AuthoredNodeInput,
+  type NormalizedAuthoredGraph,
+  normalizeAuthoredGraph,
+} from "./authoring/normalize-graph"
+export {
+  type FlowSpec,
+  type FlowSpecStepType,
+  type FlowStepSpec,
+  flowSpecSchema,
+  flowSpecStepTypes,
+} from "./authoring/spec-schema"
 export * from "./channel-rules/channel-step-refinement"
 export * from "./channel-rules/channel-validator"
+export * from "./channel-rules/characters"
+export * from "./channel-rules/media-step-rules"
+export * from "./channel-rules/media-step-validators"
+export * from "./channel-rules/policies"
 export * from "./channel-rules/send-carousel-validator"
+export * from "./channel-rules/send-text-length-rules"
 export * from "./channel-rules/send-text-validator"
 export * from "./channel-rules/send-wa-template-validator"
 export * from "./channel-rules/tiktok-text-rules"
 export * from "./channel-rules/validators"
+export * from "./deep-link"
 export * from "./definition"
 export * from "./event"
+export * from "./field-reference"
 export * from "./import-export/index"
 export * from "./migrations/spreadsheet-write-mapping"
 // Export all nodes
@@ -24,6 +58,7 @@ export * from "./nodes/send-message"
 export * from "./nodes/split-traffic"
 export * from "./nodes/start-flow"
 export * from "./nodes/wait"
+export * from "./publish-schema"
 export type { FlowRoute, FlowRouteUpdate } from "./routable-handle"
 export {
   applyRouteInNode,
@@ -78,21 +113,26 @@ export * from "./steps/klaviyo-sync-profile"
 export * from "./steps/mailchimp-add-member"
 export * from "./steps/mailer-lite-add-subscriber"
 export * from "./steps/make"
+export * from "./steps/mark-conversation-as-read"
+export * from "./steps/mark-conversation-as-unread"
 export * from "./steps/mark-email-verified"
 export * from "./steps/moosend-create-contact"
 export * from "./steps/open-website"
 export * from "./steps/opt-in-email"
 export * from "./steps/opt-out-email"
 export * from "./steps/questionnaires"
+export * from "./steps/quick-reply-settings"
 export * from "./steps/remove-contact-tag"
 export * from "./steps/send-audio"
 export * from "./steps/send-card"
 export * from "./steps/send-carousel"
 export * from "./steps/send-file"
 export * from "./steps/send-gif"
+export * from "./steps/send-google-ads-conversion"
 export * from "./steps/send-image"
 export * from "./steps/send-messenger-message-template"
 export * from "./steps/send-meta-capi-event"
+export * from "./steps/send-multiple-images"
 export * from "./steps/send-quick-reply"
 export * from "./steps/send-text"
 export * from "./steps/send-video"
@@ -114,6 +154,9 @@ export * from "./steps/start-external-node"
 export * from "./steps/step-action"
 export * from "./steps/subscribe-broadcast"
 export * from "./steps/subscribe-sequence"
+export * from "./steps/template-parameter-values"
+export * from "./steps/template-start-step"
+export * from "./steps/thread-control"
 export * from "./steps/trigger-n8n"
 export * from "./steps/typing"
 export * from "./steps/unarchive-conversation"
@@ -128,9 +171,12 @@ export * from "./steps/wa-template-mpm-rules"
 export * from "./steps/wa-template-send-rules"
 export * from "./steps/wa-template-utils"
 export * from "./steps/wait"
+export * from "./steps/whatsapp-call-button"
 export * from "./steps/whatsapp-carousel-rules"
 export * from "./steps/whatsapp-flow"
+export * from "./steps/whatsapp-flow-utils"
 export * from "./steps/whatsapp-option-list"
+export * from "./template-structure"
 export * from "./types"
 export * from "./util"
 export * from "./validation-codes"

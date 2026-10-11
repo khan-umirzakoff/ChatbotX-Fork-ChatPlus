@@ -22,16 +22,18 @@ import { toast } from "sonner"
 import { useSequenceOptions } from "@/features/sequences/provider/sequence-hook"
 import { useWorkspaceId } from "@/hooks/routing"
 import { addContactSequenceAction } from "../actions/add-contact-sequence.action"
-import { addContactSequenceRequest } from "../schemas/contact-sequence"
+import { addContactSequenceRequest } from "../schema/contact-sequence"
 
 type AddContactSequenceDialogProps = {
   trigger: ReactElement
   ids: string[]
+  onSuccess?: () => void
 }
 
 export default function AddContactSequenceDialog({
   trigger,
   ids,
+  onSuccess,
 }: AddContactSequenceDialogProps) {
   const t = useTranslations()
   const [open, setOpen] = useState(false)
@@ -58,6 +60,7 @@ export default function AddContactSequenceDialog({
             )
             setOpen(false)
             resetFormAndAction()
+            onSuccess?.()
           },
           onError: ({ error }) => {
             if (error.serverError) {

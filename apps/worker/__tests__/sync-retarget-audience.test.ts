@@ -97,14 +97,17 @@ describe("handleSyncRetargetAudience", () => {
       phoneNumber: null,
     }))
     mocks.listRetargetContacts
-      .mockResolvedValueOnce(firstPage)
-      .mockResolvedValueOnce([
-        {
-          id: "ci-501",
-          email: null,
-          phoneNumber: "+12025550101",
-        },
-      ])
+      .mockResolvedValueOnce({ rows: firstPage, hasMore: true })
+      .mockResolvedValueOnce({
+        rows: [
+          {
+            id: "ci-501",
+            email: null,
+            phoneNumber: "+12025550101",
+          },
+        ],
+        hasMore: false,
+      })
 
     await handleSyncRetargetAudience(jobData)
 
@@ -143,9 +146,10 @@ describe("handleSyncRetargetAudience", () => {
   })
 
   test("terminal auth error marks the integration invalid and stops without throwing", async () => {
-    mocks.listRetargetContacts.mockResolvedValueOnce([
-      { id: "ci-1", email: "person@example.com", phoneNumber: null },
-    ])
+    mocks.listRetargetContacts.mockResolvedValueOnce({
+      rows: [{ id: "ci-1", email: "person@example.com", phoneNumber: null }],
+      hasMore: false,
+    })
     mocks.runAction.mockRejectedValueOnce(
       Object.assign(new Error("token expired"), { code: 190 }),
     )
@@ -157,9 +161,10 @@ describe("handleSyncRetargetAudience", () => {
   })
 
   test("retryable provider errors throw for BullMQ retry", async () => {
-    mocks.listRetargetContacts.mockResolvedValueOnce([
-      { id: "ci-1", email: "person@example.com", phoneNumber: null },
-    ])
+    mocks.listRetargetContacts.mockResolvedValueOnce({
+      rows: [{ id: "ci-1", email: "person@example.com", phoneNumber: null }],
+      hasMore: false,
+    })
     mocks.runAction.mockRejectedValueOnce(
       Object.assign(new Error("rate limited"), { httpStatusCode: 429 }),
     )
@@ -168,5 +173,31 @@ describe("handleSyncRetargetAudience", () => {
       "rate limited",
     )
     expect(mocks.markInvalid).not.toHaveBeenCalled()
+  })
+
+  test("threads channel + integrationMessengerId through to listRetargetContacts (Phase 3 widening)", async () => {
+    mocks.listRetargetContacts.mockResolvedValueOnce({
+      rows: [{ id: "ci-1", email: "person@example.com", phoneNumber: null }],
+      hasMore: false,
+    })
+
+    await handleSyncRetargetAudience({
+      workspaceId: "ws-1",
+      customAudienceId: "aud-1",
+      segment: "conversations" as const,
+      adId: null,
+      channel: "messenger" as const,
+      integrationMessengerId: "im-1",
+      since: "2026-08-01T00:00:00.000Z",
+      until: "2026-08-10T23:59:59.999Z",
+    })
+
+    expect(mocks.listRetargetContacts).toHaveBeenCalledWith(
+      expect.objectContaining({
+        channel: "messenger",
+        integrationMessengerId: "im-1",
+        integrationWhatsappId: undefined,
+      }),
+    )
   })
 })

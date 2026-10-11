@@ -7,7 +7,16 @@ import {
   liftDecompressionLimit,
   sql,
 } from "@chatbotx.io/database/client"
-import { channelTypes, ROOT_TENANT_ID } from "@chatbotx.io/database/partials"
+import {
+  channelTypes,
+  type InboxDisconnectReason,
+  ROOT_TENANT_ID,
+} from "@chatbotx.io/database/partials"
+import {
+  connectionRepository,
+  LIVE_RUN_STATUSES,
+  PULL_CLAIMABLE_STATUSES,
+} from "@chatbotx.io/database/repositories"
 import {
   attachmentModel,
   coexistSyncRunModel,
@@ -15,6 +24,7 @@ import {
   integrationMessengerModel,
   integrationSmtpModel,
   integrationTelegramModel,
+  integrationThreadsModel,
   integrationTiktokModel,
   integrationWebchatModel,
   integrationWhatsappModel,
@@ -34,6 +44,12 @@ import {
 } from "@chatbotx.io/sequence-scheduler/dispatch-cancel"
 import { BaseService } from "../base.service"
 import { coexistService } from "../coexist/service"
+import type { ConnectionEvent } from "../connection/state"
+import {
+  connectionStateService,
+  type PendingQuotaRelease,
+} from "../connection/state-service"
+import { WorkspacePurgeIncompleteError } from "../errors"
 import { inboxService } from "../inbox/service"
 import { integrationActiveCampaignService } from "../integration-active-campaign/service"
 import { integrationClaudeService } from "../integration-claude/service"
@@ -76,6 +92,21 @@ export type WorkspaceTeardownIntegrations = Record<
 >
 
 export type WorkspaceTeardownLevel = "pause" | "disconnect"
+
+/**
+ * `disconnectWorkspaceChannels`'s result: `pendingReleases` carries every
+ * `channels` quota release `connectionStateService.transition` deferred
+ * (via its `pendingRelease` handshake) across every connection-backed inbox
+ * this call processed — the caller must release each one (via
+ * `connectionStateService.releasePendingQuota`) only once `tx` (if the
+ * caller supplied its own) has actually committed; otherwise a later
+ * statement in that same transaction rolling back would under-count the
+ * release.
+ */
+export type WorkspaceChannelsTeardownResult = {
+  disconnected: number
+  pendingReleases: PendingQuotaRelease[]
+}
 
 /**
  * High-volume tables that carry a direct `workspaceId` FK, ordered
@@ -129,10 +160,11 @@ class WorkspaceLifecycleService extends BaseService {
   async disconnectWorkspaceChannels(props: {
     workspaceId: string
     ownerId: string
+    reason: InboxDisconnectReason
     integrations?: WorkspaceTeardownIntegrations
     teardownLevel?: WorkspaceTeardownLevel
     tx?: DatabaseClient
-  }): Promise<number> {
+  }): Promise<WorkspaceChannelsTeardownResult> {
     const { tx = db } = props
     const inboxes = await inboxService.listWithIntegrationsByWorkspace(
       props.workspaceId,
@@ -140,18 +172,21 @@ class WorkspaceLifecycleService extends BaseService {
     )
 
     let disconnected = 0
+    const pendingReleases: PendingQuotaRelease[] = []
     for (const inbox of inboxes) {
       await this.disconnectWorkspaceInbox({
         inbox,
         ownerId: props.ownerId,
+        reason: props.reason,
         integrations: props.integrations,
         teardownLevel: props.teardownLevel ?? "disconnect",
         tx,
+        pendingReleases,
       })
       disconnected += 1
     }
 
-    return disconnected
+    return { disconnected, pendingReleases }
   }
 
   async disconnectWorkspaceIntegrations(workspaceId: string): Promise<void> {
@@ -290,6 +325,10 @@ class WorkspaceLifecycleService extends BaseService {
           setTimeout(resolve, INTER_CHUNK_DELAY_MS),
         )
       }
+
+      if (await this.hasHeavyRows(table, props.workspaceId)) {
+        throw new WorkspacePurgeIncompleteError(props.workspaceId, table)
+      }
     }
 
     return totalDeleted
@@ -313,6 +352,19 @@ class WorkspaceLifecycleService extends BaseService {
       )
     `)
     return result.rowCount ?? 0
+  }
+
+  private async hasHeavyRows(
+    table: (typeof HEAVY_WORKSPACE_TABLES)[number],
+    workspaceId: string,
+  ): Promise<boolean> {
+    const result = await db.execute(sql`
+      SELECT 1
+      FROM ${sql.raw(`"${table}"`)}
+      WHERE "workspaceId" = ${workspaceId}
+      LIMIT 1
+    `)
+    return result.rows.length > 0
   }
 
   /**
@@ -378,6 +430,10 @@ class WorkspaceLifecycleService extends BaseService {
       await new Promise((resolve) => setTimeout(resolve, INTER_CHUNK_DELAY_MS))
     }
 
+    if (await this.hasHypertableRows(messageModel, workspaceId)) {
+      throw new WorkspacePurgeIncompleteError(workspaceId, "Message")
+    }
+
     // Pass 2: attachment-only conversations (attachments whose Message rows were
     // already gone) that pass 1 never enumerated.
     for (let batch = 0; batch < HYPERTABLE_MAX_CONVERSATION_BATCHES; batch++) {
@@ -394,31 +450,57 @@ class WorkspaceLifecycleService extends BaseService {
       await new Promise((resolve) => setTimeout(resolve, INTER_CHUNK_DELAY_MS))
     }
 
+    if (await this.hasHypertableRows(attachmentModel, workspaceId)) {
+      throw new WorkspacePurgeIncompleteError(workspaceId, "Attachment")
+    }
+
     return deleted
   }
 
+  private async hasHypertableRows(
+    model: typeof messageModel | typeof attachmentModel,
+    workspaceId: string,
+  ): Promise<boolean> {
+    const rows = await db
+      .selectDistinct({ conversationId: model.conversationId })
+      .from(model)
+      .where(eq(model.workspaceId, workspaceId))
+      .limit(1)
+    return rows.length > 0
+  }
+
+  /** Returns the ids of the owner's workspaces this call tore down, so callers that need to attribute a per-workspace side effect (e.g. audit rows) don't have to re-query. */
   async deactivateOwnerWorkspaces(props: {
     ownerId: string
+    reason: InboxDisconnectReason
     integrations?: WorkspaceTeardownIntegrations
     teardownLevel?: WorkspaceTeardownLevel
-  }): Promise<void> {
+  }): Promise<string[]> {
     const workspaces = await db.query.workspaceModel.findMany({
       where: { ownerId: props.ownerId },
       columns: { id: true, tenantId: true },
     })
 
     if (workspaces.length === 0) {
-      return
+      return []
     }
 
     const teardownLevel = props.teardownLevel ?? "pause"
     for (const workspace of workspaces) {
-      await this.disconnectWorkspaceChannels({
+      const { pendingReleases } = await this.disconnectWorkspaceChannels({
         integrations: props.integrations,
         teardownLevel,
+        reason: props.reason,
         workspaceId: workspace.id,
         ownerId: props.ownerId,
       })
+      // No enclosing transaction owns this call — nothing to wait on, so
+      // release each deferred `channels` quota unit right away (same
+      // timing `transition` used before the `pendingRelease` handshake
+      // existed).
+      for (const pendingRelease of pendingReleases) {
+        await connectionStateService.releasePendingQuota(pendingRelease)
+      }
       if (teardownLevel === "disconnect") {
         await this.disconnectWorkspaceIntegrations(workspace.id)
       }
@@ -428,20 +510,26 @@ class WorkspaceLifecycleService extends BaseService {
       props.ownerId,
       workspaces[0]?.tenantId ?? ROOT_TENANT_ID,
     )
+
+    return workspaces.map((workspace) => workspace.id)
   }
 
   private async disconnectWorkspaceInbox(props: {
     inbox: InboxWithIntegrations
     ownerId: string
+    reason: InboxDisconnectReason
     integrations?: WorkspaceTeardownIntegrations
     teardownLevel: WorkspaceTeardownLevel
     tx: DatabaseClient
+    /** Shared accumulator across every inbox `disconnectWorkspaceChannels` processes in this call — see `WorkspaceChannelsTeardownResult`. */
+    pendingReleases: PendingQuotaRelease[]
   }): Promise<void> {
-    const { inbox, ownerId, integrations, teardownLevel, tx } = props
+    const { inbox, ownerId, reason, integrations, teardownLevel, tx } = props
     const removeIntegrationRow = teardownLevel === "disconnect"
 
     const finish = async (disconnect?: WorkspaceTeardownIntegration) => {
       const auth = inboxToAuth(inbox)
+      let isTokenRevoked = false
       // Skip the provider call when the integration/auth row is already gone:
       // there are no credentials to disconnect with, and passing an undefined
       // auth crashes providers that read it (e.g. messenger/whatsapp reach into
@@ -450,7 +538,8 @@ class WorkspaceLifecycleService extends BaseService {
         try {
           await disconnect.disconnect(auth)
         } catch (err) {
-          if (!disconnect.isRevokedTokenError?.(err)) {
+          isTokenRevoked = Boolean(disconnect.isRevokedTokenError?.(err))
+          if (!isTokenRevoked) {
             logger.error(
               { err, inboxId: inbox.id, workspaceId: inbox.workspaceId },
               "workspace-teardown: provider disconnect failed",
@@ -459,14 +548,76 @@ class WorkspaceLifecycleService extends BaseService {
         }
       }
 
-      // Delegates to inboxService (already a dependency here) rather than
-      // calling quotaEnforcementService/workspaceUsageService directly: those
-      // import back through tenant/workspace services and would close a
-      // circular dependency with this module.
+      // A tenant-suspend teardown must stay on `teardown.pause` with
+      // `tenant_suspended` even when the provider call failed because the
+      // token was already revoked remotely: the suspend flow, not the
+      // provider response, decides pause vs. disconnect. Only non-suspend
+      // teardowns (trial expiry, purge, manual) adopt `token_revoked` as the
+      // more specific reason.
+      const resolvedReason =
+        isTokenRevoked && reason !== "tenant_suspended"
+          ? "token_revoked"
+          : reason
+
+      // This is the community-edition forensic trail: audit is gated off
+      // outside cloud/enterprise, so this structured log is the only record
+      // of an automated teardown on every edition.
+      logger.info(
+        {
+          inboxId: inbox.id,
+          workspaceId: inbox.workspaceId,
+          ownerId,
+          channel: inbox.channel,
+          teardownLevel,
+          reason: resolvedReason,
+        },
+        "workspace-teardown: inbox disconnected",
+      )
+
+      // Connection-backed inboxes route their local status write through the
+      // engine: `transition` already mirrors `Inbox.status` and
+      // consumes/releases `channels` quota exactly once, so calling
+      // `inboxService.disconnect` afterward would double-write both. A
+      // pre-backfill inbox (no `Connection` row yet) falls back to the
+      // legacy direct write — same pattern as `disconnectInbox`'s existing
+      // fallback in `ConnectionStateService`.
+      const connection = await connectionRepository.findByInboxId(
+        { inboxId: inbox.id },
+        tx,
+      )
+      if (connection) {
+        const event: ConnectionEvent =
+          resolvedReason === "tenant_suspended"
+            ? "teardown.pause"
+            : "teardown.disconnect"
+        // Deferred via the `pendingRelease` handshake: this call's `tx` may
+        // be a transaction a caller further up owns (one that does more
+        // work after this inbox, or after this call returns) — only that
+        // caller knows when it actually commits, so `disconnectWorkspaceChannels`
+        // bubbles this up through `pendingReleases` instead of releasing it
+        // here.
+        const pendingRelease: { current: PendingQuotaRelease | null } = {
+          current: null,
+        }
+        await connectionStateService.transition({
+          connectionId: connection.id,
+          event,
+          reason: resolvedReason,
+          ownerId,
+          tx,
+          pendingRelease,
+        })
+        if (pendingRelease.current) {
+          props.pendingReleases.push(pendingRelease.current)
+        }
+        return
+      }
+
       await inboxService.disconnect({
         inboxId: inbox.id,
         ownerId,
         workspaceId: inbox.workspaceId,
+        reason: resolvedReason,
         tx,
       })
     }
@@ -487,7 +638,7 @@ class WorkspaceLifecycleService extends BaseService {
                   coexistSyncRunModel.integrationId,
                   inbox.integrationMessenger.id,
                 ),
-                inArray(coexistSyncRunModel.status, ["init", "running"]),
+                inArray(coexistSyncRunModel.status, PULL_CLAIMABLE_STATUSES),
               ),
             )
           await tx
@@ -525,7 +676,11 @@ class WorkspaceLifecycleService extends BaseService {
                   coexistSyncRunModel.integrationId,
                   inbox.integrationWhatsapp.id,
                 ),
-                inArray(coexistSyncRunModel.status, ["init", "running"]),
+                // `waiting` included: a WhatsApp coexist run parked waiting for
+                // more Meta history must be torn down with its integration.
+                // The list comes from the repository constant so it can never
+                // drift from the one the flush and recovery passes use.
+                inArray(coexistSyncRunModel.status, LIVE_RUN_STATUSES),
               ),
             )
           await tx
@@ -608,6 +763,15 @@ class WorkspaceLifecycleService extends BaseService {
         await finish(integrations?.tiktok)
         return
       }
+      case channelTypes.enum.threads: {
+        if (removeIntegrationRow && inbox.integrationThreads) {
+          await tx
+            .delete(integrationThreadsModel)
+            .where(eq(integrationThreadsModel.id, inbox.integrationThreads.id))
+        }
+        await finish(integrations?.threads)
+        return
+      }
       case channelTypes.enum.webchat: {
         if (removeIntegrationRow && inbox.integrationWebchat) {
           await tx
@@ -650,6 +814,8 @@ const inboxToAuth = (inbox: InboxWithIntegrations): unknown => {
       return inbox.integrationSmtp?.auth
     case channelTypes.enum.instagram:
       return inbox.integrationInstagram?.auth
+    case channelTypes.enum.threads:
+      return inbox.integrationThreads?.auth
     default:
       return null
   }

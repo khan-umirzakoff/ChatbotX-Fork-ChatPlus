@@ -14,14 +14,15 @@ import {
 import { PlusIcon } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { useMemo } from "react"
-import { defaultFn as addTagsAction } from "./components/actions/schemas/add-tags"
-import { defaultFn as clearCustomFieldAction } from "./components/actions/schemas/clear-custom-field"
-import { defaultFn as removeTagsAction } from "./components/actions/schemas/remove-tags"
-import { defaultFn as runGoogleSheetAction } from "./components/actions/schemas/run-google-sheet"
-import { defaultFn as sendMetaCapiEventAction } from "./components/actions/schemas/send-meta-capi-event"
-import { defaultFn as setCustomFieldAction } from "./components/actions/schemas/set-custom-field"
-import { defaultFn as startFlowAction } from "./components/actions/schemas/start-flow"
-import { defaultFn as transferConversationToHumanAction } from "./components/actions/schemas/transfer-conversation-to-human"
+import { defaultFn as addTagsAction } from "./components/actions/schema/add-tags"
+import { defaultFn as clearCustomFieldAction } from "./components/actions/schema/clear-custom-field"
+import { defaultFn as removeTagsAction } from "./components/actions/schema/remove-tags"
+import { defaultFn as runGoogleSheetAction } from "./components/actions/schema/run-google-sheet"
+import { defaultFn as sendGoogleAdsConversionAction } from "./components/actions/schema/send-google-ads-conversion"
+import { defaultFn as sendMetaCapiEventAction } from "./components/actions/schema/send-meta-capi-event"
+import { defaultFn as setCustomFieldAction } from "./components/actions/schema/set-custom-field"
+import { defaultFn as startFlowAction } from "./components/actions/schema/start-flow"
+import { defaultFn as transferConversationToHumanAction } from "./components/actions/schema/transfer-conversation-to-human"
 
 type ActionOption = {
   label: string
@@ -34,6 +35,7 @@ type ActionOption = {
     | typeof startFlowAction
     | typeof transferConversationToHumanAction
     | typeof sendMetaCapiEventAction
+    | typeof sendGoogleAdsConversionAction
     | typeof runGoogleSheetAction
 }
 
@@ -79,6 +81,11 @@ export function AddAction({
         label: t("trigger.actions.sendMetaCapiEvent"),
         value: triggerActions.enum.sendMetaCapiEvent,
         defaultFn: sendMetaCapiEventAction,
+      },
+      {
+        label: t("trigger.actions.sendGoogleAdsConversion"),
+        value: triggerActions.enum.sendGoogleAdsConversion,
+        defaultFn: sendGoogleAdsConversionAction,
       },
       {
         label: "Google Sheets",

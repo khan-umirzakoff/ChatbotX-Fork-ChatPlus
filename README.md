@@ -14,6 +14,9 @@
   </a>
 </p>
 
+<h3 align="center"><strong><a href="https://chatbotx.io/lifetime/?ref=github">NEW: Get a Lifetime Deal on ChatbotX Cloud</a></strong></h3>
+<h3 align="center"><strong><a href="https://github.com/ChatbotXIO/chatbotx-agent">NEW: get 500+ MCP and CLI Tools for Your AI Agents</a></strong></h3>
+
 <p align="center">
   <strong>Agentic chat marketing platform built for OpenClaw, Hermes, and Claude</strong>
   <br>
@@ -28,8 +31,6 @@
   <a href="https://chatbotx.io/docs" rel="dofollow">Docs</a>
   |
   <a href="https://discord.chatbotx.io/">Discord</a>
-  |
-  <a href="https://www.g2.com/products/chatbotx/take_survey" target="_blank" rel="dofollow">View G2 Reviews</a>
 </p>
 
 <p align="center">
@@ -54,6 +55,11 @@
     <source media="(prefers-color-scheme: light)" srcset=".github/assets/readme/tiktok-light.svg">
     <img alt="TikTok" src=".github/assets/readme/tiktok-light.svg" width="32">
   </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/threads-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset=".github/assets/readme/threads-light.svg">
+    <img alt="Threads" src=".github/assets/readme/threads-light.svg" width="32">
+  </picture>
   <img alt="Email" src=".github/assets/readme/email.svg" width="32">
   <img alt="Website" src=".github/assets/readme/website.svg" width="32">
 </p>
@@ -74,6 +80,12 @@
 </p>
 
 <p align="center">
+  <a href="https://chatbotx.io/docs/integrations/n8n">N8N custom node</a>
+  ·
+  <a href="https://chatbotx.io/docs/integrations/make">Make.com integration</a>
+</p>
+
+<p align="center">
   <a href="https://www.youtube.com/watch?v=b1NUlA-fIzw" target="_blank">
     <img alt="ChatbotX Omnichannel" src=".github/assets/readme/chatbotx-hero.png?v=1786238500653">
   </a>
@@ -81,7 +93,7 @@
 
 ## ✨ Features
 
-- **Omnichannel:** WhatsApp, Facebook, Instagram, TikTok, Telegram, Zalo, Email, API, and Webchat
+- **Omnichannel:** WhatsApp, Facebook, Instagram, Threads, TikTok, Telegram, Zalo, Email, API, and Webchat
 - **Visual Flow Builder:** Drag-and-drop chatbot builder with 15+ node types
 - **AI Agents:** OpenAI, Claude, Gemini, DeepSeek, OpenRouter, NVIDIA NIM, and Local LLMs
 - **Live Chat Inbox:** Real-time inbox with human takeover and conversation assignment
@@ -91,10 +103,11 @@
 - **Team Management:** Invite team members, assign roles, and manage permissions
 - **Rich Messaging:** Media, files, buttons, quick replies, catalogs, locations, and carousel cards
 - **Comment-to-DM:** Automatically message users who comment with specific keywords
+- **Comment Automation:** Auto-reply, like, and hide comments on Messenger, Instagram, Threads, and TikTok posts (on Threads: public reply and hide only — it has no DM or like API)
 - **A/B Testing:** Test and optimize different message flows
 - **Triggers:** Execute actions based on events within your bot
 - **Webhooks & HTTP:** Integrate external APIs directly into your flows
-- **Growth Tools:** Create engaging minigames and interactive experiences
+- **Growth Tools:** Generate conversation starter links for each platform
 - **Analytics:** Track performance metrics, user engagement, and campaign results
 - **APIs, CLI, and MCP:** Build advanced agent workflows with MCP-compatible clients
 
@@ -149,6 +162,7 @@ To have the project up and running, please follow the [Quick Start Guide](https:
 |   |-- whatsapp/
 |   |-- messenger/
 |   |-- instagram/
+|   |-- threads/
 |   |-- telegram/
 |   |-- zalo/
 |   |-- tiktok/
@@ -196,8 +210,8 @@ Useful package-level commands:
 pnpm --filter builder dev
 pnpm --filter worker dev
 pnpm --filter realtime dev
-pnpm --filter chatbotx-cli dev:cli
-pnpm --filter chatbotx-mcp-server dev:mcp
+pnpm --filter chatbotx dev:cli
+pnpm --filter chatbotx-mcp dev:mcp
 pnpm --filter @chatbotx.io/database db:studio
 ```
 
@@ -220,9 +234,3 @@ We're also working hard to bring open-source mobile apps to **iOS and Android** 
 ## License
 
 ChatbotX' Community Edition is released as open source under the [MIT License](https://github.com/ChatbotXIO/ChatbotX/blob/main/LICENSE) and enterprise features are released under [Commercial License](https://github.com/ChatbotXIO/ChatbotX/blob/main/apps/builder/src/enterprise/LICENSE)
-
-<br /><br /><br />
-
-<p align="center">
-  <a href="https://www.g2.com/products/chatbotx/take_survey" target="_blank" rel="dofollow"><img alt="g2" src="https://github.com/user-attachments/assets/892cb74c-0b49-4589-b2f5-fbdbf7a98f66" /></a>
-</p>

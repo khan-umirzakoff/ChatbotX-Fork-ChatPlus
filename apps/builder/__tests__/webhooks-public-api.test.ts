@@ -1,0 +1,279 @@
+import { beforeEach, describe, expect, test, vi } from "vitest"
+
+type RouteConfig = {
+  method: string
+  path: string
+  summary: string
+  tags: string[]
+  successStatus?: number
+}
+
+type CapturedProcedure = {
+  route: RouteConfig
+  handler?: (...args: any[]) => any
+}
+
+const { workspaceTokenAuthAPIForScope, capturedProcedures } = vi.hoisted(() => {
+  const capturedProcedures: CapturedProcedure[] = []
+
+  const makeProcedure = (route: RouteConfig) => {
+    const record: CapturedProcedure = { route }
+    capturedProcedures.push(record)
+
+    const chain = {
+      input: vi.fn(() => chain),
+      output: vi.fn(() => chain),
+      errors: vi.fn(() => chain),
+      handler: vi.fn((fn: (...args: any[]) => any) => {
+        record.handler = fn
+        return { handler: fn }
+      }),
+    }
+    return chain
+  }
+
+  const workspaceTokenAuthAPI = {
+    route: vi.fn((config: RouteConfig) => makeProcedure(config)),
+  }
+
+  return {
+    workspaceTokenAuthAPIForScope: vi.fn(
+      (_scope: string) => workspaceTokenAuthAPI,
+    ),
+    capturedProcedures,
+  }
+})
+
+vi.mock("@/orpc", () => ({ workspaceTokenAuthAPIForScope }))
+
+const webhookService = {
+  list: vi.fn(),
+  register: vi.fn(),
+  unregister: vi.fn(),
+  findWithConditionsOrFail: vi.fn(),
+  updateWithConditions: vi.fn(),
+  updateSettings: vi.fn(),
+  deleteMany: vi.fn(),
+}
+vi.mock("@chatbotx.io/business", () => ({ webhookService }))
+
+vi.mock("@chatbotx.io/database/schema", () => {
+  const schema = {
+    parse: vi.fn((value: unknown) => value),
+    pick: vi.fn(() => schema),
+    extend: vi.fn(() => schema),
+    omit: vi.fn(() => schema),
+  }
+  return {
+    createSelectSchema: vi.fn(() => schema),
+    webhookModel: {},
+  }
+})
+
+await import("@/features/webhooks/api/public")
+
+const findProcedure = (method: string, path: string) => {
+  const found = capturedProcedures.find(
+    (p) => p.route.method === method && p.route.path === path,
+  )
+  if (!found) {
+    throw new Error(`No procedure registered for ${method} ${path}`)
+  }
+  return found
+}
+
+// Captured before the first beforeEach's clearAllMocks() erases the
+// import-time call record — the router calls
+// workspaceTokenAuthAPIForScope("integrations") exactly once, at module load
+// (line 59 above), never again during the test run.
+const scopeArgAtImport = workspaceTokenAuthAPIForScope.mock.calls[0]?.[0]
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
+
+test("registers the webhooks public router under the integrations scope", () => {
+  expect(scopeArgAtImport).toBe("integrations")
+})
+
+describe("GET /v1/webhooks", () => {
+  const procedure = findProcedure("GET", "/v1/webhooks")
+
+  test("route metadata", () => {
+    expect(procedure.route).toEqual(
+      expect.objectContaining({ method: "GET", path: "/v1/webhooks" }),
+    )
+  })
+
+  test("delegates to webhookService.list", async () => {
+    webhookService.list.mockResolvedValueOnce({
+      data: [{ id: "webhook-1" }],
+      pageCount: 1,
+    })
+
+    await expect(
+      procedure.handler?.({
+        context: { workspace: { id: "workspace-1" } },
+        input: { page: 1, perPage: 50 },
+      }),
+    ).resolves.toEqual({ data: [{ id: "webhook-1" }], pageCount: 1 })
+
+    expect(webhookService.list).toHaveBeenCalledWith({
+      workspaceId: "workspace-1",
+      page: 1,
+      perPage: 50,
+    })
+  })
+})
+
+describe("POST /v1/webhooks", () => {
+  const procedure = findProcedure("POST", "/v1/webhooks")
+
+  test("route metadata", () => {
+    expect(procedure.route).toEqual(
+      expect.objectContaining({
+        method: "POST",
+        path: "/v1/webhooks",
+        successStatus: 201,
+      }),
+    )
+  })
+
+  test("passes conditions through unmapped and delegates to webhookService.register", async () => {
+    // `register` normalizes each condition's columns (`?? null` defaults)
+    // internally now — the handler forwards conditions as-is.
+    webhookService.register.mockResolvedValueOnce({ id: "webhook-1" })
+    const conditions = [
+      { type: "newContact" },
+      { type: "tagApplied", sourceId: "tag-1" },
+    ]
+
+    const result = await procedure.handler?.({
+      context: { workspace: { id: "workspace-1" } },
+      input: {
+        name: "n8n trigger",
+        url: "https://n8n.example.com/webhook/abc",
+        conditions,
+      },
+    })
+
+    expect(result).toEqual({ id: "webhook-1" })
+    expect(webhookService.register).toHaveBeenCalledWith({
+      workspaceId: "workspace-1",
+      name: "n8n trigger",
+      url: "https://n8n.example.com/webhook/abc",
+      conditions,
+    })
+  })
+})
+
+describe("DELETE /v1/webhooks/{id}", () => {
+  const procedure = findProcedure("DELETE", "/v1/webhooks/{id}")
+
+  test("route metadata", () => {
+    expect(procedure.route).toEqual(
+      expect.objectContaining({
+        method: "DELETE",
+        path: "/v1/webhooks/{id}",
+        successStatus: 204,
+      }),
+    )
+  })
+
+  test("delegates to webhookService.unregister", async () => {
+    webhookService.unregister.mockResolvedValueOnce(undefined)
+
+    await procedure.handler?.({
+      context: { workspace: { id: "workspace-1" } },
+      input: { id: "webhook-1" },
+    })
+
+    expect(webhookService.unregister).toHaveBeenCalledWith({
+      workspaceId: "workspace-1",
+      id: "webhook-1",
+    })
+  })
+})
+
+const context = { workspace: { id: "workspace-1" } }
+const webhook = { id: "wh-1", url: "https://example.com", conditions: [] }
+
+describe("GET /v1/webhooks/{id}", () => {
+  test("reads the webhook with its conditions in the token workspace", async () => {
+    webhookService.findWithConditionsOrFail.mockResolvedValueOnce(webhook)
+
+    await expect(
+      findProcedure("GET", "/v1/webhooks/{id}").handler?.({
+        context,
+        input: { id: "wh-1" },
+      }),
+    ).resolves.toEqual(webhook)
+    expect(webhookService.findWithConditionsOrFail).toHaveBeenCalledWith({
+      workspaceId: "workspace-1",
+      id: "wh-1",
+    })
+  })
+})
+
+describe("PUT /v1/webhooks/{id}", () => {
+  const procedure = findProcedure("PUT", "/v1/webhooks/{id}")
+  const input = {
+    id: "wh-1",
+    url: "https://example.com/new",
+    conditions: [{ type: "newContact" }],
+  }
+
+  test("replaces url and conditions in the token workspace", async () => {
+    webhookService.updateWithConditions.mockResolvedValueOnce({ id: "wh-1" })
+    webhookService.findWithConditionsOrFail.mockResolvedValueOnce(webhook)
+
+    await procedure.handler?.({ context, input })
+
+    expect(webhookService.updateWithConditions).toHaveBeenCalledWith({
+      workspaceId: "workspace-1",
+      id: "wh-1",
+      url: "https://example.com/new",
+      conditions: [{ type: "newContact" }],
+    })
+  })
+
+  test("404s when the webhook is not in the workspace", async () => {
+    webhookService.updateWithConditions.mockResolvedValueOnce(undefined)
+
+    await expect(procedure.handler?.({ context, input })).rejects.toMatchObject(
+      { code: "notFound" },
+    )
+  })
+})
+
+describe("PATCH /v1/webhooks/{id}/settings", () => {
+  test("patches name/active without touching url or conditions", async () => {
+    webhookService.findWithConditionsOrFail.mockResolvedValueOnce(webhook)
+
+    await findProcedure("PATCH", "/v1/webhooks/{id}/settings").handler?.({
+      context,
+      input: { id: "wh-1", active: false },
+    })
+
+    expect(webhookService.updateSettings).toHaveBeenCalledWith({
+      workspaceId: "workspace-1",
+      id: "wh-1",
+      active: false,
+    })
+    expect(webhookService.updateWithConditions).not.toHaveBeenCalled()
+  })
+})
+
+describe("POST /v1/webhooks/bulk-delete", () => {
+  test("deletes the given ids in the token workspace", async () => {
+    await findProcedure("POST", "/v1/webhooks/bulk-delete").handler?.({
+      context,
+      input: { ids: ["wh-1", "wh-2"] },
+    })
+
+    expect(webhookService.deleteMany).toHaveBeenCalledWith({
+      workspaceId: "workspace-1",
+      ids: ["wh-1", "wh-2"],
+    })
+  })
+})

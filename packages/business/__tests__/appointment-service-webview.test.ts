@@ -5,12 +5,15 @@ const mocks = vi.hoisted(() => ({
   transaction: vi.fn(),
   findBy: vi.fn(),
   create: vi.fn(),
+  contactFindByIdOrFail: vi.fn(),
+  conversationFindByOrFail: vi.fn(),
   list: vi.fn(),
   listByContact: vi.fn(),
   listFutureScheduledForContact: vi.fn(),
   cancelScheduled: vi.fn(),
   softDelete: vi.fn(),
   markCancelledByAppointment: vi.fn(),
+  contactInboxFindByIdForContact: vi.fn(),
   contactInboxFindByUncached: vi.fn(),
   defaultQueueRemove: vi.fn(),
   defaultQueueAdd: vi.fn(),
@@ -50,6 +53,10 @@ vi.mock("@chatbotx.io/database/repositories", () => ({
     markCancelledByAppointment: (...args: unknown[]) =>
       mocks.markCancelledByAppointment(...args),
   },
+  contactInboxRepository: {
+    findByIdForContact: (...args: unknown[]) =>
+      mocks.contactInboxFindByIdForContact(...args),
+  },
 }))
 
 vi.mock("@chatbotx.io/encryption", () => ({
@@ -59,7 +66,8 @@ vi.mock("@chatbotx.io/encryption", () => ({
   signAppointmentScheduleToken: vi.fn(async () => "schedule-token"),
 }))
 
-vi.mock("@chatbotx.io/redis", () => ({
+vi.mock("@chatbotx.io/redis", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
   invalidateCacheByTags: vi.fn(),
 }))
 
@@ -109,6 +117,20 @@ vi.mock("../src/contact-inbox/service", () => ({
   },
 }))
 
+vi.mock("../src/contact", () => ({
+  contactService: {
+    findByIdOrFail: (...args: unknown[]) =>
+      mocks.contactFindByIdOrFail(...args),
+  },
+}))
+
+vi.mock("../src/conversation", () => ({
+  conversationService: {
+    findByOrFail: (...args: unknown[]) =>
+      mocks.conversationFindByOrFail(...args),
+  },
+}))
+
 vi.mock("../src/platform/settings", () => ({
   resolveTenantSettings: vi.fn(async () => ({
     appUrl: "https://app.example.test",
@@ -116,6 +138,13 @@ vi.mock("../src/platform/settings", () => ({
 }))
 
 const { appointmentService } = await import("../src/appointment/service")
+
+// Defaults survive `vi.clearAllMocks()` (implementations are only removed by
+// `vi.resetAllMocks()`, which this file never calls) — set once so every
+// `bookAppointment` path below stays scoped-and-found unless a test overrides
+// it to exercise the not-found guard explicitly.
+mocks.contactFindByIdOrFail.mockResolvedValue({ id: "contact-1" })
+mocks.conversationFindByOrFail.mockResolvedValue({ id: "conversation-1" })
 
 const futureAppointment = {
   id: "appointment-1",
@@ -588,6 +617,7 @@ describe("appointmentService.completeWebviewBooking", () => {
     mocks.listFutureScheduledForContact.mockResolvedValue([])
     mocks.create.mockResolvedValue(createdAppointment)
     mocks.findBy.mockResolvedValue(fullAppointment)
+    mocks.contactInboxFindByIdForContact.mockResolvedValue(contactInbox)
     mocks.contactInboxFindByUncached.mockResolvedValue(contactInbox)
     mocks.defaultQueueAdd.mockResolvedValue(undefined)
     mocks.chatQueueAdd.mockResolvedValue(undefined)
@@ -754,6 +784,57 @@ describe("appointmentService.completeWebviewBooking", () => {
     ).rejects.toMatchObject({ code: "slotUnavailable" })
 
     expect(mocks.generateAvailableSlots).not.toHaveBeenCalled()
+    expect(mocks.create).not.toHaveBeenCalled()
+  })
+
+  test("rejects a foreign-workspace contactId before touching availability or the transaction", async () => {
+    mocks.contactFindByIdOrFail.mockRejectedValueOnce(
+      new Error("Contact not found"),
+    )
+
+    await expect(
+      appointmentService.bookAppointment({
+        workspaceId: "workspace-1",
+        calendarId: "calendar-1",
+        contactId: "contact-from-workspace-2",
+        startAt: new Date("2099-01-01T10:00:00.000Z"),
+        inviteeTimezone: "UTC",
+      }),
+    ).rejects.toThrow("Contact not found")
+
+    expect(mocks.contactFindByIdOrFail).toHaveBeenCalledWith({
+      workspaceId: "workspace-1",
+      id: "contact-from-workspace-2",
+    })
+    expect(mocks.prepareAvailabilityContext).not.toHaveBeenCalled()
+    expect(mocks.transaction).not.toHaveBeenCalled()
+    expect(mocks.create).not.toHaveBeenCalled()
+  })
+
+  test("rejects a foreign-workspace conversationId before touching availability or the transaction", async () => {
+    mocks.conversationFindByOrFail.mockRejectedValueOnce(
+      new Error("Conversation not found"),
+    )
+
+    await expect(
+      appointmentService.bookAppointment({
+        workspaceId: "workspace-1",
+        calendarId: "calendar-1",
+        contactId: "contact-1",
+        conversationId: "conversation-from-workspace-2",
+        startAt: new Date("2099-01-01T10:00:00.000Z"),
+        inviteeTimezone: "UTC",
+      }),
+    ).rejects.toThrow("Conversation not found")
+
+    expect(mocks.conversationFindByOrFail).toHaveBeenCalledWith({
+      where: {
+        workspaceId: "workspace-1",
+        id: "conversation-from-workspace-2",
+      },
+    })
+    expect(mocks.prepareAvailabilityContext).not.toHaveBeenCalled()
+    expect(mocks.transaction).not.toHaveBeenCalled()
     expect(mocks.create).not.toHaveBeenCalled()
   })
 

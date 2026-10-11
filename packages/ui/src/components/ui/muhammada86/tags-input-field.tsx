@@ -1,6 +1,7 @@
 "use client";
 
-// Locally patched for RTL; reapply after refreshing from the upstream shadcn registry.
+// Locally patched for RTL and to keep autoFocus off by default; reapply after
+// refreshing from the upstream shadcn registry.
 
 import {
   FormControl,
@@ -48,6 +49,8 @@ interface TagsInputFieldProps<TFieldValues extends FieldValues> {
   variant?: "default" | "enterprise" | "minimal";
   tagVariant?: "default" | "secondary" | "outline" | "destructive";
   onSelect?: (tags: string[]) => void;
+  /** Rewrites a tag before it is added, e.g. `https://shop.com/` → `shop.com`. */
+  transformTag?: (tag: string) => string;
 }
 
 const TagsInputFieldBase = <TFieldValues extends FieldValues>({
@@ -61,7 +64,7 @@ const TagsInputFieldBase = <TFieldValues extends FieldValues>({
   className,
   maxTags,
   maxLength = 100,
-  autoFocus = true,
+  autoFocus = false,
   startIcon,
   endIcon,
   allowDuplicates = false,
@@ -69,6 +72,7 @@ const TagsInputFieldBase = <TFieldValues extends FieldValues>({
   variant = "enterprise",
   tagVariant = "default",
   onSelect,
+  transformTag,
 }: TagsInputFieldProps<TFieldValues>) => {
   const { control } = useFormContext();
   const [inputValue, setInputValue] = useState("");
@@ -106,7 +110,7 @@ const TagsInputFieldBase = <TFieldValues extends FieldValues>({
     currentTags: string[],
     onChange: (tags: string[]) => void
   ) => {
-    const trimmedTag = tag.trim();
+    const trimmedTag = (transformTag ? transformTag(tag) : tag).trim();
     if (!trimmedTag) return;
 
     if (!allowDuplicates && currentTags.includes(trimmedTag)) return;

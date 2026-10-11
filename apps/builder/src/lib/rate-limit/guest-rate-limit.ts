@@ -15,6 +15,8 @@ type GuestRateLimitInput = {
   webchatId: string
   clientIp: string
   guestConversationId?: string | null
+  ipLimit?: number
+  sessionLimit?: number
   store?: RateLimitStore
   now?: number
 }
@@ -74,6 +76,8 @@ export const checkGuestRateLimit = async ({
   webchatId,
   clientIp,
   guestConversationId,
+  ipLimit = IP_LIMIT,
+  sessionLimit = SESSION_LIMIT,
   store = distributedStore,
   now = Date.now(),
 }: GuestRateLimitInput): Promise<GuestRateLimitResult> => {
@@ -86,7 +90,7 @@ export const checkGuestRateLimit = async ({
 
   try {
     const ipCount = await incrementWindowCounter(store, ipKey, WINDOW_SECONDS)
-    if (ipCount > IP_LIMIT) {
+    if (ipCount > ipLimit) {
       return { limited: true, retryAfter }
     }
 
@@ -96,7 +100,7 @@ export const checkGuestRateLimit = async ({
         sessionKey,
         WINDOW_SECONDS,
       )
-      if (sessionCount > SESSION_LIMIT) {
+      if (sessionCount > sessionLimit) {
         return { limited: true, retryAfter }
       }
     }
@@ -108,7 +112,7 @@ export const checkGuestRateLimit = async ({
       "Guest rate limit store failed, using local fallback",
     )
     const ipCount = incrementMemoryWindowCounter(ipKey, WINDOW_SECONDS)
-    if (ipCount > IP_LIMIT) {
+    if (ipCount > ipLimit) {
       return { limited: true, retryAfter }
     }
 
@@ -117,7 +121,7 @@ export const checkGuestRateLimit = async ({
         sessionKey,
         WINDOW_SECONDS,
       )
-      if (sessionCount > SESSION_LIMIT) {
+      if (sessionCount > sessionLimit) {
         return { limited: true, retryAfter }
       }
     }
@@ -125,6 +129,12 @@ export const checkGuestRateLimit = async ({
     return { limited: false, retryAfter }
   }
 }
+
+// What `getGuestClientIp` returns when no proxy header identifies the caller
+// at all — every such request shares one rate-limit bucket, so a caller that
+// has a better per-client identity of its own should substitute it via
+// `resolveGuestRateLimitKey`.
+export const UNKNOWN_CLIENT_IP = "unknown"
 
 // Trusts the first `x-forwarded-for` hop as the client IP. This is only
 // correct behind a proxy that overwrites (not appends to) the header before
@@ -135,8 +145,26 @@ export const checkGuestRateLimit = async ({
 export const getGuestClientIp = (headers: Headers) => {
   const forwardedFor = headers.get("x-forwarded-for")
   if (forwardedFor) {
-    return forwardedFor.split(",")[0]?.trim() || "unknown"
+    return forwardedFor.split(",")[0]?.trim() || UNKNOWN_CLIENT_IP
   }
 
-  return headers.get("x-real-ip")?.trim() || "unknown"
+  return headers.get("x-real-ip")?.trim() || UNKNOWN_CLIENT_IP
+}
+
+/**
+ * The `clientIp` bucket key for a guest endpoint that can identify its caller
+ * without a proxy header.
+ *
+ * Deployments with no header-setting proxy hand every request the same
+ * `UNKNOWN_CLIENT_IP`, which collapses all callers into a single bucket and
+ * makes a busy endpoint 429 for everyone. `fallbackKey` should be an
+ * identity the caller cannot forge — a value read out of a signed token,
+ * never anything taken straight from request input.
+ */
+export const resolveGuestRateLimitKey = (
+  headers: Headers,
+  fallbackKey: string,
+) => {
+  const clientIp = getGuestClientIp(headers)
+  return clientIp === UNKNOWN_CLIENT_IP ? fallbackKey : clientIp
 }

@@ -14,8 +14,8 @@ export type SequenceStepEventType = z.infer<typeof sequenceStepEventTypes>
 
 export const getSequenceStepStatsRequest = z.object({
   workspaceId: z.string(),
-  sequenceId: z.string(),
-  stepId: z.string(),
+  sequenceId: z.string().describe("Sequence id. Get it from `sequences.list`."),
+  stepId: z.string().describe("Sequence step id."),
 })
 
 export type GetSequenceStepStatsRequest = z.infer<
@@ -40,7 +40,6 @@ export const listSequenceStepContactsRequest = z.object({
   sequenceId: z.string(),
   stepId: z.string(),
   eventType: sequenceStepEventTypes,
-  total: z.number().optional(),
   page: z.number().default(1),
   perPage: z.number().default(20),
 })

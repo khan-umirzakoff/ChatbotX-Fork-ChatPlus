@@ -1,20 +1,12 @@
 import {
-  and,
-  db,
-  eq,
-  findOrFail,
-  inArray,
-  lt,
-  ne,
-  or,
-  sql,
-} from "@chatbotx.io/database/client"
-import {
-  coexistSyncRunModel,
-  contactInboxModel,
-  conversationModel,
-  inboxModel,
-} from "@chatbotx.io/database/schema"
+  coexistImportService,
+  coexistService,
+  messengerIntegrationService,
+  workspaceService,
+} from "@chatbotx.io/business"
+import { logProviderError } from "@chatbotx.io/business/error-log"
+import { findOrFail } from "@chatbotx.io/database/client"
+import { inboxModel } from "@chatbotx.io/database/schema"
 import {
   listConversations,
   type MessengerConversation,
@@ -30,7 +22,6 @@ import {
   integrationQueue,
 } from "@chatbotx.io/worker-config"
 import pLimit from "p-limit"
-import { z } from "zod"
 import { logger } from "../../../lib/logger"
 import {
   applyCoexistActivityUpdates,
@@ -41,22 +32,15 @@ import {
   createHistoricalIdFactory,
   maxNumericId,
 } from "./bulk-historical-import"
+import { filterConversationWindow } from "./conversation-window"
 import {
   fetchConvMessages,
+  messengerAuthSchema,
+  participantSourceId,
   STORE_WINDOW_MS,
   splitName,
   withInlineRetry,
 } from "./messenger-helpers"
-
-const messengerAuthSchema = z
-  .object({
-    tokens: z.object({ accessToken: z.string() }).passthrough(),
-    metadata: z
-      .object({ version: z.string().optional() })
-      .passthrough()
-      .optional(),
-  })
-  .passthrough()
 
 /** Default Graph concurrency when BUC usage signals "plenty of budget". */
 const DEFAULT_CONCURRENCY = 5
@@ -66,33 +50,6 @@ const DEFAULT_CONCURRENCY = 5
  * either hot-chains a continuation enqueue or yields to the scheduler.
  */
 const CHUNK_BUDGET_MS = 4 * 60 * 1000
-
-/**
- * Resolves the per-integration resume ceiling from the most recent prior
- * `CoexistSyncRun` row. See bulk-historical-import for full semantics.
- */
-async function fetchPriorRunCeiling(
-  integrationId: string,
-  currentRunId: string,
-): Promise<Date | null> {
-  const priorRun = await db.query.coexistSyncRunModel.findFirst({
-    where: {
-      integrationId,
-      channel: "messenger",
-      status: { in: ["succeeded", "partial"] },
-      id: { ne: currentRunId },
-    },
-    orderBy: { startedAt: "desc" },
-    columns: { startedAt: true, lastSyncedAt: true, status: true },
-  })
-  if (!priorRun) {
-    return null
-  }
-  if (priorRun.status === "succeeded") {
-    return priorRun.startedAt ?? null
-  }
-  return priorRun.lastSyncedAt ?? priorRun.startedAt ?? null
-}
 
 type ConvFilter = {
   convsToProcess: MessengerConversation[]
@@ -104,6 +61,11 @@ type ConvFilter = {
  * Apply within-run frontier + cross-run ceiling filters to one Graph
  * conversations page. Shared by both phases since each phase walks
  * `/conversations` DESC and tracks its own `lastSyncedAt` watermark.
+ *
+ * Thin wrapper preserving the original positional signature/shape over the
+ * generic `filterConversationWindow` (moved to `./conversation-window.ts` in
+ * Phase 4a of the Automatic Customer Scan plan so the scan engine can reuse
+ * the same window logic) — call sites and tests are unchanged.
  */
 function filterConversations(
   conversations: MessengerConversation[],
@@ -111,50 +73,19 @@ function filterConversations(
   ceiling: Date | null,
   currentOldest: Date | null,
 ): ConvFilter {
-  let stopAll = false
-  let oldestConvProcessed = currentOldest
-  const convsToProcess: MessengerConversation[] = []
-
-  for (const conv of conversations) {
-    const convTime = conv.updated_time ? new Date(conv.updated_time) : null
-
-    // No timestamp = can't position vs frontier/ceiling and can't update
-    // watermark. Skip — Graph rarely returns this, and importing without
-    // ordering risks re-import on every run (M1).
-    if (!convTime) {
-      continue
-    }
-
-    if (ceiling && convTime <= ceiling) {
-      stopAll = true
-      break
-    }
-
-    if (frontier && convTime > frontier) {
-      continue
-    }
-
-    convsToProcess.push(conv)
-
-    if (oldestConvProcessed === null || convTime < oldestConvProcessed) {
-      oldestConvProcessed = convTime
-    }
+  const result = filterConversationWindow({
+    items: conversations,
+    getUpdatedAt: (conv) =>
+      conv.updated_time ? new Date(conv.updated_time) : null,
+    frontier,
+    ceiling,
+    currentOldest,
+  })
+  return {
+    convsToProcess: result.itemsToProcess,
+    stopAll: result.stopAll,
+    oldestConvProcessed: result.oldestProcessed,
   }
-
-  return { convsToProcess, stopAll, oldestConvProcessed }
-}
-
-const participantSourceId = (
-  conv: MessengerConversation,
-  pageId: string,
-): { sourceId: string; name?: string } | null => {
-  const participant = conv.participants?.data?.find(
-    (entry) => entry.id !== pageId,
-  )
-  if (!participant) {
-    return null
-  }
-  return { sourceId: participant.id, name: participant.name }
 }
 
 type SyncContext = {
@@ -236,14 +167,13 @@ async function walkConversationsPages(
     // final page and the loop will exit without a subsequent respectPause().
     await ctx.respectPause()
 
-    await db
-      .update(coexistSyncRunModel)
-      .set({
+    await coexistService.updateProgress({
+      runId,
+      fields: {
         currentStep: `phase=${phaseName} page ${pageNumber} — ${conversations.data.length} conversations`,
         lastHeartbeatAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(coexistSyncRunModel.id, runId))
+      },
+    })
 
     const filtered = filterConversations(
       conversations.data,
@@ -269,16 +199,12 @@ async function walkConversationsPages(
 
 /**
  * Phase 1 — walk `/me/conversations` DESC, dedup participants, bulk upsert
- * Contacts, dispatch avatar fetch jobs. Messages are NOT fetched here.
+ * Contacts. Messages are NOT fetched here; avatars hydrate lazily on view.
  */
 async function runContactsPhase(ctx: SyncContext): Promise<PhaseResult> {
   const { runId, workspaceId, pageId, inbox } = ctx
 
-  const [runRow] = await db
-    .select({ lastSyncedAt: coexistSyncRunModel.lastSyncedAt })
-    .from(coexistSyncRunModel)
-    .where(eq(coexistSyncRunModel.id, runId))
-    .limit(1)
+  const runRow = await coexistService.findLastSyncedAt({ runId })
 
   if (!runRow) {
     return { done: true, oldestConvProcessed: null, pageNumber: 0 }
@@ -321,59 +247,29 @@ async function runContactsPhase(ctx: SyncContext): Promise<PhaseResult> {
           importedContacts: 0,
           skippedContacts: 0,
           contactInboxIds: new Map(),
+          newContactInboxIds: new Map(),
         }
         ctx.errorRef.current = `phase=contacts page ${pageNumber} bulk import failed: ${errMsg}`
-      }
-
-      // Bulk-enqueue one avatar-mirror job per resolved contact.
-      if (pageResult.contactInboxIds.size > 0) {
-        const avatarJobs = Array.from(
-          pageResult.contactInboxIds,
-          ([sourceId, link]) => ({
-            name: IntegrationJobAction.updateContactAvatar,
-            data: {
-              type: IntegrationJobAction.updateContactAvatar,
-              data: {
-                workspaceId,
-                contactInboxId: link.contactInboxId,
-                sourceId,
-              },
-            },
-            opts: {
-              jobId: `update-avatar-${link.contactInboxId}`,
-              attempts: 2,
-              removeOnComplete: true,
-              removeOnFail: { count: 100 },
-            },
-          }),
-        )
-        try {
-          await integrationQueue.addBulk(avatarJobs)
-        } catch (error) {
-          logger.error(
-            { error, runId, pageNumber, jobCount: avatarJobs.length },
-            "[coexist] avatar addBulk failed — continuing run",
-          )
-        }
       }
 
       if (pageResult.failureReason) {
         ctx.errorRef.current = `phase=contacts page ${pageNumber}: ${pageResult.failureReason}`
       }
 
-      await db
-        .update(coexistSyncRunModel)
-        .set({
-          currentScan: sql`${coexistSyncRunModel.currentScan} + ${filtered.convsToProcess.length}`,
-          importedContactCount: sql`${coexistSyncRunModel.importedContactCount} + ${pageResult.importedContacts}`,
-          skippedCount: sql`${coexistSyncRunModel.skippedCount} + ${pageResult.skippedContacts}`,
+      await coexistService.incrementProgress({
+        runId,
+        increments: {
+          currentScan: filtered.convsToProcess.length,
+          importedContactCount: pageResult.importedContacts,
+          skippedCount: pageResult.skippedContacts,
+        },
+        fields: {
           lastSyncedAt: filtered.oldestConvProcessed,
           currentStep: `phase=contacts page ${pageNumber} processed`,
           currentError: ctx.errorRef.current ?? null,
           lastHeartbeatAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(coexistSyncRunModel.id, runId))
+        },
+      })
 
       return filtered.oldestConvProcessed
     },
@@ -389,11 +285,7 @@ async function runContactsPhase(ctx: SyncContext): Promise<PhaseResult> {
 async function runMessagesPhase(ctx: SyncContext): Promise<PhaseResult> {
   const { runId, workspaceId, pageId, inbox } = ctx
 
-  const [runRow] = await db
-    .select({ lastSyncedAt: coexistSyncRunModel.lastSyncedAt })
-    .from(coexistSyncRunModel)
-    .where(eq(coexistSyncRunModel.id, runId))
-    .limit(1)
+  const runRow = await coexistService.findLastSyncedAt({ runId })
 
   if (!runRow) {
     return { done: true, oldestConvProcessed: null, pageNumber: 0 }
@@ -425,24 +317,10 @@ async function runMessagesPhase(ctx: SyncContext): Promise<PhaseResult> {
       // Single JOIN resolves ContactInbox + Conversation in one round trip.
       const linkBySource = new Map<string, ContactImportLink>()
       if (sourceIds.length > 0) {
-        const rows = await db
-          .select({
-            sourceId: contactInboxModel.sourceId,
-            contactInboxId: contactInboxModel.id,
-            contactId: contactInboxModel.contactId,
-            conversationId: conversationModel.id,
-          })
-          .from(contactInboxModel)
-          .leftJoin(
-            conversationModel,
-            eq(conversationModel.contactId, contactInboxModel.contactId),
-          )
-          .where(
-            and(
-              eq(contactInboxModel.inboxId, inbox.id),
-              inArray(contactInboxModel.sourceId, sourceIds),
-            ),
-          )
+        const rows = await coexistImportService.listContactLinksBySourceIds({
+          inboxId: inbox.id,
+          sourceIds,
+        })
         for (const r of rows) {
           if (!r.conversationId) {
             continue
@@ -459,7 +337,6 @@ async function runMessagesPhase(ctx: SyncContext): Promise<PhaseResult> {
       let pageSkipped = 0
       let pageFailed = 0
       let pageOldest: Date | null = currentOldest
-      const pageAttachmentIds: string[] = []
       // Collected across all convs in this chunk, then flushed once per table
       // after the barrier — keeps the activity bumps out of the per-page loop.
       const activityUpdates: CoexistActivityUpdate[] = []
@@ -514,9 +391,6 @@ async function runMessagesPhase(ctx: SyncContext): Promise<PhaseResult> {
                   })
                   pageImported += result.importedMessages
                   pageSkipped += result.skippedMessages
-                  for (const id of result.insertedAttachmentIds) {
-                    pageAttachmentIds.push(id)
-                  }
                   if (
                     result.newestMessageAt &&
                     (!convNewest || convNewest < result.newestMessageAt)
@@ -580,53 +454,20 @@ async function runMessagesPhase(ctx: SyncContext): Promise<PhaseResult> {
       // One UPDATE per table for the whole chunk (not per conv/page in the loop).
       await applyCoexistActivityUpdates(activityUpdates, { workspaceId })
 
-      // Bulk-enqueue per-attachment download jobs. The handler is idempotent
-      // (prefix-checked + jobId-dedup'd), so a retry of this whole chunk
-      // re-enqueues the same jobIds harmlessly.
-      if (pageAttachmentIds.length > 0) {
-        try {
-          await integrationQueue.addBulk(
-            pageAttachmentIds.map((attachmentId) => ({
-              name: IntegrationJobAction.coexistAttachmentDownload,
-              data: {
-                type: IntegrationJobAction.coexistAttachmentDownload,
-                data: {
-                  attachmentId,
-                  workspaceId,
-                  channel: "messenger" as const,
-                  integrationId: ctx.integrationId,
-                },
-              },
-              opts: {
-                jobId: `att-${attachmentId}`,
-                attempts: 5,
-                backoff: { type: "exponential", delay: 30_000 },
-                removeOnComplete: true,
-                removeOnFail: { count: 100 },
-              },
-            })),
-          )
-        } catch (error) {
-          logger.error(
-            { error, runId, pageNumber, count: pageAttachmentIds.length },
-            "[coexist] Messenger attachment download enqueue failed — bytes left as pending",
-          )
-        }
-      }
-
-      await db
-        .update(coexistSyncRunModel)
-        .set({
-          importedMessageCount: sql`${coexistSyncRunModel.importedMessageCount} + ${pageImported}`,
-          skippedCount: sql`${coexistSyncRunModel.skippedCount} + ${pageSkipped}`,
-          failedCount: sql`${coexistSyncRunModel.failedCount} + ${pageFailed}`,
+      await coexistService.incrementProgress({
+        runId,
+        increments: {
+          importedMessageCount: pageImported,
+          skippedCount: pageSkipped,
+          failedCount: pageFailed,
+        },
+        fields: {
           lastSyncedAt: pageOldest,
           currentStep: `phase=messages page ${pageNumber} processed`,
           currentError: ctx.errorRef.current ?? null,
           lastHeartbeatAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .where(eq(coexistSyncRunModel.id, runId))
+        },
+      })
 
       return pageOldest
     },
@@ -636,8 +477,8 @@ async function runMessagesPhase(ctx: SyncContext): Promise<PhaseResult> {
 /**
  * Page-per-job historical Messenger sync. Splits into two sequential phases:
  *
- *  - **contacts** — walk `/me/conversations` DESC, dedup participants, bulk
- *    upsert Contacts, dispatch avatar fetch jobs. No `/messages` calls.
+ *  - **contacts** — walk `/me/conversations` DESC and bulk-upsert Contacts.
+ *    No `/messages` calls; avatars hydrate lazily on view.
  *  - **messages** — re-walk `/me/conversations` DESC; per conv, fetch
  *    `/messages`, run discovery, bulk-insert into the resolved contact.
  *
@@ -655,19 +496,14 @@ export const coexistMessengerSync = async (
   const jobStart = Date.now()
 
   const failRun = async (currentError: string): Promise<void> => {
-    await db
-      .update(coexistSyncRunModel)
-      .set({
-        status: "failed",
-        currentError,
-        finishedAt: new Date(),
-        updatedAt: new Date(),
-      })
-      .where(eq(coexistSyncRunModel.id, runId))
+    await coexistService.markFailed({ runId, currentError })
   }
 
-  const integration = await db.query.integrationMessengerModel.findFirst({
-    where: { id: integrationId },
+  // NO workspace scope — the mismatch branch below deliberately distinguishes
+  // "not found" from "workspaceId mismatch" (do NOT substitute a
+  // workspace-scoped lookup here, which would collapse that distinction).
+  const integration = await messengerIntegrationService.findById({
+    id: integrationId,
   })
   if (!integration) {
     logger.warn({ integrationId }, "[coexist] Messenger integration gone")
@@ -710,54 +546,30 @@ export const coexistMessengerSync = async (
     message: "Inbox not found",
   })
 
-  const workspace = await db.query.workspaceModel.findFirst({
-    where: { id: workspaceId },
-    columns: { targetCountry: true },
-  })
+  const workspace = await workspaceService.find({ where: { id: workspaceId } })
   const defaultCountry = workspace?.targetCountry ?? null
 
-  const [initRow] = await db
-    .select({
-      attempts: coexistSyncRunModel.attempts,
-      currentError: coexistSyncRunModel.currentError,
-      messengerSyncPhase: coexistSyncRunModel.messengerSyncPhase,
-    })
-    .from(coexistSyncRunModel)
-    .where(eq(coexistSyncRunModel.id, runId))
-    .limit(1)
+  const initRow = await coexistService.findInitState({ runId })
 
   if (!initRow) {
     logger.warn({ runId }, "[coexist] CoexistSyncRun row gone — abandoning")
     return
   }
 
-  const ceiling = await fetchPriorRunCeiling(integrationId, runId)
+  const ceiling = await coexistService.findResumeCeiling({
+    integrationId,
+    channel: "messenger",
+    currentRunId: runId,
+  })
   const attempts = initRow.attempts
 
   // Optimistic claim: only one worker may flip status→running at a time.
-  const claimed = await db
-    .update(coexistSyncRunModel)
-    .set({
-      status: "running",
-      startedAt: sql`COALESCE(${coexistSyncRunModel.startedAt}, NOW())`,
-      lastHeartbeatAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(coexistSyncRunModel.id, runId),
-        or(
-          ne(coexistSyncRunModel.status, "running"),
-          lt(
-            coexistSyncRunModel.lastHeartbeatAt,
-            sql`NOW() - INTERVAL '10 minutes'`,
-          ),
-        ),
-      ),
-    )
-    .returning({ id: coexistSyncRunModel.id })
+  const claimedRun = await coexistService.reclaimRunForRetry({
+    runId,
+    touchUpdatedAt: true,
+  })
 
-  if (claimed.length === 0) {
+  if (!claimedRun) {
     logger.warn(
       { runId, integrationId },
       "[coexist] Messenger run already claimed by another worker — abandoning",
@@ -852,16 +664,15 @@ export const coexistMessengerSync = async (
           break
         }
         // Transition to phase 2 — reset frontier so messages walks from newest.
-        await db
-          .update(coexistSyncRunModel)
-          .set({
+        await coexistService.updateProgress({
+          runId,
+          fields: {
             messengerSyncPhase: "messages",
             lastSyncedAt: null,
             currentStep: "contacts done — start message phase",
             lastHeartbeatAt: new Date(),
-            updatedAt: new Date(),
-          })
-          .where(eq(coexistSyncRunModel.id, runId))
+          },
+        })
         currentPhase = "messages"
         continue
       }
@@ -875,23 +686,15 @@ export const coexistMessengerSync = async (
       }
 
       // Both phases complete — derive terminal status from counters.
-      const [terminal] = await db
-        .select({
-          importedMessages: coexistSyncRunModel.importedMessageCount,
-          skipped: coexistSyncRunModel.skippedCount,
-          failed: coexistSyncRunModel.failedCount,
-        })
-        .from(coexistSyncRunModel)
-        .where(eq(coexistSyncRunModel.id, runId))
-        .limit(1)
+      const terminal = await coexistService.findTerminalCounters({ runId })
 
       if (
         terminal &&
-        terminal.failed > 0 &&
-        (terminal.importedMessages > 0 || terminal.skipped > 0)
+        terminal.failedCount > 0 &&
+        (terminal.importedMessageCount > 0 || terminal.skippedCount > 0)
       ) {
         finalStatus = "partial"
-      } else if (terminal && terminal.failed > 0) {
+      } else if (terminal && terminal.failedCount > 0) {
         finalStatus = "failed"
       } else {
         finalStatus = "succeeded"
@@ -923,14 +726,10 @@ export const coexistMessengerSync = async (
           { error, runId },
           "[coexist] Messenger continuation enqueue failed — fallback to scheduler",
         )
-        await db
-          .update(coexistSyncRunModel)
-          .set({
-            status: "init",
-            lastHeartbeatAt: new Date(),
-            updatedAt: new Date(),
-          })
-          .where(eq(coexistSyncRunModel.id, runId))
+        await coexistService.updateProgress({
+          runId,
+          fields: { status: "init", lastHeartbeatAt: new Date() },
+        })
       }
     }
   } catch (error) {
@@ -940,19 +739,25 @@ export const coexistMessengerSync = async (
         ? error.message
         : "Unknown error during Messenger sync"
     logger.error(error, "[coexist] Messenger sync encountered fatal error")
+    // `messenger`, not `whatsapp`: coexist spans three channels and each sync
+    // entry point must report the channel it actually pulled from.
+    await logProviderError({
+      provider: "messenger",
+      workspaceId,
+      error,
+    })
   } finally {
     if (finalStatus !== null) {
-      await db
-        .update(coexistSyncRunModel)
-        .set({
+      await coexistService.updateProgress({
+        runId,
+        fields: {
           status: finalStatus,
           finishedAt: new Date(),
           lastHeartbeatAt: new Date(),
           currentStep: "done",
           currentError: errorRef.current ?? null,
-          updatedAt: new Date(),
-        })
-        .where(eq(coexistSyncRunModel.id, runId))
+        },
+      })
     }
   }
 

@@ -62,6 +62,10 @@ export const BaseEditor = ({
         return t("trigger.conditions.missedAudioCall")
       case triggerEventTypes.enum.callEnded:
         return t("trigger.conditions.callEnded")
+      case triggerEventTypes.enum.callRecorded:
+        return t("trigger.conditions.callRecorded")
+      case triggerEventTypes.enum.callTranscribed:
+        return t("trigger.conditions.callTranscribed")
       case triggerEventTypes.enum.ticketCreated:
         return t("trigger.conditions.ticketCreated")
       case triggerEventTypes.enum.ticketMovedToStage:
@@ -125,6 +129,8 @@ export const BaseEditor = ({
         return t("trigger.actions.transferConversationToHuman")
       case triggerActions.enum.sendMetaCapiEvent:
         return t("trigger.actions.sendMetaCapiEvent")
+      case triggerActions.enum.sendGoogleAdsConversion:
+        return t("trigger.actions.sendGoogleAdsConversion")
       case triggerActions.enum.runGoogleSheet:
         return "Google Sheets"
       default:

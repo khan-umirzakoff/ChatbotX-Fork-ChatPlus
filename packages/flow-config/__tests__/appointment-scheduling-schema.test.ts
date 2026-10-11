@@ -2,12 +2,11 @@ import { describe, expect, test } from "vitest"
 import { appointmentSchedulingStepSchema, metadataSchema } from "../src"
 
 const baseStep = {
-  id: "step-1",
+  id: "1",
   stepType: "appointmentScheduling",
   mode: "checkAvailability",
-  calendarId: "calendar-1",
-  startDateFieldId: "start-field",
-  endDateFieldId: "end-field",
+  calendarId: "1",
+  outputCustomFieldId: "output-field",
   states: [
     { id: "1", stateType: "success" },
     { id: "2", stateType: "error" },
@@ -15,18 +14,42 @@ const baseStep = {
 }
 
 describe("appointment scheduling schemas", () => {
-  test("checkAvailability does not require resultUsedByAI or outputCustomFieldId", () => {
-    expect(appointmentSchedulingStepSchema.safeParse(baseStep).success).toBe(
-      true,
+  test("checkAvailability requires outputCustomFieldId and keeps AI as a one-click toggle", () => {
+    const result = appointmentSchedulingStepSchema.safeParse(baseStep)
+
+    expect(result.success).toBe(true)
+    if (!result.success || result.data.mode !== "checkAvailability") {
+      return
+    }
+
+    expect(result.data).toEqual(
+      expect.objectContaining({
+        resultUsedByAI: false,
+      }),
     )
+    expect(result.data).not.toHaveProperty("provider")
+    expect(result.data).not.toHaveProperty("model")
+    expect(result.data).not.toHaveProperty("temperature")
+    expect(result.data).not.toHaveProperty("maxOutputTokens")
+  })
+
+  test("checkAvailability rejects legacy start/end-only config", () => {
+    expect(
+      appointmentSchedulingStepSchema.safeParse({
+        ...baseStep,
+        outputCustomFieldId: undefined,
+        startDateFieldId: "start-field",
+        endDateFieldId: "end-field",
+      }).success,
+    ).toBe(false)
   })
 
   test("bookFromCustomField requires dateTimeFieldId", () => {
     const step = {
-      id: "step-1",
+      id: "1",
       stepType: "appointmentScheduling",
       mode: "bookFromCustomField",
-      calendarId: "calendar-1",
+      calendarId: "1",
       states: [
         { id: "1", stateType: "success" },
         { id: "2", stateType: "error" },
@@ -46,6 +69,9 @@ describe("appointment scheduling schemas", () => {
     const step = {
       ...baseStep,
       mode: "checkAvailabilityFromCustomField",
+      startDateFieldId: "start-field",
+      endDateFieldId: "end-field",
+      outputCustomFieldId: undefined,
     }
 
     expect(

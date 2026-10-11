@@ -18,8 +18,9 @@ import { useTranslations } from "next-intl"
 import { useAction } from "next-safe-action/hooks"
 import type { ComponentPropsWithoutRef } from "react"
 import { toast } from "sonner"
+import { useInvalidateCustomFields } from "@/features/custom-fields/provider/custom-field-hook"
 import { deleteFieldsAction } from "./actions/delete-custom-field.action"
-import type { CustomFieldResource } from "./schemas/resource"
+import type { CustomFieldResource } from "./schema/resource"
 
 type DeleteFieldsDialogProps = ComponentPropsWithoutRef<typeof Dialog> & {
   workspaceId: string
@@ -39,6 +40,7 @@ export function DeleteFieldsDialog({
 }: DeleteFieldsDialogProps) {
   const t = useTranslations()
   const router = useRouter()
+  const invalidateCustomFields = useInvalidateCustomFields()
 
   const { execute, isPending } = useAction(
     deleteFieldsAction.bind(null, workspaceId),
@@ -51,6 +53,7 @@ export function DeleteFieldsDialog({
         )
         onOpenChange?.(false)
         router.refresh()
+        invalidateCustomFields()
       },
       onError: ({ error }) => {
         if (error.serverError) {

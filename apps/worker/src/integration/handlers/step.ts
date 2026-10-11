@@ -14,10 +14,12 @@ import {
 } from "@chatbotx.io/flow-config"
 import {
   type ChatJobSendFlowStep,
+  HeavyJobAction,
   IntegrationJobAction,
   integrationQueue,
 } from "@chatbotx.io/worker-config"
 import { logger } from "../../lib/logger"
+import { mintRandomFlowExecutionKey } from "../flow-execution-key"
 import { syncActiveCampaignContact } from "./active-campaign-handler"
 import { handleAIAnalyzeImage } from "./analyze-image"
 import { appointmentScheduling } from "./appointment-scheduling"
@@ -40,20 +42,21 @@ import {
 import { markCouponUsed, setUpCoupon } from "./coupon"
 import { handleAIDeleteMessageHistory } from "./delete-message-history"
 import { subscribeDripSubscriber } from "./drip-handler"
-import { handleAIEditImage } from "./edit-image"
 import { handleAIExtractData } from "./extract-data/index"
 import { handleFacebookCustomAudience } from "./facebook-custom-audience-handler"
 import {
   type ExecuteStepProps,
   enqueueFlowStepMessage,
+  type HeavyStepProps,
   seekConnectedNode,
 } from "./flow-utils"
 import { handleFollowUp } from "./follow-up"
-import { handleAIGenerateImage } from "./generate-image"
 import { handleAIGenerateText } from "./generate-text"
 import { handleAIGenerateTextAgent } from "./generate-text-agent"
 import { addGetResponseContact } from "./get-response-handler"
 import { getUserData } from "./get-user-data"
+import { handleSendGoogleAdsConversionStep } from "./google-ads/send-google-ads-conversion-step-handler"
+import { runViaHeavyWorker } from "./heavy-step-runner"
 import { syncKlaviyoProfile } from "./klaviyo-handler"
 import { addMailchimpMember } from "./mailchimp-handler"
 import { addMailerLiteSubscriber } from "./mailer-lite-handler"
@@ -71,7 +74,6 @@ import { questionnaires } from "./questionnaires"
 import { sendEmail } from "./send-email"
 import { addSendGridContact } from "./sendgrid-handler"
 import { scheduleSmartDelayResume } from "./smart-delay"
-import { handleAISpeechToText } from "./speech-to-text"
 
 import {
   clearSpreadsheetRow,
@@ -89,12 +91,14 @@ import {
   stepDisableBot,
   stepEnableBot,
   stepFollowConversation,
+  stepMarkConversationAsRead,
+  stepMarkConversationAsUnread,
   stepSendTyping,
+  stepThreadControl,
   stepUnarchiveConversation,
   stepUnassignConversation,
   stepUnfollowConversation,
 } from "./step-handlers"
-import { handleAITextToSpeech } from "./text-to-speech"
 import {
   countCharacters,
   externalRequest,
@@ -115,6 +119,7 @@ export async function sendFlowMessage(
     step,
     trackingContext,
     metadata,
+    isBulkBroadcast,
     quickReplies,
     sendFrom,
     commentAnchor,
@@ -129,6 +134,7 @@ export async function sendFlowMessage(
     step,
     trackingContext,
     metadata,
+    isBulkBroadcast,
     quickReplies,
     sendFrom,
     commentAnchor,
@@ -143,6 +149,8 @@ async function splitTraffic({
   step,
   targetId,
   useLatestFlowVersion,
+  metadata,
+  isBulkBroadcast,
   sendFrom,
   nodeVisits,
   commentAnchor,
@@ -177,6 +185,12 @@ async function splitTraffic({
         flowId: flowVersion.flowId,
         flowVersionId: useLatestFlowVersion ? undefined : flowVersion.id,
         nodeId: connectedEdge.target,
+        // Forward the current job's metadata across the split — without
+        // this, a broadcast-dispatched flow crossing a Split Traffic step
+        // lost its `broadcastId` attribution and the stop/resume guard in
+        // `runFlowNode` never fired for the branch taken here (fix round 1).
+        metadata,
+        isBulkBroadcast,
         sendFrom,
         nodeVisits,
         commentAnchor,
@@ -195,6 +209,25 @@ async function splitTraffic({
 // the anchor: private falls back to the normal (messaging-window-gated) DM
 // send, public falls back to a normal flow DM instead of a comment reply.
 // Fixing this needs a schema change; out of scope for now.
+//
+// Accepted residual (fix round 1, stop/resume guard): `metadata` itself DOES
+// survive a wait pause — `ContactOnSmartDelay.metadata` is a real column and
+// `buildSendFlowResumeJob` (smart-delay.ts) reads it back, so the broadcast
+// stop/resume guard in `runFlowNode` still fires correctly on the resumed
+// job. What is intentionally NOT carried is `initialBroadcastDispatch`:
+// `SmartDelayResumeJobExtras` has no such field, by design — a wait-resume
+// is a continuation, not the producer's first dispatch, so replaying it
+// would duplicate the flow head. The consequence: a broadcast recipient
+// parked on a Wait step whose broadcast gets stopped is skipped without a
+// `sent` reset when the wait timer eventually fires (correct — no
+// duplicate), but that also means a later broadcast Resume never re-targets
+// this recipient (nothing ever reset its row), so its delivery is
+// permanently truncated at the wait boundary unless the timer happens to
+// fire while the broadcast is independently sendable again. Do not "fix" this
+// by threading `initialBroadcastDispatch` through the resume path — that
+// would reintroduce the same duplicate-delivery bug this guard exists to
+// prevent.
+//
 async function handleWait({
   conversation,
   flowVersion,
@@ -275,6 +308,7 @@ async function startAnotherNode(
       flowVersionId: props.flowVersion.id,
       nodeId: props.step.nodeId,
       metadata: props.metadata,
+      isBulkBroadcast: props.isBulkBroadcast,
       appointmentId: props.appointmentId,
       sendFrom: props.sendFrom,
       nodeVisits: props.nodeVisits,
@@ -289,6 +323,7 @@ async function startExternalFlow({
   contactInbox,
   step,
   metadata,
+  isBulkBroadcast,
   sendFrom,
   nodeVisits,
   commentAnchor,
@@ -301,6 +336,7 @@ async function startExternalFlow({
       contactInboxId: contactInbox.id,
       flowId: step.flowId,
       metadata,
+      isBulkBroadcast,
       appointmentId,
       sendFrom,
       nodeVisits,
@@ -315,6 +351,7 @@ async function startExternalNode({
   contactInbox,
   step,
   metadata,
+  isBulkBroadcast,
   sendFrom,
   nodeVisits,
   commentAnchor,
@@ -328,6 +365,7 @@ async function startExternalNode({
       flowId: step.flowId,
       nodeId: step.nodeId,
       metadata,
+      isBulkBroadcast,
       appointmentId,
       sendFrom,
       nodeVisits,
@@ -355,6 +393,27 @@ export type ExecuteStepResult = {
   result: unknown
 }
 
+function toHeavyStepProps<T extends { id: string }>(
+  props: ExecuteStepProps<T>,
+): HeavyStepProps<T> {
+  if (props.flowExecutionKey) {
+    return { ...props, flowExecutionKey: props.flowExecutionKey }
+  }
+
+  const flowExecutionKey = mintRandomFlowExecutionKey("flow-inline-")
+  logger.warn(
+    {
+      flowExecutionKey,
+      conversationId: props.conversation.id,
+      contactInboxId: props.contactInbox.id,
+      stepId: props.step.id,
+    },
+    "Flow step is missing flowExecutionKey; generated fallback key",
+  )
+
+  return { ...props, flowExecutionKey }
+}
+
 export const flowStepHandlers: Record<
   StepType,
   | ((
@@ -368,6 +427,7 @@ export const flowStepHandlers: Record<
   [stepTypes.enum.archiveConversation]: stepArchiveConversation,
   [stepTypes.enum.assignConversation]: stepAssignConversation,
   [stepTypes.enum.autoAssignConversation]: stepAutoAssignConversation,
+  [stepTypes.enum.threadControl]: stepThreadControl,
   [stepTypes.enum.blockContact]: stepBlockContact,
   [stepTypes.enum.callApi]: externalRequest,
   [stepTypes.enum.make]: handleMakeStep,
@@ -388,6 +448,7 @@ export const flowStepHandlers: Record<
   [stepTypes.enum.activeCampaignSyncContact]: syncActiveCampaignContact,
   [stepTypes.enum.facebookCustomAudience]: handleFacebookCustomAudience,
   [stepTypes.enum.sendMetaCapiEvent]: handleSendMetaCapiEventStep,
+  [stepTypes.enum.sendGoogleAdsConversion]: handleSendGoogleAdsConversionStep,
   [stepTypes.enum.getResponseAddContact]: addGetResponseContact,
   [stepTypes.enum.dripSubscribeSubscriber]: subscribeDripSubscriber,
   [stepTypes.enum.mailchimpAddMember]: addMailchimpMember,
@@ -399,13 +460,17 @@ export const flowStepHandlers: Record<
   [stepTypes.enum.openWebsite]: undefined,
   [stepTypes.enum.aiAnalyzeImage]: handleAIAnalyzeImage,
   [stepTypes.enum.aiDeleteMessageHistory]: handleAIDeleteMessageHistory,
-  [stepTypes.enum.aiEditImage]: handleAIEditImage,
-  [stepTypes.enum.aiGenerateImage]: handleAIGenerateImage,
+  [stepTypes.enum.aiEditImage]: (props) =>
+    runViaHeavyWorker(HeavyJobAction.aiEditImage, toHeavyStepProps(props)),
+  [stepTypes.enum.aiGenerateImage]: (props) =>
+    runViaHeavyWorker(HeavyJobAction.aiGenerateImage, toHeavyStepProps(props)),
   [stepTypes.enum.aiGenerateTextAgent]: handleAIGenerateTextAgent,
   [stepTypes.enum.aiGenerateText]: handleAIGenerateText,
   [stepTypes.enum.aiExtractData]: handleAIExtractData,
-  [stepTypes.enum.aiSpeechToText]: handleAISpeechToText,
-  [stepTypes.enum.aiTextToSpeech]: handleAITextToSpeech,
+  [stepTypes.enum.aiSpeechToText]: (props) =>
+    runViaHeavyWorker(HeavyJobAction.aiSpeechToText, toHeavyStepProps(props)),
+  [stepTypes.enum.aiTextToSpeech]: (props) =>
+    runViaHeavyWorker(HeavyJobAction.aiTextToSpeech, toHeavyStepProps(props)),
   [stepTypes.enum.optInEmail]: optInEmail,
   [stepTypes.enum.optOutEmail]: optOutEmail,
   [stepTypes.enum.performAction]: undefined,
@@ -417,12 +482,15 @@ export const flowStepHandlers: Record<
   [stepTypes.enum.sendGif]: sendFlowMessage,
   [stepTypes.enum.sendImage]: sendFlowMessage,
   [stepTypes.enum.sendMessengerOtn]: undefined,
+  [stepTypes.enum.sendMultipleImages]: sendFlowMessage,
   [stepTypes.enum.sendText]: sendFlowMessage,
   [stepTypes.enum.sendVideo]: sendFlowMessage,
   [stepTypes.enum.setCustomField]: setContactCustomField,
   [stepTypes.enum.setDebounce]: undefined,
   [stepTypes.enum.unarchiveConversation]: stepUnarchiveConversation,
   [stepTypes.enum.unassignConversation]: stepUnassignConversation,
+  [stepTypes.enum.markConversationAsUnread]: stepMarkConversationAsUnread,
+  [stepTypes.enum.markConversationAsRead]: stepMarkConversationAsRead,
   [stepTypes.enum.unfollowConversation]: stepUnfollowConversation,
   [stepTypes.enum.getUserData]: getUserData,
   [stepTypes.enum.wait]: handleWait,
@@ -454,6 +522,7 @@ export const flowStepHandlers: Record<
   [stepTypes.enum.sendWaTemplateMessage]: sendFlowMessage,
   [stepTypes.enum.sendMessengerTemplateMessage]: sendFlowMessage,
   [stepTypes.enum.whatsappOptionList]: sendFlowMessage,
+  [stepTypes.enum.whatsappCallButton]: sendFlowMessage,
   [stepTypes.enum.whatsappFlow]: sendFlowMessage,
   [stepTypes.enum.setMessengerUserPersistentMenu]:
     setMessengerUserPersistentMenu,

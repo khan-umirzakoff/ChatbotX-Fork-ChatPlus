@@ -1,14 +1,32 @@
 import {
   and,
+  type DatabaseClient,
   db,
   eq,
   findOrFail,
   inArray,
   sql,
 } from "@chatbotx.io/database/client"
-import type { IntegrationUserInfo } from "@chatbotx.io/database/partials"
-import { integrationMessengerModel } from "@chatbotx.io/database/schema"
+import {
+  channelTypes,
+  type IntegrationUserInfo,
+  type MessengerPersistentMenu,
+} from "@chatbotx.io/database/partials"
+import { integrationMessengerRepository } from "@chatbotx.io/database/repositories"
+import {
+  integrationMessengerModel,
+  tagChannelModel,
+} from "@chatbotx.io/database/schema"
+import type { IntegrationMessengerModel } from "@chatbotx.io/database/types"
+import type { AuthValue } from "@chatbotx.io/sdk"
 import { BaseService } from "../base.service"
+import { recordRefreshedAuth } from "../connection/record-refreshed-auth"
+import { connectionStateService } from "../connection/state-service"
+import { notFoundException } from "../errors"
+import { flowService } from "../flow/service"
+import { logger } from "../logger"
+import { isWorkspaceAdminMember } from "../workspace-member/predicates"
+import { workspaceMemberService } from "../workspace-member/service"
 
 class MessengerIntegrationService extends BaseService {
   findByInboxId(inboxId: string) {
@@ -44,8 +62,10 @@ class MessengerIntegrationService extends BaseService {
     auth: Record<string, unknown>
     name?: string
     userInfo?: IntegrationUserInfo
+    tx?: DatabaseClient
   }): Promise<void> {
-    await db
+    const client = props.tx ?? db
+    const [row] = await client
       .update(integrationMessengerModel)
       .set({
         auth: props.auth,
@@ -59,6 +79,33 @@ class MessengerIntegrationService extends BaseService {
           eq(integrationMessengerModel.workspaceId, props.workspaceId),
         ),
       )
+      .returning({ pageId: integrationMessengerModel.pageId })
+    if (!row) {
+      throw notFoundException("Messenger integration not found")
+    }
+    await recordRefreshedAuth({
+      workspaceId: props.workspaceId,
+      provider: "messenger",
+      sourceId: row.pageId,
+      auth: props.auth as AuthValue,
+      tx: props.tx,
+    })
+  }
+
+  /**
+   * Seeds the row's own `persistentMenus` column with a single branding
+   * entry after the live Graph API push succeeds. Callers gate this to rows
+   * that don't already have user-configured menu items, so it never
+   * clobbers.
+   */
+  async seedPersistentMenu(props: {
+    id: string
+    entry: MessengerPersistentMenu
+  }): Promise<void> {
+    await db
+      .update(integrationMessengerModel)
+      .set({ persistentMenus: [props.entry] })
+      .where(eq(integrationMessengerModel.id, props.id))
   }
 
   findAllForTokenRefresh() {
@@ -69,6 +116,16 @@ class MessengerIntegrationService extends BaseService {
         auth: integrationMessengerModel.auth,
       })
       .from(integrationMessengerModel)
+  }
+
+  /** One bounded keyset page of connected Pages; see the repository method. */
+  listConnectedForWebhookSubscription(input: {
+    afterId?: string
+    limit: number
+  }) {
+    return integrationMessengerRepository.listConnectedForWebhookSubscription(
+      input,
+    )
   }
 
   findForTokenRefreshByWorkspaceIds(workspaceIds: string[]) {
@@ -85,56 +142,53 @@ class MessengerIntegrationService extends BaseService {
       .where(inArray(integrationMessengerModel.workspaceId, workspaceIds))
   }
 
-  async markTokenRefreshError(id: string, error: string): Promise<void> {
-    await db
-      .update(integrationMessengerModel)
-      .set({ tokenRefreshError: error })
-      .where(eq(integrationMessengerModel.id, id))
-  }
-
-  /**
-   * Store the authorizing user's identity after a connect. Separate from the
-   * insert because the avatar upload is an external call that must stay outside
-   * the connect transaction.
-   */
-  async updateUserInfo(props: {
+  async markTokenRefreshError(props: {
     id: string
     workspaceId: string
-    userInfo: IntegrationUserInfo
+    error: string
+    isRevoked: boolean
   }): Promise<void> {
-    await db
+    const [row] = await db
       .update(integrationMessengerModel)
-      .set({ userInfo: props.userInfo })
+      .set({ tokenRefreshError: props.error })
       .where(
         and(
           eq(integrationMessengerModel.id, props.id),
           eq(integrationMessengerModel.workspaceId, props.workspaceId),
         ),
       )
+      .returning({ pageId: integrationMessengerModel.pageId })
+
+    if (!row) {
+      logger.warn(
+        { integrationId: props.id, workspaceId: props.workspaceId },
+        "Unable to mark Messenger token refresh error: integration not found",
+      )
+      return
+    }
+
+    if (props.isRevoked) {
+      await connectionStateService.markUnhealthyByIdentifier({
+        provider: "messenger",
+        identifier: row.pageId,
+        workspaceId: props.workspaceId,
+        reason: "token_revoked",
+      })
+      return
+    }
+
+    await connectionStateService.markDegradedByIdentifier({
+      provider: "messenger",
+      identifier: row.pageId,
+      workspaceId: props.workspaceId,
+      reason: "refresh_failed",
+    })
   }
 
   findByWorkspaceId(workspaceId: string) {
     return db.query.integrationMessengerModel.findMany({
       where: { workspaceId },
     })
-  }
-
-  /**
-   * Page ids from the given list that already have a Messenger integration.
-   * `IntegrationMessenger.pageId` is unique platform-wide, so a match means the
-   * page cannot be connected again anywhere.
-   */
-  async findConnectedPageIds(pageIds: string[]): Promise<string[]> {
-    if (pageIds.length === 0) {
-      return []
-    }
-
-    const rows = await db
-      .select({ pageId: integrationMessengerModel.pageId })
-      .from(integrationMessengerModel)
-      .where(inArray(integrationMessengerModel.pageId, pageIds))
-
-    return rows.map((row) => row.pageId)
   }
 
   /**
@@ -159,6 +213,160 @@ class MessengerIntegrationService extends BaseService {
       .limit(1)
 
     return rows.length > 0
+  }
+
+  /**
+   * Load by id with NO workspace scope — delegates to the repository.
+   * Callers that separately have a `workspaceId` must compare it themselves
+   * (see `coexist/messenger-sync.ts`'s explicit-mismatch branch); this must
+   * NOT be used as a substitute for `findByIdForWorkspace`.
+   */
+  findById(props: { id: string }) {
+    return integrationMessengerRepository.findById(props)
+  }
+
+  /**
+   * Load by Facebook page id with NO workspace scope — for inbound webhooks
+   * that have not yet resolved a workspace (e.g. inbox-label sync).
+   */
+  findByPageIdUnscoped(props: { pageId: string }) {
+    return integrationMessengerRepository.findByPageIdUnscoped(props)
+  }
+
+  listByWorkspaceIdOrId(
+    where: Partial<Pick<IntegrationMessengerModel, "id" | "workspaceId">>,
+  ) {
+    return db.query.integrationMessengerModel.findMany({
+      where,
+      orderBy: { createdAt: "asc" },
+    })
+  }
+
+  async updateTagSync(props: {
+    workspaceId: string
+    integrationId: string
+    enabled: boolean
+  }): Promise<Date | null> {
+    const updated = await db
+      .update(integrationMessengerModel)
+      .set({ syncTagEnabledAt: props.enabled ? new Date() : null })
+      .where(
+        and(
+          eq(integrationMessengerModel.id, props.integrationId),
+          eq(integrationMessengerModel.workspaceId, props.workspaceId),
+        ),
+      )
+      .returning({
+        syncTagEnabledAt: integrationMessengerModel.syncTagEnabledAt,
+      })
+
+    if (updated.length === 0) {
+      throw notFoundException("Messenger channel not found")
+    }
+
+    await this.invalidateCacheTags(`workspaces:${props.workspaceId}#messengers`)
+
+    return updated[0].syncTagEnabledAt
+  }
+
+  async updateProfileFields(
+    props: { id: string },
+    data: Record<string, unknown>,
+    tx: DatabaseClient,
+  ) {
+    await tx
+      .update(integrationMessengerModel)
+      .set(data)
+      .where(eq(integrationMessengerModel.id, props.id))
+  }
+
+  /**
+   * Every Messenger page the user may clone a template onto: the pages of
+   * all workspaces where the user is an admin (owner or `superAdmin`),
+   * minus the source Facebook Page itself — it may be connected in more than
+   * one workspace, so the exclusion is by `pageId`, not by integration id.
+   * The same list feeds the picker and authorizes the clone action; the
+   * action passes `authoritative` so a just-revoked membership can never be
+   * served from cache across a workspace boundary.
+   */
+  async listCloneTargetsForUser(input: {
+    userId: string
+    excludePageId?: string | null
+    /** Read memberships uncached — required whenever the list authorizes a write. */
+    authoritative?: boolean
+  }): Promise<IntegrationMessengerModel[]> {
+    const members = input.authoritative
+      ? await workspaceMemberService.listByUserIdUncached({
+          userId: input.userId,
+        })
+      : await workspaceMemberService.listByUserId({ userId: input.userId })
+    const adminWorkspaceIds = Array.from(
+      new Set(
+        members
+          .filter(isWorkspaceAdminMember)
+          .map((member) => member.workspaceId),
+      ),
+    )
+    if (adminWorkspaceIds.length === 0) {
+      return []
+    }
+
+    return await db.query.integrationMessengerModel.findMany({
+      where: {
+        workspaceId: { in: adminWorkspaceIds },
+        pageId: input.excludePageId ? { ne: input.excludePageId } : undefined,
+      },
+      orderBy: { name: "asc" },
+    })
+  }
+
+  /**
+   * Sets (or clears) the flow started when a partner hands a conversation back.
+   * The flow must be an active flow of the same workspace. There is no cache to
+   * invalidate: the worker reads the integration row uncached.
+   */
+  async updateHandoverResumeFlow(input: {
+    id: string
+    workspaceId: string
+    handoverResumeFlowId: string | null
+  }): Promise<void> {
+    const { id, workspaceId, handoverResumeFlowId } = input
+    if (handoverResumeFlowId) {
+      const flow = await flowService.findActiveById({
+        id: handoverResumeFlowId,
+        workspaceId,
+      })
+      if (!flow) {
+        throw notFoundException("Handover flow not found")
+      }
+    }
+    const row = await integrationMessengerRepository.updateHandoverResumeFlow({
+      id,
+      workspaceId,
+      handoverResumeFlowId,
+    })
+    if (!row) {
+      throw notFoundException("Messenger integration not found")
+    }
+  }
+
+  /**
+   * Deletes the integration row and its polymorphic TagChannel entries within
+   * the caller's transaction. Coexist teardown, remote unsubscribe, and inbox
+   * disconnect stay orchestrated by the caller.
+   */
+  async disconnect(props: { id: string; tx: DatabaseClient }) {
+    await props.tx
+      .delete(tagChannelModel)
+      .where(
+        and(
+          eq(tagChannelModel.channelType, channelTypes.enum.messenger),
+          eq(tagChannelModel.integrationId, props.id),
+        ),
+      )
+    await props.tx
+      .delete(integrationMessengerModel)
+      .where(eq(integrationMessengerModel.id, props.id))
   }
 }
 

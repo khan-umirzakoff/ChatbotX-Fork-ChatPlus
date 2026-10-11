@@ -24,7 +24,7 @@ import {
 } from "@chatbotx.io/ui/components/ui/popover"
 import EmojiPicker, { type EmojiClickData } from "emoji-picker-react"
 import { CodeXml, Smile } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { type ReactNode, useEffect, useRef, useState } from "react"
 import { usePromptVariableOptions } from "./use-prompt-variable-options"
 
 type TiptapEditorProps = {
@@ -34,7 +34,15 @@ type TiptapEditorProps = {
   enableEmoji?: boolean
   channels?: ChannelType[]
   includeCouponVariables?: boolean
+  includeRawCustomFieldVariables?: boolean
+  includeBotFieldVariables?: boolean
   onChange?: (content: string) => void
+  /**
+   * Rendered in the editor's toolbar, after the variable picker — the
+   * character counter goes here so it sits with the emoji and custom field
+   * controls rather than below the editor.
+   */
+  toolbarEnd?: ReactNode
 }
 
 export const TiptapEditor = ({
@@ -42,9 +50,12 @@ export const TiptapEditor = ({
   onChange,
   channels,
   includeCouponVariables = false,
+  includeRawCustomFieldVariables = false,
+  includeBotFieldVariables = false,
   placeholder = "Type a message...",
   showEmojiPicker = true,
   enableEmoji = true,
+  toolbarEnd,
 }: TiptapEditorProps) => {
   const [isOpenEmoji, setIsOpenEmoji] = useState(false)
   const [isEditorFocused, setIsEditorFocused] = useState(false)
@@ -52,6 +63,8 @@ export const TiptapEditor = ({
   const promptVariableOptions = usePromptVariableOptions({
     channels,
     includeCouponVariables,
+    includeRawCustomFieldVariables,
+    includeBotFieldVariables,
   })
   const promptVariableOptionsRef = useRef(promptVariableOptions)
 
@@ -131,6 +144,26 @@ export const TiptapEditor = ({
     }
   }, [tiptapEditor, initValue])
 
+  // Variable options load lazily (custom/bot fields, coupons), so the initial
+  // hydration above may have escaped known tokens as plain text. Once options
+  // arrive, upgrade them to labeled mention chips — but only while the
+  // document still equals `initValue` and the editor is not focused, so a
+  // user's in-progress edit is never clobbered.
+  useEffect(() => {
+    if (!(tiptapEditor && initValue) || tiptapEditor.isFocused) {
+      return
+    }
+    if (tiptapEditor.getText({ blockSeparator: "\n" }) !== initValue) {
+      return
+    }
+    tiptapEditor.commands.setContent(
+      plainTextToParagraphHtmlWithVariableMentions(
+        initValue,
+        promptVariableOptions,
+      ),
+    )
+  }, [tiptapEditor, initValue, promptVariableOptions])
+
   return (
     <div className="relative">
       <EditorContent
@@ -207,6 +240,8 @@ export const TiptapEditor = ({
             )}
           </PopoverContent>
         </Popover>
+
+        {toolbarEnd ? <div className="ps-1 pe-2">{toolbarEnd}</div> : null}
       </div>
     </div>
   )

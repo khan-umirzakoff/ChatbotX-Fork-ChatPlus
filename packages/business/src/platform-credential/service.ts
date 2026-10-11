@@ -1,9 +1,11 @@
 import {
   and,
+  asc,
   type DatabaseClient,
   db,
   eq,
   isNull,
+  sql,
 } from "@chatbotx.io/database/client"
 import {
   type CredentialByType,
@@ -42,7 +44,7 @@ type DecryptedCredential<T extends CredentialType> = {
 
 export type MetaAppCredentialType = Extract<
   CredentialType,
-  "messenger" | "instagram" | "instagramFacebook"
+  "messenger" | "instagram" | "instagramFacebook" | "threads"
 >
 
 class PlatformCredentialService extends BaseService {
@@ -83,6 +85,8 @@ class PlatformCredentialService extends BaseService {
     type: T
     livemode?: boolean
     tx?: DatabaseClient
+    /** Rethrow DB/decrypt failures instead of reporting "no credential". */
+    strict?: boolean
   }): Promise<DecryptedCredential<T> | undefined> {
     try {
       const row = await this.findForUser(props)
@@ -91,6 +95,9 @@ class PlatformCredentialService extends BaseService {
       }
       return this._decrypt(row)
     } catch (err) {
+      if (props.strict) {
+        throw err
+      }
       logger.error({ props, err }, "Failed to decrypt credential")
       return
     }
@@ -205,6 +212,8 @@ class PlatformCredentialService extends BaseService {
     type: T
     livemode?: boolean
     tx?: DatabaseClient
+    /** Rethrow DB/decrypt failures instead of reporting "no credential". */
+    strict?: boolean
   }): Promise<DecryptedCredential<T> | undefined> {
     try {
       const row = await this.findPlatform(props)
@@ -213,7 +222,50 @@ class PlatformCredentialService extends BaseService {
       }
       return this._decrypt(row)
     } catch (err) {
+      if (props.strict) {
+        throw err
+      }
       logger.error({ props, err }, "Failed to decrypt platform credential")
+      return
+    }
+  }
+
+  async findDecryptedThreadsByClientId(props: {
+    clientId: string
+    livemode?: boolean
+    tx?: DatabaseClient
+  }): Promise<DecryptedCredential<"threads"> | undefined> {
+    const { clientId, livemode = false, tx = db } = props
+
+    try {
+      const [row] = await tx
+        .select()
+        .from(platformCredentialModel)
+        .where(
+          and(
+            eq(platformCredentialModel.type, "threads"),
+            eq(platformCredentialModel.livemode, livemode),
+            eq(platformCredentialModel.usePlatformCredential, false),
+            sql`${platformCredentialModel.publicConfig}->>'clientId' = ${clientId}`,
+          ),
+        )
+        .orderBy(
+          sql`CASE WHEN ${platformCredentialModel.userId} IS NULL THEN 0 ELSE 1 END`,
+          asc(platformCredentialModel.userId),
+          asc(platformCredentialModel.id),
+        )
+        .limit(1)
+
+      if (!row) {
+        return
+      }
+
+      return this._decrypt(row as CredentialRow<"threads">)
+    } catch (err) {
+      logger.error(
+        { clientId, err, livemode, type: "threads" },
+        "Failed to resolve threads credential by clientId",
+      )
       return
     }
   }
@@ -297,6 +349,8 @@ class PlatformCredentialService extends BaseService {
     type: T
     livemode?: boolean
     tx?: DatabaseClient
+    /** Rethrow DB/decrypt failures instead of reporting "no credential". */
+    strict?: boolean
   }): Promise<DecryptedCredential<T> | undefined> {
     if (props.userId !== undefined) {
       return this.findDecryptedForUser({ ...props, userId: props.userId })
@@ -356,6 +410,8 @@ class PlatformCredentialService extends BaseService {
     type: T
     livemode?: boolean
     tx?: DatabaseClient
+    /** Rethrow DB/decrypt failures instead of falling back / reporting "no credential". */
+    strict?: boolean
   }): Promise<DecryptedCredential<T> | undefined> {
     const setting = await tenantService.findByOwner(props.ownerId)
     const livemode = props.livemode ?? false
@@ -366,6 +422,7 @@ class PlatformCredentialService extends BaseService {
         type: props.type,
         livemode,
         tx: props.tx,
+        strict: props.strict,
       })
       if (own) {
         return own
@@ -378,6 +435,7 @@ class PlatformCredentialService extends BaseService {
       type: props.type,
       livemode,
       tx: props.tx,
+      strict: props.strict,
     })
   }
 
@@ -424,7 +482,10 @@ class PlatformCredentialService extends BaseService {
   > {
     const userRow = await this.findForUser(props)
     if (userRow && !userRow.usePlatformCredential) {
-      return { publicConfig: userRow.publicConfig, isInherited: false }
+      return {
+        publicConfig: await this._publicWithDerivedFlags(userRow),
+        isInherited: false,
+      }
     }
 
     const platformRow = await this.findPlatform({
@@ -433,10 +494,27 @@ class PlatformCredentialService extends BaseService {
       tx: props.tx,
     })
     if (platformRow) {
-      return { publicConfig: platformRow.publicConfig, isInherited: true }
+      return {
+        publicConfig: await this._publicWithDerivedFlags(platformRow),
+        isInherited: true,
+      }
     }
 
     return
+  }
+
+  /**
+   * Public (non-secret) config of the platform-global credential for the admin
+   * view. Unlike `findPlatform(...).publicConfig`, flags that older rows never
+   * persisted are derived at read time (see `_publicWithDerivedFlags`).
+   */
+  async findPlatformPublic<T extends CredentialType>(props: {
+    type: T
+    livemode?: boolean
+    tx?: DatabaseClient
+  }): Promise<CredentialPublicByType[T] | undefined> {
+    const row = await this.findPlatform(props)
+    return row ? this._publicWithDerivedFlags(row) : undefined
   }
 
   // ─── Private helpers ─────────────────────────────────────────────────────────
@@ -449,6 +527,38 @@ class PlatformCredentialService extends BaseService {
       CredentialPublicByType[T]
     >
     return schema.parse(config)
+  }
+
+  /**
+   * Rows saved before `hasDeveloperToken` existed lack the flag in their stored
+   * `publicConfig` even though the encrypted value holds a token. For googleAds
+   * rows missing it, decrypt server-side and derive the boolean. The secret
+   * itself never leaves this method.
+   */
+  private async _publicWithDerivedFlags<T extends CredentialType>(
+    row: CredentialRow<T>,
+  ): Promise<CredentialPublicByType[T]> {
+    const stored = row.publicConfig
+    if (
+      row.type !== "googleAds" ||
+      typeof (stored as { hasDeveloperToken?: unknown }).hasDeveloperToken ===
+        "boolean"
+    ) {
+      return stored
+    }
+    try {
+      const { config } = await this._decrypt(row)
+      const hasDeveloperToken = Boolean(
+        (config as { developerToken?: string }).developerToken,
+      )
+      return { ...stored, hasDeveloperToken } as CredentialPublicByType[T]
+    } catch (err) {
+      logger.error(
+        { err, credentialId: row.id },
+        "Failed to derive credential public flags",
+      )
+      return stored
+    }
   }
 
   private async _decrypt<T extends CredentialType>(

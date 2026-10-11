@@ -1,6 +1,7 @@
 import { createId, zodBigintAsString } from "@chatbotx.io/utils"
 import { z } from "zod"
 
+import { zodFieldReference } from "../field-reference"
 import {
   errorStateDefaultFn,
   errorStateSchema,
@@ -23,14 +24,18 @@ export type AIGenerateTextAgentProvider = z.infer<
 
 export const aiGenerateTextAgentSchema = z
   .object({
-    id: zodBigintAsString(),
-    stepType: z.literal(stepTypes.enum.aiGenerateTextAgent),
+    id: zodBigintAsString().describe(
+      "Step id (numeric string), unique within the flow.",
+    ),
+    stepType: z
+      .literal(stepTypes.enum.aiGenerateTextAgent)
+      .describe('Step type discriminator: "aiGenerateTextAgent".'),
     provider: aiGenerateTextAgentProvider.catch("openai"),
     integrationId: z.string().trim().optional(),
     model: z.string().trim().optional(),
     aiAgentId: zodBigintAsString(),
     message: z.string().trim().min(1),
-    outputFieldId: z.string().trim().min(1),
+    outputFieldId: zodFieldReference(),
     rememberConversation: z.boolean(),
     states: z.tuple([successStateSchema, errorStateSchema]).optional(),
   })

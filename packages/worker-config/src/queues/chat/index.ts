@@ -15,18 +15,20 @@ import type {
   SendGifStepSchema,
   SendImageStepSchema,
   SendMessengerTemplateMessageStepSchema,
+  SendMultipleImagesStepSchema,
   SendQuickReplyStepSchema,
   SendTextStepSchema,
   SendVideoStepSchema,
   SendWaTemplateMessageStepSchema,
   WaTemplateParams,
+  WhatsappCallButtonStepSchema,
 } from "@chatbotx.io/flow-config"
 import type { CommentAnchor, MessageButtonTemplate } from "@chatbotx.io/sdk"
 import { Queue } from "bullmq"
 import {
   defaultJobOptions,
   fakeQueue,
-  getRedisConnection,
+  getQueueConnection,
   isNoRedisEnv,
 } from "../../lib/connection"
 import { queueNames } from "../../lib/types"
@@ -39,6 +41,7 @@ export const ChatJobAction = {
   sendFlowMessage: "sendFlowMessage",
   sendChatMessage: "sendChatMessage",
   sendWhatsappTemplateMessage: "sendWhatsappTemplateMessage",
+  sendWhatsappTemplateToConversation: "sendWhatsappTemplateToConversation",
   sendMessengerTemplateMessage: "sendMessengerTemplateMessage",
   sendTyping: "sendTyping",
   notifyExportResult: "notifyExportResult",
@@ -60,6 +63,7 @@ export type ChatJobSendChannelMessage = {
     }
     quickReplies?: MessageButtonTemplate[]
     metadata?: MetadataPayload
+    isBulkBroadcast?: boolean
     sendFrom?: "inbox"
   }
 }
@@ -75,6 +79,7 @@ export type ChatJobSendFlowStep = {
     step:
       | SendTextStepSchema
       | SendImageStepSchema
+      | SendMultipleImagesStepSchema
       | SendGifStepSchema
       | SendFileStepSchema
       | SendVideoStepSchema
@@ -84,8 +89,14 @@ export type ChatJobSendFlowStep = {
       | SendQuickReplyStepSchema
       | SendWaTemplateMessageStepSchema
       | SendMessengerTemplateMessageStepSchema
+      | WhatsappCallButtonStepSchema
     trackingContext?: BotResponseTrackingContext
     metadata?: MetadataPayload
+    /**
+     * Preserves bulk delivery across automatic flow continuations. It is
+     * absent when an inbound button or quick reply starts the flow.
+     */
+    isBulkBroadcast?: boolean
     appointmentId?: string
     richResponse?: {
       executionId: string
@@ -109,6 +120,8 @@ export type ChatJobSendChatMessage = {
     quickReplies?: MessageButtonTemplate[]
     trackingContext?: BotResponseTrackingContext
     metadata?: MetadataPayload
+    /** Marks an automatic bulk-broadcast delivery, including a flow's first prompt. */
+    isBulkBroadcast?: boolean
   }
 }
 
@@ -119,6 +132,24 @@ export type ChatJobSendWhatsappTemplateMessage = {
     contactInbox: ContactInboxModel
     templateId: string
     broadcastId: string
+    templateData?: WaTemplateParams
+    metadata?: MetadataPayload
+  }
+}
+
+/**
+ * Sends one approved WhatsApp template to a single open conversation with
+ * runtime params — the agent's "Send template" action from the inbox composer.
+ * Unlike `sendWhatsappTemplateMessage` there is no broadcast, so no broadcast
+ * sendability guard runs; the template send bypasses the 24h/standby gate
+ * (`isTemplateMessage`), which is exactly why an agent reaches for it.
+ */
+export type ChatJobSendWhatsappTemplateToConversation = {
+  type: typeof ChatJobAction.sendWhatsappTemplateToConversation
+  data: {
+    conversation: ConversationModel
+    contactInbox: ContactInboxModel
+    templateId: string
     templateData?: WaTemplateParams
     metadata?: MetadataPayload
   }
@@ -220,6 +251,7 @@ export type ChatJobData =
   | ChatJobSendFlowStep
   | ChatJobSendChatMessage
   | ChatJobSendWhatsappTemplateMessage
+  | ChatJobSendWhatsappTemplateToConversation
   | ChatJobSendMessengerTemplateMessage
   | ChatJobSendTyping
   | ChatJobBroadcastEvent
@@ -232,6 +264,6 @@ export type ChatJobData =
 export const chatQueue = isNoRedisEnv()
   ? fakeQueue
   : new Queue<ChatJobData>(queueNames.enum.chat, {
-      connection: getRedisConnection(),
+      connection: getQueueConnection(queueNames.enum.chat),
       defaultJobOptions,
     })

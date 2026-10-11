@@ -1,6 +1,7 @@
 import { createId, zodBigintAsString } from "@chatbotx.io/utils"
 import { z } from "zod"
 
+import { zodFieldReference } from "../field-reference"
 import {
   errorStateDefaultFn,
   errorStateSchema,
@@ -28,18 +29,27 @@ export const aiTextToSpeechVoiceTypes = z.enum([
   "sage",
   "shimmer",
   "verse",
+  "marin",
+  "cedar",
 ])
 export type AITextToSpeechVoiceType = z.infer<typeof aiTextToSpeechVoiceTypes>
 
 export const aiTextToSpeechSchema = z.object({
-  id: zodBigintAsString(),
-  stepType: z.literal(stepTypes.enum.aiTextToSpeech),
+  id: zodBigintAsString().describe(
+    "Step id (numeric string), unique within the flow.",
+  ),
+  stepType: z
+    .literal(stepTypes.enum.aiTextToSpeech)
+    .describe('Step type discriminator: "aiTextToSpeech".'),
   provider: z.literal("openai"),
   model: aiTextToSpeechModelTypes,
+  // Persisted flow versions predate OpenAI's 4,096-character input limit.
+  // Keep this boundary backward-compatible; the editor rejects newly edited
+  // over-limit messages while existing flows remain readable.
   message: z.string().trim().min(1),
   voiceType: aiTextToSpeechVoiceTypes,
   voiceTone: z.string().trim().optional(),
-  outputFieldId: z.string().trim().min(1),
+  outputFieldId: zodFieldReference(),
   states: z.tuple([successStateSchema, errorStateSchema]).optional(),
 })
 
@@ -48,6 +58,7 @@ export type AITextToSpeechSchema = z.infer<typeof aiTextToSpeechSchema>
 export const AI_TEXT_TO_SPEECH_BASE64_ENCODING = "base64" as const
 export const AI_TEXT_TO_SPEECH_DEFAULT_MIME_TYPE = "audio/mpeg" as const
 export const AI_TEXT_TO_SPEECH_DEFAULT_EXTENSION = "mp3" as const
+export const AI_TEXT_TO_SPEECH_MESSAGE_MAX_LENGTH = 4096
 
 export type GetAITextToSpeechAudioPathProps = {
   storagePrefix: string

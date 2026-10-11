@@ -1,4 +1,4 @@
-import { type AnyColumn, type SQL, sql } from "drizzle-orm"
+import { type AnyColumn, and, inArray, type SQL, sql } from "drizzle-orm"
 import {
   type ContactInfoFilterValue,
   type ContactInfoType,
@@ -26,6 +26,31 @@ const COLUMN_NEGATION_OPERATORS = new Set<string>([
 
 export const contactInboxInteractedWithin24hSQL = (): SQL =>
   sql`${contactInboxModel.lastIncomingMessageAt} >= NOW() - INTERVAL '24 hours'`
+
+export type ContactInboxScope = {
+  /** Contact must have a contact-inbox on one of these inboxes. Omit for any inbox. */
+  inboxIds?: string[]
+  /** Contact-inbox must have received a message in the last 24 hours. */
+  requireRecentInteraction?: boolean
+}
+
+const inboxIdsPredicate = (inboxIds: string[]): SQL =>
+  inboxIds.length > 0
+    ? inArray(contactInboxModel.inboxId, inboxIds)
+    : sql`false`
+
+/** Contacts having at least one contact-inbox that satisfies the scope. */
+export const buildContactInboxScopeWhere = (
+  scope: ContactInboxScope,
+): ContactWhere =>
+  contactInboxExists(
+    and(
+      scope.inboxIds ? inboxIdsPredicate(scope.inboxIds) : undefined,
+      scope.requireRecentInteraction
+        ? contactInboxInteractedWithin24hSQL()
+        : undefined,
+    ),
+  )
 
 export const buildRawColumnWhere = (
   columnName: string,
@@ -502,6 +527,28 @@ export function buildExistsBooleanWhere(
     return {}
   }
   return exists(yesPredicate, isNo)
+}
+
+/**
+ * Boolean snapshot fields distinguish an explicit false value from no
+ * captured value. Unlike buildExistsBooleanWhere, `isEmpty` means no inbox
+ * has a value at all rather than "not true".
+ */
+export function buildContactInboxTriStateBooleanWhere(
+  column: AnyColumn,
+  operator: string,
+  value: unknown,
+): ContactWhere {
+  if (operator === operatorTypes.enum.eq && value === "true") {
+    return contactInboxExists(sql`${column} = true`)
+  }
+  if (operator === operatorTypes.enum.eq && value === "false") {
+    return contactInboxExists(sql`${column} = false`)
+  }
+  if (operator === operatorTypes.enum.isEmpty) {
+    return contactInboxExists(sql`${column} IS NOT NULL`, true)
+  }
+  return {}
 }
 
 export function buildLastCommentWhere(

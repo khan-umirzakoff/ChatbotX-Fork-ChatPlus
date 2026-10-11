@@ -13,6 +13,42 @@ export const contactSources = z.enum([
 ])
 export type ContactSource = z.infer<typeof contactSources>
 
+export const profileSnapshotStates = z.enum([
+  "pending",
+  "captured",
+  "unavailable",
+  "failed",
+])
+export type ProfileSnapshotState = z.infer<typeof profileSnapshotStates>
+
+/**
+ * Channels whose integration implements `getProfileSnapshot`. The single
+ * source for every "can this channel capture a profile snapshot" gate (claim,
+ * recovery scans, import producers); adding a channel = add it here and
+ * implement the handler.
+ */
+export const profileSnapshotChannels = ["instagram"] as const
+export type ProfileSnapshotChannel = (typeof profileSnapshotChannels)[number]
+
+export const supportsProfileSnapshot = (
+  channel: string,
+): channel is ProfileSnapshotChannel =>
+  profileSnapshotChannels.some((candidate) => candidate === channel)
+
+/**
+ * Channels whose integration implements `getPostDetails` and whose comments are
+ * tracked per post (`ChannelPost` / `ContactInboxPost`, the `commentedOnPost`
+ * filter). The single source for every "can this channel track posts" gate;
+ * adding a channel = add it here and implement the handler.
+ */
+export const postTrackingChannels = ["messenger", "instagram"] as const
+export type PostTrackingChannel = (typeof postTrackingChannels)[number]
+
+export const supportsPostTracking = (
+  channel: string,
+): channel is PostTrackingChannel =>
+  postTrackingChannels.some((candidate) => candidate === channel)
+
 export const genderTypes = z.enum(["male", "female", "unknown"])
 export type GenderType = z.infer<typeof genderTypes>
 
@@ -53,6 +89,8 @@ export const systemFieldTypes = z.enum([
   "last_ref",
   "user_channel",
   "user_hash",
+  "minigame_play_token",
+  "mini_app_token",
   "user_tags",
   "user_external_id",
   "user_source",
@@ -90,6 +128,8 @@ export const systemFieldTypes = z.enum([
   "last_error_log",
   "last_outbound_message_at",
   "last_commented_post_text",
+  "last_call_recorded",
+  "last_call_transcript",
 
   "last_step",
   "current_step",
@@ -193,6 +233,7 @@ export const contactFilterFields = z.enum([
   "keywordsReceived",
   "customFields",
   "customField",
+  "botField",
   "executedFlow",
   "executedStep",
   "consecutiveAiFailures",
@@ -239,6 +280,7 @@ export const contactFilterFields = z.enum([
   "locale",
   "language",
   "fromCtwaAd",
+  "fromGoogleAd",
   "ctwaConversion",
   "ctwaRetarget",
 ])

@@ -52,10 +52,15 @@ const WhatsappFlowStepEditor = ({
     setDialogOpen(true)
   }, [])
 
-  const handleFlowSelected = useCallback(() => {
-    setValue(`${parentName}.flow.startScreenId`, null)
-    setValue(`${parentName}.flow.fieldMappings`, [])
-  }, [parentName, setValue])
+  const handleFlowSelected = useCallback(
+    (value?: string) => {
+      const flow = whatsappFlows.find((item) => item.id === value)
+      setValue(`${parentName}.flow.sourceId`, flow?.sourceId ?? "")
+      setValue(`${parentName}.flow.startScreenId`, null)
+      setValue(`${parentName}.flow.fieldMappings`, [])
+    },
+    [parentName, setValue, whatsappFlows],
+  )
 
   useEffect(() => {
     if (
@@ -63,6 +68,7 @@ const WhatsappFlowStepEditor = ({
       prevInboxIdRef.current !== integrationInboxId
     ) {
       setValue(`${parentName}.flow.id`, null)
+      setValue(`${parentName}.flow.sourceId`, "")
       setValue(`${parentName}.flow.startScreenId`, null)
       setValue(`${parentName}.flow.fieldMappings`, [])
     }
@@ -89,7 +95,11 @@ const WhatsappFlowStepEditor = ({
       </div>
 
       <div className="space-y-3 bg-secondary px-4 py-2">
-        <TiptapEditorField includeCouponVariables name={`${parentName}.text`} />
+        <TiptapEditorField
+          includeBotFieldVariables
+          includeCouponVariables
+          name={`${parentName}.text`}
+        />
       </div>
 
       <div className="bg-slate-200 px-3 py-2 dark:bg-neutral-900">

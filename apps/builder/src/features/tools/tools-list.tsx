@@ -1,17 +1,27 @@
 "use client"
 
+import type { WorkspaceMemberPermissions } from "@chatbotx.io/database/partials"
+import { Badge } from "@chatbotx.io/ui/components/ui/badge"
 import { Card, CardContent } from "@chatbotx.io/ui/components/ui/card"
 import { cn } from "@chatbotx.io/ui/lib/utils"
-import { SiFacebook, SiInstagram } from "@icons-pack/react-simple-icons"
+import {
+  SiFacebook,
+  SiInstagram,
+  SiThreads,
+  SiTiktok,
+} from "@icons-pack/react-simple-icons"
 import {
   BotIcon,
   CalendarIcon,
   CardSimIcon,
   CircleQuestionMarkIcon,
   CopyIcon,
+  Gamepad2Icon,
   ImagesIcon,
+  LayoutTemplateIcon,
   LinkIcon,
   MapIcon,
+  MegaphoneIcon,
   QrCodeIcon,
   TicketPercentIcon,
   UserCheck2Icon,
@@ -20,15 +30,43 @@ import {
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { useCallback, useMemo } from "react"
+import { buildMessagingAdsToolPath } from "@/features/ads-campaign/lib/tool-path"
 import { useWorkspaceId } from "@/hooks/routing"
+import {
+  hasWorkspacePermission,
+  type WorkspacePermissionKey,
+} from "@/lib/auth/permission-routes"
 
-const TOOLS_CONFIG = [
+// Exported for tests (`__tests__/tools-list-config.test.ts`) only.
+export const TOOLS_CONFIG = [
   {
     id: "facebook-comment",
     labelKey: "facebookCommentAutomation.title",
     descriptionKey: "facebookCommentAutomation.description",
     icon: SiFacebook,
     getLink: (id: string) => `/space/${id}/fb-comments`,
+  },
+  {
+    id: "facebook-lead-ads",
+    labelKey: "facebookLeadAdsAutomation.title",
+    descriptionKey: "facebookLeadAdsAutomation.description",
+    icon: SiFacebook,
+    getLink: (id: string) => `/space/${id}/fb-lead-ads`,
+  },
+  {
+    id: "facebook-marketing-messages",
+    labelKey: "facebookMarketingMessages.title",
+    descriptionKey: "facebookMarketingMessages.description",
+    icon: SiFacebook,
+    getLink: (id: string) => `/space/${id}/fb-marketing-messages`,
+  },
+  {
+    id: "click-to-message-ads",
+    labelKey: "clickToMessageAds.title",
+    descriptionKey: "clickToMessageAds.description",
+    icon: MegaphoneIcon,
+    permission: "superAdmin",
+    getLink: (id: string) => buildMessagingAdsToolPath({ workspaceId: id }),
   },
   {
     id: "instagram-comment",
@@ -45,11 +83,18 @@ const TOOLS_CONFIG = [
     getLink: (id: string) => `/space/${id}/ig-stories`,
   },
   {
-    id: "facebook-lead-ads",
-    labelKey: "facebookLeadAdsAutomation.title",
-    descriptionKey: "facebookLeadAdsAutomation.description",
-    icon: SiFacebook,
-    getLink: (id: string) => `/space/${id}/fb-lead-ads`,
+    id: "threads-comment",
+    labelKey: "threadsCommentAutomation.title",
+    descriptionKey: "threadsCommentAutomation.description",
+    icon: SiThreads,
+    getLink: (id: string) => `/space/${id}/threads-comments`,
+  },
+  {
+    id: "tiktok-comment",
+    labelKey: "tiktokCommentAutomation.title",
+    descriptionKey: "tiktokCommentAutomation.description",
+    icon: SiTiktok,
+    getLink: (id: string) => `/space/${id}/tiktok-comments`,
   },
   {
     id: "reflinks",
@@ -84,6 +129,7 @@ const TOOLS_CONFIG = [
     labelKey: "templates.title",
     descriptionKey: "templates.description",
     icon: CopyIcon,
+    getLink: (id: string) => `/space/${id}/templates`,
   },
   {
     id: "appointment",
@@ -107,6 +153,41 @@ const TOOLS_CONFIG = [
     getLink: (id: string) => `/space/${id}/products`,
   },
   {
+    id: "coupons",
+    labelKey: "coupons.title",
+    descriptionKey: "coupons.description",
+    icon: TicketPercentIcon,
+    getLink: (id: string) => `/space/${id}/topic-coupons`,
+  },
+  {
+    id: "minigames",
+    labelKey: "minigames.title",
+    descriptionKey: "minigames.description",
+    icon: Gamepad2Icon,
+    getLink: (id: string) => `/space/${id}/minigames`,
+  },
+  {
+    id: "mini-apps",
+    labelKey: "miniApps.title",
+    descriptionKey: "miniApps.description",
+    icon: LayoutTemplateIcon,
+    getLink: (id: string) => `/space/${id}/mini-apps`,
+  },
+  // {
+  //   id: "webhooks",
+  //   labelKey: "webhooks.title",
+  //   descriptionKey: "webhooks.description",
+  //   icon: UsersIcon,
+  //   getLink: (id: string) => `/space/${id}/webhooks`,
+  // },
+  {
+    id: "bot-simulator",
+    labelKey: "botSimulator.title",
+    descriptionKey: "botSimulator.description",
+    icon: BotIcon,
+    getLink: (id: string) => `/space/${id}/bot-simulator`,
+  },
+  {
     id: "places-near-me",
     labelKey: "placesNearMe.title",
     descriptionKey: "placesNearMe.description",
@@ -118,46 +199,82 @@ const TOOLS_CONFIG = [
     descriptionKey: "pollManager.description",
     icon: UserCheck2Icon,
   },
-  {
-    id: "bot-simulator",
-    labelKey: "botSimulator.title",
-    descriptionKey: "botSimulator.description",
-    icon: BotIcon,
-  },
-  {
-    id: "coupons",
-    labelKey: "coupons.title",
-    descriptionKey: "coupons.description",
-    icon: TicketPercentIcon,
-    getLink: (id: string) => `/space/${id}/topic-coupons`,
-  },
-  // {
-  //   id: "webhooks",
-  //   labelKey: "webhooks.title",
-  //   descriptionKey: "webhooks.description",
-  //   icon: UsersIcon,
-  //   getLink: (id: string) => `/space/${id}/webhooks`,
-  // },
 ] as const
 
-export const ToolsList = () => {
+type ToolsListProps = {
+  /**
+   * The current member's permissions — may be a partial object (the jsonb
+   * column defaults to `{}`), which `hasWorkspacePermission` treats as
+   * fail-closed, exactly like the sidebar's nav filtering (`app-sidebar.tsx`).
+   */
+  permissions: WorkspaceMemberPermissions
+  /**
+   * Whether the signed-in user is on the preview allowlist
+   * (`lib/workspace/preview-channels.ts`) and may see cards for channels still
+   * awaiting provider approval. Defaults to `false` so a call site that
+   * forgets to resolve it hides those cards rather than leaking them.
+   */
+  canSeePreviewTools?: boolean
+}
+
+/**
+ * A config entry declares the permission that gates its card (only
+ * `click-to-message-ads` today, `superAdmin`); entries without one are
+ * visible to everyone who can open the Tools page. Reuses the app-wide
+ * `hasWorkspacePermission` check rather than a local visibility table so a
+ * future gated card only needs a `permission` field, and an unknown flag
+ * hides the card instead of leaking it.
+ */
+export function canShowTool(
+  permission: WorkspacePermissionKey | undefined,
+  permissions: WorkspaceMemberPermissions,
+): boolean {
+  return !permission || hasWorkspacePermission(permissions, permission)
+}
+
+/**
+ * A card flagged `previewOnly` belongs to a channel whose provider approval is
+ * still pending (today: Threads) — it stays hidden until the signed-in user is
+ * on the preview allowlist, independently of workspace permissions.
+ */
+export function canShowPreviewTool(
+  previewOnly: boolean,
+  canSeePreviewTools: boolean,
+): boolean {
+  return !previewOnly || canSeePreviewTools
+}
+
+export const ToolsList = ({
+  permissions,
+  canSeePreviewTools = false,
+}: ToolsListProps) => {
   const workspaceId = useWorkspaceId()
   const t = useTranslations()
   const router = useRouter()
 
   const tools = useMemo(
     () =>
-      TOOLS_CONFIG.map((config) => ({
+      TOOLS_CONFIG.filter((config) => {
+        const permission =
+          "permission" in config ? config.permission : undefined
+        const previewOnly =
+          "previewOnly" in config ? Boolean(config.previewOnly) : false
+        return (
+          canShowTool(permission, permissions) &&
+          canShowPreviewTool(previewOnly, canSeePreviewTools)
+        )
+      }).map((config) => ({
         id: config.id,
         label: t(config.labelKey),
         description: t(config.descriptionKey),
         icon: config.icon,
+        beta: "beta" in config ? Boolean(config.beta) : false,
         link:
           "getLink" in config && config.getLink
             ? config.getLink(workspaceId.toString())
             : undefined,
       })),
-    [t, workspaceId],
+    [t, workspaceId, permissions, canSeePreviewTools],
   )
 
   const handleCardClick = useCallback(
@@ -206,7 +323,14 @@ export const ToolsList = () => {
                 <tool.icon className="text-primary" size={30} />
               </div>
               <div className="text-center">
-                <h3 className="font-semibold">{tool.label}</h3>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  <h3 className="font-semibold">{tool.label}</h3>
+                  {tool.beta ? (
+                    <Badge className="uppercase" variant="secondary">
+                      {t("tools.beta")}
+                    </Badge>
+                  ) : null}
+                </div>
                 <p className="text-muted-foreground text-sm">
                   {tool.description}
                 </p>

@@ -20,8 +20,12 @@ export type AppointmentSchedulingMode = z.infer<
 >
 
 const appointmentSchedulingBaseFields = {
-  id: zodBigintAsString(),
-  stepType: z.literal(stepTypes.enum.appointmentScheduling),
+  id: zodBigintAsString().describe(
+    "Step id (numeric string), unique within the flow.",
+  ),
+  stepType: z
+    .literal(stepTypes.enum.appointmentScheduling)
+    .describe('Step type discriminator: "appointmentScheduling".'),
   calendarId: zodBigintAsString(),
   states: z.tuple([successStateSchema, errorStateSchema]),
 }
@@ -45,7 +49,6 @@ export const appointmentSchedulingStepSchema = z.discriminatedUnion("mode", [
   z.object({
     ...appointmentSchedulingBaseFields,
     mode: z.literal(appointmentSchedulingModes.enum.book),
-    dateTimeFieldId: z.string().trim().min(1),
   }),
   z.object({
     ...appointmentSchedulingBaseFields,
@@ -54,8 +57,8 @@ export const appointmentSchedulingStepSchema = z.discriminatedUnion("mode", [
   z.object({
     ...appointmentSchedulingBaseFields,
     mode: z.literal(appointmentSchedulingModes.enum.checkAvailability),
-    startDateFieldId: z.string().trim().min(1),
-    endDateFieldId: z.string().trim().min(1),
+    resultUsedByAI: z.boolean().default(false),
+    outputCustomFieldId: z.string().trim().min(1),
   }),
 ])
 export type AppointmentSchedulingStepSchema = z.infer<

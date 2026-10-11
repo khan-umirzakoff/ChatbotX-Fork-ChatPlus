@@ -1,5 +1,5 @@
-import botFieldWorkspaceTokenAPIs from "./workspace-token"
+import { privateBotFieldsAPI } from "./private"
 
 export const botFieldAPIs = {
-  ...botFieldWorkspaceTokenAPIs,
+  ...privateBotFieldsAPI,
 }

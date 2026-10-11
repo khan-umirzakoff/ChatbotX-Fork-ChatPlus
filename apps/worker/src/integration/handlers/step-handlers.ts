@@ -1,15 +1,14 @@
-import { conversationService } from "@chatbotx.io/business"
 import {
-  and,
-  db,
-  eq,
-  gte,
-  inArray,
-  or,
-  type SQL,
-  sql,
-} from "@chatbotx.io/database/client"
-import { contactModel, conversationModel } from "@chatbotx.io/database/schema"
+  contactInboxService,
+  contactService,
+  conversationService,
+  inboxTeamService,
+  workspaceMemberService,
+} from "@chatbotx.io/business"
+import { requestThreadControlAction } from "@chatbotx.io/channel-registry/thread-control"
+import { gte, type SQL } from "@chatbotx.io/database/client"
+import { channelTypes } from "@chatbotx.io/database/partials"
+import { conversationModel } from "@chatbotx.io/database/schema"
 import {
   type ArchiveConversationStepSchema,
   type AssignConversationStepSchema,
@@ -19,6 +18,9 @@ import {
   type DisableBotStepSchema,
   type EnableBotStepSchema,
   type FollowConversationStepSchema,
+  type MarkConversationAsReadStepSchema,
+  type MarkConversationAsUnreadStepSchema,
+  type ThreadControlStepSchema,
   type TypingStepSchema,
   type UnarchiveConversationStepSchema,
   type UnassignConversationStepSchema,
@@ -26,21 +28,56 @@ import {
 } from "@chatbotx.io/flow-config"
 import { subHours } from "date-fns"
 import {
-  allIntegrations,
-  resolveIntegrationContextFromContactInbox,
-} from "../../services/integrations"
+  resolveWhatsappMessageSourceId,
+  sendTypingToChannel,
+} from "../../chat/handlers/send-message"
+import { logger } from "../../lib/logger"
+import { resolveIntegrationContextFromContactInbox } from "../../services/integrations"
 import type { ExecuteStepProps } from "./flow"
 import type { ExecuteStepResult } from "./step"
+
+/**
+ * Releases or passes the conversation's routing thread. A channel with no
+ * routing support, a channel refusal (e.g. we no longer own the thread) or any
+ * other failure follows the step's Error path with the reason, so a flow can
+ * branch on it; the step never throws into a retry.
+ */
+export async function stepThreadControl({
+  conversation,
+  contactInbox,
+  step,
+}: ExecuteStepProps<ThreadControlStepSchema>): Promise<ExecuteStepResult> {
+  try {
+    await requestThreadControlAction({
+      workspaceId: conversation.workspaceId,
+      contactInboxId: contactInbox.id,
+      conversationId: conversation.id,
+      action: step.action,
+    })
+    return { status: "success", result: undefined }
+  } catch (err) {
+    logger.warn(
+      { err, contactInboxId: contactInbox.id, action: step.action },
+      "Thread control step failed",
+    )
+    return {
+      status: "error",
+      errorMessage: err instanceof Error ? err.message : String(err),
+      result: undefined,
+    }
+  }
+}
 
 export async function stepBlockContact({
   conversation,
 }: ExecuteStepProps<BlockContactStepSchema>) {
-  await db
-    .update(contactModel)
-    .set({
-      blockedAt: new Date(),
-    })
-    .where(eq(contactModel.id, conversation.contactId))
+  // `block` → `update` adds `findByIdOrFail` + `emitContactInfoChangeEvents` +
+  // cache invalidation the raw write lacked — a deliberate behavior change;
+  // called out in the PR body.
+  await contactService.block({
+    workspaceId: conversation.workspaceId,
+    id: conversation.contactId,
+  })
 }
 
 export async function stepArchiveConversation({
@@ -77,42 +114,10 @@ export async function stepAssignConversation({
   conversation,
   step,
 }: ExecuteStepProps<AssignConversationStepSchema>) {
-  let assignedUserId: string | null = null
-  let assignedInboxTeamId: string | null = null
-
-  if (step.assignedId.startsWith("u_")) {
-    const userId = step.assignedId.slice(2)
-    const workspaceMember = await db.query.workspaceMemberModel.findFirst({
-      where: {
-        userId,
-        workspaceId: conversation.workspaceId,
-      },
-    })
-    if (workspaceMember) {
-      assignedUserId = userId
-    }
-  } else if (step.assignedId.startsWith("t_")) {
-    const inboxTeamId = step.assignedId.slice(2)
-    const inboxTeam = await db.query.inboxTeamModel.findFirst({
-      where: {
-        id: inboxTeamId,
-        workspaceId: conversation.workspaceId,
-      },
-    })
-    if (inboxTeam) {
-      assignedInboxTeamId = inboxTeamId
-    }
-  }
-
-  if (!(assignedUserId || assignedInboxTeamId)) {
-    return
-  }
-
-  await conversationService.updateAssignment({
+  await conversationService.assignOneOrSkip({
     workspaceId: conversation.workspaceId,
-    conversations: [conversation],
-    assignedUserId,
-    assignedInboxTeamId,
+    conversation,
+    assignedId: step.assignedId,
     triggerContext: {
       triggerSource: "worker",
       triggerHandler: "stepAssignConversation",
@@ -178,16 +183,9 @@ export async function stepAutoAssignConversation({
 
   let requiredUsers: { userId: string }[] = []
   if (userIds.length > 0) {
-    requiredUsers = await db.query.workspaceMemberModel.findMany({
-      where: {
-        workspaceId: conversation.workspaceId,
-        userId: {
-          in: userIds,
-        },
-      },
-      columns: {
-        userId: true,
-      },
+    requiredUsers = await workspaceMemberService.listExistingUserIds({
+      workspaceId: conversation.workspaceId,
+      userIds,
     })
     for (const u of requiredUsers) {
       allocation[`u_${u.userId}`] = {
@@ -200,16 +198,9 @@ export async function stepAutoAssignConversation({
 
   let requiredInboxTeams: { id: string }[] = []
   if (inboxTeamIds.length > 0) {
-    requiredInboxTeams = await db.query.inboxTeamModel.findMany({
-      where: {
-        workspaceId: conversation.workspaceId,
-        id: {
-          in: inboxTeamIds,
-        },
-      },
-      columns: {
-        id: true,
-      },
+    requiredInboxTeams = await inboxTeamService.listExistingIds({
+      workspaceId: conversation.workspaceId,
+      ids: inboxTeamIds,
     })
     for (const t of requiredInboxTeams) {
       allocation[`t_${t.id}`] = {
@@ -228,34 +219,11 @@ export async function stepAutoAssignConversation({
     }
   }
 
-  const conversationCount = await db
-    .select({
-      assignedUserId: conversationModel.assignedUserId,
-      assignedInboxTeamId: conversationModel.assignedInboxTeamId,
-      conversationsCount: sql<number>`cast(count(${conversationModel.id}) as int)`,
-    })
-    .from(conversationModel)
-    .groupBy(
-      conversationModel.assignedUserId,
-      conversationModel.assignedInboxTeamId,
-    )
-    .where(
-      and(
-        ...filterConversationConditions,
-        and(
-          or(
-            inArray(
-              conversationModel.assignedUserId,
-              requiredUsers.map((r) => r.userId),
-            ),
-            inArray(
-              conversationModel.assignedInboxTeamId,
-              requiredInboxTeams.map((r) => r.id),
-            ),
-          ),
-        ),
-      ),
-    )
+  const conversationCount = await conversationService.countByAssignee({
+    filterConditions: filterConversationConditions,
+    userIds: requiredUsers.map((r) => r.userId),
+    inboxTeamIds: requiredInboxTeams.map((r) => r.id),
+  })
   for (const cc of conversationCount) {
     if (cc.assignedUserId && allocation[`u_${cc.assignedUserId}`]) {
       allocation[`u_${cc.assignedUserId}`].count = cc.conversationsCount
@@ -304,6 +272,123 @@ export async function stepUnassignConversation({
       triggerType: "flow_action",
     },
   })
+}
+
+export async function stepMarkConversationAsUnread({
+  conversation,
+}: ExecuteStepProps<MarkConversationAsUnreadStepSchema>) {
+  await conversationService.markUnread({
+    workspaceId: conversation.workspaceId,
+    id: conversation.id,
+  })
+}
+
+// Channels whose "Seen" receipt the Mark Read step sends. Explicit on purpose:
+// the `api` channel also implements `agentMarkAsRead` but is out of scope, so
+// "has a handler" is not the right test.
+const READ_RECEIPT_CHANNELS: ReadonlySet<string> = new Set([
+  channelTypes.enum.messenger,
+  channelTypes.enum.instagram,
+  channelTypes.enum.whatsapp,
+])
+
+// Shared by the Mark Read receipt and the Typing step: a step's props carry
+// the flow's current contactInbox, but not every trigger sets one (e.g. an
+// automation firing outside a message context), so fall back to the
+// contact's most recently active one.
+async function resolveContactInbox(
+  contactInbox: Awaited<
+    ReturnType<typeof contactInboxService.findRecentByContactId>
+  >,
+  workspaceId: string,
+  contactId: string,
+) {
+  return (
+    contactInbox ||
+    (await contactInboxService.findRecentByContactId({
+      workspaceId,
+      contactId,
+    }))
+  )
+}
+
+export async function stepMarkConversationAsRead(
+  props: ExecuteStepProps<MarkConversationAsReadStepSchema>,
+) {
+  const { conversation } = props
+
+  await conversationService.updateReadStatus({
+    workspaceId: conversation.workspaceId,
+    id: conversation.id,
+    agentLastReadAt: new Date(),
+  })
+
+  // Comment threads (`sourceId` = post id) are not a DM the contact opened.
+  if (conversation.sourceId !== null) {
+    return
+  }
+
+  await sendReadReceipt(props)
+}
+
+/** Best-effort channel "Seen" receipt: never throws, the flow continues. */
+async function sendReadReceipt(
+  props: ExecuteStepProps<MarkConversationAsReadStepSchema>,
+) {
+  const { conversation } = props
+  let channel: string | undefined
+
+  try {
+    const contactInbox = await resolveContactInbox(
+      props.contactInbox,
+      conversation.workspaceId,
+      conversation.contactId,
+    )
+    if (!contactInbox) {
+      return
+    }
+    channel = contactInbox.channel
+    if (!READ_RECEIPT_CHANNELS.has(contactInbox.channel)) {
+      return
+    }
+
+    const isWhatsapp = contactInbox.channel === channelTypes.enum.whatsapp
+    const messageSourceId = await resolveWhatsappMessageSourceId({
+      conversation,
+      contactInbox,
+    })
+    if (isWhatsapp && !messageSourceId) {
+      logger.debug(
+        {
+          workspaceId: conversation.workspaceId,
+          conversationId: conversation.id,
+        },
+        "stepMarkConversationAsRead: no incoming WhatsApp message to mark read",
+      )
+      return
+    }
+
+    const { integration, ctx } =
+      await resolveIntegrationContextFromContactInbox({
+        workspaceId: conversation.workspaceId,
+        contactInbox,
+      })
+
+    await integration.runChannelHandler("conversation", "agentMarkAsRead", {
+      ctx,
+      data: { contact: contactInbox, messageSourceId },
+    })
+  } catch (err) {
+    logger.warn(
+      {
+        err,
+        workspaceId: conversation.workspaceId,
+        conversationId: conversation.id,
+        channel,
+      },
+      "stepMarkConversationAsRead: channel receipt failed",
+    )
+  }
 }
 
 export async function stepFollowConversation({
@@ -371,36 +456,21 @@ export const stepSendTyping = async (
 ) => {
   const { conversation, contactInbox: baseContactInbox } = props
 
-  const contactInbox =
-    baseContactInbox ||
-    (await db.query.contactInboxModel.findFirst({
-      where: {
-        contactId: conversation.contactId,
-      },
-      orderBy: {
-        lastMessageAt: "desc",
-      },
-    }))
+  const contactInbox = await resolveContactInbox(
+    baseContactInbox,
+    conversation.workspaceId,
+    conversation.contactId,
+  )
 
   if (!contactInbox) {
     return
   }
 
-  if (!allIntegrations[contactInbox.channel]) {
-    return
-  }
-
-  const { integration, ctx } = await resolveIntegrationContextFromContactInbox({
-    workspaceId: conversation.workspaceId,
+  // Shared path so the WhatsApp wamid lookup lives in one place.
+  await sendTypingToChannel({
+    conversation,
     contactInbox,
-  })
-
-  await integration.runChannelHandler("conversation", "sendTyping", {
-    ctx,
-    data: {
-      contact: contactInbox,
-      typing: true,
-      seconds: props.step.seconds,
-    },
+    typing: true,
+    seconds: props.step.seconds,
   })
 }

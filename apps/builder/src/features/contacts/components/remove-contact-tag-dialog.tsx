@@ -22,16 +22,18 @@ import { toast } from "sonner"
 import { useTagOptions } from "@/features/tags/provider/tag-hook"
 import { useWorkspaceId } from "@/hooks/routing"
 import { removeContactTagAction } from "../actions/remove-contact-tag.action"
-import { removeContactTagsRequest } from "../schemas/contact-tag"
+import { removeContactTagsRequest } from "../schema/contact-tag"
 
 type RemoveContactTagDialogProps = {
   trigger: ReactElement
   ids: string[]
+  onSuccess?: () => void
 }
 
 export default function RemoveContactTagDialog({
   trigger,
   ids,
+  onSuccess,
 }: RemoveContactTagDialogProps) {
   const t = useTranslations()
   const [open, setOpen] = useState(false)
@@ -54,6 +56,7 @@ export default function RemoveContactTagDialog({
             )
             resetFormAndAction()
             setOpen(false)
+            onSuccess?.()
           },
           onError: ({ error }) => {
             if (error.serverError) {

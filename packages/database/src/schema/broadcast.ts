@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm"
 import {
   index,
   integer,
@@ -7,7 +8,11 @@ import {
   text,
   timestamp,
 } from "drizzle-orm/pg-core"
-import { broadcastScheduleTypes, broadcastStatuses } from "../partials"
+import {
+  broadcastScheduleTypes,
+  broadcastStatuses,
+  broadcastTargetModes,
+} from "../partials"
 import {
   bigintAsString,
   sharedColumns,
@@ -58,6 +63,15 @@ export const broadcastModel = pgTable(
     ),
     templateId: bigintAsString(),
     templateData: jsonb(),
+    /**
+     * Which layout scopes the audience and templates: `channel` (legacy —
+     * the integration columns above, else the whole channel) or `targets`
+     * (the `BroadcastTarget` rows). Persisted rather than derived from the
+     * presence of target rows, because those rows cascade away with their
+     * inbox and an empty target list must then mean "nobody", never
+     * "every page of the channel".
+     */
+    targetMode: text().notNull().default(broadcastTargetModes.enum.channel),
     status: broadcastStatus().notNull(),
     schedulesType: broadcastScheduleType().notNull(),
     schedulesAt: timestamp(timestampConfig).notNull(),
@@ -65,12 +79,27 @@ export const broadcastModel = pgTable(
     subaction: text().notNull(),
     channel: text().notNull(),
     contactCount: integer(),
+    /** Set once every recipient row has been handed to its channel send job; terminal status is resolved after this. */
+    handoffCompletedAt: timestamp(timestampConfig),
+    /** Soft-delete stamp; purgeBroadcasts hard-deletes after chunked recipient teardown + zero-remaining verification. EVERY Broadcast reader must filter deletedAt IS NULL (see Task 3 checklist). */
+    deletedAt: timestamp(timestampConfig),
+    /** Dispatch epoch, incremented by resumeSending AND moveToDraft. Suffixes every downstream PER-CONTACT send jobId (defeats BullMQ's 1-hour completed-job dedup on resume) and pins prepare's promotion UPDATE (defeats stale-prepare re-promotion after a moveToDraft → re-schedule round-trip). The sendBroadcast DRIVER jobId (broadcastSendJobId) deliberately stays epoch-FREE — it enforces the single-driver invariant and its removeOnComplete/Fail: true frees the key at terminal state. */
+    resumeCount: integer().notNull().default(0),
+    /** 1-based inclusive start position over the ascending-id audience order; null = from the beginning. See `resolveBroadcastAudienceRange` in partials/broadcast.ts. */
+    audienceRangeStart: integer(),
+    /** 1-based inclusive end position over the ascending-id audience order; null = to the end. */
+    audienceRangeEnd: integer(),
+    /** Recipients handed to channel send jobs per dispatch minute; null = `BROADCAST_DEFAULT_SEND_RATE_PER_MINUTE`. No `.default()` — null is the "unset" state the form/API send. */
+    sendRatePerMinute: integer(),
   },
   (table) => [
     index("Broadcast_workspaceId_idx").using(
       "btree",
       table.workspaceId.asc().nullsLast(),
     ),
+    index("Broadcast_workspaceId_active_idx")
+      .on(table.workspaceId, table.channel)
+      .where(sql`"status" IN ('scheduled', 'sending') AND "deletedAt" IS NULL`),
     index("Broadcast_flowId_idx").using(
       "btree",
       table.flowId.asc().nullsLast(),
@@ -87,5 +116,8 @@ export const broadcastModel = pgTable(
       "btree",
       table.status.asc().nullsLast(),
     ),
+    index("Broadcast_deletedAt_idx")
+      .using("btree", table.deletedAt.asc().nullsLast())
+      .where(sql`"deletedAt" IS NOT NULL`),
   ],
 )

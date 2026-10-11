@@ -5,6 +5,7 @@ This file summarizes how **ChatbotX** (this repository) is structured and how to
 ## What this project is
 
 - **Product:** Open-source omnichannel chatbot platform (inbox, flow builder, AI agents, broadcasts, webhooks, public APIs, CLI, MCP).
+- **Agent-first:** the primary user is an **AI agent** driving the product through the public API, the CLI, and the MCP server. The web UI is a secondary client of the same capabilities. A feature that exists only in the UI is invisible to agents — see invariant 23.
 - **Architecture:** **pnpm** workspaces + **Turborepo**. Shared packages use the **`@chatbotx.io/*`** npm scope.
 - **License:** Community Edition is **MIT**; enterprise-specific code may fall under a separate commercial license (see `apps/builder/src/enterprise/LICENSE`).
 
@@ -20,11 +21,11 @@ This file summarizes how **ChatbotX** (this repository) is structured and how to
 | `apps/builder`    | **Next.js** web app (product UI). Default dev URL often `http://localhost:3123` (see `.env.example`).                   |
 | `apps/worker`     | **BullMQ** (and related) background jobs: chat, AI, triggers, webhooks, analytics, sequences.                           |
 | `apps/realtime`   | Realtime server; builder exposes `NEXT_PUBLIC_REALTIME_URL` (e.g. `http://localhost:1999`).                             |
-| `apps/cli`        | Command-line client (`chatbotx-cli`).                                                                                   |
+| `apps/cli`        | Command-line client (`chatbotx`).                                                                                       |
 | `apps/mcp-server` | MCP server exposing public API surfaces.                                                                                |
 | `apps/javascript-executor` | Internal HTTP service that executes flow-step JavaScript in isolated-vm.                                      |
-| `packages/*`      | Shared libraries: `database` (Drizzle + PostgreSQL), `ui`, `public-apis`, `sdk`, `worker-config`, `ai`, etc.            |
-| `integrations/*`  | Channel and vendor integrations (WhatsApp, Messenger, Telegram, Zalo, TikTok, webchat, SMTP, OpenAI, Google Sheets, …). |
+| `packages/*`      | Shared libraries: `database` (Drizzle + PostgreSQL), `ui`, `sdk`, `worker-config`, `ai`, etc.            |
+| `integrations/*`  | Channel and vendor integrations (WhatsApp, Messenger, Instagram, Threads, Telegram, Zalo, TikTok, webchat, SMTP, OpenAI, Google Sheets, …). |
 
 ## Stack (high level)
 
@@ -39,8 +40,11 @@ This file summarizes how **ChatbotX** (this repository) is structured and how to
 ```bash
 pnpm dev              # turbo dev — all dev tasks the repo wires up
 pnpm build            # turbo build
-pnpm lint             # ultracite lint
+pnpm lint             # check:agent-instructions → turbo run lint → ultracite check
 pnpm fix              # ultracite fix --unsafe
+pnpm test             # turbo run test (vitest, --passWithNoTests per workspace)
+pnpm test:coverage    # turbo run test -- --coverage
+pnpm sync:agent-instructions   # regenerate the .devin/ + .github/ invariant mirrors
 pnpm check:circular   # madge circular deps
 pnpm check:unused     # knip
 ```
@@ -51,8 +55,8 @@ Targeted examples:
 pnpm --filter builder dev
 pnpm --filter worker dev
 pnpm --filter realtime dev
-pnpm --filter chatbotx-cli dev:cli
-pnpm --filter chatbotx-mcp-server dev:mcp
+pnpm --filter chatbotx dev:cli
+pnpm --filter chatbotx-mcp dev:mcp
 pnpm --filter @chatbotx.io/database db:studio
 ```
 
@@ -103,6 +107,7 @@ For automatic context injection on every prompt, add the hook to your **own** `.
 - **Pages:** `apps/builder/src/app/...` — async Server Components; `params` / `searchParams` are **Promises** (Next.js 16 / React 19 style).
 - **oRPC:** RPC + OpenAPI from the builder; auth stacks and middleware live around `apps/builder/src/orpc.ts` and `apps/builder/src/middlewares/`. Feature APIs often colocate under each feature’s `api/` folder.
 - **Public / unauthenticated routes:** implement as route handlers under `app/`, and register prefixes in `apps/builder/src/proxy.ts` (`publicRoutes`) so middleware does not force sign-in.
+- **Client-side server data:** TanStack Query via `@/lib/orpc/query` (`orpc.<router>.<proc>.queryOptions()`); zustand `provider/` stores are for client-only state. See `feature-scaffold` skill.
 
 ### API surface
 
@@ -112,6 +117,9 @@ For automatic context injection on every prompt, add the hook to your **own** `.
 
 - Schema and migrations: **`packages/database`** (Drizzle). Use the **drizzle-database** skill in `.agents/skills/drizzle-database/SKILL.md` for migrations and query patterns.
 - **Migration safety:** Never run or apply `db:migrate` automatically. Generate and inspect migration SQL when needed, then wait for explicit user approval before applying it. This applies even when a plan lists `db:migrate` as a verification step.
+- **Drift guard (no database needed, runs in `pnpm lint`):** `pnpm --filter @chatbotx.io/database db:check-drift` runs `drizzle-kit generate` into a throwaway probe folder and fails if any SQL would be emitted — i.e. `src/schema` and the migration snapshot chain disagree. It is registered as that package's `lint` script, so `pnpm lint` covers it. The probe folder is swept on exit and on signals, and `run-migrations.mjs` refuses to apply a leftover one.
+- **Database-backed tests (opt-in):** `pnpm --filter @chatbotx.io/database test:db` runs `packages/database/__tests__/integration/`, which reads `information_schema.columns` from a real Postgres. They skip themselves under plain `pnpm test` (the vitest preset points `DATABASE_URL` at a non-routable sentinel) and insert no rows.
+- **A drizzle `.default()` is not proof of a database default.** `.default(...)` makes the column optional in `$inferInsert` and makes drizzle emit the bare `DEFAULT` keyword for an omitted key — it never inlines the value. drizzle-kit serializes `jsonb().default(sql`[]`)` as *no* default, so schema, snapshot and database all agree the column has none while TypeScript still calls it optional: omitting the key is a NOT NULL violation at runtime, and `db:check-drift` cannot see it. 19 columns are in that state today; they are pinned in `__tests__/integration/schema-default-parity.test.ts`, and every insert path for one of them must write the value explicitly.
 
 ### Workers & queues
 
@@ -121,6 +129,10 @@ For automatic context injection on every prompt, add the hook to your **own** `.
 
 - **New or changed channels:** `integrations/<channel>/` and the **integration-channel** skill. Respect webhook send/receive patterns already used by sibling integrations.
 
+### Business logic
+
+- Any DB read/write from app code, a new service method, or shared validation/cache/event logic: **`packages/business`**. The chain is `action | API handler → service → repository → DB` — app code calls a service, never `db` directly. Use the **business-data-access** skill.
+
 ### Dependencies
 
 - Add deps with **`pnpm add <pkg> --filter <workspace>`**. Import internal packages via their **`exports`** (e.g. `@chatbotx.io/database/client`).
@@ -129,7 +141,7 @@ For automatic context injection on every prompt, add the hook to your **own** `.
 
 - **Rules (always apply):** `.agents/rules/` — `data-access.md` (no direct `db` in app layer), `git.md` (commit/PR/staging), `no-dynamic-import.md` (dynamic `import()` breaks the tsdown build — applies to `packages/*`, `integrations/*`, `apps/{worker,cli,mcp-server,javascript-executor}`; allowed in `apps/builder`).
 - **Per-tool rule mirrors:** `.devin/rules/chatbotx.md` and the ChatbotX section in `.github/copilot-instructions.md` receive generated copies of the shared invariants below. **This file (`AGENTS.md`) is canonical**; run `pnpm sync:agent-instructions` after changing them.
-- **Agent skills (detailed runbooks):** `.agents/skills/` — notably `turborepo-workflow`, `feature-scaffold`, `orpc-api`, `drizzle-database`, `integration-channel`, `worker-development`, `contact-filter`, plus `security-review`, `testing-workflow`, `reliability-concurrency`.
+- **Agent skills (detailed runbooks):** `.agents/skills/<name>/SKILL.md`. Read the skill for a task **before** writing code for it. The canonical task → skill routing table is in `CLAUDE.md` ("Skill → task mapping") — it is the single inventory; do not maintain a second list here.
 - **Specialist subagents:** `.claude/agents/` — `invariant-guard` (post-edit invariant check), `rag-eval` (retrieval/tenant scoping), `incident-responder` (prod triage). General reviewers/planners come from the `~/.claude/` global set.
 - **Test placement:** use `<workspace>/__tests__/` for app/package/integration-level tests, especially tests covering actions, routes, API behavior, cache behavior, worker behavior, or multiple feature boundaries (e.g. `apps/builder/__tests__`, `apps/worker/__tests__`, `packages/sdk/__tests__`, `integrations/messenger/__tests__`). Use colocated `src/**/__tests__` only for narrow unit/component tests clearly owned by that module.
 - **Quality bar:** Run `pnpm lint` (and typecheck scripts for touched packages) before considering work done. Keep changes scoped to the requested behavior.
@@ -143,7 +155,7 @@ These are the most common mistakes — read before writing any code:
 
 2. **`relations/index.ts` needs TWO edits** — When adding a new table, you must both `import` the new relations file AND spread it inside the `relations` object. Missing one breaks Drizzle's relational queries silently.
 
-3. **`ChannelType` cascade** — Adding a value to `channelTypes` in `packages/database/src/partials/channel.ts` causes compile errors in every `Record<ChannelType, ...>` across the codebase. Grep for `Record<ChannelType` and fix all hits.
+3. **`ChannelType` cascade** — `channelTypes` is defined in `packages/utils/src/channel.ts` (`packages/database/src/partials/channel.ts` only re-exports it, so packages that cannot depend on the database layer — notably `flow-config` — can still key tables by channel). Adding a value there causes compile errors in every `Record<ChannelType, ...>` across the codebase. Grep for `Record<ChannelType` and fix all hits.
 
 4. **`.bind()` with `bindArgsSchemas`** — Server actions that use `bindArgsSchemas` (e.g. for `workspaceId`) must be called with `.bind(null, workspaceId)` when passed to `useHookFormAction` or `useAction`. Without this, TypeScript throws a "too few arguments" error.
 
@@ -155,7 +167,7 @@ These are the most common mistakes — read before writing any code:
 
 8. **`docs/tech-stack.md` is authoritative** — If you see references to Prisma anywhere in older docs, those are stale. This project uses Drizzle ORM exclusively.
 
-9. **No direct `db` in app layer** — Code in `apps/` and `integrations/` must NOT import `db` from `@chatbotx.io/database/client`. All database access goes through a service (`packages/business/`) or repository (`packages/database/src/repositories/`). Existing direct imports are legacy exceptions. See `.agents/rules/data-access.md`.
+9. **The chain is `action | API handler → service → repository → DB`** — code in `apps/` and `integrations/` must NOT import `db` from `@chatbotx.io/database/client`; call a service from `packages/business/`. A service may call a repository from `packages/database/src/repositories/`; a repository is raw only (where-builders, joins, pagination — never cache/events/validation). `packages/connections` is the orchestration layer above those services and repositories: it may compose provider calls, open transactions, and pass transaction handles, but it must never issue raw DB queries. The one exception for app code is a **pure read with zero business logic**, which may call a repository directly. A `.query.ts` file under `apps/builder/src/features/*/queries/` is a thin request adapter — it may turn session context into plain params and shape a service's response, but must not hold where-builders, pagination, or count logic, and must not import `db`; a session-free read is called straight from the handler with no query file. The public API handler and its private-path equivalent for the same resource must call the **same service method** — only the app layer resolves the caller's permission scope and passes it in as plain data (`scope`/`accessScope`). Existing direct `db` imports outside this chain are legacy exceptions. See `.agents/rules/data-access.md`.
 
 10. **White-label tenancy** — `User`/`Workspace` carry a `tenantId` that defaults to `ROOT_TENANT_ID` (`"1"`, the platform). `User` email is unique *per tenant* (`User_email_tenant_key`), never globally. Derive a new workspace's tenant via `workspaceService.resolveTenantForOwner` (owner-derived, never host-derived) — don't set `tenantId` from request input. Never accept or return `tenantId` from client input in auth: the tenant-scoped adapter stamps it from `getTenantId()`. See `docs/tenancy.md`.
 
@@ -167,13 +179,24 @@ These are the most common mistakes — read before writing any code:
 
 14. **Trial-expired workspaces are read/delete-only, not redirected.** The persistent banner explains the state; use `workspaceActionClientAllowExpired` for delete, disconnect, cancel, and other actions that must remain available after expiry. `Workspace.scheduledDeletionAt` is the soft-delete convention: the hourly `purgeWorkspaces` cron disconnects integrations first, then hard-deletes after the 24-hour grace window.
 
-15. **Workspace-scoped workers must use `withBlockedOwnerGuard`.** A blocked owner is a safe no-op with a bare `return`, so the job does not retry or dead-letter and webhook requests remain HTTP-200-safe. Excluded system/quota/tenancy jobs are `sendAuditLog`, `sendErrorLog`, and all schedule cron jobs except the two broadcast handlers. The trial+7d `unsubscribeExpiredTrials` teardown is one-shot via `UserQuota.channelsTornDownAt`.
+15. **Workspace-scoped workers must use `withBlockedOwnerGuard`.** A blocked owner is a safe no-op with a bare `return`, so the job does not retry or dead-letter and webhook requests remain HTTP-200-safe. Excluded system/quota/tenancy work is `sendAuditLog`, the `error-log:recorded` event-bus listener that records third-party failures, and all schedule cron jobs except the two broadcast handlers. The trial+7d `unsubscribeExpiredTrials` teardown is one-shot via `UserQuota.channelsTornDownAt`.
 
 16. **New flow node type cascade — grep for every registration surface.** Adding a value to `nodeTypeSchema` (`packages/flow-config/src/nodes/base.ts`) requires registering the new node schema in ALL node maps, and most fail SILENTLY (no compile error — the node doesn't render, or publish fails with a generic "flowConfigIncomplete" toast). Run `grep -rn "waitNodeSchema\|nodeTypeSchema.enum.wait" apps/ packages/` and mirror every hit: the `flowVersionSchema` union (`packages/flow-config/src/nodes/index.ts`), `allNodesConfig` (`nodes/node-config.tsx`), `allSteps` (`steps/index.tsx`), `viewerNodeTypes` (`react-flow-wrapper.tsx`), and `analyticsNodeTypes` (`node-types-config.ts`). Never hand-list node schemas in a new zod union — reuse `flowVersionSchema`/`publishFlowSchema` so client and server validation cannot drift.
 
 17. **A `FolderType` shared by multiple discriminator values needs extra scoping in `changeFolder`.** `AutomatedResponse` (Keywords) has one table serving two `FolderType`s — `automatedResponse` (Contact/inbound) and `outboundAutomatedResponse` (Page/outbound) — disambiguated by a `type` column, both resolved to the same model in `FolderService.resolveResourceModel`. `FolderService.changeFolder` (`packages/business/src/folder/service.ts`) scopes its select/update only by `workspaceId` + `id`, so without an extra check it will happily move an inbound row into an outbound folder (or vice versa), silently breaking the "never share a folder namespace" invariant. Any resource added to `resolveResourceModel` that shares a table across more than one `FolderType` must add a matching entry to `automatedResponseTypeByFolderType` (or an equivalent map) and thread it into `changeFolder`'s where-clause — see how `packages/database/src/partials/automated-response.ts` does it for Keywords.
 
 18. **Channel-visibility (`Tenant.hiddenChannels`) is a UI gate, not authorization.** The two-tier policy (`tenantService.resolveVisibleChannels`) only decides whether the create UI *renders* a channel — it is never consulted by webhooks, outbound send, or `Inbox`, so a hidden channel that is already connected keeps working. Three consequences that bite silently: (a) the connect **actions** (e.g. `connectTelegramAction`) deliberately do NOT re-check the policy — a hidden channel is still creatable by invoking its action directly; adding true blocking is an authorization change on the action, not a visibility change. (b) Any new enforcement surface must pass the **tenant-aware owner** from `resolvePlatformOwnerId`/`resolveOwnerForWorkspace` (`apps/builder/src/lib/platform-credential-owner.ts`, host wins over `workspaceId`) — pass a bare `userId` and the policy silently falls back to platform-global with no error. (c) The settings surface **grandfathers** already-connected channels (`inboxService.distinctConnectedChannels`); any new gate over `CREATABLE_CHANNELS` must preserve that so hiding never makes an existing connection disappear. The canonical gate is `resolveChannelPolicy`/`requireVisibleChannel` (`apps/builder/src/lib/workspace/`) — the channels layout and every `settings/channels/<channel>/page.tsx` route share its one cached resolution per request, so never hand-roll a separate visibility check that can drift from it. `smtp` (manageable but not creatable) sits outside the policy entirely. See `docs/tenancy.md#channel-visibility-policy`.
+
+19. **Platform support access is a synthetic membership, never a `WorkspaceMember` row.** `resolveWorkspaceAccess` (`packages/business/src/workspace-support-access/resolve-access.ts`) is the single async entry point every auth gate calls: it loads the workspace (via `workspaceService.findForAuth`, which — like `WorkspaceMemberService.findMembership` — intentionally skips `withCache` so `disable()` ends a session on the very next request even if cache invalidation failed) and delegates to `resolveWorkspaceMembership` (`packages/business/src/workspace-member/synthetic.ts`), which returns the real row if one exists, otherwise synthesizes one in-memory when the caller `isSuperAdmin(user)` and `isSupportAccessEnabled(workspace)` (true while `Workspace.supportAccessUntil` is set and in the future — the owner's opt-in from Settings → General). Nothing is ever inserted, so there is no grant/revoke/expire step — access starts and stops purely by re-evaluating `supportAccessUntil` on every request. A daily `clearExpiredSupportAccess` cron (`apps/worker/src/schedule/handlers/clear-expired-support-access.ts`) does clear the stale `supportAccessUntil` timestamp once it's in the past, but this is display/reporting hygiene only (e.g. the `/admin` workspaces list sort) — it never gates access, since reads already ignore a past timestamp. Every gate that resolves a caller's workspace membership (`workspaceAuthorizedMidddleware`, `workspaceActionClientAllowExpired`, the workspace layout, `getCurrentUserAndTargetWorkspace`) must route through this helper rather than querying `WorkspaceMember` directly, or a super admin's support session will silently 404. The resolved `isSupportSession` flag must gate any action that changes the support-access window itself (`toggleSupportAccessAction` rejects the call when true) — otherwise the synthetic membership's `superAdmin: true` permission would let a support session renew its own time-boxed access indefinitely. Because there is no row, a support session never appears in the members table, never counts toward `WorkspaceUsage.teamMembers`, and disabling the toggle (`WorkspaceSupportAccessService.disable`) alone ends every in-progress session immediately. See `docs/support-access.md`.
+
+20. **Structured logging: the key is `err`, not `error`.** Server-side code (actions, queries, API handlers, worker consumers, integrations) must use the structured logger, never `console`. Pino's serializer is keyed on `err`, so `logger.error({ error }, "...")` silently drops the stack trace while `logger.error({ err: error }, "...")` keeps it. Import the nearest child logger (`apps/worker/src/lib/logger.ts`, a feature's `lib/log`) or `getChildLogger` from `@chatbotx.io/logger` — there is no named `logger` export on that package. Client components may use `console` only for local debugging removed before merge.
+
+21. **TanStack Query mutations must invalidate.** `router.refresh()` only re-renders the RSC tree; it does not touch the browser-singleton QueryClient (`apps/builder/src/lib/query/query-client.ts`, `staleTime: 30_000`) that survives navigation. Every create, update, delete, toggle, or move of a TanStack-cached resource must call its invalidator (`useInvalidateTags`, `useInvalidateInboxes`, `useInvalidateUsers`, `useInvalidateSequences`, `useInvalidateCustomFields`, `useInvalidateBotFields`, `useInvalidateFlows`, `useSavedReplyCache`) or `setQueryData`. Invalidate before `router.push`. Shared mutation dialogs such as `ChangeFolderDialog` must expose `onSuccess` so callers can invalidate their resource. List payloads may contain derived fields (`flowVersions`, `folderId`, `stepsCount`), so invalidation is required even when the primary entity is unchanged.
+
+22. **`ContactInboxPost` has no FK and is partitioned by `workspaceId`.** Every ContactInbox, Contact, or Workspace delete path must go through `contactInboxPostService`; every post query must include `workspaceId`; and post writes must hold the durable workspace purge guard through commit.
+
+23. **Agent-first: every feature ships a public API — including the ones that only return a result.** The CLI and MCP server derive their whole surface from `GET /api/public-spec.json` (`publicRouter`), so a capability without a public procedure does not exist for an AI agent, however well it works in the UI. A new feature — or a new operation on an existing one — must add a procedure to its `features/<x>/api/public.ts`, nested in `apps/builder/src/routers/public.ts`, behind `workspaceTokenAuthAPIForScope("<scope>")`. This covers **result-returning operations**, not just CRUD: anything a user clicks in the UI to *get something back* — a link (`botSimulator.getLink` is the reference), a preview or render, a test run/test send/connection test, stats and reports, an export, AI-generated content, a status check, a sync or scan. The rule of thumb: if a button in the UI produces a result, an agent must be able to call one operation and receive the same result. Build the public procedure **first** and the UI second; both call the same service method or `features/<x>/lib/` function, never two implementations. The response must be machine-usable data (ids, URLs, JSON) — never something that only renders on screen — and the procedure's `summary`/`description` must say which operation supplies each input id (e.g. "Get webchat ids from `webchats.list`"). Then run the `cli-mcp-docs` skill. **Exempt** (state the reason in the PR): sign-in/sign-up and personal account settings; platform administration (super admin, reseller, tenant, platform credentials); end-customer public pages (webviews, short links, booking pages); the browser-redirect step of a channel OAuth connect (the post-connect read/settings/disconnect still need an API); UI-only plumbing (device push tokens, realtime, help items); and operations a workspace token must never perform (minting/revoking API tokens).
+
 <!-- END GENERATED: SHARED-INVARIANTS -->
 
 ## Git conventions
@@ -184,10 +207,20 @@ See **`.agents/rules/git.md`** for the full canonical rules (commit format, bran
 
 - Human-facing docs: [chatbotx.io/docs](https://chatbotx.io/docs) (including Quick Start).
 - Tech stack details: `docs/tech-stack.md`
+- Architecture decisions: `docs/adr/`
+- Messaging scaling runbook: `docs/scaling-messaging.md`
 - Request flow diagrams: `docs/request-workflow.md`
 - White-label tenancy model: `docs/tenancy.md`
-- Facebook comment automation: `docs/fb-comment-automation.md` (skill: `.agents/skills/fb-comment-automation/`)
+- Workspace API tokens (hashing, scopes, `{{api_key}}` default token): `docs/developer/workspace-api-tokens.md`
+- Ads conversion tracking (CTWA/CTM/CTID, rules vs Trigger actions, CAPI): `docs/ads-conversion-tracking.md`
+- Google Ads Click-to-Message conversion tracking (gclid/gbraid capture, Connection-engine OAuth, Data Manager API delivery, dedup, state machine, statistics dashboard, read-only public API, ops runbook): `docs/google-ads-conversion-tracking.md`
+- Google Ads conversion options for admins (dedup mode, conversion time, consent, legacy differences): `docs/google-ads-conversion-options-admin-guide.md`
+- Comment automation (all channels): `docs/comment-automation.md` (skill: `.agents/skills/comment-automation/`)
+- Push notifications (Expo Push Service, device tokens): `docs/push-notifications.md`
 - Enterprise licensing (offline Ed25519 license keys): `docs/licensing.md`
+- Platform support access (super admin opening any workspace): `docs/support-access.md`
+- Automatic Customer Scan (contact import by scanning channel conversation history; shares the `CoexistSyncRun` table via a `type` discriminator): `docs/contact-scan.md`
+- WhatsApp Conversation Routing (thread control with Meta AI / other partners: webhook backfill, send gate, handover, archive release): `docs/whatsapp-conversation-routing.md`
 
 When unsure, search the codebase for an existing feature that resembles the request and mirror its structure, imports, and error-handling style.
 

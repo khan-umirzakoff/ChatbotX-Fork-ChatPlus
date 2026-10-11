@@ -9,19 +9,16 @@ vi.mock("next/cache", () => ({
 }))
 
 // ---------------------------------------------------------------------------
-// Mock @chatbotx.io/redis — intercept invalidateCacheByTags calls
-// ---------------------------------------------------------------------------
-vi.mock("@chatbotx.io/redis", () => ({
-  invalidateCacheByTags: vi.fn(),
-}))
-
-// ---------------------------------------------------------------------------
 // Mock auth utilities so workspaceActionClient never touches Next.js headers()
 // zodBigintAsString() returns z.string(), so workspaceId parsed from bind arg
 // is a plain string.  The workspace mock must use string ids to match.
 // ---------------------------------------------------------------------------
 vi.mock("@/lib/auth/utils", () => ({
   getCurrentUserId: vi.fn(),
+}))
+
+vi.mock("next/headers", () => ({
+  headers: vi.fn(async () => new Headers()),
 }))
 
 // Workspace IDs as strings (zodBigintAsString returns string, not BigInt)
@@ -33,43 +30,16 @@ vi.mock("@/features/workspace-members/queries", () => ({
 }))
 
 // ---------------------------------------------------------------------------
-// Mock @chatbotx.io/database/client
-// Chainable builder: db.update(model).set(…).where(…).returning()
+// Mock @chatbotx.io/database/client — findOrFail is still reached by the
+// workspaceActionClient auth chain.
 // ---------------------------------------------------------------------------
-const returningResult: { current: { syncTagEnabledAt: Date | null }[] } = {
-  current: [],
-}
-
-const dbUpdateBuilder = {
-  set: vi.fn(),
-  where: vi.fn(),
-  returning: vi.fn(),
-}
-
 vi.mock("@chatbotx.io/database/client", () => ({
-  db: {
-    update: vi.fn(),
-  },
   findOrFail: vi.fn(),
   isDatabaseError: vi.fn(() => false),
-  and: (...args: unknown[]) => args,
-  eq: (...args: unknown[]) => args,
 }))
 
 // ---------------------------------------------------------------------------
-// Mock @chatbotx.io/database/schema
-// ---------------------------------------------------------------------------
-vi.mock("@chatbotx.io/database/schema", () => ({
-  integrationMessengerModel: {
-    id: "id",
-    workspaceId: "workspaceId",
-    syncTagEnabledAt: "syncTagEnabledAt",
-  },
-  userModel: { id: "id" },
-}))
-
-// ---------------------------------------------------------------------------
-// Mock @chatbotx.io/business (isPlatformAdmin) and errors
+// Mock @chatbotx.io/business (isPlatformAdmin, messengerIntegrationService) and errors
 //
 // This factory mock enumerates exports, so it must cover everything
 // `workspaceActionClient` reaches — not just what this action calls directly.
@@ -77,10 +47,34 @@ vi.mock("@chatbotx.io/database/schema", () => ({
 // next-safe-action swallows it into a generic `serverError`, which reads like an
 // unrelated failure. `isWorkspaceScheduledForDeletion` is the deletion gate in
 // `lib/safe-action.ts`; `false` = an active workspace, this action's precondition.
+//
+// Cache invalidation now lives inside `messengerIntegrationService.updateTagSync`
+// itself (see `integration-tag-sync.service.test.ts`), so this action-level test
+// only needs to prove the action forwards to the service and surfaces its result.
 // ---------------------------------------------------------------------------
+const updateTagSync = vi.fn()
+
 vi.mock("@chatbotx.io/business", () => ({
   isPlatformAdmin: vi.fn(async () => false),
   isWorkspaceScheduledForDeletion: vi.fn(() => false),
+  resolveWorkspaceAccess: vi.fn(({ realMember, workspaceId }) => {
+    if (!realMember) {
+      return
+    }
+    return {
+      workspace: realMember.workspace ?? { id: workspaceId },
+      member: realMember,
+      isSupportSession: false,
+    }
+  }),
+  messengerIntegrationService: { updateTagSync },
+}))
+
+vi.mock("@chatbotx.io/business/audit", () => ({
+  getAuditActor: vi.fn(() => undefined),
+  withAuditContext: vi.fn(
+    async (_ctx: unknown, fn: () => Promise<unknown>) => await fn(),
+  ),
 }))
 
 vi.mock("@chatbotx.io/business/errors", () => ({
@@ -107,17 +101,13 @@ vi.mock("@/lib/log", () => ({
 const { toggleMessengerTagSyncAction } = await import(
   "../toggle-tag-sync.action"
 )
-const { invalidateCacheByTags } = await import("@chatbotx.io/redis")
-const { db, findOrFail } = await import("@chatbotx.io/database/client")
+const { ChatbotXException } = await import("@chatbotx.io/business/errors")
+const { findOrFail } = await import("@chatbotx.io/database/client")
 const { getCurrentUserId } = await import("@/lib/auth/utils")
 const { getAllWorkspaceMembers } = await import(
   "@/features/workspace-members/queries"
 )
 
-const invalidateCacheByTagsMock = invalidateCacheByTags as ReturnType<
-  typeof vi.fn
->
-const dbUpdate = db.update as ReturnType<typeof vi.fn>
 const findOrFailMock = findOrFail as ReturnType<typeof vi.fn>
 const getCurrentUserIdMock = getCurrentUserId as ReturnType<typeof vi.fn>
 const getAllWorkspaceMembersMock = getAllWorkspaceMembers as ReturnType<
@@ -152,122 +142,58 @@ describe("toggleMessengerTagSyncAction", () => {
       workspaceIds: [WORKSPACE_ID],
     })
 
-    // Re-wire the chainable DB builder
-    dbUpdateBuilder.set.mockReturnValue(dbUpdateBuilder)
-    dbUpdateBuilder.where.mockReturnValue(dbUpdateBuilder)
-    dbUpdateBuilder.returning.mockResolvedValue(returningResult.current)
-    dbUpdate.mockReturnValue(dbUpdateBuilder)
+    updateTagSync.mockResolvedValue(null)
   })
 
   // ── enabled: true ──────────────────────────────────────────────────────────
 
   describe("enabled: true", () => {
-    test("sets syncTagEnabledAt to a Date instance (not null)", async () => {
+    test("returns the Date instance from the service (not null)", async () => {
       const now = new Date()
-      returningResult.current = [{ syncTagEnabledAt: now }]
-      dbUpdateBuilder.returning.mockResolvedValue(returningResult.current)
+      updateTagSync.mockResolvedValue(now)
 
       const result = await invokeAction(true)
 
-      expect(dbUpdate).toHaveBeenCalledTimes(1)
-
-      const setArg = dbUpdateBuilder.set.mock.calls[0]?.[0] as {
-        syncTagEnabledAt: unknown
-      }
-      expect(setArg.syncTagEnabledAt).toBeInstanceOf(Date)
-      expect(setArg.syncTagEnabledAt).not.toBeNull()
-
-      // Return value exposes syncTagEnabledAt from the DB row
+      expect(updateTagSync).toHaveBeenCalledTimes(1)
+      expect(updateTagSync).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        integrationId: INTEGRATION_ID,
+        enabled: true,
+      })
       expect(result?.data?.syncTagEnabledAt).toBeInstanceOf(Date)
-    })
-
-    test("scopes the WHERE clause by both workspaceId and integrationId", async () => {
-      returningResult.current = [{ syncTagEnabledAt: new Date() }]
-      dbUpdateBuilder.returning.mockResolvedValue(returningResult.current)
-
-      await invokeAction(true)
-
-      expect(dbUpdateBuilder.where).toHaveBeenCalledTimes(1)
-      // Our and() mock spreads its args into an array — the array should contain
-      // exactly two eq() predicate results (one per field).
-      const whereArg = dbUpdateBuilder.where.mock.calls[0]?.[0] as unknown[]
-      expect(Array.isArray(whereArg)).toBe(true)
-      expect(whereArg).toHaveLength(2)
-    })
-
-    test("calls invalidateCacheByTags with the workspace-scoped messenger key", async () => {
-      returningResult.current = [{ syncTagEnabledAt: new Date() }]
-      dbUpdateBuilder.returning.mockResolvedValue(returningResult.current)
-
-      await invokeAction(true)
-
-      expect(invalidateCacheByTagsMock).toHaveBeenCalledTimes(1)
-      expect(invalidateCacheByTagsMock).toHaveBeenCalledWith([
-        `workspaces:${WORKSPACE_ID}#messengers`,
-      ])
     })
   })
 
   // ── enabled: false ─────────────────────────────────────────────────────────
 
   describe("enabled: false", () => {
-    test("sets syncTagEnabledAt to null", async () => {
-      returningResult.current = [{ syncTagEnabledAt: null }]
-      dbUpdateBuilder.returning.mockResolvedValue(returningResult.current)
+    test("passes enabled: false to the service", async () => {
+      updateTagSync.mockResolvedValue(null)
 
       await invokeAction(false)
 
-      const setArg = dbUpdateBuilder.set.mock.calls[0]?.[0] as {
-        syncTagEnabledAt: unknown
-      }
-      expect(setArg.syncTagEnabledAt).toBeNull()
-    })
-
-    test("calls invalidateCacheByTags with the workspace-scoped messenger key", async () => {
-      returningResult.current = [{ syncTagEnabledAt: null }]
-      dbUpdateBuilder.returning.mockResolvedValue(returningResult.current)
-
-      await invokeAction(false)
-
-      expect(invalidateCacheByTagsMock).toHaveBeenCalledWith([
-        `workspaces:${WORKSPACE_ID}#messengers`,
-      ])
-    })
-
-    test("scopes the WHERE clause by both workspaceId and integrationId", async () => {
-      returningResult.current = [{ syncTagEnabledAt: null }]
-      dbUpdateBuilder.returning.mockResolvedValue(returningResult.current)
-
-      await invokeAction(false)
-
-      const whereArg = dbUpdateBuilder.where.mock.calls[0]?.[0] as unknown[]
-      expect(Array.isArray(whereArg)).toBe(true)
-      expect(whereArg).toHaveLength(2)
+      expect(updateTagSync).toHaveBeenCalledWith({
+        workspaceId: WORKSPACE_ID,
+        integrationId: INTEGRATION_ID,
+        enabled: false,
+      })
     })
   })
 
-  // ── no matching row ────────────────────────────────────────────────────────
+  // ── unknown integration id ─────────────────────────────────────────────────
+  // The service now throws notFoundException instead of silently returning
+  // null when no row matches — the action must surface that as a rejection,
+  // not swallow it.
 
-  describe("no matching row (returning empty array)", () => {
-    test("returns { syncTagEnabledAt: null } without throwing", async () => {
-      returningResult.current = []
-      dbUpdateBuilder.returning.mockResolvedValue([])
+  describe("unknown integration id", () => {
+    test("surfaces the service's notFound error as serverError", async () => {
+      updateTagSync.mockRejectedValue(
+        new ChatbotXException("Messenger channel not found"),
+      )
 
       const result = await invokeAction(true)
 
-      // updated[0] is undefined → falls back to null via `?? null`
-      expect(result?.data?.syncTagEnabledAt).toBeNull()
-    })
-
-    test("still calls invalidateCacheByTags even when no row was updated", async () => {
-      returningResult.current = []
-      dbUpdateBuilder.returning.mockResolvedValue([])
-
-      await invokeAction(false)
-
-      expect(invalidateCacheByTagsMock).toHaveBeenCalledWith([
-        `workspaces:${WORKSPACE_ID}#messengers`,
-      ])
+      expect(result?.serverError).toBe("Messenger channel not found")
     })
   })
 })

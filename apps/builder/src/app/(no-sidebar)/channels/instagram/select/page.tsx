@@ -1,29 +1,38 @@
-import { getInstagramAccount } from "@chatbotx.io/integration-instagram"
-import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
+import { resolveSelectSession } from "@/features/channel-connect/lib/select-page"
 import { SelectAccount } from "@/features/integration-instagram/components/select-accounts"
-import type { FacebookAuthCallback } from "@/lib/facebook-pending-auth"
-import {
-  decryptAuth,
-  FB_INSTAGRAM_PENDING_AUTH_COOKIE,
-} from "@/lib/facebook-pending-auth"
 
 export const dynamic = "force-dynamic"
 
-export default async function InstagramSelectPage() {
-  const token = (await cookies()).get(FB_INSTAGRAM_PENDING_AUTH_COOKIE)?.value
+/**
+ * `session.targets` always has exactly one entry for the direct-login
+ * provider (its `exchangeCode` returns the final per-account auth directly,
+ * with no `listCandidates` step) — no live `getInstagramAccount` re-fetch.
+ */
+export default async function InstagramSelectPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ session?: string }>
+}) {
+  const { sessionId, resolved } = await resolveSelectSession({
+    searchParams,
+    expectedProvider: "instagram",
+  })
 
-  const auth = token ? await decryptAuth<FacebookAuthCallback>(token) : null
-
-  if (!auth) {
+  const target = resolved.session.targets[0]
+  if (!target) {
     redirect("/channels/create")
   }
 
-  const account = await getInstagramAccount(auth.userToken)
-
-  if (!account) {
-    redirect("/channels/create")
-  }
-
-  return <SelectAccount account={account} workspaceId={auth.workspaceId} />
+  return (
+    <SelectAccount
+      account={{
+        id: target.id,
+        name: target.name,
+        avatarUrl: target.avatarUrl,
+      }}
+      sessionId={sessionId}
+      workspaceId={resolved.workspace.id}
+    />
+  )
 }

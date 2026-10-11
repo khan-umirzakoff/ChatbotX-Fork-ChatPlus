@@ -1,7 +1,22 @@
-import { and, db, eq, findOrFail, sql } from "@chatbotx.io/database/client"
-import type { IntegrationUserInfo } from "@chatbotx.io/database/partials"
+import {
+  and,
+  type DatabaseClient,
+  db,
+  eq,
+  findOrFail,
+  sql,
+} from "@chatbotx.io/database/client"
+import type {
+  InstagramPersistentMenu,
+  IntegrationUserInfo,
+} from "@chatbotx.io/database/partials"
 import { integrationInstagramModel } from "@chatbotx.io/database/schema"
+import type { AuthValue } from "@chatbotx.io/sdk"
 import { BaseService } from "../base.service"
+import { recordRefreshedAuth } from "../connection/record-refreshed-auth"
+import { connectionStateService } from "../connection/state-service"
+import { notFoundException } from "../errors"
+import { logger } from "../logger"
 
 class InstagramIntegrationService extends BaseService {
   findByInboxId(inboxId: string) {
@@ -59,11 +74,52 @@ class InstagramIntegrationService extends BaseService {
     })
   }
 
-  async markTokenRefreshError(id: string, error: string): Promise<void> {
-    await db
+  async markTokenRefreshError(props: {
+    id: string
+    workspaceId: string
+    error: string
+    isRevoked: boolean
+  }): Promise<void> {
+    const [row] = await db
       .update(integrationInstagramModel)
-      .set({ tokenRefreshError: error })
-      .where(eq(integrationInstagramModel.id, id))
+      .set({ tokenRefreshError: props.error })
+      .where(
+        and(
+          eq(integrationInstagramModel.id, props.id),
+          eq(integrationInstagramModel.workspaceId, props.workspaceId),
+        ),
+      )
+      .returning({
+        igId: integrationInstagramModel.igId,
+        type: integrationInstagramModel.type,
+      })
+
+    if (!row) {
+      logger.warn(
+        { integrationId: props.id, workspaceId: props.workspaceId },
+        "Unable to mark Instagram token refresh error: integration not found",
+      )
+      return
+    }
+
+    const provider = row.type === "facebook" ? "instagramFacebook" : "instagram"
+
+    if (props.isRevoked) {
+      await connectionStateService.markUnhealthyByIdentifier({
+        provider,
+        identifier: row.igId,
+        workspaceId: props.workspaceId,
+        reason: "token_revoked",
+      })
+      return
+    }
+
+    await connectionStateService.markDegradedByIdentifier({
+      provider,
+      identifier: row.igId,
+      workspaceId: props.workspaceId,
+      reason: "refresh_failed",
+    })
   }
 
   findByWorkspaceId(workspaceId: string, type?: "instagram" | "facebook") {
@@ -92,8 +148,10 @@ class InstagramIntegrationService extends BaseService {
     username?: string
     pageId?: string
     userInfo?: IntegrationUserInfo
+    tx?: DatabaseClient
   }): Promise<void> {
-    await db
+    const client = props.tx ?? db
+    const [row] = await client
       .update(integrationInstagramModel)
       .set({
         auth: props.auth,
@@ -109,27 +167,36 @@ class InstagramIntegrationService extends BaseService {
           eq(integrationInstagramModel.workspaceId, props.workspaceId),
         ),
       )
+      .returning({
+        igId: integrationInstagramModel.igId,
+        type: integrationInstagramModel.type,
+      })
+    if (!row) {
+      throw notFoundException("Instagram integration not found")
+    }
+    await recordRefreshedAuth({
+      workspaceId: props.workspaceId,
+      provider: row.type === "facebook" ? "instagramFacebook" : "instagram",
+      sourceId: row.igId,
+      auth: props.auth as AuthValue,
+      tx: props.tx,
+    })
   }
 
   /**
-   * Store the authorizing user's identity after a connect. Separate from the
-   * insert because the avatar upload is an external call that must stay outside
-   * the connect transaction.
+   * Seeds the row's own `persistentMenus` column with a single branding
+   * entry after the live Graph API push succeeds, same as Messenger's
+   * `seedPersistentMenu`. Callers gate this to rows that don't already have
+   * user-configured menu items, so it never clobbers.
    */
-  async updateUserInfo(props: {
+  async seedPersistentMenu(props: {
     id: string
-    workspaceId: string
-    userInfo: IntegrationUserInfo
+    entry: InstagramPersistentMenu
   }): Promise<void> {
     await db
       .update(integrationInstagramModel)
-      .set({ userInfo: props.userInfo })
-      .where(
-        and(
-          eq(integrationInstagramModel.id, props.id),
-          eq(integrationInstagramModel.workspaceId, props.workspaceId),
-        ),
-      )
+      .set({ persistentMenus: [props.entry] })
+      .where(eq(integrationInstagramModel.id, props.id))
   }
 
   /**
@@ -160,6 +227,30 @@ class InstagramIntegrationService extends BaseService {
 
   existsByPageId(pageId: string): Promise<boolean> {
     return this.existsForPage({ pageId })
+  }
+
+  listByWorkspaceId(workspaceId: string) {
+    return db.query.integrationInstagramModel.findMany({
+      where: { workspaceId },
+      orderBy: { createdAt: "asc" },
+    })
+  }
+
+  async updateProfileFields(
+    props: { id: string },
+    data: Record<string, unknown>,
+    tx: DatabaseClient,
+  ) {
+    await tx
+      .update(integrationInstagramModel)
+      .set(data)
+      .where(eq(integrationInstagramModel.id, props.id))
+  }
+
+  async disconnect(props: { id: string; tx: DatabaseClient }) {
+    await props.tx
+      .delete(integrationInstagramModel)
+      .where(eq(integrationInstagramModel.id, props.id))
   }
 }
 

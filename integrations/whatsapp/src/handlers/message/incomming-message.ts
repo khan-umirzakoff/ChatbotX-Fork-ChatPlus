@@ -1,14 +1,21 @@
 import { deriveAdSourcePlatform } from "@chatbotx.io/business/referral"
 import {
   contentTypes,
+  echoOrigins,
   type IncomingContact,
   type IncomingMessage,
   type MessageHandlers,
   type MessageReferral,
   messageTypes,
 } from "@chatbotx.io/sdk"
+import { extractInvisibleGoogleClick } from "@chatbotx.io/utils/google-click"
 import type { ServerMessageTypes } from "whatsapp-api-js/types"
 import { getWhatsappClient } from "../../client"
+import {
+  isStandbyEchoItem,
+  parseStandbyEcho,
+  readThreadControlReceiveInfo,
+} from "../../lib/conversation-routing"
 import { extractWhatsappUserIdentity } from "../../lib/raw-identity"
 import { asString } from "../../lib/value"
 import type { WhatsappAuthValue, WhatsappWebhookEvent } from "../../schema"
@@ -28,6 +35,12 @@ import type {
 type WhatsappReferralPayload = Record<string, unknown> & {
   ctwa_clid?: string
   source_url?: string
+  /**
+   * Stored verbatim as `referral.source` below — WhatsApp has no `source` field
+   * of its own. Left as a bare `string`: every Meta webhook reference writes
+   * this as a literal `"ad"` and gives it no parameter entry, so the value set
+   * is undocumented and nothing here may key a decision on it.
+   */
   source_type?: string
   source_id?: string
   headline?: string
@@ -61,13 +74,34 @@ const getWhatsappReferral = (
   }
 }
 
+/** Meta's message timestamp (Unix seconds); unusable -> the clock. */
+const whatsappTimestampToDate = (
+  timestamp: unknown,
+  now = new Date(),
+): Date => {
+  const seconds = Number(timestamp)
+  return Number.isFinite(seconds) && seconds > 0
+    ? new Date(seconds * 1000)
+    : now
+}
+
 const REF_PREFIX = "/ref-"
 
-const parseTextMessage: WhatsappMessageParser<"text"> = (message) => {
-  const body = message.text.body
+const parseTextMessage: WhatsappMessageParser<"text"> = (
+  message,
+  { receivedAt },
+) => {
+  // Google's Click-to-Message ads hide the click id in invisible characters of
+  // the starter text. Only a run that decodes to a valid payload is stripped,
+  // so ordinary text (including Japanese IVS sequences) is never altered.
+  const { text: body, googleReferral } = extractInvisibleGoogleClick(
+    message.text.body,
+    receivedAt,
+  )
+  const googleClick = googleReferral ?? undefined
   return body.startsWith(REF_PREFIX)
-    ? { ref: body.slice(REF_PREFIX.length) }
-    : { text: body }
+    ? { ref: body.slice(REF_PREFIX.length), googleClick }
+    : { text: body, googleClick }
 }
 
 const parseLocationMessage: WhatsappMessageParser<"location"> = (message) => {
@@ -121,9 +155,10 @@ const parseButtonMessage: WhatsappMessageParser<"button"> = (message) => {
  * (`packages/flow-config/src/routable-handle.ts:296`), this repo's existing
  * pattern for "look up the handler for a discriminant".
  *
- * Unlisted types (`reaction`, `system`, `request_welcome`, and anything Meta
- * adds later) fall through to the generic label in `receiveMessage` below,
- * matching the old `default` branch exactly.
+ * System messages are filtered and queued separately by the webhook handler.
+ * Other unlisted types (`reaction`, `request_welcome`, and anything Meta adds
+ * later) fall through to the generic label in `receiveMessage` below, matching
+ * the old `default` branch exactly.
  */
 const messageParsers: {
   readonly [Type in ServerMessageTypes["type"]]?: WhatsappMessageParser<Type>
@@ -149,17 +184,36 @@ export const receiveMessage: MessageHandlers<WhatsappAuthValue>["receiveMessage"
     } = props
 
     const data = payload as WhatsappWebhookEvent
+    const threadControl = readThreadControlReceiveInfo(data.raw)
+
+    // A standby echo is a partner's outgoing message, not a customer message:
+    // its "message" is the Send API body, so it never reaches the type parsers.
+    if (
+      threadControl?.delivery === "standby" &&
+      isStandbyEchoItem(data.message)
+    ) {
+      const echo = parseStandbyEcho(data.message as Record<string, unknown>)
+      return {
+        message: echo.message,
+        contact: echo.contact,
+        postbackAction: null,
+        quickReplyAction: null,
+        ref: null,
+        echoOrigin: echoOrigins.enum.thirdParty,
+        threadControl,
+      }
+    }
+
     const whatsappClient = getWhatsappClient(ctx.auth)
-    const referral = getWhatsappReferral(data.message)
+    const metaReferral = getWhatsappReferral(data.message)
 
     const message: IncomingMessage = {
       sourceId: data.message.id,
       messageType: messageTypes.enum.incoming,
       contentType: contentTypes.enum.text,
     }
-    const { sourceUserId, sourceUsername } = extractWhatsappUserIdentity(
-      data.raw,
-    )
+    const { sourceUserId, sourceParentUserId, sourceUsername } =
+      extractWhatsappUserIdentity(data.raw)
     // Username adopters: Meta sends an empty `from` (phone hidden) alongside
     // a BSUID in `contacts[0].user_id`. Fall back to the BSUID as the
     // contact's identity so the row is BSUID-keyed instead of empty-keyed
@@ -169,6 +223,7 @@ export const receiveMessage: MessageHandlers<WhatsappAuthValue>["receiveMessage"
       sourceId: asString(data.from) ?? sourceUserId ?? "",
       firstName: data.name,
       ...(sourceUserId ? { sourceUserId } : {}),
+      ...(sourceParentUserId ? { sourceParentUserId } : {}),
       ...(sourceUsername ? { sourceUsername } : {}),
     }
 
@@ -177,8 +232,19 @@ export const receiveMessage: MessageHandlers<WhatsappAuthValue>["receiveMessage"
     // the pairing is sound; TypeScript cannot prove it through the lookup —
     // same documented-assertion pattern as `readInteractiveReply`.
     const fragment: IncomingMessageFragment = parse
-      ? await parse(data.message as never, { ctx, whatsappClient })
+      ? await parse(data.message as never, {
+          ctx,
+          whatsappClient,
+          receivedAt: whatsappTimestampToDate(data.message.timestamp),
+        })
       : { text: `Received ${data.message.type}` }
+
+    const referral: MessageReferral | null = fragment.googleClick
+      ? {
+          ...metaReferral,
+          ...fragment.googleClick,
+        }
+      : metaReferral
 
     if (fragment.text !== undefined) {
       message.text = fragment.text
@@ -203,5 +269,6 @@ export const receiveMessage: MessageHandlers<WhatsappAuthValue>["receiveMessage"
       referralSource: referral?.source ?? null,
       referral,
       buttonTitle: fragment.buttonTitle ?? null,
+      ...(threadControl ? { threadControl } : {}),
     }
   }

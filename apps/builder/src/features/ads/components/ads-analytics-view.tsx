@@ -1,6 +1,20 @@
 "use client"
 
-import type { CapiDeliverySummary } from "@chatbotx.io/business"
+import {
+  DateRangePresetFilter,
+  resolvePresetOption,
+} from "@chatbotx.io/analytics-nextjs/components/date-range-preset-filter"
+import type {
+  AdsAnalyticsData,
+  AdsAnalyticsTimeseriesRow,
+  CapiDeliverySummary,
+} from "@chatbotx.io/business"
+// Narrow subpath import (not the `@chatbotx.io/business` barrel) — this is a
+// "use client" component; see the comment atop `channel-fields.ts` for why.
+import {
+  ADS_INTEGRATION_FK_BY_CHANNEL,
+  perChannelIntegrationIds,
+} from "@chatbotx.io/business/ads-conversion/channel-fields"
 import { Button, buttonVariants } from "@chatbotx.io/ui/components/ui/button"
 import { Card, CardContent } from "@chatbotx.io/ui/components/ui/card"
 import {
@@ -43,6 +57,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@chatbotx.io/ui/components/ui/tooltip"
+import type { AdsEligibleChannelType } from "@chatbotx.io/utils/channel"
+import { useQuery } from "@tanstack/react-query"
 import {
   ChevronDownIcon,
   DownloadIcon,
@@ -55,18 +71,36 @@ import { useLocale, useTranslations } from "next-intl"
 import { useAction } from "next-safe-action/hooks"
 import { use, useEffect, useMemo, useState } from "react"
 import { toast } from "sonner"
-import useSWR from "swr"
-import { client } from "@/lib/orpc/orpc"
+import { orpc } from "@/lib/orpc/query"
 import { retargetAdAction } from "../actions/retarget"
+import { useAdsRangeUrl } from "../hooks/use-ads-range-url"
+import { parseLocalDateKey } from "../lib/ads-date-key"
 import { buildWhatsappRetargetHref } from "../lib/build-whatsapp-retarget-href"
-import type { AdsAnalyticsData } from "../lib/merge-analytics"
-import type { AdsAnalyticsTimeseriesRow } from "../queries/analytics"
-import type { AdsSwitcherData } from "../queries/switcher"
-import type { AdsAnalyticsSearchParams } from "../schemas/analytics"
+import type { AdsAnalyticsSearchParams } from "../schema/analytics"
 import { AdAccountFilter } from "./ad-account-filter"
-import { AdsAccountControl } from "./ads-account-control"
+import { AdsAccountFilter } from "./ads-account-filter"
 import { AdsPerformanceChart } from "./ads-performance-chart"
-import { DateRangeControls } from "./date-range-controls"
+
+type ChannelIntegration = { id: string; name: string }
+
+// The dashboard page always renders one concrete, single ads-eligible
+// channel now (the former "All channels" aggregate view lived only in the
+// URL-filter era — see `AnalyticsNav`'s per-channel menu items). Every
+// per-channel action (CAPI settings link, retarget dialog seed, export FK
+// lookup) needs exactly one of these.
+type ConcreteAdsChannel = AdsEligibleChannelType
+
+// Route segments for each channel's Ads Optimization (capi) settings page —
+// mirrors buildCapiSettingsHref's original whatsapp-only comment: the
+// Automatic Events / CAPI permission lives per-integration, so the CTA needs
+// a concrete integration + channel to target.
+// TEMPORARILY HIDDEN (conversion tracking unfinished): only used by the hidden
+// conversion delivery card's reconnect CTA. Uncomment together with it.
+// const CAPI_SETTINGS_SEGMENT_BY_CHANNEL: Record<ConcreteAdsChannel, string> = {
+//   whatsapp: "whatsapps",
+//   messenger: "messengers",
+//   instagram: "instagrams",
+// }
 
 type RetargetSegment = "conversations" | "leads" | "purchases"
 type AudienceMode = "create" | "existing"
@@ -74,26 +108,39 @@ type RetargetDialogState = {
   segment: RetargetSegment
   adId?: string | null
   adName?: string | null
+  // The channel THIS entry targets — always the page's current (concrete)
+  // channel filter now that "All channels" no longer exists in the UI.
+  channel: ConcreteAdsChannel
 } | null
 
 type AdsAnalyticsViewProps = {
   workspaceId: string
   range: AdsAnalyticsSearchParams
-  selectedIntegrationWhatsappId: string | null
+  // `channel` is the currently viewed channel (the dashboard menu item
+  // implies it — see `AnalyticsNav`); `selectedChannelIntegrationId` is the
+  // server-resolved integration for it (resolved from `channelIntegrations`
+  // + `channelAccount`, WhatsApp additionally honoring the legacy `account`
+  // param as fallback), null meaning "All accounts — aggregate across every
+  // connected integration for that channel".
+  channel: ConcreteAdsChannel
+  channelIntegrations: ChannelIntegration[]
+  selectedChannelIntegrationId: string | null
   promises: Promise<
     [AdsAnalyticsData, CapiDeliverySummary, AdsAnalyticsTimeseriesRow[]]
   >
-  switcherIntegrations: AdsSwitcherData["integrations"]
-  whatsappCredentialPublic: AdsSwitcherData["whatsappCredentialPublic"]
-  oauthCallbackUrl: AdsSwitcherData["oauthCallbackUrl"]
+  // Floors the "Lifetime" preset at workspace birth so its range matches what
+  // the server can actually return and the preset label resolves correctly.
+  workspaceCreatedAt: Date
 }
 
-const formatFunnelPercent = (value: number, total: number) => {
-  if (total === 0) {
-    return "0%"
-  }
-  return `${Number(((value / total) * 100).toFixed(1))}%`
-}
+// TEMPORARILY HIDDEN (conversion tracking unfinished): only used by the hidden
+// funnel leads/purchases stages. Uncomment together with it.
+// const formatFunnelPercent = (value: number, total: number) => {
+//   if (total === 0) {
+//     return "0%"
+//   }
+//   return `${Number(((value / total) * 100).toFixed(1))}%`
+// }
 
 const FUNNEL_CLIP_PATHS = [
   "polygon(0 0, 100% 0, 91% 100%, 9% 100%)",
@@ -171,52 +218,70 @@ function CostTile({
   )
 }
 
-function DeliveryCount({
-  label,
-  value,
-  tone,
-}: {
-  label: string
-  value: number
-  tone?: string
-}) {
-  const locale = useLocale()
+// TEMPORARILY HIDDEN (conversion tracking unfinished): only used by the hidden
+// conversion delivery card. Uncomment together with it.
+// function DeliveryCount({
+//   label,
+//   value,
+//   tone,
+// }: {
+//   label: string
+//   value: number
+//   tone?: string
+// }) {
+//   const locale = useLocale()
+//
+//   return (
+//     <div>
+//       <div className="text-muted-foreground text-sm">{label}</div>
+//       <div className={`mt-1 font-semibold text-2xl ${tone ?? ""}`}>
+//         {value.toLocaleString(locale)}
+//       </div>
+//     </div>
+//   )
+// }
 
-  return (
-    <div>
-      <div className="text-muted-foreground text-sm">{label}</div>
-      <div className={`mt-1 font-semibold text-2xl ${tone ?? ""}`}>
-        {value.toLocaleString(locale)}
-      </div>
-    </div>
-  )
-}
-
-// The Automatic Events permission now lives on each WhatsApp channel's Ads
-// Optimization (capi) tab, so the CTA needs a concrete integration to target.
-function buildCapiSettingsHref(
-  workspaceId: string,
-  integrationWhatsappId: string,
-) {
-  return `/space/${workspaceId}/whatsapps/${integrationWhatsappId}/capi`
-}
+// The Automatic Events / CAPI permission lives on each channel integration's
+// Ads Optimization (ads) tab (Phase 6: generalized beyond WhatsApp), so the
+// CTA needs a concrete channel + integration to target.
+// TEMPORARILY HIDDEN (conversion tracking unfinished): only used by the hidden
+// conversion delivery card's reconnect CTA. Uncomment together with it.
+// function buildCapiSettingsHref(
+//   workspaceId: string,
+//   channel: ConcreteAdsChannel,
+//   integrationId: string,
+// ) {
+//   const segment = CAPI_SETTINGS_SEGMENT_BY_CHANNEL[channel]
+//   return `/space/${workspaceId}/${segment}/${integrationId}/ads`
+// }
 
 // Formatters take the next-intl locale explicitly: it is identical on the
 // server render and client hydration, unlike the Intl default locale.
-function formatMoney(locale: string, value: number | null): string {
+//
+// `currency` is the ad accounts' shared ISO currency (`data.spendCurrency`).
+// When it is null — mixed-currency accounts or no insights — render a bare
+// number instead of stamping a (wrong) currency symbol on the value.
+function formatMoney(
+  locale: string,
+  value: number | null,
+  currency: string | null,
+): string {
   if (value === null) {
     return "-"
   }
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(value)
+  return new Intl.NumberFormat(
+    locale,
+    currency
+      ? { style: "currency", currency, maximumFractionDigits: 2 }
+      : { maximumFractionDigits: 2 },
+  ).format(value)
 }
 
-function formatRoas(value: number | null): string {
-  return value === null ? "-" : `${value.toFixed(2)}x`
-}
+// TEMPORARILY HIDDEN (conversion tracking unfinished): only used by the hidden
+// ROAS tile and the ROAS table column. Uncomment together with it.
+// function formatRoas(value: number | null): string {
+//   return value === null ? "-" : `${value.toFixed(2)}x`
+// }
 
 function formatCount(locale: string, value: number | null): string {
   return value === null ? "-" : value.toLocaleString(locale)
@@ -236,12 +301,15 @@ function buildExportHref(input: {
   segment: "conversations" | "leads" | "purchases"
   range: AdsAnalyticsSearchParams
   adId?: string | null
+  channel: ConcreteAdsChannel
   integrationWhatsappId?: string | null
+  selectedChannelIntegrationId?: string | null
 }) {
   const params = new URLSearchParams({
     segment: input.segment,
     from: input.range.from,
     to: input.range.to,
+    channel: input.channel,
   })
   if (input.adId) {
     params.set("adId", input.adId)
@@ -249,8 +317,23 @@ function buildExportHref(input: {
   if (input.range.account) {
     params.set("account", input.range.account)
   }
-  if (input.integrationWhatsappId) {
-    params.set("integrationWhatsappId", input.integrationWhatsappId)
+  // Same `tz` the on-screen dashboard resolved this range with, so the CSV
+  // export queries the identical viewer-local window instead of silently
+  // reverting to UTC anchoring.
+  if (input.range.tz) {
+    params.set("tz", input.range.tz)
+  }
+  // Whatsapp's id comes from the page-level `account` switcher
+  // (`integrationWhatsappId`); messenger/instagram from the account filter's
+  // own `selectedChannelIntegrationId` — same "which prop is this channel's
+  // id source" split as `AdsChannelAnalyticsPage`'s `analyticsRange`. Once
+  // resolved, the URL param name is just the channel's FK column name.
+  const integrationId =
+    input.channel === "whatsapp"
+      ? input.integrationWhatsappId
+      : input.selectedChannelIntegrationId
+  if (integrationId) {
+    params.set(ADS_INTEGRATION_FK_BY_CHANNEL[input.channel], integrationId)
   }
   return `/space/${input.workspaceId}/dashboard/ads/export?${params.toString()}`
 }
@@ -267,13 +350,13 @@ function RetargetAudienceDialog({
   dialog,
   onOpenChange,
   range,
-  selectedIntegrationWhatsappId,
+  selectedChannelIntegrationId,
   workspaceId,
 }: {
   dialog: RetargetDialogState
   onOpenChange: (open: boolean) => void
   range: AdsAnalyticsSearchParams
-  selectedIntegrationWhatsappId: string | null
+  selectedChannelIntegrationId: string | null
   workspaceId: string
 }) {
   const t = useTranslations()
@@ -283,22 +366,17 @@ function RetargetAudienceDialog({
   const [audienceName, setAudienceName] = useState("")
   const [customAudienceId, setCustomAudienceId] = useState("")
 
-  const adAccounts = useSWR(
-    open ? (["facebook-ads-ad-accounts", workspaceId] as const) : null,
-    ([, ws]) =>
-      client.integrationFacebookAdsAPI.listAdAccounts({
-        workspaceId: ws,
-      }),
+  const adAccounts = useQuery(
+    orpc.integrationFacebookAdsAPI.listAdAccounts.queryOptions({
+      input: { workspaceId },
+      enabled: open,
+    }),
   )
-  const customAudiences = useSWR(
-    open && adAccountId
-      ? (["facebook-ads-custom-audiences", workspaceId, adAccountId] as const)
-      : null,
-    ([, ws, accountId]) =>
-      client.integrationFacebookAdsAPI.listCustomAudiences({
-        workspaceId: ws,
-        adAccountId: accountId,
-      }),
+  const customAudiences = useQuery(
+    orpc.integrationFacebookAdsAPI.listCustomAudiences.queryOptions({
+      input: { workspaceId, adAccountId: adAccountId || "" },
+      enabled: open && Boolean(adAccountId),
+    }),
   )
 
   const suggestedName = useMemo(() => {
@@ -384,7 +462,7 @@ function RetargetAudienceDialog({
             >
               <SelectTrigger
                 className="w-full"
-                disabled={adAccounts.isLoading || Boolean(adAccounts.error)}
+                disabled={adAccounts.isLoading || adAccounts.isError}
                 id="ads-retarget-ad-account"
               >
                 <SelectValue placeholder={t("facebookAds.fields.adAccount")} />
@@ -397,7 +475,7 @@ function RetargetAudienceDialog({
                 ))}
               </SelectContent>
             </Select>
-            {adAccounts.error && (
+            {adAccounts.isError && (
               <p className="text-destructive text-sm">
                 {t("facebookAds.adAccounts.error")}
               </p>
@@ -452,7 +530,7 @@ function RetargetAudienceDialog({
                   disabled={
                     !adAccountId ||
                     customAudiences.isLoading ||
-                    Boolean(customAudiences.error)
+                    customAudiences.isError
                   }
                   id="ads-retarget-custom-audience"
                 >
@@ -468,7 +546,7 @@ function RetargetAudienceDialog({
                   ))}
                 </SelectContent>
               </Select>
-              {customAudiences.error && (
+              {customAudiences.isError && (
                 <p className="text-destructive text-sm">
                   {t("facebookAds.customAudiences.error")}
                 </p>
@@ -487,8 +565,13 @@ function RetargetAudienceDialog({
               retarget.execute({
                 segment: dialog.segment,
                 adId: dialog.adId,
-                integrationWhatsappId:
-                  selectedIntegrationWhatsappId ?? undefined,
+                // `dialog.channel` always equals the page's current channel
+                // now — there is only ever one channel in view.
+                channel: dialog.channel,
+                ...perChannelIntegrationIds(
+                  dialog.channel,
+                  selectedChannelIntegrationId ?? undefined,
+                ),
                 since: range.from,
                 until: range.to,
                 adAccountId,
@@ -508,18 +591,37 @@ function RetargetAudienceDialog({
 }
 
 export function AdsAnalyticsView({
+  channel,
+  channelIntegrations,
   promises,
   range,
-  selectedIntegrationWhatsappId,
-  switcherIntegrations,
-  whatsappCredentialPublic,
-  oauthCallbackUrl,
+  selectedChannelIntegrationId,
+  workspaceCreatedAt,
   workspaceId,
 }: AdsAnalyticsViewProps) {
+  // WhatsApp-only surfaces (retarget hrefs, export param) read the same
+  // unified selection — null under "All accounts" aggregates, matching the
+  // messenger/instagram contract.
+  const selectedIntegrationWhatsappId =
+    channel === "whatsapp" ? selectedChannelIntegrationId : null
   const t = useTranslations()
   const locale = useLocale()
-  const [data, delivery, timeseries] = use(promises)
+  // `delivery` (CAPI delivery summary) is still fetched by the page so the
+  // hidden delivery card can be restored by uncommenting alone — skipped here
+  // while that card is hidden. See "TEMPORARILY HIDDEN (conversion tracking unfinished)".
+  const [data, , timeseries] = use(promises)
   const router = useRouter()
+  const pushAdsRange = useAdsRangeUrl()
+
+  // The URL is the source of truth for the date range (server-fetched). Rebuild
+  // the shared filter's initial Date range from the `from`/`to` date-keys as
+  // LOCAL calendar days (matching how `useAdsRangeUrl` writes them), and derive
+  // the preset those days correspond to so the control's label stays in sync.
+  const filterRange = {
+    from: parseLocalDateKey(range.from),
+    to: parseLocalDateKey(range.to),
+  }
+  const filterPreset = resolvePresetOption(filterRange, workspaceCreatedAt)
   const [retargetDialog, setRetargetDialog] =
     useState<RetargetDialogState>(null)
   const hasData =
@@ -527,27 +629,144 @@ export function AdsAnalyticsView({
     data.totals.leads > 0 ||
     data.totals.purchases > 0 ||
     data.totals.spend > 0
-  const deliveryTotal =
-    delivery.sent +
-    delivery.pending +
-    delivery.failed +
-    delivery.skippedNoScope +
-    delivery.skippedRegion
+  // TEMPORARILY HIDDEN (conversion tracking unfinished): restore with the delivery card.
+  // const deliveryTotal =
+  //   delivery.sent +
+  //   delivery.pending +
+  //   delivery.failed +
+  //   delivery.skippedNoScope +
+  //   delivery.skippedRegion
+
+  // Per-ad row action builder — each item seeds the retarget dialog with
+  // the page's current channel (the only channel a row can ever belong to
+  // now that the dashboard is single-channel per page).
+  const renderRetargetSegmentItems = (
+    adId: string | null,
+    adName: string | null | undefined,
+  ) => (
+    <>
+      {/* TEMPORARILY HIDDEN (conversion tracking unfinished): the "purchased" and
+          "qualified leads" audiences resolve to an empty contact set until the
+          conversion-rule engine ships, so retargeting them would silently build
+          an empty custom audience. Restore both items with it. */}
+      {/*
+      <DropdownMenuItem
+        onClick={() =>
+          setRetargetDialog({
+            segment: "purchases",
+            adId,
+            adName,
+            channel,
+          })
+        }
+      >
+        {t("ads.analytics.thoseWhoPurchased")}
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        onClick={() =>
+          setRetargetDialog({
+            segment: "leads",
+            adId,
+            adName,
+            channel,
+          })
+        }
+      >
+        {t("ads.analytics.qualifiedLeads")}
+      </DropdownMenuItem>
+      */}
+      <DropdownMenuItem
+        onClick={() =>
+          setRetargetDialog({
+            segment: "conversations",
+            adId,
+            adName,
+            channel,
+          })
+        }
+      >
+        {t("ads.analytics.thoseWhoStartedConversation")}
+      </DropdownMenuItem>
+    </>
+  )
+
+  // "Send WhatsApp broadcast" only exists for WhatsApp (buildWhatsappRetargetHref
+  // preselects the WhatsApp broadcast create page) — its href always encodes
+  // explicit `channel: "whatsapp"` regardless of integration selection (see
+  // build-whatsapp-retarget-href.ts).
+  const renderWhatsappBroadcastSub = (adId: string | null) => (
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger>
+        <MessageCircleIcon className="size-4" />
+        {t("ads.analytics.sendWhatsappBroadcast")}
+      </DropdownMenuSubTrigger>
+      <DropdownMenuPortal>
+        <DropdownMenuSubContent>
+          {/* TEMPORARILY HIDDEN (conversion tracking unfinished): see
+              renderRetargetSegmentItems — restore the full tuple with it. */}
+          {(["conversations"] as const).map((segment) => (
+            <DropdownMenuItem
+              key={segment}
+              onClick={() =>
+                router.push(
+                  buildWhatsappRetargetHref({
+                    workspaceId,
+                    segment,
+                    adId,
+                    range,
+                    integrationWhatsappId: selectedIntegrationWhatsappId,
+                  }),
+                )
+              }
+            >
+              {t(segmentLabelKey(segment))}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuSubContent>
+      </DropdownMenuPortal>
+    </DropdownMenuSub>
+  )
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <h1 className="font-semibold text-xl">{t("ads.analytics.title")}</h1>
-        <div className="flex flex-col items-end gap-8">
-          <AdsAccountControl
-            integrations={switcherIntegrations}
-            oauthCallbackUrl={oauthCallbackUrl}
-            whatsappCredentialPublic={whatsappCredentialPublic}
+      {/* Filters stack, right-aligned: the date range (refresh + preset +
+          custom-range) on top, the integration/account selectors on their own
+          row below it. */}
+      <div className="flex flex-col items-end gap-3">
+        {/* Same refresh + preset-dropdown + custom-range-dialog UI as the
+            Contacts/Conversations dashboards (`DateRangePresetFilter`),
+            bridged to this URL-driven, server-fetched page instead of the
+            shared analytics store — see `useAdsRangeUrl`. `key` on the URL
+            range remounts it so back/forward and deep links re-sync the
+            displayed range; `defaultPreset` is derived so a restored range
+            shows the correct preset (or the custom date text) instead of
+            always "Last 7 days". */}
+        <DateRangePresetFilter
+          defaultPreset={filterPreset}
+          initialFrom={filterRange.from.getTime()}
+          initialTo={filterRange.to.getTime()}
+          key={`${range.from}_${range.to}`}
+          onChange={pushAdsRange}
+          workspaceCreatedAt={workspaceCreatedAt}
+        />
+        <div className="flex flex-wrap items-end justify-end gap-3">
+          {/* The channel is implied by the dashboard menu item (see
+              `AnalyticsNav`) — this only selects the integration/account
+              within the current channel, with "All accounts" aggregating
+              across every one of its integrations (WhatsApp included). */}
+          {/* User-requested order: Ad accounts on the left, Integration on
+              the right (was the reverse). */}
+          <AdAccountFilter
+            channel={channel}
+            range={range}
+            selectedChannelIntegrationId={selectedChannelIntegrationId}
             workspaceId={workspaceId}
           />
-          <DateRangeControls range={range}>
-            <AdAccountFilter range={range} workspaceId={workspaceId} />
-          </DateRangeControls>
+          <AdsAccountFilter
+            channelIntegrations={channelIntegrations}
+            range={range}
+            selectedIntegrationId={selectedChannelIntegrationId}
+          />
         </div>
       </div>
 
@@ -573,6 +792,13 @@ export function AdsAnalyticsView({
                 tone="bg-blue-600"
                 value={data.totals.conversations.toLocaleString(locale)}
               />
+              {/* TEMPORARILY HIDDEN (conversion tracking unfinished): leads and purchases only ever
+                  become non-zero once an AdsConversionRule exists, and the
+                  only page that creates one (/dashboard/ads/conversion-events)
+                  is hidden while the feature is being finished — so these two
+                  stages would sit at a permanent 0 and read as "broken".
+                  Restore this block together with that page. */}
+              {/*
               <FunnelStage
                 clipPath={FUNNEL_CLIP_PATHS[1]}
                 label={t("ads.analytics.qualifiedLeads")}
@@ -593,6 +819,7 @@ export function AdsAnalyticsView({
                 tone="bg-emerald-600"
                 value={data.totals.purchases.toLocaleString(locale)}
               />
+              */}
             </div>
           </CardContent>
         </Card>
@@ -600,30 +827,44 @@ export function AdsAnalyticsView({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-1">
           <CostTile
             info={
-              selectedIntegrationWhatsappId
+              selectedChannelIntegrationId
                 ? t("ads.analytics.spendAccountLevelNote")
                 : undefined
             }
             label={t("ads.analytics.adSpend")}
-            value={formatMoney(locale, data.totals.spend)}
+            value={formatMoney(locale, data.totals.spend, data.spendCurrency)}
           />
+          {/* TEMPORARILY HIDDEN (conversion tracking unfinished): every tile below divides by
+              leads/purchases/revenue, which stay 0 until the conversion-rule
+              engine ships — a cost-per-lead of "–" next to a real ad spend
+              reads as a bug. Ad spend above is Insights-sourced and stays. */}
+          {/*
           <CostTile
             label={t("ads.analytics.costPerLead")}
-            value={formatMoney(locale, data.totals.costPerLead)}
+            value={formatMoney(
+              locale,
+              data.totals.costPerLead,
+              data.spendCurrency,
+            )}
           />
           <CostTile
             label={t("ads.analytics.costPerPurchase")}
-            value={formatMoney(locale, data.totals.costPerPurchase)}
+            value={formatMoney(
+              locale,
+              data.totals.costPerPurchase,
+              data.spendCurrency,
+            )}
           />
           <CostTile
             info={t("ads.analytics.revenueCurrencyNote")}
             label={t("ads.analytics.revenue")}
-            value={formatMoney(locale, data.totals.revenue)}
+            value={formatMoney(locale, data.totals.revenue, data.spendCurrency)}
           />
           <CostTile
             label={t("ads.analytics.roas")}
             value={formatRoas(data.totals.roas)}
           />
+          */}
         </div>
       </div>
 
@@ -639,7 +880,7 @@ export function AdsAnalyticsView({
         <CostTile
           info={t("ads.analytics.costCurrencyNote")}
           label={t("ads.analytics.cpc")}
-          value={formatMoney(locale, data.totals.cpc)}
+          value={formatMoney(locale, data.totals.cpc, data.spendCurrency)}
         />
         <CostTile
           label={t("ads.analytics.ctr")}
@@ -648,17 +889,35 @@ export function AdsAnalyticsView({
         <CostTile
           info={t("ads.analytics.costCurrencyNote")}
           label={t("ads.analytics.cpm")}
-          value={formatMoney(locale, data.totals.cpm)}
+          value={formatMoney(locale, data.totals.cpm, data.spendCurrency)}
         />
         <CostTile
           info={t("ads.analytics.costCurrencyNote")}
           label={t("ads.analytics.costPerConversation")}
-          value={formatMoney(locale, data.totals.costPerConversation)}
+          value={formatMoney(
+            locale,
+            data.totals.costPerConversation,
+            data.spendCurrency,
+          )}
         />
       </div>
 
       <AdsPerformanceChart data={timeseries} />
 
+      {/* TEMPORARILY HIDDEN (conversion tracking unfinished): this card reports
+          CAPI delivery of AdsConversionEvent rows. No rows are produced while
+          the conversion-rule engine is unfinished, so it always renders the
+          "no conversion events" empty state. Restore it with the funnel stages,
+          and re-add `delivery` to the `use(promises)` destructuring plus the
+          `deliveryTotal` sum above.
+
+          NOTE when restoring: the block below originally carried its own JSX
+          comment on the reconnect CTA, removed here because JSX comments cannot
+          nest. It said: the reconnect CTA is delivery-summary-level (it needs
+          ONE integration + scope), so it is hidden under "All accounts" (no
+          selected account to link to) while the delivery counts stay visible
+          either way. */}
+      {/*
       <Card>
         <CardContent className="flex flex-col gap-4 p-5">
           <div className="font-medium text-sm">
@@ -704,9 +963,7 @@ export function AdsAnalyticsView({
               {delivery.skippedNoScope > 0 ? (
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 text-sm dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
                   <span>{t("ads.analytics.delivery.noScopeWarning")}</span>
-                  {/* Aggregate view (no selected account) has no single
-                      WhatsApp integration to link to — pick one first. */}
-                  {selectedIntegrationWhatsappId ? (
+                  {selectedChannelIntegrationId ? (
                     <Link
                       className={buttonVariants({
                         size: "sm",
@@ -714,7 +971,8 @@ export function AdsAnalyticsView({
                       })}
                       href={buildCapiSettingsHref(
                         workspaceId,
-                        selectedIntegrationWhatsappId,
+                        channel,
+                        selectedChannelIntegrationId,
                       )}
                     >
                       {t("ads.analytics.delivery.reconnectCta")}
@@ -727,26 +985,30 @@ export function AdsAnalyticsView({
         </CardContent>
       </Card>
 
+      */}
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-end gap-3">
           <div className="flex flex-wrap gap-2">
-            {(["conversations", "leads", "purchases"] as const).map(
-              (segment) => (
-                <Link
-                  className={buttonVariants({ size: "sm", variant: "outline" })}
-                  href={buildExportHref({
-                    workspaceId,
-                    segment,
-                    range,
-                    integrationWhatsappId: selectedIntegrationWhatsappId,
-                  })}
-                  key={segment}
-                >
-                  <DownloadIcon className="size-4" />
-                  {t(`ads.analytics.export.${segment}`)}
-                </Link>
-              ),
-            )}
+            {/* TEMPORARILY HIDDEN (conversion tracking unfinished): "leads" and "purchases"
+                export an empty AdsConversionEvent set until the conversion-rule
+                engine ships — restore the full tuple below with it. */}
+            {(["conversations"] as const).map((segment) => (
+              <Link
+                className={buttonVariants({ size: "sm", variant: "outline" })}
+                href={buildExportHref({
+                  workspaceId,
+                  segment,
+                  range,
+                  channel,
+                  integrationWhatsappId: selectedIntegrationWhatsappId,
+                  selectedChannelIntegrationId,
+                })}
+                key={segment}
+              >
+                <DownloadIcon className="size-4" />
+                {t(`ads.analytics.export.${segment}`)}
+              </Link>
+            ))}
           </div>
         </div>
         <Card>
@@ -757,13 +1019,22 @@ export function AdsAnalyticsView({
                   <TableHead>
                     {t("ads.connectAccounts.adAccountName")}
                   </TableHead>
+                  <TableHead>
+                    {t("ads.analytics.channelFilter.label")}
+                  </TableHead>
                   <TableHead>{t("ads.analytics.adSpend")}</TableHead>
+                  {/* TEMPORARILY HIDDEN (conversion tracking unfinished): these six columns
+                      are AdsConversionEvent-backed and stay 0/"–" until the
+                      conversion-rule engine ships. Restore them together with
+                      the matching <TableCell>s below. */}
+                  {/*
                   <TableHead>{t("ads.analytics.purchases")}</TableHead>
                   <TableHead>{t("ads.analytics.revenue")}</TableHead>
                   <TableHead>{t("ads.analytics.costPerPurchase")}</TableHead>
                   <TableHead>{t("ads.analytics.roas")}</TableHead>
                   <TableHead>{t("ads.analytics.qualifiedLeads")}</TableHead>
                   <TableHead>{t("ads.analytics.costPerLead")}</TableHead>
+                  */}
                   <TableHead>{t("ads.analytics.cpc")}</TableHead>
                   <TableHead className="text-right"> </TableHead>
                 </TableRow>
@@ -774,16 +1045,37 @@ export function AdsAnalyticsView({
                     <TableCell className="font-medium">
                       {ad.adName ?? ad.adId ?? t("ads.analytics.unattributed")}
                     </TableCell>
-                    <TableCell>{formatMoney(locale, ad.spend)}</TableCell>
-                    <TableCell>{ad.purchases.toLocaleString(locale)}</TableCell>
-                    <TableCell>{formatMoney(locale, ad.revenue)}</TableCell>
                     <TableCell>
-                      {formatMoney(locale, ad.costPerPurchase)}
+                      <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-medium text-xs">
+                        {t(`ads.conversionEvents.tabs.${channel}`)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      {formatMoney(locale, ad.spend, data.spendCurrency)}
+                    </TableCell>
+                    {/* TEMPORARILY HIDDEN (conversion tracking unfinished): paired with the
+                        commented-out <TableHead>s above — restore together. */}
+                    {/*
+                    <TableCell>{ad.purchases.toLocaleString(locale)}</TableCell>
+                    <TableCell>
+                      {formatMoney(locale, ad.revenue, data.spendCurrency)}
+                    </TableCell>
+                    <TableCell>
+                      {formatMoney(
+                        locale,
+                        ad.costPerPurchase,
+                        data.spendCurrency,
+                      )}
                     </TableCell>
                     <TableCell>{formatRoas(ad.roas)}</TableCell>
                     <TableCell>{ad.leads.toLocaleString(locale)}</TableCell>
-                    <TableCell>{formatMoney(locale, ad.costPerLead)}</TableCell>
-                    <TableCell>{formatMoney(locale, ad.cpc)}</TableCell>
+                    <TableCell>
+                      {formatMoney(locale, ad.costPerLead, data.spendCurrency)}
+                    </TableCell>
+                    */}
+                    <TableCell>
+                      {formatMoney(locale, ad.cpc, data.spendCurrency)}
+                    </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger
@@ -795,99 +1087,10 @@ export function AdsAnalyticsView({
                           }
                         />
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() =>
-                              setRetargetDialog({
-                                segment: "purchases",
-                                adId: ad.adId,
-                                adName: ad.adName,
-                              })
-                            }
-                          >
-                            {t("ads.analytics.thoseWhoPurchased")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              setRetargetDialog({
-                                segment: "leads",
-                                adId: ad.adId,
-                                adName: ad.adName,
-                              })
-                            }
-                          >
-                            {t("ads.analytics.qualifiedLeads")}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              setRetargetDialog({
-                                segment: "conversations",
-                                adId: ad.adId,
-                                adName: ad.adName,
-                              })
-                            }
-                          >
-                            {t("ads.analytics.thoseWhoStartedConversation")}
-                          </DropdownMenuItem>
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                              <MessageCircleIcon className="size-4" />
-                              {t("ads.analytics.sendWhatsappBroadcast")}
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuPortal>
-                              <DropdownMenuSubContent>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    router.push(
-                                      buildWhatsappRetargetHref({
-                                        workspaceId,
-                                        segment: "purchases",
-                                        adId: ad.adId,
-                                        range,
-                                        integrationWhatsappId:
-                                          selectedIntegrationWhatsappId,
-                                      }),
-                                    )
-                                  }
-                                >
-                                  {t("ads.analytics.thoseWhoPurchased")}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    router.push(
-                                      buildWhatsappRetargetHref({
-                                        workspaceId,
-                                        segment: "leads",
-                                        adId: ad.adId,
-                                        range,
-                                        integrationWhatsappId:
-                                          selectedIntegrationWhatsappId,
-                                      }),
-                                    )
-                                  }
-                                >
-                                  {t("ads.analytics.qualifiedLeads")}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    router.push(
-                                      buildWhatsappRetargetHref({
-                                        workspaceId,
-                                        segment: "conversations",
-                                        adId: ad.adId,
-                                        range,
-                                        integrationWhatsappId:
-                                          selectedIntegrationWhatsappId,
-                                      }),
-                                    )
-                                  }
-                                >
-                                  {t(
-                                    "ads.analytics.thoseWhoStartedConversation",
-                                  )}
-                                </DropdownMenuItem>
-                              </DropdownMenuSubContent>
-                            </DropdownMenuPortal>
-                          </DropdownMenuSub>
+                          {renderRetargetSegmentItems(ad.adId, ad.adName)}
+                          {channel === "whatsapp"
+                            ? renderWhatsappBroadcastSub(ad.adId)
+                            : null}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -906,7 +1109,7 @@ export function AdsAnalyticsView({
           }
         }}
         range={range}
-        selectedIntegrationWhatsappId={selectedIntegrationWhatsappId}
+        selectedChannelIntegrationId={selectedChannelIntegrationId}
         workspaceId={workspaceId}
       />
     </div>

@@ -6,9 +6,9 @@ import type { SendFlowStepProps } from "@chatbotx.io/sdk"
 import { uploadAttachment } from "../../../apis/attachment"
 import { logger } from "../../../lib/logger"
 import type { MessengerAuthValue } from "../../../schema"
+import { convertCanonicalQuickReplies } from "./canonical-quick-replies"
 import { convertMediaType } from "./send-attachment"
-import { convertFacebookButtons } from "./send-button"
-import { convertCanonicalFacebookQuickReplies } from "./send-quick-replies"
+import { convertButtons } from "./send-button"
 
 export async function* convertFlowStepMedia(
   props: SendFlowStepProps<
@@ -24,10 +24,16 @@ export async function* convertFlowStepMedia(
     const media_type = convertMediaType(step.stepType)
     const attachment = await uploadAttachment(ctx.auth, step.url, media_type)
     const quickReplies = props.data.quickReplies ?? []
-    const buttons = convertFacebookButtons({
+    const buttons = convertButtons({
       flowId,
       flowVersionId,
       buttons: step.buttons,
+      // Same `metadata` every other button-bearing converter passes
+      // (`send-text.ts`, `send-carousel.ts`). Omitting it costs no compile
+      // error and renders identically — the buttons just encode an empty
+      // broadcast/sequence/commentAutomation id, so every tap on an
+      // image-or-video-with-buttons step reports nothing to any of the three.
+      metadata: props.data.metadata,
       contactInboxId: props.data.contact.id,
     })
     yield {
@@ -45,7 +51,7 @@ export async function* convertFlowStepMedia(
         },
       },
       ...(quickReplies.length > 0
-        ? { quick_replies: convertCanonicalFacebookQuickReplies(quickReplies) }
+        ? { quick_replies: convertCanonicalQuickReplies(quickReplies) }
         : {}),
     }
   } catch (error) {

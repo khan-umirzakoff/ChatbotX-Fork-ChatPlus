@@ -1,6 +1,7 @@
 "use client"
 
 import { DataTable } from "@chatbotx.io/ui/components/data-table/data-table"
+import { DataTableRowCard } from "@chatbotx.io/ui/components/data-table/data-table-row-card"
 import { DataTableToolbar } from "@chatbotx.io/ui/components/data-table/data-table-toolbar"
 import { buttonVariants } from "@chatbotx.io/ui/components/ui/button"
 import {
@@ -16,6 +17,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useLocale, useTranslations } from "next-intl"
 import { use, useMemo, useState } from "react"
+import { useInvalidateFlows } from "@/features/flows/provider/flow-hook"
 import { ChangeFolderDialog } from "../folders/change-folder"
 import { CreateFlowDialog } from "./create-flow-dialog"
 import { DeleteFlowsDialog } from "./delete-flow-dialog"
@@ -25,7 +27,7 @@ import { FlowsTableToolbarActions } from "./flows-table-toolbar-actions"
 import { ImportFlowDialog } from "./import-flow-dialog"
 import type { listFlowsRSC } from "./queries"
 import { RenameFlowDialog } from "./react-flow/components/rename-flow"
-import type { FlowResource } from "./schemas/resource"
+import type { FlowResource } from "./schema/resource"
 
 type FlowsTableProps = {
   promises: Promise<[Awaited<ReturnType<typeof listFlowsRSC>>]>
@@ -41,14 +43,15 @@ export function FlowsTable({
   const t = useTranslations()
   const locale = useLocale()
   const router = useRouter()
+  const invalidateFlows = useInvalidateFlows()
 
   const [{ data, pageCount }] = use(promises)
 
   const [rowAction, setRowAction] =
     useState<DataTableRowAction<FlowResource> | null>(null)
   const columns = useMemo(
-    () => getFlowColumns({ t, setRowAction, locale }),
-    [t, locale],
+    () => getFlowColumns({ t, setRowAction, locale, invalidateFlows }),
+    [t, locale, invalidateFlows],
   )
 
   const { table } = useDataTable({
@@ -70,7 +73,10 @@ export function FlowsTable({
         <CardTitle className="font-bold text-xl">{t("flows.title")}</CardTitle>
       </CardHeader>
       <CardContent>
-        <DataTable table={table}>
+        <DataTable
+          mobileCard={(row) => <DataTableRowCard row={row} />}
+          table={table}
+        >
           <DataTableToolbar table={table}>
             <FlowsTableToolbarActions
               setRowAction={setRowAction}
@@ -94,6 +100,7 @@ export function FlowsTable({
           onOpenChange={() => setRowAction(null)}
           onSuccess={() => {
             rowAction?.row.toggleSelected(false)
+            invalidateFlows()
             router.refresh()
           }}
           open={rowAction?.variant === "delete"}
@@ -104,7 +111,10 @@ export function FlowsTable({
         <DuplicateFlowDialog
           flow={rowAction?.row.original || null}
           onOpenChange={() => setRowAction(null)}
-          onSuccess={() => router.refresh()}
+          onSuccess={() => {
+            invalidateFlows()
+            router.refresh()
+          }}
           open={rowAction?.variant === "duplicate"}
           workspaceId={workspaceId}
         />
@@ -122,6 +132,7 @@ export function FlowsTable({
             rowAction?.row.original ? [rowAction?.row.original.id] : null
           }
           onOpenChange={() => setRowAction(null)}
+          onSuccess={invalidateFlows}
           open={rowAction?.variant === "move"}
           workspaceId={workspaceId}
         />

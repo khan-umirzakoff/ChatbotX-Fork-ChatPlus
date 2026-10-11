@@ -3,6 +3,7 @@
 import { aiChatProviders, openaiCompatiblePresetConfigs } from "@chatbotx.io/ai"
 import {
   type AIAgentProviderModels,
+  aiAgentActionRulesSchema,
   aiMessageRoles,
 } from "@chatbotx.io/database/partials"
 import type { AIAgentModel } from "@chatbotx.io/database/types"
@@ -44,9 +45,14 @@ import { getAiProviderLabelKey } from "@/features/ai-agents/lib/ai-provider-labe
 import {
   type UpdateAIAgentRequest,
   updateAIAgentRequest,
-} from "@/features/ai-agents/schemas/action"
+} from "@/features/ai-agents/schema/action"
 import { AIToolMultiSelect } from "@/features/ai-tools/components/ai-tool-multi-select"
-import type { IntegrationOpenaiCompatibleResource } from "@/features/integration-openai-compatible/schemas/resource"
+import type { IntegrationOpenaiCompatibleResource } from "@/features/integration-openai-compatible/schema/resource"
+import {
+  AIActionsField,
+  type AIAgentActionOptions,
+  normalizeAIAgentActionRulesForForm,
+} from "./components/ai-actions-field"
 import { WebSearchAuthorizedDomainsField } from "./components/web-search-authorized-domains-field"
 import {
   buildOpenaiCompatibleAgentModels,
@@ -58,6 +64,7 @@ export function UpdateAIAgentDialog({
   workspaceId,
   agent,
   openaiCompatibleIntegrations,
+  actionOptions,
   open,
   onOpenChange,
   onSuccess,
@@ -67,6 +74,7 @@ export function UpdateAIAgentDialog({
   workspaceId: string
   agent: AIAgentModel | null
   openaiCompatibleIntegrations: IntegrationOpenaiCompatibleResource[]
+  actionOptions: AIAgentActionOptions
   onSuccess?: () => void
 }) {
   const t = useTranslations()
@@ -168,6 +176,13 @@ export function UpdateAIAgentDialog({
       setValue(
         "webSearchAuthorizedDomains",
         agent.webSearchAuthorizedDomains.map((domain) => ({ value: domain })),
+      )
+      setValue("actionPrompt", agent.actionPrompt ?? "")
+      setValue(
+        "actionRules",
+        normalizeAIAgentActionRulesForForm(
+          aiAgentActionRulesSchema.catch([]).parse(agent.actionRules),
+        ),
       )
     }
   }, [agent, openaiCompatibleIntegrations, setValue])
@@ -292,7 +307,7 @@ export function UpdateAIAgentDialog({
                 </Popover>
               </div>
 
-              <PlainTextEditorField name="prompt" />
+              <PlainTextEditorField includeBotFieldVariables name="prompt" />
             </div>
 
             <div className="flex flex-col gap-3">
@@ -312,6 +327,9 @@ export function UpdateAIAgentDialog({
                     />
                   </div>
                   <div className="ps-3 pe-12 pt-14 pb-3">
+                    {/* No bot-field variables here: the runner interpolates
+                        only `prompt` — configured messages reach the model
+                        verbatim, so a token would never resolve. */}
                     <PlainTextEditorField name={`messages.${index}.content`} />
                   </div>
                   <Button
@@ -341,6 +359,7 @@ export function UpdateAIAgentDialog({
 
             <AIToolMultiSelect name="tools" />
             <WebSearchAuthorizedDomainsField />
+            <AIActionsField options={actionOptions} />
             <div>
               <div className="flex items-center gap-3">
                 <Label>{t("fields.isRichResponse.label")}</Label>

@@ -14,7 +14,7 @@ import { distributedLock } from "@chatbotx.io/redis"
 import { normalizeError } from "universal-error-normalizer"
 import { logger } from "../../lib/logger"
 import { getContactFieldMap } from "./contact-field-map"
-import type { ExecuteStepProps } from "./flow-utils"
+import { type ExecuteStepProps, logStepProviderError } from "./flow-utils"
 import type { ExecuteStepResult } from "./step"
 
 export const KLAVIYO_LOCK_TIMEOUT_SECONDS = 30
@@ -136,6 +136,7 @@ export const syncKlaviyoProfile = async (
       { ...logContext, ...provider, err: normalized },
       "Klaviyo profile sync failed",
     )
+    await logStepProviderError("klaviyo", props, error)
     return { status: "error", result: null, errorMessage: normalized.message }
   }
 }

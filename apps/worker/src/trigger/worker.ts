@@ -1,8 +1,10 @@
+import { flushAllPendingWorkspaceBroadcasts } from "@chatbotx.io/business"
+import { extractContactInboxId } from "@chatbotx.io/events"
 import { runWithWebhookExecutionContext } from "@chatbotx.io/events/context"
 import { SdkException } from "@chatbotx.io/sdk"
 import {
   defaultWorkerOptions,
-  getRedisConnection,
+  getQueueConnection,
   queueNames,
   TriggerJobAction,
   type TriggerJobData,
@@ -12,6 +14,7 @@ import { ensureBootstrapped } from "../lib/bootstrap"
 import { isBlockedWorkspace } from "../lib/is-blocked-workspace"
 import { logger } from "../lib/logger"
 import { resolveWorkspaceId } from "../lib/resolve-workspace-id"
+import { runJobWithAuditContext } from "../lib/run-job-with-audit-context"
 import { TriggerExecutorService } from "./services/trigger-executor.service"
 import { TriggerMatcherService } from "./services/trigger-matcher.service"
 import type { TriggerEventData } from "./types"
@@ -31,49 +34,63 @@ async function startTriggerWorker() {
   const worker = new Worker(
     queueNames.enum.trigger,
     async (job: Job<TriggerJobData>) => {
-      if (await isBlockedWorkspace(await resolveWorkspaceId(job.data.data))) {
+      const workspaceId = await resolveWorkspaceId(job.data.data)
+      if (await isBlockedWorkspace(workspaceId)) {
         return
       }
 
-      switch (job.data.type) {
-        case TriggerJobAction.evaluateTriggers: {
-          const { data: eventData } = job.data
+      await runJobWithAuditContext(
+        { workspaceId, source: "trigger:evaluateTriggers" },
+        async () => {
+          switch (job.data.type) {
+            case TriggerJobAction.evaluateTriggers: {
+              const { data: eventData } = job.data
 
-          if (eventData.source === "worker") {
-            logger.info("Skipping worker-emitted event to prevent loop")
-            return
+              if (eventData.source === "worker") {
+                logger.info("Skipping worker-emitted event to prevent loop")
+                return
+              }
+
+              const matchedTriggers = await triggerMatcher.findMatchingTriggers(
+                eventData as TriggerEventData,
+              )
+
+              if (matchedTriggers.length === 0) {
+                return
+              }
+
+              logger.info(
+                `Found ${matchedTriggers.length} triggers for event type ${eventData.eventType}`,
+              )
+
+              const contactInboxId = extractContactInboxId(eventData.eventData)
+
+              await runWithWebhookExecutionContext(
+                eventData.channelOriginated ? { source: "webhook" } : {},
+                () =>
+                  Promise.allSettled(
+                    matchedTriggers.map((trigger) =>
+                      triggerExecutor.execute(trigger, {
+                        contactId: eventData.contactId,
+                        contactInboxId,
+                        occurrenceId: job.id
+                          ? `${job.id}:${job.timestamp}`
+                          : undefined,
+                      }),
+                    ),
+                  ),
+              )
+              return
+            }
+
+            default:
+              throw new SdkException("TriggerJobAction action is not defined")
           }
-
-          const matchedTriggers = await triggerMatcher.findMatchingTriggers(
-            eventData as TriggerEventData,
-          )
-
-          if (matchedTriggers.length === 0) {
-            return
-          }
-
-          logger.info(
-            `Found ${matchedTriggers.length} triggers for event type ${eventData.eventType}`,
-          )
-
-          await runWithWebhookExecutionContext(
-            eventData.channelOriginated ? { source: "webhook" } : {},
-            () =>
-              Promise.allSettled(
-                matchedTriggers.map((trigger) =>
-                  triggerExecutor.execute(trigger, eventData.contactId),
-                ),
-              ),
-          )
-          return
-        }
-
-        default:
-          throw new SdkException("TriggerJobAction action is not defined")
-      }
+        },
+      )
     },
     {
-      connection: getRedisConnection(),
+      connection: getQueueConnection(queueNames.enum.trigger),
       ...defaultWorkerOptions,
       concurrency: 100,
     },
@@ -99,6 +116,9 @@ async function startTriggerWorker() {
     isShuttingDown = true
     try {
       await worker.close()
+      // After close(): drains events published by jobs that finished during
+      // the close drain, whose coalesce timers would never fire past exit.
+      await flushAllPendingWorkspaceBroadcasts()
       process.exit(0)
     } catch (err) {
       logger.error(err, "[TriggerWorker] Error during shutdown")

@@ -8,7 +8,13 @@ import {
   useRef,
 } from "react"
 import { useStore } from "zustand"
-import { type AnalysisStore, createAnalysisStore } from "./analysis-store"
+import type {
+  AnalysisDashboardType,
+  AnalysisState,
+  AnalysisStore,
+} from "./analysis-store"
+import { createAnalysisStore } from "./analysis-store"
+import { useAnalyticsApi } from "./analytics-api-context"
 
 export type AnalysisStoreApi = ReturnType<typeof createAnalysisStore>
 
@@ -17,8 +23,8 @@ export const AnalysisStoreContext = createContext<AnalysisStoreApi | undefined>(
 )
 
 export type AnalysisStoreProviderProps = {
-  type?: "dashboard" | "reflinks" | "magic-links"
-  defaultSearchParams: { [x: string]: string }
+  type: AnalysisDashboardType
+  defaultSearchParams: AnalysisState["defaultSearchParams"]
   children: ReactNode
   autoInitialize?: boolean
 }
@@ -26,12 +32,13 @@ export type AnalysisStoreProviderProps = {
 export const AnalysisStoreProvider = ({
   children,
   autoInitialize = true,
-  type = "dashboard",
+  type,
   defaultSearchParams,
 }: AnalysisStoreProviderProps) => {
+  const api = useAnalyticsApi()
   const storeRef = useRef<AnalysisStoreApi>(null)
   if (!storeRef.current) {
-    storeRef.current = createAnalysisStore({ type, defaultSearchParams })
+    storeRef.current = createAnalysisStore({ type, defaultSearchParams, api })
   }
 
   useEffect(() => {

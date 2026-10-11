@@ -1,23 +1,18 @@
 "use server"
 
+import { webhookService } from "@chatbotx.io/business"
 import { ChatbotXException } from "@chatbotx.io/business/errors"
-import { db, eq } from "@chatbotx.io/database/client"
 import { folderTypes } from "@chatbotx.io/database/partials"
-import { webhookModel } from "@chatbotx.io/database/schema"
-import { updateWebhookCache } from "@chatbotx.io/events"
-import { createId } from "@chatbotx.io/utils"
 import { getTranslations } from "next-intl/server"
 import {
   type WorkspaceIdRequestParams,
   workspaceIdrequestParams,
-} from "@/features/common/schemas"
-import { ensureFolderIsExists } from "@/features/folders/actions/utils"
+} from "@/features/common/schema"
 import { workspaceActionClient } from "@/lib/safe-action"
-import { MAX_WEBHOOKS_PER_CHATBOT } from "../constants"
 import {
   type CreateWebhookSchema,
   createWebhookSchema,
-} from "../schemas/create-webhook-schema"
+} from "../schema/create-webhook-schema"
 
 export const createWebhookAction = workspaceActionClient
   .bindArgsSchemas(workspaceIdrequestParams)
@@ -30,45 +25,22 @@ export const createWebhookAction = workspaceActionClient
       bindArgsParsedInputs: WorkspaceIdRequestParams
       parsedInput: CreateWebhookSchema
     }) => {
-      const t = await getTranslations()
-
-      const existingWebhooksCount = await db.$count(
-        webhookModel,
-        eq(webhookModel.workspaceId, workspaceId),
-      )
-
-      if (existingWebhooksCount >= MAX_WEBHOOKS_PER_CHATBOT) {
-        throw new ChatbotXException(
-          t("validation.maxItemsReached", {
-            max: MAX_WEBHOOKS_PER_CHATBOT,
-            feature: "webhooks",
-          }),
-        )
-      }
-
-      if (parsedInput.folderId) {
-        await ensureFolderIsExists(
-          parsedInput.folderId,
+      try {
+        return await webhookService.create({
           workspaceId,
-          folderTypes.enum.webhook,
-        )
-      }
-
-      const { ...webhookData } = parsedInput
-
-      const result = await db
-        .insert(webhookModel)
-        .values({
-          id: createId(),
-          ...webhookData,
-          workspaceId,
-          url: "",
+          data: parsedInput,
+          folderType: folderTypes.enum.webhook,
         })
-        .returning()
-        .then((rows) => rows[0])
-
-      await updateWebhookCache(workspaceId)
-
-      return result
+      } catch (error) {
+        if (
+          error instanceof ChatbotXException &&
+          error.code === "validation" &&
+          error.data
+        ) {
+          const t = await getTranslations()
+          throw new ChatbotXException(t(error.message, error.data))
+        }
+        throw error
+      }
     },
   )

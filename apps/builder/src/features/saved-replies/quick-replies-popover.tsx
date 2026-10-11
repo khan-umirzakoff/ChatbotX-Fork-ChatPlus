@@ -1,11 +1,7 @@
 "use client"
 
 import { Button } from "@chatbotx.io/ui/components/ui/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@chatbotx.io/ui/components/ui/popover"
+import { Popover, PopoverContent } from "@chatbotx.io/ui/components/ui/popover"
 import { useTranslations } from "next-intl"
 import {
   type ReactElement,
@@ -16,7 +12,8 @@ import {
   useRef,
   useState,
 } from "react"
-import { useSavedReplyStore } from "./provider/saved-reply-store-context"
+import { useWorkspaceId } from "@/hooks/routing"
+import { useSavedReplies } from "./provider/saved-reply-hook"
 
 type SavedReplySlashPopoverProps = {
   inputValue: string
@@ -32,15 +29,14 @@ export const QuickRepliesPopover = ({
   const t = useTranslations()
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(0)
+  const anchorRef = useRef<HTMLDivElement>(null)
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([])
-  const {
-    savedReplies,
-    isLoading: isLoadingSavedReplies,
-    getAllSavedReplies,
-  } = useSavedReplyStore((state) => state)
-
+  const workspaceId = useWorkspaceId()
   const normalizedContent = (inputValue ?? "").trimStart()
   const shouldShow = normalizedContent.startsWith("/")
+  const { data: savedReplies = [], isLoading } = useSavedReplies(workspaceId, {
+    enabled: shouldShow,
+  })
   const keyword = shouldShow
     ? normalizedContent.slice(1).trim().toLowerCase()
     : ""
@@ -65,8 +61,7 @@ export const QuickRepliesPopover = ({
     }
 
     setOpen(true)
-    getAllSavedReplies()
-  }, [shouldShow, getAllSavedReplies])
+  }, [shouldShow])
 
   useEffect(() => {
     if (filteredSavedReplies.length === 0) {
@@ -140,28 +135,33 @@ export const QuickRepliesPopover = ({
   )
 
   return (
-    <div onKeyDownCapture={onKeyDownCapture}>
+    // The popover is driven entirely by the input's value (a leading "/"), so
+    // it needs an anchor, not a trigger: `Popover.Trigger` would apply Base UI's
+    // non-native button keyboard handling to the textarea and swallow every
+    // Space keypress (and stamp it with `role="button"`).
+    <div onKeyDownCapture={onKeyDownCapture} ref={anchorRef}>
       <Popover onOpenChange={setOpen} open={open && shouldShow}>
-        <PopoverTrigger render={children} />
+        {children}
         <PopoverContent
           align="start"
-          className="max-h-75 w-100 overflow-y-auto p-0"
+          anchor={anchorRef}
+          className="max-h-75 w-[min(100vw-2rem,25rem)] overflow-y-auto p-0"
           initialFocus={false}
           side="top"
         >
-          {isLoadingSavedReplies ? (
+          {isLoading ? (
             <div className="px-2 py-3 text-muted-foreground text-sm">
               {t("messages.loadingData")}
             </div>
           ) : null}
 
-          {!isLoadingSavedReplies && filteredSavedReplies.length === 0 ? (
+          {!isLoading && filteredSavedReplies.length === 0 ? (
             <div className="px-2 py-3 text-muted-foreground text-sm">
               {t("messages.noDataAvailable")}
             </div>
           ) : null}
 
-          {isLoadingSavedReplies
+          {isLoading
             ? null
             : filteredSavedReplies.map((reply, index) => (
                 <Button

@@ -1,8 +1,8 @@
 import {
   contactCustomFieldService,
   contactService,
+  tagService,
 } from "@chatbotx.io/business"
-import { db } from "@chatbotx.io/database/client"
 import { triggerEventTypes } from "@chatbotx.io/database/partials"
 import type { MatchableEventType } from "@chatbotx.io/events"
 import type { MatchableWebhookEventData, WebhookPayload } from "../types"
@@ -43,6 +43,11 @@ const EVENT_NAMES = {
   [triggerEventTypes.enum.contactReferredExistingContact]:
     "contact_referred_existing_contact",
   [triggerEventTypes.enum.dateTimeBasedTrigger]: "datetime_based_trigger",
+  [triggerEventTypes.enum.incomingCall]: "incoming_call",
+  [triggerEventTypes.enum.missedAudioCall]: "missed_audio_call",
+  [triggerEventTypes.enum.callEnded]: "call_ended",
+  [triggerEventTypes.enum.callRecorded]: "call_recorded",
+  [triggerEventTypes.enum.callTranscribed]: "call_transcribed",
 } satisfies Record<MatchableEventType, string>
 
 async function buildTagPayload(
@@ -53,18 +58,14 @@ async function buildTagPayload(
   // Scoped by workspace because the tag id comes from event metadata and tag ids
   // are globally unique: an id-only lookup would resolve another tenant's tag
   // and put its name in this workspace's outbound payload.
-  const tag = await db.query.tagModel.findFirst({
-    where: {
-      id: data.tagId as string,
-      workspaceId,
-      deletedAt: { isNull: true as const },
-    },
-    columns: { name: true },
+  const tagName = await tagService.findNameByIdForWorkspace({
+    workspaceId,
+    id: data.tagId as string,
   })
 
   return {
     ...basePayload,
-    tag: tag?.name || "",
+    tag: tagName || "",
   }
 }
 
@@ -187,6 +188,28 @@ const PAYLOAD_BUILDERS = {
   [triggerEventTypes.enum.contactReferredANewContact]: buildReferralPayload,
   [triggerEventTypes.enum.contactReferredExistingContact]: buildReferralPayload,
   [triggerEventTypes.enum.dateTimeBasedTrigger]: (basePayload, data) => ({
+    ...basePayload,
+    ...data,
+  }),
+  // Call events pass their metadata (callId, durationSeconds, recordingUrl,
+  // transcript, …) straight through — every field is server-generated.
+  [triggerEventTypes.enum.incomingCall]: (basePayload, data) => ({
+    ...basePayload,
+    ...data,
+  }),
+  [triggerEventTypes.enum.missedAudioCall]: (basePayload, data) => ({
+    ...basePayload,
+    ...data,
+  }),
+  [triggerEventTypes.enum.callEnded]: (basePayload, data) => ({
+    ...basePayload,
+    ...data,
+  }),
+  [triggerEventTypes.enum.callRecorded]: (basePayload, data) => ({
+    ...basePayload,
+    ...data,
+  }),
+  [triggerEventTypes.enum.callTranscribed]: (basePayload, data) => ({
     ...basePayload,
     ...data,
   }),

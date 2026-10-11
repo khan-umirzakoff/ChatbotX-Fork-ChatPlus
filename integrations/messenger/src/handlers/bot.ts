@@ -6,19 +6,19 @@ import {
 } from "../apis/label"
 import {
   addBranding,
-  deleteMessengerProfileFields,
-  getPagePictureUrl,
-  updateMessengerProfile,
+  deleteProfileFields as deleteProfileFieldsApi,
+  getAccountPictureUrl,
+  updateProfile as updateProfileApi,
 } from "../apis/page"
 import type { MessengerAuthValue } from "../schema"
 
 export const botHandlers: BotHandlers<MessengerAuthValue> = {
   updateProfile: async ({ ctx, data }) =>
-    await updateMessengerProfile({ ctx, params: data }),
+    await updateProfileApi({ ctx, params: data }),
   addBranding: async ({ ctx, title, url }) => addBranding({ ctx, title, url }),
   deleteProfileFields: async ({ ctx, fields }) =>
-    deleteMessengerProfileFields({ ctx, fields }),
-  getProfilePictureUrl: async ({ ctx }) => getPagePictureUrl({ ctx }),
+    deleteProfileFieldsApi({ ctx, fields }),
+  getProfilePictureUrl: async ({ ctx }) => getAccountPictureUrl({ ctx }),
   createLabel: async ({ ctx, data }) => {
     const { id } = await createCustomLabel({
       ctx,
@@ -28,7 +28,11 @@ export const botHandlers: BotHandlers<MessengerAuthValue> = {
     return { id, name: data.name }
   },
   listLabels: async ({ ctx, data }) => {
-    const labels = await getUserLabels({ ctx, psid: data.sourceId })
+    const labels = await getUserLabels({
+      ctx,
+      psid: data.sourceId,
+      requestTimeoutMs: data.requestTimeoutMs,
+    })
     return labels.map((label) => ({
       id: label.id,
       name: label.page_label_name,

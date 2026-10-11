@@ -22,9 +22,17 @@ vi.mock("@/features/contact-filter/lib/timezone", () => ({
   getBrowserTimezone: () => "UTC",
 }))
 
-vi.mock("@/features/custom-fields/provider/custom-field-store-context", () => ({
-  useCustomFieldStore: (selector: (state: { customFields: [] }) => unknown) =>
-    selector({ customFields: [] }),
+vi.mock("@/features/custom-fields/provider/custom-field-hook", () => ({
+  useCustomFields: () => ({
+    // `type: "shortText"` so the field-type-driven operation options
+    // (Finding 3) offer append/prepend once this field is selected.
+    data: [{ id: "field-1", name: "Field 1", type: "shortText" }],
+  }),
+  useBotFields: () => ({ data: [] }),
+}))
+
+vi.mock("@/hooks/routing", () => ({
+  useWorkspaceId: () => "workspace-1",
 }))
 
 vi.mock("@/features/custom-fields/custom-field-select", async () => {
@@ -48,6 +56,45 @@ vi.mock("@/features/custom-fields/custom-field-select", async () => {
                 <option value="field-1">Field 1</option>
               </select>
             </label>
+          )}
+        />
+      )
+    },
+    // Minimal stand-in mirroring the real type -> operations mapping (text
+    // types get append/prepend, everything else only gets "set") so this
+    // test can still exercise selecting a non-"set" operation once a field
+    // is picked.
+    CustomFieldOperationSelect: ({
+      name,
+      type,
+    }: {
+      name: string
+      type: string | null
+    }) => {
+      const form = useFormContext()
+      // Hardcoded FieldOperationType codes (not the imported enum — a
+      // vi.mock factory can't safely reference bindings from this file's
+      // top-level static imports).
+      const options =
+        type === "shortText" || type === "longText"
+          ? ["O01", "O02", "O03"]
+          : ["O01"]
+      return (
+        <Controller
+          control={form.control}
+          name={name}
+          render={({ field }) => (
+            <select
+              data-testid={`select-${name}`}
+              onChange={(event) => field.onChange(event.target.value)}
+              value={field.value ?? ""}
+            >
+              {options.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
           )}
         />
       )
@@ -78,45 +125,6 @@ vi.mock("@/components/tiptap/plain-text-editor-field", async () => {
                 onChange={(event) => field.onChange(event.target.value)}
                 value={field.value ?? ""}
               />
-            </label>
-          )}
-        />
-      )
-    },
-  }
-})
-
-vi.mock("@chatbotx.io/ui/components/form/select-field", async () => {
-  const { useFormContext } = await import("react-hook-form")
-  return {
-    SelectField: ({
-      name,
-      options,
-      label,
-    }: {
-      name: string
-      options: { label: string; value: string }[]
-      label?: string
-    }) => {
-      const form = useFormContext()
-      return (
-        <Controller
-          control={form.control}
-          name={name}
-          render={({ field }) => (
-            <label>
-              {label}
-              <select
-                data-testid={`select-${name}`}
-                onChange={(event) => field.onChange(event.target.value)}
-                value={field.value ?? ""}
-              >
-                {options.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
             </label>
           )}
         />
@@ -175,7 +183,7 @@ afterEach(() => {
 })
 
 const invalidStep: SetCustomFieldStepSchema = {
-  id: "step-1",
+  id: "1",
   stepType: stepTypes.enum.setCustomField,
   inputFieldId: "",
   operation: FieldOperationType.set,
@@ -268,7 +276,7 @@ describe("SetCustomFieldStepEditor", () => {
     // Every edited field must land on the parent step, and id/stepType are
     // preserved.
     expect(formApi?.getValues("step")).toEqual({
-      id: "step-1",
+      id: "1",
       stepType: stepTypes.enum.setCustomField,
       inputFieldId: "field-1",
       operation: FieldOperationType.append,

@@ -7,9 +7,9 @@ import {
   type InstagramMessageAttachmentPayload,
   type InstagramSendMessage,
   type InstagramSendMessageResponse,
-} from "../schemas"
+} from "../schema"
 
-export const sendComment = (
+export const replyToComment = (
   auth: InstagramAuthValue,
   commentId: string,
   message: string | null,
@@ -68,7 +68,7 @@ export const hideComment = (
  * message payload (text, attachment, quick replies, …) — used by flow-based
  * private replies to deliver the *first* outgoing message of the run. On
  * graph.instagram.com (Instagram Login), messages are sent through the
- * `me/messages` endpoint — matching sendInstagramMessage — using the comment
+ * `me/messages` endpoint — matching `sendMessage` in `apis/message.ts` — using the comment
  * id as the recipient reference (Meta's comment_id-anchored Send API, which
  * bypasses the normal messaging-window requirement).
  *
@@ -105,3 +105,57 @@ export const sendPrivateReply = (
   message: string,
 ): Promise<InstagramSendMessageResponse> =>
   sendPrivateReplyMessage(auth, commentId, { text: message })
+
+type InstagramMediaCommentFields = {
+  id: string
+  text?: string
+  timestamp: string
+  username?: string
+  from?: { id: string; username?: string }
+  parent_id?: string
+}
+
+export type InstagramMediaComment = InstagramMediaCommentFields & {
+  replies?: { data: InstagramMediaCommentFields[] }
+}
+
+export type InstagramMediaCommentPage = {
+  comments: InstagramMediaComment[]
+  /** Cursor for the next page; absent on the last one. */
+  nextCursor?: string
+}
+
+const MEDIA_COMMENT_FIELDS =
+  "id,text,timestamp,username,from{id,username},parent_id"
+
+/**
+ * One page of a media's top-level comments, each carrying its replies. The
+ * edge has no ordering parameter, so the caller cannot stop early on age.
+ */
+export const listMediaComments = (props: {
+  auth: InstagramAuthValue
+  mediaId: string
+  after?: string
+}): Promise<InstagramMediaCommentPage> => {
+  const { auth, mediaId, after } = props
+  const version = auth.metadata.version ?? DEFAULT_API_VERSION
+  const endpoint = `${version}/${mediaId}/comments`
+
+  return rescue(endpoint, async () => {
+    const res = await instagramBusinessClient.get<{
+      data: InstagramMediaComment[]
+      paging?: { cursors?: { after?: string }; next?: string }
+    }>(endpoint, {
+      headers: { Authorization: `Bearer ${auth.tokens.accessToken}` },
+      searchParams: {
+        fields: `${MEDIA_COMMENT_FIELDS},replies{${MEDIA_COMMENT_FIELDS}}`,
+        limit: "50",
+        ...(after ? { after } : {}),
+      },
+    })
+    return {
+      comments: res.data,
+      nextCursor: res.paging?.next ? res.paging.cursors?.after : undefined,
+    }
+  })
+}

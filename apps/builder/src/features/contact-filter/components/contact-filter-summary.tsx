@@ -1,20 +1,22 @@
 "use client"
 
+import type { ChannelType } from "@chatbotx.io/database/partials"
 import { useTranslations } from "next-intl"
-import type { ContactFilterCriteria } from "../schemas"
+import type { ContactFilterCriteria } from "../schema"
 import {
-  formatConditionValueDisplay,
   formatCtwaRetargetChipLabel,
-  getConditionOptions,
-  getFieldConfigs,
+  formatFilterConditionValue,
 } from "./contact-filter-config"
+import { useContactFilterConfigs } from "./use-contact-filter-configs"
 
 type ContactFilterSummaryProps = {
   contactFilter?: ContactFilterCriteria | null
+  inboxChannel?: ChannelType
 }
 
 export function ContactFilterSummary({
   contactFilter,
+  inboxChannel,
 }: ContactFilterSummaryProps) {
   const t = useTranslations()
 
@@ -26,20 +28,26 @@ export function ContactFilterSummary({
     )
   }
 
-  const configs = getFieldConfigs({
-    t,
-    tagOptions: [],
-    inboxOptions: [],
-    customFields: [],
-    flowVersionOptions: [],
-    broadcastOptions: [],
-    sequenceOptions: [],
-    reflinkOptions: [],
-    assigneeOptions: [],
-  })
-  const operatorLabelByValue = new Map(
-    getConditionOptions(t).map((option) => [option.value, option.label]),
+  return (
+    <ContactFilterSummaryList
+      contactFilter={contactFilter}
+      inboxChannel={inboxChannel}
+    />
   )
+}
+
+// Split out so option queries only mount when there are conditions to label.
+function ContactFilterSummaryList({
+  contactFilter,
+  inboxChannel,
+}: ContactFilterSummaryProps & { contactFilter: ContactFilterCriteria }) {
+  const t = useTranslations()
+  const { configs, operatorLabelByValue } = useContactFilterConfigs(
+    inboxChannel,
+    false,
+    contactFilter.conditions,
+  )
+
   const operatorLabel =
     contactFilter.operator === "and"
       ? t("condition.operator.and")
@@ -70,12 +78,16 @@ export function ContactFilterSummary({
           }
 
           const isCustomField = condition.field === "customField"
+          const isBotField = condition.field === "botField"
           const isCouponTopic = condition.field === "couponTopic"
           const fieldConfig = configs.find((config) => {
             if (isCustomField && "customFieldId" in condition) {
               return (
                 String(config.customFieldId) === String(condition.customFieldId)
               )
+            }
+            if (isBotField && "botFieldId" in condition) {
+              return String(config.botFieldId) === String(condition.botFieldId)
             }
             if (isCouponTopic && "topicId" in condition) {
               return String(config.topicId) === String(condition.topicId)
@@ -88,6 +100,9 @@ export function ContactFilterSummary({
               if (isCustomField) {
                 return t("fields.customField.label")
               }
+              if (isBotField) {
+                return t("fields.botField.label")
+              }
               if (isCouponTopic) {
                 return t("condition.fields.couponTopic")
               }
@@ -95,13 +110,15 @@ export function ContactFilterSummary({
             })()
           const conditionOperator =
             operatorLabelByValue.get(condition.operator) ?? condition.operator
-          const valueDisplay = formatConditionValueDisplay(
+          const valueDisplay = formatFilterConditionValue(
             "value" in condition ? condition.value : undefined,
-            fieldConfig?.options,
+            fieldConfig,
+            t,
           )
           const conditionKey = [
             condition.field,
             "customFieldId" in condition ? condition.customFieldId : "",
+            "botFieldId" in condition ? condition.botFieldId : "",
             "topicId" in condition ? condition.topicId : "",
             condition.operator,
             valueDisplay,

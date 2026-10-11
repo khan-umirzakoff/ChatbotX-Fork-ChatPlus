@@ -1,8 +1,5 @@
 import { notFound } from "next/navigation"
-import { CustomFieldStoreProvider } from "@/features/custom-fields/provider/custom-field-store-context"
-import { FlowStoreProvider } from "@/features/flows/provider/flow-store-context"
-import { SequenceStoreProvider } from "@/features/sequences/provider/sequence-store-context"
-import { TagStoreProvider } from "@/features/tags/provider/tag-store-context"
+
 import { findWebhook } from "@/features/webhooks/queries"
 import UpdateWebhookForm from "@/features/webhooks/update-webhook-form"
 import { withWorkspaceIdAndIdSchema } from "@/features/workspaces/schema/resource"
@@ -25,18 +22,5 @@ export default async function UpdateWebhookPage({
     return notFound()
   }
 
-  return (
-    <FlowStoreProvider autoInitialize={true} workspaceId={workspaceId}>
-      <CustomFieldStoreProvider autoInitialize={true} workspaceId={workspaceId}>
-        <TagStoreProvider autoInitialize={true} workspaceId={workspaceId}>
-          <SequenceStoreProvider
-            autoInitialize={true}
-            workspaceId={workspaceId}
-          >
-            <UpdateWebhookForm webhook={webhook} workspaceId={workspaceId} />
-          </SequenceStoreProvider>
-        </TagStoreProvider>
-      </CustomFieldStoreProvider>
-    </FlowStoreProvider>
-  )
+  return <UpdateWebhookForm webhook={webhook} workspaceId={workspaceId} />
 }

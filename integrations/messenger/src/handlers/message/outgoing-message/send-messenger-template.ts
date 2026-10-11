@@ -101,9 +101,10 @@ export function buildMessengerTemplateComponents(
   const components: MessengerTemplateComponent[] = []
 
   if (params.header && params.header.length > 0) {
-    // Messenger utility image headers are fixed at template creation via
-    // header_handle — no image parameter is sent at send-time. Only text
-    // placeholders within the header require a parameter here.
+    // The image of a Messenger utility IMAGE header is fixed at template
+    // creation via header_handle — no image parameter is sent at send-time.
+    // Text placeholders in the header (TEXT or IMAGE format) still require a
+    // parameter here, or Meta rejects the send with (#100 - 1893029).
     const headerParameters: MessengerTemplateComponentParameter[] =
       params.header
         .filter((param) => param.type === "text")
@@ -184,6 +185,12 @@ function buildButtonParameters(
   const { flowId = "", flowVersionId, metadata } = flowContext ?? {}
   const broadcastId = extractMetadata("broadcastId", metadata)
   const sequenceStepId = extractMetadata("sequenceStepId", metadata)
+  // The third button encoder in this package, after `send-button.ts` and
+  // `send-quick-reply.ts`. A `sendMessengerTemplateMessage` step inside a
+  // comment automation's flow reply reaches here (see the `commentAnchor`
+  // branch in `outgoing-message/index.ts`), so it needs the same attribution or
+  // its taps report nothing.
+  const commentAutomationId = extractMetadata("commentAutomationId", metadata)
 
   for (const button of flowContext?.flowButtons ?? []) {
     while (usedIndexes.has(nextPostbackIndex)) {
@@ -196,6 +203,7 @@ function buildButtonParameters(
             flowId: button.beforeStep.flowId,
             broadcastId,
             sequenceStepId,
+            commentAutomationId,
           })
         : encodeButtonPayload({
             flowId,
@@ -203,6 +211,7 @@ function buildButtonParameters(
             buttonId: button.id,
             broadcastId,
             sequenceStepId,
+            commentAutomationId,
           })
 
     indexedParameters.push({

@@ -1,6 +1,7 @@
 import { createId, zodBigintAsString } from "@chatbotx.io/utils"
 import { z } from "zod"
 
+import { zodFieldReference } from "../field-reference"
 import {
   errorStateDefaultFn,
   errorStateSchema,
@@ -30,14 +31,18 @@ export const defaultAnalyzeModels = {
 
 export const aiAnalyzeImageSchema = z
   .object({
-    id: zodBigintAsString(),
-    stepType: z.literal(stepTypes.enum.aiAnalyzeImage),
+    id: zodBigintAsString().describe(
+      "Step id (numeric string), unique within the flow.",
+    ),
+    stepType: z
+      .literal(stepTypes.enum.aiAnalyzeImage)
+      .describe('Step type discriminator: "aiAnalyzeImage".'),
     provider: aiAnalyzeImageProviderSchema,
     integrationId: z.string().trim().optional(),
     model: z.string().trim(),
     prompt: z.string().trim().min(1),
     inputFieldId: z.string().trim().min(1),
-    outputFieldId: z.string().trim().min(1),
+    outputFieldId: zodFieldReference(),
     temperature: z.number().min(0).max(2),
     maxOutputTokens: z.number().int().min(250).max(4096),
     states: z.tuple([successStateSchema, errorStateSchema]).optional(),

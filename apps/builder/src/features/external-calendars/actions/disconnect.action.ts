@@ -1,24 +1,14 @@
 "use server"
 
 import { appointmentExternalCalendarService } from "@chatbotx.io/business"
-import { workspaceIdAndIdRequestParams } from "@/features/common/schemas"
-import { workspaceActionClient } from "@/lib/safe-action"
-import { disconnectGoogleCalendarProvider } from "../lib/google-calendar-provider"
+import { workspaceIdAndIdRequestParams } from "@/features/common/schema"
+import { workspaceActionClientAllowExpired } from "@/lib/safe-action"
 
-export const disconnectGoogleCalendarAction = workspaceActionClient
+export const disconnectGoogleCalendarAction = workspaceActionClientAllowExpired
   .bindArgsSchemas(workspaceIdAndIdRequestParams)
   .action(async ({ bindArgsParsedInputs: [workspaceId, integrationId] }) => {
-    const connection =
-      await appointmentExternalCalendarService.getGoogleConnectionForProviderCall(
-        {
-          workspaceId,
-          integrationId,
-        },
-      )
-
     await appointmentExternalCalendarService.disconnect({
       workspaceId,
       integrationId,
     })
-    await disconnectGoogleCalendarProvider({ workspaceId, connection })
   })

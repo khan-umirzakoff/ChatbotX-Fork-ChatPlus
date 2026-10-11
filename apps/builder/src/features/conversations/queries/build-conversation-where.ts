@@ -3,6 +3,7 @@ import { channelTypes } from "@chatbotx.io/database/partials"
 import {
   applyContactFilter,
   buildSmartKeywordWhere,
+  conversationUnreadWhere,
   parseConversationAssigneeValues,
   pruneEmailPhoneFilterConditions,
   UNASSIGNED_ASSIGNEE_VALUE,
@@ -52,6 +53,30 @@ const addContactWhere = (where: QueryWhere, contactWhere: QueryWhere): void => {
   }
 }
 
+const BLOCKED_FILTER_FIELD = "blocked"
+
+/**
+ * The inbox hides blocked contacts unless the "Blocked" status is selected. A
+ * contact filter that names the `blocked` field is the user stating what they
+ * want, so the hidden default steps aside and the filter is read literally,
+ * exactly as the Contacts page reads it — for `and` and `or` alike. AND-ing
+ * the default on top would yield `blockedAt IS NULL AND blockedAt IS NOT NULL`
+ * for "Blocked is true", which matches nothing.
+ */
+const contactFilterMentionsBlocked = (
+  contactFilter: ListConversationsRequest["contactFilter"] | undefined,
+): boolean =>
+  contactFilter?.conditions.some(
+    (condition) => condition.field === BLOCKED_FILTER_FIELD,
+  ) ?? false
+
+export const appendUnreadWhere = (where: QueryWhere): void => {
+  where.AND = [
+    ...(Array.isArray(where.AND) ? where.AND : []),
+    conversationUnreadWhere,
+  ]
+}
+
 export function buildConversationWhere(
   workspaceId: string,
   input: Omit<ListConversationsRequest, "workspaceId">,
@@ -69,7 +94,14 @@ export function buildConversationWhere(
     where.archivedAt = { isNull: true }
   }
 
-  if (!tags.includes("blocked")) {
+  // `blocked` is never pruned by the email/phone scope, so the raw request
+  // filter is the right thing to inspect here.
+  if (
+    !(
+      tags.includes("blocked") ||
+      contactFilterMentionsBlocked(input.contactFilter)
+    )
+  ) {
     where.contact = { blockedAt: { isNull: true } }
   }
 
@@ -144,13 +176,7 @@ export function buildConversationWhere(
     where.contactRepliedAt = { gt: sql`"adminRepliedAt"` }
   }
   if (tags.includes("unread")) {
-    where.lastActivityAt = {
-      ...(typeof where.lastActivityAt === "object" &&
-      where.lastActivityAt !== null
-        ? where.lastActivityAt
-        : {}),
-      gt: sql`"agentLastReadAt"`,
-    }
+    appendUnreadWhere(where)
   }
   if (tags.includes("followUp")) {
     where.followed = true

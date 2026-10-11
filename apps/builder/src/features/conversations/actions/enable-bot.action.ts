@@ -7,7 +7,7 @@ import {
   bulkUpdateIdsRequest,
   type WorkspaceIdRequestParams,
   workspaceIdrequestParams,
-} from "@/features/common/schemas"
+} from "@/features/common/schema"
 import { workspaceActionClient } from "@/lib/safe-action"
 
 export const enableBotAction = workspaceActionClient
@@ -23,14 +23,10 @@ export const enableBotAction = workspaceActionClient
       parsedInput: BulkUpdateIdsRequest
       ctx: { user: UserModel }
     }) => {
-      const conversations = await conversationService.findManyByIds({
+      await conversationService.setBotEnabledByIds({
         workspaceId,
         ids: parsedInput.ids,
-      })
-
-      await conversationService.enableBotState({
-        workspaceId,
-        conversations,
+        botEnabled: true,
         userId: ctx.user.id,
         triggerContext: {
           triggerSource: "api",

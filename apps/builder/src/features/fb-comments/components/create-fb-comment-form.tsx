@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import type { UseFormReturn } from "react-hook-form"
 import { toast } from "sonner"
+import { initialCommentPost } from "@/features/shared/comment-automation/lib/live-post-type"
 import { createFbCommentAction } from "../actions/create-fb-comment.action"
 import {
   type CreateFbCommentRequest,
@@ -18,11 +19,12 @@ const defaultValues = {
   name: "",
   type: "messenger" as const,
   folderId: undefined,
-  post: { type: "all" as const, value: [] },
+  post: initialCommentPost(false),
   privateReply: { type: "text" as const, value: "" },
-  publicReply: { type: "none" as const, value: null },
+  publicReply: { type: "none" as const, value: null, values: [{ value: "" }] },
   includeKeywords: { type: "all" as const, value: [] },
   excludeKeywords: [],
+  excludeKeywordsType: "contain" as const,
   options: {
     replyToNewContactsOnly: false,
     replyOncePerUserPerPost: false,
@@ -38,13 +40,21 @@ const defaultValues = {
     hasVideo: false,
     hasLink: false,
     hasKeywords: false,
+    hasGif: false,
+    hasEmoji: false,
     keywords: [],
     showCommentsAfter: "none" as const,
   },
   replyAfter: { type: "immediately" as const, value: 0 },
 }
 
-export function CreateFbCommentForm({ workspaceId }: { workspaceId: string }) {
+export function CreateFbCommentForm({
+  workspaceId,
+  isLive,
+}: {
+  workspaceId: string
+  isLive: boolean
+}) {
   const t = useTranslations()
   const router = useRouter()
 
@@ -69,7 +79,7 @@ export function CreateFbCommentForm({ workspaceId }: { workspaceId: string }) {
       },
       formProps: {
         mode: "onChange",
-        defaultValues,
+        defaultValues: { ...defaultValues, post: initialCommentPost(isLive) },
       },
     },
   )

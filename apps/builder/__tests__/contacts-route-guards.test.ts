@@ -2,14 +2,14 @@
 
 import { beforeEach, describe, expect, test, vi } from "vitest"
 
-const { mockGetCurrentUserAndTargetWorkspace, mockNotFound } = vi.hoisted(
-  () => ({
+const { mockGetCurrentUserAndTargetWorkspace, mockListContacts, mockNotFound } =
+  vi.hoisted(() => ({
     mockGetCurrentUserAndTargetWorkspace: vi.fn(),
+    mockListContacts: vi.fn(),
     mockNotFound: vi.fn(() => {
       throw new Error("not found")
     }),
-  }),
-)
+  }))
 
 vi.mock("@/lib/auth/utils", () => ({
   getCurrentUserAndTargetWorkspace: mockGetCurrentUserAndTargetWorkspace,
@@ -30,15 +30,10 @@ vi.mock("next-intl/server", () => ({
 }))
 
 vi.mock("@/features/contacts/queries/list-contacts.queries", () => ({
-  listContactsRSC: vi.fn(async () => ({
-    data: [],
-    pageCount: 0,
-    totalCount: 0,
-    totalCountCapped: false,
-  })),
+  listContacts: mockListContacts,
 }))
 
-vi.mock("@/features/contacts/schemas/query", () => ({
+vi.mock("@/features/contacts/schema/query", () => ({
   listContactsRequest: {
     omit: () => ({
       safeParse: () => ({ data: {} }),
@@ -50,7 +45,7 @@ vi.mock("@/features/import/queries/list-imports.queries", () => ({
   listImports: vi.fn(async () => ({ data: [], pageCount: 0 })),
 }))
 
-vi.mock("@/features/import/schemas/query", () => ({
+vi.mock("@/features/import/schema/query", () => ({
   listImportsSearchParamsCache: {
     parse: () => ({}),
   },
@@ -72,16 +67,8 @@ vi.mock("@/features/import/components/import-history-table", () => ({
   ImportHistoryTable: () => null,
 }))
 
-vi.mock("@/features/custom-fields/provider/custom-field-store-context", () => ({
-  CustomFieldStoreProvider: ({ children }: { children: unknown }) => children,
-}))
-
 vi.mock("@/features/inboxes/provider/inbox-store-context", () => ({
   InboxStoreProvider: ({ children }: { children: unknown }) => children,
-}))
-
-vi.mock("@/features/tags/provider/tag-store-context", () => ({
-  TagStoreProvider: ({ children }: { children: unknown }) => children,
 }))
 
 vi.mock("@/features/users/provider/user-store-context", () => ({
@@ -92,10 +79,10 @@ const { default: ContactsPage } = await import(
   "../src/app/space/[workspaceId]/contacts/page"
 )
 const { default: ImportContactsPage } = await import(
-  "../src/app/(no-sidebar)/space/[workspaceId]/contacts/import/page"
+  "../src/app/space/[workspaceId]/contacts/import/page"
 )
 const { default: ImportContactsHistoriesPage } = await import(
-  "../src/app/(no-sidebar)/space/[workspaceId]/contacts/import/histories/page"
+  "../src/app/space/[workspaceId]/contacts/import/histories/page"
 )
 
 const basePermissions = {
@@ -114,6 +101,26 @@ describe("contacts route guards", () => {
     vi.clearAllMocks()
   })
 
+  test("renders the contacts shell without issuing an RSC contact-list query", async () => {
+    mockGetCurrentUserAndTargetWorkspace.mockResolvedValue({
+      user: { id: "user-1" },
+      targetWorkspaceMember: {
+        permissions: {
+          ...basePermissions,
+          contacts: true,
+        },
+      },
+    })
+
+    await expect(
+      ContactsPage({
+        params: Promise.resolve({ workspaceId: "ws-1" }),
+      }),
+    ).resolves.toBeDefined()
+
+    expect(mockListContacts).not.toHaveBeenCalled()
+  })
+
   test("allows assigned-only members to reach contacts and contacts import pages", async () => {
     mockGetCurrentUserAndTargetWorkspace.mockResolvedValue({
       user: { id: "user-1" },
@@ -128,7 +135,6 @@ describe("contacts route guards", () => {
     await expect(
       ContactsPage({
         params: Promise.resolve({ workspaceId: "ws-1" }),
-        searchParams: Promise.resolve({}),
       }),
     ).resolves.toBeDefined()
     await expect(
@@ -155,7 +161,6 @@ describe("contacts route guards", () => {
     await expect(
       ContactsPage({
         params: Promise.resolve({ workspaceId: "ws-1" }),
-        searchParams: Promise.resolve({}),
       }),
     ).rejects.toThrow("not found")
     await expect(

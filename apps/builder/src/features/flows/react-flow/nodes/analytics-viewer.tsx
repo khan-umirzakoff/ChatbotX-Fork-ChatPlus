@@ -2,10 +2,10 @@
 
 import type { NodeResponse } from "@chatbotx.io/analytics/schemas"
 import {
-  disabledContinueNodeTypes,
   type FlowNode,
   type NodeType,
   nodeTypeSchema,
+  shouldShowDefaultContinue,
 } from "@chatbotx.io/flow-config"
 import {
   Card,
@@ -22,6 +22,7 @@ import { DynamicStepViewer } from "../steps"
 import { ButtonStepViewer } from "../steps/button/viewer"
 import { FlowAnalyticsStoreProvider } from "../stores/flow-analytics-store-provider"
 import { allNodesConfig } from "./node-config"
+import { QuickReplySettingsHandles } from "./quick-reply-settings/quick-reply-settings-handles"
 
 type NodeAnalyticsViewerProps = {
   id: string
@@ -235,7 +236,11 @@ export const NodeAnalyticsViewer = memo((props: NodeAnalyticsViewerProps) => {
                 />
               ))}
 
-            {!disabledContinueNodeTypes.includes(type) && (
+            {"quickReplySettings" in data.details && (
+              <QuickReplySettingsHandles details={data.details} />
+            )}
+
+            {shouldShowDefaultContinue(type, data) && (
               <div className="relative w-full text-right">
                 {/* React Flow keeps this connector on physical Position.Right. */}
                 <span className="mr-4">{t("actions.continue")}</span>

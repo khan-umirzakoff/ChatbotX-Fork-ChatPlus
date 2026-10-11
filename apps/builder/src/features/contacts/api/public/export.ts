@@ -1,0 +1,64 @@
+import { contactExportService } from "@chatbotx.io/business"
+import {
+  possibleErrorsOnCreatingResource,
+  possibleErrorsOnFindingResource,
+} from "@/lib/orpc/orpc-error-helper"
+import { workspaceTokenAuthAPIForScope } from "@/orpc"
+import {
+  exportContactsRequest,
+  exportContactsResponse,
+} from "../../schema/action"
+import {
+  getExportFilePublicRequest,
+  getExportFilePublicResponse,
+} from "../../schema/public/export"
+
+const workspaceTokenAuthAPI = workspaceTokenAuthAPIForScope("contacts")
+
+export const contactsExportPublicRouter = {
+  export: workspaceTokenAuthAPI
+    .route({
+      method: "POST",
+      path: "/v1/contacts/export",
+      summary: "Start contact export job",
+      description:
+        'Enqueues a CSV export of contacts and returns immediately with a `fileId` — poll `GET /v1/contacts/export-files/{fileId}` for status and the download URL once it finishes. Either `contactIds` or `exportAll: true` with an optional `filter` is required. Example: `{"fields":["sys:firstName","sys:email"],"exportAll":true,"filter":{"contactFilter":{...}}}`.',
+      successStatus: 202,
+      tags: ["Contacts"],
+    })
+    .input(exportContactsRequest)
+    .output(exportContactsResponse)
+    .errors(possibleErrorsOnCreatingResource)
+    .handler(
+      async ({ context, input }) =>
+        await contactExportService.start({
+          workspaceId: context.workspace.id,
+          // A workspace token has no session user, and (per the PII note in
+          // docs/developer/workspace-api-tokens.md) is never member-scoped —
+          // it always sees full PII, unlike a session caller whose export
+          // may be restricted by `canViewEmailAndPhone`/`restrictToAssignedUserId`.
+          requestedUserId: null,
+          canExportEmailAndPhone: true,
+          ...input,
+        }),
+    ),
+  getExportFile: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/contacts/export-files/{fileId}",
+      summary: "Get contact export file status and download URL",
+      description:
+        "Polls the status of an export started with `contacts.export`. Once `status` is complete, the response includes a download URL for the CSV file.",
+      tags: ["Contacts"],
+    })
+    .input(getExportFilePublicRequest)
+    .output(getExportFilePublicResponse)
+    .errors(possibleErrorsOnFindingResource)
+    .handler(
+      async ({ context, input }) =>
+        await contactExportService.getFile({
+          workspaceId: context.workspace.id,
+          fileId: input.fileId,
+        }),
+    ),
+}

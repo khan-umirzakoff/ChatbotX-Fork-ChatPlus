@@ -1,6 +1,66 @@
-import { db, eq, findOrFail, inArray } from "@chatbotx.io/database/client"
+import type { DatabaseClient } from "@chatbotx.io/database/client"
+import { and, db, eq, findOrFail, inArray } from "@chatbotx.io/database/client"
+import { connectionRepository } from "@chatbotx.io/database/repositories"
 import { integrationTiktokModel } from "@chatbotx.io/database/schema"
+import type { IntegrationTiktokModel } from "@chatbotx.io/database/types"
+import {
+  buildTiktokVideoUrl,
+  findTiktokVideo,
+  getTiktokDirectReplyStatus,
+  type TiktokAuthValue,
+  type TiktokDirectReplyStatus,
+  tiktokCanListVideos,
+  updateTiktokDirectReplyStatus,
+} from "@chatbotx.io/integration-tiktok"
+import type { AuthValue } from "@chatbotx.io/sdk"
 import { BaseService } from "../base.service"
+import {
+  CONNECTION_STORE_BINDINGS,
+  type ConnectionQuotaConsumption,
+  recordRefreshedAuth,
+  upsertConnectionRow,
+  withQuotaCompensation,
+} from "../connection"
+import { connectionStateService } from "../connection/state-service"
+import {
+  ChatbotXException,
+  channelDuplicatedException,
+  notFoundException,
+} from "../errors"
+import { inboxService } from "../inbox/service"
+import { logger } from "../logger"
+
+/** The post a TikTok comment conversation sits on, as far as it can be resolved. */
+export type TiktokPostDetails = {
+  text?: string
+  picture?: string
+  from: { id: string; name: string }
+  createdAt?: string
+  link?: string
+  /**
+   * True when the caption and thumbnail were lost to a *transient* failure — the
+   * API call threw, or answered with no video — rather than to the connection
+   * simply not holding `video.list`.
+   *
+   * Only the transient case is worth retrying, and the caller needs to tell them
+   * apart to decide how long to cache this: a missing scope is a stable state
+   * that will answer identically all day, while a timeout pinned for 24 hours is
+   * a caption-less post card long after TikTok recovered.
+   */
+  degraded?: boolean
+}
+
+/**
+ * Cache tag for everything derived from one inbox's TikTok video reads.
+ *
+ * Shared with the builder query that writes those entries: re-authorizing is
+ * the only way a connection gains `video.list`, and without dropping the
+ * entries written while the scope was missing the caption and thumbnail stay
+ * absent for the rest of the TTL — with no way for the owner to force a refresh
+ * from the UI, which reads exactly like "granting the scope did nothing".
+ */
+export const tiktokPostDetailsCacheTag = (inboxId: string): string =>
+  `tiktok-post-details:${inboxId}`
 
 class TiktokIntegrationService extends BaseService {
   findById(props: { id: string; workspaceId: string }) {
@@ -35,18 +95,450 @@ class TiktokIntegrationService extends BaseService {
       .where(inArray(integrationTiktokModel.workspaceId, workspaceIds))
   }
 
-  async updateAuth(id: string, auth: Record<string, unknown>): Promise<void> {
-    await db
+  async updateAuth(props: {
+    id: string
+    workspaceId: string
+    auth: Record<string, unknown>
+  }): Promise<void> {
+    const [row] = await db
       .update(integrationTiktokModel)
-      .set({ auth, tokenRefreshError: null })
-      .where(eq(integrationTiktokModel.id, id))
+      .set({ auth: props.auth, tokenRefreshError: null })
+      .where(
+        and(
+          eq(integrationTiktokModel.id, props.id),
+          eq(integrationTiktokModel.workspaceId, props.workspaceId),
+        ),
+      )
+      .returning({ openId: integrationTiktokModel.openId })
+
+    if (!row) {
+      throw notFoundException("TikTok integration not found")
+    }
+
+    await recordRefreshedAuth({
+      workspaceId: props.workspaceId,
+      provider: "tiktok",
+      sourceId: row.openId,
+      auth: props.auth as AuthValue,
+    })
   }
 
-  async markTokenRefreshError(id: string, error: string): Promise<void> {
-    await db
+  /**
+   * Turns TikTok's Comment-to-Message on or off for one connected account.
+   *
+   * TikTok's own rejection text is the only thing that says WHICH eligibility
+   * rule an account failed — registered in Vietnam, Indonesia or Thailand;
+   * owner over 18; a Registered Business Account or one that has run Messaging
+   * Ads; messaging permissions set to "Requests". So it is surfaced verbatim
+   * rather than replaced with a generic failure.
+   */
+  async setCommentToMessage(props: {
+    workspaceId: string
+    id: string
+    enabled: boolean
+  }): Promise<TiktokDirectReplyStatus> {
+    const { workspaceId, id, enabled } = props
+    const integration = await this.findById({ id, workspaceId })
+    const auth = integration.auth as TiktokAuthValue
+    const status: TiktokDirectReplyStatus = enabled ? "ENABLE" : "DISABLE"
+
+    try {
+      await updateTiktokDirectReplyStatus(
+        auth.tokens.accessToken,
+        auth.metadata.openId,
+        status,
+      )
+    } catch (error) {
+      logger.error(
+        { err: error, id, workspaceId },
+        "Failed to update TikTok Comment-to-Message",
+      )
+      throw new ChatbotXException(
+        error instanceof Error
+          ? error.message
+          : "Failed to update TikTok Comment-to-Message",
+      )
+    }
+
+    await this.cacheCommentToMessageStatus({ id, workspaceId, auth, status })
+
+    await this.audit(
+      "update",
+      `${enabled ? "enabled" : "disabled"} TikTok Comment-to-Message`,
+    )
+
+    return status
+  }
+
+  /**
+   * Re-reads the setting from TikTok and re-caches it.
+   *
+   * Exists because the toggle can be flipped in the TikTok app, and because
+   * every connection made before this shipped carries no cached value at all —
+   * without a way to ask, those rows would read "off" forever. `null` when
+   * TikTok answered without a status: leaving the cache alone beats recording
+   * a guess the toggle would then present as fact.
+   */
+  async refreshCommentToMessage(props: {
+    workspaceId: string
+    id: string
+  }): Promise<TiktokDirectReplyStatus | null> {
+    const { workspaceId, id } = props
+    const integration = await this.findById({ id, workspaceId })
+    const auth = integration.auth as TiktokAuthValue
+
+    let status: TiktokDirectReplyStatus | undefined
+    try {
+      status = await getTiktokDirectReplyStatus(
+        auth.tokens.accessToken,
+        auth.metadata.openId,
+      )
+    } catch (error) {
+      logger.error(
+        { err: error, id, workspaceId },
+        "Failed to read the TikTok Comment-to-Message setting",
+      )
+      throw new ChatbotXException(
+        error instanceof Error
+          ? error.message
+          : "Failed to read the TikTok Comment-to-Message setting",
+      )
+    }
+
+    if (!status) {
+      return null
+    }
+
+    await this.cacheCommentToMessageStatus({ id, workspaceId, auth, status })
+    return status
+  }
+
+  /**
+   * Caches the status on the integration's auth metadata.
+   *
+   * A cache, never the authority — the owner can flip Comment-to-Message inside
+   * the TikTok app and nothing notifies us, which is why a re-check exists. The
+   * spread keeps `scopes` and the profile fields, which token refresh re-stamps
+   * onto this same object.
+   */
+  private async cacheCommentToMessageStatus(props: {
+    id: string
+    workspaceId: string
+    auth: TiktokAuthValue
+    status: TiktokDirectReplyStatus
+  }): Promise<void> {
+    const updatedAuth: TiktokAuthValue = {
+      ...props.auth,
+      metadata: {
+        ...props.auth.metadata,
+        commentToMessage: {
+          status: props.status,
+          checkedAt: new Date().toISOString(),
+        },
+      },
+    }
+    await this.updateAuth({
+      id: props.id,
+      workspaceId: props.workspaceId,
+      auth: updatedAuth,
+    })
+  }
+
+  async markTokenRefreshError(props: {
+    id: string
+    workspaceId: string
+    error: string
+    isRevoked: boolean
+  }): Promise<void> {
+    const [row] = await db
       .update(integrationTiktokModel)
-      .set({ tokenRefreshError: error })
-      .where(eq(integrationTiktokModel.id, id))
+      .set({ tokenRefreshError: props.error })
+      .where(
+        and(
+          eq(integrationTiktokModel.id, props.id),
+          eq(integrationTiktokModel.workspaceId, props.workspaceId),
+        ),
+      )
+      .returning({
+        openId: integrationTiktokModel.openId,
+      })
+
+    if (!row) {
+      logger.warn(
+        { integrationId: props.id, workspaceId: props.workspaceId },
+        "Unable to mark TikTok token refresh error: integration not found",
+      )
+      return
+    }
+
+    if (props.isRevoked) {
+      await connectionStateService.markUnhealthyByIdentifier({
+        provider: "tiktok",
+        identifier: row.openId,
+        workspaceId: props.workspaceId,
+        reason: "token_revoked",
+      })
+      return
+    }
+
+    await connectionStateService.markDegradedByIdentifier({
+      provider: "tiktok",
+      identifier: row.openId,
+      reason: "refresh_failed",
+      workspaceId: props.workspaceId,
+    })
+  }
+
+  async listByWorkspace(
+    where: Partial<Pick<IntegrationTiktokModel, "workspaceId">>,
+  ): Promise<IntegrationTiktokModel[]> {
+    return await db.query.integrationTiktokModel.findMany({
+      where,
+      orderBy: {
+        createdAt: "asc",
+      },
+    })
+  }
+
+  /**
+   * An inbox's connection, scoped to the workspace that claims it.
+   *
+   * Never look one up by `inboxId` alone: an inbox id is not a secret, so an
+   * unscoped lookup lets a member of one workspace read another's connection by
+   * passing its id. Same contract as the messenger/instagram equivalents —
+   * throws rather than returning null, so a caller cannot forget the check.
+   */
+  findByInboxIdForWorkspace(props: {
+    inboxId: string
+    workspaceId: string
+  }): Promise<IntegrationTiktokModel> {
+    return findOrFail({
+      table: integrationTiktokModel,
+      where: { inboxId: props.inboxId, workspaceId: props.workspaceId },
+      message: "Integration TikTok not found",
+    })
+  }
+
+  /**
+   * The video a comment conversation sits on.
+   *
+   * Unlike the Meta channels, this cannot rely on the API call succeeding. The
+   * caption and thumbnail live behind `business/videos/list/`, and while its
+   * `video.list` scope is approved, a connection made before that approval does
+   * not carry it until its owner re-authorizes. So the call is attempted only
+   * when the connection actually granted the scope, and a failure is never
+   * fatal — a comment conversation has to stay usable without it.
+   *
+   * What always works is derived from the connection itself: the account that
+   * owns the video is the connected account, so its name and the canonical video
+   * URL need no network at all.
+   *
+   * The two ways of ending up on that fallback are NOT the same, so the result
+   * says which one happened (`degraded`): a connection without the scope will
+   * answer identically until its owner re-authorizes, while a thrown call or a
+   * video the API did not return is worth asking about again shortly.
+   */
+  async getPostDetails(props: {
+    workspaceId: string
+    inboxId: string
+    postId: string
+  }): Promise<TiktokPostDetails> {
+    const { workspaceId, inboxId, postId } = props
+    const integration = await this.findByInboxIdForWorkspace({
+      inboxId,
+      workspaceId,
+    })
+
+    const auth = integration.auth as TiktokAuthValue
+    const from = { id: integration.openId, name: integration.name }
+    const fallback: TiktokPostDetails = {
+      from,
+      link: buildTiktokVideoUrl(auth.metadata?.username, postId),
+    }
+
+    if (!tiktokCanListVideos(auth)) {
+      return fallback
+    }
+
+    try {
+      const video = await findTiktokVideo(auth.tokens.accessToken, {
+        businessId: auth.metadata.openId,
+        videoId: postId,
+      })
+      if (!video) {
+        // The scope is there and the call worked, so an absent video is either
+        // a deletion or a list that has not caught up yet — the second is worth
+        // re-asking about, and telling them apart costs another call.
+        return { ...fallback, degraded: true }
+      }
+      return {
+        text: video.caption,
+        picture: video.thumbnail_url,
+        from,
+        createdAt: video.create_time
+          ? new Date(video.create_time * 1000).toISOString()
+          : undefined,
+        link: video.share_url ?? fallback.link,
+      }
+    } catch (err) {
+      logger.warn(
+        { err, inboxId, postId },
+        "Unable to load TikTok video details; falling back to the derived link",
+      )
+      return { ...fallback, degraded: true }
+    }
+  }
+
+  async findByOpenId(openId: string): Promise<IntegrationTiktokModel | null> {
+    return (
+      (await db.query.integrationTiktokModel.findFirst({
+        where: { openId },
+      })) ?? null
+    )
+  }
+
+  async connect(input: {
+    workspaceId: string
+    ownerId: string
+    openId: string
+    username: string
+    displayName: string
+    auth: Record<string, unknown>
+  }): Promise<{
+    wasCreated: boolean
+    integration: { id: string } | undefined
+  }> {
+    const { workspaceId, ownerId, openId, username, displayName, auth } = input
+
+    const quotaConsumption: ConnectionQuotaConsumption = {
+      consumed: false,
+      workspaceUsageIncremented: false,
+    }
+
+    const { wasCreated, inboxId, integration } = await withQuotaCompensation(
+      {
+        ownerId,
+        quotaConsumption,
+        context: { provider: "tiktok", workspaceId },
+      },
+      () =>
+        db.transaction(async (tx) => {
+          // Guards against two different workspaces simultaneously claiming
+          // the same TikTok account. `connect.action.ts` catches this
+          // specific `channelDuplicated` code to redirect with a friendly
+          // error.
+          if (
+            await inboxService.isConnected({
+              tx,
+              channel: "tiktok",
+              sourceId: username,
+              workspaceId,
+            })
+          ) {
+            throw channelDuplicatedException()
+          }
+
+          const { inbox, wasCreated: inboxWasCreated } =
+            await inboxService.create({
+              tx,
+              ownerId,
+              data: {
+                workspaceId,
+                name: displayName,
+                channel: "tiktok",
+                sourceId: username,
+              },
+              skipQuota: true,
+            })
+
+          const existing = await connectionRepository.findByProviderSourceId(
+            { workspaceId, provider: "tiktok", sourceId: openId },
+            tx,
+          )
+
+          await upsertConnectionRow({
+            tx,
+            workspaceId,
+            provider: "tiktok",
+            kind: "channel",
+            descriptor: { sourceId: openId, displayName },
+            auth: auth as AuthValue,
+            extraConfig: {},
+            existing,
+            store: CONNECTION_STORE_BINDINGS.tiktok as NonNullable<
+              (typeof CONNECTION_STORE_BINDINGS)["tiktok"]
+            >,
+            ownerId,
+            quotaConsumption,
+            inboxId: inbox.id,
+          })
+
+          const row = await findOrFail({
+            table: integrationTiktokModel,
+            where: { inboxId: inbox.id },
+            client: tx,
+            message: "Integration TikTok not found",
+          })
+
+          return {
+            wasCreated: inboxWasCreated,
+            inboxId: inbox.id,
+            integration: row,
+          }
+        }),
+    )
+
+    // Re-authorizing is how a connection gains `video.list`, so anything cached
+    // from the scope-less state has to go now — otherwise the post card stays
+    // caption-less for the rest of the TTL and the owner has no way to refresh
+    // it. Best-effort by design: a failed invalidation must not undo a
+    // successful connect.
+    await this.invalidateCacheTags(tiktokPostDetailsCacheTag(inboxId)).catch(
+      (err) => {
+        // The connection itself is already committed. A cache the invalidation
+        // could not reach costs a stale post card until its TTL runs out, which
+        // is not a reason to report a successful connect as failed.
+        logger.warn(
+          { err, inboxId },
+          "Connected TikTok but could not drop its cached post details",
+        )
+      },
+    )
+
+    return { wasCreated, integration }
+  }
+
+  async disconnect(input: {
+    workspaceId: string
+    id: string
+    inboxId: string
+    ownerId: string
+    tx?: DatabaseClient
+  }): Promise<void> {
+    const { workspaceId, id, inboxId, ownerId, tx } = input
+
+    const run = async (client: DatabaseClient) => {
+      await client
+        .delete(integrationTiktokModel)
+        .where(
+          and(
+            eq(integrationTiktokModel.id, id),
+            eq(integrationTiktokModel.workspaceId, workspaceId),
+          ),
+        )
+      await connectionStateService.disconnectInbox({
+        inboxId,
+        workspaceId,
+        ownerId,
+        tx: client,
+      })
+    }
+
+    if (tx) {
+      await run(tx)
+      return
+    }
+    await db.transaction(run)
   }
 }
 

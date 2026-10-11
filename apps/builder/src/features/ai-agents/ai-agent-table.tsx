@@ -15,9 +15,11 @@ import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { use, useMemo, useState } from "react"
 import { DeleteAIAgentsDialog } from "@/features/ai-agents/delete-ai-agent"
+import { useInvalidateAIAgents } from "@/features/ai-agents/hooks/use-ai-agents"
 import type { listAIAgents } from "@/features/ai-agents/queries"
 import { UpdateAIAgentDialog } from "@/features/ai-agents/update-ai-agent"
 import type { listIntegrationOpenaiCompatible } from "@/features/integration-openai-compatible/queries"
+import type { AIAgentActionOptions } from "./components/ai-actions-field"
 import { BotReplyDelayDialog } from "./components/bot-reply-delay-dialog"
 import { ChangeDefault } from "./components/change-default"
 import { CreateAIAgentDialog } from "./create-ai-agent"
@@ -33,16 +35,22 @@ type AIAgentsTableProps = {
       Awaited<ReturnType<typeof listAIAgents>>,
       Awaited<ReturnType<typeof listIntegrationOpenaiCompatible>>,
       WorkspaceModel,
+      AIAgentActionOptions,
     ]
   >
 }
 
 export function AIAgentsTable({ workspaceId, promises }: AIAgentsTableProps) {
-  const [{ data, pageCount }, openaiCompatibleIntegrations, workspace] =
-    use(promises)
+  const [
+    { data, pageCount },
+    openaiCompatibleIntegrations,
+    workspace,
+    actionOptions,
+  ] = use(promises)
 
   const t = useTranslations()
   const router = useRouter()
+  const invalidateAIAgents = useInvalidateAIAgents()
 
   const [rowAction, setRowAction] =
     useState<AIAgentDataTableRowAction<AIAgentModel> | null>(null)
@@ -79,8 +87,10 @@ export function AIAgentsTable({ workspaceId, promises }: AIAgentsTableProps) {
         <DataTable table={table}>
           <DataTableToolbar table={table}>
             <CreateAIAgentDialog
+              actionOptions={actionOptions}
               onSuccess={() => {
                 router.refresh()
+                invalidateAIAgents()
               }}
               openaiCompatibleIntegrations={openaiCompatibleIntegrations}
               workspaceId={workspaceId}
@@ -94,6 +104,7 @@ export function AIAgentsTable({ workspaceId, promises }: AIAgentsTableProps) {
           onSuccess={() => {
             rowAction?.row.toggleSelected(false)
             router.refresh()
+            invalidateAIAgents()
           }}
           open={rowAction?.variant === "delete"}
           showTrigger={false}
@@ -101,10 +112,12 @@ export function AIAgentsTable({ workspaceId, promises }: AIAgentsTableProps) {
         />
 
         <UpdateAIAgentDialog
+          actionOptions={actionOptions}
           agent={rowAction?.row.original || null}
           onOpenChange={() => setRowAction(null)}
           onSuccess={() => {
             router.refresh()
+            invalidateAIAgents()
           }}
           open={rowAction?.variant === "update"}
           openaiCompatibleIntegrations={openaiCompatibleIntegrations}
@@ -116,6 +129,7 @@ export function AIAgentsTable({ workspaceId, promises }: AIAgentsTableProps) {
           onOpenChange={() => setRowAction(null)}
           onSuccess={() => {
             router.refresh()
+            invalidateAIAgents()
           }}
           open={rowAction?.variant === "toggleDefault"}
         />

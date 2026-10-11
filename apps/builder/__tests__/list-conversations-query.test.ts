@@ -13,12 +13,23 @@ const mocks = vi.hoisted(() => {
     createMessageRepository: vi.fn().mockResolvedValue(repo),
     findManyQuery: vi.fn().mockResolvedValue([]),
     findWithFullRelations: vi.fn().mockResolvedValue(null),
-    getCurrentUserAndTargetWorkspace: vi.fn().mockResolvedValue(null),
     // Identity mock: resolveLastMessageSinceTime's output becomes exactly the
     // anchor it was given, so assertions can compare sinceTime straight
     // against each conversation's own lastActivityAt.
     getSafeSinceTime: vi.fn((value: Date | undefined) => value),
     notFoundException: (message: string) => new Error(message),
+    resolveContactAvatarUrl: vi.fn(
+      async (
+        input: {
+          contact: { avatar: string | null }
+          contactInboxes?: readonly { id: string; channel: string }[]
+        },
+        finalize: (key: string) => string | Promise<string>,
+      ): Promise<string | null> =>
+        input.contact.avatar
+          ? await finalize(input.contact.avatar)
+          : `https://app.example.com/media/avatar/${input.contactInboxes?.at(-1)?.id}`,
+    ),
     repo,
   }
 })
@@ -28,6 +39,7 @@ vi.mock("@chatbotx.io/business", () => ({
     findManyQuery: mocks.findManyQuery,
     findWithFullRelations: mocks.findWithFullRelations,
   },
+  resolveContactAvatarUrl: mocks.resolveContactAvatarUrl,
 }))
 
 vi.mock("@chatbotx.io/business/errors", () => ({
@@ -35,13 +47,13 @@ vi.mock("@chatbotx.io/business/errors", () => ({
 }))
 
 vi.mock("@chatbotx.io/database/repositories", () => ({
+  contactInboxOperationalColumns: { sourceIdentityHistory: false },
   createMessageRepository: mocks.createMessageRepository,
   getSafeSinceTime: mocks.getSafeSinceTime,
 }))
 
 vi.mock("@/lib/auth/utils", () => ({
   assertCurrentUserCanAccessChatbot: mocks.assertCurrentUserCanAccessChatbot,
-  getCurrentUserAndTargetWorkspace: mocks.getCurrentUserAndTargetWorkspace,
 }))
 
 vi.mock(
@@ -60,7 +72,6 @@ describe("listConversations / findConversation last-message sinceTime", () => {
     vi.clearAllMocks()
     mocks.createMessageRepository.mockResolvedValue(mocks.repo)
     mocks.repo.findLastByConversation.mockResolvedValue([])
-    mocks.getCurrentUserAndTargetWorkspace.mockResolvedValue(null)
     mocks.buildConversationWhere.mockReturnValue({})
   })
 
@@ -97,7 +108,10 @@ describe("listConversations / findConversation last-message sinceTime", () => {
       newerDmConversation,
     ])
 
-    await listConversations({ workspaceId: "ws-1" })
+    await listConversations(
+      { workspaceId: "ws-1" },
+      { includeEmailAndPhone: true },
+    )
 
     expect(mocks.repo.findLastByConversation).toHaveBeenCalledWith(
       "conv-comment",
@@ -145,7 +159,6 @@ describe("listConversations / findConversation attachment count", () => {
     vi.clearAllMocks()
     mocks.createMessageRepository.mockResolvedValue(mocks.repo)
     mocks.repo.findLastByConversation.mockResolvedValue([])
-    mocks.getCurrentUserAndTargetWorkspace.mockResolvedValue(null)
     mocks.buildConversationWhere.mockReturnValue({})
   })
 
@@ -161,7 +174,10 @@ describe("listConversations / findConversation attachment count", () => {
     }
     mocks.findManyQuery.mockResolvedValue([conversation])
 
-    await listConversations({ workspaceId: "ws-1" })
+    await listConversations(
+      { workspaceId: "ws-1" },
+      { includeEmailAndPhone: true },
+    )
 
     expect(mocks.repo.findLastByConversation).toHaveBeenCalledWith(
       "conv-1",
@@ -210,8 +226,99 @@ describe("listConversations / findConversation attachment count", () => {
       { id: "msg-1", text: "", attachmentCount: 2, attachments: [] },
     ])
 
-    const result = await listConversations({ workspaceId: "ws-1" })
+    const result = await listConversations(
+      { workspaceId: "ws-1" },
+      { includeEmailAndPhone: true },
+    )
 
     expect(result.data[0]?.messages[0]?.attachmentCount).toBe(2)
+  })
+
+  test("returns a proxy avatar URL for a contact whose newest capable inbox is pending", async () => {
+    const conversation = {
+      id: "conv-1",
+      contactId: "contact-1",
+      lastActivityAt: new Date("2026-01-01T00:00:00Z"),
+      contactInboxes: [
+        {
+          id: "ci-old",
+          channel: "messenger",
+          lastMessageAt: new Date("2026-01-01T00:00:00Z"),
+        },
+        {
+          id: "ci-new",
+          channel: "instagram",
+          lastMessageAt: new Date("2026-02-01T00:00:00Z"),
+        },
+      ],
+      contact: { id: "contact-1", avatar: null },
+      assignedUser: null,
+      assignedInboxTeam: null,
+    }
+    mocks.findManyQuery.mockResolvedValue([conversation])
+
+    const result = await listConversations(
+      { workspaceId: "ws-1" },
+      { includeEmailAndPhone: true },
+    )
+
+    expect(result.data[0]?.contact?.avatar).toBe(
+      "https://app.example.com/media/avatar/ci-new",
+    )
+    expect(mocks.resolveContactAvatarUrl).toHaveBeenCalledWith(
+      expect.objectContaining({
+        workspaceId: "ws-1",
+        contact: conversation.contact,
+        contactInboxes: conversation.contactInboxes,
+      }),
+      expect.any(Function),
+    )
+  })
+
+  test("keeps a mirrored contact avatar's raw storage key unchanged", async () => {
+    const conversation = {
+      id: "conv-1",
+      contactId: "contact-1",
+      lastActivityAt: new Date("2026-01-01T00:00:00Z"),
+      contactInboxes: [
+        {
+          id: "ci-1",
+          channel: "messenger",
+          lastMessageAt: new Date("2026-01-01T00:00:00Z"),
+        },
+      ],
+      contact: { id: "contact-1", avatar: "avatars/contact-1.png" },
+      assignedUser: null,
+      assignedInboxTeam: null,
+    }
+    mocks.findManyQuery.mockResolvedValue([conversation])
+
+    const result = await listConversations(
+      { workspaceId: "ws-1" },
+      { includeEmailAndPhone: true },
+    )
+
+    expect(result.data[0]?.contact?.avatar).toBe("avatars/contact-1.png")
+  })
+
+  test("returns null for a WhatsApp contact without an avatar or contact inbox", async () => {
+    const conversation = {
+      id: "conv-1",
+      contactId: "contact-1",
+      lastActivityAt: new Date("2026-01-01T00:00:00Z"),
+      contactInboxes: [],
+      contact: { id: "contact-1", avatar: null },
+      assignedUser: null,
+      assignedInboxTeam: null,
+    }
+    mocks.findManyQuery.mockResolvedValue([conversation])
+    mocks.resolveContactAvatarUrl.mockResolvedValueOnce(null)
+
+    const result = await listConversations(
+      { workspaceId: "ws-1", channel: "whatsapp" },
+      { includeEmailAndPhone: true },
+    )
+
+    expect(result.data[0]?.contact?.avatar).toBeNull()
   })
 })

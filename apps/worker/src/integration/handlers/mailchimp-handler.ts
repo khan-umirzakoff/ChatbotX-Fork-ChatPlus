@@ -14,6 +14,7 @@ import { normalizeError } from "universal-error-normalizer"
 import { logger } from "../../lib/logger"
 import { getContactFieldMap } from "./contact-field-map"
 import type { ExecuteStepProps } from "./flow"
+import { logStepProviderError } from "./flow-utils"
 import type { ExecuteStepResult } from "./step"
 
 const MAX_RETRIES = 3
@@ -222,6 +223,7 @@ export const addMailchimpMember = async (
       { ...logContext, error: normalized },
       "Mailchimp add-member step failed",
     )
+    await logStepProviderError("mailchimp", props, error)
     return {
       status: "error",
       errorMessage: normalized.message,

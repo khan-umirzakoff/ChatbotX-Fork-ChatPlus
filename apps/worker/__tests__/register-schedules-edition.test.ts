@@ -20,6 +20,7 @@ vi.mock("bullmq", () => ({ Queue: FakeQueue }))
 
 vi.mock("@chatbotx.io/worker-config", () => ({
   PURGE_WORKSPACES_INTERVAL_MINUTES: 10,
+  PURGE_BROADCASTS_INTERVAL_MINUTES: 5,
   ScheduleJobData: {
     enqueueBroadcast: "enqueueBroadcast",
     finalizeBroadcasts: "finalizeBroadcasts",
@@ -36,10 +37,14 @@ vi.mock("@chatbotx.io/worker-config", () => ({
     reconcileMetaCatalogSyncs: "reconcileMetaCatalogSyncs",
     purgeCoexistStaging: "purgeCoexistStaging",
     purgeWhatsappSignupSessions: "purgeWhatsappSignupSessions",
+    purgeExpiredConnectSessions: "purgeExpiredConnectSessions",
     purgeWorkspaces: "purgeWorkspaces",
+    purgeBroadcasts: "purgeBroadcasts",
     purgeAutomationThrottle: "purgeAutomationThrottle",
     refreshChannelTokens: "refreshChannelTokens",
     unsubscribeExpiredTrials: "unsubscribeExpiredTrials",
+    googleAdsHousekeeping: "googleAdsHousekeeping",
+    googleAdsSyncSetups: "googleAdsSyncSetups",
   },
   scheduleQueue: new FakeQueue(),
 }))
@@ -58,6 +63,11 @@ const CLOUD_ONLY = [
 
 const upsertedNames = () =>
   mockUpsertJobScheduler.mock.calls.map((call) => call[0] as string)
+
+const upsertedRepeatOptionsFor = (name: string) =>
+  mockUpsertJobScheduler.mock.calls.find((call) => call[0] === name)?.[1] as
+    | { pattern?: string; every?: number }
+    | undefined
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -101,7 +111,44 @@ describe("registerSchedules — edition gating", () => {
 
     const names = upsertedNames()
     expect(names).toContain("purgeWorkspaces")
+    expect(names).toContain("purgeBroadcasts")
     expect(names).toContain("maintainMacPartitions")
     expect(names).toContain("enqueueBroadcast")
+    expect(names).toContain("purgeExpiredConnectSessions")
+    expect(names).toContain("googleAdsHousekeeping")
+    expect(names).toContain("googleAdsSyncSetups")
+  })
+
+  test("google ads crons run every 10 minutes and daily at 03:30", async () => {
+    envState.NEXT_PUBLIC_EDITION = "community"
+
+    await registerSchedules()
+
+    expect(upsertedRepeatOptionsFor("googleAdsHousekeeping")?.pattern).toBe(
+      "*/10 * * * *",
+    )
+    expect(upsertedRepeatOptionsFor("googleAdsSyncSetups")?.pattern).toBe(
+      "30 3 * * *",
+    )
+    const call = mockUpsertJobScheduler.mock.calls.find(
+      (c) => c[0] === "googleAdsHousekeeping",
+    )
+    expect(call?.[2]).toEqual({
+      name: "googleAdsHousekeeping",
+      data: { type: "googleAdsHousekeeping", data: {} },
+    })
+  })
+
+  // Derived-const typo protection: the cron pattern must actually track
+  // PURGE_BROADCASTS_INTERVAL_MINUTES (mocked as 5 above), not a hardcoded
+  // literal that could silently drift from it.
+  test("purgeBroadcasts registers with a pattern derived from PURGE_BROADCASTS_INTERVAL_MINUTES", async () => {
+    envState.NEXT_PUBLIC_EDITION = "community"
+
+    await registerSchedules()
+
+    expect(upsertedRepeatOptionsFor("purgeBroadcasts")?.pattern).toBe(
+      "*/5 * * * *",
+    )
   })
 })

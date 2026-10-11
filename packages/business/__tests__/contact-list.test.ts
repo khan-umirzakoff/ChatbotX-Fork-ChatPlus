@@ -1,0 +1,331 @@
+// @vitest-environment node
+import { beforeEach, describe, expect, test, vi } from "vitest"
+
+// ---------------------------------------------------------------------------
+// contactService.list (packages/business/src/contact/list.ts)
+//
+// Covers:
+//  - scope.canViewEmailAndPhone=false masks email/phone on every row and
+//    forwards includeEmailAndPhone:false + restrictToAssignedUserId to
+//    buildListWhere.
+//  - unscoped calls (scope: UNSCOPED) never mask.
+//  - withCount:false skips the count round-trip entirely (totalCount: 0).
+//  - the O1 projection/relation optimization: listTableRows is used for
+//    projection:"table"; listWithInboxesAndConversation is used when
+//    `include` omits both "tags" and "customFields"; listWithRelations is
+//    used otherwise.
+// ---------------------------------------------------------------------------
+
+const { contactRepository } = await import("@chatbotx.io/database/repositories")
+const { inboxService } = await import("../src/inbox/service")
+const { count, list, UNSCOPED } = await import("../src/contact/list")
+
+const where = { workspaceId: "ws-1" }
+const orderBy = { createdAt: "desc" }
+
+beforeEach(() => {
+  vi.restoreAllMocks()
+  vi.spyOn(contactRepository, "buildListWhere").mockReturnValue(where as never)
+  vi.spyOn(contactRepository, "resolveOrderBy").mockReturnValue(
+    orderBy as never,
+  )
+  vi.spyOn(
+    contactRepository,
+    "listWithInboxesAndConversation",
+  ).mockResolvedValue([] as never)
+  vi.spyOn(contactRepository, "listTableRows").mockResolvedValue([] as never)
+  vi.spyOn(contactRepository, "listWithRelations").mockResolvedValue(
+    [] as never,
+  )
+  vi.spyOn(contactRepository, "countCapped").mockResolvedValue({
+    total: 0,
+    capped: false,
+  } as never)
+})
+
+describe("contactService.list", () => {
+  test("scope.canViewEmailAndPhone=false masks email/phone and forwards includeEmailAndPhone:false + restrictToAssignedUserId", async () => {
+    const rows = [
+      {
+        id: "contact-1",
+        email: "ada@example.com",
+        phoneNumber: "+15551234567",
+      },
+      {
+        id: "contact-2",
+        email: "bob@example.com",
+        phoneNumber: "+15557654321",
+      },
+    ]
+    vi.spyOn(contactRepository, "listWithRelations").mockResolvedValue(
+      rows as never,
+    )
+
+    const result = await list({
+      workspaceId: "ws-1",
+      scope: {
+        canViewEmailAndPhone: false,
+        restrictToAssignedUserId: "user-1",
+      },
+    })
+
+    expect(result.data).toEqual([
+      { id: "contact-1", email: null, phoneNumber: null },
+      { id: "contact-2", email: null, phoneNumber: null },
+    ])
+    expect(contactRepository.buildListWhere).toHaveBeenCalledWith(
+      expect.objectContaining({
+        includeEmailAndPhone: false,
+        restrictToAssignedUserId: "user-1",
+      }),
+    )
+  })
+
+  test("unscoped call (scope: UNSCOPED) does not mask email/phone", async () => {
+    const rows = [
+      {
+        id: "contact-1",
+        email: "ada@example.com",
+        phoneNumber: "+15551234567",
+      },
+    ]
+    vi.spyOn(contactRepository, "listWithRelations").mockResolvedValue(
+      rows as never,
+    )
+
+    const result = await list({ workspaceId: "ws-1", scope: UNSCOPED })
+
+    expect(result.data).toEqual(rows)
+    expect(contactRepository.buildListWhere).toHaveBeenCalledWith(
+      expect.objectContaining({
+        includeEmailAndPhone: true,
+        restrictToAssignedUserId: undefined,
+      }),
+    )
+  })
+
+  test("withCount:false skips the count round-trip and returns totalCount: 0", async () => {
+    const countSpy = vi.spyOn(contactRepository, "countCapped")
+
+    const result = await list({
+      workspaceId: "ws-1",
+      scope: UNSCOPED,
+      withCount: false,
+    })
+
+    expect(countSpy).not.toHaveBeenCalled()
+    expect(result.totalCount).toBe(0)
+    expect(result.totalCountCapped).toBe(false)
+    expect(result.pageCount).toBe(0)
+  })
+
+  test("projection:'table' uses listTableRows, not listWithRelations", async () => {
+    const tableRowsSpy = vi.spyOn(contactRepository, "listTableRows")
+    const relationsSpy = vi.spyOn(contactRepository, "listWithRelations")
+
+    await list({ workspaceId: "ws-1", scope: UNSCOPED, projection: "table" })
+
+    expect(tableRowsSpy).toHaveBeenCalledTimes(1)
+    expect(relationsSpy).not.toHaveBeenCalled()
+  })
+
+  test("projection:'table' for a restricted member passes includeEmailAndPhone:false + restrictToAssignedUserId to buildListWhere and returns rows as-is", async () => {
+    const rows = [
+      {
+        id: "contact-1",
+        fullName: "Ada Lovelace",
+        avatar: null,
+        createdAt: new Date("2024-01-01"),
+        contactInboxes: [],
+        conversation: null,
+      },
+    ]
+    vi.spyOn(contactRepository, "listTableRows").mockResolvedValue(
+      rows as never,
+    )
+
+    const result = await list({
+      workspaceId: "ws-1",
+      scope: {
+        canViewEmailAndPhone: false,
+        restrictToAssignedUserId: "user-1",
+      },
+      projection: "table",
+    })
+
+    expect(result.data).toEqual(rows)
+    expect(contactRepository.buildListWhere).toHaveBeenCalledWith(
+      expect.objectContaining({
+        includeEmailAndPhone: false,
+        restrictToAssignedUserId: "user-1",
+      }),
+    )
+  })
+
+  test("include omitting both 'tags' and 'customFields' uses listWithInboxesAndConversation", async () => {
+    const tableSpy = vi.spyOn(
+      contactRepository,
+      "listWithInboxesAndConversation",
+    )
+    const relationsSpy = vi.spyOn(contactRepository, "listWithRelations")
+
+    await list({ workspaceId: "ws-1", scope: UNSCOPED, include: ["inboxes"] })
+
+    expect(tableSpy).toHaveBeenCalledTimes(1)
+    expect(relationsSpy).not.toHaveBeenCalled()
+  })
+
+  test("include containing 'tags' uses listWithRelations", async () => {
+    const tableSpy = vi.spyOn(
+      contactRepository,
+      "listWithInboxesAndConversation",
+    )
+    const relationsSpy = vi.spyOn(contactRepository, "listWithRelations")
+
+    await list({ workspaceId: "ws-1", scope: UNSCOPED, include: ["tags"] })
+
+    expect(relationsSpy).toHaveBeenCalledTimes(1)
+    expect(tableSpy).not.toHaveBeenCalled()
+  })
+
+  test("include containing 'customFields' uses listWithRelations", async () => {
+    const tableSpy = vi.spyOn(
+      contactRepository,
+      "listWithInboxesAndConversation",
+    )
+    const relationsSpy = vi.spyOn(contactRepository, "listWithRelations")
+
+    await list({
+      workspaceId: "ws-1",
+      scope: UNSCOPED,
+      include: ["customFields"],
+    })
+
+    expect(relationsSpy).toHaveBeenCalledTimes(1)
+    expect(tableSpy).not.toHaveBeenCalled()
+  })
+
+  test("include omitted entirely uses listWithRelations (default full relation set)", async () => {
+    const tableSpy = vi.spyOn(
+      contactRepository,
+      "listWithInboxesAndConversation",
+    )
+    const relationsSpy = vi.spyOn(contactRepository, "listWithRelations")
+
+    await list({ workspaceId: "ws-1", scope: UNSCOPED })
+
+    expect(relationsSpy).toHaveBeenCalledTimes(1)
+    expect(tableSpy).not.toHaveBeenCalled()
+  })
+})
+
+describe("contactService inbox scope keys", () => {
+  test("list resolves channels to inbox ids and passes them to buildListWhere", async () => {
+    const resolveSpy = vi
+      .spyOn(inboxService, "resolveBroadcastInboxIds")
+      .mockResolvedValue(["inbox-1"])
+
+    await list({
+      workspaceId: "ws-1",
+      scope: UNSCOPED,
+      channels: ["whatsapp"],
+      subaction: "whatsappWithin24Hours",
+    })
+
+    expect(resolveSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId: "ws-1", channels: ["whatsapp"] }),
+    )
+    expect(contactRepository.buildListWhere).toHaveBeenCalledWith(
+      expect.objectContaining({
+        inboxScope: {
+          inboxIds: ["inbox-1"],
+          requireRecentInteraction: true,
+        },
+      }),
+    )
+  })
+
+  test("list without inbox keys never resolves inboxes and sends no scope", async () => {
+    const resolveSpy = vi.spyOn(inboxService, "resolveBroadcastInboxIds")
+
+    await list({ workspaceId: "ws-1", scope: UNSCOPED })
+
+    expect(resolveSpy).not.toHaveBeenCalled()
+    expect(contactRepository.buildListWhere).toHaveBeenCalledWith(
+      expect.objectContaining({ inboxScope: undefined }),
+    )
+  })
+
+  test("an empty channels array is treated as not provided", async () => {
+    const resolveSpy = vi.spyOn(inboxService, "resolveBroadcastInboxIds")
+
+    await list({ workspaceId: "ws-1", scope: UNSCOPED, channels: [] })
+
+    expect(resolveSpy).not.toHaveBeenCalled()
+  })
+
+  test("an empty inboxIds array is treated as not provided, so channels still narrow", async () => {
+    const resolveSpy = vi
+      .spyOn(inboxService, "resolveBroadcastInboxIds")
+      .mockResolvedValue(["inbox-1"])
+
+    await list({
+      workspaceId: "ws-1",
+      scope: UNSCOPED,
+      inboxIds: [],
+      channels: ["whatsapp"],
+    })
+
+    expect(resolveSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ inboxIds: undefined, channels: ["whatsapp"] }),
+    )
+  })
+
+  test("inboxIds: [] alone applies no inbox restriction", async () => {
+    const resolveSpy = vi.spyOn(inboxService, "resolveBroadcastInboxIds")
+
+    await list({ workspaceId: "ws-1", scope: UNSCOPED, inboxIds: [] })
+
+    expect(resolveSpy).not.toHaveBeenCalled()
+    expect(contactRepository.buildListWhere).toHaveBeenCalledWith(
+      expect.objectContaining({ inboxScope: undefined }),
+    )
+  })
+
+  test("subaction alone applies only the recent-interaction window", async () => {
+    await list({
+      workspaceId: "ws-1",
+      scope: UNSCOPED,
+      subaction: "messengerActiveContacts",
+    })
+
+    expect(contactRepository.buildListWhere).toHaveBeenCalledWith(
+      expect.objectContaining({
+        inboxScope: { requireRecentInteraction: true },
+      }),
+    )
+  })
+
+  test("count with only an inbox key does not use the unfiltered stats shortcut", async () => {
+    vi.spyOn(inboxService, "resolveBroadcastInboxIds").mockResolvedValue([
+      "inbox-1",
+    ])
+    const statsSpy = vi.spyOn(
+      contactRepository,
+      "sumTotalContactsFromInboxStats",
+    )
+    const countSpy = vi
+      .spyOn(contactRepository, "count")
+      .mockResolvedValue(3 as never)
+
+    const result = await count({
+      workspaceId: "ws-1",
+      scope: UNSCOPED,
+      inboxIds: ["inbox-1"],
+    })
+
+    expect(statsSpy).not.toHaveBeenCalled()
+    expect(countSpy).toHaveBeenCalledTimes(1)
+    expect(result).toEqual({ total: 3 })
+  })
+})

@@ -3,20 +3,14 @@ import type { WorkspaceModel } from "@chatbotx.io/database/types"
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import type { ConditionEvaluationContext } from "../src/trigger/types"
 
-const { contactCustomFieldFindFirst, customFieldFindFirst } = vi.hoisted(
-  () => ({
-    contactCustomFieldFindFirst: vi.fn(),
-    customFieldFindFirst: vi.fn(),
-  }),
-)
+const { contactCustomFieldFindValue, customFieldFindBy } = vi.hoisted(() => ({
+  contactCustomFieldFindValue: vi.fn(),
+  customFieldFindBy: vi.fn(),
+}))
 
-vi.mock("@chatbotx.io/database/client", () => ({
-  db: {
-    query: {
-      contactCustomFieldModel: { findFirst: contactCustomFieldFindFirst },
-      customFieldModel: { findFirst: customFieldFindFirst },
-    },
-  },
+vi.mock("@chatbotx.io/business", () => ({
+  contactCustomFieldService: { findValue: contactCustomFieldFindValue },
+  customFieldService: { findBy: customFieldFindBy },
 }))
 
 import { ConditionEvaluator } from "../src/trigger/services/condition-evaluator"
@@ -110,9 +104,7 @@ describe("ConditionEvaluator dateTimeBasedTrigger timezone", () => {
     // 14:00 UTC is 21:00 in Asia/Ho_Chi_Minh (+7), so an `at: "21"` condition
     // only fires when the hour-of-day is resolved in the +7 zone, never in UTC.
     vi.setSystemTime(new Date("2026-07-11T14:00:00.000Z"))
-    contactCustomFieldFindFirst.mockResolvedValue({
-      value: "2026-07-11T02:00:00.000Z",
-    })
+    contactCustomFieldFindValue.mockResolvedValue("2026-07-11T02:00:00.000Z")
   })
 
   afterEach(() => {
@@ -178,9 +170,7 @@ describe("ConditionEvaluator dateTimeBasedTrigger date-type anchor", () => {
     // zone. The VN date 2026-07-11 is stored as 2026-07-11T00:00:00+07:00.
     // The anchor is the START of the day (hour 0), never the legacy end-of-day
     // (hour 23).
-    contactCustomFieldFindFirst.mockResolvedValue({
-      value: "2026-07-11T00:00:00+07:00",
-    })
+    contactCustomFieldFindValue.mockResolvedValue("2026-07-11T00:00:00+07:00")
   })
 
   afterEach(() => {
@@ -249,7 +239,7 @@ describe("ConditionEvaluator customFieldValueChanged operator vocabulary", () =>
     fieldType: string,
     newValue: unknown,
   ): ConditionEvaluationContext => {
-    customFieldFindFirst.mockResolvedValue({ type: fieldType })
+    customFieldFindBy.mockResolvedValue({ type: fieldType })
     return buildContext(
       {
         type: triggerEventTypes.enum.customFieldValueChanged,
@@ -325,5 +315,39 @@ describe("ConditionEvaluator customFieldValueChanged operator vocabulary", () =>
         ),
       ),
     ).resolves.toBe(true)
+  })
+})
+
+describe("ConditionEvaluator WhatsApp call conditions", () => {
+  const evaluator = new ConditionEvaluator()
+
+  // The five call conditions the Triggers screen offers under the WhatsApp
+  // group. The events are emitted (apps/worker/src/integration/handlers/
+  // whatsapp-call.ts, whatsapp-call-recording.ts) and the webhook payload
+  // builder maps all five, so a rule using one has to be able to match.
+  const CALL_CONDITIONS = [
+    triggerEventTypes.enum.incomingCall,
+    triggerEventTypes.enum.missedAudioCall,
+    triggerEventTypes.enum.callEnded,
+    triggerEventTypes.enum.callRecorded,
+    triggerEventTypes.enum.callTranscribed,
+  ]
+
+  test.each(
+    CALL_CONDITIONS,
+  )("%s matches the event that carries it", async (type) => {
+    await expect(
+      evaluator.evaluate(buildContext({ type }, { callId: "call-1" })),
+    ).resolves.toBe(true)
+  })
+
+  // Control: the conditions the screen keeps commented out must still fall
+  // through to `false`, so the case above is not just "everything matches".
+  test("a condition the screen does not offer still does not match", async () => {
+    await expect(
+      evaluator.evaluate(
+        buildContext({ type: triggerEventTypes.enum.ticketCreated }),
+      ),
+    ).resolves.toBe(false)
   })
 })

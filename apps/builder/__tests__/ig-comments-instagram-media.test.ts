@@ -31,7 +31,7 @@ vi.mock("@/lib/log", () => ({
 }))
 
 const { listInstagramLoginMedia, listInstagramFacebookMedia } = await import(
-  "@/features/ig-comments/queries/instagram-media"
+  "@/features/ig-comments/lib/instagram-media"
 )
 
 function buildMedia(id: string, productType: string) {
@@ -114,6 +114,31 @@ describe("listInstagramLoginMedia / listInstagramFacebookMedia", () => {
     expect(result.posts).toEqual([
       expect.objectContaining({ id: "a-1", accountId: "ig-account-a" }),
     ])
+  })
+
+  test("shows a video's thumbnail, not its .mp4 media_url", async () => {
+    mockFindInstagramIntegrationsByWorkspaceId.mockResolvedValue([
+      {
+        id: "integration-a",
+        igId: "ig-account-a",
+        name: "Account A",
+        auth: { tokens: { accessToken: "token-a" } },
+      },
+    ])
+    mockListInstagramLoginMedia.mockResolvedValue([
+      {
+        ...buildMedia("a-1", "REELS"),
+        media_type: "VIDEO",
+        media_url: "https://cdn.example.com/video.mp4",
+        thumbnail_url: "https://cdn.example.com/thumb.jpg",
+      },
+    ])
+
+    const result = await listInstagramLoginMedia("workspace-1")
+
+    expect(result.posts[0]?.full_picture).toBe(
+      "https://cdn.example.com/thumb.jpg",
+    )
   })
 
   test("logs (does not silently swallow) a failure fetching one account's media, while still returning the others", async () => {

@@ -1,11 +1,9 @@
 "use server"
 
-import { db, eq } from "@chatbotx.io/database/client"
-import { webhookModel } from "@chatbotx.io/database/schema"
-import { updateWebhookCache } from "@chatbotx.io/events"
+import { webhookService } from "@chatbotx.io/business"
 import { zodBigintAsString } from "@chatbotx.io/utils"
 import { workspaceActionClient } from "@/lib/safe-action"
-import { updateWebhookSettingsRequest } from "../schemas/update-webhook-schema"
+import { updateWebhookSettingsRequest } from "../schema/update-webhook-schema"
 
 export const updateWebhookSettingsAction = workspaceActionClient
   .bindArgsSchemas([zodBigintAsString(), zodBigintAsString()])
@@ -16,21 +14,9 @@ export const updateWebhookSettingsAction = workspaceActionClient
       parsedInput,
     } = props
 
-    const webhook = await db.query.webhookModel.findFirst({
-      where: {
-        id,
-        workspaceId,
-      },
+    await webhookService.updateSettings({
+      workspaceId,
+      id,
+      ...parsedInput,
     })
-
-    if (!webhook) {
-      throw new Error("Webhook not found")
-    }
-
-    await db
-      .update(webhookModel)
-      .set(parsedInput)
-      .where(eq(webhookModel.id, webhook.id))
-
-    await updateWebhookCache(workspaceId)
   })

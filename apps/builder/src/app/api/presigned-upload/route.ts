@@ -1,15 +1,14 @@
 import {
+  fileService,
   isPlatformAdmin,
   resolveTenantSettings,
   resolveTenantSettingsByDomain,
 } from "@chatbotx.io/business"
-import { db } from "@chatbotx.io/database/client"
-import { fileContextTypes, fileStatuses } from "@chatbotx.io/database/partials"
-import { fileModel } from "@chatbotx.io/database/schema"
+import { fileContextTypes, uploadTypes } from "@chatbotx.io/database/partials"
 import { uploader } from "@chatbotx.io/filesystem"
-import { createId } from "@chatbotx.io/utils"
 import { type NextRequest, NextResponse } from "next/server"
-import { presignImportUploadRequest } from "@/features/import/schemas/presign"
+import { presignImportUploadRequest } from "@/features/import/schema/presign"
+import { assertWorkspaceSuperAdmin } from "@/lib/auth/assert-workspace-super-admin"
 import {
   assertCurrentUserCanAccessChatbot,
   getCurrentUser,
@@ -46,6 +45,20 @@ export async function POST(req: NextRequest) {
           { status: 403 },
         )
       }
+
+      // Ads-creative uploads carry the same super-admin posture the old
+      // wizard-time `uploadAdImage` oRPC asserted — membership alone (this
+      // route's default) would be a real authz downgrade for this type.
+      // Gate on `subType` too, not just `type`: a member could otherwise send
+      // `type: "generic"` + `subType: "adsCampaignCreative"` and mint a File
+      // row that later passes the create-time ownership preflight.
+      const targetsAdsCreative =
+        input.type === uploadTypes.enum.adsCampaignCreative ||
+        input.subType === uploadTypes.enum.adsCampaignCreative
+      if (targetsAdsCreative) {
+        await assertWorkspaceSuperAdmin(input.workspaceId)
+      }
+
       ;({ storageUrl } = await resolveTenantSettings({
         workspaceId: input.workspaceId,
       }))
@@ -96,9 +109,7 @@ export async function POST(req: NextRequest) {
     const presignedPostUrl = await uploader.getPresignedUpload(path)
     const publicUrl = new URL(path, storageUrl).toString()
 
-    const fileId = createId()
-    await db.insert(fileModel).values({
-      id: fileId,
+    const file = await fileService.createPending({
       workspaceId: input.workspaceId ?? null,
       userId,
       contextType:
@@ -109,11 +120,10 @@ export async function POST(req: NextRequest) {
       path,
       fileName: input.fileName,
       mimeType: input.mimeType,
-      status: fileStatuses.enum.pending,
     })
 
     return NextResponse.json({
-      fileId,
+      fileId: file.id,
       presignedPostUrl,
       publicUrl,
       path,

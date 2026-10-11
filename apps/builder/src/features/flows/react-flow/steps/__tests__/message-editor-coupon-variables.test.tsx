@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { resolveSendTextLengthLimits } from "@chatbotx.io/flow-config"
 import type { ComponentProps, ReactNode } from "react"
 import { act } from "react"
 import { createRoot, type Root } from "react-dom/client"
@@ -112,7 +113,11 @@ describe("flow message coupon variables", () => {
     render(<SendTextStepEditor parentName="step" />)
 
     expect(tiptapEditorFieldMock).toHaveBeenCalledWith({
+      includeBotFieldVariables: true,
       includeCouponVariables: true,
+      // No `beforeStep.channel` on the harness form, so the counter falls back
+      // to the omnichannel budget.
+      maxLength: resolveSendTextLengthLimits({ channel: "omnichannel" }).text,
       name: "step.text",
     })
   })
@@ -121,6 +126,7 @@ describe("flow message coupon variables", () => {
     render(<WhatsappFlowStepEditor parentName="step" />)
 
     expect(tiptapEditorFieldMock).toHaveBeenCalledWith({
+      includeBotFieldVariables: true,
       includeCouponVariables: true,
       name: "step.text",
     })

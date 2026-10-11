@@ -1,3 +1,4 @@
+import { z } from "zod"
 import {
   ADS_PAGE_LIMIT,
   DEFAULT_API_VERSION,
@@ -5,6 +6,7 @@ import {
 } from "../constants"
 import { rescue } from "../exception"
 import { facebookAdsGraphClient } from "../lib/http-client"
+import type { AdAccountDetails } from "../messaging-ads/types"
 import type { FacebookAdAccount, FacebookCustomAudience } from "../schemas"
 
 type GraphPage<T> = {
@@ -48,6 +50,51 @@ export function getAdAccounts(
   )
 }
 
+const adAccountDetailsResponseSchema = z.object({
+  id: z.string(),
+  name: z.string().optional(),
+  currency: z.string(),
+  timezone_name: z.string(),
+  account_status: z.number(),
+  // Phase 0 confirm: no Meta ad account field is documented as a universal
+  // "minimum daily budget" guarantee — `min_daily_budget` is requested
+  // best-effort and may be absent for some accounts/currencies.
+  min_daily_budget: z.number().optional(),
+})
+
+/**
+ * Extends the bare `getAdAccounts` listing with the fields the messaging-ads
+ * wizard needs before it can render a budget input: currency (to label the
+ * input), timezone (for schedule display), account status (advertisable
+ * check), and a best-effort minimum daily budget.
+ */
+export function getAdAccountDetails(
+  accessToken: string,
+  adAccountId: string,
+  version: string = DEFAULT_API_VERSION,
+): Promise<AdAccountDetails> {
+  const endpoint = `${version}/${adAccountId}`
+
+  return rescue(endpoint, async () => {
+    const response = await facebookAdsGraphClient.get<unknown>(endpoint, {
+      searchParams: {
+        fields:
+          "id,name,currency,timezone_name,account_status,min_daily_budget",
+        access_token: accessToken,
+      },
+    })
+    const parsed = adAccountDetailsResponseSchema.parse(response)
+    return {
+      id: parsed.id,
+      name: parsed.name,
+      currency: parsed.currency,
+      timezoneName: parsed.timezone_name,
+      accountStatus: parsed.account_status,
+      minDailyBudgetMinorUnits: parsed.min_daily_budget,
+    }
+  })
+}
+
 export function getCustomAudiences(
   accessToken: string,
   adAccountId: string,
@@ -62,4 +109,57 @@ export function getCustomAudiences(
       access_token: accessToken,
     }),
   )
+}
+
+/**
+ * Ad accounts for the Marketing Messages create form. Separate from
+ * `getAdAccounts` on purpose: that function's `FacebookAdAccount` shape is
+ * consumed by the CTM wizard and must not grow fields.
+ *
+ * `tosAccepted` is returned as Graph's raw map. Deciding whether the
+ * custom-audience terms are accepted is the caller's job
+ * (`isCustomAudienceTosAccepted`), which keeps the key-name uncertainty in one
+ * place instead of spread across the integration layer.
+ */
+export type MarketingMessagesAdAccount = {
+  /** `act_<id>` — the value Graph endpoints take. */
+  id: string
+  /** Bare id — the value the ToS remediation link takes. */
+  accountId: string
+  name?: string
+  currency: string
+  tosAccepted: Record<string, number>
+}
+
+type MarketingMessagesAdAccountResponse = {
+  id: string
+  account_id: string
+  name?: string
+  currency: string
+  tos_accepted?: Record<string, number>
+}
+
+export function getMarketingMessagesAdAccounts(
+  accessToken: string,
+  version: string = DEFAULT_API_VERSION,
+): Promise<MarketingMessagesAdAccount[]> {
+  const endpoint = `${version}/me/adaccounts`
+
+  return rescue(endpoint, async () => {
+    const rows = await fetchAllPages<MarketingMessagesAdAccountResponse>(
+      endpoint,
+      {
+        fields: "name,account_id,currency,tos_accepted",
+        limit: String(ADS_PAGE_LIMIT),
+        access_token: accessToken,
+      },
+    )
+    return rows.map((row) => ({
+      id: row.id,
+      accountId: row.account_id,
+      name: row.name,
+      currency: row.currency,
+      tosAccepted: row.tos_accepted ?? {},
+    }))
+  })
 }

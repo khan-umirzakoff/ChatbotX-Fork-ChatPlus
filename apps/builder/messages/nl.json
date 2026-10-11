@@ -1,7 +1,9 @@
 {
   "actions": {
+    "retry": "Opnieuw proberen",
     "copy": "Kopiëren",
     "copyUrl": "URL kopiëren",
+    "chatWidget": "Chatwidget",
     "actions": "Acties",
     "add": "Toevoegen",
     "addVariable": "Variabele toevoegen",
@@ -71,6 +73,7 @@
     "reset": "Opnieuw instellen",
     "save": "Opslaan",
     "selectAll": "Alles selecteren",
+    "unselect": "Selectie opheffen",
     "selectRow": "Rij selecteren",
     "sendFlow": "Flow verzenden",
     "sendMessage": "Bericht verzenden",
@@ -145,7 +148,13 @@
     "onSuccess": "Bij succes",
     "clone": "Klonen",
     "remove": "Verwijderen",
-    "restore": "Herstellen"
+    "restore": "Herstellen",
+    "loadMore": "Load more",
+    "saveAsDraft": "Save as draft",
+    "schedule": "Schedule",
+    "moveToDraft": "Move to draft",
+    "stop": "Stop",
+    "resume": "Resume"
   },
   "errors": {
     "superAdminRequired": "Je moet superbeheerder van de werkruimte zijn om dit te doen."
@@ -156,7 +165,8 @@
     "skip": "Overslaan"
   },
   "admins": {
-    "title": "Beheerders"
+    "title": "Beheerders",
+    "adminActivityLogs": "Beheerdersactiviteitenlogboek"
   },
   "assignAdmin": {
     "assignConversation": "Gesprek toewijzen",
@@ -244,6 +254,7 @@
     "dateFilterPreset": "Voorinstelling voor datumfilter",
     "noResults": "Geen resultaten.",
     "noData": "Geen gegevens",
+    "errorLogRetentionNotice": "Alleen de foutlogboeken van de afgelopen {days} dagen worden bewaard.",
     "comingSoon": "Binnenkort beschikbaar",
     "unknown": "Onbekend",
     "pagination": {
@@ -253,10 +264,20 @@
       "firstPage": "Naar de eerste pagina",
       "previousPage": "Naar de vorige pagina",
       "nextPage": "Naar de volgende pagina",
-      "lastPage": "Naar de laatste pagina"
+      "lastPage": "Naar de laatste pagina",
+      "totalRows": "{total} rij(en)"
     },
     "sessionsThroughTheRef": "Sessies via de referentie \"{ref}\" per dag",
-    "sessionsThroughTheMagicLink": "Sessies via de magische link \"{ref}\" per dag"
+    "sessionsThroughTheMagicLink": "Sessies via de magische link \"{ref}\" per dag",
+    "repliesToComments": "Reacties op opmerkingen",
+    "repliesByDate": "Reacties per datum",
+    "userCommentsOnThisPost": "Gebruikersreacties op dit bericht",
+    "botRepliesToComments": "Botreacties op opmerkingen",
+    "comment": "Opmerking",
+    "message": "Bericht",
+    "searchByDate": "Zoeken op datum...",
+    "publicReply": "Openbare reactie",
+    "privateReply": "Privéreactie"
   },
   "flowAnalytics": {
     "nodes": {
@@ -316,6 +337,7 @@
       "message": "Je laatste betaling is mislukt. Werk je betaalmethode bij om je werkruimte actief te houden."
     },
     "trial": {
+      "planName": "Proefperiode",
       "daysLeft": "Proefperiode: nog {days} dagen",
       "endsTomorrow": "Proefperiode eindigt morgen",
       "expired": "Je proefperiode is afgelopen — upgrade om je werkruimte actief te houden",
@@ -343,7 +365,9 @@
       "scheduled": "Gepland",
       "sent": "Verzonden",
       "sending": "Wordt verzonden",
-      "cancelled": "Geannuleerd"
+      "cancelled": "Geannuleerd",
+      "draft": "Draft",
+      "failed": "Failed"
     },
     "stats": {
       "sent": "Verzonden",
@@ -427,11 +451,144 @@
       "audienceFilter": "Doelgroepfilter",
       "noAudienceFilter": "Geen doelgroepfilter",
       "template": "Sjabloon",
-      "noTemplate": "Geen sjabloon",
       "integration": "Integratie"
+    },
+    "filters": {
+      "all": "All"
+    },
+    "views": {
+      "table": "Table",
+      "calendar": "Calendar"
+    },
+    "panel": {
+      "collapse": "Collapse panel",
+      "expand": "Expand panel"
+    },
+    "empty": {
+      "title": "No broadcasts yet",
+      "description": "Create your first broadcast to reach your contacts.",
+      "filteredTitle": "No broadcasts match",
+      "filteredDescription": "Try another status or clear the search."
+    },
+    "scheduleDialog": {
+      "title": "Schedule broadcast",
+      "description": "Choose when \"{name}\" should be sent."
+    },
+    "deleteDialog": {
+      "title": "{count, plural, one {Delete broadcast} other {Delete broadcasts}}",
+      "description": "{count, plural, one {\"{name}\" will be removed. Its data is deleted in the background.} other {# broadcasts will be removed. Their data is deleted in the background.}}",
+      "partial": "{deleted} of {requested} deleted — the rest changed status"
+    },
+    "calendar": {
+      "today": "Today",
+      "apply": "Apply",
+      "more": "+{count} more",
+      "ranges": {
+        "month": "Month",
+        "week": "Week",
+        "day": "Day",
+        "custom": "Custom"
+      },
+      "previous": "Previous",
+      "next": "Next",
+      "emptyDay": "No broadcasts on this day",
+      "emptyRange": "No broadcasts in this range",
+      "jumpToDate": "Jump to date"
+    },
+    "fields": {
+      "id": "ID"
+    },
+    "moveToDraftDialog": {
+      "title": "Move to draft",
+      "description": "\"{name}\" will be unscheduled and moved back to drafts."
+    },
+    "stopDialog": {
+      "title": "Stop broadcast",
+      "description": "Remaining messages for \"{name}\" stop within about a minute. A few already handed to the channel may still deliver. You can resume later — only unsent recipients will receive."
+    },
+    "resumeDialog": {
+      "title": "Resume broadcast",
+      "description": "\"{name}\" will continue sending to recipients who have not received it yet."
+    },
+    "planLimitDialog": {
+      "title": "Upgrade je abonnement",
+      "sendRate": "Je huidige {plan}-abonnement ondersteunt broadcasts met een maximale verzendsnelheid van {rate} berichten per minuut. Upgrade je abonnement om broadcasts tot {multiplier}x sneller te verzenden.",
+      "activeBroadcasts": "Je huidige {plan}-abonnement voert {max, plural, one {# broadcast} other {# broadcasts}} tegelijk uit. Upgrade je abonnement om meer broadcasts tegelijk uit te voeren."
+    },
+    "sendLimit": {
+      "title": "Limiet",
+      "hint": "Laat leeg om naar alle overeenkomende contacten te verzenden.",
+      "rateHint": "Laat leeg om de standaardsnelheid te gebruiken.",
+      "rangeSummary": "Contacten #{start} – #{end}",
+      "rangeFromSummary": "Vanaf contact #{start}",
+      "rangeLabel": "Contactbereik",
+      "fromLabel": "Van",
+      "toLabel": "Tot",
+      "allPlaceholder": "Alle",
+      "rangeEndBeforeStart": "De eindpositie mag niet vóór de startpositie liggen"
+    }
+  },
+  "commentAutomation": {
+    "stats": {
+      "sent": "Verzonden",
+      "delivered": "Afgeleverd",
+      "seen": "Gezien",
+      "clicked": "Geklikt",
+      "failed": "Mislukt",
+      "missed": "Gemist",
+      "noContacts": "Geen contacten gevonden",
+      "noComment": "(geen tekst)",
+      "pageInfo": "Pagina {page} van {pageCount}",
+      "selectedAll": "Alles geselecteerd",
+      "selectedCount": "{count} geselecteerd",
+      "tagAllDialogDescription": "Tags worden aan alle geselecteerde contacten toegevoegd.",
+      "tagDialogDescription": "Tags worden aan {count} contact(en) toegevoegd.",
+      "tagQueued": "{count} contacten worden op de achtergrond getagd.",
+      "loadingMore": "Meer laden...",
+      "receivers": "Ontvangers"
+    },
+    "missReasons": {
+      "outsideSchedule": "Buiten schema",
+      "postNotMatched": "Bericht niet gericht",
+      "commentIsReply": "Reactie op reactie",
+      "keywordsNotMatched": "Trefwoorden kwamen niet overeen",
+      "contactNotNew": "Contact is niet nieuw",
+      "alreadyRepliedOnPost": "Al beantwoord op dit bericht",
+      "engagedOnOtherPost": "Al gereageerd op een ander bericht",
+      "mentionCountNotMatched": "Aantal vermeldingen kwam niet overeen"
+    },
+    "replyTo": {
+      "mentions": "Reacties met genoeg vermeldingen",
+      "mentionCount": "Aantal getagde personen",
+      "mentionCountDescription": "Alleen reacties die minstens zoveel personen (@naam) taggen, komen overeen.",
+      "mentionCountOption": "{count, plural, one {# persoon} other {# personen}}"
+    },
+    "excludeKeywordsType": {
+      "equal": "Reacties gelijk aan",
+      "contain": "Reacties die bevatten"
+    },
+    "hideComments": {
+      "hasGif": "Bevat GIF",
+      "hasEmoji": "Bevat emoji"
+    },
+    "trackUserTags": {
+      "label": "Bijhouden of een gebruiker andere gebruikers tagt",
+      "descriptionText": "Telt de accounts die in elke reactie worden getagd en telt ze op bij de totalen van het contact over alle reacties. Gebruik '{{total_tagged}}' voor alle getagde accounts en '{{total_new_tagged}}' voor accounts die je pagina nooit een bericht hebben gestuurd of nooit contact zijn geweest."
+    },
+    "card": {
+      "reply": "Antwoord"
+    },
+    "liveBadge": "Live",
+    "postTypeDialog": {
+      "title": "Berichttype selecteren"
     }
   },
   "fields": {
+    "optionalHint": "(optioneel)",
+    "marketingMessagesConfigId": {
+      "label": "Configuratie-ID voor marketingberichten",
+      "description": "Configuratie-ID van Facebook Login for Business die wordt gebruikt om de marketing_messages_messenger-machtiging aan te vragen."
+    },
     "omnichannel": {
       "label": "Omnichannel"
     },
@@ -454,6 +611,9 @@
       "viaFacebookTitle": "Instagram via Facebook",
       "cloneFromMessenger": "Klonen vanuit Messenger",
       "clonedFromMessenger": "Gekloond vanuit Messenger"
+    },
+    "threads": {
+      "label": "Threads"
     },
     "zalo": {
       "label": "Zalo OA"
@@ -556,7 +716,8 @@
       "label": "Agent"
     },
     "aiAgent": {
-      "label": "AI-agent"
+      "label": "AI-agent",
+      "loadError": "AI-agenten laden mislukt. Probeer het opnieuw."
     },
     "aiQueuedMessages": {
       "label": "AI-berichten in wachtrij"
@@ -566,9 +727,6 @@
     },
     "aiFunction": {
       "label": "AI-functie"
-    },
-    "aiTrigger": {
-      "label": "AI-trigger"
     },
     "alphanumericLength": {
       "label": "Alfanumerieke lengte"
@@ -612,6 +770,9 @@
     },
     "dynamicImage": {
       "label": "Dynamische afbeelding"
+    },
+    "minigame": {
+      "label": "Minigame"
     },
     "savePayloadToCustomField": {
       "label": "Payload opslaan in aangepast veld"
@@ -707,7 +868,10 @@
       "append": "Aan het einde toevoegen",
       "prepend": "Aan het begin toevoegen",
       "increase": "Verhogen met",
-      "decrease": "Verlagen met"
+      "decrease": "Verlagen met",
+      "groupSystemFields": "Systeemvelden",
+      "groupCustomFields": "Aangepaste velden",
+      "groupAccountFields": "Botvelden"
     },
     "dataCollect": {
       "label": "Gegevens verzamelen"
@@ -790,6 +954,19 @@
     "contactId": {
       "label": "Contact-ID"
     },
+    "channelIdentity": {
+      "psid": "PSID",
+      "igsid": "IGSID",
+      "whatsappId": "WhatsApp ID",
+      "bsuid": "BSUID",
+      "zaloUserId": "Zalo-gebruikers-ID",
+      "telegramChatId": "Telegram-chat-ID",
+      "tiktokUserId": "TikTok-gebruikers-ID",
+      "threadsUsername": "Threads-gebruikersnaam",
+      "webchatGuestId": "Webchat-gast-ID",
+      "externalId": "Externe ID",
+      "channelId": "Kanaal-ID"
+    },
     "flow": {
       "label": "Flow"
     },
@@ -810,8 +987,8 @@
       "aiDeleteMessageHistory": "{aiName}: berichtgeschiedenis verwijderen"
     },
     "steps": {
-      "label": "Stappen",
-      "placeholder": "Selecteer een stap"
+      "label": "Node",
+      "placeholder": "Selecteer een node"
     },
     "folder": {
       "label": "Map"
@@ -972,6 +1149,9 @@
     "mcpServer": {
       "label": "MCP-server"
     },
+    "template": {
+      "label": "Template"
+    },
     "systemFunction": {
       "label": "Systeemfunctie",
       "names": {
@@ -1018,12 +1198,15 @@
       "label": "Bewerking"
     },
     "outputCustomField": {
-      "label": "Aangepast uitvoerveld"
+      "label": "Aangepast uitvoerveld",
+      "javascriptOptional": "Optioneel. Slaat de volledige returnwaarde op. Gebruik de JSON-padtoewijzing hierboven om afzonderlijke velden te schrijven.",
+      "javascriptDumpLabel": "Volledige JSON-uitvoer (optioneel)"
     },
     "javascriptCode": {
       "label": "JavaScript-code",
       "placeholder": "return (input.first_name || 'there').toUpperCase()",
-      "description": "Gebruik pure JavaScript en retourneer een waarde. Netwerk, bestanden, API's en externe bibliotheken zijn niet beschikbaar. Contact- en systeemgegevens zijn beschikbaar via het `input`-object."
+      "description": "Gebruik pure JavaScript en retourneer een waarde. Netwerk, bestanden, API's en externe bibliotheken zijn niet beschikbaar. Contact- en systeemgegevens zijn beschikbaar via het `input`-object.",
+      "objectMapping": "Wijs een willekeurig JSON-pad uit de returnwaarde toe aan een willekeurig aangepast veld, net als bij Externe API-aanvraag. Jij kiest de paden en de velden."
     },
     "httpMethod": {
       "label": "Methode"
@@ -1087,7 +1270,8 @@
       "placeholder": "587"
     },
     "provider": {
-      "label": "Provider"
+      "label": "Provider",
+      "placeholder": "Selecteer provider"
     },
     "prompt": {
       "label": "Prompt",
@@ -1176,7 +1360,9 @@
       "label": "Status",
       "pending": "In behandeling",
       "processing": "Wordt verwerkt",
+      "installing": "Installing",
       "completed": "Voltooid",
+      "partial": "Partial",
       "failed": "Mislukt",
       "success": "Geslaagd",
       "error": "Fout"
@@ -1376,7 +1562,8 @@
       "date": "Datum",
       "datetime": "Datum en tijd",
       "location": "Locatie",
-      "anyInput": "Elke invoer"
+      "anyInput": "Elke invoer",
+      "locationDescription": "Op WhatsApp stuurt dit Meta's native knop Locatie verzenden en wacht op de pin. Andere kanalen sturen de prompt als tekst; een gedeelde pin of ingevoerde lat,lng voltooit de stap ook."
     },
     "workspaceMember": {
       "label": "Werkruimtelid"
@@ -1460,6 +1647,10 @@
     "autoSkipFailAttempts": {
       "label": "Mislukte pogingen voor automatisch overslaan"
     },
+    "showHint": {
+      "label": "Hint tonen",
+      "description": "Stel het telefoonnummer of e-mailadres van het contact voor als snel antwoord. Werkt alleen op Messenger en Instagram."
+    },
     "autoSkip": {
       "label": "Automatisch overslaan"
     },
@@ -1500,7 +1691,8 @@
       "searchPlaceholder": "Trefwoord zoeken..."
     },
     "templateId": {
-      "label": "WhatsApp-sjabloon"
+      "label": "WhatsApp-sjabloon",
+      "placeholder": "Selecteer een sjabloon"
     },
     "messengerTemplateId": {
       "label": "Messenger-sjabloon"
@@ -1510,6 +1702,12 @@
     },
     "messengerChannel": {
       "label": "Messenger-kanaal"
+    },
+    "whatsappChannels": {
+      "label": "WhatsApp-kanalen"
+    },
+    "messengerChannels": {
+      "label": "Messenger-pagina's"
     },
     "messages": {
       "label": "Berichten"
@@ -1546,7 +1744,10 @@
       "label": "Client-ID"
     },
     "clientSecret": {
-      "label": "Clientgeheim"
+      "label": "Clientgeheim",
+      "keepHint": "Laat leeg om het opgeslagen clientgeheim te behouden.",
+      "isSet": "Er is een clientgeheim ingesteld.",
+      "isNotSet": "Geen clientgeheim ingesteld."
     },
     "verifyToken": {
       "label": "Verificatietoken voor webhook"
@@ -1618,6 +1819,9 @@
     "appSecret": {
       "label": "Appgeheim"
     },
+    "version": {
+      "label": "Versie"
+    },
     "webhookVerifyToken": {
       "label": "Verificatietoken voor webhook"
     },
@@ -1640,7 +1844,10 @@
         "failed": "Mislukt",
         "completedAt": "Voltooid op",
         "errorDetails": "Importfouten",
-        "row": "Rij {row}"
+        "row": "Rij {row}",
+        "unsupportedChannelStep": "Het kanaal {channel} ondersteunt {block} niet.",
+        "channelStepConstraintExceeded": "{block} overschrijdt de limiet van {channel}: {actual} {unit}, maximaal {allowed}.",
+        "channelStepConstraintExceededGeneric": "Het kanaal {channel} ondersteunt de huidige configuratie van {block} niet."
       }
     },
     "line": {
@@ -1661,6 +1868,17 @@
       "label": "URL voor inlogcallback",
       "hint": "Voeg deze toe aan de geautoriseerde omleidings-URI's van je Google-app om inloggen met Google mogelijk te maken."
     },
+    "adsDeveloperToken": {
+      "label": "Google Ads-developertoken",
+      "hint": "Optioneel: Google vereist geen developertoken meer. Laat leeg om het opgeslagen token te behouden.",
+      "isSet": "Er is een developertoken ingesteld.",
+      "isNotSet": "Er is geen developertoken ingesteld.",
+      "clear": "Wissen",
+      "cleared": "Developer token gewist."
+    },
+    "googleAdsCallbackUrl": {
+      "hint": "Gebruik een aparte Google OAuth-app voor Google Ads, los van je Google-app, met de scopes adwords en datamanager ingeschakeld. Deze app heeft een eigen Google OAuth-verificatie nodig."
+    },
     "webhookUrl": {
       "label": "Webhook-URL",
       "hint": "Registreer deze exacte webhook-URL in je provider-app. Deze moet deze host gebruiken, niet je aangepaste domein — de provider kan een aangepast domein niet bereiken."
@@ -1672,11 +1890,16 @@
       "clientId": "Client-ID",
       "clientSecret": "Clientgeheim",
       "displayName": "Weergavenaam",
+      "needsReauthorizationForComments": "Deze verbinding is geautoriseerd vóór commentaarautomatisering. Verbind opnieuw om commentaargebeurtenissen te ontvangen.",
       "connectInstructions": {
         "step1": "Maak een TikTok-app aan op <link>developers.tiktok.com</link>.",
         "step2": "Autoriseer je account en kopieer het <strong>toegangstoken</strong>, de <strong>open ID</strong> en het <strong>clientgeheim</strong>.",
         "step3": "Plak de inloggegevens hieronder om verbinding te maken."
-      }
+      },
+      "commentToMessage": "Comment-to-Message",
+      "commentToMessageDescription": "Lets this account answer high-intent comments with a direct message. Required for TikTok comment automations that use a private reply.",
+      "commentToMessageEligibility": "Only available to Business Accounts registered in Vietnam, Indonesia or Thailand, owned by someone over 18, that are registered businesses or have run Messaging Ads, with messaging permissions set to \"Requests\".",
+      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting."
     },
     "drip": {
       "label": "Drip"
@@ -1838,15 +2061,72 @@
         "description": "Dit token wordt maar één keer getoond. Bewaar het veilig — je kunt het daarna niet meer bekijken.",
         "done": "Klaar"
       }
+    },
+    "tokenPermission": {
+      "label": "Machtiging",
+      "full": "Volledige toegang",
+      "readOnly": "Alleen-lezen"
+    },
+    "tokenScopes": {
+      "label": "Bereiken",
+      "contacts": "Contacten",
+      "inbox": "Inbox",
+      "automation": "Automatisering",
+      "broadcasts": "Uitzendingen",
+      "analytics": "Analyse",
+      "ecommerce": "E-commerce",
+      "channels": "Kanalen",
+      "integrations": "Integraties",
+      "minigames": "Minigames",
+      "appointments": "Afspraken",
+      "media": "Media",
+      "ads": "Advertenties",
+      "settings": "Instellingen",
+      "miniApps": "Mini Apps"
+    },
+    "adReferral": {
+      "label": "Ads",
+      "ctwa": "CTWA",
+      "ctm": "CTM",
+      "ctid": "CTID",
+      "googleAds": "Google Ads",
+      "googleAdsWhatsapp": "GA CCWA",
+      "googleAdsMessenger": "GA CCTM"
+    },
+    "adSource": {
+      "label": "Ad source"
+    },
+    "manualAppSecret": {
+      "label": "Meta App-geheim (optioneel)",
+      "description": "Schakelt webhook-handtekeningverificatie in voor deze handmatige verbinding. Te vinden in het dashboard van je Meta-app onder Instellingen > Algemeen."
+    },
+    "lastCallRecorded": {
+      "label": "Laatste gespreksopname"
+    },
+    "lastCallTranscript": {
+      "label": "Laatste gesprekstranscript"
+    },
+    "sendRatePerMinute": {
+      "label": "Berichten per minuut"
+    },
+    "adsUploadMethod": {
+      "label": "Uploadmethode",
+      "hint": "Data Manager wordt aanbevolen. De oude upload-API werkt alleen voor Google Cloud-projecten die Google nog toestaat en gebruikt de Data Manager-machtiging niet. Een wijziging geldt alleen voor nieuwe verbindingen: verbind bestaande werkruimtes opnieuw.",
+      "dataManager": "Data Manager API (aanbevolen)",
+      "legacy": "Oude upload-API"
     }
   },
   "condition": {
+    "unknownValue": "Onbekend",
     "yes": "Ja",
     "no": "Nee",
     "valuePlaceholder": "...",
     "datePlaceholder": "YYYY-MM-DD",
     "datetimePlaceholder": "YYYY-MM-DD HH:mm",
     "datetimeInvalid": "Voer een datum in als YYYY-MM-DD HH:mm of als variabele",
+    "openPost": "{post} openen",
+    "openPostLink": "Openen",
+    "postWithoutCaption": "Bericht zonder bijschrift",
     "operator": {
       "and": "Alle voorwaarden",
       "or": "Een of meer voorwaarden"
@@ -1949,8 +2229,9 @@
       "blocked": "Geblokkeerd",
       "noAdminReply": "Geen antwoord van beheerder",
       "contactCreatedAt": "Contact aangemaakt op",
-      "fromCtwaAd": "Van Click-to-WhatsApp-advertentie",
-      "ctwaConversion": "CTWA-conversie",
+      "fromCtwaAd": "Van advertentie",
+      "fromGoogleAd": "Van Google Ads",
+      "ctwaConversion": "Advertentieconversie",
       "lastUserInputTypes": {
         "text": "Tekst",
         "location": "Locatie",
@@ -1977,9 +2258,10 @@
       "systemFields": "Systeemvelden",
       "topicCoupon": "Coupononderwerp",
       "customFields": "Aangepaste velden",
+      "botFields": "Botvelden",
       "email": "E-mail",
       "sms": "Sms",
-      "ctwaAds": "Click-to-WhatsApp-advertenties"
+      "ctwaAds": "Advertenties"
     },
     "languages": {
       "ar": "Arabisch",
@@ -2018,9 +2300,9 @@
     },
     "ctwaRetarget": {
       "segments": {
-        "conversations": "CTWA-gespreksstarters",
-        "leads": "CTWA-gekwalificeerde leads",
-        "purchases": "CTWA-kopers"
+        "conversations": "Advertentie-gespreksstarters",
+        "leads": "Advertentie-gekwalificeerde leads",
+        "purchases": "Advertentie-kopers"
       },
       "adPrefix": "advertentie",
       "allAds": "alle advertenties"
@@ -2034,6 +2316,28 @@
     "title": "Flows",
     "quickReplies": {
       "limitReached": "Limiet voor snelle antwoorden bereikt ({max})."
+    },
+    "quickReplySettings": {
+      "open": "Instellingen voor snelle antwoorden",
+      "title": "Snelle antwoorden configureren",
+      "chooseNextStep": "Volgende stap kiezen",
+      "followUp": {
+        "label": "Opvolgen als het contact niet heeft gereageerd",
+        "waitFor": "Wacht",
+        "divider": "Als het contact niet heeft gereageerd, opvolgen met",
+        "windowHint": "Messenger en Instagram staan verzenden alleen toe binnen 24 uur na het laatste bericht van het contact; latere opvolgingen worden daar overgeslagen.",
+        "handle": "Geen reactie"
+      },
+      "retry": {
+        "label": "Opnieuw vragen als het antwoord geen snel antwoord is",
+        "message": "Bericht voor opnieuw vragen",
+        "messageDefault": "Tik op een van de opties hieronder 👇",
+        "count": "Aantal pogingen",
+        "countOption": "{count, plural, =0 {Geen pogingen} one {# keer} other {# keer}}",
+        "divider": "Wanneer het aantal pogingen is overschreden",
+        "handle": "Pogingen overschreden",
+        "getUserDataConflict": "Opnieuw vragen is niet beschikbaar als dit bericht een stap Gebruikersgegevens ophalen bevat."
+      }
     },
     "buttons": {
       "limitReached": "Knoppenlimiet bereikt ({max})."
@@ -2120,6 +2424,7 @@
       "sendFile": "Bestand verzenden",
       "sendGif": "GIF verzenden",
       "sendImage": "Afbeelding verzenden",
+      "sendMultipleImages": "Meerdere afbeeldingen",
       "sendMessage": "Bericht verzenden",
       "sendNode": "Ander knooppunt starten",
       "sendText": "Tekst verzenden",
@@ -2127,6 +2432,7 @@
       "sendTemplateMessage": "Sjabloonbericht",
       "whatsappOptionList": "Optielijst",
       "noTemplatesAvailable": "Geen sjablonen beschikbaar",
+      "inboxesUnavailable": "Kanalen konden niet worden geladen",
       "noFlowsAvailable": "Geen flows beschikbaar",
       "setCustomField": "Aangepast veld instellen",
       "startAnotherNode": "Ander knooppunt starten",
@@ -2139,6 +2445,8 @@
       "transferConversationToHuman": "Gesprek overdragen aan medewerker",
       "unarchiveConversation": "Gesprek uit archief halen",
       "unassignConversation": "Toewijzing van gesprek opheffen",
+      "markConversationAsUnread": "Gesprek markeren als ongelezen",
+      "markConversationAsRead": "Gesprek markeren als gelezen",
       "unfollowConversation": "Gesprek niet meer volgen",
       "unsubscribeBroadcast": "Afmelden voor broadcast",
       "getUserData": "Gebruikersgegevens ophalen",
@@ -2159,12 +2467,15 @@
       "whatsappFlow": "WhatsApp-flow",
       "appointmentScheduling": "Afspraken plannen",
       "triggerN8n": "Trigger n8n",
-      "metaConversions": "Meta Conversions API",
       "sendMetaCapiEvent": "Meta CAPI-gebeurtenis verzenden",
       "import": "Flow importeren",
       "export": "Exporteren",
       "importStarted": "De flow wordt geïmporteerd. Bekijk de importgeschiedenis voor de resultaten.",
-      "importJsonOnly": "Alleen JSON-bestanden"
+      "importJsonOnly": "Alleen JSON-bestanden",
+      "whatsappCallButton": "Bellen via WhatsApp",
+      "metaConversions": "Meta Conversions API",
+      "threadControl": "Threadbeheer",
+      "sendGoogleAdsConversion": "Google Ads-conversie verzenden"
     },
     "splitTraffic": {
       "balanceHint": "De totale som moet gelijk zijn aan 100%.",
@@ -2201,6 +2512,10 @@
       "addSlide": "Kaart toevoegen",
       "removeSlide": "Kaart verwijderen",
       "whatsappLinkButtonIgnored": "Op WhatsApp werkt de link van deze kaart niet: een kaart met een linkknop mag geen andere knoppen hebben. Deze wordt in plaats daarvan als antwoord verzonden."
+    },
+    "sendMultipleImages": {
+      "removeImage": "Afbeelding verwijderen",
+      "selectImage": "Afbeeldingen selecteren"
     },
     "additionalSteps": "Aanvullende stappen",
     "delayType": {
@@ -2272,7 +2587,15 @@
     "sendText": {
       "tiktokTitleTruncated": "Als er knoppen zijn toegevoegd, verstuurt TikTok alleen de eerste 40 tekens van dit bericht — de rest wordt afgekapt."
     },
-    "dataWasSaved": "Gegevens zijn opgeslagen"
+    "dataWasSaved": "Gegevens zijn opgeslagen",
+    "media": {
+      "stepUnsupportedOnChannel": "Dit kanaal kan dit mediatype niet verzenden — de stap wordt daar overgeslagen. Verwijder de stap of zet de node op een kanaal dat het ondersteunt.",
+      "buttonsSkippedOnChannel": "Dit kanaal kan geen knoppen bij een mediabericht verzenden — daar worden ze overgeslagen. Zet ze in plaats daarvan in een volgende tekststap."
+    },
+    "whatsappCallButton": {
+      "editButtonTitle": "Knop bewerken",
+      "buttonLabel": "Knoplabel"
+    }
   },
   "folders": {
     "heading": {
@@ -2292,6 +2615,41 @@
   },
   "general": {
     "title": "Algemeen"
+  },
+  "facebookMarketingMessages": {
+    "deleteWarning": "Hiermee verwijder je de campagne alleen uit ChatbotX. De Meta-berichtcampagne blijft lopen — pauzeer of verwijder deze in Advertentiebeheer.",
+    "title": "Facebook Marketing Messages",
+    "description": "Verhoog betrokkenheid en verkoop met gepersonaliseerde promotieberichten op Messenger.",
+    "create": "Nieuw maken",
+    "grantTitle": "Facebook-toegang verlenen",
+    "grantDescription": "Geef toegang om de functie Marketingberichten te gebruiken",
+    "grantAction": "Toegang verlenen",
+    "reconnect": "Opnieuw verbinden",
+    "expiredWarning": "Je Facebook-toegang is verlopen of ingetrokken. Verbind opnieuw om campagnes te maken of te bewerken. Bestaande campagnes worden hieronder weergegeven en zijn alleen-lezen tot je opnieuw verbindt.",
+    "fields": {
+      "image": "Afbeelding",
+      "video": "Video",
+      "page": "Facebook-pagina",
+      "adAccount": "Advertentieaccount",
+      "budgetType": "Budgettype",
+      "budget": "Budget",
+      "daily": "Dagbudget",
+      "lifetime": "Totaalbudget",
+      "templateType": "Berichttype",
+      "text": "Tekst",
+      "button": "Knop",
+      "media": "Media",
+      "generic": "Generiek",
+      "greeting": "Begroeting",
+      "quickReplies": "Snelle antwoorden",
+      "elements": "Kaarten"
+    },
+    "errors": {
+      "notConfigured": "Facebook Marketing Messages is niet geconfigureerd. Vraag je beheerder om de configuratie-ID voor marketingberichten in te stellen.",
+      "notGranted": "Geef toegang om de functie Marketingberichten te gebruiken.",
+      "tosNotAccepted": "Accepteer de voorwaarden voor aangepaste objecten op {url} om deze functie te gebruiken",
+      "notFound": "Marketingbericht niet gevonden."
+    }
   },
   "facebookAds": {
     "title": "Facebook-advertenties",
@@ -2322,6 +2680,12 @@
   },
   "ads": {
     "title": "Advertenties",
+    "dashboardNav": {
+      "whatsapp": "Click-to-WhatsApp-advertenties",
+      "messenger": "Click-to-Messenger-advertenties",
+      "instagram": "Click-to-Instagram-advertenties",
+      "google": "Google Ads"
+    },
     "connectAccounts": {
       "connectAdAccount": "Advertentieaccount koppelen",
       "adAccountName": "Naam advertentieaccount",
@@ -2347,6 +2711,8 @@
       "title": "Conversie-events",
       "tabs": {
         "facebook": "Facebook",
+        "instagram": "Instagram",
+        "messenger": "Messenger",
         "whatsapp": "WhatsApp"
       },
       "manageAdsAccounts": "Advertentieaccounts beheren",
@@ -2354,11 +2720,16 @@
       "selectAll": "Alles selecteren",
       "whatsappAsset": "WhatsApp-asset",
       "selectWhatsappAsset": "WhatsApp-asset selecteren",
+      "selectIntegration": "Integratie",
+      "selectIntegrationPlaceholder": "Integratie selecteren",
+      "noIntegrationsConnected": "Nog geen gekoppelde integraties voor dit kanaal.",
+      "connectIntegration": "Kanaal koppelen",
       "templates": "Sjablonen",
       "selectTemplates": "Sjablonen selecteren",
       "noTemplates": "Geen goedgekeurde sjablonen gevonden.",
       "existingRules": "Bestaande regels",
       "noRules": "Nog geen conversieregels voor dit WhatsApp-asset.",
+      "noRulesGeneric": "Nog geen conversieregels voor deze integratie.",
       "toggleRule": "Regel in- of uitschakelen",
       "deleteRule": "Regel verwijderen",
       "qualifyingTemplateMessageSent": "Kwalificerend sjabloonbericht wordt verzonden",
@@ -2398,24 +2769,26 @@
         "title": "Gekwalificeerde leads bijhouden",
         "question": "Op welk punt in het gesprek wil je een contact als lead kwalificeren?",
         "when": "Wanneer",
-        "then": "Markeer CTWA-lead dan als"
+        "then": "Markeer CTWA-lead dan als",
+        "thenGeneric": "Markeer lead dan als"
       },
       "trackPurchases": {
         "title": "Aankopen bijhouden",
         "question": "Welk sjabloon bevestigt een aankoop?",
         "when": "Wanneer",
         "then": "Dan",
-        "noValueNote": "Een op regels gebaseerde aankoop registreert een aankoopconversie zonder bestelwaarde – die telt mee voor aankopen, maar draagt 0 bij aan de omzet. De bestelwaarde wordt alleen vastgelegd door Meta's automatische events."
+        "noValueNote": "Een op regels gebaseerde aankoop registreert een aankoopconversie zonder bestelwaarde – die telt mee voor aankopen, maar draagt 0 bij aan de omzet. De bestelwaarde wordt alleen vastgelegd door Meta's automatische events.",
+        "questionGeneric": "Op welk punt in het gesprek wil je een aankoop registreren?"
       }
     },
     "analytics": {
-      "title": "CTWA-analyse",
+      "title": "Advertentieanalyse",
       "funnelOverview": "Funneloverzicht",
       "conversationsStarted": "Gestarte gesprekken",
       "qualifiedLeads": "Gekwalificeerde leads",
       "purchases": "Aankopen",
       "adSpend": "Advertentie-uitgaven",
-      "spendAccountLevelNote": "Uitgaven worden gerapporteerd op het niveau van het Meta-advertentieaccount; met een geselecteerd WhatsApp-account worden advertenties met alleen uitgaven maar zonder funnelactiviteit voor dat account verborgen.",
+      "spendAccountLevelNote": "Uitgaven worden gerapporteerd op het niveau van het Meta-advertentieaccount; met een geselecteerd account worden advertenties met alleen uitgaven maar zonder funnelactiviteit voor dat account verborgen.",
       "revenue": "Omzet",
       "roas": "ROAS",
       "revenueCurrencyNote": "Omzet gaat uit van één valuta (USD). Advertentieaccounts met meerdere valuta's worden nog niet samengevoegd.",
@@ -2444,21 +2817,28 @@
       "adAccountFilter": {
         "all": "Alle advertentieaccounts",
         "label": "Advertentieaccount",
+        "unavailable": "Kan advertentieaccounts niet laden — controleer de Ads-koppeling van deze integratie, of de Facebook Ads-koppeling van de workspace, in de instellingen.",
         "note": "Advertenties met conversies maar zonder uitgaven of levering in de geselecteerde periode worden verborgen bij filteren op advertentieaccount."
+      },
+      "channelFilter": {
+        "label": "Kanaal",
+        "allAccounts": "Alle accounts",
+        "allChannels": "Alle kanalen"
       },
       "retarget": "Retargeten",
       "thoseWhoPurchased": "Degenen die hebben gekocht",
       "thoseWhoStartedConversation": "Degenen die een gesprek zijn gestart",
       "sendWhatsappBroadcast": "WhatsApp-broadcast versturen",
+      "retargetOnChannel": "Retargeten op {channel}",
       "from": "Van",
       "to": "Tot",
       "unattributed": "Niet toegewezen",
       "retargetDialog": {
-        "title": "CTWA-contacten retargeten",
+        "title": "Advertentiecontacten retargeten",
         "createAudience": "Doelgroep aanmaken",
         "useExistingAudience": "Bestaande doelgroep gebruiken",
         "audienceName": "Naam doelgroep",
-        "audiencePrefix": "CTWA",
+        "audiencePrefix": "Advertenties",
         "confirm": "Synchronisatie starten",
         "success": "Synchronisatie van retargetingdoelgroep staat in de wachtrij.",
         "error": "Synchronisatie van retargetingdoelgroep kon niet in de wachtrij worden geplaatst."
@@ -2470,7 +2850,7 @@
         "failed": "Mislukt",
         "skippedNoScope": "Overgeslagen (geen bereik)",
         "skippedRegion": "Overgeslagen (regio)",
-        "noScopeWarning": "Sommige conversies zijn niet verzonden omdat dit WhatsApp-account de rechten voor events mist. Koppel het opnieuw om rapportage van automatische events in te schakelen.",
+        "noScopeWarning": "Sommige conversies zijn niet verzonden omdat dit account de rechten voor events mist. Koppel het opnieuw om rapportage van automatische events in te schakelen.",
         "reconnectCta": "Account opnieuw koppelen",
         "empty": "Nog geen conversie-events in deze periode."
       },
@@ -2483,7 +2863,8 @@
         "contactName": "Naam contact",
         "phone": "Telefoon",
         "adId": "Advertentie-ID",
-        "occurredAt": "Opgetreden op"
+        "occurredAt": "Opgetreden op",
+        "channel": "Kanaal"
       },
       "empty": "Nog geen gegevens. Koppel een advertentieaccount en begin met het bijhouden van conversies."
     }
@@ -2753,13 +3134,134 @@
     "title": "Make",
     "setting": {
       "label": "Make",
-      "description": "Koppel je Make.com-account om gebeurtenissen vanuit je flows te verzenden en contactgegevens via Make-scenario's te ontvangen. De Developer Access Token van je workspace wordt naar het klembord gekopieerd wanneer je op Verbinden klikt. Plak deze bij het maken van de verbinding in Make.",
-      "notConfigured": "Geen Make-uitnodigingslink gevonden. Voeg er een toe in Platforminstellingen.",
-      "noWorkspaceToken": "Geen Developer Access Token gevonden voor deze workspace. Genereer er een in het gedeelte voor workspacetokens hierboven en klik daarna opnieuw op Verbinden."
+      "description": "Koppel je Make.com-account om gebeurtenissen vanuit je flows te verzenden en contactgegevens via Make-scenario's te ontvangen.",
+      "notConfigured": "Geen Make-uitnodigingslink gevonden. Voeg er een toe in Platforminstellingen."
     }
   },
   "integrations": {
     "title": "Integraties"
+  },
+  "aiHandover": {
+    "title": "Meta Business AI",
+    "description": "Bepaal wat er gebeurt wanneer de AI-assistent van Meta je Messenger-klanten beantwoordt.",
+    "info": "Indien ingeschakeld worden gesprekken hier overgenomen nadat de AI-assistent ze teruggeeft, en gelden de onderstaande instellingen.",
+    "enabled": {
+      "label": "Inschakelen"
+    },
+    "schedule": {
+      "label": "Looptijd",
+      "description": "Alleen toepassen tijdens deze uren van de tijdzone van de workspace.",
+      "from": "Vanaf uur",
+      "to": "Tot uur",
+      "add": "Tijdbereik toevoegen",
+      "remove": "Tijdbereik verwijderen"
+    },
+    "gotoFlow": {
+      "label": "Ga naar flow",
+      "description": "Flow die start wanneer de AI-assistent het gesprek teruggeeft. Heeft voorrang op het terugkeerbericht.",
+      "placeholder": "Selecteer een flow",
+      "clear": "Flow wissen"
+    },
+    "returnMessage": {
+      "label": "Terugkeerbericht",
+      "description": "Wordt in plaats daarvan verzonden als er geen flow is ingesteld of de flow niet meer actief is.",
+      "placeholder": "Bericht dat wordt verzonden wanneer de AI het gesprek teruggeeft"
+    },
+    "pauseBot": {
+      "label": "Gesprek overdragen aan medewerker",
+      "description": "Stopt de bot voor dit contact na het teruggeven, tot een teamlid overneemt of de bot hervat."
+    },
+    "readOnly": "Je kunt deze instellingen bekijken maar niet wijzigen.",
+    "errors": {
+      "supportSession": "Instellingen kunnen niet worden gewijzigd vanuit een supportsessie.",
+      "flowNotFound": "De geselecteerde flow is niet gevonden of niet actief.",
+      "timeRanges": "Voer geldige tijdbereiken in: hele uren van 0 tot 24, met een verschillend begin en einde."
+    },
+    "bulk": {
+      "title": "Toepassen op alle klanten",
+      "description": "Draag elk in aanmerking komend Messenger-gesprek over aan de AI-assistent van Meta, of neem de gesprekken terug die hij nu vasthoudt. Het draait op de achtergrond en je kunt het hier volgen.",
+      "started": "Gestart. Je kunt de voortgang hier volgen.",
+      "progress": "Voortgang",
+      "processedOfTotal": "{done} van {total} gesprekken",
+      "counters": "{processed} klaar, {skipped} overgeslagen, {failed} mislukt",
+      "action": {
+        "enable": "Inschakelen voor iedereen",
+        "disable": "Uitschakelen voor iedereen"
+      },
+      "status": {
+        "pending": "Wacht op start",
+        "running": "Bezig",
+        "cancelling": "Wordt geannuleerd",
+        "completed": "Voltooid",
+        "failed": "Mislukt",
+        "cancelled": "Geannuleerd"
+      },
+      "enable": {
+        "dialogDescription": "Elk Messenger-gesprek waarin de klant de afgelopen 30 dagen heeft geschreven en dat geen andere app vasthoudt, wordt overgedragen aan de AI-assistent van Meta. Gesprekken worden teruggenomen volgens de instellingen hierboven.",
+        "confirm": "Inschakelen voor iedereen",
+        "blocked": "Sla de automatisering hierboven op en zet hem aan (binnen de looptijd) om hem voor alle klanten in te schakelen."
+      },
+      "disable": {
+        "dialogDescription": "Alleen gesprekken die de AI-assistent van Meta nu vasthoudt, worden teruggenomen, en alleen klanten die de afgelopen 7 dagen hebben geschreven, zijn bereikbaar. Elk van hen ontvangt het onderstaande bericht, verzonden met de Human Agent-tag van Meta. Schrijf het dus alsof een persoon antwoordt. De pagina heeft de Human Agent-machtiging nodig.",
+        "messageLabel": "Bericht aan klanten",
+        "messageDescription": "Maximaal {max} tekens.",
+        "messagePlaceholder": "Hallo, een teamlid neemt dit gesprek over.",
+        "confirm": "Uitschakelen voor iedereen",
+        "policyWarning": "Meta staat de Human Agent-tag alleen toe wanneer een persoon de klant antwoordt. Gebruik voor promoties of geautomatiseerde berichten kan ertoe leiden dat het berichtenverkeer van de pagina wordt beperkt."
+      },
+      "errors": {
+        "automationNotActive": "Sla de automatisering op en zet hem aan (binnen de looptijd) voordat je hem voor alle klanten inschakelt.",
+        "messageRequired": "Voer het bericht in dat naar klanten wordt gestuurd.",
+        "messageTooLong": "Het bericht is te lang.",
+        "pageNotConnected": "Deze pagina is niet gekoppeld.",
+        "nothingToRetry": "Er valt niets opnieuw te proberen."
+      },
+      "runErrors": {
+        "automationStopped": "Gestopt omdat de automatisering is uitgeschakeld.",
+        "tokenInvalid": "De toegang van de pagina is ingetrokken. Koppel de pagina opnieuw en probeer het nog eens.",
+        "channelUnsupported": "Dit kanaal ondersteunt de bulkactie niet.",
+        "maxAttempts": "Opgegeven na herhaalde fouten.",
+        "channelUnavailable": "Gestopt omdat Meta meerdere keren achter elkaar niet bereikbaar was.",
+        "batchFailed": "Sommige gesprekken konden niet worden bevestigd en zijn als mislukt geteld.",
+        "pageDisconnected": "Gestopt omdat de pagina is losgekoppeld.",
+        "pageRefused": "Meta heeft de overdracht voor deze pagina geweigerd: de pagina is mogelijk niet ingesteld voor de AI-assistent van Meta, of mist de machtiging.",
+        "integrationUnavailable": "De koppeling van de pagina kon niet worden geladen. Koppel de pagina opnieuw en probeer het nog eens."
+      },
+      "pausedUntil": "Gepauzeerd tot {at} om binnen de snelheidslimieten van Meta voor deze pagina te blijven. Hervat vanzelf.",
+      "preparing": "Voorbereiden…",
+      "live": {
+        "enable": "Inschakelen voor klanten: {done} / {total}",
+        "disable": "Uitschakelen voor klanten: {done} / {total}",
+        "enableCounting": "Inschakelen voor klanten: tellen…",
+        "disableCounting": "Uitschakelen voor klanten: tellen…"
+      },
+      "done": {
+        "enable": "Ingeschakeld voor {processed} van {total} klanten.",
+        "disable": "Uitgeschakeld voor {processed} van {total} klanten."
+      },
+      "stopped": {
+        "enable": "Inschakelen voor alle klanten is gestopt.",
+        "disable": "Uitschakelen voor alle klanten is gestopt."
+      },
+      "retry": "Opnieuw proberen"
+    },
+    "history": {
+      "link": "Geschiedenis",
+      "title": "Geschiedenis van bulkruns",
+      "empty": "Nog geen runs.",
+      "columns": {
+        "action": "Actie",
+        "requestedAt": "Gestart",
+        "progress": "Verwerkt / totaal",
+        "finishedAt": "Voltooid",
+        "message": "Bericht",
+        "requestedBy": "Aangevraagd door"
+      },
+      "description": "Elke keer dat \"Toepassen op alle klanten\" voor deze pagina is in- of uitgeschakeld, nieuwste eerst.",
+      "error": "De geschiedenis kon niet worden geladen.",
+      "previousPage": "Vorige pagina",
+      "nextPage": "Volgende pagina"
+    }
   },
   "platformSettings": {
     "title": "Platforminstellingen",
@@ -2789,9 +3291,14 @@
       "instagram": "Dit Instagram-account is al gekoppeld aan een andere workspace.",
       "messenger": "Deze Facebook-pagina is al gekoppeld aan een andere workspace.",
       "telegram": "Deze Telegram-bot is al gekoppeld aan een andere workspace.",
+      "threads": "Dit Threads-account is al gekoppeld aan een andere workspace.",
       "tiktok": "Dit TikTok-account is al gekoppeld aan een andere workspace.",
       "whatsapp": "Dit WhatsApp-nummer is al gekoppeld aan een andere workspace.",
       "zalo": "Deze Zalo OA is al gekoppeld aan een andere workspace."
+    },
+    "missingScopes": {
+      "generic": "Verbinding geannuleerd: sommige machtigingen zijn niet verleend. Maak opnieuw verbinding en accepteer alle gevraagde machtigingen.",
+      "tiktok": "TikTok-verbinding geannuleerd: sommige machtigingen zijn niet verleend. Maak opnieuw verbinding en accepteer alle gevraagde machtigingen."
     },
     "reconnect": {
       "success": "Kanaal opnieuw gekoppeld.",
@@ -2812,6 +3319,60 @@
       "button": "Alle machtigingen vernieuwen",
       "resultSuccess": "{refreshed} kanaal/kanalen vernieuwd.",
       "resultWithFailures": "{refreshed} kanaal/kanalen vernieuwd, {failed} mislukt."
+    },
+    "connectMany": {
+      "coexist": {
+        "running": "Geschiedenissynchronisatie starten…",
+        "done": "Geschiedenissynchronisatie gestart",
+        "failed": "Geschiedenissynchronisatie mislukt"
+      },
+      "selectAll": "Alles selecteren",
+      "selected": "{count}/{max} geselecteerd",
+      "dialogTitleRunning": "{count} {feature} verbinden…",
+      "dialogTitleDone": "{connected} van {total} verbonden",
+      "progress": "{done}/{total}",
+      "progressAnnouncement": "{done} van {total} voltooid",
+      "status": {
+        "waiting": "Wachten",
+        "connecting": "Verbinden…",
+        "connected": "Verbonden",
+        "duplicated": "Al verbonden",
+        "limitReached": "Limiet bereikt",
+        "failed": "Mislukt",
+        "timedOut": "Time-out",
+        "cancelled": "Geannuleerd"
+      },
+      "reason": {
+        "notSelectable": "Dit item kan niet worden geselecteerd.",
+        "channelLimit": "Kanaallimiet bereikt.",
+        "workspaceLimit": "Werkruimtelimiet bereikt.",
+        "providerRejected": "De provider heeft dit verzoek geweigerd.",
+        "inProgress": "Verbinding is al bezig.",
+        "unknown": "Er is iets misgegaan.",
+        "followUpFailed": "Instellen niet voltooid — rond dit af via de kanaalinstellingen.",
+        "webhookSubscribeFailed": "Verbonden, maar het webhook-abonnement is mislukt — probeer het opnieuw via de verbindingsinstellingen."
+      },
+      "sessionError": {
+        "sessionExpired": "Je sessie is verlopen. Maak opnieuw verbinding.",
+        "notMember": "Je bent geen lid meer van deze werkruimte.",
+        "trialExpired": "Je proefperiode is verlopen.",
+        "macLimitReached": "Je hebt je accountlimiet bereikt.",
+        "credentialMissing": "Ontbrekende inloggegevens. Maak opnieuw verbinding."
+      },
+      "cancelRemaining": "Resterende annuleren",
+      "retryFailed": "Opnieuw proberen ({count})",
+      "retry": "Opnieuw proberen",
+      "goToChannels": "Naar kanalen",
+      "close": "Sluiten",
+      "leaveNotice": "Je kunt de pagina verlaten; verbonden accounts blijven behouden",
+      "stepConnecting": "Verbinden",
+      "stepCoexist": "Geschiedenis synchroniseren",
+      "validation": {
+        "min": "Selecteer minimaal 1",
+        "max": "Je kunt tot {max} selecteren",
+        "duplicate": "Dubbele selectie"
+      },
+      "progressLabel": "Voortgang"
     }
   },
   "workspace": {
@@ -2842,7 +3403,20 @@
       "bannerDescription": "Deze workspace staat gepland voor verwijdering. Maak de verwijdering hieronder ongedaan om de workspace te blijven gebruiken.",
       "pendingBlockedToast": "Deze workspace staat gepland voor verwijdering. Neem contact op met een workspacebeheerder om de toegang te herstellen.",
       "navDisabledTooltip": "Niet beschikbaar zolang de verwijdering van de workspace gepland staat",
-      "badge": "Verwijdering gepland"
+      "badge": "Verwijdering gepland",
+      "purging": "Het verwijderen van de werkruimte is bezig.",
+      "alreadyStarted": "Het verwijderen van de werkruimte is al gestart."
+    },
+    "supportAccess": {
+      "bannerTitle": "Platformondersteuningssessie",
+      "bannerDescription": "Een platformondersteuningsmedewerker heeft tot {time} tijdelijke toegang tot deze werkruimte.",
+      "cardTitle": "Platformondersteuningstoegang",
+      "cardDescription": "Laat het platformondersteuningsteam deze werkruimte 7 dagen lang met volledige toegang openen. Je kunt dit op elk moment uitschakelen.",
+      "enabledUntil": "Ingeschakeld tot {time}",
+      "permissionRequired": "Je moet superbeheerder zijn om platformondersteuningstoegang te wijzigen.",
+      "enabledToast": "Platformondersteuningstoegang ingeschakeld.",
+      "disabledToast": "Platformondersteuningstoegang uitgeschakeld.",
+      "toggleError": "Er is iets misgegaan. Probeer het opnieuw."
     }
   },
   "workspaces": {
@@ -2857,6 +3431,14 @@
     "deleteConfirmation": "Weet je het absoluut zeker?\nDeze actie kan niet ongedaan worden gemaakt.\nHiermee wordt je {feature} permanent van onze servers verwijderd."
   },
   "messages": {
+    "timeAgo": {
+      "now": "nu",
+      "minutes": "{count} min",
+      "hours": "{count} u",
+      "days": "{count} d",
+      "months": "{count} mnd",
+      "years": "{count} j"
+    },
     "moveFeature": "{feature} verplaatsen",
     "poweredBy": "Mogelijk gemaakt door {name}",
     "noGiphyApiKey": "Geen GIPHY API-sleutel gevonden. Voeg er een toe in Platforminstellingen.",
@@ -2881,10 +3463,12 @@
     "disconnectFeatureDescription": "Weet je zeker dat je {feature} wilt loskoppelen?",
     "disconnectSuccess": "{feature} losgekoppeld",
     "reply": "Beantwoorden",
+    "privateReply": "Privé antwoord",
     "viewMessage": "Bericht bekijken",
     "changeLikeState": "Vind-ik-leukstatus wijzigen",
     "changeHideState": "Verbergstatus wijzigen",
     "commentHidden": "Deze opmerking is verborgen",
+    "commentMediaUnavailable": "Deze reactie bevat een GIF, sticker of afbeelding die niet kan worden weergegeven",
     "messageDeleted": "Het bericht is verwijderd.",
     "sendFailed": "Verzenden mislukt",
     "repliedToStory": "Heeft op je story gereageerd",
@@ -2898,6 +3482,9 @@
     "editMessagePlaceholder": "Bewerk je bericht...",
     "saveEdit": "Opslaan",
     "cancelEdit": "Annuleren",
+    "replaceAttachment": "Bijlage vervangen",
+    "addAttachment": "Bijlage toevoegen",
+    "reloadAttachment": "Bijlage opnieuw laden",
     "failedToCopy": "Kopiëren is mislukt",
     "failedToPreviewImage": "Voorbeeld van afbeelding laden is mislukt",
     "loadingData": "Gegevens laden...",
@@ -2921,6 +3508,12 @@
     "duplicatedSuccess": "{feature} gedupliceerd",
     "duplicateConfirmation": "Hiermee wordt een kopie van je {feature} gemaakt.",
     "deleteFeature": "{feature} verwijderen",
+    "resetFeature": "{feature} resetten",
+    "resetConfirmation": "Hiermee worden de waarden van de geselecteerde {feature} leeggemaakt.\nDeze actie kan niet ongedaan worden gemaakt.",
+    "resetAllConfirmation": "Hiermee worden de waarden van alle {feature} van dit contact leeggemaakt.\nDeze actie kan niet ongedaan worden gemaakt.",
+    "resetSuccess": "{feature} succesvol gereset",
+    "clearFeature": "{feature} wissen",
+    "clearSuccess": "{feature} succesvol gewist",
     "deleteConfirmation": "Weet je het absoluut zeker?\nDeze actie kan niet ongedaan worden gemaakt.\nHiermee wordt je {feature} permanent van onze servers verwijderd.",
     "addFeature": "{feature} toevoegen",
     "signOutConfirmation": "Weet je zeker dat je wilt uitloggen?",
@@ -2955,9 +3548,6 @@
     "enableSuccess": "{feature} ingeschakeld",
     "userInactive": "Gebruiker is meer dan 7 dagen inactief",
     "messagingWindowClosed": "Het bericht kan niet buiten het toegestane venster worden verzonden",
-    "sendHumanAgentTag": "Eén bericht verzenden met de tag HUMAN_AGENT",
-    "warning": "Waarschuwing!",
-    "humanAgentWarningDescription": "Je mag alleen binnen 7 dagen op het bericht van een gebruiker reageren wanneer het probleem redelijkerwijs niet binnen 24 uur kan worden opgelost. Voorbeelden zijn weekenden, feestdagen of gevallen die meer dan één dag vereisen. Gebruik deze optie om geen enkele andere reden, omdat dit je Facebook-pagina of Instagram-account in gevaar kan brengen. Ga niet verder als je twijfelt.",
     "humanAgentWindowExpired": "Het berichtenvenster is verlopen. Het contact moet eerst een bericht sturen om het gesprek opnieuw te openen.",
     "restoreVersionSuccess": "Flow hersteld naar de geselecteerde versie",
     "revertToPublishedSuccess": "Concept teruggezet naar de gepubliceerde versie",
@@ -2966,6 +3556,10 @@
     "noVersionsFound": "Geen gepubliceerde versies gevonden",
     "publishVersionSuccess": "Er is een nieuwe versie gepubliceerd",
     "flowConfigIncomplete": "Sommige configuraties zijn onvolledig",
+    "quickReplyNextStepRequired": "Kies een volgende stap voor elke ingeschakelde instelling voor snelle antwoorden",
+    "quickReplyRetryMessageRequired": "Voer een bericht voor opnieuw vragen in",
+    "quickReplyRetryWithGetUserData": "Opnieuw vragen kan niet worden gecombineerd met een stap Gebruikersgegevens ophalen",
+    "whatsappFlowIncomplete": "Open de knop en kies een WhatsApp Flow en het startscherm ervan.",
     "whatsappCarouselButtonsMismatch": "Op WhatsApp moet een carrousel op elke kaart dezelfde knoppen hebben: één linkknop op elke kaart, of hetzelfde aantal antwoordknoppen op elke kaart",
     "whatsappCarouselLinkButtonNotAlone": "Op WhatsApp mag een carrouselkaart met een linkknop geen andere knoppen hebben. Verwijder de andere knoppen op die kaart, of wijzig de linkknop in een andere actie.",
     "duplicateNodeError": "Het blok kon niet worden gedupliceerd. Probeer het opnieuw.",
@@ -2974,11 +3568,39 @@
     "historyDepth": "({count})",
     "none": "Geen",
     "tiktokCardTitleTooLong": "TikTok verkort dit bericht: als er knoppen zijn toegevoegd, worden alleen de eerste 40 tekens verzonden. Verkort het bericht of verwijder de knoppen.",
+    "sendTextTooLongForChannel": "Dit bericht is langer dan dit kanaal toestaat. Kort het in of richt dit blok op een kanaal met een hogere limiet.",
     "waTemplateMpmNoProducts": "Voeg minstens één product toe aan deze multi-productknop voordat je publiceert.",
     "waTemplateMpmTooManySections": "Een multi-productknop kan maximaal 10 secties hebben. Verwijder enkele secties voordat je publiceert.",
     "waTemplateMpmTooManyProducts": "Een multi-productknop kan in totaal maximaal 30 producten hebben. Verwijder enkele producten voordat je publiceert.",
     "waTemplateLtoExpirationRequired": "Kies een vervaldatum voor de tijdelijke aanbieding voordat je verzendt.",
-    "waTemplateMpmIncompleteProducts": "Elke sectie heeft minstens één geselecteerd product nodig — verwijder lege rijen of kies er een product voor."
+    "waTemplateMpmIncompleteProducts": "Elke sectie heeft minstens één geselecteerd product nodig — verwijder lege rijen of kies er een product voor.",
+    "unsupportedBlock": "Dit kanaal ondersteunt dit blok niet.",
+    "constraintExceeded": "De limiet van dit kanaal is overschreden.",
+    "mediaButtonsUnsupported": "Dit kanaal kan geen knoppen bij een mediabericht verzenden. Verwijder de knoppen of verplaats ze naar een tekststap hierna.",
+    "voiceCall": "Spraakoproep",
+    "voiceCallDuration": "Spraakoproep · {duration}",
+    "missedVoiceCall": "Gemiste spraakoproep",
+    "declinedVoiceCall": "Geweigerde spraakoproep",
+    "voiceCallFailed": "Mislukte spraakoproep",
+    "unansweredVoiceCall": "Geen antwoord",
+    "canceledVoiceCall": "Geannuleerd gesprek",
+    "acceptedCallPermission": "Verzoek om beltoestemming geaccepteerd",
+    "declinedCallPermission": "Verzoek om beltoestemming geweigerd",
+    "sendHumanAgentTag": "Eén bericht verzenden met de tag HUMAN_AGENT",
+    "warning": "Waarschuwing!",
+    "humanAgentWarningDescription": "Je mag alleen binnen 7 dagen op het bericht van een gebruiker reageren wanneer het probleem redelijkerwijs niet binnen 24 uur kan worden opgelost. Voorbeelden zijn weekenden, feestdagen of gevallen die meer dan één dag vereisen. Gebruik deze optie om geen enkele andere reden, omdat dit je Facebook-pagina of Instagram-account in gevaar kan brengen. Ga niet verder als je twijfelt.",
+    "callFailed": "Gespreksprobleem",
+    "flowResponse": {
+      "viewResponse": "Antwoord bekijken",
+      "title": "Flow-antwoord",
+      "description": "Antwoorden die de klant in deze WhatsApp Flow heeft verstuurd.",
+      "empty": "Dit antwoord bevat geen gegevens.",
+      "failed": "Het antwoord kan niet worden geladen.",
+      "noAnswer": "Geen antwoord",
+      "labelsUnavailable": "De vragen van de Flow konden niet worden geladen, daarom worden de veldnamen getoond.",
+      "yes": "Ja",
+      "no": "Nee"
+    }
   },
   "instagram": {
     "description": "Met deze integratie kun je Instagram-bots maken.",
@@ -2990,6 +3612,12 @@
     "tabs": {
       "generalSettings": "Algemene instellingen",
       "conversionsApi": "Advertentie-optimalisatie"
+    },
+    "selectPage": {
+      "noAccountsTitle": "Geen Instagram-accounts gevonden",
+      "noAccountsDescription": "Er zijn geen Instagram-zakelijke accounts gevonden op de Facebook-pagina's die je beheert. Koppel Instagram opnieuw en geef alle gevraagde machtigingen.",
+      "alreadyConnectedNote": "Dit account is al gekoppeld",
+      "tryAgain": "Probeer opnieuw te koppelen"
     }
   },
   "coexist": {
@@ -3035,14 +3663,10 @@
     "defaultPersona": "Standaardpersona",
     "reconnect": "Opnieuw koppelen",
     "reconnectDescription": "Koppel je bot opnieuw als je Messenger-bot niet reageert of als je een machtigingsfout in het foutenlogboek ziet.",
-    "selectFacebookPage": "Facebook-pagina selecteren",
     "selectPage": {
       "noPagesTitle": "Geen Facebook-pagina's gevonden",
       "noPagesDescription": "Voor pagina's in Bedrijfsmanager is tijdens het koppelen toegang tot Bedrijfsmanager vereist. Koppel Messenger opnieuw en verleen alle gevraagde machtigingen.",
-      "bmLookupFailedTitle": "Pagina's uit Bedrijfsmanager ontbreken mogelijk",
-      "bmLookupFailedDescription": "Koppel Messenger opnieuw en verleen toegang tot Bedrijfsmanager zodat pagina's die via Bedrijfsmanager worden beheerd kunnen worden vermeld.",
       "alreadyConnectedNote": "Deze pagina is al gekoppeld",
-      "notAdminNote": "Volledige beheerdersmachtiging voor de pagina is vereist om deze te koppelen",
       "tryAgain": "Probeer opnieuw te koppelen"
     },
     "title": "Facebook Messenger",
@@ -3087,6 +3711,7 @@
         "result": {
           "title": "Kloonresultaten",
           "succeededTitle": "Geslaagd",
+          "pendingTitle": "Wacht op beoordeling door Meta",
           "close": "Sluiten"
         }
       }
@@ -3176,10 +3801,6 @@
       "description": "Beschrijving van AI-agents",
       "title": "AI-agents"
     },
-    "aiTriggers": {
-      "description": "Beschrijving van AI-triggers",
-      "title": "AI-triggers"
-    },
     "automatedResponses": {
       "title": "Trefwoorden"
     },
@@ -3229,7 +3850,14 @@
     "signUpTitle": "Registreren bij {name}",
     "changePasswordTitle": "Je wachtwoord wijzigen",
     "changePasswordDescription": "Stel een nieuw wachtwoord in voordat je verdergaat.",
-    "passwordChangeSuccess": "Wachtwoord gewijzigd"
+    "passwordChangeSuccess": "Wachtwoord gewijzigd",
+    "oauthError": {
+      "accountNotLinked": "Er bestaat al een account met dit e-mailadres en het kon niet worden gekoppeld. Log in zoals je eerder deed of neem contact op met support.",
+      "unableToLinkAccount": "We konden deze aanmelding niet aan het bestaande account koppelen. Meld je aan zoals je eerder deed, of neem contact op met support.",
+      "sessionExpired": "De aanmeldpoging is verlopen. Probeer het opnieuw.",
+      "accessDenied": "Aanmelden is geannuleerd.",
+      "generic": "Aanmelden mislukt. Probeer het opnieuw."
+    }
   },
   "emailTopics": {
     "title": "E-mailonderwerpen"
@@ -3248,6 +3876,7 @@
   "validation": {
     "maxSize": "De bestandsgrootte overschrijdt de maximale limiet",
     "maxItemsReached": "Maximaal {max} {feature} toegestaan per workspace",
+    "maxCharacters": "Maximaal {max} tekens.",
     "invalidApiKey": "Ongeldige API-sleutel",
     "maxMustBeGreaterThanMin": "{maxField} moet groter zijn dan of gelijk zijn aan {minField}"
   },
@@ -3297,7 +3926,8 @@
       "verifyToken": "Webhook-verificatietoken",
       "qrCodeHint": "Scan de QR-code om de webhook-URL te openen",
       "moreSettings": "Meer instellingen",
-      "goToInbox": "Breng me erheen"
+      "goToInbox": "Breng me erheen",
+      "multipleTitle": "Je WhatsApp-inboxen zijn klaar!"
     },
     "phoneVerification": {
       "title": "WhatsApp-telefoonnummer verifiëren",
@@ -3310,7 +3940,8 @@
       "actions": {
         "sendCode": "Code verzenden",
         "resendIn": "Opnieuw verzenden over {seconds}s",
-        "verify": "Verifiëren en registreren"
+        "verify": "Registreren",
+        "skip": "Overslaan"
       },
       "fields": {
         "code": {
@@ -3328,18 +3959,12 @@
         "codeNotSent": "De WhatsApp-verificatiecode kon niet worden verzonden.",
         "codeNotVerified": "De WhatsApp-verificatiecode kon niet worden geverifieerd.",
         "registrationFailed": "Verificatie van het WhatsApp-telefoonnummer is mislukt."
-      }
+      },
+      "queueProgress": "Verifiëren {current} van {total}"
     },
     "connect": {
       "errors": {
-        "accessTokenRequired": "Een WhatsApp-toegangstoken is vereist.",
         "appSettingsNotFound": "De WhatsApp-appinstellingen zijn niet gevonden.",
-        "failedToPersistIntegration": "Opslaan van de WhatsApp-integratie is mislukt.",
-        "noPhoneNumberFound": "Er is geen WhatsApp-telefoonnummer gevonden.",
-        "noPhoneNumbersFound": "Er zijn geen telefoonnummers gevonden voor dit WhatsApp Business-account.",
-        "phoneNumberNotFound": "Het geselecteerde WhatsApp-telefoonnummer is niet gevonden.",
-        "unableToVerifyToken": "Het WhatsApp-token kan niet worden geverifieerd.",
-        "wabaMismatch": "Het geselecteerde WhatsApp Business-account komt niet overeen met de autorisatie.",
         "wabaResolveFailed": "Het WhatsApp Business-account kon niet uit de autorisatie worden bepaald."
       }
     },
@@ -3440,7 +4065,8 @@
       "profile": "Profiel",
       "usefulLinks": "Nuttige links",
       "conversionsApi": "Advertentie-optimalisatie",
-      "settings": "Instellingen"
+      "settings": "Instellingen",
+      "calls": "Calls"
     },
     "accountHealths": {
       "title": "Je WhatsApp-account beheren",
@@ -3570,11 +4196,260 @@
       "label": "Koptekst van sjabloon"
     },
     "transferPhoneNumber": "Telefoonnummer van een andere WhatsApp-provider overdragen",
-    "signupSessionExpired": "Je WhatsApp-registratiesessie is verlopen. Start de koppeling opnieuw.",
-    "capi": {
-      "automaticEvents": {
-        "title": "Automatische events",
-        "description": "Verstuur conversiegebeurtenissen van dit WhatsApp-nummer automatisch naar Meta. Ontbreekt de machtiging, verbind het account dan opnieuw om deze te verlenen."
+    "selectPage": {
+      "tryAgain": "Probeer opnieuw te koppelen"
+    },
+    "manualAppSecretMissingNotice": "Webhook-handtekeningen worden niet gecontroleerd totdat je je Meta App-geheim toevoegt.",
+    "calls": {
+      "title": "WhatsApp Calls",
+      "description": "Let customers call your business on WhatsApp and control how calling works for this number.",
+      "enableLabel": "Enable calling",
+      "enableHelper": "Allow WhatsApp calls to and from this business number.",
+      "iconVisibilityLabel": "Show call icon",
+      "iconVisibilityHelper": "Show the call button in the chat and on your business profile.",
+      "callbackPermissionLabel": "Callback permission requests",
+      "callbackPermissionHelper": "Automatically ask customers for permission to call them back after a missed or completed call.",
+      "propagationNote": "Changes are applied by Meta immediately, but the WhatsApp app of your customers can take up to 7 days to reflect them.",
+      "loadFailed": "Failed to load calling settings from Meta. Check the connection of this number and try again.",
+      "errors": {
+        "notFound": "WhatsApp integration not found",
+        "notWhatsappConversation": "This conversation is not on WhatsApp",
+        "callNotFound": "Call not found",
+        "callNotReady": "The call is not ready to answer yet — try again",
+        "inAppCallingUnavailable": "In-app calling is not configured on this server",
+        "noCallPermission": "The contact has not granted call permission",
+        "permissionRequestLimitReached": "WhatsApp staat slechts 2 verzoeken om belrechten per contact per 7 dagen toe. Dit contact heeft die limiet bereikt — probeer het later opnieuw.",
+        "audioConnectFailed": "Could not connect call audio",
+        "updateFailed": "Meta heeft de wijziging van de belinstellingen afgewezen",
+        "savedOnMetaOnly": "Meta saved the change but this workspace did not. Save again to finish.",
+        "bicUnavailable": "Door het bedrijf geïnitieerde oproepen zijn niet beschikbaar voor dit land",
+        "callAlreadyInProgress": "Er is al een gesprek met dit contact gaande",
+        "hangupFailed": "Kan het gesprek niet beëindigen",
+        "voipCannotAnswer": "This call is no longer available to answer",
+        "voipCallEnded": "The call ended before it could be answered",
+        "voipAnswerFailed": "Could not answer the WhatsApp call",
+        "voipRejectFailed": "Kan het WhatsApp-gesprek niet weigeren",
+        "voipHangupFailed": "Kan het WhatsApp-gesprek niet beëindigen",
+        "voipNotReservedAgent": "U bent niet de aan dit gesprek toegewezen agent",
+        "voipCallAccessDenied": "U heeft geen toestemming om dit gesprek te behandelen",
+        "voipTurnCredentialsRateLimited": "Too many call setup requests. Please wait a moment and try again.",
+        "callNoLongerRinging": "Die oproep gaat niet meer over",
+        "transcriptionRequiresRecording": "Schakel het opnemen van gesprekken in voordat je transcriptie inschakelt.",
+        "supportSessionCallingBlocked": "Bellen is niet beschikbaar tijdens een platformondersteuningssessie.",
+        "callingAccessDenied": "U heeft geen toegang tot bellen in deze werkruimte.",
+        "callArtifactAccessDenied": "Je hebt geen toestemming om deze oproep te bekijken.",
+        "callHistoryAccessDenied": "Je hebt geen toegang tot de oproepgeschiedenis in deze werkruimte."
+      },
+      "permissionRequestTitle": "Request call permission",
+      "permissionRequestDescription": "Ask this customer to allow calls from your business on WhatsApp. Meta limits requests to 1 per 24 hours and 2 per 7 days per customer.",
+      "permissionRequestBodyLabel": "Message",
+      "permissionRequestDefaultBody": "We would like to call you on WhatsApp to help you faster. Do you allow us to call you?",
+      "permissionRequestSent": "Call permission request sent",
+      "inAppCallingLabel": "In-app calling (beta)",
+      "inAppCallingHelper": "Route this number's WhatsApp calls to the inbox so agents can answer them in the browser.",
+      "recordingLabel": "Record calls",
+      "recordingHelper": "Neem gesprekken op die in de inbox worden aangenomen of gestart en voeg de opname toe aan het gesprek.",
+      "recordingInProgress": "Opname aangevraagd",
+      "incomingCall": "Incoming WhatsApp call…",
+      "unknownCaller": "Unknown caller",
+      "incomingCallBanner": "Incoming WhatsApp call",
+      "answer": "Answer",
+      "reject": "Reject",
+      "ringingBadge": "Ringing",
+      "ringingCountdown": "{seconds}s",
+      "updateFailedTitle": "Meta heeft de wijziging afgewezen",
+      "callContact": "Bellen via WhatsApp",
+      "dialing": "Bellen…",
+      "startCall": "WhatsApp-gesprek starten",
+      "retentionLabel": "Bewaartermijn opnamen (dagen)",
+      "retentionHelper": "Hoe lang gespreksopnamen worden bewaard voordat ze permanent worden verwijderd.",
+      "transcriptionLabel": "Gesprekken transcriberen",
+      "transcriptionHelper": "Voeg van elk opgenomen gesprek een transcript toe aan het gesprek.",
+      "preflight": {
+        "title": "Belgeschiktheid",
+        "appSubscriptionMissing": "Configureer eerst de WhatsApp-webhook voor deze app in het Meta App Dashboard en probeer het daarna opnieuw.",
+        "appSubscriptionFailed": "Kan het 'calls'-webhookabonnement van de app niet verifiëren. Probeer het straks opnieuw.",
+        "callsNotSubscribed": "Deze app is niet geabonneerd op het 'calls'-webhookveld, waardoor oproepgebeurtenissen ChatbotX niet kunnen bereiken (Meta-fout 138018: technische vereisten zijn niet vervuld — zorg dat minstens één app die op de WABA is geabonneerd ook het webhookveld voor oproepen heeft).",
+        "fixButton": "Oplossen",
+        "fixSuccess": "De app is nu geabonneerd op WhatsApp-oproepwebhooks.",
+        "manualIntegrationNotice": "Dit nummer is handmatig verbonden en heeft hier geen app-gegevens. Abonneer het 'calls'-webhookveld van je app in het Meta App Dashboard.",
+        "coexistenceWarning": "Dit nummer gebruikt coexistentie met de WhatsApp Business-app, wat Meta niet ondersteunt voor bellen. Verplaats het naar alleen Cloud API."
+      },
+      "voipConnecting": "Connecting…",
+      "recordingActivity": {
+        "showTranscript": "Transcript weergeven",
+        "hideTranscript": "Transcript verbergen"
+      },
+      "outbound": {
+        "needsPermission": "You need permission to call this contact. Request permission first.",
+        "permissionCheckFailed": "We could not check your call permission for this contact right now. Please try again in a moment.",
+        "businessCallingUnavailable": "WhatsApp heeft door het bedrijf gestarte gesprekken niet ingeschakeld voor dit nummer. Dit hangt af van de beschikbaarheid in je land en de geschiktheid van het account bij Meta, dus het kan hier niet worden ingeschakeld.",
+        "callAlreadyInProgress": "A call to this contact is already in progress.",
+        "dailyLimitReached": "You have reached the connected-call limit with this contact for now.",
+        "ineligibleNumber": "This number is not eligible for business-initiated calling.",
+        "recipientUncallable": "This contact cannot be called on WhatsApp right now.",
+        "temporarilyDisabled": "Calling is temporarily disabled for this number due to call quality.",
+        "rateLimited": "Too many call attempts. Please wait a moment and try again.",
+        "paymentIssue": "There is a billing issue with your WhatsApp Business account.",
+        "callingNotEnabled": "Calling is not enabled for this WhatsApp number.",
+        "callFailed": "The call could not be placed. Please try again.",
+        "calling": "Calling…",
+        "ringback": "Ringing…",
+        "micPermissionDenied": "Microfoontoegang is geweigerd. Sta microfoontoegang toe in je browserinstellingen en probeer het opnieuw.",
+        "micNotFound": "Geen microfoon gevonden. Sluit een microfoon aan en probeer het opnieuw.",
+        "callAccessDenied": "U heeft geen toestemming om dit contact te bellen."
+      },
+      "card": {
+        "audioCall": "Audiogesprek",
+        "recordingUnavailable": "Opname niet meer beschikbaar",
+        "recordingNotCaptured": "Opname niet beschikbaar voor dit gesprek",
+        "recordingProcessing": "Opname wordt verwerkt…",
+        "moreOptions": "Meer opties",
+        "download": "Downloaden",
+        "openCallInformation": "Gespreksinformatie openen",
+        "transcript": "Transcript",
+        "aiSummary": "AI-samenvatting",
+        "transcriptUnavailable": "Transcript nog niet beschikbaar",
+        "summaryUnavailable": "AI-samenvatting nog niet beschikbaar",
+        "play": "Afspelen",
+        "pause": "Pauzeren",
+        "seek": "Zoeken",
+        "mute": "Dempen",
+        "unmute": "Dempen opheffen",
+        "playbackFailed": "Afspelen mislukt",
+        "answeredBy": "Beantwoord door {name}",
+        "calledBy": "Gebeld door {name}",
+        "callFailed": "Gespreksprobleem",
+        "callBack": "Terugbellen"
+      },
+      "sheet": {
+        "title": "Gesprekinformatie",
+        "summaryTab": "AI-samenvatting",
+        "transcriptTab": "Transcript",
+        "searchLabel": "Zoeken in transcript",
+        "searchPlaceholder": "Zoeken in transcript…",
+        "transcriptUnavailable": "Transcript niet beschikbaar voor de taal van dit gesprek",
+        "transcriptError": "Het transcript kan niet worden geladen. Controleer je verbinding en probeer het opnieuw.",
+        "noSearchResults": "Geen overeenkomende segmenten",
+        "playSegment": "Vanaf hier afspelen",
+        "summaryKeyPoints": "Belangrijkste punten",
+        "summaryActionItems": "Actiepunten",
+        "regenerate": "Opnieuw genereren",
+        "regenerateConfirmTitle": "AI-samenvatting opnieuw genereren?",
+        "regenerateConfirmDescription": "Dit vervangt de huidige samenvatting door een nieuw gegenereerde.",
+        "summaryEmpty": "Er is nog geen AI-samenvatting voor dit gesprek.",
+        "generateSummary": "Samenvatting genereren"
+      },
+      "summaryDialog": {
+        "title": "AI-samenvatting genereren",
+        "description": "Kies een verbonden AI-provider om dit gesprek samen te vatten.",
+        "noProviderTitle": "Geen AI-provider verbonden",
+        "noProviderDescription": "Verbind een AI-integratie om gespreksamenvattingen te genereren.",
+        "connectLink": "Naar AI-instellingen",
+        "generate": "Genereren",
+        "generating": "Bezig met genereren…",
+        "generateFailed": "Kon de samenvatting niet genereren. Probeer het opnieuw.",
+        "retry": "Opnieuw proberen",
+        "emptyTranscriptTooltip": "Dit gesprek heeft nog geen transcript om samen te vatten"
+      },
+      "panel": {
+        "eyebrowCalling": "BELLEN…",
+        "eyebrowIncoming": "INKOMENDE OPROEP",
+        "eyebrowOnCall": "IN GESPREK",
+        "statusPreparing": "Voorbereiden…",
+        "statusWaitingForMic": "Wachten op microfoontoegang…",
+        "statusDeclined": "Geweigerd",
+        "statusCallFailed": "Oproep mislukt",
+        "statusCallEnded": "Oproep beëindigd",
+        "end": "Beëindigen",
+        "minimize": "Minimaliseren",
+        "goToConversation": "Ga naar het gesprek",
+        "expand": "Uitvouwen",
+        "dismiss": "Sluiten",
+        "statusNoAnswer": "Geen antwoord",
+        "eyebrowCallEnded": "OPROEP BEËINDIGD",
+        "statusConnectionLost": "Verbinding verbroken",
+        "answerFailed": "De oproep kon niet worden beantwoord. Controleer of een microfoon is aangesloten en toegestaan in je browser en probeer het opnieuw.",
+        "ringingListTitle": "{count, plural, one {# inkomende oproep} other {# inkomende oproepen}}"
+      },
+      "capability": {
+        "title": "Belgeschiktheid",
+        "enableCalling": "Schakel bellen in via Instellingen > Kanalen > WhatsApp > Bellen.",
+        "reconnectChannel": "Ga naar Instellingen > Kanalen en maak opnieuw verbinding met het WhatsApp-kanaal.",
+        "ok": "OK",
+        "micPermissionTitle": "Microfoonmachtiging",
+        "dialFailureTitle": "Oproep kon niet worden geplaatst"
+      },
+      "manualIntegrationCallWarning": {
+        "title": "Handmatig verbonden nummer",
+        "callsSubscription": "Dit WhatsApp-nummer is handmatig verbonden. Zorg dat je Meta-app is geabonneerd op het calls-webhookveld (Meta App Dashboard → WhatsApp → Configuration → Webhook fields → calls) — anders komen uitgaande gesprekken niet tot stand en gaan inkomende gesprekken niet over.",
+        "unsignedWebhook": "Dit nummer heeft ook geen Meta App Secret geconfigureerd, waardoor de binnenkomende webhooks niet handtekening-geverifieerd zijn.",
+        "callAnyway": "Toch bellen"
+      },
+      "replaceConfirm": {
+        "title": "Gesprek met {current} beëindigen?",
+        "description": "Je bent in gesprek met {current}. Als je {incoming} beantwoordt, wordt dat gesprek direct beëindigd.",
+        "confirm": "Beëindigen en opnemen",
+        "cancel": "In gesprek blijven"
+      },
+      "answerCaller": "Oproep van {name} beantwoorden",
+      "rejectCaller": "Oproep van {name} weigeren",
+      "hours": {
+        "title": "Belvensters",
+        "description": "Klanten kunnen dit nummer alleen binnen deze tijden bellen. Daarbuiten biedt WhatsApp aan om te chatten of, als terugbelverzoeken aan staan, om een terugbelverzoek te sturen, en toont het wanneer ze weer kunnen bellen.",
+        "enabledLabel": "Alleen gesprekken aannemen binnen de beltijden",
+        "timezoneLabel": "Tijdzone",
+        "closed": "Gesloten",
+        "openTimeLabel": "{day}: opent om",
+        "closeTimeLabel": "{day}: sluit om",
+        "addRangeLabel": "Tijden toevoegen op {day}",
+        "removeRangeLabel": "Tijden verwijderen op {day}",
+        "overnightHint": "Elke dag eindigt om 23:59. Blijf je na middernacht open, voeg de resterende uren dan toe aan de volgende dag.",
+        "days": {
+          "monday": "Maandag",
+          "tuesday": "Dinsdag",
+          "wednesday": "Woensdag",
+          "thursday": "Donderdag",
+          "friday": "Vrijdag",
+          "saturday": "Zaterdag",
+          "sunday": "Zondag"
+        },
+        "errors": {
+          "rangeOrder": "De sluitingstijd moet na de openingstijd liggen.",
+          "rangeOverlap": "De tijden op deze dag overlappen.",
+          "noOpenHours": "Voeg tijden toe aan ten minste één dag."
+        }
+      },
+      "inboundLabel": "Accept incoming calls",
+      "inboundHelper": "Let customers call in. Turn off to keep dialling out without the inbox ringing.",
+      "page": {
+        "title": "Oproepen",
+        "subtitle": "Oproepgeschiedenis voor deze werkruimte",
+        "emptyTitle": "Nog geen oproepen",
+        "emptyDescription": "Oproepen verschijnen hier zodra je team WhatsApp-oproepen begint te plaatsen of te ontvangen.",
+        "loadMore": "Meer laden",
+        "allActivity": "Alle oproepen",
+        "filterMissed": "Gemist",
+        "filterNoReply": "Geen antwoord",
+        "allInboxes": "Alle postvakken IN",
+        "allAgents": "Alle medewerkers",
+        "columnContact": "Contact",
+        "columnInbox": "Postvak IN",
+        "columnDirection": "Richting",
+        "columnAgent": "Medewerker",
+        "columnDuration": "Duur",
+        "columnDate": "Datum",
+        "directionInbound": "Inkomend",
+        "directionOutbound": "Uitgaand",
+        "kindOngoing": "Actief",
+        "kindAnsweredInbound": "Beantwoord",
+        "kindAnsweredOutbound": "Beantwoord",
+        "openConversation": "Gesprek openen",
+        "unknownContact": "Onbekend contact",
+        "emptyFilteredTitle": "Geen oproepen komen overeen met dit filter",
+        "emptyFilteredDescription": "Probeer een ander filter of wis het om alle oproepen te zien.",
+        "loadMoreError": "Meer oproepen konden niet worden geladen. Probeer het opnieuw.",
+        "callInformation": "Oproepinformatie"
       }
     }
   },
@@ -3588,7 +4463,8 @@
       "toggleSuccess": "Instelling voor tagsynchronisatie bijgewerkt.",
       "enabledSince": "Ingeschakeld sinds {date}",
       "disabled": "Uitgeschakeld"
-    }
+    },
+    "refreshPermissions": "Machtigingen vernieuwen"
   },
   "telegram": {
     "description": "Met deze integratie kun je Telegram-bots maken.",
@@ -3599,6 +4475,14 @@
     "chatbotInvitationDescription2": "{userName} heeft je uitgenodigd om lid te worden van {chatbotName}.",
     "invalidInvitation": "Deze uitnodiging is ongeldig of verlopen.",
     "workspaceUnavailable": "Deze workspace is niet meer beschikbaar."
+  },
+  "inboxes": {
+    "markReadOnOutbound": {
+      "label": "Botberichten als gelezen markeren",
+      "enabled": "Ingeschakeld",
+      "disabled": "Uitgeschakeld",
+      "description": "Indien ingeschakeld markeert de bot zijn eigen berichten automatisch als gelezen"
+    }
   },
   "inboxTeams": {
     "title": "Inboxteams"
@@ -3611,7 +4495,47 @@
   },
   "reflinks": {
     "title": "Toegangspuntlinks",
-    "description": "Trefwoordlinks die flows starten en ref-payloads van kanalen vastleggen."
+    "description": "Trefwoordlinks die flows starten en ref-payloads van kanalen vastleggen.",
+    "chatWidget": {
+      "title": "Chatwidget",
+      "description": "Toon knoppen voor je chatkanalen op je website. Een bezoeker klikt erop om een chat te starten en de flow van deze ref-link uit te voeren.",
+      "authorizedDomains": {
+        "label": "Toegestane domeinen",
+        "placeholder": "example.com",
+        "description": "Alleen deze domeinen en hun subdomeinen kunnen de widget tonen. Laat leeg om elke website toe te staan.",
+        "invalid": "Deze domeinen zijn ongeldig: {domains}. Voer alleen een domein in, zoals example.com."
+      },
+      "channels": {
+        "label": "Kanalen",
+        "description": "Zet een kanaal uit om het in de widget te verbergen.",
+        "empty": "Er is nog geen kanaal met een chatlink gekoppeld.",
+        "profileLinkOnly": "Opent de profielpagina — de flow van de ref-link wordt niet uitgevoerd."
+      },
+      "preview": "Voorbeeld",
+      "embedCodeDescription": "Plak deze code vóór de afsluitende body-tag van je website. Opgeslagen wijzigingen worden automatisch toegepast, opnieuw plakken is niet nodig.",
+      "savedSuccess": "Instellingen van chatwidget opgeslagen",
+      "poweredBy": "door",
+      "toggleLabel": "Chat met ons",
+      "logo": {
+        "description": "De ronde knop waarop bezoekers klikken om de widget te openen. Kies een vierkante afbeelding, of laat leeg voor het standaard chatpictogram.",
+        "choose": "Kiezen uit mediabibliotheek",
+        "notImage": "Het logo moet een afbeelding zijn."
+      },
+      "brandUrl": {
+        "label": "Doorverwijs-URL",
+        "placeholder": "https://example.com",
+        "description": "Waar je merknaam in de \"door\"-regel van de widget naartoe linkt. Verplicht als er een merknaam is ingesteld.",
+        "requiredWithName": "Voer een doorverwijs-URL in voor deze merknaam."
+      },
+      "brandName": {
+        "description": "Getoond in de \"door\"-regel van de widget. Verplicht als er een doorverwijs-URL is ingesteld. Laat beide leeg om die regel te verbergen.",
+        "requiredWithUrl": "Voer een merknaam in voor deze doorverwijs-URL."
+      },
+      "logoBackgroundColor": {
+        "label": "Achtergrondkleur pictogram",
+        "description": "Achtergrond van het standaard chatpictogram. Het pictogram wordt wit of zwart zodat het leesbaar blijft."
+      }
+    }
   },
   "qrCodes": {
     "title": "QR-codes",
@@ -3725,7 +4649,9 @@
       "productRemovedFromCart": "Product uit winkelwagen verwijderd",
       "productOrdered": "Product besteld",
       "contactReferredANewContact": "Contact heeft een nieuw contact doorverwezen",
-      "contactReferredExistingContact": "Contact heeft een bestaand contact doorverwezen"
+      "contactReferredExistingContact": "Contact heeft een bestaand contact doorverwezen",
+      "callRecorded": "Oproep opgenomen",
+      "callTranscribed": "Oproep getranscribeerd"
     },
     "actions": {
       "addTag": "Tag toevoegen",
@@ -3735,7 +4661,8 @@
       "startAnotherFlow": "Andere flow starten",
       "notifyAdmins": "Beheerders informeren",
       "transferConversationToHuman": "Gesprek overdragen aan een medewerker",
-      "sendMetaCapiEvent": "Meta CAPI-gebeurtenis verzenden"
+      "sendMetaCapiEvent": "Meta CAPI-gebeurtenis verzenden",
+      "sendGoogleAdsConversion": "Google Ads-conversie verzenden"
     },
     "triggerGoesOff": "Trigger wordt geactiveerd",
     "before": "Voor",
@@ -3747,11 +4674,17 @@
     "at": "Om"
   },
   "errorLogs": {
-    "title": "Foutlogboeken"
+    "title": "Foutlogboeken",
+    "unknownContact": "Onbekend contact"
   },
   "developerAccessToken": {
     "title": "API-toegangstoken",
-    "description": "Genereer een token waarmee je workspace toegang krijgt tot de openbare API's. Houd dit token geheim en deel het met niemand."
+    "description": "Genereer een token waarmee je workspace toegang krijgt tot de openbare API's. Houd dit token geheim en deel het met niemand.",
+    "createDialogTitle": "API-token maken",
+    "namePlaceholder": "bijv. Zapier-integratie",
+    "empty": "Nog geen API-tokens.",
+    "defaultBadge": "Standaard",
+    "allScopes": "Alle bereiken"
   },
   "contacts": {
     "title": "Contacten",
@@ -3769,8 +4702,78 @@
     "exportTakingLong": "Het exporteren duurt langer dan verwacht",
     "exportTakingLongDescription": "De export wordt nog verwerkt. Je kunt dit dialoogvenster sluiten en over enkele minuten de exportgeschiedenis bekijken."
   },
+  "contactScan": {
+    "menu": {
+      "importFromFile": "Import from File",
+      "automaticScan": "Automatic Customer Scan"
+    },
+    "title": "Automatic Customer Scan",
+    "submit": "Automatic Scan",
+    "fields": {
+      "inbox": "Inbox",
+      "scanFrom": "Scan Inbox from Time"
+    },
+    "hint": {
+      "range": "The system will scan customers who have messaged the page from {from} until now.",
+      "beforeChoose": "After scanning, you must wait another 24 hours before you can use this feature again."
+    },
+    "status": {
+      "idle": "No scan has been run yet for this inbox. Choose a start date and run your first Automatic Customer Scan.",
+      "running": "The system is performing an automatic scan; estimated completion time is {eta}.",
+      "nextScan": "Next scan time: {at}",
+      "finished": "The system completed the last customer scan request at {at}.",
+      "total": "Total customers scanned: {count}",
+      "waitCooldown": "You must wait another 24 hours before you can use this feature again.",
+      "failed": "The last scan failed. You can try again once the cooldown ends.",
+      "partial": "The last scan finished partially — some conversations could not be imported."
+    },
+    "errors": {
+      "contactScanFromTimeInvalid": "Scan-from time must be in the past.",
+      "contactScanInboxNotFound": "Inbox not found.",
+      "contactScanChannelUnsupported": "This channel does not support Automatic Customer Scan.",
+      "contactScanIntegrationDisconnected": "This inbox is not connected.",
+      "contactScanCooldown": "This inbox was scanned recently. Please wait before scanning again.",
+      "contactScanAlreadyRunning": "A scan is already running for this inbox.",
+      "contactScanForbidden": "You do not have permission to run an Automatic Customer Scan."
+    },
+    "histories": {
+      "title": "Scan History",
+      "columns": {
+        "channel": "Channel",
+        "scanFrom": "Scan from",
+        "importedContacts": "Imported contacts",
+        "scannedConversations": "Scanned conversations",
+        "finishedAt": "Finished at",
+        "error": "Error"
+      },
+      "status": {
+        "init": "Queued",
+        "running": "Running",
+        "succeeded": "Succeeded",
+        "partial": "Partial",
+        "failed": "Failed"
+      },
+      "empty": "No scans have been run yet."
+    }
+  },
   "auditLogs": {
-    "title": "Auditlogboeken"
+    "title": "Auditlogboeken",
+    "columns": {
+      "user": "Gebruiker",
+      "action": "Actie",
+      "detail": "Detail",
+      "ipAddress": "IP-adres",
+      "date": "Datum"
+    },
+    "filters": {
+      "from": "Van",
+      "to": "Tot",
+      "user": "Gebruiker",
+      "userPlaceholder": "Gebruikers-ID",
+      "keyword": "Trefwoord",
+      "keywordPlaceholder": "Actie of detail",
+      "allAdmins": "Alle admins"
+    }
   },
   "customFields": {
     "title": "Aangepaste velden",
@@ -3885,7 +4888,8 @@
     "afterText": "Na"
   },
   "tools": {
-    "title": "Hulpmiddelen"
+    "title": "Hulpmiddelen",
+    "beta": "Beta"
   },
   "aiProviders": {
     "openai": "OpenAI",
@@ -3906,7 +4910,26 @@
   },
   "botSimulator": {
     "title": "Botsimulator",
-    "description": "Simuleer het gedrag van je bot in een realtimeomgeving."
+    "description": "Simuleer het gedrag van je bot in een realtimeomgeving.",
+    "formDescription": "Krijg een link die een website met je webchat toont, zodat je de bot aan een klant kunt demonstreren.",
+    "websiteLink": "Websitelink",
+    "websiteLinkPlaceholder": "https://example.com",
+    "websiteLinkHint": "De website die achter de webchat wordt getoond. Sommige websites staan niet toe dat ze in een andere pagina worden getoond.",
+    "selectWebchat": "Selecteer een webchat",
+    "webchatRequired": "Selecteer een webchat",
+    "invalidUrl": "Voer een volledige link in die begint met http:// of https://",
+    "getLink": "Link ophalen",
+    "linkCopied": "Link gekopieerd naar klembord",
+    "copyFailed": "Link kon niet worden gekopieerd",
+    "noWebchat": "Deze werkruimte heeft nog geen webchat.",
+    "createWebchat": "Webchat maken",
+    "websitePreview": "Websitevoorbeeld",
+    "webchatDisabled": "Deze webchat staat uit. Zet hem aan of kies een andere.",
+    "domainNotAllowed": "Deze website staat niet in de toegestane domeinen van de webchat.",
+    "disabledWebchatLabel": "{name} (uit)",
+    "allowedDomainsHint": "Werkt alleen met websites op: {domains}",
+    "noEnabledWebchat": "Er staat geen webchat aan in deze workspace.",
+    "enableWebchat": "Zet een webchat aan"
   },
   "pollManager": {
     "title": "Pollbeheer",
@@ -3986,15 +5009,15 @@
     "trackCommentsOn": "Opmerkingen volgen op",
     "trackCommentsOnDescription": "Pas deze automatisering toe op alle berichten op je pagina of beperk deze tot specifieke berichten die je selecteert.",
     "privateReply": "Privéantwoord (inbox)",
-    "privateReplyDescription": "Stuur een privébericht naar de inbox van degene die de opmerking plaatste. Kies een AI-agent, een vaste tekstsjabloon (spintax wordt ondersteund), een chatbotflow of schakel dit uit.",
+    "privateReplyDescription": "Stuur een privébericht naar de inbox van degene die de opmerking plaatste. Kies een AI-agent, een vaste tekstsjabloon, een chatbotflow of schakel dit uit.",
     "publicReply": "Openbaar antwoord op opmerking",
-    "publicReplyDescription": "Plaats een openbaar antwoord direct onder de opmerking. Ondersteunt maximaal 10 tekstsjablonen (spintax wordt ondersteund), een AI-agent, een chatbotflow of geen antwoord.",
+    "publicReplyDescription": "Plaats een openbaar antwoord direct onder de opmerking. Ondersteunt maximaal 10 tekstsjablonen, een AI-agent, een chatbotflow of geen antwoord. Elk bericht wordt als een aparte reactie geplaatst. Spintax wordt ondersteund.",
     "replyMessage": "Antwoordbericht",
     "replyMessagePlaceholder": "Voer een antwoordbericht in...",
     "includeKeywordsType": "Antwoorden op",
     "includeKeywordsTypeDescription": "Kies op welke opmerkingen deze automatisering reageert.",
     "includeKeywords": "Trefwoorden om te vinden",
-    "excludeKeywords": "Opmerkingen met deze trefwoorden uitsluiten",
+    "excludeKeywords": "Reacties uitsluiten die bevatten",
     "excludeKeywordsDescription": "Opmerkingen die een van deze trefwoorden bevatten, worden door zowel de inbox- als de openbare antwoordautomatisering genegeerd.",
     "keywordsPlaceholder": "Typ en druk op Enter...",
     "replyAfter": "Antwoorden na",
@@ -4056,8 +5079,8 @@
       "replyToUsersWhoCommentedOnOtherPostsDescription": "Blijf gebruikers beantwoorden die al opmerkingen bij je andere berichten hebben geplaatst.",
       "ignoreCommentReplies": "Antwoorden op opmerkingen niet beantwoorden",
       "ignoreCommentRepliesDescription": "Sla de automatisering over voor opmerkingen die een antwoord zijn op andere opmerkingen en verwerk alleen opmerkingen op het hoogste niveau.",
-      "trackUserTags": "Volgen of een gebruiker andere gebruikers tagt",
-      "trackUserTagsDescription": "Activeer de automatisering wanneer een gebruiker een andere gebruiker tagt of vermeldt in een opmerking."
+      "trackUserTags": "Bijhouden of een gebruiker andere gebruikers tagt",
+      "trackUserTagsDescription": "Telt de accounts die in elke reactie worden getagd en telt ze op bij de totalen van het contact over alle reacties. Gebruik '{{total_tagged}}' voor alle getagde accounts en '{{total_new_tagged}}' voor accounts die je pagina nooit een bericht hebben gestuurd of nooit contact zijn geweest."
     },
     "hideComments": {
       "all": "Alle opmerkingen verbergen",
@@ -4077,7 +5100,13 @@
     "chooseSpecificPosts": "Berichten kiezen...",
     "postIdTab": "Bericht-ID",
     "postIdPlaceholder": "Voer bericht-ID's in, één per regel...",
-    "noPostsFound": "Geen berichten gevonden"
+    "noPostsFound": "Geen berichten gevonden",
+    "postTypeDialog": {
+      "liveTitle": "Livestream",
+      "liveDescription": "Automatiseer reacties op livestreams. Ondersteunt openbare antwoorden, privéantwoorden en het verbergen en liken van reacties.",
+      "postsTitle": "Paginaberichten",
+      "postsDescription": "Automatiseer reacties op paginaberichten en reels. Ondersteunt openbare antwoorden, privéantwoorden en het verbergen en liken van reacties."
+    }
   },
   "instagramCommentAutomation": {
     "title": "Automatisering van Instagram-opmerkingen",
@@ -4089,15 +5118,15 @@
     "trackCommentsOn": "Opmerkingen volgen op",
     "trackCommentsOnDescription": "Pas deze automatisering toe op alle berichten van je gekoppelde account of beperk deze tot specifieke berichten die je selecteert.",
     "privateReply": "Privéantwoord (inbox)",
-    "privateReplyDescription": "Stuur een privébericht naar de inbox van degene die de opmerking plaatste. Kies een AI-agent, een vaste tekstsjabloon (spintax wordt ondersteund), een chatbotflow of schakel dit uit.",
+    "privateReplyDescription": "Stuur een privébericht naar de inbox van degene die de opmerking plaatste. Kies een AI-agent, een vaste tekstsjabloon, een chatbotflow of schakel dit uit.",
     "publicReply": "Openbaar antwoord op opmerking",
-    "publicReplyDescription": "Plaats een openbaar antwoord direct onder de opmerking. Ondersteunt maximaal 10 tekstsjablonen (spintax wordt ondersteund), een AI-agent, een chatbotflow of geen antwoord.",
+    "publicReplyDescription": "Plaats een openbaar antwoord direct onder de opmerking. Ondersteunt maximaal 10 tekstsjablonen, een AI-agent, een chatbotflow of geen antwoord. Elk bericht wordt als een aparte reactie geplaatst. Spintax wordt ondersteund.",
     "replyMessage": "Antwoordbericht",
     "replyMessagePlaceholder": "Voer een antwoordbericht in...",
     "includeKeywordsType": "Antwoorden op",
     "includeKeywordsTypeDescription": "Kies op welke opmerkingen deze automatisering reageert.",
     "includeKeywords": "Trefwoorden om te vinden",
-    "excludeKeywords": "Opmerkingen met deze trefwoorden uitsluiten",
+    "excludeKeywords": "Reacties uitsluiten die bevatten",
     "excludeKeywordsDescription": "Opmerkingen die een van deze trefwoorden bevatten, worden door zowel de inbox- als de openbare antwoordautomatisering genegeerd.",
     "keywordsPlaceholder": "Typ en druk op Enter...",
     "replyAfter": "Antwoorden na",
@@ -4157,7 +5186,9 @@
       "replyToUsersWhoCommentedOnOtherPosts": "Gebruikers beantwoorden die opmerkingen bij andere berichten hebben geplaatst",
       "replyToUsersWhoCommentedOnOtherPostsDescription": "Blijf gebruikers beantwoorden die al opmerkingen bij je andere berichten hebben geplaatst.",
       "ignoreCommentReplies": "Antwoorden op opmerkingen niet beantwoorden",
-      "ignoreCommentRepliesDescription": "Sla de automatisering over voor opmerkingen die een antwoord zijn op andere opmerkingen en verwerk alleen opmerkingen op het hoogste niveau."
+      "ignoreCommentRepliesDescription": "Sla de automatisering over voor opmerkingen die een antwoord zijn op andere opmerkingen en verwerk alleen opmerkingen op het hoogste niveau.",
+      "trackUserTags": "Bijhouden of een gebruiker andere gebruikers tagt",
+      "trackUserTagsDescription": "Telt de accounts die in elke reactie worden getagd en telt ze op bij de totalen van het contact over alle reacties. Gebruik '{{total_tagged}}' voor alle getagde accounts en '{{total_new_tagged}}' voor accounts die je pagina nooit een bericht hebben gestuurd of nooit contact zijn geweest."
     },
     "hideComments": {
       "all": "Alle opmerkingen verbergen",
@@ -4182,6 +5213,222 @@
       "instagramDescription": "Verbinding via Instagram Login. Ondersteunt openbare antwoorden, privéantwoorden en het verbergen van opmerkingen. Opmerkingen leuk vinden wordt niet ondersteund.",
       "instagramFacebookTitle": "Instagram Login met Facebook",
       "instagramFacebookDescription": "Instagram gekoppeld via een Facebook-pagina. Ondersteunt openbare antwoorden, privéantwoorden, het verbergen van opmerkingen en het leuk vinden van opmerkingen."
+    },
+    "postTypeDialog": {
+      "liveTitle": "Instagram Live",
+      "liveDescription": "Automatiseer reacties op Instagram Live. Stuurt elke reageerder een privéantwoord terwijl je live bent.",
+      "postsTitle": "Berichten en reels",
+      "postsDescription": "Automatiseer reacties op berichten en reels. Ondersteunt openbare antwoorden, privéantwoorden en het verbergen van reacties."
+    },
+    "liveReplyNote": "Instagram staat op een Live-reactie alleen een privéantwoord toe, en alleen terwijl je live bent. Openbare antwoorden, verbergen en liken zijn niet beschikbaar."
+  },
+  "threadsCommentAutomation": {
+    "title": "Threads Comment Automation",
+    "description": "Automate public Threads comment replies for your contacts.",
+    "create": "Create Automation",
+    "replies": "Replies",
+    "empty": "No Threads comment automations yet.",
+    "publicOnlyNote": "Threads currently supports public replies only.",
+    "trackCommentsOn": "Track comments on",
+    "publicReply": "Public reply to comment",
+    "publicReplyDescription": "Send a public reply to matching Threads comments. Maximaal 10 tekstberichten (spintax ondersteund), elk geplaatst als afzonderlijk antwoord.",
+    "replyMessage": "Reply message",
+    "replyFlow": "Reply flow",
+    "replyAIAgent": "Reply AI Agent",
+    "includeKeywordsType": "Reply to",
+    "includeKeywords": "Keywords to match",
+    "excludeKeywords": "Reacties uitsluiten die bevatten",
+    "keywordsPlaceholder": "Type and press Enter...",
+    "replyAfter": "Reply after",
+    "replyAfterValue": "Value",
+    "specificPostIds": "Specific post IDs",
+    "postIdPlaceholder": "Voer numerieke bericht-ID's in en druk op Enter (niet de code in de link)...",
+    "card": {
+      "targeting": "Targeting & Reply",
+      "filters": "Filters & Options",
+      "replyTiming": "Reply Timing",
+      "hideComments": "Opmerkingen verbergen"
+    },
+    "postType": {
+      "all": "All posts",
+      "specificPosts": "Specific posts"
+    },
+    "replyType": {
+      "text": "Text message",
+      "flow": "Flow",
+      "AIAgent": "AI Agent",
+      "none": "No reply"
+    },
+    "keywordsType": {
+      "all": "All comments",
+      "equal": "Exact match",
+      "contain": "Contains"
+    },
+    "replyAfterType": {
+      "immediately": "Immediately",
+      "seconds": "After X seconds",
+      "minutes": "After X minutes",
+      "hours": "After X hours",
+      "randomWithin3Minutes": "Random within 3 minutes",
+      "randomWithin5Minutes": "Random within 5 minutes",
+      "randomWithin10Minutes": "Random within 10 minutes",
+      "randomWithin20Minutes": "Random within 20 minutes",
+      "randomWithin30Minutes": "Random within 30 minutes",
+      "randomWithin60Minutes": "Random within 60 minutes"
+    },
+    "options": {
+      "replyToNewContactsOnly": "Only reply to new contacts",
+      "replyOncePerUserPerPost": "Reply only once to each user per post",
+      "replyToUsersWhoCommentedOnOtherPosts": "Reply to users who commented on other posts",
+      "ignoreCommentReplies": "Don't reply to replies to comments"
+    },
+    "validation": {
+      "postIdsMustBeEmptyForAll": "Post IDs must be empty when targeting all posts.",
+      "postIdsRequired": "Select at least one post ID when targeting specific posts.",
+      "keywordsMustBeEmptyForAll": "Keywords must be empty when matching all comments.",
+      "keywordsRequired": "Enter at least one keyword for the selected match type.",
+      "delayMustBePositive": "Delay value must be greater than zero.",
+      "delayMustBeZero": "Delay value must be zero for the selected timing option.",
+      "atLeastOneFieldRequired": "At least one field is required.",
+      "replyTextRequired": "Voer minstens één antwoordbericht in.",
+      "hideKeywordsRequired": "Enter at least one keyword to hide comments by keyword."
+    },
+    "hideCommentsDescription": "Alleen antwoorden op het hoogste niveau op je berichten kunnen worden verborgen.",
+    "hideComments": {
+      "all": "Alle opmerkingen verbergen",
+      "hasPhoneNumber": "Bevat telefoonnummer",
+      "hasLink": "Bevat link",
+      "hasKeywords": "Bevat trefwoorden",
+      "keywords": "Trefwoorden",
+      "showCommentsAfter": "Opmerkingen weergeven na"
+    },
+    "showCommentsAfter": {
+      "none": "Nooit"
+    },
+    "chooseSpecificPosts": "Berichten kiezen...",
+    "selectPosts": "Berichten selecteren",
+    "selectAccountAll": "Alle accounts",
+    "postsTab": "Berichten",
+    "postIdTab": "Bericht-ID",
+    "noPostsFound": "Geen berichten gevonden",
+    "loadPostsError": "Berichten konden niet worden geladen. Je kunt ID's nog steeds handmatig invoeren."
+  },
+  "tiktokCommentAutomation": {
+    "title": "TikTok Comment Automation",
+    "description": "Automate replies, likes and hiding on comments under your TikTok videos.",
+    "create": "Create Automation",
+    "replies": "Replies",
+    "empty": "No TikTok comment automations yet.",
+    "deliveryDelayNote": "TikTok delivers comment events within five minutes, so replies are not instant. Any reply delay you set is added on top of that.",
+    "trackCommentsOn": "Track comments on",
+    "publicReply": "Public reply to comment",
+    "publicReplyDescription": "Send a public reply to matching TikTok comments. Maximaal 10 tekstberichten (spintax ondersteund), elk geplaatst als afzonderlijk antwoord.",
+    "replyMessage": "Reply message",
+    "replyFlow": "Reply flow",
+    "replyAIAgent": "Reply AI Agent",
+    "includeKeywordsType": "Reply to",
+    "includeKeywords": "Keywords to match",
+    "excludeKeywords": "Reacties uitsluiten die bevatten",
+    "keywordsPlaceholder": "Type and press Enter...",
+    "replyAfter": "Reply after",
+    "replyAfterValue": "Value",
+    "specificPostIds": "Specific video IDs",
+    "postIdPlaceholder": "Enter video IDs and press Enter...",
+    "hideCommentsDescription": "Hidden comments stay visible to their author only.",
+    "card": {
+      "targeting": "Targeting & Reply",
+      "filters": "Filters & Options",
+      "hideComments": "Hide Comments",
+      "replyTiming": "Reply Timing"
+    },
+    "postType": {
+      "all": "All videos",
+      "specificPosts": "Specific videos"
+    },
+    "replyType": {
+      "text": "Text message",
+      "flow": "Flow",
+      "AIAgent": "AI Agent",
+      "none": "No reply"
+    },
+    "keywordsType": {
+      "all": "All comments",
+      "equal": "Exact match",
+      "contain": "Contains"
+    },
+    "replyAfterType": {
+      "immediately": "Immediately",
+      "seconds": "After X seconds",
+      "minutes": "After X minutes",
+      "hours": "After X hours",
+      "randomWithin3Minutes": "Random within 3 minutes",
+      "randomWithin5Minutes": "Random within 5 minutes",
+      "randomWithin10Minutes": "Random within 10 minutes",
+      "randomWithin20Minutes": "Random within 20 minutes",
+      "randomWithin30Minutes": "Random within 30 minutes",
+      "randomWithin60Minutes": "Random within 60 minutes"
+    },
+    "options": {
+      "replyToNewContactsOnly": "Only reply to new contacts",
+      "replyOncePerUserPerPost": "Reply only once to each user per video",
+      "replyToUsersWhoCommentedOnOtherPosts": "Reply to users who commented on other videos",
+      "ignoreCommentReplies": "Don't reply to replies to comments",
+      "likeUserComment": "Like the user's comment"
+    },
+    "hide": {
+      "all": "Hide every comment",
+      "hasPhoneNumber": "Hide comments containing a phone number",
+      "hasLink": "Hide comments containing a link",
+      "hasKeywords": "Hide comments containing keywords",
+      "keywords": "Keywords to hide",
+      "showCommentsAfter": "Show hidden comments again after"
+    },
+    "showCommentsAfter": {
+      "none": "Never",
+      "6h": "6 hours",
+      "12h": "12 hours",
+      "1d": "1 day",
+      "2d": "2 days",
+      "3d": "3 days",
+      "4d": "4 days",
+      "5d": "5 days",
+      "6d": "6 days",
+      "7d": "7 days",
+      "8d": "8 days",
+      "9d": "9 days",
+      "10d": "10 days"
+    },
+    "validation": {
+      "postIdsMustBeEmptyForAll": "Video IDs must be empty when targeting all videos.",
+      "postIdsRequired": "Select at least one video ID when targeting specific videos.",
+      "keywordsMustBeEmptyForAll": "Keywords must be empty when matching all comments.",
+      "keywordsRequired": "Enter at least one keyword for the selected match type.",
+      "delayMustBePositive": "Delay value must be greater than zero.",
+      "delayMustBeZero": "Delay value must be zero for the selected timing option.",
+      "hideKeywordsRequired": "Enter at least one keyword to hide comments by keyword.",
+      "atLeastOneFieldRequired": "At least one field is required.",
+      "replyTextRequired": "Voer minstens één antwoordbericht in."
+    },
+    "privateReply": "Private reply (Comment-to-Message)",
+    "privateReplyDescription": "Send a direct message to the commenter. TikTok only allows this for comments it flags as high intent, so it will not fire for every matching comment.",
+    "privateReplyMessage": "Private reply message",
+    "privateReplyHighIntentTitle": "TikTok decides which comments can be messaged",
+    "privateReplyHighIntentNotice": "Comment-to-Message must be enabled on the connected TikTok account, and the account must be a Business Account registered in Vietnam, Indonesia or Thailand. TikTok sends the direct message only for first-level comments it flags as high intent, within 48 hours, once per comment, and not if the commenter already messaged you in the past 24 hours."
+  },
+  "commentAutomationMissedComments": {
+    "action": "Gemiste reacties verwerken",
+    "processing": "Gemiste reacties worden verwerkt",
+    "title": "Gemiste reacties verwerken",
+    "description": "Scan de reacties op dit bericht van de afgelopen 7 dagen en verwerk ze met deze reactie-automatisering. Reacties die al verwerkt zijn, worden overgeslagen. Hiermee worden echte berichten en antwoorden verzonden.",
+    "success": "{scanned} reacties gescand: {skipped} al verwerkt, {queued} in de wachtrij voor verwerking, {failed} mislukt.",
+    "errors": {
+      "notSinglePost": "Alleen beschikbaar voor een automatisering die zich op precies één specifiek bericht richt.",
+      "inactive": "Zet deze automatisering aan voordat je gemiste reacties verwerkt.",
+      "outsideSchedule": "Deze automatisering valt buiten haar actieve uren. Probeer het opnieuw binnen haar planning.",
+      "workspaceInactive": "Deze workspace staat uit of valt buiten zijn actieve uren, dus er zou geen reactie worden verwerkt. Probeer het opnieuw wanneer de workspace actief is.",
+      "alreadyRunning": "Gemiste reacties voor deze automatisering worden al verwerkt. Probeer het over een paar minuten opnieuw.",
+      "integrationNotFound": "Er is geen gekoppeld account voor dit kanaal gevonden.",
+      "fetchFailed": "De reacties op het bericht konden niet worden geladen. Controleer de kanaalverbinding en probeer het opnieuw."
     }
   },
   "instagramStoryAutomation": {
@@ -4260,6 +5507,16 @@
     "duplicateError": "Er bestaat al een automatisering voor deze pagina en dit formulier.",
     "subscribeError": "Deze pagina kon niet worden geabonneerd op Facebook-leadmeldingen, waardoor de automatisering niet is gemaakt. Koppel de pagina opnieuw via 'Nieuwe toevoegen' en probeer het opnieuw."
   },
+  "clickToMessageAds": {
+    "title": "Click-to-Message-advertenties",
+    "description": "Advertenties sturen mensen rechtstreeks naar een gesprek op Messenger, Instagram of WhatsApp.",
+    "empty": {
+      "title": "Geen account gekoppeld voor dit kanaal",
+      "description": "Koppel eerst een kanaalaccount en kom daarna hier terug om advertenties te maken.",
+      "cta": "Ga naar kanaalinstellingen"
+    },
+    "dashboardCta": "Bekijk in het advertentiedashboard"
+  },
   "ecommerce": {
     "title": "E-commerce",
     "description": "Maak en beheer je webwinkel."
@@ -4268,11 +5525,11 @@
     "title": "Afspraken plannen",
     "description": "Maak en beheer je afsprakenplanning.",
     "flowModes": {
-      "bookFromCustomField": "Afspraak boeken",
-      "checkAvailabilityFromCustomField": "Beschikbaarheid controleren",
-      "book": "Datum-/tijdkiezer",
-      "checkAvailability": "Datumbereikkiezer",
-      "cancel": "Afspraak annuleren"
+      "bookFromCustomField": "Book appointment",
+      "checkAvailabilityFromCustomField": "Check availability",
+      "book": "Open booking page",
+      "checkAvailability": "Open availability page",
+      "cancel": "Cancel appointment"
     },
     "fields": {
       "mode": "Modus",
@@ -4291,7 +5548,60 @@
   },
   "templates": {
     "title": "Sjablonen",
-    "description": "Maak en beheer je sjablonen."
+    "description": "Maak en beheer je sjablonen.",
+    "share": {
+      "label": "Delen",
+      "enabled": "Gedeeld",
+      "disabled": "Niet gedeeld",
+      "dialogTitle": "Sjabloon delen",
+      "dialogDescription": "Iedereen met deze link kan een kopie van dit sjabloon installeren in een werkruimte binnen jouw tenant.",
+      "enableLabel": "Deellink inschakelen",
+      "linkLabel": "Deellink",
+      "description": "Iedereen met de link kan dit sjabloon in zijn eigen werkruimte installeren."
+    },
+    "installs": {
+      "title": "Installaties",
+      "resources": "Bronnen",
+      "warnings": "Waarschuwingen",
+      "completedAt": "Voltooid op",
+      "autoUpdate": "Automatische update"
+    },
+    "form": {
+      "contents": "Sjabloon-inhoud",
+      "comingSoon": "Binnenkort beschikbaar",
+      "selectAll": "Alles selecteren",
+      "selectedCount": "{count} geselecteerd",
+      "details": "Details",
+      "permissions": "Standaardrechten",
+      "allowEdit": "Bewerken na installatie toestaan",
+      "allowDelete": "Verwijderen na installatie toestaan",
+      "publisherName": "Naam uitgever",
+      "youtubeVideoId": "YouTube-video-ID",
+      "youtubeVideoIdDescription": "De 11-tekens-ID uit de video-URL, bijv. \"dQw4w9WgXcQ\" in youtube.com/watch?v=dQw4w9WgXcQ",
+      "testLink": "Testlink",
+      "imageUrl": "Omslagafbeelding",
+      "installBehavior": "Installatiegedrag",
+      "createInstallFolder": "Installeren in een aparte map",
+      "createInstallFolderDescription": "Plaatst elke geïnstalleerde bron in één nieuwe map die naar dit sjabloon is vernoemd.",
+      "defaultAutoUpdate": "Installaties standaard markeren voor updates",
+      "defaultAutoUpdateDescription": "Nieuwe installaties tonen een melding over een beschikbare update zodra je dit sjabloon opnieuw publiceert."
+    },
+    "categories": {
+      "flows": "Flows",
+      "customFields": "Aangepaste velden",
+      "tags": "Tags",
+      "products": "Producten",
+      "productCategories": "Productcategorieën",
+      "aiFunctions": "AI-functies",
+      "aiAgents": "AI-agents",
+      "calendars": "Afspraakkalenders",
+      "webchats": "Webchats",
+      "keywords": "Trefwoorden",
+      "entryPointLinks": "Toegangspuntlinks",
+      "triggers": "Triggers",
+      "fbCommentAutomations": "Facebook-reactieautomatiseringen",
+      "settings": "Instellingen"
+    }
   },
   "qrCodeGenerator": {
     "title": "QR-codegenerator",
@@ -4308,6 +5618,17 @@
     },
     "queues": {
       "title": "Wachtrijen"
+    },
+    "workspaces": {
+      "title": "Werkruimtes",
+      "description": "Werkruimtes waarvan de eigenaar platformondersteuningstoegang heeft ingeschakeld, kunnen hier worden geopend.",
+      "owner": "Eigenaar",
+      "tenant": "Huurder",
+      "supportStatus": "Ondersteuningsstatus",
+      "openAsSupport": "Openen als ondersteuning",
+      "supportEnabledUntil": "Ingeschakeld tot {time}",
+      "supportOff": "Uit",
+      "searchPlaceholder": "Zoeken op naam, e-mailadres eigenaar of ID"
     }
   },
   "platformCredentials": {
@@ -4406,6 +5727,34 @@
     "invalidDescription": "Deze link is ongeldig of verlopen.",
     "unavailableTitle": "Afmelden niet beschikbaar.",
     "unavailableDescription": "Deze werkruimte is niet meer beschikbaar."
+  },
+  "connectSessionPage": {
+    "metadataTitle": "Connecting…",
+    "processingTitle": "Finishing up…",
+    "processingDescription": "You can close this window. The application that started this connection will finish setting things up shortly.",
+    "completedTitle": "Connected!",
+    "completedDescription": "You can close this window now.",
+    "failedTitle": "Connection failed.",
+    "failedDescription": "Something went wrong while connecting. Please try again from the application that started this.",
+    "cancelledTitle": "Connection cancelled.",
+    "cancelledDescription": "You can close this window.",
+    "expiredTitle": "This link has expired.",
+    "expiredDescription": "Please start the connection again from the application that started this.",
+    "invalidTitle": "This link is no longer valid.",
+    "invalidDescription": "This connection link is invalid or has already been used."
+  },
+  "templatesPublicPage": {
+    "invalidTitle": "Deze link is niet meer beschikbaar.",
+    "invalidDescription": "Deze sjabloon-deellink is ongeldig, uitgeschakeld of verlopen.",
+    "byPublisher": "Door {publisherName}",
+    "includes": "Dit sjabloon bevat",
+    "videoTitle": "Sjabloon-voorbeeldvideo",
+    "tryItOut": "Probeer het",
+    "signInToInstall": "Log in om te installeren",
+    "selectWorkspace": "Selecteer een werkruimte",
+    "install": "Installeren",
+    "installStarted": "Installatie gestart",
+    "noEligibleWorkspaces": "Je hebt geen werkruimte die geschikt is om dit sjabloon te installeren."
   },
   "extensionsMe": {
     "actions": {
@@ -5028,10 +6377,19 @@
       "confirmationFlowId": "Bevestigingsflow",
       "cancellationFlowId": "Annuleringsflow",
       "externalConnectionId": "Externe kalender",
+      "externalEventTitleTemplate": "Event title template",
+      "externalEventDescriptionTemplate": "Event description template",
+      "externalEventAttendeesTemplate": "Attendees template",
       "reminders": "Herinneringen",
       "reminderTimingValue": "Waarde",
       "reminderTimingUnit": "Eenheid"
     },
+    "placeholders": {
+      "externalEventTitleTemplate": "Appointment: '{{booking_calendar}}'",
+      "externalEventDescriptionTemplate": "Add appointment details or variables",
+      "externalEventAttendeesTemplate": "one@example.com, another@example.com"
+    },
+    "externalEventDisclosure": "Template values and attendees are shared with the connected Google Calendar.",
     "locationTypes": {
       "inPerson": "Persoonlijke afspraak",
       "phoneCall": "Telefoongesprek",
@@ -5121,14 +6479,14 @@
   },
   "metaConversions": {
     "title": "Conversions API",
-    "description": "Verstuur LeadSubmitted-gebeurtenissen vanuit Messenger-, Instagram- en WhatsApp-gesprekken naar Meta.",
+    "description": "Verstuur conversiegebeurtenissen vanuit Messenger-, Instagram- en WhatsApp-gesprekken naar Meta.",
     "datasetId": "Dataset-ID",
     "reconnect": "Machtigingen opnieuw koppelen",
     "connectViaFacebook": "Koppelen via Facebook",
     "unsupportedExplanation": "Dit Instagram-account is gekoppeld met Instagram Business Login. Koppel het account via Facebook om Meta Conversions API te kunnen gebruiken.",
     "flowStep": {
-      "description": "Plaats een LeadSubmitted-gebeurtenis in de wachtrij voor Messenger, Instagram of WhatsApp.",
-      "whatsappNote": "WhatsApp-gebeurtenissen worden alleen verzonden voor gesprekken die zijn gestart vanuit een click-to-WhatsApp-advertentie."
+      "whatsappNote": "WhatsApp-gebeurtenissen worden alleen verzonden voor gesprekken die zijn gestart vanuit een click-to-WhatsApp-advertentie.",
+      "description": "Plaats een LeadSubmitted-gebeurtenis in de wachtrij voor Messenger, Instagram of WhatsApp."
     },
     "status": {
       "title": "Meta Conversions API",
@@ -5154,12 +6512,51 @@
       "datasetRequired": "Sla een Dataset-ID op voordat je een toegangstoken toevoegt.",
       "invalidToken": "Dit token kreeg geen toegang tot de dataset.",
       "invalidDatasetId": "Voer een geldig Dataset ID in (alleen cijfers).",
-      "whatsappNotFound": "WhatsApp-integratie niet gevonden."
+      "whatsappNotFound": "WhatsApp-integratie niet gevonden.",
+      "testEventCodeRequired": "Sla een testgebeurteniscode op voordat je een testgebeurtenis verzendt.",
+      "invalidTestEventCode": "De testgebeurteniscode mag alleen letters, cijfers, koppeltekens of underscores bevatten (max. 64).",
+      "invalidMessagingId": "Het messaging-id mag alleen letters, cijfers, koppeltekens of onderstrepingstekens bevatten (max. 512).",
+      "capiDisconnected": "Meta CAPI is losgekoppeld voor dit kanaal. Koppel het opnieuw voordat je een testgebeurtenis verzendt."
     },
     "fields": {
       "eventType": {
         "label": "Gebeurtenistype",
-        "leadSubmitted": "Lead ingediend"
+        "leadSubmitted": "Lead ingediend",
+        "purchase": "Aankoop",
+        "initiateCheckout": "Afrekenen gestart",
+        "addToCart": "In winkelwagen",
+        "viewContent": "Inhoud bekijken",
+        "orderCreated": "Bestelling aangemaakt",
+        "orderShipped": "Bestelling verzonden",
+        "orderDelivered": "Bestelling afgeleverd",
+        "orderCanceled": "Bestelling geannuleerd",
+        "orderReturned": "Bestelling geretourneerd",
+        "cartAbandoned": "Winkelwagen verlaten",
+        "qualifiedLead": "Gekwalificeerde lead",
+        "ratingProvided": "Beoordeling gegeven",
+        "reviewProvided": "Recensie gegeven",
+        "addPaymentInfo": "Betaalgegevens toevoegen",
+        "addToWishlist": "Toevoegen aan verlanglijst",
+        "completeRegistration": "Registratie voltooid",
+        "contact": "Contact",
+        "customizeProduct": "Product aanpassen",
+        "donate": "Doneren",
+        "findLocation": "Locatie zoeken",
+        "lead": "Lead",
+        "schedule": "Afspraak plannen",
+        "search": "Zoeken",
+        "startTrial": "Proefperiode starten",
+        "submitApplication": "Aanvraag indienen",
+        "subscribe": "Abonneren",
+        "custom": "Aangepaste gebeurtenis…",
+        "groups": {
+          "commerce": "Commercie",
+          "leads": "Leads",
+          "orders": "Bestellingen",
+          "feedback": "Feedback",
+          "leadsAndSignups": "Leads & aanmeldingen",
+          "other": "Overig"
+        }
       },
       "value": "Waarde",
       "valuePlaceholder": "bijv. 250",
@@ -5168,7 +6565,25 @@
       "contentCategory": "Contentcategorie",
       "contentCategoryPlaceholder": "De categorie van de content die bij de gebeurtenis hoort",
       "contentName": "Contentnaam",
-      "contentNamePlaceholder": "De naam van de pagina of het product dat bij de gebeurtenis hoort"
+      "contentNamePlaceholder": "De naam van de pagina of het product dat bij de gebeurtenis hoort",
+      "orderId": "Order ID",
+      "orderIdPlaceholder": "e.g. ORDER-12345",
+      "contents": {
+        "label": "Line items",
+        "item": "line item",
+        "id": "Product ID",
+        "quantity": "Quantity",
+        "itemPrice": "Item price"
+      },
+      "customEventName": "Naam van aangepaste gebeurtenis",
+      "customEventNamePlaceholder": "bijv. MyCustomEvent",
+      "contentType": {
+        "label": "Inhoudstype",
+        "product": "Product",
+        "product_group": "Productgroep"
+      },
+      "contentIds": "Content-ID's",
+      "contentIdsPlaceholder": "bijv. 123,456"
     },
     "datasetIdPlaceholder": "Plak de Dataset-ID uit Events Manager",
     "saveDataset": "Opslaan",
@@ -5215,6 +6630,1383 @@
     },
     "whatsapp": {
       "connect": "Koppelen"
+    },
+    "limitedDataUse": {
+      "label": "Limited Data Use (US privacy)",
+      "description": "Restrict Meta's use of event data for users in applicable US states. Meta auto-detects the user's location from this event; no location data is sent by ChatbotX."
+    },
+    "actionSource": {
+      "label": "Actiebron",
+      "help": "Waar deze gebeurtenis plaatsvond. Zie de Meta-documentatie over actiebronnen.",
+      "business_messaging": "Zakelijke berichten",
+      "email": "E-mail",
+      "phone_call": "Telefoongesprek",
+      "chat": "Chat",
+      "physical_store": "Fysieke winkel",
+      "system_generated": "Door systeem gegenereerd",
+      "other": "Overig"
+    },
+    "dialog": {
+      "title": "Meta CAPI",
+      "advanced": "Geavanceerd"
+    },
+    "testEvents": {
+      "title": "Testgebeurtenissen",
+      "description": "Plak de test_event_code uit Events Manager → Test events. Zolang deze is ingesteld, wordt elke gebeurtenis van dit kanaal naar de Test events-weergave geleid met de volledige payload (waarde, valuta, content-ID's) en niet meegeteld in rapporten. Wis de code wanneer je klaar bent.",
+      "codeLabel": "Testgebeurteniscode",
+      "codePlaceholder": "bijv. TEST12345",
+      "save": "Code opslaan",
+      "clear": "Wissen",
+      "saved": "Testgebeurteniscode opgeslagen.",
+      "cleared": "Testgebeurteniscode gewist. Gebeurtenissen zijn weer live.",
+      "send": "Testgebeurtenis verzenden",
+      "sent": "Testgebeurtenis verzonden. Deze verschijnt binnen een minuut onder Test events in Events Manager.",
+      "sendHint": "Verstuurt één voorbeeld-Purchase (100 USD) naar een messaging-id dat je invoert. Er wordt geen opgeslagen contact gebruikt.",
+      "activeNotice": "Testmodus staat aan: gebeurtenissen van dit kanaal worden pas weer meegeteld in rapporten zodra de code is gewist.",
+      "openTestEvents": "Test events openen",
+      "dialogTitle": "Testgebeurtenis verzenden",
+      "dialogDescription": "Eén voorbeeld-Purchase (100 USD) wordt verzonden met je testgebeurteniscode. Plak het voorbeeld-messaging-id uit Events Manager → Test events → Messaging → Graph API Explorer, zodat niets aan een echt contact wordt toegeschreven.",
+      "messagingIdLabel": {
+        "messenger": "Contact-id (page_scoped_user_id)",
+        "instagram": "Contact-id (ig_sid)",
+        "whatsapp": "Klik-id (ctwa_clid)"
+      },
+      "messagingIdPlaceholder": "Plak de voorbeeldwaarde van Meta",
+      "messagingIdHint": "Alleen letters, cijfers, koppeltekens en onderstrepingstekens (max. 512).",
+      "cancel": "Annuleren",
+      "confirmSend": "Verzenden"
+    }
+  },
+  "googleAds": {
+    "title": "Google Ads",
+    "description": "Verstuur offline conversies naar Google Ads voor contacten die via een klik op een Google-advertentie zijn binnengekomen.",
+    "notAvailable": {
+      "description": "De Google Ads-inloggegevens van het platform (OAuth-client-ID en geheim) zijn niet geconfigureerd. Vraag de platformbeheerder ze toe te voegen in de Google Ads-platforminstellingen."
+    },
+    "connect": {
+      "scopes": "We vragen toestemming om je Google Ads-accounts en conversieacties te lezen en om namens jou conversies te versturen.",
+      "button": "Google Ads koppelen",
+      "reconnect": "Opnieuw koppelen",
+      "unnamedAccount": "Google Ads-account",
+      "viaManager": "via manager {manager}",
+      "statusLabel": "Verbindingsstatus",
+      "needsReauthDescription": "De Google-toegang is ingetrokken of verlopen. Koppel opnieuw om conversies te blijven versturen.",
+      "pausedDescription": "Deze verbinding is gepauzeerd, dus er worden geen conversies verstuurd.",
+      "degradedDescription": "Google Ads reageert met fouten. Conversies worden automatisch opnieuw geprobeerd.",
+      "howItWorks": "Hoe het werkt",
+      "steps": {
+        "signIn": "Log in met het Google-account dat je advertenties beheert.",
+        "chooseAccount": "Kies het Google Ads-account.",
+        "pickAction": "Kies de conversieactie in je flows."
+      },
+      "uploadMethod": "Uploadmethode: {method}"
+    },
+    "status": {
+      "connected": "Gekoppeld",
+      "degraded": "Verstoord",
+      "needsReauth": "Opnieuw koppelen vereist",
+      "paused": "Gepauzeerd",
+      "disconnected": "Losgekoppeld"
+    },
+    "picker": {
+      "title": "Kies een Google Ads-account",
+      "legend": "Google Ads-accounts",
+      "loading": "Google Ads-verbinding laden",
+      "loadError": "Kan de Google Ads-verbindingspoging niet laden.",
+      "waiting": "Wachten tot Google de aanmelding bevestigt…",
+      "noTargets": "Er zijn geen Google Ads-accounts gevonden voor dit Google-account.",
+      "alreadyThisWorkspace": "Al gekoppeld aan deze workspace",
+      "alreadyOtherWorkspace": "Al gekoppeld aan een andere workspace",
+      "notSelectable": "Dit account kan niet worden geselecteerd",
+      "connectSelected": "Account koppelen",
+      "sessionExpired": "De verbindingspoging is verlopen. Koppel opnieuw om door te gaan.",
+      "sessionCancelled": "De verbindingspoging is geannuleerd.",
+      "stalled": "De aanmelding is niet voltooid. Gebruik «Google Ads koppelen» om het opnieuw te proberen.",
+      "dismiss": "Negeren",
+      "cancelFailed": "De koppelpoging kon niet worden geannuleerd. Probeer het opnieuw.",
+      "connectErrorTitle": "Google Ads kon niet worden gekoppeld",
+      "errors": {
+        "stateMismatch": "De aanmelding kon niet worden geverifieerd. Koppel opnieuw om door te gaan.",
+        "expired": "De verbindingspoging is verlopen. Koppel opnieuw om door te gaan.",
+        "providerDenied": "Google-toegang is niet verleend. Koppel opnieuw en sta de gevraagde machtigingen toe.",
+        "exchangeFailed": "Kan de Google-aanmelding niet voltooien. Koppel opnieuw om door te gaan.",
+        "providerError": "Google heeft een fout geretourneerd. Probeer het over een moment opnieuw te koppelen.",
+        "noCandidates": "Er is geen actief Google Ads-account gevonden voor deze Google-gebruiker. Accounts die zijn geannuleerd, opgeschort of niet volledig zijn ingesteld, kunnen niet worden gebruikt. Meld je aan met een Google-account dat een actief Google Ads-account beheert.",
+        "alreadyConnected": "Dat Google Ads-account is al gekoppeld.",
+        "quotaExceeded": "De verbindingslimiet van je abonnement is bereikt.",
+        "trialExpired": "Je proefperiode is afgelopen, dus er kunnen geen nieuwe verbindingen worden toegevoegd.",
+        "internalError": "Er is iets misgegaan bij het koppelen. Probeer het opnieuw.",
+        "providerUnavailable": "Google Ads is tijdelijk niet beschikbaar, dus de koppeling kon niet worden voltooid. Probeer het over een moment opnieuw.",
+        "developerTokenMissing": "Google Ads is niet volledig ingesteld: de Google-inloggegevens van het platform zijn onvolledig. Vraag je beheerder de Google Ads-inloggegevens te controleren.",
+        "developerTokenNotApproved": "Google heeft het developer token in de Google Ads-inloggegevens geweigerd. Het token is optioneel: vraag je beheerder het te verwijderen of te vervangen door een geldig token.",
+        "projectNotApproved": "Je Google Cloud-project is nog niet goedgekeurd voor Google Ads-accounts in productie. Vraag Explorer- of Basic-toegang aan voor het project in Google Cloud Console (Google Ads API → Overview) en verbind daarna opnieuw.",
+        "permissionDenied": "Deze Google-gebruiker heeft geen toestemming om toegang te krijgen tot Google Ads-accounts. Log in met een Google-gebruiker die toegang heeft tot een Google Ads-account.",
+        "apiNotEnabled": "De Google Ads API is niet ingeschakeld voor het Google Cloud-project. Vraag je beheerder deze in te schakelen en probeer het daarna opnieuw.",
+        "credentialsInvalid": "Google heeft de inloggegevens geweigerd. Koppel opnieuw om door te gaan.",
+        "scopeMissing": "Niet alle machtigingen zijn verleend. Google Ads heeft toegang nodig tot je Google Ads-account en toestemming om conversies te verzenden. Maak opnieuw verbinding en vink alle machtigingen aan.",
+        "legacyUploadNotAllowed": "Google staat de oude upload-API niet toe voor dit account. Zet de inloggegevens om naar Data Manager en verbind deze werkruimte opnieuw."
+      }
+    },
+    "setup": {
+      "conversionCustomer": "Conversieaccount",
+      "notResolved": "Nog niet bepaald",
+      "retry": "Installatie opnieuw proberen",
+      "dataTermsWarning": "De voorwaarden voor klantgegevens zijn voor dit account niet geaccepteerd. Accepteer ze in Google Ads en probeer de installatie opnieuw.",
+      "errors": {
+        "conversionCustomerInaccessible": "Het conversieaccount is niet toegankelijk met deze Google-aanmelding. Controleer je toegang in Google Ads en probeer het opnieuw.",
+        "customerDataTermsNotAccepted": "De voorwaarden voor klantgegevens zijn voor dit account niet geaccepteerd. Accepteer ze in Google Ads en probeer de installatie opnieuw.",
+        "syncFailed": "Kan de conversieacties niet uit Google Ads lezen. Probeer de installatie over een moment opnieuw.",
+        "developerTokenMissing": "De Google Ads-inloggegevens van het platform (OAuth-client-ID en geheim) zijn niet geconfigureerd."
+      }
+    },
+    "conversionActions": {
+      "title": "Conversieacties",
+      "description": "Alleen ingeschakelde acties die conversies uit klikken importeren, kunnen conversies ontvangen.",
+      "helpLink": "Google Ads Help",
+      "sync": "Conversieacties synchroniseren",
+      "syncedAt": "Laatst gesynchroniseerd {date}",
+      "neverSynced": "Nog niet gesynchroniseerd",
+      "empty": "Geen conversieacties gevonden. Maak in Google Ads een conversieactie voor offline import aan en synchroniseer daarna.",
+      "name": "Naam",
+      "category": "Categorie",
+      "counting": "Telling",
+      "status": "Status",
+      "onePerClickNote": "iOS-klikken (gbraid) kunnen niet naar deze actie worden verzonden. Gebruik de telling \"Elke\" om ze te ontvangen.",
+      "externalNote": "Niet ondersteund: deze actie gebruikt externe attributie, die niet via Google Data Manager kan worden verzonden.",
+      "count": "{count, plural, one {# conversieactie} other {# conversieacties}}"
+    },
+    "events": {
+      "title": "Conversiegeschiedenis",
+      "description": "Recente conversies die naar Google Ads zijn verstuurd. Klik-ID's zijn gemaskeerd.",
+      "empty": "Conversies verschijnen hier zodra een flow of trigger er een verstuurt.",
+      "emptyFiltered": "Geen conversies komen overeen met deze status.",
+      "loadError": "Kan de conversiegeschiedenis niet laden.",
+      "page": "Pagina {page} van {pages}",
+      "filter": {
+        "label": "Status",
+        "all": "Alle statussen"
+      },
+      "columns": {
+        "status": "Status",
+        "action": "Conversieactie",
+        "channel": "Kanaal",
+        "clickId": "Klik-ID",
+        "occurredAt": "Opgetreden",
+        "actions": "Acties",
+        "dedup": "Ontdubbeling",
+        "consent": "Toestemmingsmomentopname",
+        "matching": "Matching",
+        "properties": "Eigenschappen"
+      },
+      "status": {
+        "pending": "In afwachting",
+        "sending": "Wordt verstuurd",
+        "sent": "Verstuurd",
+        "processed": "Verwerkt",
+        "failed": "Mislukt",
+        "skippedNoAccount": "Overgeslagen: geen account",
+        "skippedExpired": "Overgeslagen: verlopen"
+      },
+      "processing": {
+        "processing": "Google is bezig met verwerken",
+        "success": "Geaccepteerd",
+        "partialSuccess": "Gedeeltelijk geaccepteerd",
+        "failed": "Afgewezen",
+        "unknown": "Resultaat onbekend",
+        "timedOut": "Time-out"
+      },
+      "stage": {
+        "delivery": "Bezorging mislukt",
+        "processing": "Verwerking mislukt",
+        "timeout": "Time-out"
+      },
+      "consent": {
+        "adUserDataFull": "Gebruikersgegevens voor advertenties: {status}",
+        "adPersonalizationFull": "Advertentiepersonalisatie: {status}",
+        "status": {
+          "granted": "Verleend",
+          "denied": "Geweigerd",
+          "notProvided": "Niet opgegeven",
+          "notSupported": "Niet ondersteund (verouderde upload)"
+        },
+        "adUserDataShort": "Data: {status}",
+        "adPersonalizationShort": "Pers.: {status}",
+        "delivery": {
+          "toSend": "Te verzenden",
+          "notSent": "Niet verzonden",
+          "unknown": "Niet bevestigd"
+        }
+      },
+      "dedup": {
+        "click": "Per klik",
+        "id": "ID: {id}",
+        "event": "Elke uitvoering"
+      },
+      "matching": {
+        "enabled": "Geconfigureerd: {fields}",
+        "withheldConsent": "Achtergehouden (geen toestemming): {fields}",
+        "unsupportedTransport": "Niet verzonden (oud): {fields}"
+      },
+      "timeProvided": "Opgegeven tijd",
+      "timeProvidedTooltip": "Deze conversietijd komt uit de stap, niet uit het moment waarop de stap werd uitgevoerd."
+    },
+    "validate": {
+      "open": "Aanvraag valideren",
+      "title": "Aanvraag valideren",
+      "description": "Een configuratiecontrole: Google valideert de aanvraag zonder een conversie vast te leggen.",
+      "conversionAction": "Conversieactie",
+      "clickIdType": "Type klik-ID",
+      "clickIdTypes": {
+        "gclid": "GCLID",
+        "gbraid": "GBRAID"
+      },
+      "clickId": "Klik-ID",
+      "submit": "Controle uitvoeren",
+      "ok": "Google heeft deze configuratie geaccepteerd. Er is niets vastgelegd.",
+      "reasons": {
+        "accountNotReady": "Google Ads is nog niet klaar. Rond het koppelen en instellen van je account af en probeer het opnieuw.",
+        "needsReauth": "De Google Ads-koppeling moet opnieuw worden gemaakt.",
+        "rejected": "Google heeft deze aanvraag afgewezen",
+        "legacyUploadNotAllowed": "Google staat de oude upload-API niet toe voor dit account. Zet de inloggegevens om naar Data Manager en verbind deze werkruimte opnieuw."
+      },
+      "invalid": "Kies een conversieactie en voer een geldig klik-ID in.",
+      "consentIncluded": "Bevat toestemming: {values}.",
+      "consentNone": "In deze test is geen toestemming opgenomen.",
+      "consentVariableSkipped": "Toestemming uit een contactveld kan niet worden getest en wordt weggelaten.",
+      "consentNotSentLegacy": "Advertentiepersonalisatie ({status}) wordt niet verzonden met de oude uploadmethode."
+    },
+    "conversionFields": {
+      "conversionAction": "Conversieactie",
+      "unavailableOption": "{id} (niet beschikbaar)",
+      "unavailableWarning": "De geselecteerde conversieactie is niet meer beschikbaar of niet ingeschakeld. Kies een andere voordat je publiceert.",
+      "externalOption": "{name} (externe attributie, niet ondersteund)",
+      "loading": "Conversieacties laden",
+      "loadError": "Je Google Ads-conversieacties konden niet worden geladen.",
+      "notConnected": "Koppel Google Ads om conversies te verzenden.",
+      "noActions": "Geen ingeschakelde conversieacties gevonden. Synchroniseer ze in je Google Ads-instellingen.",
+      "openSettings": "Google Ads-instellingen openen",
+      "needsReauth": "De Google Ads-koppeling moet opnieuw worden gemaakt.",
+      "dedupModeClick": "Eén keer per advertentieklik",
+      "dedupModeClickHelp": "Telt deze conversieactie één keer per advertentieklik.",
+      "dedupModeIdHelp": "Telt één keer per verschillende ID.",
+      "dedupModeId": "Eén keer per order- of gebeurtenis-ID",
+      "dedupModeEvent": "Bij elke uitvoering",
+      "dedupModeEventHelp": "Registreert bij elke uitvoering een nieuwe conversie, ook voor dezelfde advertentieklik. Een nieuwe poging van dezelfde uitvoering wordt niet dubbel geteld.",
+      "dedupId": "Order- of gebeurtenis-ID",
+      "dedupIdPlaceholder": "bijv. '{{order_number}}'",
+      "dedupIdHelp": "Gebruik hetzelfde ID opnieuw bij nieuwe pogingen en imports. Gebruik voor elke aankoop of gebeurtenis een ander ID.",
+      "dedupIdExample": "Geen order-ID bij verkoop via chat? Combineer het contact met een veld dat je per verkoop instelt, bijv. {example}. Gebruik niet de huidige tijd: die verandert bij elke run.",
+      "dedupIdInfoLabel": "Over de order- of gebeurtenis-ID",
+      "dedupLeadIdNote": "Elk ander ID telt als een nieuwe lead van dezelfde klik.",
+      "dedupClickNote": "Herhaalde aankopen van dezelfde klik worden niet geteld.",
+      "dedupLegacyNote": "Legacy-upload: Google krijgt een versluierde ID.",
+      "additionalOptions": "Extra opties",
+      "additionalOptionsCount": "{count} ingesteld",
+      "customerMatching": "Klantmatching",
+      "customerMatchingCount": "{count} aan",
+      "customerMatchingLegacy": "Niet ondersteund door de oude uploadmethode. Schakel de verbinding over naar de Data Manager API om dit te gebruiken.",
+      "customerMatchingTermsNotAccepted": "Wordt niet verzonden totdat de voorwaarden voor klantgegevens zijn geaccepteerd in de conversie-instellingen van Google Ads.",
+      "learnMore": "Meer informatie",
+      "matchEmailLabel": "E-mailadres",
+      "matchPhoneLabel": "Telefoonnummer",
+      "matchEmailPlaceholder": "'{{email}}'",
+      "matchPhonePlaceholder": "'{{phone}}'",
+      "customerTypeLabel": "Klanttype",
+      "customerValueBucketLabel": "Klantwaarde",
+      "customerPropertiesLegacy": "Niet ondersteund door de oude uploadmethode. Schakel de verbinding over naar de Data Manager API om dit te gebruiken.",
+      "conversionTime": "Conversietijd",
+      "conversionTimePlaceholder": "Laat leeg om het tijdstip te gebruiken waarop deze stap wordt uitgevoerd",
+      "valuePlaceholder": "Optioneel, bijv. 250",
+      "currencyPlaceholder": "Optioneel, USD",
+      "validation": {
+        "dedupIdRequired": "Voer een ID in of kies Eén keer per advertentieklik.",
+        "dedupIdTooLong": "Gebruik maximaal 64 tekens.",
+        "matchTemplateInvalid": "Gebruik slechts één variabele, zoals '{{email}}'. Een vaste waarde is niet toegestaan.",
+        "customerTypeInvalid": "Gebruik NEW of RETURNING, of een variabele zoals '{{customer_type}}'.",
+        "customerValueBucketInvalid": "Gebruik LOW, MEDIUM of HIGH, of een variabele zoals '{{customer_value}}'.",
+        "timeFormat": "Gebruik een datum met tijdzone, bijv. 2026-10-08T14:30:00+07:00.",
+        "timeInvalidDate": "Deze datum bestaat niet.",
+        "currencyRequired": "Voeg een valuta toe als je een waarde instelt.",
+        "valueRequired": "Voeg een waarde toe als je een valuta instelt.",
+        "conversionActionRequired": "Kies een conversieactie.",
+        "valueInvalid": "Gebruik een gewoon getal, bijv. 19.99.",
+        "valueTooLarge": "Deze waarde is te groot.",
+        "currencyInvalid": "Gebruik een valutacode van 3 letters, bijv. USD."
+      },
+      "consentInvalid": "De toestemmingsinstellingen kunnen niet worden gelezen, dus deze stap zal mislukken.",
+      "consentFixLink": "Los het op in instellingen",
+      "dedupModeLabel": "Dubbele conversies voorkomen"
+    },
+    "summary": {
+      "conversionAction": "Conversieactie {id}",
+      "notConfigured": "Kies een conversieactie",
+      "dedupClick": "Eén keer per advertentieklik",
+      "dedupId": "ID: {id}",
+      "dedupEvent": "Bij elke uitvoering"
+    },
+    "consent": {
+      "title": "Toestemming voor conversiegegevens",
+      "description": "Of klanten ermee instemden hun gegevens voor advertenties te delen. Geldt voor elke conversie die deze werkruimte verstuurt.",
+      "learnMore": "Meer informatie",
+      "notConnected": "Geldt voor conversies zodra een Google Ads-account is gekoppeld.",
+      "adUserData": {
+        "label": "Gebruikersgegevens voor advertenties"
+      },
+      "adPersonalization": {
+        "label": "Advertentiepersonalisatie"
+      },
+      "source": {
+        "notProvided": "Niet opgegeven",
+        "granted": "Altijd toegestaan",
+        "denied": "Altijd geweigerd",
+        "variable": "Uit een contactveld"
+      },
+      "help": {
+        "notProvided": "Weggelaten. Google gebruikt de standaardtoestemming van je account.",
+        "granted": "Elke conversie geeft aan dat de klant akkoord ging.",
+        "denied": "Elke conversie geeft aan dat de klant weigerde.",
+        "variable": "Gebruik \"{granted}\" of \"{denied}\". Leeg wordt overgeslagen; al het andere laat de stap mislukken."
+      },
+      "templatePlaceholder": "bijv. '{{gdpr_consent}}'",
+      "templateLabel": "Contactveld voor {setting}",
+      "validation": {
+        "templateRequired": "Voeg een contactveld in, bijv. '{{gdpr_consent}}'.",
+        "templateTooLong": "Gebruik maximaal 200 tekens."
+      },
+      "legacy": {
+        "title": "Niet verzonden met legacy-upload",
+        "body": "Legacy-upload accepteert alleen toestemming voor gebruikersgegevens voor advertenties. Maak opnieuw verbinding met Data Manager om het te verzenden."
+      },
+      "save": "Opslaan",
+      "saved": "Toestemmingsinstellingen opgeslagen",
+      "invalidStored": "De opgeslagen toestemmingsinstellingen konden niet worden gelezen. Stappen die conversies verzenden mislukken totdat je nieuwe instellingen opslaat."
+    },
+    "errors": {
+      "supportSession": "Platformsupportsessies kunnen de Google Ads-verbinding niet wijzigen of conversies versturen.",
+      "developerTokenMissing": "Google Ads is nog niet beschikbaar: de Google Ads-inloggegevens van het platform (OAuth-client-ID en geheim) zijn niet geconfigureerd.",
+      "notConnected": "Google Ads is niet gekoppeld voor deze workspace.",
+      "sessionNotFound": "Deze Google Ads-verbindingspoging is niet gevonden of is verlopen. Begin opnieuw.",
+      "pickFailed": "Kan dat Google Ads-account niet koppelen. Mogelijk is het al elders gekoppeld of is de poging verlopen.",
+      "notRetryable": "Deze conversie kan niet opnieuw worden geprobeerd: alleen mislukte conversies kunnen opnieuw worden geprobeerd.",
+      "authorizationUnavailable": "Kan de Google-aanmelding niet starten. Probeer het over een moment opnieuw.",
+      "credentialSecretsRequired": "Voer het clientgeheim in. Het is nog niet opgeslagen."
+    },
+    "enums": {
+      "category": {
+        "default": "Standaard",
+        "purchase": "Aankoop",
+        "addToCart": "Toevoegen aan winkelwagen",
+        "beginCheckout": "Afrekenen starten",
+        "subscribePaid": "Betaald abonnement",
+        "phoneCallLead": "Lead via telefoongesprek",
+        "importedLead": "Geïmporteerde lead",
+        "submitLeadForm": "Leadformulier verzenden",
+        "bookAppointment": "Afspraak boeken",
+        "signup": "Aanmelding",
+        "requestQuote": "Offerte aanvragen",
+        "getDirections": "Routebeschrijving",
+        "outboundClick": "Uitgaande klik",
+        "contact": "Contact",
+        "engagement": "Betrokkenheid",
+        "storeVisit": "Winkelbezoek",
+        "storeSale": "Winkelverkoop",
+        "qualifiedLead": "Gekwalificeerde lead",
+        "convertedLead": "Geconverteerde lead",
+        "pageView": "Paginaweergave",
+        "download": "Download",
+        "lead": "Lead"
+      },
+      "countingType": {
+        "onePerClick": "Eén per klik",
+        "manyPerClick": "Meerdere per klik"
+      },
+      "actionStatus": {
+        "enabled": "Ingeschakeld",
+        "removed": "Verwijderd",
+        "hidden": "Verborgen"
+      },
+      "unknown": "Overig ({value})"
+    },
+    "uploadMethods": {
+      "dataManager": "Data Manager",
+      "legacy": "Verouderde upload"
+    },
+    "stepErrors": {
+      "google_ads_unsupported_channel": "Het kanaal van dit contact kan geen Google Ads-conversies verzenden.",
+      "google_ads_no_click": "Het contact kwam niet via een klik op een Google-advertentie.",
+      "google_ads_no_account": "Er is geen gereed Google Ads-account verbonden.",
+      "google_ads_unknown_conversion_action": "De conversieactie bestaat niet meer. Synchroniseer en kies een andere.",
+      "google_ads_action_disabled": "De conversieactie is niet ingeschakeld in Google Ads.",
+      "google_ads_incompatible_action": "Deze actie telt één conversie per klik, wat Google niet toestaat voor deze iOS-klik.",
+      "google_ads_unsupported_action": "Deze actie gebruikt externe attributie en kan deze conversies niet ontvangen.",
+      "google_ads_invalid_value": "De waarde of valuta was ongeldig.",
+      "google_ads_invalid_input": "De instellingen van de stap waren ongeldig.",
+      "google_ads_record_failed": "De conversie kon niet worden opgeslagen.",
+      "google_ads_missing_dedup_id": "De order- of gebeurtenis-ID was leeg.",
+      "google_ads_invalid_dedup_id": "De order- of gebeurtenis-ID was langer dan 64 tekens.",
+      "google_ads_missing_occurrence_key": "Deze uitvoering had geen stabiele identificatie, dus de conversie is niet vastgelegd.",
+      "google_ads_invalid_customer_property": "Het klanttype of de klantwaarde was geen toegestane waarde.",
+      "google_ads_invalid_consent_config": "De opgeslagen toestemmingsinstellingen konden niet worden gelezen.",
+      "google_ads_invalid_consent_value": "Een toestemmingsveld bevatte een andere waarde dan \"granted\" of \"denied\".",
+      "google_ads_invalid_conversion_time": "De conversietijd was geen geldige datum met tijdzone, of lag in de toekomst."
+    },
+    "stats": {
+      "filters": {
+        "allChannels": "Alle kanalen",
+        "allActions": "Alle acties",
+        "channelLabel": "Kanaal",
+        "actionLabel": "Conversieactie"
+      },
+      "tiles": {
+        "confirmed": "Bevestigd",
+        "awaitingGoogle": "Wacht op Google",
+        "queued": "In wachtrij",
+        "failed": "Mislukt",
+        "skipped": "Overgeslagen",
+        "deliveryRate": "Afleverpercentage",
+        "confirmedHelp": "Google heeft bevestigd dat deze conversies zijn vastgelegd.",
+        "awaitingGoogleHelp": "Naar Google verzonden, wacht tot Google de verwerking heeft afgerond.",
+        "queuedHelp": "Wacht om te worden verzonden.",
+        "failedHelp": "Niet geaccepteerd of niet verwerkt door Google.",
+        "skippedHelp": "Niet verzonden: geen account gereed, of te oud voor Google.",
+        "deliveryRateHelp": "Bevestigd ÷ (bevestigd + mislukt). In wachtrij, wachtend en overgeslagen worden niet meegeteld."
+      },
+      "confirmedValue": "Bevestigde waarde",
+      "confirmedValueItem": "{value} ({count, plural, one {# conversie} other {# conversies}})",
+      "moreCurrencies": "+{count} meer",
+      "chart": {
+        "title": "Conversies per dag",
+        "viewAsTable": "Weergeven als tabel",
+        "tableCaption": "Conversies per dag",
+        "dateColumn": "Datum"
+      },
+      "byAction": {
+        "title": "Per conversieactie",
+        "truncated": "De 50 acties met de meeste conversies worden getoond."
+      },
+      "byChannel": {
+        "title": "Per kanaal",
+        "confirmedCount": "{count, plural, one {# bevestigd} other {# bevestigd}}"
+      },
+      "failures": {
+        "title": "Fouten per fase",
+        "unknown": "Onbekend"
+      },
+      "empty": {
+        "title": "Geen conversies in deze periode",
+        "description": "Conversies verschijnen hier zodra een flowstap of trigger er een verzendt."
+      },
+      "error": {
+        "title": "Statistieken konden niet worden geladen",
+        "retry": "Opnieuw proberen"
+      },
+      "viewStatistics": "Statistieken bekijken",
+      "deliveryRateNone": "—",
+      "deliveryRateNoneHelp": "Geen bevestigde of mislukte conversies in deze periode.",
+      "actionFallback": "Actie {id}",
+      "openSettings": "Instellingen van Google Ads openen",
+      "outcome": {
+        "title": "Verdeling van resultaten"
+      },
+      "googleReport": {
+        "title": "Reported by Google Ads",
+        "description": "Conversions Google Ads itself recorded for these days, next to what ChatbotX sent and Google confirmed.",
+        "sent": "Confirmed by ChatbotX",
+        "reported": "Reported by Google",
+        "note": "Google can take hours to update its reports, and counts follow the action's own settings, so small gaps are normal.",
+        "unavailable": "Google Ads reporting is not available right now."
+      }
+    }
+  },
+  "minigames": {
+    "title": "Gamification",
+    "description": "Maak en beheer minigames met prijstrekking voor je klanten.",
+    "types": {
+      "luckyWheel": "Gelukswiel",
+      "jackpot": "Jackpot",
+      "gashapon": "Gashapon",
+      "drawLots": "Loten trekken",
+      "scratchOff": "Kraslot"
+    },
+    "createDialog": {
+      "title": "Kies een type minigame",
+      "comingSoon": "Binnenkort beschikbaar"
+    },
+    "prizeSettings": {
+      "sumOfProbabilities": "Som van alle kansen: {value}%",
+      "loseProbability": "Verlieskans: {value}%",
+      "winProbability": "Winkans: {value}%",
+      "newPrize": "Nieuwe prijs",
+      "prizeNameCustomFieldLabel": "Prijsnaam opslaan in Aangepast veld"
+    },
+    "prizeItemDialog": {
+      "prizeTitle": "Prijs bewerken",
+      "nonWinningTitle": "Verliesinstelling bewerken",
+      "prizeNameLabel": "Prijsnaam",
+      "nonWinningTitleLabel": "Titel",
+      "loseImageDescription": "Aanbevolen formaat 120x120px",
+      "quantityLabel": "Prijsaantal",
+      "quantityDescription": "Aantal keren dat deze prijs nog gewonnen kan worden; neemt met 1 af bij elke winst. Laat leeg voor onbeperkt."
+    },
+    "outcomeMessage": {
+      "enableWin": "Stuur een bericht naar de winnaar die de prijs heeft ontvangen",
+      "enableLose": "Stuur een bericht wanneer de speler niet wint",
+      "mode": "Berichttype",
+      "modeText": "Tekst",
+      "modeFlow": "Flow",
+      "text": "Bericht"
+    },
+    "winningMessageDialog": {
+      "title": "Instellingen winbericht",
+      "titleLabel": "Titel",
+      "prizeNameHint": "Je kunt '{{prize_name}}' gebruiken in de titel en beschrijving om de prijsnaam in te voegen.",
+      "acceptButtonText": "Tekst accepteerknop",
+      "shareButtonText": "Tekst deelknop",
+      "shareButtonDescription": "Beschrijving deelknop"
+    },
+    "nonWinningMessageDialog": {
+      "title": "Instellingen verliesbericht",
+      "titleLabel": "Titel",
+      "shareButtonText": "Tekst deelknop",
+      "shareButtonDescription": "Beschrijving deelknop"
+    },
+    "preview": {
+      "start": "Start",
+      "shareWithFriends": "Delen met vrienden",
+      "jackpotHeader": "JACKPOT",
+      "jackpotBanner": "Jackpot",
+      "luckyWheelHeader": "GELUKSWIEL",
+      "gashaponHeader": "GASHAPON",
+      "drawLotsHeader": "LOTEN TREKKEN",
+      "scratchOffHeader": "KRAS & WIN",
+      "scratchOffCardTitle": "Geluksster kraslotjes",
+      "comingSoon": "Gedetailleerde voorvertoning voor dit speltype volgt binnenkort"
+    },
+    "form": {
+      "generalSettingsTitle": "Algemene instellingen",
+      "appearanceTitle": "Uiterlijk",
+      "playerSettingsTitle": "Spelerinstellingen",
+      "prizeSettingsTitle": "Prijsinstellingen",
+      "validationFailed": "Corrigeer de gemarkeerde velden voordat je opslaat."
+    },
+    "generalSettings": {
+      "showName": "Zichtbaar",
+      "playedAt": "Gespeeld op",
+      "rulesDescription": "Spelregels",
+      "openerTags": "Tag contacten die de spellink openen",
+      "playerTags": "Tag spelers",
+      "newFriendTags": "Tag nieuwe vrienden"
+    },
+    "appearance": {
+      "backgroundColor": "Achtergrondkleur",
+      "machineColor": "Machinekleur",
+      "decorativeColor": "Decoratiekleur",
+      "ruleTextColor": "Kleur regeltekst",
+      "backgroundImage": "Achtergrondafbeelding",
+      "backgroundImageDescription": "Aanbevolen breedte: 1024px",
+      "prizeDescriptionImage": "Prijsbeschrijvingsafbeelding (optioneel)",
+      "prizeDescriptionImageDescription": "Aanbevolen breedte: 750px",
+      "startButtonImage": "Afbeelding startknop",
+      "startButtonImageDescription": "Aanbevolen formaat: 360x105px"
+    },
+    "playerSettings": {
+      "drawsPerPerson": "Aantal trekkingskansen per persoon",
+      "maxSharesPerPerson": "Max. bonustrekkingen uit verwijzingen",
+      "maxSharesPerPersonHint": "Elke vriend die via de uitnodigingslink van deze speler binnenkomt en jou een bericht stuurt, levert hem 1 extra trekking op, tot deze limiet. Zet op 0 om verwijzingsbonussen uit te schakelen. Bonustrekkingen moeten vóór de volgende reset worden gebruikt.",
+      "sharingNode": "Deelstap",
+      "sharingNodeHint": "De flow-stap die wordt uitgevoerd wanneer een vriend de deellink van deze speler opent. Laat leeg om de knop Delen te verbergen.",
+      "resetPolicyLabel": "Trekkingen resetten",
+      "resetNever": "Aantal trekkingen niet resetten",
+      "resetEveryNDays": "Reset het aantal trekkingen elke",
+      "resetIntervalDaysSuffix": "dag(en)"
+    },
+    "publicUrl": {
+      "label": "Openbare URL",
+      "hint": "Kopieer en plak de URL in je flow, broadcast of sequence om deze minigame te delen."
+    },
+    "play": {
+      "close": "Sluiten",
+      "drawsRemaining": "Nog {count} pogingen over",
+      "noDrawsLeft": "Je hebt geen pogingen meer over voor dit minispel.",
+      "notStartedYet": "Dit minispel is nog niet begonnen.",
+      "ended": "Dit minispel is beëindigd.",
+      "forbiddenTitle": "Toegang geweigerd",
+      "forbiddenDescription": "Deze link is ongeldig of verlopen.",
+      "comingSoonTitle": "Binnenkort beschikbaar",
+      "comingSoonDescription": "Dit type minispel is nog niet speelbaar.",
+      "rateLimited": "Te veel verzoeken. Wacht even en probeer het opnieuw."
+    },
+    "list": {
+      "gamesPlayed": "Gespeelde spellen",
+      "participants": "Deelnemers",
+      "winners": "Winnaars",
+      "shares": "Verwijzingen"
+    },
+    "history": {
+      "title": "Geschiedenis",
+      "played": "Gespeeld",
+      "remaining": "Resterende trekkingen",
+      "shares": "Verwijzingen",
+      "openedAt": "Eerst geopend",
+      "lastPlayedAt": "Laatst gespeeld",
+      "unknownContact": "Onbekend contact",
+      "conversationNotFound": "Geen gesprek gevonden voor dit contact",
+      "popupBlocked": "Sta pop-ups voor deze site toe en probeer het opnieuw.",
+      "record": "Logboek",
+      "recordDialog": {
+        "title": "Speellogboek",
+        "win": "Gewonnen",
+        "lose": "Geen prijs",
+        "empty": "Nog geen speelrecords"
+      }
+    }
+  },
+  "mediaLibrary": {
+    "title": "Mediabibliotheek",
+    "searchPlaceholder": "Bestanden zoeken...",
+    "newFolder": "Nieuwe map",
+    "recent": "Recent",
+    "favourite": "Favoriet",
+    "upload": "Uploaden",
+    "select": "Selecteren",
+    "bulkSelect": "Meerdere selecteren",
+    "deleteFolder": "Map verwijderen",
+    "renameFolder": "Map hernoemen",
+    "noFiles": "Geen bestanden gevonden",
+    "noFolders": "Nog geen mappen",
+    "folderNamePlaceholder": "Mapnaam",
+    "confirmDeleteFolder": "Map en alle bestanden verwijderen?",
+    "confirmDeleteFolderDescription": "Alle bestanden in deze map worden permanent van de server verwijderd. Deze actie kan niet ongedaan worden gemaakt.",
+    "confirmDeleteFile": "Bestand verwijderen?",
+    "confirmDeleteFileDescription": "Dit bestand wordt permanent van de server verwijderd.",
+    "addToFavourites": "Toevoegen aan favorieten",
+    "removeFromFavourites": "Verwijderen uit favorieten",
+    "deleteFile": "Bestand verwijderen",
+    "selectOnlyOneFile": "Je kunt maar 1 bestand selecteren",
+    "confirmDeleteFiles": "{count, plural, =1 {1 bestand verwijderen?} other {# bestanden verwijderen?}}",
+    "confirmDeleteFilesDescription": "Deze bestanden worden permanent van de server verwijderd. Deze actie kan niet ongedaan worden gemaakt.",
+    "filesCount": "{count, plural, =0 {Geen bestanden} =1 {1 bestand} other {# bestanden}}",
+    "openMediaLibrary": "Mediabibliotheek openen",
+    "uploadFailed": "Uploaden van {name} mislukt"
+  },
+  "adsCampaign": {
+    "title": "Advertenties",
+    "createCta": "Advertentie maken",
+    "prereq": {
+      "notConnected": "Verbind Facebook Ads om berichtenadvertenties voor dit kanaal te maken.",
+      "connectCta": "Facebook Ads verbinden"
+    },
+    "specialAdCategory": {
+      "none": "Geen",
+      "housing": "Huisvesting",
+      "employment": "Werkgelegenheid",
+      "credit": "Krediet",
+      "issues": "Maatschappelijke kwesties, verkiezingen of politiek",
+      "financialProducts": "Financiële producten en diensten",
+      "onlineGambling": "Online gokken en gaming"
+    },
+    "fields": {
+      "objective": {
+        "label": "Doelstelling",
+        "value": "Interactie (berichten)"
+      },
+      "specialAdCategory": {
+        "label": "Speciale advertentiecategorie",
+        "description": "Als u een beperkte categorie selecteert, worden leeftijd, geslacht en andere targetingopties verwijderd die Meta voor die categorie niet toestaat.",
+        "restrictedNote": "Targeting op leeftijd en geslacht is uitgeschakeld omdat een beperkte speciale advertentiecategorie is geselecteerd."
+      },
+      "adAccount": {
+        "label": "Advertentieaccount"
+      },
+      "whatsappPage": {
+        "label": "Facebook-pagina",
+        "description": "Voor WhatsApp-advertenties is nog steeds een gekoppelde Facebook-pagina vereist — selecteer de verbonden pagina die u wilt gebruiken."
+      },
+      "dailyBudget": {
+        "label": "Dagbudget",
+        "placeholder": "bijv. 2000",
+        "description": "Voer het bedrag in de kleinste valuta-eenheid van uw advertentieaccount in (bijv. centen voor USD)."
+      },
+      "countries": {
+        "label": "Landen"
+      },
+      "ageRange": {
+        "min": "Minimumleeftijd",
+        "max": "Maximumleeftijd"
+      },
+      "gender": {
+        "label": "Geslacht",
+        "male": "Man",
+        "female": "Vrouw"
+      },
+      "schedule": {
+        "start": "Starttijd",
+        "end": "Eindtijd"
+      },
+      "destination": {
+        "label": "Bestemming"
+      },
+      "callToAction": {
+        "label": "Call-to-action",
+        "derivedNote": "De call-to-actionknop ({type}) wordt automatisch afgeleid van het kanaal."
+      },
+      "specialAdCategoryCountry": {
+        "label": "Land van advertentiecategorie",
+        "description": "Vereist door Meta voor de categorie maatschappelijke kwesties, verkiezingen of politiek — het land waarin je deze advertenties mag weergeven."
+      }
+    },
+    "welcomeMessage": {
+      "title": "Welkomstbericht",
+      "label": "Welkomstbericht",
+      "description": "Wordt automatisch verzonden wanneer iemand vanuit deze advertentie een gesprek start.",
+      "mode": {
+        "default": "Standaardbericht van Meta gebruiken",
+        "single": "Eén bericht",
+        "templates": "Tot 5 berichtvarianten testen"
+      },
+      "messageLabel": "Bericht",
+      "templateLabel": "Variant {index}",
+      "headingPlaceholder": "Kop (optioneel)",
+      "addTemplate": "Variant toevoegen",
+      "templatesLimit": "Er kunnen maximaal {max} varianten worden getest."
+    },
+    "creative": {
+      "mediaRequired": "Upload een afbeelding of video om door te gaan.",
+      "mediaType": {
+        "label": "Advertentiemateriaal",
+        "orVideo": "of video",
+        "selectAdAccountFirst": "Selecteer een advertentieaccount voordat u media uploadt.",
+        "uploadImage": "Afbeelding uploaden",
+        "uploadVideo": "Video uploaden"
+      },
+      "uploading": "Uploaden...",
+      "imageUploadFailed": "Afbeelding uploaden mislukt. Probeer het opnieuw.",
+      "videoProcessing": "Video wordt verwerkt...",
+      "videoReady": "Video gereed",
+      "videoProcessingFailed": "Video verwerken mislukt. Probeer een ander bestand.",
+      "previewAlt": "Voorbeeld van advertentiemateriaal",
+      "primaryText": "Primaire tekst",
+      "headline": "Kop"
+    },
+    "wizard": {
+      "createDraft": "Als gepauzeerd concept maken",
+      "campaignStep": {
+        "title": "Campagne",
+        "namePlaceholder": "Geef deze advertentie een naam"
+      },
+      "adSetStep": {
+        "title": "Advertentieset"
+      },
+      "creativeStep": {
+        "title": "Advertentiemateriaal"
+      },
+      "preflightStep": {
+        "title": "Controle"
+      },
+      "errors": {
+        "nameRequired": "Voer een naam in voor deze advertentie.",
+        "adAccountRequired": "Selecteer een advertentieaccount.",
+        "budgetRequired": "Voer een dagbudget in.",
+        "countryRequired": "Selecteer ten minste één land.",
+        "mediaRequired": "Upload een afbeelding of video."
+      }
+    },
+    "preflight": {
+      "title": "Overzicht",
+      "pausedNote": "Deze advertentie wordt als gepauzeerd concept gemaakt. Er gaat niets live en er wordt geen geld uitgegeven totdat u de advertentie publiceert."
+    },
+    "publishConfirm": {
+      "title": "Deze advertentie publiceren?",
+      "description": "Publiceren activeert de campagne, advertentieset en advertentie in die volgorde. Meta begint uw budget te besteden zodra de levering start.",
+      "confirm": "Publiceren"
+    },
+    "list": {
+      "viewOnMeta": "Bekijk op Meta",
+      "empty": "Nog geen berichtenadvertenties.",
+      "createState": "Conceptstatus",
+      "actions": "Acties",
+      "notPublishedYet": "Nog niet gepubliceerd",
+      "draftReady": "Concept gereed",
+      "createFailed": "Aanmaken mislukt",
+      "creating": "Bezig met maken...",
+      "publish": "Publiceren",
+      "pause": "Pauzeren"
+    },
+    "messages": {
+      "created": "Advertentieconcept gemaakt.",
+      "actionSucceeded": "Gereed."
+    },
+    "box": {
+      "ctwa": {
+        "title": "CTWA",
+        "description": "Maak en beheer Click-to-WhatsApp-advertenties hier."
+      },
+      "ctm": {
+        "title": "CTM",
+        "description": "Maak en beheer Click-to-Messenger-advertenties hier."
+      },
+      "ctid": {
+        "title": "CTID",
+        "description": "Maak en beheer Click-to-Instagram-advertenties hier."
+      },
+      "connectCta": "Facebook Ads verbinden",
+      "reconnectCta": "Opnieuw verbinden",
+      "reconnectNeeded": "Deze verbinding moet opnieuw tot stand worden gebracht.",
+      "refresh": "Vernieuwen",
+      "whatsappPageRequiredNote": "Voor click-to-WhatsApp-advertenties is nog steeds een gekoppelde Facebook-pagina vereist (een vereiste van Meta) — u kiest deze bij het maken van een advertentie.",
+      "emptyDashboardNote": "Advertenties die hier worden gemaakt, verschijnen nu automatisch op het advertentiedashboard van dit kanaal — selecteer deze integratie in het filter daar om de accounts en uitgaven te zien."
+    },
+    "insights": {
+      "title": "Prestaties",
+      "empty": "Nog geen gegevens",
+      "impressions": "Vertoningen",
+      "reach": "Bereik",
+      "spend": "Uitgaven",
+      "clicks": "Klikken",
+      "conversations": "Gesprekken",
+      "costPerConversation": "Kosten/gesprek",
+      "costPerConversationTooltip": "Gemiddelde kosten per gestart berichtgesprek.",
+      "datePresetLabel": "Periode:",
+      "datePreset": {
+        "maximum": "Alle tijd",
+        "last_30d": "Laatste 30 dagen",
+        "last_7d": "Laatste 7 dagen"
+      }
+    }
+  },
+  "accountFields": {
+    "title": "Botvelden"
+  },
+  "aiAgentActions": {
+    "title": "AI Actions",
+    "description": "Let the AI automatically take actions while talking to customers.",
+    "when": "When",
+    "whenPlaceholder": "Describe when the AI should do this...",
+    "whatShouldAIDo": "What should the AI do?",
+    "action": "Action {number}",
+    "actionType": "Action type",
+    "addRule": "Add action rule",
+    "addAction": "Add action",
+    "duplicateRule": "Duplicate rule",
+    "removeRule": "Remove rule",
+    "removeAction": "Remove action",
+    "moveUp": "Move action up",
+    "moveDown": "Move action down",
+    "flow": "Flow",
+    "admin": "Admin",
+    "tag": "Tag",
+    "customField": "Custom field",
+    "actionPrompt": {
+      "label": "Action prompt",
+      "description": "Private instructions used only when the AI evaluates action rules.",
+      "placeholder": "Add optional instructions for matching action rules...",
+      "open": "Configure action prompt",
+      "reset": "Reset"
+    },
+    "actionTypes": {
+      "sendFlow": "Flow verzenden",
+      "assignConversation": "Gesprek toewijzen",
+      "removeAssignment": "Toewijzing verwijderen",
+      "transferToHuman": "Overdragen aan medewerker",
+      "addTag": "Tag toevoegen",
+      "removeTag": "Tag verwijderen",
+      "setCustomField": "Aangepast veld instellen",
+      "clearCustomField": "Aangepast veld wissen",
+      "markFollowUp": "Opvolgen",
+      "removeFollowUp": "Opvolging verwijderen",
+      "transferToBot": "Gesprek overdragen aan bot",
+      "archive": "Archiveren",
+      "blockContact": "Contact blokkeren"
+    }
+  },
+  "openLink": {
+    "title": "Link openen",
+    "invalidTitle": "Ongeldige link.",
+    "invalidDescription": "Deze link is ongeldig of verlopen.",
+    "openZaloGroup": "Zalo-groep openen",
+    "openZalo": "Zalo openen",
+    "openMessenger": "Messenger openen"
+  },
+  "conversationRouting": {
+    "owner": {
+      "metaAi": "Meta AI",
+      "partner": "Partner",
+      "partnerWithRole": "Partner · {role}",
+      "self": "jou"
+    },
+    "roles": {
+      "ai_agent": "Meta AI",
+      "ctwa": "Click-to-WhatsApp-advertenties",
+      "customer_service": "Klantenservice",
+      "escalation": "Escalatie",
+      "marketing": "Marketing",
+      "utility": "Utility"
+    },
+    "pill": {
+      "standby": "Standby ({owner})",
+      "owned": "Actief",
+      "tooltip": "Behandeld door {owner}"
+    },
+    "release": {
+      "label": "Vrijgeven",
+      "tooltip": "Geef dit gesprek vrij zodat andere apps kunnen antwoorden",
+      "success": "Gesprek vrijgegeven"
+    },
+    "pass": {
+      "menuItem": "Doorgeven aan escalatie",
+      "title": "Doorgeven aan de escalatiepartner?",
+      "description": "Dit gesprek overdragen aan je escalatiepartner? Je antwoorden worden gepauzeerd totdat het gesprek terugkomt.",
+      "confirm": "Doorgeven",
+      "success": "Gesprek doorgegeven aan de escalatiepartner"
+    },
+    "aiHandover": {
+      "label": "BizAI",
+      "tooltip": "Dit gesprek teruggeven aan de AI-assistent",
+      "title": "Teruggeven aan de AI-assistent?",
+      "description": "De AI-assistent gaat deze klant weer beantwoorden. Je antwoorden worden gepauzeerd tot het gesprek bij jou terugkomt. Meta garandeert niet dat de assistent elk bericht beantwoordt.",
+      "confirm": "Teruggeven",
+      "success": "Gesprek teruggegeven aan de AI-assistent"
+    },
+    "composer": {
+      "aiStandbyHint": "Replying takes over this conversation from the AI assistant.",
+      "title": "Je staat in standby (alleen luisteren)",
+      "description": "Een externe partner behandelt dit gesprek. Het berichtenveld is vergrendeld om dubbele antwoorden te voorkomen.",
+      "takeOver": "Overnemen",
+      "takeOverSuccess": "Je behandelt dit gesprek nu",
+      "notEscalation": "Alleen de escalatiepartner kan overnemen. Routing wordt ingesteld in Meta Business Suite.",
+      "notPrimaryReceiver": "Deze app moet de primaire ontvanger van de pagina zijn om over te nemen. Stel dit in bij de Handover Protocol-instellingen van de pagina.",
+      "learnMore": "Meer informatie",
+      "dismiss": "Toch verzenden"
+    },
+    "divider": {
+      "ownerHandling": "{owner} behandelt dit gesprek nu",
+      "handedOver": "{previousOwner} heeft dit gesprek aan jou teruggegeven",
+      "selfHandling": "Je behandelt dit gesprek nu",
+      "takenOver": "Je hebt dit gesprek overgenomen",
+      "released": "Gesprek vrijgegeven",
+      "passed": "Gesprek doorgegeven aan de escalatiepartner",
+      "serviceRejected": "Bericht niet verzonden: {owner} behandelt dit gesprek"
+    },
+    "context": {
+      "title": "Gesprekscontext",
+      "summaryBadge": "AI-samenvatting",
+      "historyBadge": "Geschiedenis",
+      "customer": "Klant",
+      "business": "Bedrijf",
+      "handoverNote": "Overdrachtsnotitie: {note}",
+      "showAll": "Alles tonen ({count})",
+      "showLess": "Minder tonen"
+    },
+    "echo": {
+      "partner": "Partner"
+    },
+    "panel": {
+      "title": "Gespreksroutering",
+      "threadState": "Threadstatus",
+      "threadStateOwned": "In behandeling",
+      "threadStateStandby": "Stand-by",
+      "threadStateIdle": "Inactief",
+      "currentOwner": "Huidige eigenaar",
+      "noOwner": "Geen eigenaar",
+      "roleLabel": "Jouw rol",
+      "selfOwned": "Behandelt het gesprek",
+      "selfStandby": "Stand-by — alleen meeluisteren",
+      "selfIdle": "Wacht op het volgende klantbericht",
+      "hintOwned": "Geef vrij als je klaar bent zodat andere apps kunnen antwoorden.",
+      "hintStandby": "Terwijl een partner dit behandelt, worden je berichten vastgehouden zodat de klant geen dubbele antwoorden krijgt. Neem over vanuit het berichtenveld om te antwoorden.",
+      "hintIdle": "Het volgende klantbericht bepaalt wie antwoordt.",
+      "syncOwner": "Eigenaar synchroniseren",
+      "syncOwnerSuccess": "Eigenaar gesynchroniseerd"
+    },
+    "settings": {
+      "title": "Hervattingsflow na overdracht",
+      "description": "De automatisering die wordt uitgevoerd wanneer een partner een gesprek teruggeeft.",
+      "resumeFlowLabel": "Kies een flow",
+      "resumeFlowPlaceholder": "Selecteer een flow",
+      "info": "Deze flow start automatisch wanneer de controle wordt teruggegeven. De gesprekssamenvatting en de chatgeschiedenis worden dan getoond aan je medewerkers in de livechat.",
+      "save": "Wijzigingen opslaan",
+      "clearFlow": "Flow wissen",
+      "adminOnly": "Alleen workspacebeheerders kunnen de routering wijzigen",
+      "flowNotFound": "De geselecteerde flow is niet gevonden of niet actief",
+      "integrationNotFound": "WhatsApp-nummer niet gevonden",
+      "messengerIntegrationNotFound": "Messenger-pagina niet gevonden"
+    },
+    "errors": {
+      "unsupported": "Gespreksroutering is niet beschikbaar op dit kanaal",
+      "notFound": "Dit gesprek staat niet op dat kanaal",
+      "actionFailed": "Gespreksroutering bijwerken mislukt. Probeer het opnieuw."
+    },
+    "step": {
+      "action": "Actie",
+      "release": "Het gesprek vrijgeven",
+      "pass": "Doorgeven aan de escalatiepartner",
+      "helper": "Alleen WhatsApp. Op andere kanalen, of wanneer het gesprek hier niet wordt beheerd, volgt de stap het foutpad."
+    },
+    "template": {
+      "sent": "Sjabloon verzonden"
+    }
+  },
+  "miniApps": {
+    "title": "Mini Apps",
+    "description": "Maak WhatsApp Flow-formulieren en deel ze als link via elk kanaal.",
+    "feature": "Mini App",
+    "deleteWhatsappChoice": "“Verwijderen” behoudt de Flows die al op WhatsApp zijn gepubliceerd. “Verwijderen & WhatsApp Flow verwijderen” haalt ze ook bij Meta weg: concept-Flows worden verwijderd, gepubliceerde Flows worden uitgefaseerd omdat Meta verwijderen niet toestaat.",
+    "deleteWhatsappFailed": "Mini App verwijderd, maar {count} WhatsApp Flow(s) konden niet bij Meta worden verwijderd. Verwijder ze in WhatsApp Manager.",
+    "deleteWithWhatsapp": "Verwijderen & WhatsApp Flow verwijderen",
+    "publicUrl": {
+      "label": "Openbare URL",
+      "hint": "Kopieer de URL en plak hem in je flow, broadcast of reeks. Zo verstuurd wordt elk antwoord gekoppeld aan het contact dat hem opende."
+    },
+    "table": {
+      "whatsapp": "WhatsApp",
+      "notPublished": "Niet gepubliceerd",
+      "submissions": "Antwoorden",
+      "copyJson": "JSON kopiëren"
+    },
+    "submissions": {
+      "title": "Antwoorden",
+      "submittedAt": "Verzonden op",
+      "contact": "Contact",
+      "anonymous": "Anoniem",
+      "yes": "Ja",
+      "no": "Nee",
+      "unknownContact": "Onbekend contact",
+      "conversationNotFound": "Dit contact heeft nog geen gesprek.",
+      "openConversationFailed": "Kan het gesprek niet openen."
+    },
+    "editor": {
+      "namePlaceholder": "Naam van de Mini App",
+      "undo": "Ongedaan maken",
+      "redo": "Opnieuw",
+      "preview": "Voorbeeld",
+      "viewJson": "JSON bekijken",
+      "saveFailed": "De Mini App kon niet worden opgeslagen",
+      "noIssues": "Geen problemen",
+      "issuesCount": "{count, plural, one {# probleem} other {# problemen}}",
+      "addScreen": "Scherm toevoegen",
+      "newScreenTitle": "Nieuw scherm",
+      "searchComponents": "Componenten zoeken",
+      "paletteHint": "Klik om toe te voegen of sleep naar het scherm",
+      "dropHere": "Sleep componenten hierheen",
+      "emptyScreen": "Sleep componenten van links of klik op een component om het toe te voegen",
+      "slotThen": "Dan",
+      "slotElse": "Anders",
+      "slotCase": "Geval: {value}",
+      "noCondition": "Nog geen voorwaarde",
+      "drag": "Slepen om te verplaatsen",
+      "duplicate": "Dupliceren",
+      "remove": "Verwijderen",
+      "cannotDropHere": "Dit component kan hier niet worden geplaatst",
+      "previewSubmitted": "Voorbeeld verzonden: {answers}"
+    },
+    "screen": {
+      "title": "Scherm",
+      "screenTitle": "Titel",
+      "screenId": "Scherm-ID",
+      "screenIdHint": "Alleen letters en underscores. Wordt gebruikt voor navigatie en in de Flow JSON.",
+      "terminal": "Laatste scherm",
+      "terminalHint": "De flow kan hier eindigen. Er is een Footer nodig die de flow afrondt.",
+      "remove": "Scherm verwijderen"
+    },
+    "inspector": {
+      "default": "Standaard",
+      "commaSeparated": "Scheid waarden met komma's.",
+      "uploadImage": "Afbeelding selecteren",
+      "imageTooLarge": "De afbeelding is zelfs na compressie te groot. Probeer een kleinere.",
+      "moveUp": "Omhoog",
+      "moveDown": "Omlaag",
+      "removeItem": "Verwijderen",
+      "optionTitle": "Titel",
+      "optionId": "ID",
+      "addOption": "Optie toevoegen",
+      "addImage": "Afbeelding toevoegen",
+      "noAction": "Geen actie",
+      "chooseAction": "Kies een actie",
+      "noOtherScreen": "Voeg nog een scherm toe om naartoe te navigeren.",
+      "completeHint": "Rondt de flow af en verstuurt alle antwoorden.",
+      "endText": "Tekst rechts",
+      "badge": "Badge",
+      "conditionHint": "Toont “Dan” als waar, anders “Anders”. Voorbeeld: {example}",
+      "switchValueHint": "Toont het geval waarvan de naam gelijk is aan deze waarde.",
+      "cases": "Gevallen",
+      "addCase": "Geval toevoegen",
+      "casesHint": "Elke gevalnaam wordt vergeleken met de waarde hierboven.",
+      "nameHint": "Veldsleutel in de antwoorden. Letters, cijfers en underscores.",
+      "markdownHint": "Ondersteunt # koppen, **vet**, *cursief*, ~~doorgehaald~~, lijsten en [links](https://…).",
+      "patternHint": "Optionele reguliere expressie waaraan het antwoord moet voldoen.",
+      "saveToCustomField": "Opslaan in aangepast veld",
+      "chooseCustomField": "Kies een aangepast veld",
+      "customFieldHint": "Wanneer een contact de Mini App-link verzendt, wordt het antwoord in dit veld opgeslagen.",
+      "imageLoadFailed": "Deze afbeelding kon niet worden geladen. Kies een JPEG-, PNG-, WebP- of GIF-afbeelding.",
+      "answerReference": "Antwoordverwijzing",
+      "answerReferenceHint": "Plak deze in tekst of een voorwaarde om dit antwoord te gebruiken.",
+      "copyReference": "Kopiëren",
+      "variablesHint": "Typ {open} of klik op {button} om een aangepast veld in te voegen. Waarden verschijnen alleen in de weblink voor een bekend contact."
+    },
+    "json": {
+      "title": "Flow JSON",
+      "description": "WhatsApp Flow JSON (versie 7.3). Plak het in WhatsApp Manager of de Flows Playground.",
+      "copy": "JSON kopiëren",
+      "contactVariablesWarning": "Deze JSON bevat nog aangepaste velden zoals '{{first_name}}'. WhatsApp toont ze precies zoals ze geschreven zijn, dus verwijder ze voordat je de JSON in WhatsApp plakt."
+    },
+    "publish": {
+      "open": "Publiceren op WhatsApp",
+      "title": "Publiceren op WhatsApp",
+      "description": "Maakt of werkt deze Mini App bij als WhatsApp Flow en publiceert hem. Daarna kun je hem versturen met de stap “WhatsApp Flow verzenden”.",
+      "number": "WhatsApp-nummer",
+      "noNumbers": "Koppel eerst een WhatsApp-nummer.",
+      "unsavedChanges": "Je hebt niet-opgeslagen wijzigingen. Sla eerst op zodat WhatsApp de nieuwste versie krijgt.",
+      "submit": "Publiceren",
+      "success": "Gepubliceerd op WhatsApp",
+      "draftOnly": "Meta heeft de Flow vanwege fouten als concept bewaard",
+      "failed": "Publiceren op WhatsApp mislukt",
+      "contactVariables": "Deze Mini App toont aangepaste velden in de teksten. Die werken voorlopig alleen via de weblink — verwijder ze voordat je naar WhatsApp publiceert."
+    },
+    "runner": {
+      "back": "Terug",
+      "doneTitle": "Bedankt!",
+      "doneDescription": "Je antwoorden zijn verzonden.",
+      "errors": {
+        "required": "Dit veld is verplicht",
+        "invalidEmail": "Voer een geldig e-mailadres in",
+        "invalidFormat": "Het formaat is ongeldig",
+        "tooShort": "Het antwoord is te kort",
+        "selectMore": "Selecteer meer opties",
+        "selectFewer": "Selecteer minder opties",
+        "uploadMore": "Voeg meer bestanden toe"
+      }
+    },
+    "public": {
+      "notFoundTitle": "Mini App niet beschikbaar",
+      "notFoundDescription": "Deze link is ongeldig of de Mini App is uitgeschakeld.",
+      "rateLimited": "Te veel inzendingen. Wacht even en probeer het opnieuw.",
+      "submitFailed": "Je antwoorden konden niet worden verzonden. Probeer het opnieuw."
+    },
+    "view": {
+      "selectPlaceholder": "Selecteren",
+      "calendarSingle": "Kalender",
+      "calendarRange": "Periode",
+      "readMore": "Meer lezen",
+      "takePhoto": "Foto maken of kiezen",
+      "uploadDocument": "Document uploaden",
+      "previousImage": "Vorige afbeelding",
+      "nextImage": "Volgende afbeelding"
+    },
+    "categories": {
+      "text": "Tekst",
+      "input": "Invoer",
+      "selection": "Selectie",
+      "media": "Media",
+      "navigation": "Navigatie",
+      "container": "Containers"
+    },
+    "components": {
+      "TextHeading": "Kop",
+      "TextSubheading": "Subkop",
+      "TextBody": "Lopende tekst",
+      "TextCaption": "Bijschrift",
+      "RichText": "Rich text",
+      "TextInput": "Tekstinvoer",
+      "TextArea": "Tekstvak",
+      "Dropdown": "Dropdown",
+      "RadioButtonsGroup": "Enkele keuze",
+      "CheckboxGroup": "Meerdere keuzes",
+      "ChipsSelector": "Chips",
+      "DatePicker": "Datumkiezer",
+      "CalendarPicker": "Kalender",
+      "OptIn": "Opt-in",
+      "PhotoPicker": "Foto uploaden",
+      "DocumentPicker": "Document uploaden",
+      "Image": "Afbeelding",
+      "ImageCarousel": "Afbeeldingencarrousel",
+      "EmbeddedLink": "Link",
+      "NavigationList": "Navigatielijst",
+      "Footer": "Footer-knop",
+      "Form": "Formulier",
+      "If": "Als / Anders",
+      "Switch": "Switch"
+    },
+    "actions": {
+      "navigate": "Naar scherm gaan",
+      "complete": "Flow afronden",
+      "open_url": "URL openen"
+    },
+    "defaults": {
+      "heading": "Kop",
+      "subheading": "Subkop",
+      "body": "Lopende tekst",
+      "caption": "Bijschrift",
+      "richText": "## Titel\n\nWat **rijke** tekst.",
+      "textInputLabel": "Jouw antwoord",
+      "textAreaLabel": "Details",
+      "dropdownLabel": "Kies er één",
+      "radioLabel": "Kies er één",
+      "checkboxLabel": "Kies er meerdere",
+      "chipsLabel": "Kies er meerdere",
+      "dateLabel": "Datum",
+      "calendarLabel": "Datum",
+      "optInLabel": "Ik ga akkoord met de voorwaarden",
+      "photoLabel": "Foto's uploaden",
+      "documentLabel": "Documenten uploaden",
+      "linkText": "Meer informatie",
+      "footerLabel": "Doorgaan",
+      "option": "Optie",
+      "navigationItem": "Item",
+      "imageAlt": "Afbeelding"
+    },
+    "properties": {
+      "text": "Tekst",
+      "label": "Label",
+      "name": "Veldsleutel",
+      "description": "Beschrijving",
+      "title": "Titel",
+      "required": "Verplicht",
+      "helperText": "Hulptekst",
+      "errorMessage": "Foutmelding",
+      "initValue": "Beginwaarde",
+      "inputType": "Invoertype",
+      "labelVariant": "Groot label",
+      "pattern": "Patroon",
+      "minChars": "Minimum aantal tekens",
+      "maxChars": "Maximum aantal tekens",
+      "maxLength": "Maximale lengte",
+      "fontWeight": "Lettertype-stijl",
+      "strikethrough": "Doorhalen",
+      "markdown": "Markdown",
+      "dataSource": "Opties",
+      "mediaSize": "Afbeeldingsgrootte",
+      "minSelectedItems": "Minimaal geselecteerd",
+      "maxSelectedItems": "Maximaal geselecteerd",
+      "minDate": "Vroegste datum",
+      "maxDate": "Laatste datum",
+      "unavailableDates": "Niet-beschikbare datums",
+      "mode": "Modus",
+      "minDays": "Minimum aantal dagen",
+      "maxDays": "Maximum aantal dagen",
+      "includeDays": "Selecteerbare weekdagen",
+      "photoSource": "Fotobron",
+      "minUploadedPhotos": "Minimum aantal foto's",
+      "maxUploadedPhotos": "Maximum aantal foto's",
+      "minUploadedDocuments": "Minimum aantal documenten",
+      "maxUploadedDocuments": "Maximum aantal documenten",
+      "maxFileSizeKb": "Maximale bestandsgrootte (KB)",
+      "allowedMimeTypes": "Toegestane bestandstypen",
+      "src": "Afbeelding",
+      "width": "Breedte",
+      "height": "Hoogte",
+      "scaleType": "Schaal",
+      "aspectRatio": "Beeldverhouding",
+      "altText": "Alternatieve tekst",
+      "images": "Afbeeldingen",
+      "listItems": "Items",
+      "leftCaption": "Bijschrift links",
+      "centerCaption": "Bijschrift midden",
+      "rightCaption": "Bijschrift rechts",
+      "enabled": "Ingeschakeld",
+      "condition": "Voorwaarde",
+      "value": "Waarde",
+      "action": "Bij klikken",
+      "screenId": "Scherm-ID"
+    },
+    "options": {
+      "inputType": {
+        "text": "Tekst",
+        "number": "Getal",
+        "email": "E-mail",
+        "password": "Wachtwoord",
+        "passcode": "Toegangscode",
+        "phone": "Telefoon"
+      },
+      "fontWeight": {
+        "normal": "Normaal",
+        "bold": "Vet",
+        "italic": "Cursief",
+        "bold_italic": "Vet cursief"
+      },
+      "scaleType": {
+        "cover": "Vullen",
+        "contain": "Passend"
+      },
+      "mediaSize": {
+        "regular": "Normaal",
+        "large": "Groot"
+      },
+      "mode": {
+        "single": "Enkele datum",
+        "range": "Periode"
+      },
+      "photoSource": {
+        "camera_gallery": "Camera en galerij",
+        "camera": "Alleen camera",
+        "gallery": "Alleen galerij"
+      },
+      "weekday": {
+        "Mon": "Ma",
+        "Tue": "Di",
+        "Wed": "Wo",
+        "Thu": "Do",
+        "Fri": "Vr",
+        "Sat": "Za",
+        "Sun": "Zo"
+      }
+    },
+    "issues": {
+      "definition_invalid": "De gegevens van de Mini App zijn ongeldig.",
+      "screen_id_invalid": "De scherm-ID mag alleen letters en underscores bevatten.",
+      "screen_id_reserved": "“SUCCESS” is gereserveerd door WhatsApp. Kies een andere scherm-ID.",
+      "screen_id_duplicate": "Een ander scherm gebruikt deze ID al.",
+      "no_terminal_screen": "Markeer minstens één scherm als laatste scherm.",
+      "terminal_screen_without_complete": "Het laatste scherm heeft een Footer nodig die de flow afrondt.",
+      "screen_without_exit": "Dit scherm heeft geen manier om verder te gaan. Voeg een Footer of link toe die naar een ander scherm gaat.",
+      "screen_unreachable": "Geen enkel scherm navigeert naar dit scherm.",
+      "too_many_components": "Een scherm kan maximaal {max} componenten bevatten.",
+      "component_limit": "Een scherm kan maximaal {max} × {type} bevatten.",
+      "picker_conflict": "Een scherm kan niet tegelijk een foto-upload en een document-upload hebben.",
+      "picker_multiple_in_complete": "Stel {property} in op 1: WhatsApp verstuurt bij het afronden van de flow slechts één bestand.",
+      "footer_not_last": "De Footer moet het laatste component op het scherm zijn.",
+      "footer_in_nested_branch": "Een Footer kan alleen direct in een Als-tak op het eerste niveau staan.",
+      "footer_missing_in_branch": "Als de ene tak een Footer heeft, heeft de andere tak er ook een nodig.",
+      "navigation_list_with_footer": "Een navigatielijst kan niet samen met een Footer op een scherm staan.",
+      "navigation_list_on_terminal": "Een navigatielijst kan niet op het laatste scherm staan.",
+      "if_too_deep": "Als-blokken kunnen maximaal {max} niveaus diep worden genest.",
+      "if_then_empty": "De tak “Dan” heeft minstens één component nodig.",
+      "switch_no_cases": "Voeg minstens één geval toe.",
+      "child_not_allowed": "Dit component kan niet in {parent} worden geplaatst.",
+      "name_invalid": "Gebruik letters, cijfers en underscores voor de veldsleutel.",
+      "name_duplicate": "De veldsleutel “{name}” is al in gebruik.",
+      "property_required": "{property} is verplicht.",
+      "property_too_long": "{property} mag maximaal {max} tekens bevatten.",
+      "property_too_short": "{property} heeft minstens {min} items nodig.",
+      "property_invalid": "{property} is ongeldig.",
+      "option_duplicate_id": "Elke optie heeft een unieke ID nodig.",
+      "min_greater_than_max": "{property} mag niet groter zijn dan het maximum.",
+      "action_required": "Kies wat er bij klikken gebeurt.",
+      "action_not_allowed": "Deze actie is hier niet toegestaan.",
+      "navigate_target_missing": "Het doelscherm bestaat niet meer.",
+      "navigate_self": "Een scherm kan niet naar zichzelf navigeren.",
+      "expression_invalid": "De expressie kan niet worden gelezen. Controleer aanhalingstekens en haakjes.",
+      "reference_invalid": "{reference} is geen geldige verwijzing.",
+      "reference_unknown": "{reference} komt met geen enkel veld overeen.",
+      "data_reference_unsupported": "{reference}: schermgegevens worden niet ondersteund. Gebruik in plaats daarvan formuliervelden.",
+      "property_unknown": "WhatsApp accepteert de eigenschap “{name}” niet voor dit onderdeel.",
+      "complete_on_non_terminal": "“Flow voltooien” kan alleen op het laatste scherm.",
+      "footer_captions_invalid": "Gebruik alleen een middentekst, of een linker- en rechtertekst samen.",
+      "options_with_images_limit": "Met afbeeldingen mag een dropdown hoogstens {max} opties hebben.",
+      "navigation_badge_multiple": "Slechts één item in een navigatielijst mag een badge hebben.",
+      "contact_variable_whatsapp": "Aangepaste velden verschijnen alleen in de weblink; WhatsApp ondersteunt ze nog niet. Verwijder ze voordat je publiceert naar WhatsApp."
+    },
+    "upload": {
+      "choosePhotos": "Kies of maak foto’s",
+      "chooseDocuments": "Kies bestanden",
+      "remove": "Verwijderen",
+      "count": "{count}/{max}",
+      "errors": {
+        "empty": "Het bestand is leeg.",
+        "too_large": "Het bestand is te groot.",
+        "type_not_allowed": "Dit bestandstype is niet toegestaan.",
+        "rate_limited": "Te veel uploads. Wacht even en probeer het opnieuw.",
+        "upload_failed": "Het bestand kon niet worden geüpload. Probeer het opnieuw."
+      }
     }
   }
 }

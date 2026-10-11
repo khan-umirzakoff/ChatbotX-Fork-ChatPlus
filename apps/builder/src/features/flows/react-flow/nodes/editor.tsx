@@ -37,9 +37,11 @@ import {
   useFormContext,
   useWatch,
 } from "react-hook-form"
-import { useCustomFieldStore } from "@/features/custom-fields/provider/custom-field-store-context"
-import { useInboxStore } from "@/features/inboxes/provider/inbox-store-context"
+import { useCustomFields } from "@/features/custom-fields/provider/custom-field-hook"
+import { useInboxListState } from "@/features/inboxes/provider/inbox-hook"
+import { useWorkspaceId } from "@/hooks/routing"
 import RecursiveDropdownMenu from "../components/recursive-dropdown-menu"
+import { resolveFlowValidationCodeKey } from "../flow-validation-message"
 import { allSteps, DynamicStepEditor } from "../steps"
 import { ButtonStepEditor } from "../steps/button/editor"
 import { ErrorAlert } from "../steps/error-alert"
@@ -49,6 +51,8 @@ import { useStepStore } from "../stores/step-store-provider"
 import { useFlowHistory } from "../stores/use-flow-history"
 import { useWhatsappFlow } from "../stores/whatsapp-flow-store-provider"
 import { allNodesConfig } from "./node-config"
+import { QuickReplySettingsDialog } from "./quick-reply-settings/quick-reply-settings-dialog"
+import { QuickReplySettingsEdgeSyncs } from "./quick-reply-settings/quick-reply-settings-edge-sync"
 import type { MenuItem } from "./types"
 
 const collectErrorMessages = (node: unknown): string[] => {
@@ -97,7 +101,7 @@ const replaceIds = (data: unknown): unknown => {
   return data
 }
 
-const NodeEditorQuickReplies = () => {
+const NodeEditorQuickReplies = ({ nodeId }: { nodeId: string }) => {
   const t = useTranslations()
   const { control } = useFormContext()
 
@@ -149,6 +153,11 @@ const NodeEditorQuickReplies = () => {
           {t("flows.quickReplies.limitReached", { max: MAX_QUICK_REPLIES })}
         </p>
       )}
+      {quickReplies.length > 0 && <QuickReplySettingsDialog />}
+      <QuickReplySettingsEdgeSyncs
+        hasQuickReplies={quickReplies.length > 0}
+        nodeId={nodeId}
+      />
     </div>
   )
 }
@@ -162,7 +171,7 @@ const NodeEditorMenu = memo(
     onClick: (menuItem: MenuItem) => void
   }) => {
     const t = useTranslations()
-    const inboxes = useInboxStore((s) => s.inboxes)
+    const { inboxes, status } = useInboxListState()
     const whatsappTemplates = useFlowTemplate((s) => s.whatsappTemplates)
     const whatsappFlows = useWhatsappFlow((s) => s.whatsappFlows)
     const messengerTemplates = useFlowTemplate((s) => s.messengerTemplates)
@@ -176,6 +185,7 @@ const NodeEditorMenu = memo(
         setNodeMenus(
           nodeConfig.menus(t, {
             inboxes,
+            inboxesStatus: status,
             templates: { waTemplates: whatsappTemplates, messengerTemplates },
             flows: { waFlows: whatsappFlows },
             beforeStep,
@@ -188,6 +198,7 @@ const NodeEditorMenu = memo(
       nodeType,
       t,
       inboxes,
+      status,
       whatsappTemplates,
       whatsappFlows,
       messengerTemplates,
@@ -240,7 +251,7 @@ export const NodeEditor = memo((props: NodeEditorProps) => {
   const t = useTranslations()
   const nodeConfig = nodeType ? allNodesConfig[nodeType]?.(t) : null
   const validator = nodeConfig?.validator.shape.data.shape.details
-  const customFields = useCustomFieldStore((state) => state.customFields)
+  const customFields = useCustomFields(useWorkspaceId()).data ?? []
   const customFieldLookup = useMemo(() => {
     const customFieldById = new Map(
       customFields.map((field) => [
@@ -308,8 +319,13 @@ export const NodeEditor = memo((props: NodeEditorProps) => {
     [],
   )
 
+  // `maxWait` is what bounds the loss. Without it, typing faster than every
+  // 700ms keeps rescheduling and the node data never reaches the flow, so the
+  // wrapper's autosave is never called at all — its own 4000ms ceiling can
+  // never fire. 2000ms stays under that ceiling, so the two debouncers compose
+  // into a bounded worst case.
   const pushToFlow = useMemo(
-    () => createDebouncedFn(pushNodeDetailsToFlow, 700),
+    () => createDebouncedFn(pushNodeDetailsToFlow, 700, 2000),
     [pushNodeDetailsToFlow],
   )
 
@@ -432,10 +448,19 @@ export const NodeEditor = memo((props: NodeEditorProps) => {
                       )}
                     >
                       {(() => {
-                        const messages = collectErrorMessages(
-                          // biome-ignore lint/suspicious/noExplicitAny: wip - dynamic form errors
-                          (form.formState.errors as any).steps?.[index],
-                        )
+                        // A validation code becomes its translated message;
+                        // one rule failing on several fields shows once.
+                        const messages = [
+                          ...new Set(
+                            collectErrorMessages(
+                              // biome-ignore lint/suspicious/noExplicitAny: wip - dynamic form errors
+                              (form.formState.errors as any).steps?.[index],
+                            ).map((message) => {
+                              const key = resolveFlowValidationCodeKey(message)
+                              return key ? t(key) : message
+                            }),
+                          ),
+                        ]
                         return messages.length > 0 ? (
                           <ErrorAlert message={messages.join(", ")} />
                         ) : (
@@ -505,15 +530,20 @@ export const NodeEditor = memo((props: NodeEditorProps) => {
           upgradedNodeDetails.quickReplies && (
             <>
               {(() => {
-                const messages = collectErrorMessages(
+                const messages = collectErrorMessages([
                   // biome-ignore lint/suspicious/noExplicitAny: wip - dynamic form errors
                   (form.formState.errors as any).quickReplies,
-                )
+                  // biome-ignore lint/suspicious/noExplicitAny: wip - dynamic form errors
+                  (form.formState.errors as any).quickReplySettings,
+                ]).map((message) => {
+                  const key = resolveFlowValidationCodeKey(message)
+                  return key ? t(key) : message
+                })
                 return messages.length > 0 ? (
                   <ErrorAlert message={messages.join(", ")} />
                 ) : null
               })()}
-              <NodeEditorQuickReplies />
+              <NodeEditorQuickReplies nodeId={nodeId} />
             </>
           )}
 

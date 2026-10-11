@@ -44,7 +44,7 @@ const {
 
 vi.mock("@chatbotx.io/business", () => ({
   coexistService: {
-    claimRun: mockClaimRun,
+    claimRunWithNewToken: mockClaimRun,
     findIntegrationForCoexist: mockFindIntegration,
     findResumeCeiling: mockFindResumeCeiling,
     findRunById: mockFindRunById,
@@ -63,6 +63,14 @@ vi.mock("@chatbotx.io/worker-config", () => ({
     add: mockQueueAdd,
     addBulk: mockQueueAddBulk,
   },
+  LowJobAction: {
+    coexistAttachmentDownload: "coexistAttachmentDownload",
+    updateContactAvatar: "updateContactAvatar",
+  },
+  lowQueue: {
+    add: mockQueueAdd,
+    addBulk: mockQueueAddBulk,
+  },
 }))
 
 vi.mock("../src/lib/logger", () => ({
@@ -71,6 +79,10 @@ vi.mock("../src/lib/logger", () => ({
     info: vi.fn(),
     warn: vi.fn(),
   },
+}))
+
+vi.mock("../src/integration/handlers/profile-snapshot/queue", () => ({
+  enqueueProfileSnapshotJobs: vi.fn().mockResolvedValue(undefined),
 }))
 
 vi.mock("../src/integration/handlers/coexist/bulk-historical-import", () => ({
@@ -166,7 +178,12 @@ describe("coexistInstagramSync", () => {
     // Default: no display name resolved → keep the participant fallback.
     mockResolveContactProfile.mockResolvedValue(null)
     mockBulkImportContacts.mockResolvedValue({
+      // `bulkImportContacts` aliases `bulkImportChannelContacts`, which returns
+      // BOTH maps: `contactInboxIds` (all contacts — read for message import)
+      // and `newContactInboxIds` (only newly inserted — read to enqueue snapshot
+      // jobs). The Instagram sync uses both, so the mock must provide both.
       contactInboxIds: new Map([["customer-1", contactLink]]),
+      newContactInboxIds: new Map([["customer-1", contactLink]]),
       importedContacts: 1,
       skippedContacts: 0,
     })
@@ -327,6 +344,38 @@ describe("coexistInstagramSync", () => {
       expect(call[0].fields).not.toHaveProperty("lastSyncedAt", null)
       expect(call[0].fields.lastSyncedAt ?? undefined).not.toBeNull()
     }
+  })
+
+  it("advances the watermark after attachment inserts without eagerly enqueueing downloads", async () => {
+    mockFetchConversationMessages.mockResolvedValue({
+      messages: [{ id: "message-with-attachment", message: "photo" }],
+    })
+    mockToHistoricalMessage.mockReturnValue({
+      sourceId: "message-with-attachment",
+      messageType: "incoming",
+      contentType: "image",
+      text: "photo",
+    })
+    mockBulkImportMessages.mockResolvedValue({
+      importedMessages: 1,
+      insertedAttachmentIds: ["attachment-1"],
+      newestIncomingMessageAt: new Date("2026-08-01T00:00:00Z"),
+      newestMessageAt: new Date("2026-08-01T00:00:00Z"),
+      oldestMessageAt: new Date("2026-08-01T00:00:00Z"),
+      newestMessageId: "100000000000001",
+      skippedMessages: 0,
+    })
+
+    await coexistInstagramSync(syncData)
+
+    expect(mockQueueAddBulk).not.toHaveBeenCalled()
+    expect(mockUpdateProgress).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fields: expect.objectContaining({
+          lastSyncedAt: new Date("2026-08-01T00:00:00Z"),
+        }),
+      }),
+    )
   })
 
   it("saves the contact's real name split into first/last from the user node", async () => {

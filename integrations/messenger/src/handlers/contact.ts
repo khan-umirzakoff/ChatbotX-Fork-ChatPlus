@@ -1,7 +1,9 @@
 import type { ContactHandlers } from "@chatbotx.io/sdk"
 import { assignLabelToUser, removeLabelFromUser } from "../apis/label"
+import { getPostDetails, toChannelPostDetails } from "../apis/post"
 import {
   deleteUserPersistentMenu,
+  getContactProfilePicUrl,
   getCustomUserSettings,
   getUserProfile,
   setUserPersistentMenu,
@@ -10,6 +12,11 @@ import type { MessengerAuthValue } from "../schema"
 
 export const contactHandlers: Partial<ContactHandlers<MessengerAuthValue>> = {
   getProfile: getUserProfile,
+  getContactProfilePicUrl,
+  getPostDetails: async ({ ctx, data }) =>
+    toChannelPostDetails(
+      await getPostDetails({ ctx, input: { postId: data.postId } }),
+    ),
   assignLabel: async ({ ctx, data }) => {
     await assignLabelToUser({ ctx, labelId: data.labelId, psid: data.sourceId })
   },

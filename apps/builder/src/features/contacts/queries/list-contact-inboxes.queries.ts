@@ -1,10 +1,11 @@
 import { broadcastService } from "@chatbotx.io/business"
+import { resolveBroadcastAudienceRange } from "@chatbotx.io/database/partials"
 import { assertCurrentUserCanAccessChatbot } from "@/lib/auth/utils"
 import type { ContactPermissionScope } from "../permissions"
 import type {
   ListContactInboxesAudiencePreviewRequest,
   ListContactsRequest,
-} from "../schemas/query"
+} from "../schema/query"
 
 export async function countContactInboxes(
   input: ListContactsRequest,
@@ -15,6 +16,7 @@ export async function countContactInboxes(
   const total = await broadcastService.countAudience({
     workspaceId: input.workspaceId,
     channels: input.channels,
+    inboxIds: input.inboxIds,
     integrationWhatsappId: input.integrationWhatsappId,
     integrationMessengerId: input.integrationMessengerId,
     contactFilter: input.contactFilter,
@@ -35,6 +37,7 @@ export async function listAudienceInboxesPreview(
   const data = await broadcastService.listAudiencePreview({
     workspaceId: input.workspaceId,
     channels: input.channels,
+    inboxIds: input.inboxIds,
     integrationWhatsappId: input.integrationWhatsappId,
     integrationMessengerId: input.integrationMessengerId,
     contactFilter: input.contactFilter,
@@ -43,6 +46,7 @@ export async function listAudienceInboxesPreview(
     page: input.page ?? 1,
     perPage: input.perPage ?? 20,
     restrictToAssignedUserId: accessScope?.restrictToAssignedUserId,
+    audienceRange: resolveBroadcastAudienceRange(input),
   })
 
   return {

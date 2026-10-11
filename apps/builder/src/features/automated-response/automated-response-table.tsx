@@ -38,7 +38,8 @@ import { useTranslations } from "next-intl"
 import { useAction } from "next-safe-action/hooks"
 import React, { use, useMemo } from "react"
 import { toast } from "sonner"
-import { useFlowStore } from "../flows/provider/flow-store-context"
+import { useWorkspaceId } from "@/hooks/routing"
+import { useFlows } from "../flows/provider/flow-hook"
 import { ChangeFolderDialog } from "../folders/change-folder"
 import { enableAutomatedResponseAction } from "./actions/enable-automated-response-action"
 import { AutomatedResponseTableToolbarActions } from "./automated-response-table-toolbar-actions"
@@ -67,7 +68,7 @@ export function AutomatedResponsesTable({
   const folderType = automatedResponseFolderTypeByType[type]
 
   const [{ data, pageCount }] = use(promises)
-  const { flows: allFlows } = useFlowStore((state) => state)
+  const { data: allFlows = [] } = useFlows(useWorkspaceId())
 
   const [rowAction, setRowAction] =
     React.useState<DataTableRowAction<AutomatedResponseResource> | null>(null)
@@ -166,6 +167,7 @@ export function AutomatedResponsesTable({
           <AutomatedResponseStatusCell
             checked={cell.getValue<AutomatedResponseResource["status"]>()}
             id={row.original.id}
+            type={type}
             workspaceId={workspaceId}
           />
         ),
@@ -241,7 +243,7 @@ export function AutomatedResponsesTable({
         enableHiding: false,
       },
     ],
-    [workspaceId, basePath, t, allFlows, searchParams],
+    [workspaceId, basePath, t, allFlows, searchParams, type],
   )
 
   const { table } = useDataTable({
@@ -270,6 +272,7 @@ export function AutomatedResponsesTable({
             <AutomatedResponseTableToolbarActions
               folderType={folderType}
               table={table}
+              type={type}
               workspaceId={workspaceId}
             />
             <AddAutomatedResponseButton basePath={basePath} />
@@ -286,6 +289,7 @@ export function AutomatedResponsesTable({
           }}
           open={rowAction?.variant === "delete"}
           showTrigger={false}
+          type={type}
           workspaceId={workspaceId}
         />
 
@@ -308,11 +312,17 @@ const AutomatedResponseStatusCell = (props: {
   id: string
   workspaceId: string
   checked: boolean
+  type: AutomatedResponseType
 }) => {
   const router = useRouter()
 
   const { execute, isPending } = useAction(
-    enableAutomatedResponseAction.bind(null, props.workspaceId, props.id),
+    enableAutomatedResponseAction.bind(
+      null,
+      props.workspaceId,
+      props.id,
+      props.type,
+    ),
     {
       onError: ({ error }) => {
         if (error.serverError) {

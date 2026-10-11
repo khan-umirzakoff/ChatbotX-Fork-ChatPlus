@@ -1,12 +1,11 @@
 "use server"
 
-import { workspaceMemberCacheTag } from "@chatbotx.io/business"
+import { isDeepStrictEqual } from "node:util"
+import { userService, workspaceMemberService } from "@chatbotx.io/business"
+import { auditService } from "@chatbotx.io/business/audit"
 import { ChatbotXException } from "@chatbotx.io/business/errors"
-import { db, eq, findOrFail } from "@chatbotx.io/database/client"
-import { workspaceMemberModel } from "@chatbotx.io/database/schema"
-import { invalidateCacheByTags } from "@chatbotx.io/redis"
 import { isCommunity } from "@/env"
-import { workspaceIdAndIdRequestParams } from "@/features/common/schemas"
+import { workspaceIdAndIdRequestParams } from "@/features/common/schema"
 import { hasWorkspacePermission } from "@/lib/auth/permission-routes"
 import { getCurrentUserAndTargetWorkspace } from "@/lib/auth/utils"
 import { workspaceActionClient } from "@/lib/safe-action"
@@ -20,10 +19,9 @@ export const updateWorkspaceMemberAction = workspaceActionClient
   .inputSchema(updateWorkspaceMemberRequest)
   .bindArgsSchemas(workspaceIdAndIdRequestParams)
   .action(async ({ bindArgsParsedInputs: [workspaceId, id], parsedInput }) => {
-    const workspaceMember = await findOrFail({
-      table: workspaceMemberModel,
-      where: { id, workspaceId },
-      message: "Workspace member not found",
+    const workspaceMember = await workspaceMemberService.findByIdOrFail({
+      id,
+      workspaceId,
     })
 
     const currentUserAndTargetChatbot =
@@ -52,14 +50,50 @@ export const updateWorkspaceMemberAction = workspaceActionClient
           permissions: normalizeContactsPermissions(parsedInput.permissions),
         }
 
-    await db
-      .update(workspaceMemberModel)
-      .set(updateInput)
-      .where(eq(workspaceMemberModel.id, workspaceMember.id))
+    const permissionsChanged = !isDeepStrictEqual(
+      workspaceMember.permissions,
+      updateInput.permissions,
+    )
+    const notificationsChanged = !(
+      isDeepStrictEqual(
+        workspaceMember.notificationTypes,
+        updateInput.notificationTypes,
+      ) &&
+      isDeepStrictEqual(
+        workspaceMember.notificationChannels,
+        updateInput.notificationChannels,
+      )
+    )
 
-    // The member's permissions/nav are served from the cached
-    // `listByUserId` result; bust it so the change takes effect immediately.
-    await invalidateCacheByTags([
-      workspaceMemberCacheTag(workspaceMember.userId),
-    ])
+    // updateWorkspaceMemberRequest currently has exactly these 3 fields, so
+    // this covers every field in updateInput. If a new field is added to the
+    // schema, it MUST be added to permissionsChanged/notificationsChanged (or
+    // diffed separately) below, or it will silently never be persisted.
+    if (!(permissionsChanged || notificationsChanged)) {
+      return
+    }
+
+    const updated = await workspaceMemberService.update({
+      id: workspaceMember.id,
+      workspaceId,
+      data: updateInput,
+    })
+
+    if (!updated) {
+      return
+    }
+
+    // Only a real permissions/role change is in the audit-log spec for this
+    // action — a save that only touches notification settings must not be
+    // recorded as a "changed role" event.
+    if (permissionsChanged) {
+      const targetUser = await userService.findNameAndEmail(
+        workspaceMember.userId,
+      )
+
+      await auditService.record({
+        action: "role_change",
+        detail: `changed role of ${targetUser?.name ?? targetUser?.email ?? "a member"} to ${updateInput.permissions.superAdmin ? "admin" : "member"}`,
+      })
+    }
   })

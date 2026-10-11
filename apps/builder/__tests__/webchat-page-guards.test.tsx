@@ -38,15 +38,8 @@ vi.mock("@chatbotx.io/business", () => ({
       | null
       | undefined,
   ) => Boolean(workspace?.scheduledDeletionAt),
+  integrationWebchatService: { findByIdForWorkspaceOrNull: mockFindFirst },
   workspaceService: { find: mockWorkspaceFind },
-}))
-
-vi.mock("@chatbotx.io/database/client", () => ({
-  db: {
-    query: {
-      integrationWebchatModel: { findFirst: mockFindFirst },
-    },
-  },
 }))
 
 vi.mock("@/lib/domain", () => ({
@@ -109,14 +102,14 @@ const { default: WebchatPage } = await import(
 )
 
 const targetWebchat = {
-  id: "webchat-1",
-  workspaceId: "ws-1",
+  id: "2",
+  workspaceId: "1",
   authorizedDomains: ["allowed.example"],
 }
 
 const searchParams = {
-  workspaceId: "ws-1",
-  webchatId: "webchat-1",
+  workspaceId: "1",
+  webchatId: "2",
 }
 
 const setReferer = (referer: string | null) => {
@@ -174,7 +167,7 @@ describe("WebchatPage", () => {
     )
   })
 
-  test("still renders the chat for a third-party referer when authorizedDomains is empty", async () => {
+  test("shows the unauthorized-domain message for a third-party referer when authorizedDomains is empty (fail closed)", async () => {
     mockFindFirst.mockResolvedValue({ ...targetWebchat, authorizedDomains: [] })
     setReferer("https://anyone.example")
 
@@ -182,8 +175,11 @@ describe("WebchatPage", () => {
       searchParams: Promise.resolve(searchParams),
     })
 
-    expect((element as { type: { name: string } }).type.name).toBe(
-      "GuestSessionStoreProvider",
+    expect(isValidElement<{ children: unknown }>(element)).toBe(true)
+    const rendered = JSON.stringify(element)
+    expect(rendered).toContain("Webchat unavailable")
+    expect(rendered).toContain(
+      "This website is not authorized to load this chat widget.",
     )
   })
 

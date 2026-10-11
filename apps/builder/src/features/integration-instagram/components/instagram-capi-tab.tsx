@@ -15,6 +15,7 @@ import Link from "next/link"
 import { useTranslations } from "next-intl"
 import { CapiConnectedCard } from "@/features/meta-conversions/components/capi-connected-card"
 import { CapiMethodChooser } from "@/features/meta-conversions/components/capi-method-chooser"
+import { CapiTestEventCard } from "@/features/meta-conversions/components/capi-test-event-card"
 import {
   type CapiConnectionState,
   getCapiConnectionState,
@@ -33,7 +34,7 @@ import { setInstagramCapiDatasetAction } from "../actions/set-capi-dataset.actio
 type InstagramCapiTabProps = {
   integrationInstagram: Pick<
     IntegrationInstagramModel,
-    "id" | "type" | "hasCapiScope" | "datasetId"
+    "id" | "type" | "hasCapiScope" | "datasetId" | "capiTestEventCode"
   >
   hasManualCapiAccessToken: boolean
   capiDisconnected: boolean
@@ -43,6 +44,7 @@ type InstagramCapiTabProps = {
 const statusDescriptionKey = {
   ready: "metaConversions.statusDescriptions.ready",
   notConnected: "metaConversions.statusDescriptions.notConnected",
+  missingPermission: "metaConversions.statusDescriptions.missingPermission",
   unverified: "metaConversions.statusDescriptions.unverified",
   unsupported: "metaConversions.statusDescriptions.unsupported",
 } as const satisfies Record<CapiStatus, string>
@@ -51,10 +53,12 @@ function renderConnectionContent({
   connectionState,
   integrationInstagram,
   workspaceId,
+  notice,
 }: {
   connectionState: CapiConnectionState
   integrationInstagram: InstagramCapiTabProps["integrationInstagram"]
   workspaceId: string
+  notice: string
 }) {
   if (connectionState === "disconnected") {
     return (
@@ -71,12 +75,26 @@ function renderConnectionContent({
     )
   }
   return (
-    <CapiConnectedCard
-      datasetId={integrationInstagram.datasetId}
-      disconnectAction={disconnectInstagramCapiAction}
-      integrationId={integrationInstagram.id}
-      workspaceId={workspaceId}
-    />
+    <>
+      <CapiConnectedCard
+        datasetId={integrationInstagram.datasetId}
+        disconnectAction={disconnectInstagramCapiAction}
+        integrationId={integrationInstagram.id}
+        notice={connectionState === "awaitingScope" ? notice : undefined}
+        workspaceId={workspaceId}
+      />
+      {/* Sending needs the Meta scope or a manual token; while the scope is
+          still missing a test would only be skipped, so hide the card. */}
+      {connectionState === "awaitingScope" ? null : (
+        <CapiTestEventCard
+          channel="instagram"
+          datasetId={integrationInstagram.datasetId}
+          integrationId={integrationInstagram.id}
+          testEventCode={integrationInstagram.capiTestEventCode}
+          workspaceId={workspaceId}
+        />
+      )}
+    </>
   )
 }
 
@@ -96,7 +114,8 @@ export function InstagramCapiTab({
     hasDatasetId: Boolean(integrationInstagram.datasetId),
   })
   const status = getCapiStatus({
-    hasCapiScope: !capiDisconnected && integrationInstagram.hasCapiScope,
+    hasCapiScope: integrationInstagram.hasCapiScope,
+    capiDisconnected,
     hasManualCapiAccessToken,
     hasDatasetId: Boolean(integrationInstagram.datasetId),
     credentialAvailable,
@@ -108,6 +127,7 @@ export function InstagramCapiTab({
     connectionState,
     integrationInstagram,
     workspaceId,
+    notice: t("metaConversions.statusDescriptions.missingPermission"),
   })
 
   return (

@@ -29,7 +29,8 @@ import { archiveConversationAction } from "./actions/archive-conversation.action
 import { followConversationAction } from "./actions/follow-conversation.action"
 import { unarchiveConversationAction } from "./actions/unarchive-conversation.action"
 import { unfollowConversationAction } from "./actions/unfollow-conversation.action"
-import { unreadConversationAction } from "./actions/unread-conversation.action"
+import { ThreadControlPassMenuItem } from "./components/thread-control-pass-menu-item"
+import { useMarkConversationUnread } from "./hooks/use-mark-conversation-unread"
 import type { ListConversationItemResource } from "./schema/resource"
 
 type ConversationActionProps = {
@@ -80,20 +81,8 @@ export function ConversationAction({ conversation }: ConversationActionProps) {
       },
     )
 
-  const { execute: unreadFn, isExecuting: isMarkingUnread } = useAction(
-    unreadConversationAction.bind(null, workspaceId, conversation.id),
-    {
-      onSuccess: (result) => {
-        updateConversation(conversation.id, {
-          agentLastReadAt: new Date(result.data?.agentLastReadAt ?? new Date()),
-        })
-      },
-      onError: ({ error }) => {
-        if (error.serverError) {
-          toast.error(error.serverError)
-        }
-      },
-    },
+  const { markAsUnread, isMarkingUnread } = useMarkConversationUnread(
+    conversation.id,
   )
 
   const { execute: archiveFn, isExecuting: isArchiving } = useAction(
@@ -203,7 +192,10 @@ export function ConversationAction({ conversation }: ConversationActionProps) {
             {t("actions.markAsFollowUp")}
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem disabled={isMarkingUnread} onClick={() => unreadFn()}>
+        <DropdownMenuItem
+          disabled={isMarkingUnread}
+          onClick={() => markAsUnread()}
+        >
           <MailIcon />
           {t("actions.markAsUnread")}
         </DropdownMenuItem>
@@ -238,6 +230,8 @@ export function ConversationAction({ conversation }: ConversationActionProps) {
             {t("actions.blockContact")}
           </DropdownMenuItem>
         )}
+
+        <ThreadControlPassMenuItem conversation={conversation} />
 
         <DeleteContactDialog
           ids={[conversation.contact?.id || ""]}

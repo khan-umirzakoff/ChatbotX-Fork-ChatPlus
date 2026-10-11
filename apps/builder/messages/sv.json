@@ -4,6 +4,7 @@
     "title": "QR-kod"
   },
   "actions": {
+    "retry": "Försök igen",
     "actions": "Åtgärder",
     "activate": "Aktivera",
     "add": "Lägg till",
@@ -43,6 +44,7 @@
     "continue": "Fortsätt",
     "copy": "Kopiera",
     "copyUrl": "Kopiera URL",
+    "chatWidget": "Chattwidget",
     "create": "Skapa",
     "createFeature": "Skapa {feature}",
     "deactivate": "Inaktivera",
@@ -121,6 +123,7 @@
     "scanQRCode": "Skanna mig med din kamera",
     "search": "Sök",
     "selectAll": "Markera alla",
+    "unselect": "Avmarkera",
     "selectFile": "Välj fil",
     "selectRow": "Markera rad",
     "send": "Skicka",
@@ -149,7 +152,13 @@
     "uploadFile": "Ladda upp fil",
     "view": "Visa",
     "viewAnalytics": "Visa analys",
-    "wait": "Vänta"
+    "wait": "Vänta",
+    "loadMore": "Load more",
+    "saveAsDraft": "Save as draft",
+    "schedule": "Schedule",
+    "moveToDraft": "Move to draft",
+    "stop": "Stop",
+    "resume": "Resume"
   },
   "errors": {
     "superAdminRequired": "Du måste vara superadministratör för arbetsytan för att göra detta."
@@ -211,7 +220,8 @@
     "title": "ActiveCampaign"
   },
   "admins": {
-    "title": "Administratörer"
+    "title": "Administratörer",
+    "adminActivityLogs": "Administratörsaktivitetslogg"
   },
   "aiAgent": {
     "defaultAgent": "Standardagent",
@@ -291,6 +301,7 @@
     "newContactsByCountry": "Nya kontakter per land",
     "newContactsBySource": "Nya kontakter per källa",
     "noData": "Inga data",
+    "errorLogRetentionNotice": "Endast felloggar från de senaste {days} dagarna sparas.",
     "noResults": "Inga resultat.",
     "pagination": {
       "firstPage": "Gå till första sidan",
@@ -299,7 +310,8 @@
       "pageOf": "Sida {page} av {pageCount}",
       "previousPage": "Gå till föregående sida",
       "rowsPerPage": "Rader per sida",
-      "selectedRows": "{selected} av {total} rad(er) har markerats."
+      "selectedRows": "{selected} av {total} rad(er) har markerats.",
+      "totalRows": "{total} rad(er)"
     },
     "percentage": "Procentandel",
     "responseCount": "Antal svar",
@@ -312,17 +324,26 @@
     "totalContacts": "Totalt antal kontakter",
     "uniqueConversationsByAdmins": "Unika konversationer per mänsklig agent",
     "uniqueConversationsByAdminsHelp": "Antal kontakter som en mänsklig agent har skickat minst ett meddelande till.",
-    "unknown": "Okänd"
+    "unknown": "Okänd",
+    "repliesToComments": "Svar på kommentarer",
+    "repliesByDate": "Svar per datum",
+    "userCommentsOnThisPost": "Användarkommentarer på det här inlägget",
+    "botRepliesToComments": "Bottens svar på kommentarer",
+    "comment": "Kommentar",
+    "message": "Meddelande",
+    "searchByDate": "Sök efter datum...",
+    "publicReply": "Offentligt svar",
+    "privateReply": "Privat svar"
   },
   "appointmentScheduling": {
     "description": "Skapa och hantera din tidsbokning.",
     "title": "Tidsbokning",
     "flowModes": {
-      "bookFromCustomField": "Boka tid",
-      "checkAvailabilityFromCustomField": "Kontrollera tillgänglighet",
-      "book": "Datum- och tidsväljare",
-      "checkAvailability": "Datumintervallväljare",
-      "cancel": "Avboka tid"
+      "bookFromCustomField": "Book appointment",
+      "checkAvailabilityFromCustomField": "Check availability",
+      "book": "Open booking page",
+      "checkAvailability": "Open availability page",
+      "cancel": "Cancel appointment"
     },
     "fields": {
       "mode": "Läge",
@@ -347,7 +368,23 @@
     "user": "Användare"
   },
   "auditLogs": {
-    "title": "Granskningsloggar"
+    "title": "Granskningsloggar",
+    "columns": {
+      "user": "Användare",
+      "action": "Åtgärd",
+      "detail": "Detalj",
+      "ipAddress": "IP-adress",
+      "date": "Datum"
+    },
+    "filters": {
+      "from": "Från",
+      "to": "Till",
+      "user": "Användare",
+      "userPlaceholder": "Användar-ID",
+      "keyword": "Nyckelord",
+      "keywordPlaceholder": "Åtgärd eller detalj",
+      "allAdmins": "Alla administratörer"
+    }
   },
   "auth": {
     "acceptTermsAndPolicy": "Genom att klicka på fortsätt godkänner du vår",
@@ -382,7 +419,14 @@
     "signUpSuccess": "Registreringen lyckades. Kontrollera din e-post för verifiering.",
     "signUpTitle": "Registrera dig på {name}",
     "termsOfService": "Användarvillkor",
-    "trySigningInAgain": "Du kan också försöka logga in igen med en annan e-postadress."
+    "trySigningInAgain": "Du kan också försöka logga in igen med en annan e-postadress.",
+    "oauthError": {
+      "accountNotLinked": "Det finns redan ett konto med den här e-postadressen och det kunde inte kopplas. Logga in på samma sätt som tidigare eller kontakta supporten.",
+      "unableToLinkAccount": "Vi kunde inte koppla den här inloggningen till det befintliga kontot. Logga in på samma sätt som tidigare eller kontakta supporten.",
+      "sessionExpired": "Inloggningsförsöket har gått ut. Försök igen.",
+      "accessDenied": "Inloggningen avbröts.",
+      "generic": "Inloggningen misslyckades. Försök igen."
+    }
   },
   "autoAssignConversation": {
     "rule": {
@@ -426,6 +470,7 @@
     },
     "title": "Fakturering",
     "trial": {
+      "planName": "Provperiod",
       "daysLeft": "Provperiod: {days} dagar kvar",
       "dismiss": "Stäng",
       "endsTomorrow": "Provperioden slutar i morgon",
@@ -452,7 +497,26 @@
   },
   "botSimulator": {
     "description": "Simulera botens beteende i en realtidsmiljö.",
-    "title": "Botsimulator"
+    "title": "Botsimulator",
+    "formDescription": "Få en länk som visar en webbplats med din webbchatt, så att du kan demonstrera boten för en kund.",
+    "websiteLink": "Webbplatslänk",
+    "websiteLinkPlaceholder": "https://example.com",
+    "websiteLinkHint": "Webbplatsen som visas bakom webbchatten. Vissa webbplatser tillåter inte att visas inuti en annan sida.",
+    "selectWebchat": "Välj en webbchatt",
+    "webchatRequired": "Välj en webbchatt",
+    "invalidUrl": "Ange en fullständig länk som börjar med http:// eller https://",
+    "getLink": "Hämta länk",
+    "linkCopied": "Länken kopierades till urklipp",
+    "copyFailed": "Det gick inte att kopiera länken",
+    "noWebchat": "Den här arbetsytan har ingen webbchatt ännu.",
+    "createWebchat": "Skapa en webbchatt",
+    "websitePreview": "Förhandsvisning av webbplats",
+    "webchatDisabled": "Den här webbchatten är avstängd. Slå på den eller välj en annan.",
+    "domainNotAllowed": "Den här webbplatsen finns inte bland webbchattens tillåtna domäner.",
+    "disabledWebchatLabel": "{name} (avstängd)",
+    "allowedDomainsHint": "Fungerar bara med webbplatser på: {domains}",
+    "noEnabledWebchat": "Ingen webbchatt är påslagen i den här arbetsytan.",
+    "enableWebchat": "Slå på en webbchatt"
   },
   "broadcasts": {
     "allContacts": {
@@ -463,7 +527,6 @@
       "audienceFilter": "Målgruppsfilter",
       "integration": "Integration",
       "noAudienceFilter": "Inget målgruppsfilter",
-      "noTemplate": "Ingen mall",
       "subaction": "Underåtgärd",
       "template": "Mall",
       "title": "Utskickningsinformation"
@@ -528,7 +591,9 @@
       "cancelled": "Avbrutet",
       "scheduled": "Schemalagt",
       "sending": "Skickar",
-      "sent": "Skickat"
+      "sent": "Skickat",
+      "draft": "Draft",
+      "failed": "Failed"
     },
     "telegramAllContacts": {
       "description": "Använd den här meddelandetypen om du vill skicka ett utskick till dina Telegram-kontakter.",
@@ -546,6 +611,135 @@
     "whatsappWithin24Hours": {
       "description": "Kan innehålla kampanjer och skickas endast till användare som har skickat meddelanden till din bot under de senaste 24 timmarna.",
       "title": "Aktiva kontakter inom 24 timmar"
+    },
+    "filters": {
+      "all": "All"
+    },
+    "views": {
+      "table": "Table",
+      "calendar": "Calendar"
+    },
+    "panel": {
+      "collapse": "Collapse panel",
+      "expand": "Expand panel"
+    },
+    "empty": {
+      "title": "No broadcasts yet",
+      "description": "Create your first broadcast to reach your contacts.",
+      "filteredTitle": "No broadcasts match",
+      "filteredDescription": "Try another status or clear the search."
+    },
+    "scheduleDialog": {
+      "title": "Schedule broadcast",
+      "description": "Choose when \"{name}\" should be sent."
+    },
+    "deleteDialog": {
+      "title": "{count, plural, one {Delete broadcast} other {Delete broadcasts}}",
+      "description": "{count, plural, one {\"{name}\" will be removed. Its data is deleted in the background.} other {# broadcasts will be removed. Their data is deleted in the background.}}",
+      "partial": "{deleted} of {requested} deleted — the rest changed status"
+    },
+    "calendar": {
+      "today": "Today",
+      "apply": "Apply",
+      "more": "+{count} more",
+      "ranges": {
+        "month": "Month",
+        "week": "Week",
+        "day": "Day",
+        "custom": "Custom"
+      },
+      "previous": "Previous",
+      "next": "Next",
+      "emptyDay": "No broadcasts on this day",
+      "emptyRange": "No broadcasts in this range",
+      "jumpToDate": "Jump to date"
+    },
+    "fields": {
+      "id": "ID"
+    },
+    "moveToDraftDialog": {
+      "title": "Move to draft",
+      "description": "\"{name}\" will be unscheduled and moved back to drafts."
+    },
+    "stopDialog": {
+      "title": "Stop broadcast",
+      "description": "Remaining messages for \"{name}\" stop within about a minute. A few already handed to the channel may still deliver. You can resume later — only unsent recipients will receive."
+    },
+    "resumeDialog": {
+      "title": "Resume broadcast",
+      "description": "\"{name}\" will continue sending to recipients who have not received it yet."
+    },
+    "planLimitDialog": {
+      "title": "Uppgradera ditt abonnemang",
+      "sendRate": "Ditt nuvarande {plan}-abonnemang stöder broadcasts med en maximal sändningshastighet på {rate} meddelanden per minut. Uppgradera abonnemanget för att skicka broadcasts upp till {multiplier}x snabbare.",
+      "activeBroadcasts": "Ditt nuvarande {plan}-abonnemang kör {max, plural, one {# broadcast} other {# broadcasts}} åt gången. Uppgradera abonnemanget för att köra fler broadcasts samtidigt."
+    },
+    "sendLimit": {
+      "title": "Gräns",
+      "hint": "Lämna tomt för att skicka till alla matchande kontakter.",
+      "rateHint": "Lämna tomt för att använda standardhastigheten.",
+      "rangeSummary": "Kontakter nr {start} – nr {end}",
+      "rangeFromSummary": "Från kontakt nr {start}",
+      "rangeLabel": "Kontaktintervall",
+      "fromLabel": "Från",
+      "toLabel": "Till",
+      "allPlaceholder": "Alla",
+      "rangeEndBeforeStart": "Slutpositionen får inte vara före startpositionen"
+    }
+  },
+  "commentAutomation": {
+    "stats": {
+      "sent": "Skickat",
+      "delivered": "Levererat",
+      "seen": "Sett",
+      "clicked": "Klickat",
+      "failed": "Misslyckades",
+      "missed": "Missade",
+      "noContacts": "Inga kontakter hittades",
+      "noComment": "(ingen text)",
+      "pageInfo": "Sida {page} av {pageCount}",
+      "selectedAll": "Alla har markerats",
+      "selectedCount": "{count} har markerats",
+      "tagAllDialogDescription": "Taggar läggs till för alla markerade kontakter.",
+      "tagDialogDescription": "Taggar läggs till för {count} kontakt(er).",
+      "tagQueued": "{count} kontakter taggas i bakgrunden.",
+      "loadingMore": "Läser in fler...",
+      "receivers": "Mottagare"
+    },
+    "missReasons": {
+      "outsideSchedule": "Utanför schemat",
+      "postNotMatched": "Inlägget är inte målinriktat",
+      "commentIsReply": "Kommentarssvar",
+      "keywordsNotMatched": "Nyckelorden matchade inte",
+      "contactNotNew": "Kontakten är inte ny",
+      "alreadyRepliedOnPost": "Redan besvarad på detta inlägg",
+      "engagedOnOtherPost": "Har redan interagerat på ett annat inlägg",
+      "mentionCountNotMatched": "Antalet omnämnanden stämde inte"
+    },
+    "replyTo": {
+      "mentions": "Kommentarer med tillräckligt många omnämnanden",
+      "mentionCount": "Antal taggade personer",
+      "mentionCountDescription": "Endast kommentarer som taggar minst så här många personer (@namn) matchar.",
+      "mentionCountOption": "{count, plural, one {# person} other {# personer}}"
+    },
+    "excludeKeywordsType": {
+      "equal": "Kommentarer lika med",
+      "contain": "Kommentarer som innehåller"
+    },
+    "hideComments": {
+      "hasGif": "Innehåller GIF",
+      "hasEmoji": "Innehåller emoji"
+    },
+    "trackUserTags": {
+      "label": "Spåra om en användare taggar andra användare",
+      "descriptionText": "Räknar kontona som taggas i varje kommentar och lägger till dem i kontaktens totaler över alla kommentarer. Använd '{{total_tagged}}' för alla taggade konton och '{{total_new_tagged}}' för konton som aldrig har skrivit till din sida eller varit kontakter."
+    },
+    "card": {
+      "reply": "Svar"
+    },
+    "liveBadge": "Live",
+    "postTypeDialog": {
+      "title": "Välj inläggstyp"
     }
   },
   "channels": {
@@ -554,9 +748,14 @@
       "instagram": "Det här Instagram-kontot är redan anslutet till en annan arbetsyta.",
       "messenger": "Den här Facebook-sidan är redan ansluten till en annan arbetsyta.",
       "telegram": "Den här Telegram-boten är redan ansluten till en annan arbetsyta.",
+      "threads": "Det här Threads-kontot är redan anslutet till en annan arbetsyta.",
       "tiktok": "Det här TikTok-kontot är redan anslutet till en annan arbetsyta.",
       "whatsapp": "Det här WhatsApp-numret är redan anslutet till en annan arbetsyta.",
       "zalo": "Det här Zalo OA-kontot är redan anslutet till en annan arbetsyta."
+    },
+    "missingScopes": {
+      "generic": "Anslutningen avbröts: vissa behörigheter beviljades inte. Anslut igen och godkänn alla begärda behörigheter.",
+      "tiktok": "TikTok-anslutningen avbröts: vissa behörigheter beviljades inte. Anslut igen och godkänn alla begärda behörigheter."
     },
     "reconnect": {
       "errors": {
@@ -578,6 +777,60 @@
       "button": "Uppdatera alla behörigheter",
       "resultSuccess": "Uppdaterade {refreshed} kanal(er).",
       "resultWithFailures": "Uppdaterade {refreshed} kanal(er), {failed} misslyckades."
+    },
+    "connectMany": {
+      "coexist": {
+        "running": "Startar synkronisering av historik…",
+        "done": "Synkronisering av historik startad",
+        "failed": "Synkroniseringen av historik misslyckades"
+      },
+      "selectAll": "Markera alla",
+      "selected": "{count}/{max} markerade",
+      "dialogTitleRunning": "Ansluter {count} {feature}…",
+      "dialogTitleDone": "Anslutna {connected} av {total}",
+      "progress": "{done}/{total}",
+      "progressAnnouncement": "{done} av {total} klara",
+      "status": {
+        "waiting": "Väntar",
+        "connecting": "Ansluter…",
+        "connected": "Ansluten",
+        "duplicated": "Redan ansluten",
+        "limitReached": "Gräns nådd",
+        "failed": "Misslyckades",
+        "timedOut": "Tidsgräns nådd",
+        "cancelled": "Avbruten"
+      },
+      "reason": {
+        "notSelectable": "Det här objektet kan inte väljas.",
+        "channelLimit": "Kanalgränsen har nåtts.",
+        "workspaceLimit": "Arbetsytans gräns har nåtts.",
+        "providerRejected": "Leverantören avvisade den här begäran.",
+        "inProgress": "Anslutningen pågår redan.",
+        "unknown": "Något gick fel.",
+        "followUpFailed": "Konfigurationen är inte klar – slutför den i kanalinställningarna.",
+        "webhookSubscribeFailed": "Ansluten, men webhook-prenumerationen misslyckades – försök igen från anslutningsinställningarna."
+      },
+      "sessionError": {
+        "sessionExpired": "Din session har gått ut. Anslut igen.",
+        "notMember": "Du är inte längre medlem i den här arbetsytan.",
+        "trialExpired": "Din provperiod har gått ut.",
+        "macLimitReached": "Du har nått ditt kontos gräns.",
+        "credentialMissing": "Autentiseringsuppgifter saknas. Anslut igen."
+      },
+      "cancelRemaining": "Avbryt återstående",
+      "retryFailed": "Försök igen ({count})",
+      "retry": "Försök igen",
+      "goToChannels": "Gå till kanaler",
+      "close": "Stäng",
+      "leaveNotice": "Du kan lämna sidan; anslutna konton behålls",
+      "stepConnecting": "Ansluter",
+      "stepCoexist": "Synkronisera historik",
+      "validation": {
+        "min": "Välj minst 1",
+        "max": "Du kan välja upp till {max}",
+        "duplicate": "Dubbelt val"
+      },
+      "progressLabel": "Förlopp"
     }
   },
   "claude": {
@@ -593,11 +846,11 @@
   },
   "coexist": {
     "billingNote": "Det kan ta flera timmar att slutföra synkroniseringen för stora sidor.",
-    "decline": "Synkronisera inte",
     "descriptionMessenger": "När detta är aktiverat importeras befintliga Messenger-kontakter och upp till 3 månaders konversationshistorik från den här sidan.",
     "descriptionInstagram": "When enabled, existing Instagram contacts and up to 3 months of conversation history will be imported from this Instagram account.",
-    "descriptionWhatsapp": "När detta är aktiverat importeras kontakter och upp till 6 månaders chatthistorik från det här WhatsApp-numret.",
     "enable": "Aktivera synkronisering",
+    "decline": "Synkronisera inte",
+    "descriptionWhatsapp": "När detta är aktiverat importeras kontakter och upp till 6 månaders chatthistorik från det här WhatsApp-numret.",
     "errors": {
       "alreadyTriggered": "Synkroniseringen har redan utlösts för det här numret. Vänta tills Meta levererar historiska data.",
       "notEligible": "Det här numret är inte berättigat till historisk synkronisering.",
@@ -618,20 +871,25 @@
     "toggleLabel": "Synkronisera befintliga kontakter och chatthistorik"
   },
   "condition": {
+    "unknownValue": "Okänd",
     "datePlaceholder": "YYYY-MM-DD",
     "datetimeInvalid": "Ange ett datum som YYYY-MM-DD HH:mm eller en variabel",
+    "openPost": "Öppna {post}",
+    "openPostLink": "Öppna",
+    "postWithoutCaption": "Inlägg utan bildtext",
     "datetimePlaceholder": "YYYY-MM-DD HH:mm",
     "fieldGroups": {
       "analytics": "Analys",
       "broadcastWhatsapp": "Utskick (WhatsApp)",
       "customFields": "Anpassade fält",
+      "botFields": "Botfält",
       "ecommerce": "E-handel",
       "email": "E-post",
       "facebookInstagramComment": "Facebook-/Instagram-kommentar",
       "instagram": "Instagram",
       "opportunity": "Affärsmöjlighet",
       "sms": "SMS",
-      "ctwaAds": "Click to WhatsApp-annonser",
+      "ctwaAds": "Annonser",
       "systemFields": "Systemfält",
       "systemTime": "Systemtid",
       "topicCoupon": "Kupongämne"
@@ -652,8 +910,9 @@
       "completedWhatsAppFlows": "Slutförda WhatsApp-flöden",
       "consecutiveAiFailures": "Antal AI-fel i följd",
       "contactCreatedAt": "Kontakten skapades",
-      "fromCtwaAd": "Från Click to WhatsApp-annons",
-      "ctwaConversion": "CTWA-konvertering",
+      "fromCtwaAd": "Från annons",
+      "fromGoogleAd": "Från Google Ads",
+      "ctwaConversion": "Annonskonvertering",
       "contactCreatedDate": "Datum då kontakten skapades",
       "contactCreatedDateMinutesAgo": "Datum då kontakten skapades (minuter sedan)",
       "continent": "Kontinent",
@@ -793,9 +1052,9 @@
     },
     "ctwaRetarget": {
       "segments": {
-        "conversations": "CTWA-samtalsstartare",
-        "leads": "CTWA-kvalificerade leads",
-        "purchases": "CTWA-köpare"
+        "conversations": "Annons-samtalsstartare",
+        "leads": "Annons-kvalificerade leads",
+        "purchases": "Annons-köpare"
       },
       "adPrefix": "annons",
       "allAds": "alla annonser"
@@ -818,6 +1077,60 @@
     "exportTakingLongDescription": "Exporten bearbetas fortfarande. Du kan stänga den här dialogrutan och kontrollera exporthistoriken igen om några minuter.",
     "linkCopied": "Länken har kopierats till urklipp",
     "title": "Kontakter"
+  },
+  "contactScan": {
+    "menu": {
+      "importFromFile": "Import from File",
+      "automaticScan": "Automatic Customer Scan"
+    },
+    "title": "Automatic Customer Scan",
+    "submit": "Automatic Scan",
+    "fields": {
+      "inbox": "Inbox",
+      "scanFrom": "Scan Inbox from Time"
+    },
+    "hint": {
+      "range": "The system will scan customers who have messaged the page from {from} until now.",
+      "beforeChoose": "After scanning, you must wait another 24 hours before you can use this feature again."
+    },
+    "status": {
+      "idle": "No scan has been run yet for this inbox. Choose a start date and run your first Automatic Customer Scan.",
+      "running": "The system is performing an automatic scan; estimated completion time is {eta}.",
+      "nextScan": "Next scan time: {at}",
+      "finished": "The system completed the last customer scan request at {at}.",
+      "total": "Total customers scanned: {count}",
+      "waitCooldown": "You must wait another 24 hours before you can use this feature again.",
+      "failed": "The last scan failed. You can try again once the cooldown ends.",
+      "partial": "The last scan finished partially — some conversations could not be imported."
+    },
+    "errors": {
+      "contactScanFromTimeInvalid": "Scan-from time must be in the past.",
+      "contactScanInboxNotFound": "Inbox not found.",
+      "contactScanChannelUnsupported": "This channel does not support Automatic Customer Scan.",
+      "contactScanIntegrationDisconnected": "This inbox is not connected.",
+      "contactScanCooldown": "This inbox was scanned recently. Please wait before scanning again.",
+      "contactScanAlreadyRunning": "A scan is already running for this inbox.",
+      "contactScanForbidden": "You do not have permission to run an Automatic Customer Scan."
+    },
+    "histories": {
+      "title": "Scan History",
+      "columns": {
+        "channel": "Channel",
+        "scanFrom": "Scan from",
+        "importedContacts": "Imported contacts",
+        "scannedConversations": "Scanned conversations",
+        "finishedAt": "Finished at",
+        "error": "Error"
+      },
+      "status": {
+        "init": "Queued",
+        "running": "Running",
+        "succeeded": "Succeeded",
+        "partial": "Partial",
+        "failed": "Failed"
+      },
+      "empty": "No scans have been run yet."
+    }
   },
   "coupons": {
     "actions": {
@@ -902,7 +1215,12 @@
   },
   "developerAccessToken": {
     "description": "Generera en token som ger din arbetsyta åtkomst till de offentliga API:erna. Håll denna token hemlig och dela den inte med någon.",
-    "title": "API-åtkomsttoken"
+    "title": "API-åtkomsttoken",
+    "createDialogTitle": "Skapa API-token",
+    "namePlaceholder": "t.ex. Zapier-integration",
+    "empty": "Inga API-token ännu.",
+    "defaultBadge": "Standard",
+    "allScopes": "Alla omfång"
   },
   "dialog": {
     "deleteConfirmation": "Är du helt säker?\nDen här åtgärden kan inte ångras.\nDetta tar permanent bort {feature} från våra servrar."
@@ -951,7 +1269,8 @@
     "title": "E-postämnen"
   },
   "errorLogs": {
-    "title": "Felloggar"
+    "title": "Felloggar",
+    "unknownContact": "Okänd kontakt"
   },
   "extensionsMe": {
     "actions": {
@@ -978,6 +1297,41 @@
       "tags": "Användartaggar"
     },
     "unknown": "Okänt"
+  },
+  "facebookMarketingMessages": {
+    "deleteWarning": "Detta tar bara bort kampanjen från ChatbotX. Meta-meddelandekampanjen fortsätter — pausa eller ta bort den i Annonshanteraren.",
+    "title": "Facebook Marketing Messages",
+    "description": "Öka engagemang och försäljning med personliga kampanjmeddelanden på Messenger.",
+    "create": "Skapa ny",
+    "grantTitle": "Ge Facebook-åtkomst",
+    "grantDescription": "Ge åtkomst för att använda funktionen Marknadsföringsmeddelanden",
+    "grantAction": "Ge åtkomst",
+    "reconnect": "Anslut igen",
+    "expiredWarning": "Din Facebook-åtkomst har upphört eller återkallats. Anslut igen för att skapa eller redigera kampanjer. Befintliga kampanjer visas nedan och är skrivskyddade tills du ansluter igen.",
+    "fields": {
+      "image": "Bild",
+      "video": "Video",
+      "page": "Facebook-sida",
+      "adAccount": "Annonskonto",
+      "budgetType": "Budgettyp",
+      "budget": "Budget",
+      "daily": "Dagsbudget",
+      "lifetime": "Total budget",
+      "templateType": "Meddelandetyp",
+      "text": "Text",
+      "button": "Knapp",
+      "media": "Media",
+      "generic": "Generisk",
+      "greeting": "Hälsning",
+      "quickReplies": "Snabbsvar",
+      "elements": "Kort"
+    },
+    "errors": {
+      "notConfigured": "Facebook Marketing Messages är inte konfigurerat. Be din administratör att ange konfigurations-ID:t för marknadsföringsmeddelanden.",
+      "notGranted": "Ge åtkomst för att använda funktionen Marknadsföringsmeddelanden.",
+      "tosNotAccepted": "För att använda den här funktionen behöver du godkänna villkoren för anpassade objekt på {url}",
+      "notFound": "Marknadsföringsmeddelandet hittades inte."
+    }
   },
   "facebookAds": {
     "adAccounts": {
@@ -1008,6 +1362,12 @@
   },
   "ads": {
     "title": "Annonser",
+    "dashboardNav": {
+      "whatsapp": "Click-to-WhatsApp-annonser",
+      "messenger": "Click-to-Messenger-annonser",
+      "instagram": "Click-to-Instagram-annonser",
+      "google": "Google Ads"
+    },
     "connectAccounts": {
       "connectAdAccount": "Anslut annonskonto",
       "adAccountName": "Namn på annonskonto",
@@ -1033,6 +1393,8 @@
       "title": "Konverteringshändelser",
       "tabs": {
         "facebook": "Facebook",
+        "instagram": "Instagram",
+        "messenger": "Messenger",
         "whatsapp": "WhatsApp"
       },
       "manageAdsAccounts": "Hantera annonskonton",
@@ -1040,11 +1402,16 @@
       "selectAll": "Markera alla",
       "whatsappAsset": "WhatsApp-tillgång",
       "selectWhatsappAsset": "Välj WhatsApp-tillgång",
+      "selectIntegration": "Integration",
+      "selectIntegrationPlaceholder": "Välj integration",
+      "noIntegrationsConnected": "Inga anslutna integrationer för denna kanal ännu.",
+      "connectIntegration": "Anslut en kanal",
       "templates": "Mallar",
       "selectTemplates": "Välj mallar",
       "noTemplates": "Inga godkända mallar hittades.",
       "existingRules": "Befintliga regler",
       "noRules": "Inga konverteringsregler för denna WhatsApp-tillgång ännu.",
+      "noRulesGeneric": "Inga konverteringsregler för denna integration ännu.",
       "toggleRule": "Aktivera eller inaktivera regel",
       "deleteRule": "Ta bort regel",
       "qualifyingTemplateMessageSent": "Kvalificerande mallmeddelande skickas",
@@ -1084,24 +1451,26 @@
         "title": "Spåra kvalificerade leads",
         "question": "Vid vilken punkt i konversationen vill du kvalificera en kontakt som lead?",
         "when": "När",
-        "then": "Markera då CTWA-lead som"
+        "then": "Markera då CTWA-lead som",
+        "thenGeneric": "Markera då lead som"
       },
       "trackPurchases": {
         "title": "Spåra köp",
         "question": "Vilken mall bekräftar ett köp?",
         "when": "När",
         "then": "Då",
-        "noValueNote": "Ett regelbaserat köp registrerar en köpkonvertering utan ordervärde – det räknas mot köp men bidrar med 0 till intäkterna. Ordervärde registreras endast av Metas automatiska händelser."
+        "noValueNote": "Ett regelbaserat köp registrerar en köpkonvertering utan ordervärde – det räknas mot köp men bidrar med 0 till intäkterna. Ordervärde registreras endast av Metas automatiska händelser.",
+        "questionGeneric": "Vid vilken punkt i konversationen vill du registrera ett köp?"
       }
     },
     "analytics": {
-      "title": "CTWA-analys",
+      "title": "Annonsanalys",
       "funnelOverview": "Tratt-översikt",
       "conversationsStarted": "Startade konversationer",
       "qualifiedLeads": "Kvalificerade leads",
       "purchases": "Köp",
       "adSpend": "Annonsutgifter",
-      "spendAccountLevelNote": "Utgifter rapporteras på Meta-annonskontonivå; med ett valt WhatsApp-konto döljs annonser med enbart utgifter och ingen tratt-aktivitet för det kontot.",
+      "spendAccountLevelNote": "Utgifter rapporteras på Meta-annonskontonivå; med ett valt konto döljs annonser med enbart utgifter och ingen tratt-aktivitet för det kontot.",
       "revenue": "Intäkter",
       "roas": "ROAS",
       "revenueCurrencyNote": "Intäkter förutsätter en enda valuta (USD). Annonskonton med blandade valutor sammanställs inte ännu.",
@@ -1130,21 +1499,28 @@
       "adAccountFilter": {
         "all": "Alla annonskonton",
         "label": "Annonskonto",
+        "unavailable": "Det gick inte att läsa in annonskonton — kontrollera den här integrationens Ads-anslutning, eller arbetsytans Facebook Ads-anslutning, i inställningarna.",
         "note": "Annonser med konverteringar men noll utgifter eller noll leverans i det valda datumintervallet döljs vid filtrering efter annonskonto."
+      },
+      "channelFilter": {
+        "label": "Kanal",
+        "allAccounts": "Alla konton",
+        "allChannels": "Alla kanaler"
       },
       "retarget": "Retargeting",
       "thoseWhoPurchased": "De som har köpt",
       "thoseWhoStartedConversation": "De som startade en konversation",
       "sendWhatsappBroadcast": "Skicka WhatsApp-utskick",
+      "retargetOnChannel": "Retargeting på {channel}",
       "from": "Från",
       "to": "Till",
       "unattributed": "Ej attribuerat",
       "retargetDialog": {
-        "title": "Retargeta CTWA-kontakter",
+        "title": "Retargeta annonskontakter",
         "createAudience": "Skapa målgrupp",
         "useExistingAudience": "Använd befintlig målgrupp",
         "audienceName": "Målgruppens namn",
-        "audiencePrefix": "CTWA",
+        "audiencePrefix": "Annonser",
         "confirm": "Starta synkronisering",
         "success": "Synkronisering av retargeting-målgrupp har lagts i kö.",
         "error": "Det gick inte att köa synkronisering av retargeting-målgrupp."
@@ -1156,7 +1532,7 @@
         "failed": "Misslyckades",
         "skippedNoScope": "Hoppades över (ingen behörighetsomfattning)",
         "skippedRegion": "Hoppades över (region)",
-        "noScopeWarning": "Vissa konverteringar skickades inte eftersom detta WhatsApp-konto saknar behörigheten för händelser. Anslut det igen för att aktivera rapportering av automatiska händelser.",
+        "noScopeWarning": "Vissa konverteringar skickades inte eftersom detta konto saknar behörigheten för händelser. Anslut det igen för att aktivera rapportering av automatiska händelser.",
         "reconnectCta": "Anslut konto igen",
         "empty": "Inga konverteringshändelser i detta intervall ännu."
       },
@@ -1169,7 +1545,8 @@
         "contactName": "Kontaktens namn",
         "phone": "Telefon",
         "adId": "Annons-ID",
-        "occurredAt": "Skedde vid"
+        "occurredAt": "Skedde vid",
+        "channel": "Kanal"
       },
       "empty": "Inga data ännu. Anslut ett annonskonto och börja spåra konverteringar."
     }
@@ -1186,7 +1563,7 @@
     "create": "Skapa automatisering",
     "deactivated": "Automatiseringen har inaktiverats",
     "description": "Automatisera Facebook-kommentarer för dina kontakter.",
-    "excludeKeywords": "Uteslut kommentarer med dessa nyckelord",
+    "excludeKeywords": "Uteslut kommentarer som innehåller",
     "excludeKeywordsDescription": "Kommentarer som innehåller något av dessa nyckelord ignoreras av både inkorgsautomatiseringen och den offentliga svarsautomatiseringen.",
     "hideComments": {
       "all": "Dölj alla kommentarer",
@@ -1211,6 +1588,8 @@
     "options": {
       "ignoreCommentReplies": "Svara inte på svar på kommentarer",
       "ignoreCommentRepliesDescription": "Hoppa över automatisering för kommentarer som är svar på andra kommentarer och inte kommentarer på toppnivå.",
+      "trackUserTags": "Spåra om en användare taggar andra användare",
+      "trackUserTagsDescription": "Räknar kontona som taggas i varje kommentar och lägger till dem i kontaktens totaler över alla kommentarer. Använd '{{total_tagged}}' för alla taggade konton och '{{total_new_tagged}}' för konton som aldrig har skrivit till din sida eller varit kontakter.",
       "likeUserComment": "Gilla användarens kommentar",
       "likeUserCommentDescription": "Reagera automatiskt med en gilla-markering på kommentatorns kommentar.",
       "replyOncePerUserPerPost": "Svara endast en gång per användare och inlägg",
@@ -1218,9 +1597,7 @@
       "replyToNewContactsOnly": "Svara endast nya kontakter",
       "replyToNewContactsOnlyDescription": "Svara automatiskt endast personer som aldrig tidigare har varit en kontakt i din arbetsyta.",
       "replyToUsersWhoCommentedOnOtherPosts": "Svara användare som har kommenterat andra inlägg",
-      "replyToUsersWhoCommentedOnOtherPostsDescription": "Fortsätt svara användare som redan har kommenterat dina andra inlägg.",
-      "trackUserTags": "Spåra om en användare taggar andra användare",
-      "trackUserTagsDescription": "Utlös automatiseringen när en användare taggar eller nämner en annan användare i sin kommentar."
+      "replyToUsersWhoCommentedOnOtherPostsDescription": "Fortsätt svara användare som redan har kommenterat dina andra inlägg."
     },
     "postIdPlaceholder": "Ange ett inläggs-ID per rad...",
     "postIdTab": "Inläggs-ID",
@@ -1232,9 +1609,9 @@
       "specificPosts": "Specifika inlägg"
     },
     "privateReply": "Privat svar (inkorg)",
-    "privateReplyDescription": "Skicka ett privat meddelande till kommentatorns inkorg. Välj en AI-agent, en fast textmall (spintax stöds), ett chattbotflöde eller inaktivera.",
+    "privateReplyDescription": "Skicka ett privat meddelande till kommentatorns inkorg. Välj en AI-agent, en fast textmall, ett chattbotflöde eller inaktivera.",
     "publicReply": "Offentligt svar på kommentar",
-    "publicReplyDescription": "Publicera ett offentligt svar direkt under kommentaren. Stöder upp till 10 textmallar (spintax stöds), en AI-agent, ett chattbotflöde eller inget svar.",
+    "publicReplyDescription": "Publicera ett offentligt svar direkt under kommentaren. Stöder upp till 10 textmallar, en AI-agent, ett chattbotflöde eller inget svar. Varje meddelande publiceras som ett separat svar. Spintax stöds.",
     "replies": "Svar",
     "replyAfter": "Svara efter",
     "replyAfterType": {
@@ -1275,7 +1652,13 @@
     },
     "title": "Automatisering av Facebook-kommentarer",
     "trackCommentsOn": "Spåra kommentarer på",
-    "trackCommentsOnDescription": "Använd denna automatisering för alla inlägg på din sida eller begränsa den till specifika inlägg som du väljer."
+    "trackCommentsOnDescription": "Använd denna automatisering för alla inlägg på din sida eller begränsa den till specifika inlägg som du väljer.",
+    "postTypeDialog": {
+      "liveTitle": "Livesändning",
+      "liveDescription": "Automatisera kommentarer i livesändningar. Stöder offentliga svar, privata svar samt att dölja och gilla kommentarer.",
+      "postsTitle": "Sidinlägg",
+      "postsDescription": "Automatisera kommentarer på sidans inlägg och reels. Stöder offentliga svar, privata svar samt att dölja och gilla kommentarer."
+    }
   },
   "facebookLeadAdsAutomation": {
     "addNewPage": "Lägg till ny",
@@ -1293,7 +1676,22 @@
     "title": "Automatisering av Facebook-leadannonser",
     "whatFlow": "Vilket flöde utlöses"
   },
+  "clickToMessageAds": {
+    "title": "Click-to-Message-annonser",
+    "description": "Annonser skickar personer direkt till en konversation på Messenger, Instagram eller WhatsApp.",
+    "empty": {
+      "title": "Inget konto anslutet för den här kanalen",
+      "description": "Anslut ett kanalkonto först och kom sedan tillbaka hit för att skapa annonser.",
+      "cta": "Gå till kanalinställningar"
+    },
+    "dashboardCta": "Visa i annonspanelen"
+  },
   "fields": {
+    "optionalHint": "(valfritt)",
+    "marketingMessagesConfigId": {
+      "label": "Konfigurations-ID för marknadsföringsmeddelanden",
+      "description": "Konfigurations-ID för Facebook Login for Business som används för att begära behörigheten marketing_messages_messenger."
+    },
     "accessToken": {
       "label": "Åtkomsttoken"
     },
@@ -1307,7 +1705,8 @@
       "label": "Agent"
     },
     "aiAgent": {
-      "label": "AI-agent"
+      "label": "AI-agent",
+      "loadError": "Det gick inte att läsa in AI-agenter. Försök igen."
     },
     "aiEditImage": {
       "inputFieldId": {
@@ -1322,9 +1721,6 @@
     },
     "aiQueuedMessages": {
       "label": "Köade AI-meddelanden"
-    },
-    "aiTrigger": {
-      "label": "AI-utlösare"
     },
     "alphanumericLength": {
       "label": "Alfanumerisk längd"
@@ -1346,6 +1742,9 @@
     },
     "appSecret": {
       "label": "Apphemlighet"
+    },
+    "version": {
+      "label": "Version"
     },
     "assignedId": {
       "label": "Tilldela till"
@@ -1373,6 +1772,10 @@
     "authorizedDomain": {
       "description": "Domänerna eller underdomänerna som har behörighet att komma åt din webbchatt.",
       "label": "Behörighetsdomän{plural, select, 1 {} other {er}}"
+    },
+    "showHint": {
+      "label": "Visa tips",
+      "description": "Föreslå kontaktens telefonnummer eller e-post som snabbsvar. Fungerar endast på Messenger och Instagram."
     },
     "autoSkip": {
       "label": "Hoppa över automatiskt"
@@ -1452,7 +1855,10 @@
       "label": "Klient-ID"
     },
     "clientSecret": {
-      "label": "Klienthemlighet"
+      "label": "Klienthemlighet",
+      "keepHint": "Lämna tomt för att behålla den sparade klienthemligheten.",
+      "isSet": "En klienthemlighet är angiven.",
+      "isNotSet": "Ingen klienthemlighet är angiven."
     },
     "code": {
       "label": "Kod",
@@ -1485,6 +1891,19 @@
     },
     "contactId": {
       "label": "Kontakt-ID"
+    },
+    "channelIdentity": {
+      "psid": "PSID",
+      "igsid": "IGSID",
+      "whatsappId": "WhatsApp ID",
+      "bsuid": "BSUID",
+      "zaloUserId": "Zalo-användar-ID",
+      "telegramChatId": "Telegram-chatt-ID",
+      "tiktokUserId": "TikTok-användar-ID",
+      "threadsUsername": "Threads-användarnamn",
+      "webchatGuestId": "Webbchatt-gäst-ID",
+      "externalId": "Externt ID",
+      "channelId": "Kanal-ID"
     },
     "contactNote": {
       "label": "Kontaktanteckning"
@@ -1537,7 +1956,10 @@
       "label": "Anpassat fält",
       "prepend": "Lägg till i början",
       "savePayloadTo": "Spara svar i anpassat fält",
-      "set_value": "Ange värde"
+      "set_value": "Ange värde",
+      "groupSystemFields": "Systemfält",
+      "groupCustomFields": "Anpassade fält",
+      "groupAccountFields": "Botfält"
     },
     "customFields": {
       "label": "Anpassade fält"
@@ -1777,7 +2199,10 @@
         "recent": "Senaste importer",
         "row": "Rad {row}",
         "success": "Lyckades",
-        "title": "Importhistorik"
+        "title": "Importhistorik",
+        "unsupportedChannelStep": "Kanalen {channel} stöder inte {block}.",
+        "channelStepConstraintExceeded": "{block} överskrider gränsen för {channel}: {actual} {unit}, högst {allowed}.",
+        "channelStepConstraintExceededGeneric": "Kanalen {channel} stöder inte den aktuella {block}-konfigurationen."
       },
       "label": "Import",
       "unableToReadHeaders": "Det gick inte att läsa importrubrikerna.",
@@ -1828,6 +2253,9 @@
       "loginDescription": "Anslut ditt Instagram Business-konto direkt via Instagram OAuth.",
       "loginTitle": "Logga in med Instagram",
       "viaFacebookTitle": "Instagram via Facebook"
+    },
+    "threads": {
+      "label": "Threads"
     },
     "instagramBusinessFollowsUser": {
       "label": "Instagram-företaget följer användaren"
@@ -2032,6 +2460,9 @@
     "mcpServer": {
       "label": "MCP-server"
     },
+    "template": {
+      "label": "Template"
+    },
     "me": {
       "label": "Länk till mina data"
     },
@@ -2052,6 +2483,12 @@
     },
     "messengerChannel": {
       "label": "Messenger-kanal"
+    },
+    "whatsappChannels": {
+      "label": "WhatsApp-kanaler"
+    },
+    "messengerChannels": {
+      "label": "Messenger-sidor"
     },
     "messengerTemplateId": {
       "label": "Messenger-mall"
@@ -2138,12 +2575,15 @@
       "used": "Använd"
     },
     "outputCustomField": {
-      "label": "Anpassat utdatafält"
+      "label": "Anpassat utdatafält",
+      "javascriptOptional": "Valfritt. Sparar hela returvärdet. Använd JSON-sökvägsmappningen ovan för att skriva enskilda fält.",
+      "javascriptDumpLabel": "Fullständig JSON-utdata (valfritt)"
     },
     "javascriptCode": {
       "label": "JavaScript-kod",
       "placeholder": "return (input.first_name || 'there').toUpperCase()",
-      "description": "Använd ren JavaScript och returnera ett värde. Nätverk, filer, API:er och externa bibliotek är inte tillgängliga. Kontakt- och systemdata är tillgängliga via `input`-objektet."
+      "description": "Använd ren JavaScript och returnera ett värde. Nätverk, filer, API:er och externa bibliotek är inte tillgängliga. Kontakt- och systemdata är tillgängliga via `input`-objektet.",
+      "objectMapping": "Mappa valfri JSON-sökväg från returvärdet till valfritt anpassat fält, på samma sätt som Extern API-begäran. Du väljer sökvägar och fält."
     },
     "outputFieldId": {
       "label": "Spara resultatet i ett anpassat fält"
@@ -2240,7 +2680,8 @@
       "placeholder": "Ange prompt"
     },
     "provider": {
-      "label": "Leverantör"
+      "label": "Leverantör",
+      "placeholder": "Välj leverantör"
     },
     "publishableKey": {
       "label": "Publicerbar nyckel"
@@ -2254,6 +2695,9 @@
     },
     "dynamicImage": {
       "label": "Dynamisk bild"
+    },
+    "minigame": {
+      "label": "Minispel"
     },
     "quality": {
       "label": "Kvalitet",
@@ -2289,7 +2733,8 @@
       "location": "Plats",
       "number": "Nummer",
       "phone": "Telefon",
-      "text": "Text"
+      "text": "Text",
+      "locationDescription": "På WhatsApp skickar detta Metas inbyggda knapp Skicka plats och väntar på nålen. Andra kanaler skickar prompten som text; en delad nål eller inmatad lat,lng slutför också steget."
     },
     "requestBody": {
       "keyPlaceholder": "Fält",
@@ -2357,6 +2802,17 @@
       "hint": "Lägg till den här i de auktoriserade omdirigerings-URI:erna i din Google-app för att aktivera Google-inloggning.",
       "label": "URL för återanrop vid inloggning"
     },
+    "adsDeveloperToken": {
+      "label": "Google Ads developer token",
+      "hint": "Valfritt: Google kräver inte längre en developer token. Lämna tomt för att behålla den sparade token.",
+      "isSet": "En developer token är angiven.",
+      "isNotSet": "Ingen developer token är angiven.",
+      "clear": "Rensa",
+      "cleared": "Developer token rensad."
+    },
+    "googleAdsCallbackUrl": {
+      "hint": "Använd en dedikerad Google OAuth-app för Google Ads, separat från din Google-app, med scopen adwords och datamanager aktiverade. Den behöver en egen Google OAuth-verifiering."
+    },
     "size": {
       "label": "Storlek",
       "options": {
@@ -2402,19 +2858,21 @@
     },
     "status": {
       "completed": "Slutförd",
+      "partial": "Partial",
       "error": "Fel",
       "failed": "Misslyckades",
       "label": "Status",
       "pending": "Väntande",
       "processing": "Bearbetas",
+      "installing": "Installing",
       "success": "Lyckades"
     },
     "statusCode": {
       "label": "Statuskod"
     },
     "steps": {
-      "label": "Steg",
-      "placeholder": "Välj steg"
+      "label": "Nod",
+      "placeholder": "Välj nod"
     },
     "subject": {
       "label": "Ämne"
@@ -2470,7 +2928,8 @@
       "label": "Temperatur"
     },
     "templateId": {
-      "label": "WhatsApp-mall"
+      "label": "WhatsApp-mall",
+      "placeholder": "Välj en mall"
     },
     "templateMessages": {
       "label": "Mallmeddelanden"
@@ -2499,8 +2958,13 @@
         "step3": "Klistra in inloggningsuppgifterna nedan för att ansluta."
       },
       "displayName": "Visningsnamn",
+      "needsReauthorizationForComments": "Den här anslutningen godkändes före kommentarsautomatisering. Anslut igen för att börja ta emot kommentarshändelser.",
       "label": "TikTok",
-      "openId": "Öppet ID"
+      "openId": "Öppet ID",
+      "commentToMessage": "Comment-to-Message",
+      "commentToMessageDescription": "Lets this account answer high-intent comments with a direct message. Required for TikTok comment automations that use a private reply.",
+      "commentToMessageEligibility": "Only available to Business Accounts registered in Vietnam, Indonesia or Thailand, owned by someone over 18, that are registered businesses or have run Messaging Ads, with messaging permissions set to \"Requests\".",
+      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting."
     },
     "timezone": {
       "description": "Kontakter tilldelas den här tidszonen när kontaktens tidszon är okänd.",
@@ -2700,6 +3164,59 @@
         "description": "Denna token visas endast en gång. Förvara den säkert — du kommer inte kunna se den igen.",
         "done": "Klart"
       }
+    },
+    "tokenPermission": {
+      "label": "Behörighet",
+      "full": "Full åtkomst",
+      "readOnly": "Skrivskyddad"
+    },
+    "tokenScopes": {
+      "label": "Omfång",
+      "contacts": "Kontakter",
+      "inbox": "Inkorg",
+      "automation": "Automatisering",
+      "broadcasts": "Utskick",
+      "analytics": "Analys",
+      "ecommerce": "E-handel",
+      "channels": "Kanaler",
+      "integrations": "Integrationer",
+      "minigames": "Minispel",
+      "appointments": "Bokningar",
+      "media": "Media",
+      "ads": "Annonser",
+      "settings": "Inställningar",
+      "miniApps": "Mini Apps"
+    },
+    "adReferral": {
+      "label": "Ads",
+      "ctwa": "CTWA",
+      "ctm": "CTM",
+      "ctid": "CTID",
+      "googleAds": "Google Ads",
+      "googleAdsWhatsapp": "GA CCWA",
+      "googleAdsMessenger": "GA CCTM"
+    },
+    "adSource": {
+      "label": "Ad source"
+    },
+    "manualAppSecret": {
+      "label": "Meta App Secret (valfritt)",
+      "description": "Aktiverar verifiering av webhook-signatur för denna manuella anslutning. Du hittar den i din Meta-apps instrumentpanel under Inställningar > Allmänt."
+    },
+    "lastCallRecorded": {
+      "label": "Senaste samtalsinspelning"
+    },
+    "lastCallTranscript": {
+      "label": "Senaste samtalstranskription"
+    },
+    "sendRatePerMinute": {
+      "label": "Meddelanden per minut"
+    },
+    "adsUploadMethod": {
+      "label": "Uppladdningsmetod",
+      "hint": "Data Manager rekommenderas. Det gamla uppladdnings-API:et fungerar bara för Google Cloud-projekt som Google fortfarande tillåter och använder inte Data Manager-behörigheten. En ändring gäller bara nya anslutningar: anslut befintliga arbetsytor igen.",
+      "dataManager": "Data Manager API (rekommenderas)",
+      "legacy": "Gammalt uppladdnings-API"
     }
   },
   "flowAnalytics": {
@@ -2770,6 +3287,7 @@
       "moosendCreateContact": "Lägg till kontakt i Moosend",
       "noFlowsAvailable": "Inga flöden tillgängliga",
       "noTemplatesAvailable": "Inga mallar tillgängliga",
+      "inboxesUnavailable": "Det gick inte att läsa in kanaler",
       "openWebsite": "Öppna webbplats",
       "optInEmail": "Anmäl till e-post",
       "optOutEmail": "Avanmäl från e-post",
@@ -2785,6 +3303,7 @@
       "sendGif": "Skicka GIF",
       "sendGridAddContact": "Lägg till kontakt i SendGrid",
       "sendImage": "Skicka bild",
+      "sendMultipleImages": "Flera bilder",
       "sendMessage": "Skicka meddelande",
       "sendNode": "Starta en annan nod",
       "sendTemplateMessage": "Mallmeddelande",
@@ -2814,6 +3333,8 @@
       "typing": "Skriver",
       "unarchiveConversation": "Återställ konversation från arkivet",
       "unassignConversation": "Ta bort tilldelning av konversation",
+      "markConversationAsUnread": "Markera konversation som oläst",
+      "markConversationAsRead": "Markera konversation som läst",
       "unfollowConversation": "Sluta följa konversation",
       "unsubscribeBroadcast": "Avsluta prenumeration på utskick",
       "unsubscribeSequence": "Avsluta prenumeration på sekvens",
@@ -2821,18 +3342,25 @@
       "whatsappFlow": "WhatsApp-flöde",
       "whatsappOptionList": "Alternativlista",
       "appointmentScheduling": "Tidsbokning",
-      "metaConversions": "Meta Conversions API",
       "triggerN8n": "Trigger n8n",
       "sendMetaCapiEvent": "Skicka Meta CAPI-händelse",
       "import": "Importera flöde",
       "export": "Exportera",
       "importStarted": "Flödet importeras. Kontrollera importhistoriken för resultat.",
-      "importJsonOnly": "Endast JSON-filer"
+      "importJsonOnly": "Endast JSON-filer",
+      "whatsappCallButton": "Ring på WhatsApp",
+      "metaConversions": "Meta Conversions API",
+      "threadControl": "Trådkontroll",
+      "sendGoogleAdsConversion": "Skicka Google Ads-konvertering"
     },
     "sendCarousel": {
       "addSlide": "Lägg till kort",
       "removeSlide": "Ta bort kort",
       "whatsappLinkButtonIgnored": "På WhatsApp fungerar inte det här kortets länk: ett kort med en länkknapp kan inte ha andra knappar. Det skickas som ett svar istället."
+    },
+    "sendMultipleImages": {
+      "removeImage": "Ta bort bild",
+      "selectImage": "Välj bilder"
     },
     "additionalSteps": "Ytterligare steg",
     "aiAnalyzeImage": {
@@ -2898,6 +3426,28 @@
     "quickReplies": {
       "limitReached": "Gränsen för snabbsvar har nåtts ({max})."
     },
+    "quickReplySettings": {
+      "open": "Inställningar för snabbsvar",
+      "title": "Konfigurera snabbsvar",
+      "chooseNextStep": "Välj nästa steg",
+      "followUp": {
+        "label": "Följ upp om kontakten inte har reagerat",
+        "waitFor": "Vänta i",
+        "divider": "Om kontakten inte har reagerat, följ upp med",
+        "windowHint": "Messenger och Instagram tillåter bara utskick inom 24 timmar efter kontaktens senaste meddelande; senare uppföljningar hoppas över där.",
+        "handle": "Ingen reaktion"
+      },
+      "retry": {
+        "label": "Försök igen om svaret inte är ett snabbsvar",
+        "message": "Meddelande vid nytt försök",
+        "messageDefault": "Tryck på ett av alternativen nedan 👇",
+        "count": "Antal försök",
+        "countOption": "{count, plural, =0 {Inga försök} one {# gång} other {# gånger}}",
+        "divider": "När antalet försök har överskridits",
+        "handle": "Försök överskridna",
+        "getUserDataConflict": "Nytt försök är inte tillgängligt när det här meddelandet innehåller steget Hämta användardata."
+      }
+    },
     "setCustomField": {
       "temporalHint": "Lämna tomt för att spara aktuellt datum och tid."
     },
@@ -2961,7 +3511,15 @@
     "sendText": {
       "tiktokTitleTruncated": "När knappar är kopplade skickar TikTok bara de första 40 tecknen i det här meddelandet — resten klipps bort."
     },
-    "dataWasSaved": "Uppgifterna sparades"
+    "dataWasSaved": "Uppgifterna sparades",
+    "media": {
+      "stepUnsupportedOnChannel": "Den här kanalen kan inte skicka den här medietypen – steget hoppas över där. Ta bort det eller byt nodens kanal till en som stöder det.",
+      "buttonsSkippedOnChannel": "Den här kanalen kan inte skicka knappar tillsammans med ett mediemeddelande – där hoppas de över. Lägg dem i ett efterföljande textsteg i stället."
+    },
+    "whatsappCallButton": {
+      "editButtonTitle": "Redigera knapp",
+      "buttonLabel": "Knappetikett"
+    }
   },
   "folders": {
     "heading": {
@@ -3061,6 +3619,14 @@
   "editProfile": {
     "title": "Redigera profil"
   },
+  "inboxes": {
+    "markReadOnOutbound": {
+      "label": "Markera botmeddelanden som lästa",
+      "enabled": "Aktiverad",
+      "disabled": "Inaktiverad",
+      "description": "När detta är aktiverat markerar boten automatiskt sina egna meddelanden som lästa"
+    }
+  },
   "inboxTeams": {
     "title": "Inkorgsteam"
   },
@@ -3074,6 +3640,12 @@
     "tabs": {
       "generalSettings": "Allmänna inställningar",
       "conversionsApi": "Annonsoptimering"
+    },
+    "selectPage": {
+      "noAccountsTitle": "Inga Instagram-konton hittades",
+      "noAccountsDescription": "Inga Instagram-företagskonton hittades på de Facebook-sidor du hanterar. Återanslut Instagram och bevilja alla begärda behörigheter.",
+      "alreadyConnectedNote": "Det här kontot är redan anslutet",
+      "tryAgain": "Försök återansluta"
     }
   },
   "instagramCommentAutomation": {
@@ -3095,7 +3667,7 @@
     "create": "Skapa automatisering",
     "deactivated": "Automatiseringen har inaktiverats",
     "description": "Automatisera Instagram-kommentarer för dina kontakter.",
-    "excludeKeywords": "Uteslut kommentarer med dessa nyckelord",
+    "excludeKeywords": "Uteslut kommentarer som innehåller",
     "excludeKeywordsDescription": "Kommentarer som innehåller något av dessa nyckelord ignoreras av både inkorgsautomatiseringen och den offentliga svarsautomatiseringen.",
     "hideComments": {
       "all": "Dölj alla kommentarer",
@@ -3118,6 +3690,8 @@
     "options": {
       "ignoreCommentReplies": "Svara inte på svar på kommentarer",
       "ignoreCommentRepliesDescription": "Hoppa över automatisering för kommentarer som är svar på andra kommentarer och inte kommentarer på toppnivå.",
+      "trackUserTags": "Spåra om en användare taggar andra användare",
+      "trackUserTagsDescription": "Räknar kontona som taggas i varje kommentar och lägger till dem i kontaktens totaler över alla kommentarer. Använd '{{total_tagged}}' för alla taggade konton och '{{total_new_tagged}}' för konton som aldrig har skrivit till din sida eller varit kontakter.",
       "likeUserComment": "Gilla användarens kommentar",
       "likeUserCommentDescription": "Reagera automatiskt med en gilla-markering på kommentatorns kommentar.",
       "replyOncePerUserPerPost": "Svara endast en gång per användare och inlägg",
@@ -3136,9 +3710,9 @@
       "specificPosts": "Specifika inlägg"
     },
     "privateReply": "Privat svar (inkorg)",
-    "privateReplyDescription": "Skicka ett privat meddelande till kommentatorns inkorg. Välj en AI-agent, en fast textmall (spintax stöds), ett chattbotflöde eller inaktivera.",
+    "privateReplyDescription": "Skicka ett privat meddelande till kommentatorns inkorg. Välj en AI-agent, en fast textmall, ett chattbotflöde eller inaktivera.",
     "publicReply": "Offentligt svar på kommentar",
-    "publicReplyDescription": "Publicera ett offentligt svar direkt under kommentaren. Stöder upp till 10 textmallar (spintax stöds), en AI-agent, ett chattbotflöde eller inget svar.",
+    "publicReplyDescription": "Publicera ett offentligt svar direkt under kommentaren. Stöder upp till 10 textmallar, en AI-agent, ett chattbotflöde eller inget svar. Varje meddelande publiceras som ett separat svar. Spintax stöds.",
     "replies": "Svar",
     "replyAfter": "Svara efter",
     "replyAfterType": {
@@ -3179,7 +3753,223 @@
     },
     "title": "Automatisering av Instagram-kommentarer",
     "trackCommentsOn": "Spåra kommentarer på",
-    "trackCommentsOnDescription": "Använd denna automatisering för alla inlägg på ditt anslutna konto eller begränsa den till specifika inlägg som du väljer."
+    "trackCommentsOnDescription": "Använd denna automatisering för alla inlägg på ditt anslutna konto eller begränsa den till specifika inlägg som du väljer.",
+    "postTypeDialog": {
+      "liveTitle": "Instagram Live",
+      "liveDescription": "Automatisera kommentarer i Instagram Live. Skickar ett privat svar till varje kommentator medan du sänder live.",
+      "postsTitle": "Inlägg och reels",
+      "postsDescription": "Automatisera kommentarer på inlägg och reels. Stöder offentliga svar, privata svar och att dölja kommentarer."
+    },
+    "liveReplyNote": "Instagram tillåter bara ett privat svar på en Live-kommentar, och bara medan du sänder live. Offentliga svar, döljning och gilla-markeringar är inte tillgängliga."
+  },
+  "threadsCommentAutomation": {
+    "title": "Threads Comment Automation",
+    "description": "Automate public Threads comment replies for your contacts.",
+    "create": "Create Automation",
+    "replies": "Replies",
+    "empty": "No Threads comment automations yet.",
+    "publicOnlyNote": "Threads currently supports public replies only.",
+    "trackCommentsOn": "Track comments on",
+    "publicReply": "Public reply to comment",
+    "publicReplyDescription": "Send a public reply to matching Threads comments. Upp till 10 textmeddelanden (spintax stöds), vart och ett publicerat som ett separat svar.",
+    "replyMessage": "Reply message",
+    "replyFlow": "Reply flow",
+    "replyAIAgent": "Reply AI Agent",
+    "includeKeywordsType": "Reply to",
+    "includeKeywords": "Keywords to match",
+    "excludeKeywords": "Uteslut kommentarer som innehåller",
+    "keywordsPlaceholder": "Type and press Enter...",
+    "replyAfter": "Reply after",
+    "replyAfterValue": "Value",
+    "specificPostIds": "Specific post IDs",
+    "postIdPlaceholder": "Ange numeriska inläggs-ID:n och tryck Enter (inte koden i länken)...",
+    "card": {
+      "targeting": "Targeting & Reply",
+      "filters": "Filters & Options",
+      "replyTiming": "Reply Timing",
+      "hideComments": "Dölj kommentarer"
+    },
+    "postType": {
+      "all": "All posts",
+      "specificPosts": "Specific posts"
+    },
+    "replyType": {
+      "text": "Text message",
+      "flow": "Flow",
+      "AIAgent": "AI Agent",
+      "none": "No reply"
+    },
+    "keywordsType": {
+      "all": "All comments",
+      "equal": "Exact match",
+      "contain": "Contains"
+    },
+    "replyAfterType": {
+      "immediately": "Immediately",
+      "seconds": "After X seconds",
+      "minutes": "After X minutes",
+      "hours": "After X hours",
+      "randomWithin3Minutes": "Random within 3 minutes",
+      "randomWithin5Minutes": "Random within 5 minutes",
+      "randomWithin10Minutes": "Random within 10 minutes",
+      "randomWithin20Minutes": "Random within 20 minutes",
+      "randomWithin30Minutes": "Random within 30 minutes",
+      "randomWithin60Minutes": "Random within 60 minutes"
+    },
+    "options": {
+      "replyToNewContactsOnly": "Only reply to new contacts",
+      "replyOncePerUserPerPost": "Reply only once to each user per post",
+      "replyToUsersWhoCommentedOnOtherPosts": "Reply to users who commented on other posts",
+      "ignoreCommentReplies": "Don't reply to replies to comments"
+    },
+    "validation": {
+      "postIdsMustBeEmptyForAll": "Post IDs must be empty when targeting all posts.",
+      "postIdsRequired": "Select at least one post ID when targeting specific posts.",
+      "keywordsMustBeEmptyForAll": "Keywords must be empty when matching all comments.",
+      "keywordsRequired": "Enter at least one keyword for the selected match type.",
+      "delayMustBePositive": "Delay value must be greater than zero.",
+      "delayMustBeZero": "Delay value must be zero for the selected timing option.",
+      "atLeastOneFieldRequired": "At least one field is required.",
+      "replyTextRequired": "Ange minst ett svarsmeddelande.",
+      "hideKeywordsRequired": "Enter at least one keyword to hide comments by keyword."
+    },
+    "hideCommentsDescription": "Endast svar på översta nivån till dina inlägg kan döljas.",
+    "hideComments": {
+      "all": "Dölj alla kommentarer",
+      "hasPhoneNumber": "Innehåller telefonnummer",
+      "hasLink": "Innehåller länk",
+      "hasKeywords": "Innehåller nyckelord",
+      "keywords": "Nyckelord",
+      "showCommentsAfter": "Visa kommentarer efter"
+    },
+    "showCommentsAfter": {
+      "none": "Aldrig"
+    },
+    "chooseSpecificPosts": "Välj inlägg...",
+    "selectPosts": "Välj inlägg",
+    "selectAccountAll": "Alla konton",
+    "postsTab": "Inlägg",
+    "postIdTab": "Inläggs-ID",
+    "noPostsFound": "Inga inlägg hittades",
+    "loadPostsError": "Det gick inte att läsa in inläggen. Du kan fortfarande ange ID:n manuellt."
+  },
+  "tiktokCommentAutomation": {
+    "title": "TikTok Comment Automation",
+    "description": "Automate replies, likes and hiding on comments under your TikTok videos.",
+    "create": "Create Automation",
+    "replies": "Replies",
+    "empty": "No TikTok comment automations yet.",
+    "deliveryDelayNote": "TikTok delivers comment events within five minutes, so replies are not instant. Any reply delay you set is added on top of that.",
+    "trackCommentsOn": "Track comments on",
+    "publicReply": "Public reply to comment",
+    "publicReplyDescription": "Send a public reply to matching TikTok comments. Upp till 10 textmeddelanden (spintax stöds), vart och ett publicerat som ett separat svar.",
+    "replyMessage": "Reply message",
+    "replyFlow": "Reply flow",
+    "replyAIAgent": "Reply AI Agent",
+    "includeKeywordsType": "Reply to",
+    "includeKeywords": "Keywords to match",
+    "excludeKeywords": "Uteslut kommentarer som innehåller",
+    "keywordsPlaceholder": "Type and press Enter...",
+    "replyAfter": "Reply after",
+    "replyAfterValue": "Value",
+    "specificPostIds": "Specific video IDs",
+    "postIdPlaceholder": "Enter video IDs and press Enter...",
+    "hideCommentsDescription": "Hidden comments stay visible to their author only.",
+    "card": {
+      "targeting": "Targeting & Reply",
+      "filters": "Filters & Options",
+      "hideComments": "Hide Comments",
+      "replyTiming": "Reply Timing"
+    },
+    "postType": {
+      "all": "All videos",
+      "specificPosts": "Specific videos"
+    },
+    "replyType": {
+      "text": "Text message",
+      "flow": "Flow",
+      "AIAgent": "AI Agent",
+      "none": "No reply"
+    },
+    "keywordsType": {
+      "all": "All comments",
+      "equal": "Exact match",
+      "contain": "Contains"
+    },
+    "replyAfterType": {
+      "immediately": "Immediately",
+      "seconds": "After X seconds",
+      "minutes": "After X minutes",
+      "hours": "After X hours",
+      "randomWithin3Minutes": "Random within 3 minutes",
+      "randomWithin5Minutes": "Random within 5 minutes",
+      "randomWithin10Minutes": "Random within 10 minutes",
+      "randomWithin20Minutes": "Random within 20 minutes",
+      "randomWithin30Minutes": "Random within 30 minutes",
+      "randomWithin60Minutes": "Random within 60 minutes"
+    },
+    "options": {
+      "replyToNewContactsOnly": "Only reply to new contacts",
+      "replyOncePerUserPerPost": "Reply only once to each user per video",
+      "replyToUsersWhoCommentedOnOtherPosts": "Reply to users who commented on other videos",
+      "ignoreCommentReplies": "Don't reply to replies to comments",
+      "likeUserComment": "Like the user's comment"
+    },
+    "hide": {
+      "all": "Hide every comment",
+      "hasPhoneNumber": "Hide comments containing a phone number",
+      "hasLink": "Hide comments containing a link",
+      "hasKeywords": "Hide comments containing keywords",
+      "keywords": "Keywords to hide",
+      "showCommentsAfter": "Show hidden comments again after"
+    },
+    "showCommentsAfter": {
+      "none": "Never",
+      "6h": "6 hours",
+      "12h": "12 hours",
+      "1d": "1 day",
+      "2d": "2 days",
+      "3d": "3 days",
+      "4d": "4 days",
+      "5d": "5 days",
+      "6d": "6 days",
+      "7d": "7 days",
+      "8d": "8 days",
+      "9d": "9 days",
+      "10d": "10 days"
+    },
+    "validation": {
+      "postIdsMustBeEmptyForAll": "Video IDs must be empty when targeting all videos.",
+      "postIdsRequired": "Select at least one video ID when targeting specific videos.",
+      "keywordsMustBeEmptyForAll": "Keywords must be empty when matching all comments.",
+      "keywordsRequired": "Enter at least one keyword for the selected match type.",
+      "delayMustBePositive": "Delay value must be greater than zero.",
+      "delayMustBeZero": "Delay value must be zero for the selected timing option.",
+      "hideKeywordsRequired": "Enter at least one keyword to hide comments by keyword.",
+      "atLeastOneFieldRequired": "At least one field is required.",
+      "replyTextRequired": "Ange minst ett svarsmeddelande."
+    },
+    "privateReply": "Private reply (Comment-to-Message)",
+    "privateReplyDescription": "Send a direct message to the commenter. TikTok only allows this for comments it flags as high intent, so it will not fire for every matching comment.",
+    "privateReplyMessage": "Private reply message",
+    "privateReplyHighIntentTitle": "TikTok decides which comments can be messaged",
+    "privateReplyHighIntentNotice": "Comment-to-Message must be enabled on the connected TikTok account, and the account must be a Business Account registered in Vietnam, Indonesia or Thailand. TikTok sends the direct message only for first-level comments it flags as high intent, within 48 hours, once per comment, and not if the commenter already messaged you in the past 24 hours."
+  },
+  "commentAutomationMissedComments": {
+    "action": "Bearbeta missade kommentarer",
+    "processing": "Bearbetar missade kommentarer",
+    "title": "Bearbeta missade kommentarer",
+    "description": "Skanna inläggets kommentarer från de senaste 7 dagarna och kör dem genom den här kommentarsautomatiseringen. Kommentarer som redan har bearbetats hoppas över. Detta skickar riktiga meddelanden och svar.",
+    "success": "Skannade {scanned} kommentarer: {skipped} redan bearbetade, {queued} köade för bearbetning, {failed} misslyckades.",
+    "errors": {
+      "notSinglePost": "Endast tillgängligt för en automatisering som riktar sig mot exakt ett specifikt inlägg.",
+      "inactive": "Aktivera den här automatiseringen innan du bearbetar missade kommentarer.",
+      "outsideSchedule": "Den här automatiseringen är utanför sina aktiva tider. Försök igen inom dess schema.",
+      "workspaceInactive": "Den här arbetsytan är avstängd eller utanför sina aktiva tider, så inga kommentarer skulle bearbetas. Försök igen när arbetsytan är aktiv.",
+      "alreadyRunning": "Missade kommentarer bearbetas redan för den här automatiseringen. Försök igen om några minuter.",
+      "integrationNotFound": "Inget anslutet konto hittades för den här kanalen.",
+      "fetchFailed": "Det gick inte att läsa in inläggets kommentarer. Kontrollera kanalanslutningen och försök igen."
+    }
   },
   "instagramStoryAutomation": {
     "title": "Automatisering av Instagram Story-svar",
@@ -3243,6 +4033,128 @@
   },
   "integrations": {
     "title": "Integrationer"
+  },
+  "aiHandover": {
+    "title": "Meta Business AI",
+    "description": "Styr vad som händer när Metas AI-assistent svarar dina Messenger-kunder.",
+    "info": "När det är aktiverat tas konversationer över här efter att AI-assistenten lämnat tillbaka dem, och inställningarna nedan gäller.",
+    "enabled": {
+      "label": "Aktivera"
+    },
+    "schedule": {
+      "label": "Körtid",
+      "description": "Tillämpa bara under dessa timmar i arbetsytans tidszon.",
+      "from": "Från timme",
+      "to": "Till timme",
+      "add": "Lägg till tidsintervall",
+      "remove": "Ta bort tidsintervall"
+    },
+    "gotoFlow": {
+      "label": "Gå till flöde",
+      "description": "Flow som startas när AI-assistenten lämnar tillbaka konversationen. Har företräde framför återlämningsmeddelandet.",
+      "placeholder": "Välj ett flöde",
+      "clear": "Rensa flöde"
+    },
+    "returnMessage": {
+      "label": "Återlämningsmeddelande",
+      "description": "Skickas i stället när inget flöde är valt eller flödet inte längre är aktivt.",
+      "placeholder": "Meddelande som skickas när AI:n lämnar tillbaka konversationen"
+    },
+    "pauseBot": {
+      "label": "Överför konversation till människa",
+      "description": "Stoppar boten för den här kontakten efter återlämningen tills en teammedlem tar över eller den återupptas."
+    },
+    "readOnly": "Du kan se de här inställningarna men inte ändra dem.",
+    "errors": {
+      "supportSession": "Inställningar kan inte ändras från en supportsession.",
+      "flowNotFound": "Det valda flödet hittades inte eller är inte aktivt.",
+      "timeRanges": "Ange giltiga tidsintervall: hela timmar från 0 till 24, med olika start och slut."
+    },
+    "bulk": {
+      "title": "Tillämpa på alla kunder",
+      "description": "Lämna över alla berättigade Messenger-konversationer till Metas AI-assistent, eller ta tillbaka de som den håller just nu. Det körs i bakgrunden och du kan följa det här.",
+      "started": "Startad. Du kan följa förloppet här.",
+      "progress": "Förlopp",
+      "processedOfTotal": "{done} av {total} konversationer",
+      "counters": "{processed} klara, {skipped} hoppades över, {failed} misslyckades",
+      "action": {
+        "enable": "Aktivera för alla",
+        "disable": "Inaktivera för alla"
+      },
+      "status": {
+        "pending": "Väntar på start",
+        "running": "Körs",
+        "cancelling": "Avbryts",
+        "completed": "Slutförd",
+        "failed": "Misslyckades",
+        "cancelled": "Avbruten"
+      },
+      "enable": {
+        "dialogDescription": "Varje Messenger-konversation där kunden har skrivit de senaste 30 dagarna och som ingen annan app håller lämnas över till Metas AI-assistent. Konversationer tas tillbaka enligt inställningarna ovan.",
+        "confirm": "Aktivera för alla",
+        "blocked": "Spara automatiseringen ovan och slå på den (inom dess körtid) för att aktivera den för alla kunder."
+      },
+      "disable": {
+        "dialogDescription": "Bara konversationer som Metas AI-assistent håller just nu tas tillbaka, och bara kunder som skrivit de senaste 7 dagarna kan nås. Var och en får meddelandet nedan, skickat med Metas Human Agent-tagg, så skriv det som om en person svarar. Sidan behöver behörigheten Human Agent.",
+        "messageLabel": "Meddelande till kunder",
+        "messageDescription": "Upp till {max} tecken.",
+        "messagePlaceholder": "Hej, en teammedlem tar över den här konversationen.",
+        "confirm": "Inaktivera för alla",
+        "policyWarning": "Meta tillåter Human Agent-taggen bara när en person svarar kunden. Används den för kampanjer eller automatiska meddelanden kan sidans meddelandefunktion begränsas."
+      },
+      "errors": {
+        "automationNotActive": "Spara automatiseringen och slå på den (inom dess körtid) innan du aktiverar den för alla kunder.",
+        "messageRequired": "Ange meddelandet som ska skickas till kunderna.",
+        "messageTooLong": "Meddelandet är för långt.",
+        "pageNotConnected": "Den här sidan är inte ansluten.",
+        "nothingToRetry": "Det finns inget att försöka igen."
+      },
+      "runErrors": {
+        "automationStopped": "Stoppades eftersom automatiseringen stängdes av.",
+        "tokenInvalid": "Sidans åtkomst har återkallats. Anslut sidan igen och försök på nytt.",
+        "channelUnsupported": "Den här kanalen stöder inte massåtgärden.",
+        "maxAttempts": "Gav upp efter upprepade fel.",
+        "channelUnavailable": "Stoppades eftersom Meta inte kunde nås flera gånger i rad.",
+        "batchFailed": "Vissa konversationer kunde inte bekräftas och räknades som misslyckade.",
+        "pageDisconnected": "Stoppades eftersom sidan kopplades bort.",
+        "pageRefused": "Meta nekade överlämningen för den här sidan: den kanske inte är konfigurerad för Metas AI-assistent eller saknar behörighet.",
+        "integrationUnavailable": "Sidans anslutning kunde inte laddas. Anslut sidan igen och försök på nytt."
+      },
+      "pausedUntil": "Pausad till {at} för att hålla sig inom Metas hastighetsgränser för den här sidan. Den återupptas av sig själv.",
+      "preparing": "Förbereder…",
+      "live": {
+        "enable": "Aktiverar för kunder: {done} / {total}",
+        "disable": "Inaktiverar för kunder: {done} / {total}",
+        "enableCounting": "Aktiverar för kunder: räknar…",
+        "disableCounting": "Inaktiverar för kunder: räknar…"
+      },
+      "done": {
+        "enable": "Aktiverat för {processed} av {total} kunder.",
+        "disable": "Inaktiverat för {processed} av {total} kunder."
+      },
+      "stopped": {
+        "enable": "Aktiveringen för alla kunder stoppades.",
+        "disable": "Inaktiveringen för alla kunder stoppades."
+      },
+      "retry": "Försök igen"
+    },
+    "history": {
+      "link": "Historik",
+      "title": "Historik för massköringar",
+      "empty": "Inga körningar ännu.",
+      "columns": {
+        "action": "Åtgärd",
+        "requestedAt": "Startad",
+        "progress": "Bearbetade / totalt",
+        "finishedAt": "Avslutad",
+        "message": "Meddelande",
+        "requestedBy": "Begärd av"
+      },
+      "description": "Varje gång \"Tillämpa på alla kunder\" slogs på eller av för den här sidan, senaste först.",
+      "error": "Historiken kunde inte laddas.",
+      "previousPage": "Föregående sida",
+      "nextPage": "Nästa sida"
+    }
   },
   "invitation": {
     "chatbotInvitationDescription1": "Gå med i {chatbotName}",
@@ -3341,9 +4253,8 @@
   },
   "make": {
     "setting": {
-      "description": "Anslut ditt Make.com-konto för att skicka händelser från dina flöden och ta emot kontaktdata via Make-scenarier. Din arbetsytas åtkomsttoken för utvecklare kopieras till urklipp när du klickar på Anslut – klistra in den när du skapar anslutningen i Make.",
+      "description": "Anslut ditt Make.com-konto för att skicka händelser från dina flöden och ta emot kontaktdata via Make-scenarier.",
       "label": "Make",
-      "noWorkspaceToken": "Ingen åtkomsttoken för utvecklare hittades för den här arbetsytan. Generera en i avsnittet Arbetsytetoken ovan och klicka sedan på Anslut igen.",
       "notConfigured": "Ingen inbjudningslänk för Make hittades. Lägg till en i Plattformsinställningar."
     },
     "title": "Make"
@@ -3363,16 +4274,28 @@
     "toolsGroup": "Verktyg"
   },
   "messages": {
+    "timeAgo": {
+      "now": "nu",
+      "minutes": "{count} min",
+      "hours": "{count} tim",
+      "days": "{count} d",
+      "months": "{count} mån",
+      "years": "{count} år"
+    },
     "addFeature": "Lägg till {feature}",
     "archiveFeature": "Arkivera {feature}",
     "archiveFeatureDescription": "Är du säker på att du vill arkivera {feature}?",
     "botIsActive": "Boten är aktiv",
     "cancelEdit": "Avbryt",
+    "replaceAttachment": "Ersätt bilaga",
+    "addAttachment": "Lägg till bilaga",
+    "reloadAttachment": "Ladda om bilaga",
     "changeDefault": "Ändra standard",
     "changeDefaultDescription": "Är du säker på att du vill ändra standardagenten för AI?",
     "changeHideState": "Ändra dölj-status",
     "changeLikeState": "Ändra gilla-status",
     "commentHidden": "Den här kommentaren har dolts",
+    "commentMediaUnavailable": "Den här kommentaren innehåller en GIF, ett klistermärke eller en bild som inte kan visas",
     "connectFailed": "Det gick inte att ansluta {feature}",
     "connectSuccess": "{feature} har anslutits",
     "connectedSuccess": "{feature} har anslutits",
@@ -3388,6 +4311,12 @@
     "deleteConfirmation": "Är du helt säker?\nDen här åtgärden kan inte ångras.\nDetta tar permanent bort {feature} från våra servrar.",
     "deleteFailed": "Det gick inte att ta bort {feature}",
     "deleteFeature": "Ta bort {feature}",
+    "resetFeature": "Återställ {feature}",
+    "resetConfirmation": "Detta rensar värdena för de valda {feature}.\nDenna åtgärd kan inte ångras.",
+    "resetAllConfirmation": "Detta rensar värdena för alla {feature} för denna kontakt.\nDenna åtgärd kan inte ångras.",
+    "resetSuccess": "{feature} återställdes",
+    "clearFeature": "Rensa {feature}",
+    "clearSuccess": "{feature} rensades",
     "deleteFileComingSoon": "Funktionen för att ta bort filer kommer snart",
     "deleteMessageSuccess": "Meddelandet har tagits bort",
     "deleteNodeError": "Det gick inte att ta bort blocket. Försök igen.",
@@ -3418,10 +4347,13 @@
     "failedToPreviewImage": "Det gick inte att förhandsgranska bilden",
     "featureNotFound": "{feature} hittades inte",
     "flowConfigIncomplete": "Vissa konfigurationer är ofullständiga",
+    "quickReplyNextStepRequired": "Välj ett nästa steg för varje aktiverad snabbsvarsinställning",
+    "quickReplyRetryMessageRequired": "Ange ett meddelande för nytt försök",
+    "quickReplyRetryWithGetUserData": "Nytt försök kan inte kombineras med steget Hämta användardata",
+    "whatsappFlowIncomplete": "Öppna knappen och välj ett WhatsApp Flow och dess startskärm.",
     "whatsappCarouselButtonsMismatch": "På WhatsApp måste ett karusellkort ha samma knappar på varje kort: antingen en enda länkknapp på varje kort, eller samma antal svarsknappar på varje kort",
     "whatsappCarouselLinkButtonNotAlone": "På WhatsApp kan ett karusellkort med en länkknapp inte ha några andra knappar. Ta bort de andra knapparna på det kortet, eller ändra länkknappen till en annan åtgärd.",
     "historyDepth": "({count})",
-    "humanAgentWarningDescription": "Du får endast svara på en användares meddelande inom 7 dagar när problemet rimligen inte kan lösas inom 24 timmar. Exempel är helger, högtider eller ärenden som kräver mer än en dag. Använd inte detta alternativ av någon annan anledning, eftersom det kan utsätta din Facebook-sida eller ditt Instagram-konto för risk. Fortsätt inte om du är osäker.",
     "humanAgentWindowExpired": "Meddelandeperioden har löpt ut. Kontakten måste skicka ett meddelande först för att öppna konversationen igen.",
     "leaveEmptyToKeepSecret": "Lämna tomt för att behålla den nuvarande hemligheten",
     "loadingData": "Läser in data...",
@@ -3447,6 +4379,7 @@
     "noVersionsFound": "Inga publicerade versioner hittades",
     "poweredBy": "Drivs av {name}",
     "publishVersionSuccess": "En ny version har publicerats",
+    "privateReply": "Privat svar",
     "redoHistoryCleared": "Historiken för Gör om har rensats",
     "refreshTokenSuccessfully": "Token för {feature} har uppdaterats",
     "repliedToStory": "Svarade på din story",
@@ -3464,7 +4397,6 @@
     "selectConversationContactTitle": "Ingen kontakt vald",
     "selectConversationDescription": "Välj en konversation i listan till vänster för att visa meddelanden och börja chatta.",
     "selectConversationTitle": "Välj en konversation",
-    "sendHumanAgentTag": "Skicka ett meddelande med taggen HUMAN_AGENT",
     "sentAttachments": "Skickade {count, plural, one {1 bilaga} other {# bilagor}}",
     "signOutConfirmation": "Är du säker på att du vill logga ut?",
     "success": "Lyckades",
@@ -3477,14 +4409,41 @@
     "videoError": "Videofel",
     "viewMessage": "Visa meddelande",
     "viewPost": "Visa inlägg",
-    "warning": "Varning!",
     "none": "Ingen",
     "tiktokCardTitleTooLong": "TikTok kommer att korta ner det här meddelandet: med knappar kopplade skickas bara de första 40 tecknen. Korta ner meddelandet eller ta bort knapparna.",
+    "sendTextTooLongForChannel": "Det här meddelandet är längre än vad kanalen tillåter. Korta ner det eller rikta det här blocket mot en kanal med högre gräns.",
     "waTemplateMpmNoProducts": "Lägg till minst en produkt i den här flerproduktsknappen innan publicering.",
     "waTemplateMpmTooManySections": "En flerproduktsknapp kan ha högst 10 sektioner. Ta bort några sektioner innan publicering.",
     "waTemplateMpmTooManyProducts": "En flerproduktsknapp kan ha högst 30 produkter totalt. Ta bort några produkter innan publicering.",
     "waTemplateLtoExpirationRequired": "Välj ett utgångsdatum för det tidsbegränsade erbjudandet innan du skickar.",
-    "waTemplateMpmIncompleteProducts": "Varje sektion behöver minst en vald produkt — ta bort tomma rader eller välj en produkt."
+    "waTemplateMpmIncompleteProducts": "Varje sektion behöver minst en vald produkt — ta bort tomma rader eller välj en produkt.",
+    "unsupportedBlock": "Den här kanalen har inte stöd för det här blocket.",
+    "constraintExceeded": "Den här kanalens gräns har överskridits.",
+    "mediaButtonsUnsupported": "Den här kanalen kan inte skicka knappar tillsammans med ett mediemeddelande. Ta bort knapparna eller flytta dem till ett textsteg efter det här.",
+    "voiceCall": "Röstsamtal",
+    "voiceCallDuration": "Röstsamtal · {duration}",
+    "missedVoiceCall": "Missat röstsamtal",
+    "declinedVoiceCall": "Avvisat röstsamtal",
+    "voiceCallFailed": "Misslyckat röstsamtal",
+    "unansweredVoiceCall": "Inget svar",
+    "canceledVoiceCall": "Avbrutet samtal",
+    "acceptedCallPermission": "Accepterade begäran om samtalstillstånd",
+    "declinedCallPermission": "Avvisade begäran om samtalstillstånd",
+    "humanAgentWarningDescription": "Du får endast svara på en användares meddelande inom 7 dagar när problemet rimligen inte kan lösas inom 24 timmar. Exempel är helger, högtider eller ärenden som kräver mer än en dag. Använd inte detta alternativ av någon annan anledning, eftersom det kan utsätta din Facebook-sida eller ditt Instagram-konto för risk. Fortsätt inte om du är osäker.",
+    "sendHumanAgentTag": "Skicka ett meddelande med taggen HUMAN_AGENT",
+    "warning": "Varning!",
+    "callFailed": "Samtalsproblem",
+    "flowResponse": {
+      "viewResponse": "Visa svar",
+      "title": "Flow-svar",
+      "description": "Svar som kunden skickade i detta WhatsApp Flow.",
+      "empty": "Det här svaret innehåller inga uppgifter.",
+      "failed": "Svaret kunde inte läsas in.",
+      "noAnswer": "Inget svar",
+      "labelsUnavailable": "Flowets frågor kunde inte läsas in, så fältnamnen visas i stället.",
+      "yes": "Ja",
+      "no": "Nej"
+    }
   },
   "messenger": {
     "botProfile": "Botprofil",
@@ -3504,6 +4463,7 @@
         "result": {
           "close": "Stäng",
           "succeededTitle": "Lyckades",
+          "pendingTitle": "Väntar på Metas granskning",
           "title": "Kloningsresultat"
         },
         "succeededCount": "{count} kanal(er) klonades",
@@ -3541,14 +4501,10 @@
     "personasDescription": "Med den här inställningen kan du ange ett annat namn och en annan bild för din bot",
     "reconnect": "Återanslut",
     "reconnectDescription": "Återanslut alltid boten om din Messenger-bot inte svarar eller om du ser behörighetsfel i felloggen.",
-    "selectFacebookPage": "Välj Facebook-sida",
     "selectPage": {
       "alreadyConnectedNote": "Den här sidan är redan ansluten",
-      "bmLookupFailedDescription": "Återanslut Messenger och bevilja åtkomst till Business Manager så att sidor som hanteras där kan visas.",
-      "bmLookupFailedTitle": "Business Manager-sidor kan saknas",
       "noPagesDescription": "Sidor i Business Manager kräver åtkomst till Business Manager under anslutningen. Återanslut Messenger och bevilja alla begärda behörigheter.",
       "noPagesTitle": "Inga Facebook-sidor hittades",
-      "notAdminNote": "Fullständig administratörsbehörighet på sidan krävs för att ansluta",
       "tryAgain": "Försök återansluta"
     },
     "tabs": {
@@ -3776,6 +4732,17 @@
     },
     "queues": {
       "title": "Köer"
+    },
+    "workspaces": {
+      "title": "Arbetsytor",
+      "description": "Arbetsytor vars ägare har aktiverat plattformens supportåtkomst kan öppnas här.",
+      "owner": "Ägare",
+      "tenant": "Hyresgäst",
+      "supportStatus": "Supportstatus",
+      "openAsSupport": "Öppna som support",
+      "supportEnabledUntil": "Aktiverad till {time}",
+      "supportOff": "Av",
+      "searchPlaceholder": "Sök efter namn, ägarens e-post eller ID"
     }
   },
   "platformBranding": {
@@ -4191,7 +5158,47 @@
   },
   "reflinks": {
     "description": "Nyckelordslänkar som startar flöden och samlar in referensnyttolaster från kanaler.",
-    "title": "Länkar till startpunkter"
+    "title": "Länkar till startpunkter",
+    "chatWidget": {
+      "title": "Chattwidget",
+      "description": "Visa knappar för dina chattkanaler på din webbplats. En besökare klickar på en för att starta en chatt och köra den här ref-länkens flöde.",
+      "authorizedDomains": {
+        "label": "Godkända domäner",
+        "placeholder": "example.com",
+        "description": "Endast dessa domäner och deras underdomäner kan visa widgeten. Lämna tomt för att tillåta alla webbplatser.",
+        "invalid": "Dessa domäner är ogiltiga: {domains}. Ange bara en domän, t.ex. example.com."
+      },
+      "channels": {
+        "label": "Kanaler",
+        "description": "Stäng av en kanal för att dölja den i widgeten.",
+        "empty": "Ingen kanal med chattlänk är ansluten ännu.",
+        "profileLinkOnly": "Öppnar profilsidan – ref-länkens flöde körs inte."
+      },
+      "preview": "Förhandsgranskning",
+      "embedCodeDescription": "Klistra in koden före den avslutande body-taggen på din webbplats. Sparade ändringar tillämpas automatiskt, du behöver inte klistra in den igen.",
+      "savedSuccess": "Inställningar för chattwidget sparade",
+      "poweredBy": "av",
+      "toggleLabel": "Chatta med oss",
+      "logo": {
+        "description": "Den runda knappen besökare klickar på för att öppna widgeten. Välj en kvadratisk bild, eller lämna tomt för att använda standardchattikonen.",
+        "choose": "Välj från mediebiblioteket",
+        "notImage": "Logotypen måste vara en bild."
+      },
+      "brandUrl": {
+        "label": "Omdirigerings-URL",
+        "placeholder": "https://example.com",
+        "description": "Vart ditt varumärkesnamn på widgetens \"av\"-rad länkar. Krävs när ett varumärkesnamn är angivet.",
+        "requiredWithName": "Ange en omdirigerings-URL för det här varumärkesnamnet."
+      },
+      "brandName": {
+        "description": "Visas på widgetens \"av\"-rad. Krävs när en omdirigerings-URL är angiven. Lämna båda tomma för att dölja raden.",
+        "requiredWithUrl": "Ange ett varumärkesnamn för den här omdirigerings-URL:en."
+      },
+      "logoBackgroundColor": {
+        "label": "Ikonens bakgrundsfärg",
+        "description": "Bakgrund för standardchattikonen. Ikonen blir vit eller svart så att den syns tydligt."
+      }
+    }
   },
   "sendGrid": {
     "acceptedLimitation": "SendGrid tar emot kontaktuppdateringar för asynkron bearbetning. Godkända uppdateringar kan fortfarande misslyckas senare.",
@@ -4315,10 +5322,6 @@
       "description": "Beskrivning av AI-agenter",
       "title": "AI-agenter"
     },
-    "aiTriggers": {
-      "description": "Beskrivning av AI-utlösare",
-      "title": "AI-utlösare"
-    },
     "automatedResponses": {
       "title": "Nyckelord"
     },
@@ -4359,7 +5362,60 @@
   },
   "templates": {
     "description": "Skapa och hantera dina mallar.",
-    "title": "Mallar"
+    "title": "Mallar",
+    "share": {
+      "label": "Dela",
+      "enabled": "Delad",
+      "disabled": "Inte delad",
+      "dialogTitle": "Dela mall",
+      "dialogDescription": "Alla med den här länken kan installera en kopia av den här mallen i en arbetsyta i din organisation.",
+      "enableLabel": "Aktivera dellänk",
+      "linkLabel": "Dellänk",
+      "description": "Alla med länken kan installera den här mallen i sin egen arbetsyta."
+    },
+    "installs": {
+      "title": "Installationer",
+      "resources": "Resurser",
+      "warnings": "Varningar",
+      "completedAt": "Slutförd",
+      "autoUpdate": "Automatisk uppdatering"
+    },
+    "form": {
+      "contents": "Mallens innehåll",
+      "comingSoon": "Kommer snart",
+      "selectAll": "Markera alla",
+      "selectedCount": "{count} markerade",
+      "details": "Detaljer",
+      "permissions": "Standardbehörigheter",
+      "allowEdit": "Tillåt redigering efter installation",
+      "allowDelete": "Tillåt borttagning efter installation",
+      "publisherName": "Utgivarens namn",
+      "youtubeVideoId": "YouTube-video-id",
+      "youtubeVideoIdDescription": "Det 11-teckens id från videons URL, t.ex. \"dQw4w9WgXcQ\" i youtube.com/watch?v=dQw4w9WgXcQ",
+      "testLink": "Testlänk",
+      "imageUrl": "Omslagsbild",
+      "installBehavior": "Installationsbeteende",
+      "createInstallFolder": "Installera i en dedikerad mapp",
+      "createInstallFolderDescription": "Placerar varje installerad resurs i en ny mapp uppkallad efter den här mallen.",
+      "defaultAutoUpdate": "Markera installationer för uppdatering som standard",
+      "defaultAutoUpdateDescription": "Nya installationer visar ett meddelande om tillgänglig uppdatering varje gång du publicerar om den här mallen."
+    },
+    "categories": {
+      "flows": "Flöden",
+      "customFields": "Anpassade fält",
+      "tags": "Taggar",
+      "products": "Produkter",
+      "productCategories": "Produktkategorier",
+      "aiFunctions": "AI-funktioner",
+      "aiAgents": "AI-agenter",
+      "calendars": "Bokningskalendrar",
+      "webchats": "Webbchattar",
+      "keywords": "Nyckelord",
+      "entryPointLinks": "Länkar till startpunkter",
+      "triggers": "Utlösare",
+      "fbCommentAutomations": "Facebook-kommentarautomatiseringar",
+      "settings": "Inställningar"
+    }
   },
   "texts": {
     "or": "eller"
@@ -4375,7 +5431,8 @@
     "title": "TikTok"
   },
   "tools": {
-    "title": "Verktyg"
+    "title": "Verktyg",
+    "beta": "Beta"
   },
   "trigger": {
     "actions": {
@@ -4386,7 +5443,8 @@
       "setCustomField": "Ange anpassat fält",
       "startAnotherFlow": "Starta ett annat flöde",
       "transferConversationToHuman": "Överför konversationen till en människa",
-      "sendMetaCapiEvent": "Skicka Meta CAPI-händelse"
+      "sendMetaCapiEvent": "Skicka Meta CAPI-händelse",
+      "sendGoogleAdsConversion": "Skicka Google Ads-konvertering"
     },
     "after": "Efter",
     "at": "Kl.",
@@ -4429,7 +5487,9 @@
       "ticketStatusChanged": "Ärendets status har ändrats",
       "ticketValueChanged": "Ärendets värde har ändrats",
       "unsubscribedFromSequence": "Har avregistrerats från en sekvens",
-      "userAskedAboutProduct": "Användaren frågade om en produkt"
+      "userAskedAboutProduct": "Användaren frågade om en produkt",
+      "callRecorded": "Samtal inspelat",
+      "callTranscribed": "Samtal transkriberat"
     },
     "day": "Dag",
     "hour": "Timme",
@@ -4448,6 +5508,34 @@
     "unavailableDescription": "Den här arbetsytan är inte längre tillgänglig.",
     "unavailableTitle": "Avregistrering är inte tillgänglig."
   },
+  "connectSessionPage": {
+    "metadataTitle": "Connecting…",
+    "processingTitle": "Finishing up…",
+    "processingDescription": "You can close this window. The application that started this connection will finish setting things up shortly.",
+    "completedTitle": "Connected!",
+    "completedDescription": "You can close this window now.",
+    "failedTitle": "Connection failed.",
+    "failedDescription": "Something went wrong while connecting. Please try again from the application that started this.",
+    "cancelledTitle": "Connection cancelled.",
+    "cancelledDescription": "You can close this window.",
+    "expiredTitle": "This link has expired.",
+    "expiredDescription": "Please start the connection again from the application that started this.",
+    "invalidTitle": "This link is no longer valid.",
+    "invalidDescription": "This connection link is invalid or has already been used."
+  },
+  "templatesPublicPage": {
+    "invalidTitle": "Den här länken är inte längre tillgänglig.",
+    "invalidDescription": "Den här mallens dellänk är ogiltig, inaktiverad eller har gått ut.",
+    "byPublisher": "Av {publisherName}",
+    "includes": "Den här mallen innehåller",
+    "videoTitle": "Förhandsgranskningsvideo för mall",
+    "tryItOut": "Prova den",
+    "signInToInstall": "Logga in för att installera",
+    "selectWorkspace": "Välj en arbetsyta",
+    "install": "Installera",
+    "installStarted": "Installationen har startat",
+    "noEligibleWorkspaces": "Du har ingen arbetsyta som är berättigad att installera den här mallen."
+  },
   "userPersistentMenus": {
     "title": "Beständiga användarmenyer"
   },
@@ -4457,6 +5545,7 @@
   "validation": {
     "invalidApiKey": "Ogiltig API-nyckel",
     "maxItemsReached": "Högst {max} {feature} tillåts per arbetsyta",
+    "maxCharacters": "Högst {max} tecken.",
     "maxMustBeGreaterThanMin": "{maxField} måste vara större än eller lika med {minField}",
     "maxSize": "Filstorleken överskrider maxgränsen"
   },
@@ -4615,14 +5704,7 @@
     },
     "connect": {
       "errors": {
-        "accessTokenRequired": "En åtkomsttoken för WhatsApp krävs.",
         "appSettingsNotFound": "Inställningarna för WhatsApp-appen hittades inte.",
-        "failedToPersistIntegration": "Det gick inte att spara WhatsApp-integrationen.",
-        "noPhoneNumberFound": "Inget WhatsApp-telefonnummer hittades.",
-        "noPhoneNumbersFound": "Inga telefonnummer hittades för det här WhatsApp Business-kontot.",
-        "phoneNumberNotFound": "Det valda WhatsApp-telefonnumret hittades inte.",
-        "unableToVerifyToken": "Det gick inte att verifiera WhatsApp-token.",
-        "wabaMismatch": "Det valda WhatsApp Business-kontot matchar inte auktoriseringen.",
         "wabaResolveFailed": "Det gick inte att fastställa WhatsApp Business-kontot från auktoriseringen."
       }
     },
@@ -4650,7 +5732,8 @@
       "qrCodeHint": "Skanna QR-koden för att öppna webhook-URL:en",
       "title": "Din WhatsApp-inkorg är klar!",
       "verifyToken": "Verifieringstoken för webhook",
-      "webhookUrl": "Webhook-URL"
+      "webhookUrl": "Webhook-URL",
+      "multipleTitle": "Dina WhatsApp-inkorgar är klara!"
     },
     "marketingMessageLite": "Marketing Messages Lite",
     "messageTemplate": {
@@ -4722,7 +5805,8 @@
       "actions": {
         "resendIn": "Skicka igen om {seconds} s",
         "sendCode": "Skicka kod",
-        "verify": "Verifiera och registrera"
+        "verify": "Registrera",
+        "skip": "Hoppa över"
       },
       "description": "Begär en verifieringskod från Meta, ange koden här så registreras telefonnumret automatiskt.",
       "errorTitle": "Telefonnumret måste verifieras",
@@ -4747,7 +5831,8 @@
         "sms": "SMS",
         "voice": "Röstsamtal"
       },
-      "title": "Verifiera WhatsApp-telefonnummer"
+      "title": "Verifiera WhatsApp-telefonnummer",
+      "queueProgress": "Verifierar {current} av {total}"
     },
     "sampleBodyCardContent": {
       "label": "Exempelinnehåll för kortets brödtext"
@@ -4764,7 +5849,6 @@
     "showHeader": {
       "label": "Visa sidhuvud"
     },
-    "signupSessionExpired": "Din registreringssession för WhatsApp har löpt ut. Starta anslutningen igen.",
     "tabs": {
       "accountHealths": "Kontostatus",
       "automation": "Automatisering",
@@ -4774,7 +5858,8 @@
       "profile": "Profil",
       "usefulLinks": "Användbara länkar",
       "conversionsApi": "Annonsoptimering",
-      "settings": "Inställningar"
+      "settings": "Inställningar",
+      "calls": "Calls"
     },
     "templateFooter": {
       "label": "Mallens sidfot"
@@ -4783,16 +5868,268 @@
       "label": "Mallens sidhuvud"
     },
     "transferPhoneNumber": "Överför telefonnummer från en annan WhatsApp-leverantör",
-    "capi": {
-      "automaticEvents": {
-        "title": "Automatiska händelser",
-        "description": "Skicka konverteringshändelser från detta WhatsApp-nummer automatiskt till Meta. Om behörigheten saknas, återanslut kontot för att bevilja den."
+    "selectPage": {
+      "tryAgain": "Försök återansluta"
+    },
+    "manualAppSecretMissingNotice": "Webhook-signaturer verifieras inte förrän du lägger till din Meta App Secret.",
+    "calls": {
+      "title": "WhatsApp Calls",
+      "description": "Let customers call your business on WhatsApp and control how calling works for this number.",
+      "enableLabel": "Enable calling",
+      "enableHelper": "Allow WhatsApp calls to and from this business number.",
+      "iconVisibilityLabel": "Show call icon",
+      "iconVisibilityHelper": "Show the call button in the chat and on your business profile.",
+      "callbackPermissionLabel": "Callback permission requests",
+      "callbackPermissionHelper": "Automatically ask customers for permission to call them back after a missed or completed call.",
+      "propagationNote": "Changes are applied by Meta immediately, but the WhatsApp app of your customers can take up to 7 days to reflect them.",
+      "loadFailed": "Failed to load calling settings from Meta. Check the connection of this number and try again.",
+      "errors": {
+        "notFound": "WhatsApp integration not found",
+        "notWhatsappConversation": "This conversation is not on WhatsApp",
+        "callNotFound": "Call not found",
+        "callNotReady": "The call is not ready to answer yet — try again",
+        "inAppCallingUnavailable": "In-app calling is not configured on this server",
+        "noCallPermission": "The contact has not granted call permission",
+        "permissionRequestLimitReached": "WhatsApp tillåter endast 2 förfrågningar om samtalstillstånd per kontakt var sjunde dag. Den här kontakten har nått gränsen – försök igen senare.",
+        "audioConnectFailed": "Could not connect call audio",
+        "updateFailed": "Meta avvisade ändringen av samtalsinställningarna",
+        "savedOnMetaOnly": "Meta saved the change but this workspace did not. Save again to finish.",
+        "bicUnavailable": "Företagsinitierade samtal är inte tillgängliga för detta land",
+        "callAlreadyInProgress": "Ett samtal med denna kontakt pågår redan",
+        "hangupFailed": "Kunde inte avsluta samtalet",
+        "voipCannotAnswer": "This call is no longer available to answer",
+        "voipCallEnded": "The call ended before it could be answered",
+        "voipAnswerFailed": "Could not answer the WhatsApp call",
+        "voipRejectFailed": "Det gick inte att avvisa WhatsApp-samtalet",
+        "voipHangupFailed": "Det gick inte att avsluta WhatsApp-samtalet",
+        "voipNotReservedAgent": "Du är inte agenten som tilldelats detta samtal",
+        "voipCallAccessDenied": "Du har inte behörighet att hantera detta samtal",
+        "voipTurnCredentialsRateLimited": "Too many call setup requests. Please wait a moment and try again.",
+        "callNoLongerRinging": "Det samtalet ringer inte längre",
+        "transcriptionRequiresRecording": "Aktivera samtalsinspelning innan du aktiverar transkribering.",
+        "supportSessionCallingBlocked": "Samtal är inte tillgängliga under en supportsession för plattformen.",
+        "callingAccessDenied": "Du har inte åtkomst till samtal i detta arbetsområde.",
+        "callArtifactAccessDenied": "Du har inte behörighet att visa det här samtalet.",
+        "callHistoryAccessDenied": "Du har inte åtkomst till samtalshistoriken i det här arbetsområdet."
+      },
+      "permissionRequestTitle": "Request call permission",
+      "permissionRequestDescription": "Ask this customer to allow calls from your business on WhatsApp. Meta limits requests to 1 per 24 hours and 2 per 7 days per customer.",
+      "permissionRequestBodyLabel": "Message",
+      "permissionRequestDefaultBody": "We would like to call you on WhatsApp to help you faster. Do you allow us to call you?",
+      "permissionRequestSent": "Call permission request sent",
+      "inAppCallingLabel": "In-app calling (beta)",
+      "inAppCallingHelper": "Route this number's WhatsApp calls to the inbox so agents can answer them in the browser.",
+      "recordingLabel": "Record calls",
+      "recordingHelper": "Spela in samtal som besvaras eller rings från inkorgen och lägg till inspelningen i konversationen.",
+      "recordingInProgress": "Inspelning begärd",
+      "incomingCall": "Incoming WhatsApp call…",
+      "unknownCaller": "Unknown caller",
+      "incomingCallBanner": "Incoming WhatsApp call",
+      "answer": "Answer",
+      "reject": "Reject",
+      "ringingBadge": "Ringing",
+      "ringingCountdown": "{seconds}s",
+      "updateFailedTitle": "Meta avvisade ändringen",
+      "callContact": "Ring via WhatsApp",
+      "dialing": "Ringer…",
+      "startCall": "Starta WhatsApp-samtal",
+      "retentionLabel": "Lagring av inspelningar (dagar)",
+      "retentionHelper": "Hur länge samtalsinspelningar sparas innan de raderas permanent.",
+      "transcriptionLabel": "Transkribera samtal",
+      "transcriptionHelper": "Lägg till en transkription av varje inspelat samtal i konversationen.",
+      "preflight": {
+        "title": "Samtalsbehörighet",
+        "appSubscriptionMissing": "Konfigurera först WhatsApp-webhooken för denna app i Meta App Dashboard och försök sedan igen.",
+        "appSubscriptionFailed": "Kunde inte verifiera appens prenumeration på 'calls'-webhooken. Försök igen om en stund.",
+        "callsNotSubscribed": "Denna app prenumererar inte på webhookfältet 'calls', så samtalshändelser kan inte nå ChatbotX (Meta-fel 138018: tekniska förutsättningar är inte uppfyllda — se till att minst en app som prenumererar på WABA:n också har webhookfältet för samtal).",
+        "fixButton": "Åtgärda",
+        "fixSuccess": "Appen prenumererar nu på WhatsApp-samtalswebhooks.",
+        "manualIntegrationNotice": "Detta nummer anslöts manuellt och har inga appuppgifter här. Prenumerera på webhookfältet 'calls' för din app i Meta App Dashboard.",
+        "coexistenceWarning": "Detta nummer använder samexistens med WhatsApp Business-appen, vilket Meta inte stöder för samtal. Flytta det till endast Cloud API."
+      },
+      "voipConnecting": "Connecting…",
+      "recordingActivity": {
+        "showTranscript": "Visa transkription",
+        "hideTranscript": "Dölj transkription"
+      },
+      "outbound": {
+        "needsPermission": "You need permission to call this contact. Request permission first.",
+        "permissionCheckFailed": "We could not check your call permission for this contact right now. Please try again in a moment.",
+        "businessCallingUnavailable": "WhatsApp har inte aktiverat företagsinitierade samtal för det här numret. Det beror på tillgängligheten i ditt land och kontots behörighet hos Meta och kan därför inte aktiveras här.",
+        "callAlreadyInProgress": "A call to this contact is already in progress.",
+        "dailyLimitReached": "You have reached the connected-call limit with this contact for now.",
+        "ineligibleNumber": "This number is not eligible for business-initiated calling.",
+        "recipientUncallable": "This contact cannot be called on WhatsApp right now.",
+        "temporarilyDisabled": "Calling is temporarily disabled for this number due to call quality.",
+        "rateLimited": "Too many call attempts. Please wait a moment and try again.",
+        "paymentIssue": "There is a billing issue with your WhatsApp Business account.",
+        "callingNotEnabled": "Calling is not enabled for this WhatsApp number.",
+        "callFailed": "The call could not be placed. Please try again.",
+        "calling": "Calling…",
+        "ringback": "Ringing…",
+        "micPermissionDenied": "Mikrofonåtkomst nekades. Tillåt mikrofonåtkomst i webbläsarens inställningar och försök igen.",
+        "micNotFound": "Ingen mikrofon hittades. Anslut en mikrofon och försök igen.",
+        "callAccessDenied": "Du har inte behörighet att ringa denna kontakt."
+      },
+      "card": {
+        "audioCall": "Röstsamtal",
+        "recordingUnavailable": "Inspelningen är inte längre tillgänglig",
+        "recordingNotCaptured": "Inspelning inte tillgänglig för det här samtalet",
+        "recordingProcessing": "Bearbetar inspelningen…",
+        "moreOptions": "Fler alternativ",
+        "download": "Ladda ner",
+        "openCallInformation": "Öppna samtalsinformation",
+        "transcript": "Transkript",
+        "aiSummary": "AI-sammanfattning",
+        "transcriptUnavailable": "Transkript inte tillgängligt än",
+        "summaryUnavailable": "AI-sammanfattning inte tillgänglig än",
+        "play": "Spela upp",
+        "pause": "Pausa",
+        "seek": "Sök",
+        "mute": "Ljud av",
+        "unmute": "Ljud på",
+        "playbackFailed": "Uppspelning misslyckades",
+        "answeredBy": "Besvarat av {name}",
+        "calledBy": "Uppringt av {name}",
+        "callFailed": "Samtalsproblem",
+        "callBack": "Ring tillbaka"
+      },
+      "sheet": {
+        "title": "Samtalsinformation",
+        "summaryTab": "AI-sammanfattning",
+        "transcriptTab": "Transkription",
+        "searchLabel": "Sök i transkriptionen",
+        "searchPlaceholder": "Sök i transkriptionen…",
+        "transcriptUnavailable": "Transkription är inte tillgänglig för detta samtals språk",
+        "transcriptError": "Kunde inte läsa in transkriberingen. Kontrollera din anslutning och försök igen.",
+        "noSearchResults": "Inga matchande avsnitt",
+        "playSegment": "Spela upp härifrån",
+        "summaryKeyPoints": "Viktiga punkter",
+        "summaryActionItems": "Åtgärdspunkter",
+        "regenerate": "Skapa igen",
+        "regenerateConfirmTitle": "Skapa AI-sammanfattningen igen?",
+        "regenerateConfirmDescription": "Detta ersätter den aktuella sammanfattningen med en nygenererad.",
+        "summaryEmpty": "Det finns ännu ingen AI-sammanfattning för detta samtal.",
+        "generateSummary": "Skapa sammanfattning"
+      },
+      "summaryDialog": {
+        "title": "Skapa AI-sammanfattning",
+        "description": "Välj en ansluten AI-leverantör för att sammanfatta detta samtal.",
+        "noProviderTitle": "Ingen AI-leverantör ansluten",
+        "noProviderDescription": "Anslut en AI-integration för att skapa samtalssammanfattningar.",
+        "connectLink": "Gå till AI-inställningar",
+        "generate": "Skapa",
+        "generating": "Skapar…",
+        "generateFailed": "Det gick inte att skapa sammanfattningen. Försök igen.",
+        "retry": "Försök igen",
+        "emptyTranscriptTooltip": "Detta samtal har ännu ingen transkription att sammanfatta"
+      },
+      "panel": {
+        "eyebrowCalling": "RINGER…",
+        "eyebrowIncoming": "INKOMMANDE SAMTAL",
+        "eyebrowOnCall": "I SAMTAL",
+        "statusPreparing": "Förbereder…",
+        "statusWaitingForMic": "Väntar på mikrofonåtkomst…",
+        "statusDeclined": "Avböjt",
+        "statusCallFailed": "Samtalet misslyckades",
+        "statusCallEnded": "Samtal avslutat",
+        "end": "Avsluta",
+        "minimize": "Minimera",
+        "goToConversation": "Gå till konversationen",
+        "expand": "Expandera",
+        "dismiss": "Stäng",
+        "statusNoAnswer": "Inget svar",
+        "eyebrowCallEnded": "SAMTAL AVSLUTAT",
+        "statusConnectionLost": "Anslutningen förlorades",
+        "answerFailed": "Samtalet kunde inte besvaras. Kontrollera att en mikrofon är ansluten och tillåten i webbläsaren och försök igen.",
+        "ringingListTitle": "{count, plural, one {# inkommande samtal} other {# inkommande samtal}}"
+      },
+      "capability": {
+        "title": "Samtalsbehörighet",
+        "enableCalling": "Aktivera samtal under Inställningar > Kanaler > WhatsApp > Samtal.",
+        "reconnectChannel": "Gå till Inställningar > Kanaler och återanslut WhatsApp-kanalen.",
+        "ok": "OK",
+        "micPermissionTitle": "Mikrofonbehörighet",
+        "dialFailureTitle": "Samtalet kunde inte kopplas"
+      },
+      "manualIntegrationCallWarning": {
+        "title": "Manuellt anslutet nummer",
+        "callsSubscription": "Det här WhatsApp-numret anslöts manuellt. Se till att din Meta-app prenumererar på webhookfältet calls (Meta App Dashboard → WhatsApp → Configuration → Webhook fields → calls) — annars går utgående samtal inte att koppla upp och inkommande samtal ringer inte.",
+        "unsignedWebhook": "Det här numret har inte heller någon Meta App Secret konfigurerad, så dess inkommande webhooks är inte signaturverifierade.",
+        "callAnyway": "Ring ändå"
+      },
+      "replaceConfirm": {
+        "title": "Avsluta samtalet med {current}?",
+        "description": "Du är i ett samtal med {current}. Om du svarar {incoming} avslutas det samtalet direkt.",
+        "confirm": "Avsluta och svara",
+        "cancel": "Stanna kvar i samtalet"
+      },
+      "answerCaller": "Svara på samtal från {name}",
+      "rejectCaller": "Avvisa samtal från {name}",
+      "hours": {
+        "title": "Samtalstider",
+        "description": "Kunder kan bara ringa det här numret under dessa tider. Utanför dem erbjuder WhatsApp att chatta i stället eller, om återuppringningsförfrågningar är aktiverade, att be om att bli uppringd, och visar när de kan ringa nästa gång.",
+        "enabledLabel": "Ta endast emot samtal under samtalstiderna",
+        "timezoneLabel": "Tidszon",
+        "closed": "Stängt",
+        "openTimeLabel": "{day}: öppnar kl.",
+        "closeTimeLabel": "{day}: stänger kl.",
+        "addRangeLabel": "Lägg till tider för {day}",
+        "removeRangeLabel": "Ta bort tider för {day}",
+        "overnightHint": "Varje dag slutar kl. 23:59. För att ha öppet efter midnatt lägger du till de återstående timmarna på nästa dag.",
+        "days": {
+          "monday": "Måndag",
+          "tuesday": "Tisdag",
+          "wednesday": "Onsdag",
+          "thursday": "Torsdag",
+          "friday": "Fredag",
+          "saturday": "Lördag",
+          "sunday": "Söndag"
+        },
+        "errors": {
+          "rangeOrder": "Stängningstiden måste vara efter öppningstiden.",
+          "rangeOverlap": "Tiderna den här dagen överlappar.",
+          "noOpenHours": "Lägg till tider för minst en dag."
+        }
+      },
+      "inboundLabel": "Accept incoming calls",
+      "inboundHelper": "Let customers call in. Turn off to keep dialling out without the inbox ringing.",
+      "page": {
+        "title": "Samtal",
+        "subtitle": "Samtalshistorik för detta arbetsområde",
+        "emptyTitle": "Inga samtal ännu",
+        "emptyDescription": "Samtal visas här när ditt team börjar ringa eller ta emot WhatsApp-samtal.",
+        "loadMore": "Ladda fler",
+        "allActivity": "Alla samtal",
+        "filterMissed": "Missade",
+        "filterNoReply": "Inget svar",
+        "allInboxes": "Alla inkorgar",
+        "allAgents": "Alla agenter",
+        "columnContact": "Kontakt",
+        "columnInbox": "Inkorg",
+        "columnDirection": "Riktning",
+        "columnAgent": "Agent",
+        "columnDuration": "Varaktighet",
+        "columnDate": "Datum",
+        "directionInbound": "Inkommande",
+        "directionOutbound": "Utgående",
+        "kindOngoing": "Pågående",
+        "kindAnsweredInbound": "Besvarat",
+        "kindAnsweredOutbound": "Besvarat",
+        "openConversation": "Öppna konversation",
+        "unknownContact": "Okänd kontakt",
+        "emptyFilteredTitle": "Inga samtal matchar detta filter",
+        "emptyFilteredDescription": "Prova ett annat filter eller rensa det för att se alla samtal.",
+        "loadMoreError": "Det gick inte att läsa in fler samtal. Försök igen.",
+        "callInformation": "Samtalsinformation"
       }
     }
   },
   "workspace": {
     "deletion": {
       "badge": "Borttagning schemalagd",
+      "purging": "Borttagning av arbetsytan pågår.",
+      "alreadyStarted": "Borttagning av arbetsytan har redan startat.",
       "bannerDescription": "Den här arbetsytan är schemalagd för borttagning. Ångra borttagningen nedan för att fortsätta använda den.",
       "bannerTitle": "Borttagning av arbetsyta har schemalagts",
       "confirmDescription": "Alla kontakter, inställningar och data raderas permanent 24 timmar efter att du har bekräftat. Du kan ångra borttagningen när som helst fram till dess.",
@@ -4819,6 +6156,17 @@
       "startTime": "Starttid",
       "timeRequired": "Välj både start- och sluttid",
       "title": "Ange aktiva tider"
+    },
+    "supportAccess": {
+      "bannerTitle": "Plattformssupportsession",
+      "bannerDescription": "En plattformssupportagent har tillfällig åtkomst till denna arbetsyta fram till {time}.",
+      "cardTitle": "Plattformens supportåtkomst",
+      "cardDescription": "Låt plattformens supportteam öppna denna arbetsyta med full åtkomst i 7 dagar. Du kan stänga av det när som helst.",
+      "enabledUntil": "Aktiverad till {time}",
+      "permissionRequired": "Du måste vara superadministratör för att ändra plattformens supportåtkomst.",
+      "enabledToast": "Plattformens supportåtkomst aktiverad.",
+      "disabledToast": "Plattformens supportåtkomst inaktiverad.",
+      "toggleError": "Något gick fel. Försök igen."
     }
   },
   "workspaceToken": {
@@ -4839,7 +6187,8 @@
       "title": "Taggsynkronisering",
       "toggleSuccess": "Inställningen för taggsynkronisering har uppdaterats."
     },
-    "title": "Zalo OA"
+    "title": "Zalo OA",
+    "refreshPermissions": "Uppdatera behörigheter"
   },
   "bookingWebview": {
     "metadataTitle": "Boka tid",
@@ -5028,10 +6377,19 @@
       "confirmationFlowId": "Bekräftelseflöde",
       "cancellationFlowId": "Avbokningsflöde",
       "externalConnectionId": "Extern kalender",
+      "externalEventTitleTemplate": "Event title template",
+      "externalEventDescriptionTemplate": "Event description template",
+      "externalEventAttendeesTemplate": "Attendees template",
       "reminders": "Påminnelser",
       "reminderTimingValue": "Värde",
       "reminderTimingUnit": "Enhet"
     },
+    "placeholders": {
+      "externalEventTitleTemplate": "Appointment: '{{booking_calendar}}'",
+      "externalEventDescriptionTemplate": "Add appointment details or variables",
+      "externalEventAttendeesTemplate": "one@example.com, another@example.com"
+    },
+    "externalEventDisclosure": "Template values and attendees are shared with the connected Google Calendar.",
     "locationTypes": {
       "inPerson": "Fysiskt möte",
       "phoneCall": "Telefonsamtal",
@@ -5121,14 +6479,14 @@
   },
   "metaConversions": {
     "title": "Conversions API",
-    "description": "Skicka LeadSubmitted-händelser från Messenger-, Instagram- och WhatsApp-konversationer till Meta.",
+    "description": "Skicka konverteringshändelser från Messenger-, Instagram- och WhatsApp-konversationer till Meta.",
     "datasetId": "Dataset-ID",
     "reconnect": "Återanslut behörigheter",
     "connectViaFacebook": "Anslut via Facebook",
     "unsupportedExplanation": "Det här Instagram-kontot anslöts med Instagram Business Login. Anslut kontot via Facebook för att använda Meta Conversions API.",
     "flowStep": {
-      "description": "Köa en LeadSubmitted-händelse för Messenger, Instagram eller WhatsApp.",
-      "whatsappNote": "WhatsApp-händelser skickas endast för konversationer som startade från en klicka-till-WhatsApp-annons."
+      "whatsappNote": "WhatsApp-händelser skickas endast för konversationer som startade från en klicka-till-WhatsApp-annons.",
+      "description": "Köa en LeadSubmitted-händelse för Messenger, Instagram eller WhatsApp."
     },
     "status": {
       "title": "Meta Conversions API",
@@ -5154,12 +6512,51 @@
       "datasetRequired": "Spara ett Dataset-ID innan du lägger till en åtkomsttoken.",
       "invalidToken": "Den här token kunde inte komma åt datasetet.",
       "invalidDatasetId": "Ange ett giltigt Dataset ID (endast siffror).",
-      "whatsappNotFound": "WhatsApp-integrationen hittades inte."
+      "whatsappNotFound": "WhatsApp-integrationen hittades inte.",
+      "testEventCodeRequired": "Spara en testhändelsekod innan du skickar en testhändelse.",
+      "invalidTestEventCode": "Testhändelsekoden får bara innehålla bokstäver, siffror, bindestreck eller understreck (max 64).",
+      "invalidMessagingId": "Messaging-id får bara innehålla bokstäver, siffror, bindestreck eller understreck (max 512).",
+      "capiDisconnected": "Meta CAPI är frånkopplat för den här kanalen. Anslut igen innan du skickar en testhändelse."
     },
     "fields": {
       "eventType": {
         "label": "Händelsetyp",
-        "leadSubmitted": "Lead Submitted"
+        "leadSubmitted": "Lead Submitted",
+        "purchase": "Köp",
+        "initiateCheckout": "Påbörja kassan",
+        "addToCart": "Lägg i varukorgen",
+        "viewContent": "Visa innehåll",
+        "orderCreated": "Order skapad",
+        "orderShipped": "Order skickad",
+        "orderDelivered": "Order levererad",
+        "orderCanceled": "Order avbruten",
+        "orderReturned": "Order returnerad",
+        "cartAbandoned": "Övergiven varukorg",
+        "qualifiedLead": "Kvalificerad lead",
+        "ratingProvided": "Betyg angivet",
+        "reviewProvided": "Recension angiven",
+        "addPaymentInfo": "Lägg till betalningsinfo",
+        "addToWishlist": "Lägg till i önskelistan",
+        "completeRegistration": "Fullföljd registrering",
+        "contact": "Kontakt",
+        "customizeProduct": "Anpassa produkt",
+        "donate": "Donera",
+        "findLocation": "Hitta plats",
+        "lead": "Lead",
+        "schedule": "Boka tid",
+        "search": "Sökning",
+        "startTrial": "Starta provperiod",
+        "submitApplication": "Skicka ansökan",
+        "subscribe": "Prenumerera",
+        "custom": "Anpassad händelse…",
+        "groups": {
+          "commerce": "Handel",
+          "leads": "Leads",
+          "orders": "Ordrar",
+          "feedback": "Feedback",
+          "leadsAndSignups": "Leads och registreringar",
+          "other": "Övrigt"
+        }
       },
       "value": "Värde",
       "valuePlaceholder": "t.ex. 250",
@@ -5168,7 +6565,25 @@
       "contentCategory": "Innehållskategori",
       "contentCategoryPlaceholder": "Kategorin för innehållet som är kopplat till händelsen",
       "contentName": "Innehållsnamn",
-      "contentNamePlaceholder": "Namnet på sidan eller produkten som är kopplad till händelsen"
+      "contentNamePlaceholder": "Namnet på sidan eller produkten som är kopplad till händelsen",
+      "orderId": "Order ID",
+      "orderIdPlaceholder": "e.g. ORDER-12345",
+      "contents": {
+        "label": "Line items",
+        "item": "line item",
+        "id": "Product ID",
+        "quantity": "Quantity",
+        "itemPrice": "Item price"
+      },
+      "customEventName": "Namn på anpassad händelse",
+      "customEventNamePlaceholder": "t.ex. MyCustomEvent",
+      "contentType": {
+        "label": "Innehållstyp",
+        "product": "Produkt",
+        "product_group": "Produktgrupp"
+      },
+      "contentIds": "Innehålls-ID",
+      "contentIdsPlaceholder": "t.ex. 123,456"
     },
     "datasetIdPlaceholder": "Klistra in Dataset-ID från Events Manager",
     "saveDataset": "Spara",
@@ -5215,6 +6630,1383 @@
     },
     "whatsapp": {
       "connect": "Anslut"
+    },
+    "limitedDataUse": {
+      "label": "Limited Data Use (US privacy)",
+      "description": "Restrict Meta's use of event data for users in applicable US states. Meta auto-detects the user's location from this event; no location data is sent by ChatbotX."
+    },
+    "actionSource": {
+      "label": "Åtgärdskälla",
+      "help": "Var denna händelse ägde rum. Se Metas dokumentation om åtgärdskälla.",
+      "business_messaging": "Företagsmeddelanden",
+      "email": "E-post",
+      "phone_call": "Telefonsamtal",
+      "chat": "Chatt",
+      "physical_store": "Fysisk butik",
+      "system_generated": "Systemgenererad",
+      "other": "Övrigt"
+    },
+    "dialog": {
+      "title": "Meta CAPI",
+      "advanced": "Avancerat"
+    },
+    "testEvents": {
+      "title": "Testhändelser",
+      "description": "Klistra in test_event_code från Events Manager → Test events. Medan den är inställd dirigeras varje händelse från den här kanalen till vyn Test events med hela nyttolasten (värde, valuta, innehålls-ID) och räknas inte i rapporter. Rensa den när du är klar.",
+      "codeLabel": "Testhändelsekod",
+      "codePlaceholder": "t.ex. TEST12345",
+      "save": "Spara kod",
+      "clear": "Rensa",
+      "saved": "Testhändelsekod sparad.",
+      "cleared": "Testhändelsekod rensad. Händelser är live igen.",
+      "send": "Skicka testhändelse",
+      "sent": "Testhändelse skickad. Den visas under Test events i Events Manager inom en minut.",
+      "sendHint": "Skickar ett exempel-Purchase (100 USD) till ett messaging-id som du anger. Ingen sparad kontakt används.",
+      "activeNotice": "Testläge är på: händelser från den här kanalen räknas inte i rapporter förrän koden rensas.",
+      "openTestEvents": "Öppna Test events",
+      "dialogTitle": "Skicka testhändelse",
+      "dialogDescription": "Ett exempel-Purchase (100 USD) skickas med din testhändelsekod. Klistra in exempel-messaging-id:t från Events Manager → Test events → Messaging → Graph API Explorer, så att inget tillskrivs en riktig kontakt.",
+      "messagingIdLabel": {
+        "messenger": "Kontakt-id (page_scoped_user_id)",
+        "instagram": "Kontakt-id (ig_sid)",
+        "whatsapp": "Klick-id (ctwa_clid)"
+      },
+      "messagingIdPlaceholder": "Klistra in exempelvärdet från Meta",
+      "messagingIdHint": "Endast bokstäver, siffror, bindestreck och understreck (max 512).",
+      "cancel": "Avbryt",
+      "confirmSend": "Skicka"
+    }
+  },
+  "googleAds": {
+    "title": "Google Ads",
+    "description": "Skicka offlinekonverteringar till Google Ads för kontakter som kom via ett klick på en Google-annons.",
+    "notAvailable": {
+      "description": "Plattformens Google Ads-inloggningsuppgifter (OAuth-klient-ID och hemlighet) är inte konfigurerade. Be plattformsadministratören lägga till dem i plattformens Google Ads-inställningar."
+    },
+    "connect": {
+      "scopes": "Vi begär behörighet att läsa dina Google Ads-konton och konverteringsåtgärder samt att skicka konverteringar å dina vägnar.",
+      "button": "Anslut Google Ads",
+      "reconnect": "Anslut igen",
+      "unnamedAccount": "Google Ads-konto",
+      "viaManager": "via hanteraren {manager}",
+      "statusLabel": "Anslutningsstatus",
+      "needsReauthDescription": "Google-åtkomsten har återkallats eller gått ut. Anslut igen för att fortsätta skicka konverteringar.",
+      "pausedDescription": "Den här anslutningen är pausad, så konverteringar skickas inte.",
+      "degradedDescription": "Google Ads svarar med fel. Konverteringar skickas automatiskt igen.",
+      "howItWorks": "Så fungerar det",
+      "steps": {
+        "signIn": "Logga in med det Google-konto som hanterar dina annonser.",
+        "chooseAccount": "Välj Google Ads-kontot.",
+        "pickAction": "Välj konverteringsåtgärden i dina flöden."
+      },
+      "uploadMethod": "Uppladdningsmetod: {method}"
+    },
+    "status": {
+      "connected": "Ansluten",
+      "degraded": "Nedsatt",
+      "needsReauth": "Måste anslutas igen",
+      "paused": "Pausad",
+      "disconnected": "Frånkopplad"
+    },
+    "picker": {
+      "title": "Välj ett Google Ads-konto",
+      "legend": "Google Ads-konton",
+      "loading": "Läser in Google Ads-anslutningen",
+      "loadError": "Det gick inte att läsa in Google Ads-anslutningsförsöket.",
+      "waiting": "Väntar på att Google ska bekräfta inloggningen…",
+      "noTargets": "Inga Google Ads-konton hittades för det här Google-kontot.",
+      "alreadyThisWorkspace": "Redan ansluten till den här arbetsytan",
+      "alreadyOtherWorkspace": "Redan ansluten till en annan arbetsyta",
+      "notSelectable": "Det här kontot kan inte väljas",
+      "connectSelected": "Anslut konto",
+      "sessionExpired": "Anslutningsförsöket har gått ut. Anslut igen för att fortsätta.",
+      "sessionCancelled": "Anslutningsförsöket avbröts.",
+      "stalled": "Inloggningen slutfördes inte. Använd «Anslut Google Ads» för att försöka igen.",
+      "dismiss": "Avfärda",
+      "cancelFailed": "Det gick inte att avbryta anslutningsförsöket. Försök igen.",
+      "connectErrorTitle": "Det gick inte att ansluta Google Ads",
+      "errors": {
+        "stateMismatch": "Inloggningen kunde inte verifieras. Anslut igen för att fortsätta.",
+        "expired": "Anslutningsförsöket har gått ut. Anslut igen för att fortsätta.",
+        "providerDenied": "Google-åtkomst beviljades inte. Anslut igen och tillåt de begärda behörigheterna.",
+        "exchangeFailed": "Det gick inte att slutföra Google-inloggningen. Anslut igen för att fortsätta.",
+        "providerError": "Google returnerade ett fel. Försök ansluta igen om en stund.",
+        "noCandidates": "Inget aktivt Google Ads-konto hittades för den här Google-användaren. Konton som är avslutade, avstängda eller inte helt konfigurerade kan inte användas. Logga in med ett Google-konto som hanterar ett aktivt Google Ads-konto.",
+        "alreadyConnected": "Det Google Ads-kontot är redan anslutet.",
+        "quotaExceeded": "Gränsen för anslutningar i din plan har nåtts.",
+        "trialExpired": "Din provperiod har tagit slut, så nya anslutningar kan inte läggas till.",
+        "internalError": "Något gick fel vid anslutningen. Försök igen.",
+        "providerUnavailable": "Google Ads är tillfälligt otillgängligt, så anslutningen kunde inte slutföras. Försök igen om en stund.",
+        "developerTokenMissing": "Google Ads är inte helt konfigurerat: plattformens Google-inloggningsuppgifter är ofullständiga. Be administratören kontrollera Google Ads-inloggningsuppgifterna.",
+        "developerTokenNotApproved": "Google avvisade utvecklartoken som är sparad i Google Ads-inloggningsuppgifterna. Token är valfri: be administratören ta bort den eller ersätta den med en giltig.",
+        "projectNotApproved": "Ditt Google Cloud-projekt är ännu inte godkänt för skarpa Google Ads-konton. Ansök om Explorer- eller Basic-åtkomst för projektet i Google Cloud Console (Google Ads API → Overview) och anslut sedan igen.",
+        "permissionDenied": "Den här Google-användaren har inte behörighet att komma åt Google Ads-konton. Logga in med en Google-användare som har åtkomst till ett Google Ads-konto.",
+        "apiNotEnabled": "Google Ads API är inte aktiverat för Google Cloud-projektet. Be administratören aktivera det och försök sedan igen.",
+        "credentialsInvalid": "Google avvisade inloggningsuppgifterna. Anslut igen för att fortsätta.",
+        "scopeMissing": "Alla behörigheter beviljades inte. Google Ads behöver åtkomst till ditt Google Ads-konto och behörighet att skicka konverteringar. Anslut igen och markera alla behörigheter.",
+        "legacyUploadNotAllowed": "Google tillåter inte det gamla uppladdnings-API:et för det här kontot. Byt inloggningsuppgifterna till Data Manager och anslut den här arbetsytan igen."
+      }
+    },
+    "setup": {
+      "conversionCustomer": "Konverteringskonto",
+      "notResolved": "Inte fastställt ännu",
+      "retry": "Försök igen med inställningen",
+      "dataTermsWarning": "Villkoren för kunddata har inte godkänts för det här kontot. Godkänn dem i Google Ads och försök sedan igen med inställningen.",
+      "errors": {
+        "conversionCustomerInaccessible": "Konverteringskontot är inte tillgängligt med den här Google-inloggningen. Kontrollera din åtkomst i Google Ads och försök igen.",
+        "customerDataTermsNotAccepted": "Villkoren för kunddata har inte godkänts för det här kontot. Godkänn dem i Google Ads och försök sedan igen med inställningen.",
+        "syncFailed": "Det gick inte att läsa konverteringsåtgärderna från Google Ads. Försök igen med inställningen om en stund.",
+        "developerTokenMissing": "Plattformens Google Ads-inloggningsuppgifter (OAuth-klient-ID och hemlighet) är inte konfigurerade."
+      }
+    },
+    "conversionActions": {
+      "title": "Konverteringsåtgärder",
+      "description": "Endast aktiverade åtgärder som importerar konverteringar från klick kan ta emot konverteringar.",
+      "helpLink": "Google Ads-hjälp",
+      "sync": "Synkronisera konverteringsåtgärder",
+      "syncedAt": "Senast synkroniserad {date}",
+      "neverSynced": "Inte synkroniserad ännu",
+      "empty": "Inga konverteringsåtgärder hittades. Skapa en konverteringsåtgärd för offlineimport i Google Ads och synkronisera sedan.",
+      "name": "Namn",
+      "category": "Kategori",
+      "counting": "Räkning",
+      "status": "Status",
+      "onePerClickNote": "iOS-klick (gbraid) kan inte skickas till den här åtgärden. Använd räkningen \"Varje\" för att ta emot dem.",
+      "externalNote": "Stöds inte: den här åtgärden använder extern attribuering, som inte kan skickas via Google Data Manager.",
+      "count": "{count, plural, one {# konverteringsåtgärd} other {# konverteringsåtgärder}}"
+    },
+    "events": {
+      "title": "Konverteringshistorik",
+      "description": "Senaste konverteringar som skickats till Google Ads. Klick-ID:n maskeras.",
+      "empty": "Konverteringar visas här när ett flöde eller en trigger skickar en.",
+      "emptyFiltered": "Inga konverteringar matchar den här statusen.",
+      "loadError": "Det gick inte att läsa in konverteringshistoriken.",
+      "page": "Sida {page} av {pages}",
+      "filter": {
+        "label": "Status",
+        "all": "Alla statusar"
+      },
+      "columns": {
+        "status": "Status",
+        "action": "Konverteringsåtgärd",
+        "channel": "Kanal",
+        "clickId": "Klick-ID",
+        "occurredAt": "Inträffade",
+        "actions": "Åtgärder",
+        "dedup": "Dubblettskydd",
+        "consent": "Samtyckesögonblicksbild",
+        "matching": "Matchning",
+        "properties": "Egenskaper"
+      },
+      "status": {
+        "pending": "Väntar",
+        "sending": "Skickas",
+        "sent": "Skickad",
+        "processed": "Bearbetad",
+        "failed": "Misslyckades",
+        "skippedNoAccount": "Hoppades över: inget konto",
+        "skippedExpired": "Hoppades över: utgången"
+      },
+      "processing": {
+        "processing": "Google bearbetar",
+        "success": "Godkänd",
+        "partialSuccess": "Delvis godkänd",
+        "failed": "Avvisad",
+        "unknown": "Okänt resultat",
+        "timedOut": "Tidsgränsen överskreds"
+      },
+      "stage": {
+        "delivery": "Leveransen misslyckades",
+        "processing": "Bearbetningen misslyckades",
+        "timeout": "Tidsgränsen överskreds"
+      },
+      "consent": {
+        "adUserDataFull": "Annonsanvändardata: {status}",
+        "adPersonalizationFull": "Annonspersonalisering: {status}",
+        "status": {
+          "granted": "Beviljat",
+          "denied": "Nekat",
+          "notProvided": "Inte angivet",
+          "notSupported": "Stöds inte (äldre uppladdning)"
+        },
+        "adUserDataShort": "Data: {status}",
+        "adPersonalizationShort": "Pers.: {status}",
+        "delivery": {
+          "toSend": "Ska skickas",
+          "notSent": "Inte skickat",
+          "unknown": "Inte bekräftat"
+        }
+      },
+      "dedup": {
+        "click": "Per klick",
+        "id": "ID: {id}",
+        "event": "Varje körning"
+      },
+      "matching": {
+        "enabled": "Konfigurerad: {fields}",
+        "withheldConsent": "Undanhållen (inget samtycke): {fields}",
+        "unsupportedTransport": "Inte skickad (äldre): {fields}"
+      },
+      "timeProvided": "Angiven tid",
+      "timeProvidedTooltip": "Den här konverteringstiden kommer från steget, inte från när det kördes."
+    },
+    "validate": {
+      "open": "Validera begäran",
+      "title": "Validera begäran",
+      "description": "En konfigurationskontroll: Google validerar begäran utan att registrera en konvertering.",
+      "conversionAction": "Konverteringsåtgärd",
+      "clickIdType": "Typ av klick-ID",
+      "clickIdTypes": {
+        "gclid": "GCLID",
+        "gbraid": "GBRAID"
+      },
+      "clickId": "Klick-ID",
+      "submit": "Kör kontroll",
+      "ok": "Google godkände den här konfigurationen. Inget registrerades.",
+      "reasons": {
+        "accountNotReady": "Google Ads är inte redo än. Slutför anslutningen och konfigurationen av ditt konto och försök igen.",
+        "needsReauth": "Google Ads-anslutningen måste återanslutas.",
+        "rejected": "Google avvisade den här begäran",
+        "legacyUploadNotAllowed": "Google tillåter inte det gamla uppladdnings-API:et för det här kontot. Byt inloggningsuppgifterna till Data Manager och anslut den här arbetsytan igen."
+      },
+      "invalid": "Välj en konverteringsåtgärd och ange ett giltigt klick-ID.",
+      "consentIncluded": "Inkluderar samtycke: {values}.",
+      "consentNone": "Inget samtycke ingår i det här testet.",
+      "consentVariableSkipped": "Samtycke från ett kontaktfält kan inte testas och utelämnas.",
+      "consentNotSentLegacy": "Annonspersonalisering ({status}) skickas inte med den äldre uppladdningsmetoden."
+    },
+    "conversionFields": {
+      "conversionAction": "Konverteringsåtgärd",
+      "unavailableOption": "{id} (inte tillgänglig)",
+      "unavailableWarning": "Den valda konverteringsåtgärden är inte längre tillgänglig eller är inte aktiverad. Välj en annan innan du publicerar.",
+      "externalOption": "{name} (extern attribuering, stöds inte)",
+      "loading": "Läser in konverteringsåtgärder",
+      "loadError": "Det gick inte att läsa in dina Google Ads-konverteringsåtgärder.",
+      "notConnected": "Anslut Google Ads för att skicka konverteringar.",
+      "noActions": "Inga aktiverade konverteringsåtgärder hittades. Synkronisera dem i Google Ads-inställningarna.",
+      "openSettings": "Öppna Google Ads-inställningar",
+      "needsReauth": "Google Ads-anslutningen måste återanslutas.",
+      "dedupModeClick": "En gång per annonsklick",
+      "dedupModeClickHelp": "Räknar denna konverteringsåtgärd en gång för varje annonsklick.",
+      "dedupModeIdHelp": "Räknas en gång per olika ID.",
+      "dedupModeId": "En gång per order- eller händelse-ID",
+      "dedupModeEvent": "Varje gång den körs",
+      "dedupModeEventHelp": "Registrerar en ny konvertering varje gång den körs, även för samma annonsklick. Ett nytt försök av samma körning räknas inte två gånger.",
+      "dedupId": "Order- eller händelse-ID",
+      "dedupIdPlaceholder": "t.ex. '{{order_number}}'",
+      "dedupIdHelp": "Återanvänd samma ID vid nya försök och importer. Använd ett olika ID för varje köp eller händelse.",
+      "dedupIdExample": "Inget order-ID vid försäljning i chatten? Kombinera kontakten med ett fält som du sätter för varje försäljning, t.ex. {example}. Använd inte aktuell tid: den ändras vid varje körning.",
+      "dedupIdInfoLabel": "Om order- eller händelse-ID",
+      "dedupLeadIdNote": "Varje olika ID räknas som en ny lead från samma klick.",
+      "dedupClickNote": "Upprepade köp från samma klick räknas inte.",
+      "dedupLegacyNote": "Gammal uppladdning: Google får ett förvrängt ID.",
+      "additionalOptions": "Fler alternativ",
+      "additionalOptionsCount": "{count} angiven",
+      "customerMatching": "Kundmatchning",
+      "customerMatchingCount": "{count} på",
+      "customerMatchingLegacy": "Stöds inte av den äldre uppladdningsmetoden. Byt anslutningen till Data Manager API för att använda det.",
+      "customerMatchingTermsNotAccepted": "Skickas inte förrän villkoren för kunddata har godkänts i konverteringsinställningarna i Google Ads.",
+      "learnMore": "Läs mer",
+      "matchEmailLabel": "E-post",
+      "matchPhoneLabel": "Telefonnummer",
+      "matchEmailPlaceholder": "'{{email}}'",
+      "matchPhonePlaceholder": "'{{phone}}'",
+      "customerTypeLabel": "Kundtyp",
+      "customerValueBucketLabel": "Kundvärde",
+      "customerPropertiesLegacy": "Stöds inte av den äldre uppladdningsmetoden. Byt anslutningen till Data Manager API för att använda det.",
+      "conversionTime": "Konverteringstid",
+      "conversionTimePlaceholder": "Lämna tomt för att använda tiden då detta steg körs",
+      "valuePlaceholder": "Valfritt, t.ex. 250",
+      "currencyPlaceholder": "Valfritt, USD",
+      "validation": {
+        "dedupIdRequired": "Ange ett ID eller välj En gång per annonsklick.",
+        "dedupIdTooLong": "Använd högst 64 tecken.",
+        "matchTemplateInvalid": "Använd bara en variabel, till exempel '{{email}}'. Ett fast värde är inte tillåtet.",
+        "customerTypeInvalid": "Använd NEW eller RETURNING, eller en variabel som '{{customer_type}}'.",
+        "customerValueBucketInvalid": "Använd LOW, MEDIUM eller HIGH, eller en variabel som '{{customer_value}}'.",
+        "timeFormat": "Använd ett datum med tidszon, t.ex. 2026-10-08T14:30:00+07:00.",
+        "timeInvalidDate": "Det här datumet finns inte.",
+        "currencyRequired": "Lägg till en valuta när du anger ett värde.",
+        "valueRequired": "Lägg till ett värde när du anger en valuta.",
+        "conversionActionRequired": "Välj en konverteringsåtgärd.",
+        "valueInvalid": "Använd ett vanligt tal, t.ex. 19.99.",
+        "valueTooLarge": "Värdet är för stort.",
+        "currencyInvalid": "Använd en valutakod med 3 bokstäver, t.ex. USD."
+      },
+      "consentInvalid": "Samtyckesinställningarna kan inte läsas, så det här steget kommer att misslyckas.",
+      "consentFixLink": "Åtgärda dem i inställningar",
+      "dedupModeLabel": "Undvik dubbla konverteringar"
+    },
+    "summary": {
+      "conversionAction": "Konverteringsåtgärd {id}",
+      "notConfigured": "Välj en konverteringsåtgärd",
+      "dedupClick": "En gång per annonsklick",
+      "dedupId": "ID: {id}",
+      "dedupEvent": "Varje gång den körs"
+    },
+    "consent": {
+      "title": "Samtycke för konverteringsdata",
+      "description": "Om kunderna har godkänt att dela sina data för annonser. Gäller varje konvertering som den här arbetsytan skickar.",
+      "learnMore": "Läs mer",
+      "notConnected": "Gäller konverteringar när ett Google Ads-konto är anslutet.",
+      "adUserData": {
+        "label": "Annonsanvändardata"
+      },
+      "adPersonalization": {
+        "label": "Annonspersonalisering"
+      },
+      "source": {
+        "notProvided": "Inte angivet",
+        "granted": "Alltid beviljat",
+        "denied": "Alltid nekat",
+        "variable": "Från ett kontaktfält"
+      },
+      "help": {
+        "notProvided": "Utelämnad. Google använder kontots standardsamtycke.",
+        "granted": "Varje konvertering anger att kunden godkände.",
+        "denied": "Varje konvertering anger att kunden avböjde.",
+        "variable": "Använd \"{granted}\" eller \"{denied}\". Tomt hoppas över; allt annat får steget att misslyckas."
+      },
+      "templatePlaceholder": "t.ex. '{{gdpr_consent}}'",
+      "templateLabel": "Kontaktfält för {setting}",
+      "validation": {
+        "templateRequired": "Infoga ett kontaktfält, t.ex. '{{gdpr_consent}}'.",
+        "templateTooLong": "Använd högst 200 tecken."
+      },
+      "legacy": {
+        "title": "Skickas inte med äldre uppladdning",
+        "body": "Äldre uppladdning accepterar bara samtycke till annonsanvändardata. Anslut igen med Data Manager för att skicka det."
+      },
+      "save": "Spara",
+      "saved": "Samtyckesinställningar sparade",
+      "invalidStored": "De sparade samtyckesinställningarna kunde inte läsas. Steg som skickar konverteringar misslyckas tills du sparar nya inställningar."
+    },
+    "errors": {
+      "supportSession": "Plattformens supportsessioner kan inte ändra Google Ads-anslutningen eller skicka konverteringar.",
+      "developerTokenMissing": "Google Ads är inte tillgängligt ännu: plattformens Google Ads-inloggningsuppgifter (OAuth-klient-ID och hemlighet) är inte konfigurerade.",
+      "notConnected": "Google Ads är inte anslutet för den här arbetsytan.",
+      "sessionNotFound": "Det här Google Ads-anslutningsförsöket hittades inte eller har gått ut. Börja om.",
+      "pickFailed": "Det gick inte att ansluta det Google Ads-kontot. Det kan redan vara anslutet någon annanstans eller så har försöket gått ut.",
+      "notRetryable": "Den här konverteringen kan inte skickas igen: endast misslyckade konverteringar kan skickas igen.",
+      "authorizationUnavailable": "Det gick inte att starta Google-inloggningen. Försök igen om en stund.",
+      "credentialSecretsRequired": "Ange klienthemligheten. Den är inte sparad ännu."
+    },
+    "enums": {
+      "category": {
+        "default": "Standard",
+        "purchase": "Köp",
+        "addToCart": "Lägg i varukorg",
+        "beginCheckout": "Påbörja kassan",
+        "subscribePaid": "Betald prenumeration",
+        "phoneCallLead": "Lead via telefonsamtal",
+        "importedLead": "Importerad lead",
+        "submitLeadForm": "Inskickat leadformulär",
+        "bookAppointment": "Boka tid",
+        "signup": "Registrering",
+        "requestQuote": "Begär offert",
+        "getDirections": "Vägbeskrivning",
+        "outboundClick": "Utgående klick",
+        "contact": "Kontakt",
+        "engagement": "Engagemang",
+        "storeVisit": "Butiksbesök",
+        "storeSale": "Butiksförsäljning",
+        "qualifiedLead": "Kvalificerad lead",
+        "convertedLead": "Konverterad lead",
+        "pageView": "Sidvisning",
+        "download": "Nedladdning",
+        "lead": "Lead"
+      },
+      "countingType": {
+        "onePerClick": "En per klick",
+        "manyPerClick": "Flera per klick"
+      },
+      "actionStatus": {
+        "enabled": "Aktiverad",
+        "removed": "Borttagen",
+        "hidden": "Dold"
+      },
+      "unknown": "Annat ({value})"
+    },
+    "uploadMethods": {
+      "dataManager": "Data Manager",
+      "legacy": "Äldre uppladdning"
+    },
+    "stepErrors": {
+      "google_ads_unsupported_channel": "Den här kontaktens kanal kan inte skicka Google Ads-konverteringar.",
+      "google_ads_no_click": "Kontakten kom inte från ett klick på en Google-annons.",
+      "google_ads_no_account": "Inget klart Google Ads-konto är anslutet.",
+      "google_ads_unknown_conversion_action": "Konverteringsåtgärden finns inte längre. Synkronisera och välj en annan.",
+      "google_ads_action_disabled": "Konverteringsåtgärden är inte aktiverad i Google Ads.",
+      "google_ads_incompatible_action": "Den här åtgärden räknar en konvertering per klick, vilket Google inte tillåter för det här iOS-klicket.",
+      "google_ads_unsupported_action": "Den här åtgärden använder extern attribuering och kan inte ta emot de här konverteringarna.",
+      "google_ads_invalid_value": "Värdet eller valutan var ogiltig.",
+      "google_ads_invalid_input": "Stegets inställningar var ogiltiga.",
+      "google_ads_record_failed": "Konverteringen kunde inte sparas.",
+      "google_ads_missing_dedup_id": "Order- eller händelse-ID:t var tomt.",
+      "google_ads_invalid_dedup_id": "Order- eller händelse-ID:t var längre än 64 tecken.",
+      "google_ads_missing_occurrence_key": "Den här körningen saknade en stabil identifierare, så konverteringen registrerades inte.",
+      "google_ads_invalid_customer_property": "Kundtypen eller kundvärdet var inte ett tillåtet värde.",
+      "google_ads_invalid_consent_config": "De sparade samtyckesinställningarna kunde inte läsas.",
+      "google_ads_invalid_consent_value": "Ett samtyckesfält innehöll ett annat värde än \"granted\" eller \"denied\".",
+      "google_ads_invalid_conversion_time": "Konverteringstiden var inget giltigt datum med tidszon, eller låg i framtiden."
+    },
+    "stats": {
+      "filters": {
+        "allChannels": "Alla kanaler",
+        "allActions": "Alla åtgärder",
+        "channelLabel": "Kanal",
+        "actionLabel": "Konverteringsåtgärd"
+      },
+      "tiles": {
+        "confirmed": "Bekräftade",
+        "awaitingGoogle": "Väntar på Google",
+        "queued": "I kö",
+        "failed": "Misslyckade",
+        "skipped": "Hoppade över",
+        "deliveryRate": "Leveransgrad",
+        "confirmedHelp": "Google har bekräftat att dessa konverteringar registrerats.",
+        "awaitingGoogleHelp": "Skickade till Google, väntar på att Google ska bli klar med bearbetningen.",
+        "queuedHelp": "Väntar på att skickas.",
+        "failedHelp": "Inte accepterade eller inte bearbetade av Google.",
+        "skippedHelp": "Inte skickade: inget redo konto, eller för gamla för Google.",
+        "deliveryRateHelp": "Bekräftade ÷ (bekräftade + misslyckade). Köade, väntande och överhoppade räknas inte."
+      },
+      "confirmedValue": "Bekräftat värde",
+      "confirmedValueItem": "{value} ({count, plural, one {# konvertering} other {# konverteringar}})",
+      "moreCurrencies": "+{count} till",
+      "chart": {
+        "title": "Konverteringar per dag",
+        "viewAsTable": "Visa som tabell",
+        "tableCaption": "Konverteringar per dag",
+        "dateColumn": "Datum"
+      },
+      "byAction": {
+        "title": "Per konverteringsåtgärd",
+        "truncated": "Visar de 50 åtgärder som har flest konverteringar."
+      },
+      "byChannel": {
+        "title": "Per kanal",
+        "confirmedCount": "{count, plural, one {# bekräftade} other {# bekräftade}}"
+      },
+      "failures": {
+        "title": "Fel per steg",
+        "unknown": "Okänd"
+      },
+      "empty": {
+        "title": "Inga konverteringar under den här perioden",
+        "description": "Konverteringar visas här när ett flödessteg eller en trigger skickar en."
+      },
+      "error": {
+        "title": "Det gick inte att läsa in statistiken",
+        "retry": "Försök igen"
+      },
+      "viewStatistics": "Visa statistik",
+      "deliveryRateNone": "—",
+      "deliveryRateNoneHelp": "Inga bekräftade eller misslyckade konverteringar under den här perioden.",
+      "actionFallback": "Åtgärd {id}",
+      "openSettings": "Öppna inställningar för Google Ads",
+      "outcome": {
+        "title": "Fördelning av resultat"
+      },
+      "googleReport": {
+        "title": "Reported by Google Ads",
+        "description": "Conversions Google Ads itself recorded for these days, next to what ChatbotX sent and Google confirmed.",
+        "sent": "Confirmed by ChatbotX",
+        "reported": "Reported by Google",
+        "note": "Google can take hours to update its reports, and counts follow the action's own settings, so small gaps are normal.",
+        "unavailable": "Google Ads reporting is not available right now."
+      }
+    }
+  },
+  "minigames": {
+    "title": "Gamification",
+    "description": "Skapa och hantera lyckohjulsminispel för dina kunder.",
+    "types": {
+      "luckyWheel": "Lyckohjul",
+      "jackpot": "Jackpot",
+      "gashapon": "Gashapon",
+      "drawLots": "Dra lott",
+      "scratchOff": "Skrapa"
+    },
+    "createDialog": {
+      "title": "Välj en minispelstyp",
+      "comingSoon": "Kommer snart"
+    },
+    "prizeSettings": {
+      "sumOfProbabilities": "Summan av alla sannolikheter: {value}%",
+      "loseProbability": "Förlustsannolikhet: {value}%",
+      "winProbability": "Vinstsannolikhet: {value}%",
+      "newPrize": "Nytt pris",
+      "prizeNameCustomFieldLabel": "Spara prisnamn i Anpassat fält"
+    },
+    "prizeItemDialog": {
+      "prizeTitle": "Redigera pris",
+      "nonWinningTitle": "Redigera inställning för förlust",
+      "prizeNameLabel": "Prisnamn",
+      "nonWinningTitleLabel": "Titel",
+      "loseImageDescription": "Rekommenderad storlek 120x120px",
+      "quantityLabel": "Antal vinster",
+      "quantityDescription": "Antal gånger detta pris fortfarande kan vinnas; minskar med 1 för varje vinst. Lämna tomt för obegränsat."
+    },
+    "outcomeMessage": {
+      "enableWin": "Skicka meddelande till vinnaren som fick priset",
+      "enableLose": "Skicka ett meddelande när spelaren inte vinner",
+      "mode": "Meddelandetyp",
+      "modeText": "Text",
+      "modeFlow": "Flöde",
+      "text": "Meddelande"
+    },
+    "winningMessageDialog": {
+      "title": "Inställningar för vinstmeddelande",
+      "titleLabel": "Titel",
+      "prizeNameHint": "Du kan använda '{{prize_name}}' i titeln och beskrivningen för att infoga prisnamnet.",
+      "acceptButtonText": "Text för Acceptera-knapp",
+      "shareButtonText": "Text för Dela-knapp",
+      "shareButtonDescription": "Beskrivning för Dela-knapp"
+    },
+    "nonWinningMessageDialog": {
+      "title": "Inställningar för förlustmeddelande",
+      "titleLabel": "Titel",
+      "shareButtonText": "Text för Dela-knapp",
+      "shareButtonDescription": "Beskrivning för Dela-knapp"
+    },
+    "preview": {
+      "start": "Starta",
+      "shareWithFriends": "Dela med vänner",
+      "jackpotHeader": "JACKPOT",
+      "jackpotBanner": "Jackpot",
+      "luckyWheelHeader": "LYCKOHJUL",
+      "gashaponHeader": "GASHAPON",
+      "drawLotsHeader": "DRA LOTT",
+      "scratchOffHeader": "SKRAPA & VINN",
+      "scratchOffCardTitle": "Turstjärnans skraplotter",
+      "comingSoon": "Detaljerad förhandsvisning kommer snart för den här speltypen"
+    },
+    "form": {
+      "generalSettingsTitle": "Allmänna inställningar",
+      "appearanceTitle": "Utseende",
+      "playerSettingsTitle": "Spelarinställningar",
+      "prizeSettingsTitle": "Prisinställningar",
+      "validationFailed": "Åtgärda de markerade fälten innan du sparar."
+    },
+    "generalSettings": {
+      "showName": "Synlig",
+      "playedAt": "Spelad",
+      "rulesDescription": "Regelbeskrivning",
+      "openerTags": "Tagga kontakter som öppnar spellänken",
+      "playerTags": "Tagga spelare",
+      "newFriendTags": "Tagga nya vänner"
+    },
+    "appearance": {
+      "backgroundColor": "Bakgrundsfärg",
+      "machineColor": "Maskinfärg",
+      "decorativeColor": "Dekorationsfärg",
+      "ruleTextColor": "Textfärg för regler",
+      "backgroundImage": "Bakgrundsbild",
+      "backgroundImageDescription": "Rekommenderad bredd: 1024px",
+      "prizeDescriptionImage": "Bild för prisbeskrivning (valfritt)",
+      "prizeDescriptionImageDescription": "Rekommenderad bredd: 750px",
+      "startButtonImage": "Bild för startknapp",
+      "startButtonImageDescription": "Rekommenderad storlek: 360x105px"
+    },
+    "playerSettings": {
+      "drawsPerPerson": "Antal lyckodragningar per person",
+      "maxSharesPerPerson": "Max antal bonusdragningar från hänvisningar",
+      "maxSharesPerPersonHint": "Varje vän som går med via den här spelarens inbjudningslänk och skickar ett meddelande till dig ger spelaren 1 extra dragning, upp till den här gränsen. Ange 0 för att stänga av hänvisningsbonusar. Bonusdragningar måste användas före nästa återställning.",
+      "sharingNode": "Delningssteg",
+      "sharingNodeHint": "Flödessteget som körs när en vän öppnar den här spelarens delningslänk. Lämna tomt för att dölja Dela-knappen.",
+      "resetPolicyLabel": "Återställ dragningar",
+      "resetNever": "Återställ inte antalet dragningar",
+      "resetEveryNDays": "Återställ antalet dragningar var",
+      "resetIntervalDaysSuffix": "dag(ar)"
+    },
+    "publicUrl": {
+      "label": "Offentlig URL",
+      "hint": "Kopiera och klistra in URL:en i ditt flöde, din utskick eller sekvens för att dela det här minispelet."
+    },
+    "play": {
+      "close": "Stäng",
+      "drawsRemaining": "{count} försök kvar",
+      "noDrawsLeft": "Du har inga fler försök kvar för det här minispelet.",
+      "notStartedYet": "Det här minispelet har inte startat än.",
+      "ended": "Det här minispelet har avslutats.",
+      "forbiddenTitle": "Åtkomst nekad",
+      "forbiddenDescription": "Den här länken är ogiltig eller har gått ut.",
+      "comingSoonTitle": "Kommer snart",
+      "comingSoonDescription": "Den här typen av minispel går inte att spela än.",
+      "rateLimited": "För många förfrågningar. Vänta en stund och försök igen."
+    },
+    "list": {
+      "gamesPlayed": "Spelade spel",
+      "participants": "Deltagare",
+      "winners": "Vinnare",
+      "shares": "Hänvisningar"
+    },
+    "history": {
+      "title": "Historik",
+      "played": "Spelade",
+      "remaining": "Återstående dragningar",
+      "shares": "Hänvisningar",
+      "openedAt": "Först öppnad",
+      "lastPlayedAt": "Senast spelad",
+      "unknownContact": "Okänd kontakt",
+      "conversationNotFound": "Ingen konversation hittades för den här kontakten",
+      "popupBlocked": "Tillåt popup-fönster för den här webbplatsen och försök sedan igen.",
+      "record": "Logg",
+      "recordDialog": {
+        "title": "Spellogg",
+        "win": "Vann",
+        "lose": "Ingen vinst",
+        "empty": "Inga spelloggar ännu"
+      }
+    }
+  },
+  "mediaLibrary": {
+    "title": "Mediebibliotek",
+    "searchPlaceholder": "Sök filer...",
+    "newFolder": "Ny mapp",
+    "recent": "Senaste",
+    "favourite": "Favorit",
+    "upload": "Ladda upp",
+    "select": "Välj",
+    "bulkSelect": "Massmarkering",
+    "deleteFolder": "Ta bort mapp",
+    "renameFolder": "Byt namn på mapp",
+    "noFiles": "Inga filer hittades",
+    "noFolders": "Inga mappar än",
+    "folderNamePlaceholder": "Mappnamn",
+    "confirmDeleteFolder": "Ta bort mappen och alla dess filer?",
+    "confirmDeleteFolderDescription": "Alla filer i denna mapp kommer att tas bort permanent från servern. Denna åtgärd kan inte ångras.",
+    "confirmDeleteFile": "Ta bort fil?",
+    "confirmDeleteFileDescription": "Denna fil kommer att tas bort permanent från servern.",
+    "addToFavourites": "Lägg till som favorit",
+    "removeFromFavourites": "Ta bort som favorit",
+    "deleteFile": "Ta bort fil",
+    "selectOnlyOneFile": "Du kan bara välja 1 fil",
+    "confirmDeleteFiles": "{count, plural, =1 {Ta bort 1 fil?} other {Ta bort # filer?}}",
+    "confirmDeleteFilesDescription": "Dessa filer kommer att tas bort permanent från servern. Denna åtgärd kan inte ångras.",
+    "filesCount": "{count, plural, =0 {Inga filer} =1 {1 fil} other {# filer}}",
+    "openMediaLibrary": "Öppna mediebibliotek",
+    "uploadFailed": "Det gick inte att ladda upp {name}"
+  },
+  "adsCampaign": {
+    "title": "Annonser",
+    "createCta": "Skapa annons",
+    "prereq": {
+      "notConnected": "Anslut Facebook Ads för att skapa meddelandeannonser för den här kanalen.",
+      "connectCta": "Anslut Facebook Ads"
+    },
+    "specialAdCategory": {
+      "none": "Ingen",
+      "housing": "Bostäder",
+      "employment": "Anställning",
+      "credit": "Kredit",
+      "issues": "Sociala frågor, val eller politik",
+      "financialProducts": "Finansiella produkter och tjänster",
+      "onlineGambling": "Onlinespel och hasardspel"
+    },
+    "fields": {
+      "objective": {
+        "label": "Mål",
+        "value": "Engagemang (meddelanden)"
+      },
+      "specialAdCategory": {
+        "label": "Särskild annonskategori",
+        "description": "Om du väljer en begränsad kategori tas ålder, kön och annan målgruppsinriktning bort som Meta inte tillåter för den kategorin.",
+        "restrictedNote": "Målgruppsinriktning efter ålder och kön är inaktiverad eftersom en begränsad särskild annonskategori har valts."
+      },
+      "adAccount": {
+        "label": "Annonskonto"
+      },
+      "whatsappPage": {
+        "label": "Facebook-sida",
+        "description": "WhatsApp-annonser kräver fortfarande en länkad Facebook-sida — välj den anslutna sidan som ska användas."
+      },
+      "dailyBudget": {
+        "label": "Daglig budget",
+        "placeholder": "t.ex. 2000",
+        "description": "Ange beloppet i annonskontots minsta valutaenhet (t.ex. cent för USD)."
+      },
+      "countries": {
+        "label": "Länder"
+      },
+      "ageRange": {
+        "min": "Lägsta ålder",
+        "max": "Högsta ålder"
+      },
+      "gender": {
+        "label": "Kön",
+        "male": "Man",
+        "female": "Kvinna"
+      },
+      "schedule": {
+        "start": "Starttid",
+        "end": "Sluttid"
+      },
+      "destination": {
+        "label": "Destination"
+      },
+      "callToAction": {
+        "label": "Uppmaning till handling",
+        "derivedNote": "Knappen för uppmaning till handling ({type}) härleds automatiskt från kanalen."
+      },
+      "specialAdCategoryCountry": {
+        "label": "Land för annonskategori",
+        "description": "Krävs av Meta för kategorin samhällsfrågor, val eller politik — landet där du har behörighet att visa dessa annonser."
+      }
+    },
+    "welcomeMessage": {
+      "title": "Välkomstmeddelande",
+      "label": "Välkomstmeddelande",
+      "description": "Skickas automatiskt när någon startar en konversation från den här annonsen.",
+      "mode": {
+        "default": "Använd Metas standardmeddelande",
+        "single": "Enstaka meddelande",
+        "templates": "Testa upp till 5 meddelandevarianter"
+      },
+      "messageLabel": "Meddelande",
+      "templateLabel": "Variant {index}",
+      "headingPlaceholder": "Rubrik (valfritt)",
+      "addTemplate": "Lägg till variant",
+      "templatesLimit": "Upp till {max} varianter kan testas."
+    },
+    "creative": {
+      "mediaRequired": "Ladda upp en bild eller video för att fortsätta.",
+      "mediaType": {
+        "label": "Annonsmaterial",
+        "orVideo": "eller video",
+        "selectAdAccountFirst": "Välj ett annonskonto innan du laddar upp media.",
+        "uploadImage": "Ladda upp bild",
+        "uploadVideo": "Ladda upp video"
+      },
+      "uploading": "Laddar upp...",
+      "imageUploadFailed": "Bilduppladdningen misslyckades. Försök igen.",
+      "videoProcessing": "Bearbetar video...",
+      "videoReady": "Videon är klar",
+      "videoProcessingFailed": "Videobearbetningen misslyckades. Prova en annan fil.",
+      "previewAlt": "Förhandsgranskning av annonsmaterial",
+      "primaryText": "Primär text",
+      "headline": "Rubrik"
+    },
+    "wizard": {
+      "createDraft": "Skapa som pausat utkast",
+      "campaignStep": {
+        "title": "Kampanj",
+        "namePlaceholder": "Namnge den här annonsen"
+      },
+      "adSetStep": {
+        "title": "Annonsuppsättning"
+      },
+      "creativeStep": {
+        "title": "Annonsmaterial"
+      },
+      "preflightStep": {
+        "title": "Granskning"
+      },
+      "errors": {
+        "nameRequired": "Ange ett namn för den här annonsen.",
+        "adAccountRequired": "Välj ett annonskonto.",
+        "budgetRequired": "Ange en daglig budget.",
+        "countryRequired": "Välj minst ett land.",
+        "mediaRequired": "Ladda upp en bild eller video."
+      }
+    },
+    "preflight": {
+      "title": "Sammanfattning",
+      "pausedNote": "Den här annonsen skapas som ett pausat utkast. Inget publiceras och inga pengar spenderas förrän du publicerar den."
+    },
+    "publishConfirm": {
+      "title": "Publicera den här annonsen?",
+      "description": "Publicering aktiverar kampanjen, annonsuppsättningen och annonsen i tur och ordning. Meta börjar spendera din budget när leveransen startar.",
+      "confirm": "Publicera"
+    },
+    "list": {
+      "viewOnMeta": "Visa på Meta",
+      "empty": "Inga meddelandeannonser ännu.",
+      "createState": "Utkaststatus",
+      "actions": "Åtgärder",
+      "notPublishedYet": "Inte publicerad än",
+      "draftReady": "Utkast klart",
+      "createFailed": "Det gick inte att skapa",
+      "creating": "Skapar...",
+      "publish": "Publicera",
+      "pause": "Pausa"
+    },
+    "messages": {
+      "created": "Annonsutkast skapat.",
+      "actionSucceeded": "Klart."
+    },
+    "box": {
+      "ctwa": {
+        "title": "CTWA",
+        "description": "Skapa och hantera Click-to-WhatsApp-annonser här."
+      },
+      "ctm": {
+        "title": "CTM",
+        "description": "Skapa och hantera Click-to-Messenger-annonser här."
+      },
+      "ctid": {
+        "title": "CTID",
+        "description": "Skapa och hantera Click-to-Instagram-annonser här."
+      },
+      "connectCta": "Anslut Facebook Ads",
+      "reconnectCta": "Anslut igen",
+      "reconnectNeeded": "Den här anslutningen behöver återanslutas.",
+      "refresh": "Uppdatera",
+      "whatsappPageRequiredNote": "Click-to-WhatsApp-annonser kräver fortfarande en länkad Facebook-sida (ett krav från Meta) — du väljer den när du skapar en annons.",
+      "emptyDashboardNote": "Annonser som skapas här visas nu automatiskt på den här kanalens annonspanel — välj den här integrationen i filtret där för att se dess konton och kostnader."
+    },
+    "insights": {
+      "title": "Prestanda",
+      "empty": "Inga data ännu",
+      "impressions": "Visningar",
+      "reach": "Räckvidd",
+      "spend": "Spendering",
+      "clicks": "Klick",
+      "conversations": "Konversationer",
+      "costPerConversation": "Kostnad/konv.",
+      "costPerConversationTooltip": "Genomsnittlig kostnad per påbörjad meddelandekonversation.",
+      "datePresetLabel": "Period:",
+      "datePreset": {
+        "maximum": "Hela perioden",
+        "last_30d": "Senaste 30 dagarna",
+        "last_7d": "Senaste 7 dagarna"
+      }
+    }
+  },
+  "accountFields": {
+    "title": "Botfält"
+  },
+  "aiAgentActions": {
+    "title": "AI Actions",
+    "description": "Let the AI automatically take actions while talking to customers.",
+    "when": "When",
+    "whenPlaceholder": "Describe when the AI should do this...",
+    "whatShouldAIDo": "What should the AI do?",
+    "action": "Action {number}",
+    "actionType": "Action type",
+    "addRule": "Add action rule",
+    "addAction": "Add action",
+    "duplicateRule": "Duplicate rule",
+    "removeRule": "Remove rule",
+    "removeAction": "Remove action",
+    "moveUp": "Move action up",
+    "moveDown": "Move action down",
+    "flow": "Flow",
+    "admin": "Admin",
+    "tag": "Tag",
+    "customField": "Custom field",
+    "actionPrompt": {
+      "label": "Action prompt",
+      "description": "Private instructions used only when the AI evaluates action rules.",
+      "placeholder": "Add optional instructions for matching action rules...",
+      "open": "Configure action prompt",
+      "reset": "Reset"
+    },
+    "actionTypes": {
+      "sendFlow": "Skicka flöde",
+      "assignConversation": "Tilldela konversation",
+      "removeAssignment": "Ta bort tilldelning",
+      "transferToHuman": "Överför till en handläggare",
+      "addTag": "Lägg till tagg",
+      "removeTag": "Ta bort tagg",
+      "setCustomField": "Ange anpassat fält",
+      "clearCustomField": "Rensa anpassat fält",
+      "markFollowUp": "Följ upp",
+      "removeFollowUp": "Ta bort uppföljning",
+      "transferToBot": "Överför konversation till bot",
+      "archive": "Arkivera",
+      "blockContact": "Blockera kontakt"
+    }
+  },
+  "openLink": {
+    "title": "Öppna länk",
+    "invalidTitle": "Ogiltig länk.",
+    "invalidDescription": "Den här länken är ogiltig eller har upphört att gälla.",
+    "openZaloGroup": "Öppna Zalo-grupp",
+    "openZalo": "Öppna Zalo",
+    "openMessenger": "Öppna Messenger"
+  },
+  "conversationRouting": {
+    "owner": {
+      "metaAi": "Meta AI",
+      "partner": "Partner",
+      "partnerWithRole": "Partner · {role}",
+      "self": "dig"
+    },
+    "roles": {
+      "ai_agent": "Meta AI",
+      "ctwa": "Click-to-WhatsApp-annonser",
+      "customer_service": "Kundtjänst",
+      "escalation": "Eskalering",
+      "marketing": "Marknadsföring",
+      "utility": "Tjänst"
+    },
+    "pill": {
+      "standby": "Standby ({owner})",
+      "owned": "Aktiv",
+      "tooltip": "Hanteras av {owner}"
+    },
+    "release": {
+      "label": "Släpp",
+      "tooltip": "Släpp konversationen så att andra appar kan svara",
+      "success": "Konversationen släppt"
+    },
+    "pass": {
+      "menuItem": "Skicka vidare till eskalering",
+      "title": "Skicka vidare till eskaleringspartnern?",
+      "description": "Lämna över den här konversationen till din eskaleringspartner? Dina svar pausas tills konversationen kommer tillbaka.",
+      "confirm": "Skicka vidare",
+      "success": "Konversationen skickades vidare till eskaleringspartnern"
+    },
+    "aiHandover": {
+      "label": "BizAI",
+      "tooltip": "Lämna tillbaka den här konversationen till AI-assistenten",
+      "title": "Lämna tillbaka till AI-assistenten?",
+      "description": "AI-assistenten börjar svara den här kunden igen. Dina svar pausas tills konversationen kommer tillbaka till dig. Meta garanterar inte att assistenten svarar på varje meddelande.",
+      "confirm": "Lämna tillbaka",
+      "success": "Konversationen har lämnats tillbaka till AI-assistenten"
+    },
+    "composer": {
+      "aiStandbyHint": "Replying takes over this conversation from the AI assistant.",
+      "title": "Du är i standby (endast lyssning)",
+      "description": "En tredjepartspartner hanterar den här konversationen. Meddelanderutan är låst för att undvika dubbla svar.",
+      "takeOver": "Ta över",
+      "takeOverSuccess": "Du hanterar nu den här konversationen",
+      "notEscalation": "Bara eskaleringspartnern kan ta över. Routing konfigureras i Meta Business Suite.",
+      "notPrimaryReceiver": "Den här appen måste vara sidans primära mottagare för att kunna ta över. Ställ in det i sidans inställningar för Handover Protocol.",
+      "learnMore": "Läs mer",
+      "dismiss": "Skicka ändå"
+    },
+    "divider": {
+      "ownerHandling": "{owner} hanterar nu den här konversationen",
+      "handedOver": "{previousOwner} lämnade tillbaka den här konversationen till dig",
+      "selfHandling": "Du hanterar nu den här konversationen",
+      "takenOver": "Du tog över den här konversationen",
+      "released": "Konversationen släppt",
+      "passed": "Konversationen skickades vidare till eskaleringspartnern",
+      "serviceRejected": "Meddelandet skickades inte: {owner} hanterar den här konversationen"
+    },
+    "context": {
+      "title": "Konversationskontext",
+      "summaryBadge": "AI-sammanfattning",
+      "historyBadge": "Historik",
+      "customer": "Kund",
+      "business": "Företag",
+      "handoverNote": "Överlämningsanteckning: {note}",
+      "showAll": "Visa alla ({count})",
+      "showLess": "Visa färre"
+    },
+    "echo": {
+      "partner": "Partner"
+    },
+    "panel": {
+      "title": "Konversationsroutning",
+      "threadState": "Trådstatus",
+      "threadStateOwned": "Ägd",
+      "threadStateStandby": "Standby",
+      "threadStateIdle": "Inaktiv",
+      "currentOwner": "Nuvarande ägare",
+      "noOwner": "Ingen ansvarig",
+      "roleLabel": "Din roll",
+      "selfOwned": "Hanterar konversationen",
+      "selfStandby": "Standby — lyssnar bara",
+      "selfIdle": "Väntar på kundens nästa meddelande",
+      "hintOwned": "Släpp när du är klar så att andra appar kan svara.",
+      "hintStandby": "Medan en partner hanterar detta hålls dina meddelanden tillbaka så att kunden inte får dubbla svar. Ta över från meddelanderutan för att svara.",
+      "hintIdle": "Kundens nästa meddelande avgör vem som svarar.",
+      "syncOwner": "Synkronisera ägare",
+      "syncOwnerSuccess": "Ägare synkroniserad"
+    },
+    "settings": {
+      "title": "Flöde för återupptagning efter överlämning",
+      "description": "Automatiseringen som körs när en partner lämnar tillbaka en konversation.",
+      "resumeFlowLabel": "Välj ett flöde",
+      "resumeFlowPlaceholder": "Välj ett flöde",
+      "info": "Det här flödet startar automatiskt när kontrollen lämnas tillbaka. Konversationssammanfattningen och chatthistoriken visas sedan för dina agenter i livechatten.",
+      "save": "Spara ändringar",
+      "clearFlow": "Rensa flöde",
+      "adminOnly": "Bara arbetsyteadministratörer kan ändra routning",
+      "flowNotFound": "Det valda flödet hittades inte eller är inte aktivt",
+      "integrationNotFound": "WhatsApp-numret hittades inte",
+      "messengerIntegrationNotFound": "Messenger-sidan hittades inte"
+    },
+    "errors": {
+      "unsupported": "Konversationsroutning är inte tillgänglig i den här kanalen",
+      "notFound": "Den här konversationen finns inte i den kanalen",
+      "actionFailed": "Det gick inte att uppdatera konversationsroutningen. Försök igen."
+    },
+    "step": {
+      "action": "Åtgärd",
+      "release": "Släpp konversationen",
+      "pass": "Skicka vidare till eskaleringspartnern",
+      "helper": "Endast WhatsApp. På andra kanaler, eller när konversationen inte ägs här, följer steget felvägen."
+    },
+    "template": {
+      "sent": "Mall skickad"
+    }
+  },
+  "miniApps": {
+    "title": "Mini Apps",
+    "description": "Skapa formulär för WhatsApp Flows och dela dem som en länk i valfri kanal.",
+    "feature": "Mini App",
+    "deleteWhatsappChoice": "”Ta bort” behåller de Flows som redan publicerats på WhatsApp. ”Ta bort och ta bort WhatsApp Flow” tar även bort dem från Meta: utkast tas bort och publicerade Flows fasas ut eftersom Meta inte tillåter att de tas bort.",
+    "deleteWhatsappFailed": "Mini App borttagen, men {count} WhatsApp Flow(s) kunde inte tas bort från Meta. Ta bort dem i WhatsApp Manager.",
+    "deleteWithWhatsapp": "Ta bort och ta bort WhatsApp Flow",
+    "publicUrl": {
+      "label": "Offentlig URL",
+      "hint": "Kopiera URL:en och klistra in den i ditt flöde, din broadcast eller sekvens. Skickad så kopplas varje svar till kontakten som öppnade den."
+    },
+    "table": {
+      "whatsapp": "WhatsApp",
+      "notPublished": "Inte publicerad",
+      "submissions": "Svar",
+      "copyJson": "Kopiera JSON"
+    },
+    "submissions": {
+      "title": "Svar",
+      "submittedAt": "Skickat",
+      "contact": "Kontakt",
+      "anonymous": "Anonym",
+      "yes": "Ja",
+      "no": "Nej",
+      "unknownContact": "Okänd kontakt",
+      "conversationNotFound": "Den här kontakten har ingen konversation än.",
+      "openConversationFailed": "Det gick inte att öppna konversationen."
+    },
+    "editor": {
+      "namePlaceholder": "Namn på Mini App",
+      "undo": "Ångra",
+      "redo": "Gör om",
+      "preview": "Förhandsvisning",
+      "viewJson": "Visa JSON",
+      "saveFailed": "Det gick inte att spara Mini App",
+      "noIssues": "Inga problem",
+      "issuesCount": "{count, plural, one {# problem} other {# problem}}",
+      "addScreen": "Lägg till skärm",
+      "newScreenTitle": "Ny skärm",
+      "searchComponents": "Sök komponenter",
+      "paletteHint": "Klicka för att lägga till, eller dra till skärmen",
+      "dropHere": "Släpp komponenter här",
+      "emptyScreen": "Dra komponenter från vänster, eller klicka på en för att lägga till den",
+      "slotThen": "Då",
+      "slotElse": "Annars",
+      "slotCase": "Fall: {value}",
+      "noCondition": "Inget villkor än",
+      "drag": "Dra för att flytta",
+      "duplicate": "Duplicera",
+      "remove": "Ta bort",
+      "cannotDropHere": "Den här komponenten kan inte placeras här",
+      "previewSubmitted": "Förhandsvisning skickad: {answers}"
+    },
+    "screen": {
+      "title": "Skärm",
+      "screenTitle": "Titel",
+      "screenId": "Skärm-ID",
+      "screenIdHint": "Endast bokstäver och understreck. Används för navigering och i Flow JSON.",
+      "terminal": "Sista skärmen",
+      "terminalHint": "Flödet kan avslutas här. Det behöver en Footer som slutför flödet.",
+      "remove": "Ta bort skärm"
+    },
+    "inspector": {
+      "default": "Standard",
+      "commaSeparated": "Separera värden med kommatecken.",
+      "uploadImage": "Välj bild",
+      "imageTooLarge": "Bilden är för stor även efter komprimering. Försök med en mindre.",
+      "moveUp": "Flytta upp",
+      "moveDown": "Flytta ned",
+      "removeItem": "Ta bort",
+      "optionTitle": "Titel",
+      "optionId": "ID",
+      "addOption": "Lägg till alternativ",
+      "addImage": "Lägg till bild",
+      "noAction": "Ingen åtgärd",
+      "chooseAction": "Välj en åtgärd",
+      "noOtherScreen": "Lägg till en annan skärm att navigera till.",
+      "completeHint": "Slutför flödet och skickar alla svar.",
+      "endText": "Text till höger",
+      "badge": "Badge",
+      "conditionHint": "Visar “Då” när sant, annars “Annars”. Exempel: {example}",
+      "switchValueHint": "Visar det fall vars namn motsvarar det här värdet.",
+      "cases": "Fall",
+      "addCase": "Lägg till fall",
+      "casesHint": "Varje fallnamn matchas mot värdet ovan.",
+      "nameHint": "Fältnyckel i svaren. Bokstäver, siffror och understreck.",
+      "markdownHint": "Stöder # rubriker, **fetstil**, *kursiv*, ~~genomstruken~~, listor och [länkar](https://…).",
+      "patternHint": "Valfritt reguljärt uttryck som svaret måste matcha.",
+      "saveToCustomField": "Spara i anpassat fält",
+      "chooseCustomField": "Välj ett anpassat fält",
+      "customFieldHint": "När en kontakt skickar Mini App-länken sparas svaret i det här fältet.",
+      "imageLoadFailed": "Bilden kunde inte läsas in. Välj en JPEG-, PNG-, WebP- eller GIF-bild.",
+      "answerReference": "Svarsreferens",
+      "answerReferenceHint": "Klistra in den i text eller ett villkor för att använda svaret.",
+      "copyReference": "Kopiera",
+      "variablesHint": "Skriv {open} eller klicka på {button} för att infoga ett anpassat fält. Värden visas bara i webblänken för en känd kontakt."
+    },
+    "json": {
+      "title": "Flow JSON",
+      "description": "WhatsApp Flow JSON (version 7.3). Klistra in den i WhatsApp Manager eller Flows Playground.",
+      "copy": "Kopiera JSON",
+      "contactVariablesWarning": "Den här JSON-koden innehåller fortfarande anpassade fält som '{{first_name}}'. WhatsApp visar dem precis som de är skrivna, så ta bort dem innan du klistrar in den i WhatsApp."
+    },
+    "publish": {
+      "open": "Publicera på WhatsApp",
+      "title": "Publicera på WhatsApp",
+      "description": "Skapar eller uppdaterar den här Mini App som ett WhatsApp Flow och publicerar det. Sedan kan du skicka det med steget “Skicka WhatsApp Flow”.",
+      "number": "WhatsApp-nummer",
+      "noNumbers": "Anslut ett WhatsApp-nummer först.",
+      "unsavedChanges": "Du har osparade ändringar. Spara först så att WhatsApp får den senaste versionen.",
+      "submit": "Publicera",
+      "success": "Publicerad på WhatsApp",
+      "draftOnly": "Meta behöll Flowet som utkast på grund av fel",
+      "failed": "Det gick inte att publicera på WhatsApp",
+      "contactVariables": "Den här Mini App visar anpassade fält i sina texter. De fungerar än så länge bara på webblänken – ta bort dem innan du publicerar till WhatsApp."
+    },
+    "runner": {
+      "back": "Tillbaka",
+      "doneTitle": "Tack!",
+      "doneDescription": "Dina svar har skickats.",
+      "errors": {
+        "required": "Det här fältet är obligatoriskt",
+        "invalidEmail": "Ange en giltig e-postadress",
+        "invalidFormat": "Formatet är ogiltigt",
+        "tooShort": "Svaret är för kort",
+        "selectMore": "Välj fler alternativ",
+        "selectFewer": "Välj färre alternativ",
+        "uploadMore": "Lägg till fler filer"
+      }
+    },
+    "public": {
+      "notFoundTitle": "Mini App är inte tillgänglig",
+      "notFoundDescription": "Länken är ogiltig eller så har Mini App stängts av.",
+      "rateLimited": "För många inskickningar. Vänta en stund och försök igen.",
+      "submitFailed": "Det gick inte att skicka dina svar. Försök igen."
+    },
+    "view": {
+      "selectPlaceholder": "Välj",
+      "calendarSingle": "Kalender",
+      "calendarRange": "Datumintervall",
+      "readMore": "Läs mer",
+      "takePhoto": "Ta eller välj ett foto",
+      "uploadDocument": "Ladda upp ett dokument",
+      "previousImage": "Föregående bild",
+      "nextImage": "Nästa bild"
+    },
+    "categories": {
+      "text": "Text",
+      "input": "Inmatning",
+      "selection": "Val",
+      "media": "Media",
+      "navigation": "Navigering",
+      "container": "Behållare"
+    },
+    "components": {
+      "TextHeading": "Rubrik",
+      "TextSubheading": "Underrubrik",
+      "TextBody": "Brödtext",
+      "TextCaption": "Bildtext",
+      "RichText": "Rich text",
+      "TextInput": "Textfält",
+      "TextArea": "Textområde",
+      "Dropdown": "Rullgardinsmeny",
+      "RadioButtonsGroup": "Enkelval",
+      "CheckboxGroup": "Flerval",
+      "ChipsSelector": "Chips",
+      "DatePicker": "Datumväljare",
+      "CalendarPicker": "Kalender",
+      "OptIn": "Opt-in",
+      "PhotoPicker": "Fotouppladdning",
+      "DocumentPicker": "Dokumentuppladdning",
+      "Image": "Bild",
+      "ImageCarousel": "Bildkarusell",
+      "EmbeddedLink": "Länk",
+      "NavigationList": "Navigeringslista",
+      "Footer": "Footer-knapp",
+      "Form": "Formulär",
+      "If": "Om / Annars",
+      "Switch": "Switch"
+    },
+    "actions": {
+      "navigate": "Gå till skärm",
+      "complete": "Slutför flödet",
+      "open_url": "Öppna en URL"
+    },
+    "defaults": {
+      "heading": "Rubrik",
+      "subheading": "Underrubrik",
+      "body": "Brödtext",
+      "caption": "Bildtext",
+      "richText": "## Titel\n\nLite **rik** text.",
+      "textInputLabel": "Ditt svar",
+      "textAreaLabel": "Detaljer",
+      "dropdownLabel": "Välj ett",
+      "radioLabel": "Välj ett",
+      "checkboxLabel": "Välj flera",
+      "chipsLabel": "Välj flera",
+      "dateLabel": "Datum",
+      "calendarLabel": "Datum",
+      "optInLabel": "Jag godkänner villkoren",
+      "photoLabel": "Ladda upp foton",
+      "documentLabel": "Ladda upp dokument",
+      "linkText": "Läs mer",
+      "footerLabel": "Fortsätt",
+      "option": "Alternativ",
+      "navigationItem": "Objekt",
+      "imageAlt": "Bild"
+    },
+    "properties": {
+      "text": "Text",
+      "label": "Etikett",
+      "name": "Fältnyckel",
+      "description": "Beskrivning",
+      "title": "Titel",
+      "required": "Obligatoriskt",
+      "helperText": "Hjälptext",
+      "errorMessage": "Felmeddelande",
+      "initValue": "Startvärde",
+      "inputType": "Inmatningstyp",
+      "labelVariant": "Stor etikett",
+      "pattern": "Mönster",
+      "minChars": "Minsta antal tecken",
+      "maxChars": "Största antal tecken",
+      "maxLength": "Maximal längd",
+      "fontWeight": "Teckenstil",
+      "strikethrough": "Genomstruken",
+      "markdown": "Markdown",
+      "dataSource": "Alternativ",
+      "mediaSize": "Bildstorlek",
+      "minSelectedItems": "Minst valda",
+      "maxSelectedItems": "Högst valda",
+      "minDate": "Tidigaste datum",
+      "maxDate": "Senaste datum",
+      "unavailableDates": "Otillgängliga datum",
+      "mode": "Läge",
+      "minDays": "Minsta antal dagar",
+      "maxDays": "Största antal dagar",
+      "includeDays": "Valbara veckodagar",
+      "photoSource": "Fotokälla",
+      "minUploadedPhotos": "Minsta antal foton",
+      "maxUploadedPhotos": "Största antal foton",
+      "minUploadedDocuments": "Minsta antal dokument",
+      "maxUploadedDocuments": "Största antal dokument",
+      "maxFileSizeKb": "Maximal filstorlek (KB)",
+      "allowedMimeTypes": "Tillåtna filtyper",
+      "src": "Bild",
+      "width": "Bredd",
+      "height": "Höjd",
+      "scaleType": "Skalning",
+      "aspectRatio": "Bildformat",
+      "altText": "Alternativ text",
+      "images": "Bilder",
+      "listItems": "Objekt",
+      "leftCaption": "Vänster bildtext",
+      "centerCaption": "Mittre bildtext",
+      "rightCaption": "Höger bildtext",
+      "enabled": "Aktiverad",
+      "condition": "Villkor",
+      "value": "Värde",
+      "action": "Vid klick",
+      "screenId": "Skärm-ID"
+    },
+    "options": {
+      "inputType": {
+        "text": "Text",
+        "number": "Nummer",
+        "email": "E-post",
+        "password": "Lösenord",
+        "passcode": "Kod",
+        "phone": "Telefon"
+      },
+      "fontWeight": {
+        "normal": "Normal",
+        "bold": "Fet",
+        "italic": "Kursiv",
+        "bold_italic": "Fet kursiv"
+      },
+      "scaleType": {
+        "cover": "Fyll",
+        "contain": "Anpassa"
+      },
+      "mediaSize": {
+        "regular": "Normal",
+        "large": "Stor"
+      },
+      "mode": {
+        "single": "Enskilt datum",
+        "range": "Datumintervall"
+      },
+      "photoSource": {
+        "camera_gallery": "Kamera och galleri",
+        "camera": "Endast kamera",
+        "gallery": "Endast galleri"
+      },
+      "weekday": {
+        "Mon": "Mån",
+        "Tue": "Tis",
+        "Wed": "Ons",
+        "Thu": "Tors",
+        "Fri": "Fre",
+        "Sat": "Lör",
+        "Sun": "Sön"
+      }
+    },
+    "issues": {
+      "definition_invalid": "Mini App-data är ogiltig.",
+      "screen_id_invalid": "Skärm-ID får bara innehålla bokstäver och understreck.",
+      "screen_id_reserved": "“SUCCESS” är reserverat av WhatsApp. Välj ett annat skärm-ID.",
+      "screen_id_duplicate": "En annan skärm använder redan det här ID:t.",
+      "no_terminal_screen": "Markera minst en skärm som sista skärm.",
+      "terminal_screen_without_complete": "Den sista skärmen behöver en Footer som slutför flödet.",
+      "screen_without_exit": "Den här skärmen har inget sätt att fortsätta. Lägg till en Footer eller länk som leder till en annan skärm.",
+      "screen_unreachable": "Ingen skärm navigerar hit.",
+      "too_many_components": "En skärm kan innehålla högst {max} komponenter.",
+      "component_limit": "En skärm kan innehålla högst {max} × {type}.",
+      "picker_conflict": "En skärm kan inte ha både fotouppladdning och dokumentuppladdning.",
+      "picker_multiple_in_complete": "Ställ in {property} på 1: WhatsApp skickar bara en enda fil när flödet slutförs.",
+      "footer_not_last": "Footern måste vara den sista komponenten på skärmen.",
+      "footer_in_nested_branch": "En Footer kan bara placeras direkt i en Om-gren på första nivån.",
+      "footer_missing_in_branch": "Om en gren har en Footer måste den andra grenen också ha en.",
+      "navigation_list_with_footer": "En navigeringslista kan inte finnas på samma skärm som en Footer.",
+      "navigation_list_on_terminal": "En navigeringslista kan inte finnas på sista skärmen.",
+      "if_too_deep": "Om-block kan nästlas högst {max} nivåer djupt.",
+      "if_then_empty": "Grenen “Då” behöver minst en komponent.",
+      "switch_no_cases": "Lägg till minst ett fall.",
+      "child_not_allowed": "Den här komponenten kan inte placeras i {parent}.",
+      "name_invalid": "Använd bokstäver, siffror och understreck för fältnyckeln.",
+      "name_duplicate": "Fältnyckeln “{name}” används redan.",
+      "property_required": "{property} är obligatoriskt.",
+      "property_too_long": "{property} får vara högst {max} tecken.",
+      "property_too_short": "{property} behöver minst {min} objekt.",
+      "property_invalid": "{property} är ogiltigt.",
+      "option_duplicate_id": "Varje alternativ behöver ett unikt ID.",
+      "min_greater_than_max": "{property} får inte vara större än maxvärdet.",
+      "action_required": "Välj vad som händer vid klick.",
+      "action_not_allowed": "Den här åtgärden är inte tillåten här.",
+      "navigate_target_missing": "Målskärmen finns inte längre.",
+      "navigate_self": "En skärm kan inte navigera till sig själv.",
+      "expression_invalid": "Uttrycket kan inte läsas. Kontrollera citattecken och parenteser.",
+      "reference_invalid": "{reference} är inte en giltig referens.",
+      "reference_unknown": "{reference} matchar inget fält.",
+      "data_reference_unsupported": "{reference}: skärmdata stöds inte. Använd formulärfält i stället.",
+      "property_unknown": "WhatsApp accepterar inte egenskapen ”{name}” för den här komponenten.",
+      "complete_on_non_terminal": "”Slutför flödet” kan bara användas på den sista skärmen.",
+      "footer_captions_invalid": "Använd antingen en mittentext eller en vänster- och högertext tillsammans.",
+      "options_with_images_limit": "Med bilder kan en rullgardinsmeny ha högst {max} alternativ.",
+      "navigation_badge_multiple": "Bara ett objekt i en navigeringslista kan ha en etikett.",
+      "contact_variable_whatsapp": "Anpassade fält visas bara i webblänken; WhatsApp stöder dem inte än. Ta bort dem innan du publicerar till WhatsApp."
+    },
+    "upload": {
+      "choosePhotos": "Välj eller ta bilder",
+      "chooseDocuments": "Välj filer",
+      "remove": "Ta bort",
+      "count": "{count}/{max}",
+      "errors": {
+        "empty": "Filen är tom.",
+        "too_large": "Filen är för stor.",
+        "type_not_allowed": "Den här filtypen är inte tillåten.",
+        "rate_limited": "För många uppladdningar. Vänta en stund och försök igen.",
+        "upload_failed": "Filen kunde inte laddas upp. Försök igen."
+      }
     }
   }
 }

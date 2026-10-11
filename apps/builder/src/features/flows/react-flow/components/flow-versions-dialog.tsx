@@ -8,15 +8,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@chatbotx.io/ui/components/ui/dialog"
+import { useQuery } from "@tanstack/react-query"
 import { format } from "date-fns"
 import { Loader2Icon, StarIcon } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { useAction } from "next-safe-action/hooks"
 import { useState } from "react"
 import { toast } from "sonner"
-import useSWR from "swr"
-import type { FlowResource } from "@/features/flows/schemas/resource"
-import { client } from "@/lib/orpc/orpc"
+import { useInvalidateFlows } from "@/features/flows/provider/flow-hook"
+import type { FlowResource } from "@/features/flows/schema/resource"
+import { orpc } from "@/lib/orpc/query"
 import { restoreFlowVersionAction } from "../../actions/restore-flow-version-action"
 
 type FlowVersionsDialogProps = {
@@ -36,18 +37,17 @@ export function FlowVersionsDialog({
 }: FlowVersionsDialogProps) {
   const t = useTranslations()
   const [restoringId, setRestoringId] = useState<string | null>(null)
+  const invalidateFlows = useInvalidateFlows()
 
   const {
     data: versions = [],
     isLoading,
-    mutate,
-  } = useSWR(
-    open ? (["flow-versions", workspaceId, flow.id] as const) : null,
-    ([, ws, id]) =>
-      client.flowsAPI.privateListFlowVersionsAPI({
-        workspaceId: ws,
-        flowId: id,
-      }),
+    refetch,
+  } = useQuery(
+    orpc.flowsAPI.privateListFlowVersionsAPI.queryOptions({
+      input: { workspaceId, flowId: flow.id },
+      enabled: open,
+    }),
   )
 
   const { execute: restoreVersion } = useAction(
@@ -55,7 +55,8 @@ export function FlowVersionsDialog({
     {
       onSuccess: ({ data }) => {
         toast.success(t("messages.restoreVersionSuccess"))
-        mutate()
+        invalidateFlows()
+        refetch()
         onOpenChange(false)
         setRestoringId(null)
         if (data) {

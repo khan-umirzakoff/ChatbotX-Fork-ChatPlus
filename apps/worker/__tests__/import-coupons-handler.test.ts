@@ -28,7 +28,7 @@ vi.mock("@chatbotx.io/database/client", () => ({
   eq: vi.fn(),
 }))
 
-vi.mock("@chatbotx.io/business", () => ({
+vi.mock("@chatbotx.io/business/import", () => ({
   importService: {
     markProcessing: vi.fn(() => {
       mocks.updateValues.push({ status: "processing" })
@@ -63,6 +63,11 @@ vi.mock("@chatbotx.io/business", () => ({
     flushProgress: vi.fn(() => Promise.resolve()),
     complete: vi.fn(() => Promise.resolve()),
   },
+}))
+
+const recordAuditLog = vi.fn()
+vi.mock("@chatbotx.io/business/audit", () => ({
+  auditService: { record: (...args: unknown[]) => recordAuditLog(...args) },
 }))
 
 vi.mock("@chatbotx.io/database/schema", () => ({

@@ -1,12 +1,14 @@
 import { trackingResponseTypes } from "@chatbotx.io/analytics"
 import { adsConversionService } from "@chatbotx.io/business"
 import { db } from "@chatbotx.io/database/client"
+import type { AutomatedResponseType } from "@chatbotx.io/database/partials"
 import type {
   AutomatedResponseModel,
   ContactInboxModel,
   ConversationModel,
 } from "@chatbotx.io/database/types"
 import { webhookChannelOrigin } from "@chatbotx.io/events/context"
+import { applySpintax } from "@chatbotx.io/utils/spintax"
 import { contactVariableService } from "@chatbotx.io/variables"
 import {
   ChatJobAction,
@@ -14,7 +16,10 @@ import {
   IntegrationJobAction,
   integrationQueue,
 } from "@chatbotx.io/worker-config"
-import { keywordMatchesText } from "./keyword-match"
+import {
+  keywordMatchesText,
+  keywordMatchModeByAutomatedResponseType,
+} from "./keyword-match"
 
 export const dispatchAutomatedResponseReply = async (props: {
   conversation: ConversationModel
@@ -32,7 +37,16 @@ export const dispatchAutomatedResponseReply = async (props: {
   const lowerCaseText = text.toLowerCase()
 
   for (const rule of rules) {
-    const matched = keywordMatchesText(rule.keywords, lowerCaseText)
+    // Match mode is derived from `rule.type` — see the Contact/Page
+    // distinction documented at automated-response.ts's
+    // `automatedResponseFolderTypeByType`.
+    const matched = keywordMatchesText(
+      rule.keywords,
+      lowerCaseText,
+      keywordMatchModeByAutomatedResponseType[
+        rule.type as AutomatedResponseType
+      ],
+    )
 
     if (!matched) {
       continue
@@ -47,6 +61,7 @@ export const dispatchAutomatedResponseReply = async (props: {
     ) {
       await adsConversionService.enqueueKeywordMatchedEvaluation({
         workspaceId: conversation.workspaceId,
+        channel: contactInbox.channel,
         inboxId: contactInbox.inboxId,
         contactInboxId: contactInbox.id,
         automatedResponseId: rule.id,
@@ -88,8 +103,10 @@ export const dispatchAutomatedResponseReply = async (props: {
         contactInbox,
         conversation,
       })
+      // Spun before the variable pass: a keyword rule's text is author copy,
+      // while the contact data substituted into it is not and must ship as-is.
       const stepMessage = await contactVariableService.replaceAll({
-        text: rule.text,
+        text: applySpintax(rule.text),
         variables,
       })
       await chatQueue.add(ChatJobAction.sendChatMessage, {

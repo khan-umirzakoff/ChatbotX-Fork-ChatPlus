@@ -12,6 +12,8 @@ import {
   waitForChatJobCompletion,
 } from "../../utils/message"
 import type { ExecuteStepProps } from "../flow"
+import { logStepProviderError } from "../flow-utils"
+import { aiErrorLogProvider } from "../shared/ai-error-log-provider"
 import { resolveFlowAIModel } from "../shared/flow-ai-model-resolver"
 import type { ExecuteStepResult } from "../step"
 
@@ -109,6 +111,8 @@ export async function handleAIExtractData({
   contactInbox,
   conversation,
   step,
+  metadata,
+  isBulkBroadcast,
 }: ExecuteStepProps<AIExtractDataSchema>): Promise<ExecuteStepResult> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), aiTimeouts.aiTotal)
@@ -200,12 +204,22 @@ ${schemaDescription}`
       content: userContent,
     } as const
 
+    // Scoped to the provider call itself. The surrounding `try` also covers
+    // our own reads and the custom-field writes below, and attributing one of
+    // those to the AI vendor would put a false provider on the row.
     const { object: extractedData } = await generateObject({
       model: resolvedModel.model,
       system: systemPrompt,
       messages: [userMessage],
       abortSignal: controller.signal,
       schema: dynamicSchema,
+    }).catch(async (error: unknown) => {
+      await logStepProviderError(
+        aiErrorLogProvider(step.provider),
+        { conversation, contactInbox },
+        error,
+      )
+      throw error
     })
 
     await Promise.all(
@@ -220,6 +234,7 @@ ${schemaDescription}`
           customFieldId: mapping.customFieldId,
           fullText: stringifyFieldValue(value),
           workspaceId: conversation.workspaceId,
+          contactInboxId: contactInbox.id,
         })
       }),
     )
@@ -247,10 +262,15 @@ ${schemaDescription}`
       "Error in handleAIExtractData",
     )
 
-    const job = await sendMessageWithRender(
-      conversation.id,
-      "Error extracting data",
-    )
+    const job =
+      metadata || isBulkBroadcast
+        ? await sendMessageWithRender(
+            conversation.id,
+            "Error extracting data",
+            undefined,
+            { metadata, isBulkBroadcast },
+          )
+        : await sendMessageWithRender(conversation.id, "Error extracting data")
     await waitForChatJobCompletion(job, { conversationId: conversation.id })
 
     return {

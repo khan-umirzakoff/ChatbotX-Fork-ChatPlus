@@ -3,8 +3,9 @@
 import { beforeEach, expect, test, vi } from "vitest"
 
 const mockHasWorkspacePermission = vi.fn()
-const mockFindOrFail = vi.fn()
-const mockDbTransaction = vi.fn()
+const mockFindByIdForWorkspace = vi.fn()
+const mockUpdate = vi.fn()
+const mockUpdateMarkReadOnOutbound = vi.fn()
 const mockIsCommunity = vi.fn(() => false)
 const SUPER_ADMIN_ERROR_RE = /super admin/i
 
@@ -30,14 +31,18 @@ vi.mock("@/lib/auth/permission-routes", () => ({
   hasWorkspacePermission: mockHasWorkspacePermission,
 }))
 
-vi.mock("@chatbotx.io/database/client", () => ({
-  db: { transaction: mockDbTransaction },
-  eq: vi.fn(),
-  findOrFail: mockFindOrFail,
+vi.mock("@chatbotx.io/business", () => ({
+  inboxService: {
+    updateMarkReadOnOutbound: mockUpdateMarkReadOnOutbound,
+  },
+  integrationWebchatService: {
+    findByIdForWorkspace: mockFindByIdForWorkspace,
+    update: mockUpdate,
+  },
 }))
 
-vi.mock("@chatbotx.io/database/schema", () => ({
-  integrationWebchatModel: { id: "id-column" },
+vi.mock("@chatbotx.io/business/branding", () => ({
+  ensureBrandingMenuEntry: vi.fn((menus: unknown) => menus),
 }))
 
 const { updateWebchatAction } = await import(
@@ -47,7 +52,10 @@ const { updateWebchatAction } = await import(
 // The action reads the caller's permissions from the middleware ctx
 // (workspaceActionClient already loads the member row), so no user/member
 // fetch happens inside the action itself.
-const makeInput = (permissions: Record<string, unknown>) => ({
+const makeInput = (
+  permissions: Record<string, unknown>,
+  markReadOnOutbound?: boolean,
+) => ({
   bindArgsParsedInputs: ["workspace-1", "webchat-1"],
   parsedInput: {
     name: "Support",
@@ -55,18 +63,18 @@ const makeInput = (permissions: Record<string, unknown>) => ({
     hideHeader: false,
     showLogo: true,
     hideMessageInput: false,
+    ...(markReadOnOutbound === undefined ? {} : { markReadOnOutbound }),
   },
   ctx: { workspaceMemberPermissions: permissions },
 })
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockFindOrFail.mockResolvedValue({ id: "webchat-1" })
-  mockDbTransaction.mockImplementation(async (fn: (tx: unknown) => unknown) =>
-    fn({
-      update: () => ({ set: () => ({ where: vi.fn() }) }),
-    }),
-  )
+  mockFindByIdForWorkspace.mockResolvedValue({
+    id: "webchat-1",
+    inboxId: "inbox-1",
+  })
+  mockUpdate.mockResolvedValue(undefined)
 })
 
 test("rejects a workspace member without superAdmin permission", async () => {
@@ -81,8 +89,8 @@ test("rejects a workspace member without superAdmin permission", async () => {
   // The permission check must short-circuit before any write is attempted —
   // this is the guard that closes the bypass of the edit page's
   // requireWorkspacePermission(workspaceId, "superAdmin") gate.
-  expect(mockFindOrFail).not.toHaveBeenCalled()
-  expect(mockDbTransaction).not.toHaveBeenCalled()
+  expect(mockFindByIdForWorkspace).not.toHaveBeenCalled()
+  expect(mockUpdate).not.toHaveBeenCalled()
 })
 
 test("gates on the permissions supplied by the middleware ctx", async () => {
@@ -98,7 +106,7 @@ test("gates on the permissions supplied by the middleware ctx", async () => {
     { superAdmin: false },
     "superAdmin",
   )
-  expect(mockDbTransaction).not.toHaveBeenCalled()
+  expect(mockUpdate).not.toHaveBeenCalled()
 })
 
 test("proceeds to update when the caller is a superAdmin", async () => {
@@ -108,10 +116,24 @@ test("proceeds to update when the caller is a superAdmin", async () => {
     makeInput({ superAdmin: true }),
   )
 
-  expect(mockFindOrFail).toHaveBeenCalledWith(
-    expect.objectContaining({
-      where: { id: "webchat-1", workspaceId: "workspace-1" },
-    }),
+  expect(mockFindByIdForWorkspace).toHaveBeenCalledWith({
+    id: "webchat-1",
+    workspaceId: "workspace-1",
+  })
+  expect(mockUpdate).toHaveBeenCalled()
+  expect(mockUpdateMarkReadOnOutbound).not.toHaveBeenCalled()
+})
+
+test("updates the inbox flag when it is included in the form submission", async () => {
+  mockHasWorkspacePermission.mockReturnValue(true)
+
+  await (updateWebchatAction as (props: unknown) => Promise<unknown>)(
+    makeInput({ superAdmin: true }, true),
   )
-  expect(mockDbTransaction).toHaveBeenCalled()
+
+  expect(mockUpdateMarkReadOnOutbound).toHaveBeenCalledWith({
+    workspaceId: "workspace-1",
+    id: "inbox-1",
+    enabled: true,
+  })
 })

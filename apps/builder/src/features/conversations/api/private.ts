@@ -1,0 +1,359 @@
+import { conversationService } from "@chatbotx.io/business"
+import { channelTypes } from "@chatbotx.io/database/partials"
+import { zodBigintAsString } from "@chatbotx.io/utils"
+import z from "zod"
+import { bulkUpdateIdsRequest, successResponse } from "@/features/common/schema"
+import { canViewContactEmailAndPhone } from "@/features/contacts/permissions"
+import { assertWorkspaceNotBlocked } from "@/lib/workspace-quota"
+import { workspaceAuthorizedMidddleware } from "@/middlewares/auth"
+import { authorizedAPI } from "@/orpc"
+import { CONVERSATIONS_LIST_POST_PATH } from "../lib/api-paths"
+import { getPostDetailsQuery } from "../queries/get-post-details.query"
+import {
+  findConversation,
+  listConversations,
+} from "../queries/list-conversations.query"
+import { assignConversationSchema } from "../schema/action"
+import { listConversationsRequest } from "../schema/query"
+import {
+  findConversationRequest,
+  findConversationResponse,
+  listConversationsResponse,
+} from "../schema/resource"
+
+const workspaceIdAndIdRequest = z.object({
+  workspaceId: zodBigintAsString(),
+  id: zodBigintAsString(),
+})
+
+const postDetailsSchema = z.object({
+  text: z.string().optional(),
+  picture: z.string().optional(),
+  from: z.object({ id: z.string(), name: z.string() }).optional(),
+  // Optional: TikTok can name the author and link the video without being able
+  // to say when it was posted.
+  createdAt: z.string().optional(),
+  link: z.string().optional(),
+})
+
+export const conversationsAuthenticatedAPI = {
+  listConversationsAuthenticatedAPI: authorizedAPI
+    .route({
+      method: "POST",
+      path: "/workspaces/{workspaceId}/conversations",
+      summary: "List conversations by cursor pagination",
+      tags: ["Conversations"],
+    })
+    .input(listConversationsRequest)
+    .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
+    .output(listConversationsResponse)
+    .handler(
+      async ({ input, context }) =>
+        await listConversations(input, {
+          includeEmailAndPhone: canViewContactEmailAndPhone(
+            context.workspaceMember.permissions,
+          ),
+        }),
+    ),
+
+  listConversationsByPOSTAuthenticatedAPI: authorizedAPI
+    .route({
+      method: "POST",
+      path: CONVERSATIONS_LIST_POST_PATH,
+      summary: "List conversations by cursor pagination using POST request",
+      tags: ["Conversations"],
+    })
+    .input(listConversationsRequest)
+    .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
+    .output(listConversationsResponse)
+    .handler(
+      async ({ input, context }) =>
+        await listConversations(input, {
+          includeEmailAndPhone: canViewContactEmailAndPhone(
+            context.workspaceMember.permissions,
+          ),
+        }),
+    ),
+
+  findConversationAuthenticatedAPI: authorizedAPI
+    .route({
+      method: "GET",
+      path: "/workspaces/{workspaceId}/conversations/{id}",
+      summary: "Find conversation by conversation id",
+      tags: ["Conversations"],
+    })
+    .input(findConversationRequest)
+    .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
+    .output(findConversationResponse)
+    .handler(async ({ input }) => await findConversation(input)),
+
+  getPostDetailsAuthenticatedAPI: authorizedAPI
+    .route({
+      method: "GET",
+      path: "/workspaces/{workspaceId}/conversations/post-details",
+      summary: "Get Facebook post details for a comment conversation",
+      tags: ["Conversations"],
+    })
+    .input(
+      z.object({
+        workspaceId: zodBigintAsString(),
+        inboxId: z.string(),
+        postId: z.string(),
+        channel: channelTypes,
+      }),
+    )
+    .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
+    .output(postDetailsSchema)
+    .handler(async ({ input }) =>
+      getPostDetailsQuery({
+        workspaceId: input.workspaceId,
+        inboxId: input.inboxId,
+        postId: input.postId,
+        channel: input.channel,
+      }),
+    ),
+
+  assignConversationsAuthenticatedAPI: authorizedAPI
+    .route({
+      method: "POST",
+      path: "/workspaces/{workspaceId}/conversations/assign",
+      summary: "Assign or unassign conversations to a user or inbox team",
+      tags: ["Conversations"],
+    })
+    .input(
+      assignConversationSchema.and(
+        z.object({ workspaceId: zodBigintAsString() }),
+      ),
+    )
+    .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
+    .output(successResponse)
+    .handler(async ({ input, context }) => {
+      await assertWorkspaceNotBlocked(context.workspace.ownerId)
+
+      await conversationService.assignByContactIds({
+        workspaceId: input.workspaceId,
+        contactIds: input.contactIds,
+        assignedId: input.assignedId,
+        assignedBy: context.user.id,
+        triggerContext: {
+          triggerSource: "api",
+          triggerHandler: "assignConversation",
+        },
+      })
+      return { success: true as const }
+    }),
+
+  archiveConversationsAuthenticatedAPI: authorizedAPI
+    .route({
+      method: "POST",
+      path: "/workspaces/{workspaceId}/conversations/archive",
+      summary: "Archive conversations",
+      tags: ["Conversations"],
+    })
+    .input(
+      bulkUpdateIdsRequest.and(z.object({ workspaceId: zodBigintAsString() })),
+    )
+    .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
+    .output(successResponse)
+    .handler(async ({ input, context }) => {
+      await assertWorkspaceNotBlocked(context.workspace.ownerId)
+
+      await conversationService.archiveByIds({
+        workspaceId: input.workspaceId,
+        ids: input.ids,
+        userId: context.user.id,
+        triggerContext: {
+          triggerSource: "api",
+          triggerHandler: "archiveConversationAction",
+          triggerType: "conversation_archived",
+        },
+      })
+      return { success: true as const }
+    }),
+
+  unarchiveConversationsAuthenticatedAPI: authorizedAPI
+    .route({
+      method: "POST",
+      path: "/workspaces/{workspaceId}/conversations/unarchive",
+      summary: "Unarchive conversations",
+      tags: ["Conversations"],
+    })
+    .input(
+      bulkUpdateIdsRequest.and(z.object({ workspaceId: zodBigintAsString() })),
+    )
+    .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
+    .output(successResponse)
+    .handler(async ({ input, context }) => {
+      await assertWorkspaceNotBlocked(context.workspace.ownerId)
+
+      await conversationService.unarchiveByIds({
+        workspaceId: input.workspaceId,
+        ids: input.ids,
+        userId: context.user.id,
+        triggerContext: {
+          triggerSource: "api",
+          triggerHandler: "unarchiveConversationAction",
+          triggerType: "conversation_unarchived",
+        },
+      })
+      return { success: true as const }
+    }),
+
+  enableBotAuthenticatedAPI: authorizedAPI
+    .route({
+      method: "POST",
+      path: "/workspaces/{workspaceId}/conversations/enable-bot",
+      summary: "Re-enable the bot for conversations",
+      tags: ["Conversations"],
+    })
+    .input(
+      bulkUpdateIdsRequest.and(z.object({ workspaceId: zodBigintAsString() })),
+    )
+    .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
+    .output(successResponse)
+    .handler(async ({ input, context }) => {
+      await assertWorkspaceNotBlocked(context.workspace.ownerId)
+
+      await conversationService.setBotEnabledByIds({
+        workspaceId: input.workspaceId,
+        ids: input.ids,
+        botEnabled: true,
+        userId: context.user.id,
+        triggerContext: {
+          triggerSource: "api",
+          triggerHandler: "enableBotAction",
+          triggerType: "conversation_transferred_to_bot",
+        },
+      })
+      return { success: true as const }
+    }),
+
+  disableBotAuthenticatedAPI: authorizedAPI
+    .route({
+      method: "POST",
+      path: "/workspaces/{workspaceId}/conversations/disable-bot",
+      summary: "Disable the bot for conversations (hand off to a human)",
+      tags: ["Conversations"],
+    })
+    .input(
+      bulkUpdateIdsRequest.and(z.object({ workspaceId: zodBigintAsString() })),
+    )
+    .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
+    .output(successResponse)
+    .handler(async ({ input, context }) => {
+      await assertWorkspaceNotBlocked(context.workspace.ownerId)
+
+      await conversationService.setBotEnabledByIds({
+        workspaceId: input.workspaceId,
+        ids: input.ids,
+        botEnabled: false,
+        userId: context.user.id,
+        triggerContext: {
+          triggerSource: "api",
+          triggerHandler: "disableBotAction",
+          triggerType: "conversation_transferred_to_human",
+        },
+      })
+      return { success: true as const }
+    }),
+
+  readConversationAuthenticatedAPI: authorizedAPI
+    .route({
+      method: "POST",
+      path: "/workspaces/{workspaceId}/conversations/{id}/read",
+      summary: "Mark a conversation as read",
+      tags: ["Conversations"],
+    })
+    .input(workspaceIdAndIdRequest)
+    .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
+    .output(successResponse)
+    .handler(async ({ input, context }) => {
+      await assertWorkspaceNotBlocked(context.workspace.ownerId)
+
+      await conversationService.updateReadStatus({
+        workspaceId: input.workspaceId,
+        id: input.id,
+        agentLastReadAt: new Date(),
+      })
+      return { success: true as const }
+    }),
+
+  unreadConversationAuthenticatedAPI: authorizedAPI
+    .route({
+      method: "POST",
+      path: "/workspaces/{workspaceId}/conversations/{id}/unread",
+      summary: "Mark a conversation as unread",
+      tags: ["Conversations"],
+    })
+    .input(workspaceIdAndIdRequest)
+    .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
+    .output(
+      z.object({
+        success: z.literal(true),
+        agentLastReadAt: z.coerce.date().nullable(),
+      }),
+    )
+    .handler(async ({ input, context }) => {
+      await assertWorkspaceNotBlocked(context.workspace.ownerId)
+
+      const result = await conversationService.markUnread({
+        workspaceId: input.workspaceId,
+        id: input.id,
+      })
+      return { success: true as const, agentLastReadAt: result.agentLastReadAt }
+    }),
+
+  followConversationAuthenticatedAPI: authorizedAPI
+    .route({
+      method: "POST",
+      path: "/workspaces/{workspaceId}/conversations/{id}/follow",
+      summary: "Follow a conversation",
+      tags: ["Conversations"],
+    })
+    .input(workspaceIdAndIdRequest)
+    .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
+    .output(successResponse)
+    .handler(async ({ input, context }) => {
+      await assertWorkspaceNotBlocked(context.workspace.ownerId)
+
+      await conversationService.setFollowed({
+        workspaceId: input.workspaceId,
+        id: input.id,
+        followed: true,
+        userId: context.user.id,
+        triggerContext: {
+          triggerSource: "api",
+          triggerHandler: "followConversationAction",
+          triggerType: "conversation_followed",
+        },
+      })
+      return { success: true as const }
+    }),
+
+  unfollowConversationAuthenticatedAPI: authorizedAPI
+    .route({
+      method: "POST",
+      path: "/workspaces/{workspaceId}/conversations/{id}/unfollow",
+      summary: "Unfollow a conversation",
+      tags: ["Conversations"],
+    })
+    .input(workspaceIdAndIdRequest)
+    .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
+    .output(successResponse)
+    .handler(async ({ input, context }) => {
+      await assertWorkspaceNotBlocked(context.workspace.ownerId)
+
+      await conversationService.setFollowed({
+        workspaceId: input.workspaceId,
+        id: input.id,
+        followed: false,
+        userId: context.user.id,
+        triggerContext: {
+          triggerSource: "api",
+          triggerHandler: "unfollowConversationAction",
+          triggerType: "conversation_unfollowed",
+        },
+      })
+      return { success: true as const }
+    }),
+}

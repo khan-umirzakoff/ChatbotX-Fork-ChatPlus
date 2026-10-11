@@ -16,12 +16,15 @@ import {
   TooltipTrigger,
 } from "@chatbotx.io/ui/components/ui/tooltip"
 import type { DataTableRowAction } from "@chatbotx.io/ui/types/data-table"
+import { errorLogProviderLabel } from "@chatbotx.io/utils/error-log"
 import type { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
-import { EllipsisIcon, UserRoundIcon } from "lucide-react"
+import { EllipsisIcon } from "lucide-react"
 import type { useTranslations } from "next-intl"
 import type { Dispatch, SetStateAction } from "react"
-import type { ErrorLogResource } from "./schemas"
+import { ContactNameCell } from "@/features/contacts/components/contact-name-cell"
+import { resolveErrorLogDetail } from "./google-ads-error-detail"
+import type { ErrorLogResource } from "./schema"
 
 type GetColumnsProps = {
   t: ReturnType<typeof useTranslations>
@@ -62,15 +65,22 @@ export function getColumns({
     },
     {
       id: "action",
-      accessorKey: "type",
+      accessorKey: "action",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Type" />
+        <DataTableColumnHeader column={column} title={t("fields.type.label")} />
       ),
-      cell: ({ row }) => <div>{row.original.action}</div>,
+      cell: ({ row }) => (
+        <div>{errorLogProviderLabel(row.original.action)}</div>
+      ),
       meta: {
         label: t("fields.type.label"),
         placeholder: t("fields.type.placeholder"),
         variant: "text",
+        // The column id ("action") matches the DB column so sorting works
+        // directly, but the toolbar's filter must persist under the server's
+        // "keyword" param — `listErrorLogs` reads nothing else, so without this
+        // the only search box on this table writes `?action=` and is ignored.
+        filterKey: "keyword",
       },
       enableColumnFilter: true,
       enableSorting: true,
@@ -79,22 +89,28 @@ export function getColumns({
     {
       accessorKey: "detail",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Description" />
+        <DataTableColumnHeader
+          column={column}
+          title={t("fields.description.label")}
+        />
       ),
-      cell: ({ row }) => (
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <div className="max-w-[400px] truncate">
-                {row.original.detail}
-              </div>
-            }
-          />
-          <TooltipContent>
-            <p>{row.original.detail}</p>
-          </TooltipContent>
-        </Tooltip>
-      ),
+      cell: ({ row }) => {
+        const detail = resolveErrorLogDetail(
+          t,
+          row.original.action,
+          row.original.detail,
+        )
+        return (
+          <Tooltip>
+            <TooltipTrigger
+              render={<div className="max-w-[400px] truncate">{detail}</div>}
+            />
+            <TooltipContent>
+              <p className="whitespace-pre-line">{detail}</p>
+            </TooltipContent>
+          </Tooltip>
+        )
+      },
       meta: {
         label: t("fields.description.label"),
       },
@@ -105,22 +121,36 @@ export function getColumns({
       id: "contact",
       accessorKey: "contact",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Contact" />
+        <DataTableColumnHeader
+          column={column}
+          title={t("fields.contact.label")}
+        />
       ),
-      cell: ({ row }) => (
-        <div>{row.original.contactId ? <UserRoundIcon size={16} /> : null}</div>
-      ),
+      cell: ({ row }) => {
+        const contact = row.original.contact
+        if (!contact) {
+          return null
+        }
+        return (
+          <ContactNameCell
+            contact={contact}
+            conversationId={contact.conversation?.id}
+            unknownContactLabel={t("errorLogs.unknownContact")}
+            workspaceId={row.original.workspaceId}
+          />
+        )
+      },
       meta: {
         label: t("fields.contact.label"),
       },
-      size: 20,
+      size: 220,
       enableSorting: false,
       enableHiding: false,
     },
     {
       accessorKey: "createdAt",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Date" />
+        <DataTableColumnHeader column={column} title={t("fields.date.label")} />
       ),
       cell: ({ row }) => format(row.original.createdAt, "yyyy/MM/dd HH:mm"),
       meta: {
@@ -131,13 +161,13 @@ export function getColumns({
     },
     {
       id: "actions",
-      header: "Actions",
+      header: () => t("actions.actions"),
       cell: ({ row }) => (
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
               <Button
-                aria-label="Open menu"
+                aria-label={t("actions.openMenu")}
                 className="flex size-8 p-0 data-[state=open]:bg-muted"
                 variant="ghost"
               >
@@ -149,7 +179,7 @@ export function getColumns({
             <DropdownMenuItem
               onClick={() => setRowAction({ row, variant: "delete" })}
             >
-              Delete
+              {t("actions.delete")}
               <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
             </DropdownMenuItem>
           </DropdownMenuContent>

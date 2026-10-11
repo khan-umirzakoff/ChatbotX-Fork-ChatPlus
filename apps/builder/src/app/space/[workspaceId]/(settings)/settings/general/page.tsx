@@ -1,7 +1,8 @@
 import { getIdFromParams } from "@chatbotx.io/utils"
 import { notFound } from "next/navigation"
-import { FlowStoreProvider } from "@/features/flows/provider/flow-store-context"
+
 import { UpdateWorkspaceForm } from "@/features/workspaces/update-workspace-form"
+import { hasWorkspacePermission } from "@/lib/auth/permission-routes"
 import { getCurrentUserAndTargetWorkspace } from "@/lib/auth/utils"
 
 export default async function GeneralPage(props: {
@@ -18,8 +19,14 @@ export default async function GeneralPage(props: {
   }
 
   return (
-    <FlowStoreProvider workspaceId={workspaceId}>
-      <UpdateWorkspaceForm workspace={userAndWorkspace.targetWorkspace} />
-    </FlowStoreProvider>
+    <UpdateWorkspaceForm
+      canManageSupportAccess={
+        hasWorkspacePermission(
+          userAndWorkspace.targetWorkspaceMember.permissions,
+          "superAdmin",
+        ) && !userAndWorkspace.isSupportSession
+      }
+      workspace={userAndWorkspace.targetWorkspace}
+    />
   )
 }

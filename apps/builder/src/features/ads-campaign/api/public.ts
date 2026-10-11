@@ -1,0 +1,514 @@
+import {
+  getCachedMessagingAdAccountDetails,
+  listCachedMessagingAdAccounts,
+  messagingAdCampaignService,
+  messagingAdsConnectionService,
+} from "@chatbotx.io/business"
+import { ChatbotXException } from "@chatbotx.io/business/errors"
+import { facebookAdAccountSchema } from "@chatbotx.io/integration-facebook-ads"
+import { ORPCError } from "@orpc/server"
+import { z } from "zod"
+import {
+  possibleErrorsOnChangingMessagingAd,
+  possibleErrorsOnCreatingAdImageUpload,
+  possibleErrorsOnCreatingMessagingAd,
+  possibleErrorsOnDeletingMessagingAd,
+  possibleErrorsOnDeletingResource,
+  possibleErrorsOnListingResource,
+  possibleErrorsOnReadingMessagingAds,
+  possibleErrorsOnRetryingMessagingAd,
+  possibleIdempotencyErrors,
+} from "@/lib/orpc/orpc-error-helper"
+import { workspaceTokenAuthAPIForScope } from "@/orpc"
+import { ADS_CAMPAIGNS_INSIGHTS_PATH } from "../lib/api-paths"
+import { createAdsCreativeImageUpload } from "../lib/create-creative-image-upload"
+import { getMessagingAdsContextForIntegration } from "../lib/facebook-ads-runner"
+import { toMessagingAdOperationResource } from "../lib/resource-mapper"
+import {
+  adAccountDetailsPublicRequest,
+  adAccountDetailsPublicRequestParams,
+  checkPrerequisitesPublicRequest,
+  createAdImageUploadPublicRequest,
+  createAdImageUploadPublicResponse,
+  createMessagingAdPublicRequest,
+  disconnectConnectionPublicRequestParams,
+  listAdAccountsPublicRequest,
+  listAdAccountsPublicRequestParams,
+  listConnectionsPublicRequestParams,
+  listConnectionsPublicResponse,
+  listMessagingAdsPublicRequest,
+  listMessengerPagesPublicRequest,
+  messagingAdsInsightsPublicRequest,
+  operationIdPublicParams,
+  uploadAdVideoPublicRequest,
+  videoStatusPublicRequest,
+  videoStatusPublicRequestParams,
+} from "../schema/public"
+import {
+  adAccountDetailsResource,
+  messagingAdInsightResource,
+  messagingAdOperationResource,
+} from "../schema/resource"
+import { createMessagingAdRequest } from "../schema/wizard"
+
+const workspaceTokenAuthAPI = workspaceTokenAuthAPIForScope("ads")
+
+const messagingAdOperationPublicResource = messagingAdOperationResource.omit({
+  workspaceId: true,
+})
+
+/**
+ * A read_only token must not be able to force an uncached Graph call on
+ * every request — every cached Graph-backed route below (`listCampaigns`,
+ * `getCampaignsInsights`, `listCampaignAdAccounts`,
+ * `getCampaignAdAccountDetails`) accepts a `refresh` param, and honoring it
+ * unconditionally would let a read_only caller bypass the cache at the
+ * token's full rate limit on every call — the exact cost/rate surface a
+ * read-only scope is meant to avoid. Only a full-permission token's
+ * `refresh` is honored; a read_only caller still gets a fresh page
+ * occasionally via the cache's own TTL.
+ */
+const resolveForceRefresh = (
+  context: { apiToken?: { permission?: string } },
+  refresh: boolean | undefined,
+): boolean | undefined =>
+  context.apiToken?.permission === "read_only" ? false : refresh
+
+const toPublicOperationResource = (
+  row: Parameters<typeof toMessagingAdOperationResource>[0],
+) => {
+  const { workspaceId: _workspaceId, ...resource } =
+    toMessagingAdOperationResource(row)
+  return resource
+}
+
+/**
+ * Every campaign-lifecycle mutation below deliberately OMITS
+ * `assertWorkspaceSuperAdmin` (present on the private `adsCampaignAPI` at
+ * `../api/private.ts`) — that guard resolves the SESSION user via
+ * `getCurrentUserAndTargetWorkspace`, and a workspace-token request has no
+ * session user (`context.user` is never set on the token auth stack, see
+ * `apps/builder/src/orpc.ts`). It would throw `errors.superAdminRequired` on
+ * every token call. Per docs/developer/workspace-api-tokens.md, a workspace
+ * token authenticates the WORKSPACE, not a member — member-level permission
+ * scoping does not apply here, and minting a token already required the
+ * caller to be a workspace superAdmin. `createdBy` is likewise omitted on
+ * every write (a token has no associated user), matching the
+ * `createdById: null` precedent in `features/coupons/api/public.ts`.
+ */
+export const adsCampaignPublicRouter = {
+  createCampaign: workspaceTokenAuthAPI
+    .route({
+      method: "POST",
+      path: "/v1/ads/campaigns",
+      summary: "Create messaging ad",
+      description:
+        "Starts a draft click-to-message ad campaign (campaign/ad set/ad) for the given audience and creative. Use `ads.publishCampaign` to publish it once ready.",
+      successStatus: 201,
+      tags: ["Ads"],
+    })
+    .input(createMessagingAdPublicRequest)
+    .output(messagingAdOperationPublicResource)
+    .errors(possibleErrorsOnCreatingMessagingAd)
+    .handler(async ({ context, input }) => {
+      // Re-validated through the private `createMessagingAdRequest` (the
+      // single source of truth for this schema's rules — CREDIT rejection,
+      // special-ad-category country, adSet time ordering, and the
+      // imageKey-ownership refine that needs `workspaceId` in scope) after
+      // merging in the token's resolved workspace. `safeParse` (not
+      // `.parse`) so a rejection here is an explicit 422 we control, rather
+      // than a raw `ZodError` bubbling up to the generic oRPC error handler
+      // (which does not remap it and would otherwise surface a 500 for what
+      // is really a client-input problem).
+      const result = createMessagingAdRequest.safeParse({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      if (!result.success) {
+        throw new ORPCError("invalidRequestData", {
+          message: "Input validation failed",
+          status: 422,
+          data: { issues: result.error.issues },
+        })
+      }
+      const record = await messagingAdCampaignService.createDraft(result.data)
+      return toPublicOperationResource({ ...record, effectiveStatus: null })
+    }),
+
+  retryCampaign: workspaceTokenAuthAPI
+    .route({
+      method: "POST",
+      path: "/v1/ads/campaigns/{id}/retry",
+      summary: "Resume messaging ad creation",
+      description:
+        "Retries a draft messaging ad's creation after a previous attempt failed partway through. Use `ads.listCampaigns` to find its `id` first.",
+      tags: ["Ads"],
+    })
+    .input(operationIdPublicParams)
+    .output(messagingAdOperationPublicResource)
+    .errors(possibleErrorsOnRetryingMessagingAd)
+    .handler(async ({ context, input }) => {
+      const record = await messagingAdCampaignService.retryDraft({
+        operationId: input.id,
+        workspaceId: context.workspace.id,
+      })
+      return toPublicOperationResource({ ...record, effectiveStatus: null })
+    }),
+
+  publishCampaign: workspaceTokenAuthAPI
+    .route({
+      method: "POST",
+      path: "/v1/ads/campaigns/{id}/publish",
+      summary: "Publish messaging ad",
+      description:
+        "Sets a created messaging ad's campaign, ad set and ad to active on Meta (Meta may still review or reject delivery). If Meta rejects a step, the call tries to pause the levels it already activated (best effort; failures are kept in `cleanupError`) and returns 200 with `publishState: publishFailed` and the reason in `lastError`. Publish only after the campaign, ad set and ad are all created (`ads.retryCampaign` resumes an interrupted creation). Use `ads.pauseCampaign` to pause it afterward.",
+      tags: ["Ads"],
+    })
+    .input(operationIdPublicParams)
+    .output(messagingAdOperationPublicResource)
+    .errors(possibleErrorsOnChangingMessagingAd)
+    .handler(async ({ context, input }) => {
+      const record = await messagingAdCampaignService.publish({
+        operationId: input.id,
+        workspaceId: context.workspace.id,
+      })
+      return toPublicOperationResource({ ...record, effectiveStatus: null })
+    }),
+
+  pauseCampaign: workspaceTokenAuthAPI
+    .route({
+      method: "POST",
+      path: "/v1/ads/campaigns/{id}/pause",
+      summary: "Pause published messaging ad on Meta",
+      description:
+        "Pauses delivery of a published messaging ad without deleting it, level by level (ad, ad set, campaign). Best effort: a level Meta refuses to pause is reported in `lastError`/`cleanupError` while the call still returns 200. There is no dedicated resume operation — publish again or edit via Meta directly.",
+      tags: ["Ads"],
+    })
+    .input(operationIdPublicParams)
+    .output(messagingAdOperationPublicResource)
+    .errors(possibleErrorsOnChangingMessagingAd)
+    .handler(async ({ context, input }) => {
+      const record = await messagingAdCampaignService.pause({
+        operationId: input.id,
+        workspaceId: context.workspace.id,
+      })
+      return toPublicOperationResource({ ...record, effectiveStatus: null })
+    }),
+
+  deleteCampaign: workspaceTokenAuthAPI
+    .route({
+      method: "DELETE",
+      path: "/v1/ads/campaigns/{id}",
+      summary: "Delete messaging ad campaign/ad set/ad on Meta",
+      description:
+        "Deletes a messaging ad's ad, ad set and campaign on Meta (best effort, level by level). The local record is kept; if Meta refuses a level, `publishState` stays `deleting` with the reason in `cleanupError` while the call still returns 200. Use `ads.listCampaigns` to find its `id` first.",
+      tags: ["Ads"],
+    })
+    .input(operationIdPublicParams)
+    .output(messagingAdOperationPublicResource)
+    .errors(possibleErrorsOnDeletingMessagingAd)
+    .handler(async ({ context, input }) => {
+      const record = await messagingAdCampaignService.deleteOperation({
+        operationId: input.id,
+        workspaceId: context.workspace.id,
+      })
+      return toPublicOperationResource({ ...record, effectiveStatus: null })
+    }),
+
+  listCampaigns: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/ads/campaigns",
+      summary: "List messaging ads",
+      description:
+        "Use this to find messaging-ad ids before publishing, pausing, or deleting one. Returns the messaging ads of one channel integration (`channel`, `integrationId`). `refresh` re-reads delivery state from Meta; it is ignored for read_only tokens.",
+      tags: ["Ads"],
+    })
+    .input(listMessagingAdsPublicRequest)
+    .output(z.object({ data: z.array(messagingAdOperationPublicResource) }))
+    .errors(possibleErrorsOnReadingMessagingAds)
+    .handler(async ({ context, input: { refresh, ...input } }) => {
+      const rows = await messagingAdCampaignService.list({
+        ...input,
+        workspaceId: context.workspace.id,
+        forceRefresh: resolveForceRefresh(context, refresh),
+      })
+      return { data: rows.map(toPublicOperationResource) }
+    }),
+
+  getCampaignsInsights: workspaceTokenAuthAPI
+    .route({
+      // POST (not GET) despite being read-only — `adIds` is an array of up
+      // to 500 entries, too large for a safe GET query string; mirrors the
+      // private `getMessagingAdsInsights` POST-for-read precedent. A
+      // read_only token can still call this: `ADS_CAMPAIGNS_INSIGHTS_PATH`
+      // is allowlisted in `READ_ONLY_TOKEN_ALLOWED_POST_PATHS`
+      // (`lib/workspace/authorize-workspace-access.ts`) — both sides read
+      // the same constant (`../lib/api-paths`), so they cannot drift.
+      method: "POST",
+      path: ADS_CAMPAIGNS_INSIGHTS_PATH,
+      summary: "Get messaging ad insights",
+      description:
+        "Returns delivery/spend insights for the given ad ids. POST (not GET) since `adIds` can be up to 500 entries, too large for a query string.",
+      tags: ["Ads"],
+    })
+    .input(messagingAdsInsightsPublicRequest)
+    .output(z.object({ data: z.array(messagingAdInsightResource) }))
+    .errors({
+      ...possibleErrorsOnReadingMessagingAds,
+      ...possibleIdempotencyErrors,
+    })
+    .handler(async ({ context, input: { refresh, ...input } }) => ({
+      // Through the service (not the raw cached read) so ownership is
+      // enforced — the requested adIds/adAccountId are intersected with this
+      // workspace's own operations before any Graph call.
+      data: await messagingAdCampaignService.listInsights({
+        ...input,
+        workspaceId: context.workspace.id,
+        // Up to MAX_INSIGHTS_AD_IDS (500) ad ids per call, at up to the
+        // token's own rate limit, is a real cost/rate surface even though it
+        // mutates no app data — see `resolveForceRefresh`.
+        forceRefresh: resolveForceRefresh(context, refresh),
+      }),
+    })),
+
+  listCampaignAdAccounts: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/ads/campaigns/{channel}/{integrationId}/ad-accounts",
+      summary: "List integration ad accounts",
+      description:
+        "Lists ad accounts available for a channel integration's messaging-ads connection. Use `ads.checkCampaignPrerequisites` first to confirm a connection exists.",
+      tags: ["Ads"],
+    })
+    .input(listAdAccountsPublicRequestParams.and(listAdAccountsPublicRequest))
+    .output(z.object({ data: z.array(facebookAdAccountSchema) }))
+    .errors(possibleErrorsOnReadingMessagingAds)
+    .handler(async ({ context, input: { refresh, ...input } }) => ({
+      data: await listCachedMessagingAdAccounts({
+        ...input,
+        workspaceId: context.workspace.id,
+        forceRefresh: resolveForceRefresh(context, refresh),
+      }),
+    })),
+
+  getCampaignAdAccountDetails: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/ads/campaigns/ad-accounts/{adAccountId}",
+      summary: "Get ad account details",
+      description:
+        "Returns one ad account's details (name, currency, status). Use `ads.listCampaignAdAccounts` to find its id first.",
+      tags: ["Ads"],
+    })
+    .input(
+      adAccountDetailsPublicRequestParams.and(adAccountDetailsPublicRequest),
+    )
+    .output(adAccountDetailsResource)
+    .errors(possibleErrorsOnReadingMessagingAds)
+    .handler(({ context, input: { refresh, ...input } }) =>
+      getCachedMessagingAdAccountDetails({
+        ...input,
+        workspaceId: context.workspace.id,
+        forceRefresh: resolveForceRefresh(context, refresh),
+      }),
+    ),
+
+  createCampaignImageUpload: workspaceTokenAuthAPI
+    .route({
+      method: "POST",
+      path: "/v1/ads/campaigns/upload-image",
+      summary: "Create campaign image upload URL",
+      description:
+        'Step 1 of an image creative: declares the image (`fileName`, `mimeType` jpeg/png/gif/webp matching the extension, `fileSize` in bytes, max 10 MB) and returns `imageKey` and `fileId` plus a presigned `presignedPostUrl`. Upload the bytes to it with an HTTP PUT, then pass `imageKey` and `fileId` as `creative.media` (`kind: "image"`) in `ads.createCampaign`. The image is verified against the workspace when the campaign is created.',
+      successStatus: 201,
+      tags: ["Ads"],
+    })
+    .input(createAdImageUploadPublicRequest)
+    .output(createAdImageUploadPublicResponse)
+    .errors(possibleErrorsOnCreatingAdImageUpload)
+    .handler(
+      async ({ context, input }) =>
+        await createAdsCreativeImageUpload({
+          ...input,
+          workspaceId: context.workspace.id,
+          userId: null,
+        }),
+    ),
+
+  uploadCampaignVideo: workspaceTokenAuthAPI
+    .route({
+      method: "POST",
+      path: "/v1/ads/campaigns/upload-video",
+      summary: "Upload campaign video",
+      description:
+        "Uploads a video for use as ad creative. Returns a `videoId`; poll `ads.getCampaignVideoStatus` until it's ready before referencing it in `ads.createCampaign`.",
+      tags: ["Ads"],
+    })
+    .input(uploadAdVideoPublicRequest)
+    .output(z.object({ videoId: z.string() }))
+    .errors(possibleErrorsOnCreatingMessagingAd)
+    .handler(async ({ context, input }) => {
+      const { ctx, integration } = await getMessagingAdsContextForIntegration({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return integration.runAction("uploadMessagingAdVideo", {
+        ctx,
+        props: {
+          adAccountId: input.adAccountId,
+          fileName: input.fileName,
+          mimeType: input.mimeType,
+          bytes: new Uint8Array(Buffer.from(input.base64, "base64")),
+        },
+      })
+    }),
+
+  getCampaignVideoStatus: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/ads/campaigns/videos/{videoId}/status",
+      summary: "Get campaign video status",
+      description:
+        "Returns processing status for a video uploaded with `ads.uploadCampaignVideo`. Poll until `isReady` is true or `isError` is true.",
+      tags: ["Ads"],
+    })
+    .input(videoStatusPublicRequestParams.and(videoStatusPublicRequest))
+    .output(
+      z.object({
+        videoId: z.string(),
+        status: z.string(),
+        isReady: z.boolean(),
+        isError: z.boolean(),
+      }),
+    )
+    .errors(possibleErrorsOnReadingMessagingAds)
+    .handler(async ({ context, input }) => {
+      const { ctx, integration } = await getMessagingAdsContextForIntegration({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return integration.runAction("getMessagingAdVideoStatus", {
+        ctx,
+        props: { videoId: input.videoId },
+      })
+    }),
+
+  listCampaignMessengerPages: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/ads/campaigns/messenger-pages",
+      summary: "List Messenger pages",
+      description:
+        "Only supported for the whatsapp channel — returns pages available for click-to-WhatsApp ad creative.",
+      tags: ["Ads"],
+    })
+    .input(listMessengerPagesPublicRequest)
+    .output(
+      z.object({
+        data: z.array(
+          z.object({ id: z.string(), name: z.string(), pageId: z.string() }),
+        ),
+      }),
+    )
+    .errors(possibleErrorsOnReadingMessagingAds)
+    .handler(async ({ context, input }) => {
+      if (input.channel !== "whatsapp") {
+        throw new ChatbotXException(
+          "Messenger pages are only listed for the WhatsApp channel",
+          "invalidRequest",
+          400,
+        )
+      }
+      return {
+        data: await messagingAdCampaignService.listMessengerPages(
+          context.workspace.id,
+        ),
+      }
+    }),
+
+  checkCampaignPrerequisites: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/ads/campaigns/prerequisites",
+      summary: "Check messaging ads prerequisites",
+      description:
+        "Reports whether an active messaging-ads connection exists for the given channel integration. Use `ads.listConnections` to inspect connections directly.",
+      tags: ["Ads"],
+    })
+    .input(checkPrerequisitesPublicRequest)
+    .output(
+      z.object({
+        connected: z.boolean(),
+        reconnectNeeded: z
+          .boolean()
+          .describe(
+            "True when a connection exists but is no longer active: reconnect it in the builder before creating campaigns.",
+          ),
+      }),
+    )
+    .errors(possibleErrorsOnReadingMessagingAds)
+    .handler(async ({ context, input }) => {
+      const connection = await messagingAdsConnectionService.findForIntegration(
+        { ...input, workspaceId: context.workspace.id },
+      )
+      return {
+        connected: connection?.status === "active",
+        reconnectNeeded: Boolean(connection) && connection?.status !== "active",
+      }
+    }),
+
+  listConnections: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/ads/connections",
+      summary: "List messaging-ads connections for channel",
+      description:
+        "Returns the messaging-ads connections for one channel whose stored status is active; a connection marked invalid is not listed (reconnect it in the builder). Use `ads.disconnectConnection` to remove one.",
+      tags: ["Ads"],
+    })
+    .input(listConnectionsPublicRequestParams)
+    .output(listConnectionsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const connections = await messagingAdsConnectionService.listForChannel({
+        workspaceId: context.workspace.id,
+        channel: input.channel,
+      })
+      return {
+        data: connections.map((connection) => ({
+          id: connection.id,
+          channel: connection.channel,
+          // "" when the connection has no channel FK (it cannot be disconnected
+          // through `ads.disconnectConnection`, which needs a channel integration).
+          integrationId:
+            connection.integrationWhatsappId ??
+            connection.integrationMessengerId ??
+            connection.integrationInstagramId ??
+            "",
+          status: connection.status,
+          createdAt: connection.createdAt,
+          updatedAt: connection.updatedAt,
+        })),
+      }
+    }),
+
+  disconnectConnection: workspaceTokenAuthAPI
+    .route({
+      method: "DELETE",
+      path: "/v1/ads/connections/{channel}/{integrationId}",
+      summary: "Disconnect messaging ads connection",
+      description:
+        "Permanently disconnects a messaging-ads connection for a channel integration. Use `ads.listConnections` to find it first.",
+      successStatus: 204,
+      tags: ["Ads"],
+    })
+    .input(disconnectConnectionPublicRequestParams)
+    .errors(possibleErrorsOnDeletingResource)
+    .handler(async ({ context, input }) => {
+      await messagingAdsConnectionService.revokeAndDisconnect({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+    }),
+}

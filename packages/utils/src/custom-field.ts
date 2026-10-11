@@ -22,6 +22,34 @@ export const customFieldTypes = z.enum([
 export type CustomFieldType = z.infer<typeof customFieldTypes>
 
 /**
+ * Contact-filter comparison operators. Lives here (not `@chatbotx.io/database`)
+ * so a "use client" component (e.g. the filter condition dialog) can read the
+ * enum without pulling in the database package. `@chatbotx.io/database/partials`
+ * re-exports this for existing backend importers. Mirrors the `channelTypes`
+ * precedent in `./channel.ts`.
+ */
+export const operatorTypes = z.enum([
+  "in",
+  "notIn",
+  "isEmpty",
+  "isNotEmpty",
+  "eq",
+  "ne",
+  "startsWith",
+  "endsWith",
+  "contains",
+  "notContains",
+  "lt",
+  "lte",
+  "gt",
+  "gte",
+  "isBetween",
+  "notBetween",
+  "used",
+])
+export type OperatorType = z.infer<typeof operatorTypes>
+
+/**
  * Canonical `(type, name)` identity used to match a flow export's custom-field
  * manifest against the target workspace's existing fields.
  *
@@ -40,3 +68,68 @@ export const customFieldResolutionKey = (field: {
   name: string
   type: CustomFieldType
 }): string => `${field.type}:${field.name.trim().toLowerCase()}`
+
+// Boolean vocabulary = Postgres's own boolean input literals, so a stored
+// value is always castable with `::boolean`. Shared by write-side
+// normalization (business), the contact-filter SQL guard (database), and
+// import/JS validation — one source, no drift.
+export const BOOLEAN_TRUTHY_LITERALS = [
+  "t",
+  "true",
+  "y",
+  "yes",
+  "on",
+  "1",
+] as const
+export const BOOLEAN_FALSY_LITERALS = [
+  "f",
+  "false",
+  "n",
+  "no",
+  "off",
+  "0",
+] as const
+
+/** Regex source for the SQL guard: `lower(btrim(value)) ~ '<this>'`. */
+export const BOOLEAN_LITERAL_PATTERN_SOURCE = `^(${[
+  ...BOOLEAN_TRUTHY_LITERALS,
+  ...BOOLEAN_FALSY_LITERALS,
+].join("|")})$`
+
+const TRUTHY = new Set<string>(BOOLEAN_TRUTHY_LITERALS)
+const FALSY = new Set<string>(BOOLEAN_FALSY_LITERALS)
+
+/** Strict: recognized literal → "true"/"false", anything else → null (callers skip/reject). */
+export const canonicalBooleanLiteral = (
+  raw: string,
+): "true" | "false" | null => {
+  const literal = raw.trim().toLowerCase()
+  if (TRUTHY.has(literal)) {
+    return "true"
+  }
+  return FALSY.has(literal) ? "false" : null
+}
+
+/**
+ * Generous: blank/falsy literal → "false", everything else → "true".
+ * Never throws — flow/trigger writes carry arbitrary user text and a chatbot
+ * must not crash on it.
+ */
+export const coerceBooleanLiteral = (raw: string): "true" | "false" => {
+  const literal = raw.trim().toLowerCase()
+  return literal.length === 0 || FALSY.has(literal) ? "false" : "true"
+}
+
+/**
+ * Number canonicalizer: whatever JS `Number()` accepts ("+1", "1.", "1e3",
+ * "0x10") → canonical decimal string ("007" → "7"); blank or non-finite →
+ * null (callers decide: throw, skip, or "unset").
+ */
+export const canonicalNumberLiteral = (raw: string): string | null => {
+  const trimmed = raw.trim()
+  if (trimmed.length === 0) {
+    return null
+  }
+  const parsed = Number(trimmed)
+  return Number.isFinite(parsed) ? String(parsed) : null
+}

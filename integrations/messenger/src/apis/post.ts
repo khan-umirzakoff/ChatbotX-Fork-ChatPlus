@@ -1,4 +1,4 @@
-import type { Context } from "@chatbotx.io/sdk"
+import type { ChannelPostDetails, Context } from "@chatbotx.io/sdk"
 import { DEFAULT_API_VERSION } from "../constants"
 import { rescue } from "../exception"
 import { facebookGraphClient } from "../lib/http-client"
@@ -9,7 +9,18 @@ export type FacebookPostDetails = {
   full_picture?: string
   from?: { id: string; name: string }
   created_time: string
+  permalink_url?: string
 }
+
+/** Maps the Graph post node into the channel-neutral post description. */
+export const toChannelPostDetails = (
+  post: FacebookPostDetails,
+): ChannelPostDetails => ({
+  caption: post.message,
+  permalink: post.permalink_url,
+  publishedAt: post.created_time ? new Date(post.created_time) : null,
+  thumbnailUrl: post.full_picture,
+})
 
 export type FacebookPostListItem = {
   id: string
@@ -84,6 +95,7 @@ export const listReelsPosts = (props: {
     const res = await facebookGraphClient.get<
       FacebookPaginatedResponse<{
         id: string
+        post_id?: string
         description?: string
         picture?: string
         created_time: string
@@ -92,12 +104,16 @@ export const listReelsPosts = (props: {
     >(endpoint, {
       headers: { Authorization: `Bearer ${auth.tokens.accessToken}` },
       searchParams: {
-        fields: "id,description,picture,created_time,permalink_url",
+        fields: "id,post_id,description,picture,created_time,permalink_url",
         limit: "100",
       },
     })
+    // A reel's video id is not the id of the post it lives in, and the `feed`
+    // webhook reports comments by that post id. Store the post id so a
+    // reel-scoped automation matches its comments; the video id is only a
+    // fallback for a reel Facebook returns without one.
     return res.data.map((item) => ({
-      id: item.id,
+      id: item.post_id ?? item.id,
       message: item.description,
       full_picture: item.picture,
       created_time: item.created_time,
@@ -120,7 +136,7 @@ export const getPostDetails = (props: {
         Authorization: `Bearer ${ctx.auth.tokens.accessToken}`,
       },
       searchParams: {
-        fields: "message,full_picture,from,created_time",
+        fields: "message,full_picture,from,created_time,permalink_url",
       },
     }),
   )

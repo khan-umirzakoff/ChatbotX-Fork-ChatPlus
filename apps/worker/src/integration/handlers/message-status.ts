@@ -1,7 +1,7 @@
 import { buildContext, conversationService } from "@chatbotx.io/business"
-import { db } from "@chatbotx.io/database/client"
 import type { IntegrationType } from "@chatbotx.io/database/partials"
 import {
+  contactInboxRepository,
   createMessageRepository,
   getSafeSinceTime,
 } from "@chatbotx.io/database/repositories"
@@ -11,11 +11,15 @@ import {
   messageEventTypeSchema,
   UPDATE_STATUS_PAYLOAD_TYPE,
 } from "@chatbotx.io/flow-config"
-import { resolveWithSourceUserIdFallback, SdkException } from "@chatbotx.io/sdk"
+import {
+  resolveSourceScopedIdentityMatch,
+  SdkException,
+} from "@chatbotx.io/sdk"
 import {
   IntegrationJobAction,
   type IntegrationJobMessageStatus,
 } from "@chatbotx.io/worker-config"
+import type { Job } from "bullmq"
 import { logger } from "../../lib/logger"
 import {
   allIntegrations,
@@ -27,16 +31,11 @@ import { runFlowPostback } from "./flow"
 type StatusContactInboxWhere = { inboxId: string } & (
   | { sourceId: string }
   | { sourceUserId: string }
+  | { sourceParentUserId: string }
 )
 
 const findStatusContactInbox = (where: StatusContactInboxWhere) =>
-  db.query.contactInboxModel.findFirst({
-    where,
-    with: {
-      conversation: true,
-      contact: true,
-    },
-  })
+  contactInboxRepository.findWithConversationAndContact({ where })
 
 /**
  * Resolves the ContactInbox a delivery/read status belongs to. The status
@@ -54,14 +53,16 @@ const resolveStatusContactInbox = async (
   if (!recipientIdentity) {
     return
   }
-  return await resolveWithSourceUserIdFallback(
+  const match = await resolveSourceScopedIdentityMatch(
     { sourceId: recipientIdentity, sourceUserId: recipientIdentity },
     (where) => findStatusContactInbox({ inboxId, ...where }),
   )
+  return match?.row
 }
 
 export const handleMessageStatus = async (
   job: IntegrationJobMessageStatus["data"],
+  parentJob?: Job,
 ) => {
   const { integrationType, integrationIdentifier, payload } = job
 
@@ -131,6 +132,7 @@ export const handleMessageStatus = async (
         conversationId: contactInbox.conversation.id,
         channel: inbox.channel,
         contactInboxId: contactInbox.id,
+        sourceId: contactInbox.sourceId,
       },
       action: {
         messageId: message?.id,
@@ -179,7 +181,13 @@ export const handleMessageStatus = async (
 
     if (eventStatus === "failed") {
       eventLog.errorData = payload.error ?? {}
-      await emit(messageEventTypeSchema.enum["message:failed"], eventLog)
+      await emit(messageEventTypeSchema.enum["message:failed"], {
+        ...eventLog,
+        // The provider has already decided: an async delivery status is the
+        // final word on a send that left this worker long ago, so nothing will
+        // re-attempt it whatever the error body claims about retryability.
+        willRetry: false,
+      })
     }
 
     if (!message || (eventStatus !== "delivered" && eventStatus !== "failed")) {
@@ -213,13 +221,16 @@ export const handleMessageStatus = async (
       return
     }
 
-    await runFlowPostback({
-      conversationId: message.conversationId,
-      action: button.postback,
-      ref: null,
-      contactInboxId: contactInbox.id,
-      webhookType: IntegrationJobAction.messageStatus,
-    })
+    await runFlowPostback(
+      {
+        conversationId: message.conversationId,
+        action: button.postback,
+        ref: null,
+        contactInboxId: contactInbox.id,
+        webhookType: IntegrationJobAction.messageStatus,
+      },
+      { flowExecutionKey: parentJob?.id },
+    )
   } catch (error) {
     logger.error(
       error,

@@ -1,7 +1,5 @@
-import { inboxTeamsAuthenticatedAPI } from "./authenticated"
-import { inboxTeamsWorkspaceTokenAPIs } from "./workspace-token"
+import { inboxTeamsAuthenticatedAPI } from "./private"
 
 export const inboxTeamsAPI = {
   ...inboxTeamsAuthenticatedAPI,
-  ...inboxTeamsWorkspaceTokenAPIs,
 }

@@ -7,15 +7,16 @@ import { useEffect, useRef, useState } from "react"
 import { type GridComponents, Virtuoso } from "react-virtuoso"
 import { toast } from "sonner"
 import { useWorkspaceId } from "@/hooks/routing"
+import { INBOX_MESSAGES_PER_PAGE } from "../chat/store/chat-store"
 import { useChatStore } from "../chat/store/chat-store-provider"
 import { ConversationInfo } from "../conversations/components/conversation-info"
 import { changeMessageAttributesAction } from "./actions/change-message-attributes.action"
 import { deleteMessageAction } from "./actions/delete-message.action"
 import { editMessageAction } from "./actions/edit-message.action"
 import { MessageItem } from "./components/message-item"
+import { canPrivateReplyToComment } from "./lib/private-reply"
 import type { MessageResourceWithRelations } from "./schema/resource"
 
-const MESSAGE_LIST_PER_PAGE = 20
 const START_INDEX = 100_000
 
 export function MessageList() {
@@ -23,7 +24,9 @@ export function MessageList() {
   const t = useTranslations()
 
   const {
+    conversations,
     messages,
+    loadInitialMessages,
     loadMoreMessages,
     isLoadMoreMessage,
     hasNextMessagePage,
@@ -34,6 +37,12 @@ export function MessageList() {
     updateMessageText,
     updateMessageAttributes,
   } = useChatStore((state) => state)
+
+  // Which channel this conversation belongs to, for the private-reply gate
+  // below. The same `contactInboxes[0].channel` the store reads elsewhere.
+  const activeChannel = conversations.find(
+    (conversation) => conversation.id === activeConversationId,
+  )?.contactInboxes?.[0]?.channel
 
   const { execute: deleteMessage } = useAction(
     deleteMessageAction.bind(null, workspaceId, activeConversationId ?? ""),
@@ -110,6 +119,16 @@ export function MessageList() {
     }
   }
 
+  const handlePrivateReplyComment = (comment: {
+    commentId: string
+    text: string
+  }) => {
+    const message = messages.find((m) => m.sourceId === comment.commentId)
+    if (message) {
+      setReplyToMessage(message, true)
+    }
+  }
+
   const handleDeleteComment = ({
     id,
     createdAt,
@@ -180,7 +199,7 @@ export function MessageList() {
     prependPendingRef.current = false
     didAutoSelectCommentRef.current = false
     if (activeConversationId) {
-      loadMoreMessages(workspaceId, MESSAGE_LIST_PER_PAGE)
+      loadInitialMessages(workspaceId, INBOX_MESSAGES_PER_PAGE)
     }
   }, [activeConversationId])
 
@@ -222,11 +241,14 @@ export function MessageList() {
       return
     }
     prependPendingRef.current = true
-    loadMoreMessages(workspaceId, MESSAGE_LIST_PER_PAGE)
+    loadMoreMessages(workspaceId, INBOX_MESSAGES_PER_PAGE)
   }
 
   return (
-    <div className="flex flex-1 flex-col px-3">
+    // `min-h-0`: Virtuoso's scroller is `height: 100%`, so without it this item
+    // is floored at the full list height and pushes the composer below the fold
+    // instead of scrolling inside itself.
+    <div className="flex min-h-0 flex-1 flex-col px-3">
       <Virtuoso
         alignToBottom={true}
         components={{
@@ -239,6 +261,12 @@ export function MessageList() {
         initialTopMostItemIndex={{ index: "LAST" }}
         itemContent={(_, message) => (
           <MessageItem
+            canPrivateReply={(comment) =>
+              canPrivateReplyToComment({
+                channel: activeChannel,
+                message: comment,
+              })
+            }
             key={message.id}
             message={message}
             onChangeHide={() => handleChangeHideState(message)}
@@ -250,6 +278,7 @@ export function MessageList() {
               })
             }}
             onEdit={handleEditMessage}
+            onPrivateReply={handlePrivateReplyComment}
             onReply={handleReplyComment}
           />
         )}

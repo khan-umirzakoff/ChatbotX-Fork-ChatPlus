@@ -1,4 +1,7 @@
-import { db } from "@chatbotx.io/database/client"
+import {
+  contactCustomFieldService,
+  customFieldService,
+} from "@chatbotx.io/business"
 import {
   type OperatorType,
   triggerEventTypes,
@@ -49,6 +52,14 @@ export class ConditionEvaluator {
       case triggerEventTypes.enum.unsubscribedFromSequence:
       case triggerEventTypes.enum.contactReferredANewContact:
       case triggerEventTypes.enum.contactReferredExistingContact:
+      // The five WhatsApp call conditions the Triggers screen offers. They
+      // carry no source or operator, so the event happening is the whole
+      // condition, same as the ones above.
+      case triggerEventTypes.enum.incomingCall:
+      case triggerEventTypes.enum.missedAudioCall:
+      case triggerEventTypes.enum.callEnded:
+      case triggerEventTypes.enum.callRecorded:
+      case triggerEventTypes.enum.callTranscribed:
         return true
 
       case triggerEventTypes.enum.dateTimeBasedTrigger:
@@ -94,20 +105,14 @@ export class ConditionEvaluator {
     if (customFieldId === actualCustomFieldId) {
       actualValue = metadata.newValue
     } else {
-      const contactCustomField =
-        await db.query.contactCustomFieldModel.findFirst({
-          where: {
-            contactId,
-            customFieldId,
-          },
-          columns: { value: true },
-        })
-      actualValue = contactCustomField?.value
+      actualValue = await contactCustomFieldService.findValue({
+        contactId,
+        customFieldId,
+      })
     }
 
-    const customField = await db.query.customFieldModel.findFirst({
+    const customField = await customFieldService.findBy({
       where: { id: customFieldId },
-      columns: { type: true },
     })
 
     if (!operator) {
@@ -391,21 +396,14 @@ export class ConditionEvaluator {
       return false
     }
 
-    const contactCustomField = await db.query.contactCustomFieldModel.findFirst(
-      {
-        where: {
-          contactId,
-          customFieldId,
-        },
-        columns: { value: true },
-      },
-    )
+    const customFieldValue = await contactCustomFieldService.findValue({
+      contactId,
+      customFieldId,
+    })
 
-    if (!contactCustomField?.value) {
+    if (!customFieldValue) {
       return false
     }
-
-    const customFieldValue = contactCustomField.value as string
 
     const config = triggerConfig as {
       triggerType?: string

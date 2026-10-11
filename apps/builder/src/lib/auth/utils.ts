@@ -1,7 +1,10 @@
 "use server"
 
+import {
+  resolveWorkspaceAccess,
+  workspaceMemberService,
+} from "@chatbotx.io/business"
 import { ChatbotXException } from "@chatbotx.io/business/errors"
-import { db } from "@chatbotx.io/database/client"
 import type {
   UserModel,
   WorkspaceMemberModel,
@@ -64,14 +67,7 @@ const getCachedCurrentUserAndAllLinkedWorkspaces = cache(
     }
 
     const [workspaceMembers, { storageUrl }] = await Promise.all([
-      db.query.workspaceMemberModel.findMany({
-        where: {
-          userId: user.id,
-        },
-        with: {
-          workspace: true,
-        },
-      }),
+      workspaceMemberService.listByUserIdUncached({ userId: user.id }),
       getTenantSettings(),
     ])
 
@@ -99,30 +95,47 @@ const getCachedCurrentUserAndAllLinkedWorkspaces = cache(
 export const getCurrentUserAndAllLinkedWorkspaces = async () =>
   getCachedCurrentUserAndAllLinkedWorkspaces()
 
-export const getCurrentUserAndTargetWorkspace = async (
-  workspaceId: string,
-): Promise<{
+type CurrentUserAndTargetWorkspace = {
   user: SessionUser
   targetWorkspace: WorkspaceModel
   targetWorkspaceMember: WorkspaceMemberModel
+  isSupportSession: boolean
   allWorkspaces: WorkspaceModel[]
   allWorkspaceMembers: (WorkspaceMemberModel & { workspace: WorkspaceModel })[]
-} | null> => {
-  const userAndWorkspaces = await getCurrentUserAndAllLinkedWorkspaces()
-  if (!userAndWorkspaces) {
-    return null
-  }
-
-  const targetWorkspaceMember = userAndWorkspaces.allWorkspaceMembers.find(
-    (workspaceMember) => workspaceMember.workspaceId === workspaceId,
-  )
-  if (!targetWorkspaceMember) {
-    return null
-  }
-
-  return {
-    ...userAndWorkspaces,
-    targetWorkspace: targetWorkspaceMember.workspace,
-    targetWorkspaceMember,
-  }
 }
+
+const getCachedCurrentUserAndTargetWorkspace = cache(
+  async (
+    workspaceId: string,
+  ): Promise<CurrentUserAndTargetWorkspace | null> => {
+    const userAndWorkspaces = await getCurrentUserAndAllLinkedWorkspaces()
+    if (!userAndWorkspaces) {
+      return null
+    }
+
+    const realMember = userAndWorkspaces.allWorkspaceMembers.find(
+      (workspaceMember) => workspaceMember.workspaceId === workspaceId,
+    )
+
+    const access = await resolveWorkspaceAccess({
+      realMember,
+      workspaceId,
+      user: userAndWorkspaces.user,
+    })
+    if (!access) {
+      return null
+    }
+
+    return {
+      ...userAndWorkspaces,
+      targetWorkspace: access.workspace,
+      targetWorkspaceMember: access.member,
+      isSupportSession: access.isSupportSession,
+    }
+  },
+)
+
+export const getCurrentUserAndTargetWorkspace = async (
+  workspaceId: string,
+): Promise<CurrentUserAndTargetWorkspace | null> =>
+  getCachedCurrentUserAndTargetWorkspace(workspaceId)

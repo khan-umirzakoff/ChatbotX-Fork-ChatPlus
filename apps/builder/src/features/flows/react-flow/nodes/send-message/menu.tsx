@@ -1,13 +1,21 @@
 import { type ChannelType, channelTypes } from "@chatbotx.io/database/partials"
-import { stepTypes } from "@chatbotx.io/flow-config"
+import {
+  CHANNEL_FLOW_POLICIES,
+  getChannelFlowPolicy,
+  type StepType,
+  stepSupport,
+  stepTypes,
+} from "@chatbotx.io/flow-config"
 import {
   CreditCardIcon,
   ImageIcon,
   ImagePlayIcon,
+  ImagesIcon,
   KeyboardIcon,
   ListIcon,
   MessageSquareIcon,
   PaperclipIcon,
+  PhoneIcon,
   PictureInPicture2Icon,
   TextIcon,
   TimerIcon,
@@ -36,6 +44,11 @@ const ALL_MENU_ITEMS = (
     label: t("flows.actions.sendImage"),
     icon: ImageIcon,
     stepType: stepTypes.enum.sendImage,
+  },
+  sendMultipleImages: {
+    label: t("flows.actions.sendMultipleImages"),
+    icon: ImagesIcon,
+    stepType: stepTypes.enum.sendMultipleImages,
   },
   sendCard: {
     label: t("flows.actions.sendCard"),
@@ -83,6 +96,11 @@ const ALL_MENU_ITEMS = (
     icon: ListIcon,
     stepType: stepTypes.enum.whatsappOptionList,
   },
+  whatsappCallButton: {
+    label: t("flows.actions.whatsappCallButton"),
+    icon: PhoneIcon,
+    stepType: stepTypes.enum.whatsappCallButton,
+  },
   typing: {
     label: t("flows.actions.typing"),
     icon: TimerIcon,
@@ -116,77 +134,83 @@ const ALL_MENU_ITEMS = (
 const BASE_MENU_ORDER = [
   "sendText",
   "sendImage",
-  "sendCard",
-  "sendCarousel",
-  "sendVideo",
-  "getUserData",
-  "sendGif",
-  "typing",
-  "sendFile",
-  "actions",
-] as const
-
-const WHATSAPP_MENU_ORDER = [
-  "sendText",
-  "sendImage",
+  "sendMultipleImages",
   "sendCard",
   "sendCarousel",
   "sendVideo",
   "getUserData",
   "sendGif",
   "sendTemplateMessage",
+  "typing",
+  "sendFile",
+  "actions",
+] as const
+
+const WHATSAPP_MENU_EXTRAS = [
   "whatsappFlow",
   "whatsappOptionList",
-  "typing",
-  "sendFile",
-  "actions",
+  "whatsappCallButton",
 ] as const
 
-const MESSENGER_MENU_ORDER = [
-  "sendText",
-  "sendImage",
-  "sendCard",
-  "sendCarousel",
-  "sendVideo",
-  "getUserData",
-  "sendGif",
-  "sendTemplateMessage",
-  "typing",
-  "sendFile",
-  "actions",
-] as const
-
-const TIKTOK_MENU_ORDER = [
-  "sendText",
-  "sendImage",
-  "getUserData",
-  "typing",
-  "actions",
-] as const
-
-const MENU_ORDER_BY_CHANNEL: Record<string, readonly string[]> = {
-  [channelTypes.enum.whatsapp]: WHATSAPP_MENU_ORDER,
-  [channelTypes.enum.messenger]: MESSENGER_MENU_ORDER,
-  [channelTypes.enum.tiktok]: TIKTOK_MENU_ORDER,
+const MENU_ITEM_STEP_TYPES: Record<string, readonly StepType[]> = {
+  sendFile: [stepTypes.enum.sendAudio, stepTypes.enum.sendFile],
+  sendTemplateMessage: [
+    stepTypes.enum.sendMessengerTemplateMessage,
+    stepTypes.enum.sendWaTemplateMessage,
+  ],
 }
+
+const isMenuItemSupported = (props: {
+  item: MenuItem
+  key: string
+  policy: (typeof CHANNEL_FLOW_POLICIES)[ChannelType]
+}): boolean => {
+  const stepTypes = props.item.stepType
+    ? [props.item.stepType]
+    : MENU_ITEM_STEP_TYPES[props.key]
+
+  return (
+    stepTypes === undefined ||
+    stepTypes.some(
+      (stepType) => props.policy.steps[stepType] !== stepSupport.unsupported,
+    )
+  )
+}
+
+/**
+ * WhatsApp-only steps that must not be offered on omnichannel nodes: they
+ * send nothing on other channels, but (unlike the option list) would still
+ * persist a fully-worded outgoing message locally — a convincing phantom
+ * send. The worker guards this too; hiding the menu entry prevents authoring
+ * it in the first place.
+ */
+const OMNICHANNEL_EXCLUDED_ITEMS = new Set(["whatsappCallButton"])
 
 export const sendMessageEditorMenus = (
   t: TranslationFn,
   menuData?: MenuData,
 ): MenuItem[] => {
   const channel = menuData?.beforeStep?.channel
+  const policy =
+    getChannelFlowPolicy(channel) ?? CHANNEL_FLOW_POLICIES.omnichannel
   const allMenuItems = ALL_MENU_ITEMS(t, menuData)
-
-  if (channel === channelTypes.enum.omnichannel) {
-    return Object.values(allMenuItems)
-  }
-
   const menuOrder =
-    channel && MENU_ORDER_BY_CHANNEL[channel]
-      ? MENU_ORDER_BY_CHANNEL[channel]
+    channel === channelTypes.enum.whatsapp ||
+    channel === channelTypes.enum.omnichannel
+      ? [...BASE_MENU_ORDER, ...WHATSAPP_MENU_EXTRAS]
       : BASE_MENU_ORDER
 
-  return menuOrder.map((key) => allMenuItems[key])
+  return menuOrder.flatMap((key) => {
+    if (
+      channel === channelTypes.enum.omnichannel &&
+      OMNICHANNEL_EXCLUDED_ITEMS.has(key)
+    ) {
+      return []
+    }
+
+    const item = allMenuItems[key]
+    return item && isMenuItemSupported({ item, key, policy }) ? [item] : []
+  })
 }
 
 export const sendMessageEditorMenusWithButton = (

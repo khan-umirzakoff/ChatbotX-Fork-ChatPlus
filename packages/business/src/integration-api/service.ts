@@ -1,21 +1,34 @@
-import { db } from "@chatbotx.io/database/client"
+import { type DatabaseClient, db } from "@chatbotx.io/database/client"
 import { integrationTypes } from "@chatbotx.io/database/partials"
 import { integrationApiRepository } from "@chatbotx.io/database/repositories"
 import type { IntegrationApiModel } from "@chatbotx.io/database/types"
+import type { AuthValue } from "@chatbotx.io/sdk"
 import { createId } from "@chatbotx.io/utils"
-import { connectChannelIntegration } from "../inbox/connect-channel"
+import { dispatchAuditRecord } from "../audit/dispatcher"
+import { BaseService } from "../base.service"
+import {
+  CONNECTION_STORE_BINDINGS,
+  type ConnectionQuotaConsumption,
+  upsertConnectionRow,
+  withQuotaCompensation,
+} from "../connection"
+import { connectionStateService } from "../connection/state-service"
 import { inboxService } from "../inbox/service"
+import type { WorkspaceQuotaConsumption } from "../workspace/quota-consumption"
 
 type ConnectIntegrationApiInput = {
   ownerId: string
+  actorUserId: string
   workspaceId?: string
   name: string
-  auth: Parameters<typeof integrationApiRepository.insert>[0]["auth"]
+  auth: AuthValue
   tokenHash: string
   tokenPrefix: string
   callbackUrl: string | null
+  /** First-channel path: creates the workspace on `tx`; thread `quotaConsumption` into `workspaceService.create` so a rollback hands the seat back. */
   createWorkspace?: (
-    tx: Parameters<typeof connectChannelIntegration>[0]["tx"],
+    tx: DatabaseClient,
+    quotaConsumption: WorkspaceQuotaConsumption,
   ) => Promise<string>
 }
 
@@ -26,61 +39,127 @@ type DisconnectIntegrationApiInput = {
   ownerId: string
 }
 
-class IntegrationApiService {
+class IntegrationApiService extends BaseService {
   async connect(
     input: ConnectIntegrationApiInput,
   ): Promise<{ workspaceId: string; inbox: IntegrationApiModel }> {
-    return await db.transaction(async (tx) => {
-      const workspaceId =
-        input.workspaceId ?? (await input.createWorkspace?.(tx))
-      if (!workspaceId) {
-        throw new Error(
-          "integrationApiService.connect: workspaceId or createWorkspace is required",
-        )
-      }
-
-      const apiId = createId()
-
-      const { integration } = await connectChannelIntegration({
-        tx,
+    const quotaConsumption: ConnectionQuotaConsumption = {
+      consumed: false,
+      workspaceUsageIncremented: false,
+    }
+    const workspaceQuotaConsumption: WorkspaceQuotaConsumption = {
+      consumed: false,
+    }
+    const result = await withQuotaCompensation(
+      {
         ownerId: input.ownerId,
-        inboxData: {
-          id: apiId,
-          workspaceId,
-          name: input.name,
-          channel: integrationTypes.enum.api,
-          sourceId: apiId,
-        },
-        insertIntegration: (inboxId) =>
-          integrationApiRepository.insert(
-            {
+        quotaConsumption,
+        workspaceQuotaConsumption,
+        context: { provider: "api", actorUserId: input.actorUserId },
+      },
+      () =>
+        db.transaction(async (tx) => {
+          const workspaceCreated = !input.workspaceId
+          const workspaceId =
+            input.workspaceId ??
+            (await input.createWorkspace?.(tx, workspaceQuotaConsumption))
+          if (!workspaceId) {
+            throw new Error(
+              "integrationApiService.connect: workspaceId or createWorkspace is required",
+            )
+          }
+
+          const apiId = createId()
+          const { inbox } = await inboxService.create({
+            tx,
+            ownerId: input.ownerId,
+            data: {
               id: apiId,
-              inboxId,
               workspaceId,
               name: input.name,
-              auth: input.auth,
+              channel: integrationTypes.enum.api,
+              sourceId: apiId,
+            },
+            skipQuota: true,
+          })
+
+          // `id === inboxId === sourceId` — the API binding's
+          // `identityColumn: "id"` (`store-bindings.ts`) sets `IntegrationApi
+          // .id` to this same `apiId` on insert, keeping one id for the
+          // inbox, the integration row, and the connection's sourceId.
+          await upsertConnectionRow({
+            tx,
+            workspaceId,
+            provider: "api",
+            kind: "channel",
+            descriptor: { sourceId: apiId, displayName: input.name },
+            auth: input.auth,
+            extraConfig: {
               tokenHash: input.tokenHash,
               tokenPrefix: input.tokenPrefix,
               callbackUrl: input.callbackUrl,
             },
-            tx,
-          ),
-      })
+            existing: undefined,
+            store: CONNECTION_STORE_BINDINGS.api as NonNullable<
+              (typeof CONNECTION_STORE_BINDINGS)["api"]
+            >,
+            ownerId: input.ownerId,
+            quotaConsumption,
+            actorUserId: input.actorUserId,
+            inboxId: inbox.id,
+          })
 
-      return { workspaceId, inbox: integration }
+          const integration = await integrationApiRepository.findByInboxId(
+            inbox.id,
+            tx,
+          )
+          if (!integration) {
+            throw new Error(
+              `integrationApiService.connect: IntegrationApi row missing for inbox ${inbox.id}`,
+            )
+          }
+
+          return { workspaceId, inbox: integration, workspaceCreated }
+        }),
+    )
+
+    // Sanctioned exception: `connect()` is reachable from `authActionClient`
+    // (create-api.action.ts), which never puts `workspaceId` into the ALS
+    // actor — only workspace-scoped action clients do. this.audit() would
+    // silently no-op here, so bypass it with an explicit override.
+    if (result.workspaceCreated) {
+      // Matches the other 5 "connect channel creates a new workspace" flows
+      // (WhatsApp/Instagram x2/Messenger/Telegram/Webchat) — API channel is
+      // the 6th entry point that can create a workspace on connect.
+      await dispatchAuditRecord({
+        userId: input.actorUserId,
+        workspaceId: result.workspaceId,
+        action: "create",
+        detail: `created the workspace (#${result.workspaceId})`,
+      })
+    }
+    await dispatchAuditRecord({
+      userId: input.actorUserId,
+      workspaceId: result.workspaceId,
+      action: "create",
+      detail: `created a new API key (#${result.inbox.id})`,
     })
+
+    return result
   }
 
   async disconnect(input: DisconnectIntegrationApiInput): Promise<void> {
     await db.transaction(async (tx) => {
       await integrationApiRepository.deleteById(input.id, tx)
-      await inboxService.disconnect({
+      await connectionStateService.disconnectInbox({
         inboxId: input.inboxId,
         ownerId: input.ownerId,
         workspaceId: input.workspaceId,
         tx,
       })
     })
+
+    await this.audit("delete", `revoked an API key (#${input.id})`)
   }
 }
 

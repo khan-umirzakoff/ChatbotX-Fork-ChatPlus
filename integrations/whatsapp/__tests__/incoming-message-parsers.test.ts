@@ -10,6 +10,9 @@ import {
 } from "../src/handlers/message/message-limits"
 import { logger } from "../src/lib/logger"
 
+// Channel-scoped storage key the received media must land under.
+const CHANNEL_MEDIA_KEY = /^public\/whatsapp\/ws-1\/int-1\/2026\/10\/06\//
+
 vi.mock("../src/lib/logger", () => ({
   logger: { debug: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }))
@@ -41,6 +44,7 @@ const buildProps = (message: Record<string, unknown>) =>
     ctx: {
       auth: { tokens: { accessToken: "test-token" } },
       storagePrefix: "workspace-1",
+      mediaStoragePrefix: "public/whatsapp/ws-1/int-1/2026/10/06",
     },
     data: {
       integrationType: "whatsapp",
@@ -129,7 +133,11 @@ describe("WhatsApp receiveMessage — media", () => {
     )
 
     expect(result.message?.attachments).toEqual([
-      expect.objectContaining({ fileType: "image", mimeType: "image/jpeg" }),
+      expect.objectContaining({
+        fileType: "image",
+        mimeType: "image/jpeg",
+        originPath: expect.stringMatching(CHANNEL_MEDIA_KEY),
+      }),
     ])
     expect(result.message?.text).toBe("Nice view")
   })
@@ -167,7 +175,7 @@ describe("WhatsApp receiveMessage — media", () => {
     // The refactor omits the `text` key when there is no caption, instead of
     // today's `message.text = undefined` (key present, value undefined).
     // Verified equivalent for every consumer (a truthiness check and a
-    // Drizzle insert) — see plan §5.2.
+    // Drizzle insert).
     expect(result.message).not.toHaveProperty("text")
   })
 
@@ -218,7 +226,7 @@ describe("WhatsApp receiveMessage — location / contacts / order", () => {
       }),
     )
 
-    // Was a dead-code `""` before the refactor (plan §5.4) — `join` never
+    // Was a dead-code `""` before the refactor — `join` never
     // returns null/undefined, so `?? "Received location"` never fired. Fixed
     // as an owner-approved edge case (2026-07-31).
     expect(result.message?.text).toBe("Received location")
@@ -371,8 +379,10 @@ describe('WhatsApp receiveMessage — carousel/template button taps (type: "butt
   })
 })
 
-describe("WhatsApp receiveMessage — unhandled interactive reply types", () => {
-  test("call_permission_reply falls back to a fixed label and logs a warning instead of silently dropping the tap", async () => {
+describe("WhatsApp receiveMessage — call permission replies", () => {
+  // Parsed into a typed entity the worker persists as the grant state, not
+  // the "Received interactive (coming soon)" interactive fallback.
+  test("call_permission_reply is parsed into a whatsapp_call_permission_reply entity", async () => {
     const result = await receiveMessage(
       buildProps({
         type: "interactive",
@@ -381,9 +391,31 @@ describe("WhatsApp receiveMessage — unhandled interactive reply types", () => 
           call_permission_reply: {
             response: "accept",
             is_permanent: false,
-            expiration_timestamp: 0,
+            expiration_timestamp: 1_756_300_000,
             response_source: "user_action",
           },
+        },
+      }),
+    )
+
+    expect(result.message?.text).toBe("Accepted call permission request")
+    expect(result.postbackAction).toBeNull()
+    expect(result.message?.contentAttributes).toMatchObject({
+      type: "whatsapp_call_permission_reply",
+      response: "accept",
+      isPermanent: false,
+      expirationTimestamp: 1_756_300_000,
+    })
+    expect(logger.warn).not.toHaveBeenCalled()
+  })
+
+  test("an unknown interactive type still falls back with a warning", async () => {
+    const result = await receiveMessage(
+      buildProps({
+        type: "interactive",
+        interactive: {
+          type: "some_future_type",
+          some_future_type: {},
         },
       }),
     )

@@ -1,9 +1,11 @@
 import {
   type Context,
   contentTypes,
+  getMediaStoragePrefix,
   guessFileTypeFromMimeType,
   type IncomingAttachment,
   type IncomingContact,
+  type IncomingFileType,
   type IncomingMessage,
   messageTypes,
   type ReceivedMessageResult,
@@ -16,6 +18,7 @@ import type {
   TelegramAuthValue,
   TelegramMessage,
   TelegramPhotoSize,
+  TelegramSticker,
   TelegramUpdate,
 } from "../../schema"
 import { telegramUpdateSchema } from "../../schema"
@@ -131,6 +134,7 @@ const getMessageAttachments = async (
         ctx,
         largestPhoto.file_id,
         "image/jpeg",
+        { width: largestPhoto.width, height: largestPhoto.height },
       )
       if (attachment) {
         attachments.push(attachment)
@@ -138,12 +142,32 @@ const getMessageAttachments = async (
     }
   }
 
-  if (message.document) {
+  // `animation` comes with `document` set to the same file for backward
+  // compatibility, so only one of them is downloaded.
+  if (message.animation) {
+    const attachment = await downloadAndUploadFile(
+      ctx,
+      message.animation.file_id,
+      message.animation.mime_type ?? "video/mp4",
+      undefined,
+      "gif",
+    )
+    if (attachment) {
+      attachments.push(attachment)
+    }
+  } else if (message.document) {
     const attachment = await downloadAndUploadFile(
       ctx,
       message.document.file_id,
       message.document.mime_type ?? "application/octet-stream",
     )
+    if (attachment) {
+      attachments.push(attachment)
+    }
+  }
+
+  if (message.sticker) {
+    const attachment = await getStickerAttachment(ctx, message.sticker)
     if (attachment) {
       attachments.push(attachment)
     }
@@ -185,10 +209,40 @@ const getMessageAttachments = async (
   return attachments
 }
 
+const getStickerAttachment = (
+  ctx: Context<TelegramAuthValue>,
+  sticker: TelegramSticker,
+): Promise<IncomingAttachment | null> => {
+  if (sticker.is_video) {
+    return downloadAndUploadFile(
+      ctx,
+      sticker.file_id,
+      "video/webm",
+      undefined,
+      "gif",
+    )
+  }
+  if (sticker.is_animated) {
+    if (!sticker.thumbnail) {
+      return Promise.resolve(null)
+    }
+    return downloadAndUploadFile(ctx, sticker.thumbnail.file_id, "image/webp", {
+      width: sticker.thumbnail.width,
+      height: sticker.thumbnail.height,
+    })
+  }
+  return downloadAndUploadFile(ctx, sticker.file_id, "image/webp", {
+    width: sticker.width,
+    height: sticker.height,
+  })
+}
+
 const downloadAndUploadFile = async (
   ctx: Context<TelegramAuthValue>,
   fileId: string,
   mimeType: string,
+  dimensions?: { width: number; height: number },
+  fileType: IncomingFileType = guessFileTypeFromMimeType(mimeType),
 ): Promise<IncomingAttachment | null> => {
   try {
     const fileUrl = await getTelegramFileUrl(ctx.auth, fileId)
@@ -198,11 +252,13 @@ const downloadAndUploadFile = async (
 
     const response = await fetch(fileUrl)
     if (!(response.ok && response.body)) {
-      return null
+      throw new TelegramException(
+        `Failed to download attachment (status ${response.status} ${response.statusText}): ${fileUrl}`,
+      )
     }
 
     const bytes = await response.arrayBuffer()
-    const originPath = `${ctx.storagePrefix}/${createId()}`
+    const originPath = `${getMediaStoragePrefix(ctx)}/${createId()}`
 
     await ctx.uploader?.putObject(originPath, Buffer.from(bytes), {
       ACL: "public-read",
@@ -212,13 +268,17 @@ const downloadAndUploadFile = async (
     return {
       sourceId: createId(),
       originPath,
-      fileType: guessFileTypeFromMimeType(mimeType),
+      fileType,
       mimeType,
       size: bytes.byteLength,
+      ...dimensions,
     }
   } catch (error) {
-    logger.error(error, "downloadAndUploadFile error")
-    return null
+    logger.error(
+      { err: error, fileId, mimeType },
+      "downloadAndUploadFile error",
+    )
+    throw error
   }
 }
 

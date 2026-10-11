@@ -1,28 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 // ---------------------------------------------------------------------------
-// Hoist mocks — the bulk pipeline calls many DB primitives we must stub:
-// transaction() runs the callback inline against a fake `tx` object that
-// exposes select(), insert(), update(), delete(), and execute().
+// Phase 4a of the Automatic Customer Scan plan
+// (`docs/plans/2026-09-09-automatic-contact-scan.md`) moved `bulkImportContacts`
+// verbatim to `packages/business/src/contact/bulk-import-channel-contacts.ts`
+// as `bulkImportChannelContacts` — `bulk-historical-import.ts` now only
+// re-exports it under the old name. Its dedup / contact-resolution / event /
+// workspace-usage behavior is covered directly by
+// `packages/business/__tests__/bulk-import-channel-contacts.test.ts`.
+//
+// This suite tests `bulkImportHistorical`'s OWN orchestration (message import
+// per contact, activity-update batching, attachment id aggregation,
+// concurrency) — everything downstream of contact resolution — so
+// `bulkImportChannelContacts` (aliased `bulkImportContacts` by the file under
+// test) is mocked at the boundary, same as the coexist sync handlers'
+// existing tests already do.
 // ---------------------------------------------------------------------------
 
 const {
-  mockTransaction,
-  mockTxSelect,
-  mockTxInsert,
-  mockTxUpdate,
-  mockTxDelete,
-  mockTxExecute,
-  mockDbUpdate,
   mockEmitContactCreated,
   mockEmit,
-  mockCreateId,
   mockBulkCreate,
   mockBulkUpdateTracking,
   mockCreateMessageRepository,
-  mockWorkspaceFind,
-  mockWorkspaceUsageIncrement,
+  mockBulkImportChannelContacts,
+  mockEnrichIfNull,
   mockBulkAdvanceActivityAndAiContextMarker,
+  mockBackdateCreatedAt,
 } = vi.hoisted(() => {
   const mockBulkCreate = vi.fn().mockResolvedValue([])
   const mockBulkCreateAttachments = vi.fn().mockResolvedValue([])
@@ -31,107 +35,42 @@ const {
     bulkCreateAttachments: mockBulkCreateAttachments,
   })
   return {
-    mockTransaction: vi.fn(),
-    mockTxSelect: vi.fn(),
-    mockTxInsert: vi.fn(),
-    mockTxUpdate: vi.fn(),
-    mockTxDelete: vi.fn(),
-    mockTxExecute: vi.fn(),
-    mockDbUpdate: vi.fn(),
     mockEmitContactCreated: vi.fn(() => Promise.resolve()),
     mockEmit: vi.fn(() => Promise.resolve()),
-    mockCreateId: vi.fn(),
     mockBulkCreate,
     mockBulkUpdateTracking: vi.fn().mockResolvedValue(null),
     mockCreateMessageRepository,
-    mockWorkspaceFind: vi.fn(),
-    mockWorkspaceUsageIncrement: vi.fn().mockResolvedValue(undefined),
+    mockBulkImportChannelContacts: vi.fn(),
+    mockEnrichIfNull: vi.fn().mockResolvedValue(undefined),
     mockBulkAdvanceActivityAndAiContextMarker: vi
       .fn()
       .mockResolvedValue(undefined),
+    mockBackdateCreatedAt: vi.fn().mockResolvedValue(undefined),
   }
 })
 
-vi.mock("@chatbotx.io/database/client", () => {
-  const tx = {
-    select: mockTxSelect,
-    insert: mockTxInsert,
-    update: mockTxUpdate,
-    delete: mockTxDelete,
-    execute: mockTxExecute,
-  }
-  mockTransaction.mockImplementation((cb: (tx: unknown) => unknown) => cb(tx))
-  // db.update() is used best-effort outside transactions (lastMessageAt bump).
-  // Return a chainable stub so it never throws.
-  mockDbUpdate.mockImplementation(() => {
-    const chain = { set: vi.fn(), where: vi.fn() }
-    chain.set.mockReturnValue(chain)
-    chain.where.mockResolvedValue(undefined)
-    return chain
-  })
-  return {
-    db: {
-      execute: mockTxExecute,
-      transaction: mockTransaction,
-      update: mockDbUpdate,
-    },
-    and: vi.fn((...args: unknown[]) => ({ __and: args })),
-    eq: vi.fn((col: unknown, val: unknown) => ({ __eq: [col, val] })),
-    inArray: vi.fn((col: unknown, vals: unknown) => ({
-      __inArray: [col, vals],
-    })),
-    or: vi.fn((...args: unknown[]) => ({ __or: args })),
-    sql: Object.assign(
-      (strings: TemplateStringsArray, ..._args: unknown[]) => ({
-        __sql: strings.raw,
-      }),
-      {
-        raw: (s: string) => s,
-        join: (chunks: unknown[], _sep?: unknown) => ({ __join: chunks }),
-      },
-    ),
-  }
-})
-
-vi.mock("@chatbotx.io/database/schema", () => ({
-  attachmentModel: { id: "att_id" },
-  contactInboxModel: {
-    id: "ci_id",
-    sourceId: "ci_sourceId",
-    sourceUserId: "ci_sourceUserId",
-    contactId: "ci_contactId",
-    inboxId: "ci_inboxId",
-  },
-  contactModel: { id: "c_id" },
-  conversationModel: { id: "conv_id", contactId: "conv_contactId" },
-  messageModel: {
-    id: "m_id",
-    contactInboxId: "m_ci",
-    sourceId: "m_sid",
-    $inferInsert: {},
-  },
+vi.mock("@chatbotx.io/database/client", () => ({
+  describeDatabaseError: vi.fn((err: unknown) => err),
 }))
 
 vi.mock("@chatbotx.io/database/repositories", () => ({
   createMessageRepository: mockCreateMessageRepository,
+  contactRepository: {
+    enrichIfNull: mockEnrichIfNull,
+  },
 }))
 
 vi.mock("@chatbotx.io/business", () => ({
+  bulkImportChannelContacts: mockBulkImportChannelContacts,
   contactInboxService: {
     bulkUpdateTracking: mockBulkUpdateTracking,
+  },
+  contactService: {
+    backdateCreatedAt: mockBackdateCreatedAt,
   },
   conversationService: {
     bulkAdvanceActivityAndAiContextMarker:
       mockBulkAdvanceActivityAndAiContextMarker,
-  },
-  messageCleanupService: {
-    cancelByInboxSource: vi.fn().mockResolvedValue(undefined),
-  },
-  workspaceService: {
-    find: mockWorkspaceFind,
-  },
-  workspaceUsageService: {
-    increment: mockWorkspaceUsageIncrement,
   },
 }))
 
@@ -139,105 +78,12 @@ vi.mock("@chatbotx.io/event-bus", () => ({ emit: mockEmit }))
 vi.mock("@chatbotx.io/events", () => ({
   emitContactCreated: mockEmitContactCreated,
 }))
-// Partial: `@chatbotx.io/database/partials` calls `zodBigintAsString()` at
-// module scope, so replacing the whole module breaks the import chain.
-vi.mock("@chatbotx.io/utils", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@chatbotx.io/utils")>()
-  return { ...actual, createId: mockCreateId }
-})
 
 // ---------------------------------------------------------------------------
 // Import after mocks
 // ---------------------------------------------------------------------------
 
 import { bulkImportHistorical } from "../src/integration/handlers/coexist/bulk-historical-import"
-
-// ---------------------------------------------------------------------------
-// Helpers — chain builders mirroring Drizzle's fluent API
-// ---------------------------------------------------------------------------
-
-type SelectStubConfig = {
-  /** Rows returned by .where() for SELECTs without .limit(), or by .limit() otherwise. */
-  rows?: unknown[]
-  /** Set to true when production code chains .limit(n) after .where(). */
-  hasLimit?: boolean
-}
-
-/** Stub a single tx.select(...).from(...).where(...)[.limit()] chain returning `rows`. */
-const enqueueSelect = (config: SelectStubConfig = {}) => {
-  const chain = {
-    from: vi.fn(),
-    where: vi.fn(),
-    limit: vi.fn(),
-  }
-  chain.from.mockReturnValue(chain)
-  if (config.hasLimit) {
-    // .where() returns the chain for further chaining; .limit() resolves
-    chain.where.mockReturnValue(chain)
-    chain.limit.mockResolvedValue(config.rows ?? [])
-  } else {
-    chain.where.mockResolvedValue(config.rows ?? [])
-  }
-  mockTxSelect.mockReturnValueOnce(chain)
-  return chain
-}
-
-type InsertStubConfig = {
-  returningRows?: unknown[]
-}
-
-/**
- * Stub tx.insert(...).values(...) which may be terminal, or chain
- * .onConflictDoNothing().returning() / .onConflictDoUpdate() / .returning().
- */
-const enqueueInsert = (config: InsertStubConfig = {}) => {
-  const chain = {
-    values: vi.fn(),
-    onConflictDoNothing: vi.fn(),
-    onConflictDoUpdate: vi.fn(),
-    returning: vi.fn(),
-  }
-  chain.values.mockReturnValue(chain)
-  chain.onConflictDoNothing.mockReturnValue(chain)
-  chain.onConflictDoUpdate.mockResolvedValue(undefined)
-  chain.returning.mockResolvedValue(config.returningRows ?? [])
-  mockTxInsert.mockReturnValueOnce(chain)
-  return chain
-}
-
-/**
- * Stub tx.insert(...).values(...).onConflictDoNothing(...) where the chain is
- * AWAITED directly without .returning() (e.g. the Conversation insert).
- */
-const enqueueInsertNoReturning = () => {
-  const chain = {
-    values: vi.fn(),
-    onConflictDoNothing: vi.fn(),
-    returning: vi.fn(),
-  }
-  chain.values.mockReturnValue(chain)
-  chain.onConflictDoNothing.mockResolvedValue(undefined)
-  chain.returning.mockResolvedValue([])
-  mockTxInsert.mockReturnValueOnce(chain)
-  return chain
-}
-
-/** Stub tx.update(...).set(...).where(...) — awaitable at .where(). */
-const _enqueueUpdate = () => {
-  const chain = { set: vi.fn(), where: vi.fn() }
-  chain.set.mockReturnValue(chain)
-  chain.where.mockResolvedValue(undefined)
-  mockTxUpdate.mockReturnValueOnce(chain)
-  return chain
-}
-
-/** Stub tx.delete(...).where(...). */
-const _enqueueDelete = () => {
-  const chain = { where: vi.fn() }
-  chain.where.mockResolvedValue(undefined)
-  mockTxDelete.mockReturnValueOnce(chain)
-  return chain
-}
 
 const inbox = {
   id: "inbox-1",
@@ -266,43 +112,38 @@ const msg = (sourceId: string, overrides: Record<string, unknown> = {}) => ({
 })
 
 // ---------------------------------------------------------------------------
-// Helpers — stub a "new contacts" happy path inside bulkImportContacts tx.
-// Sequence (when trulyNew > 0, no race):
-//   1. SELECT existing ContactInbox rows          → enqueueSelect({ rows: [] })
-//   2. INSERT Contact (terminal, no .returning()) → enqueueInsert()
-//   3. INSERT ContactInbox .returning()           → enqueueInsert({ returningRows })
-//   4. INSERT Conversation .onConflictDoNothing() → enqueueInsertNoReturning()
-//   5. SELECT conversations for new contacts      → enqueueSelect({ rows })
+// Helpers — wire `bulkImportChannelContacts` (mocked at the
+// `@chatbotx.io/business` boundary) with a canned resolution. Its own
+// dedup/event/usage behavior is covered in
+// packages/business/__tests__/bulk-import-channel-contacts.test.ts; here we
+// only assert `bulkImportHistorical` consumes the returned link map
+// correctly.
 // ---------------------------------------------------------------------------
 
-type NewContactStub = {
+type ContactStub = {
   sourceId: string
   contactId: string
   contactInboxId: string
   conversationId: string
 }
 
-const stubNewContactsTransaction = (contacts: NewContactStub[]) => {
-  // 1. SELECT existing ContactInbox → none
-  enqueueSelect({ rows: [] })
-  // 2. INSERT Contact (terminal)
-  enqueueInsert({ returningRows: contacts.map((c) => ({ id: c.contactId })) })
-  // 3. INSERT ContactInbox .returning()
-  enqueueInsert({
-    returningRows: contacts.map((c) => ({
-      id: c.contactInboxId,
-      sourceId: c.sourceId,
-      contactId: c.contactId,
-    })),
-  })
-  // 4. INSERT Conversation .onConflictDoNothing()
-  enqueueInsertNoReturning()
-  // 5. SELECT conversations for new contacts
-  enqueueSelect({
-    rows: contacts.map((c) => ({
-      id: c.conversationId,
-      contactId: c.contactId,
-    })),
+const stubContactsResolution = (
+  contacts: ContactStub[],
+  importedContacts = contacts.length,
+) => {
+  mockBulkImportChannelContacts.mockResolvedValueOnce({
+    importedContacts,
+    skippedContacts: 0,
+    contactInboxIds: new Map(
+      contacts.map((c) => [
+        c.sourceId,
+        {
+          contactInboxId: c.contactInboxId,
+          contactId: c.contactId,
+          conversationId: c.conversationId,
+        },
+      ]),
+    ),
   })
 }
 
@@ -313,24 +154,6 @@ const stubNewContactsTransaction = (contacts: NewContactStub[]) => {
 describe("bulkImportHistorical", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    let idCounter = 0
-    mockCreateId.mockImplementation(() => `id-${++idCounter}`)
-    // Re-wire transaction default after clearAllMocks resets it.
-    const tx = {
-      select: mockTxSelect,
-      insert: mockTxInsert,
-      update: mockTxUpdate,
-      delete: mockTxDelete,
-      execute: mockTxExecute,
-    }
-    mockTransaction.mockImplementation((cb: (tx: unknown) => unknown) => cb(tx))
-    // Re-wire db.update default after clearAllMocks.
-    mockDbUpdate.mockImplementation(() => {
-      const chain = { set: vi.fn(), where: vi.fn() }
-      chain.set.mockReturnValue(chain)
-      chain.where.mockResolvedValue(undefined)
-      return chain
-    })
     // Re-wire repository mock after clearAllMocks.
     mockBulkCreate.mockResolvedValue([])
     mockBulkUpdateTracking.mockResolvedValue(null)
@@ -339,14 +162,19 @@ describe("bulkImportHistorical", () => {
       bulkCreate: mockBulkCreate,
       bulkCreateAttachments: vi.fn().mockResolvedValue([]),
     })
-    mockWorkspaceFind.mockResolvedValue({
-      id: "workspace-1",
-      ownerId: "owner-1",
+    mockEnrichIfNull.mockResolvedValue(undefined)
+    // Matches the real `bulkImportChannelContacts`'s early-return shape for
+    // an empty/all-filtered contacts array — `bulkImportHistorical` always
+    // calls it once with `batch.map(b => b.contact)`, so tests that pass an
+    // empty batch need this default rather than `undefined`.
+    mockBulkImportChannelContacts.mockResolvedValue({
+      importedContacts: 0,
+      skippedContacts: 0,
+      contactInboxIds: new Map(),
     })
-    mockWorkspaceUsageIncrement.mockResolvedValue(undefined)
   })
 
-  it("empty batch returns zero counts without opening a transaction", async () => {
+  it("empty batch returns zero counts and never calls bulkImportMessages/bulkCreate", async () => {
     const result = await bulkImportHistorical({
       inbox,
       workspaceId,
@@ -365,11 +193,21 @@ describe("bulkImportHistorical", () => {
       insertedAttachmentIds: [],
       failureReason: undefined,
     })
-    expect(mockTransaction).not.toHaveBeenCalled()
+    // `bulkImportChannelContacts` is always called (it owns the
+    // empty-contacts early return internally — covered in
+    // packages/business/__tests__/bulk-import-channel-contacts.test.ts); the
+    // per-contact message loop over an empty `batch` must never reach
+    // `bulkCreate`.
+    expect(mockBulkImportChannelContacts).toHaveBeenCalledWith({
+      inbox,
+      workspaceId,
+      contacts: [],
+    })
+    expect(mockBulkCreate).not.toHaveBeenCalled()
   })
 
   it("inserts new contact + messages when no existing ContactInbox matches", async () => {
-    stubNewContactsTransaction([
+    stubContactsResolution([
       {
         sourceId: "src-1",
         contactId: "id-1",
@@ -395,8 +233,8 @@ describe("bulkImportHistorical", () => {
     expect(result.contactInboxIds.get("src-1")).toBe("ci-1")
   })
 
-  it("tracks workspace usage for newly-imported coexist contacts without consuming quota", async () => {
-    stubNewContactsTransaction([
+  it("passes the resolved batch contacts through to bulkImportChannelContacts", async () => {
+    stubContactsResolution([
       {
         sourceId: "src-1",
         contactId: "id-1",
@@ -404,37 +242,9 @@ describe("bulkImportHistorical", () => {
         conversationId: "conv-1",
       },
     ])
-    mockBulkCreate.mockResolvedValueOnce([{ id: "m-1", sourceId: "m-src-1" }])
-
-    await bulkImportHistorical({
-      inbox,
-      workspaceId,
-      runId: "12345",
-      aiReadsSyncedHistory: false,
-      batch: [{ contact: contact("src-1"), messages: [msg("m-src-1")] }],
-    })
-
-    expect(mockWorkspaceFind).not.toHaveBeenCalled()
-    expect(mockWorkspaceUsageIncrement).toHaveBeenCalledWith(
-      workspaceId,
-      "contacts",
-      1,
-    )
-  })
-
-  it("does not touch the contacts quota when no new contact is imported", async () => {
-    // All contacts already exist — bulkImportContacts resolves them without
-    // any new insert, so importedContacts stays 0 (mirrors the idempotent
-    // re-run scenario below).
-    enqueueSelect({
-      rows: [{ id: "ci-existing", sourceId: "src-1", contactId: "c-existing" }],
-    })
-    enqueueSelect({
-      rows: [{ id: "conv-existing", contactId: "c-existing" }],
-    })
     mockBulkCreate.mockResolvedValueOnce([])
 
-    const result = await bulkImportHistorical({
+    await bulkImportHistorical({
       inbox,
       workspaceId,
       runId: "12345",
@@ -442,15 +252,17 @@ describe("bulkImportHistorical", () => {
       batch: [{ contact: contact("src-1"), messages: [] }],
     })
 
-    expect(result.importedContacts).toBe(0)
-    expect(mockWorkspaceFind).not.toHaveBeenCalled()
-    expect(mockWorkspaceUsageIncrement).not.toHaveBeenCalled()
+    expect(mockBulkImportChannelContacts).toHaveBeenCalledWith({
+      inbox,
+      workspaceId,
+      contacts: [contact("src-1")],
+    })
   })
 
   it("flushes contact-inbox activity in one bulk service call", async () => {
     const firstMessageAt = new Date("2026-07-01T01:00:00.000Z")
     const secondMessageAt = new Date("2026-07-02T02:00:00.000Z")
-    stubNewContactsTransaction([
+    stubContactsResolution([
       {
         sourceId: "src-1",
         contactId: "contact-1",
@@ -493,6 +305,7 @@ describe("bulkImportHistorical", () => {
           firstInteractionAt: firstMessageAt,
           lastMessageAt: firstMessageAt,
           lastIncomingMessageAt: firstMessageAt,
+          createdAt: firstMessageAt,
         },
         {
           contactInboxId: "ci-2",
@@ -501,13 +314,23 @@ describe("bulkImportHistorical", () => {
           firstInteractionAt: secondMessageAt,
           lastMessageAt: secondMessageAt,
           lastIncomingMessageAt: secondMessageAt,
+          createdAt: secondMessageAt,
         },
+      ]),
+    })
+    // Contacts are dated from their first synced message in one bulk call.
+    expect(mockBackdateCreatedAt).toHaveBeenCalledTimes(1)
+    expect(mockBackdateCreatedAt).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      rows: expect.arrayContaining([
+        { contactId: "contact-1", createdAt: firstMessageAt },
+        { contactId: "contact-2", createdAt: secondMessageAt },
       ]),
     })
   })
 
   it("advances the AI marker by default (aiReadsSyncedHistory: false) so the AI ignores synced history", async () => {
-    stubNewContactsTransaction([
+    stubContactsResolution([
       {
         sourceId: "src-1",
         contactId: "contact-1",
@@ -549,7 +372,7 @@ describe("bulkImportHistorical", () => {
   })
 
   it("leaves the marker untouched (null) for every row when aiReadsSyncedHistory is true, so the AI reads synced history", async () => {
-    stubNewContactsTransaction([
+    stubContactsResolution([
       {
         sourceId: "src-1",
         contactId: "contact-1",
@@ -589,7 +412,7 @@ describe("bulkImportHistorical", () => {
   })
 
   it("counts duplicates as skippedMessages when message INSERT returns fewer rows than input", async () => {
-    stubNewContactsTransaction([
+    stubContactsResolution([
       {
         sourceId: "src-1",
         contactId: "id-1",
@@ -617,17 +440,20 @@ describe("bulkImportHistorical", () => {
     expect(result.skippedMessages).toBe(2)
   })
 
-  it("uses existing ContactInbox row for already-known sourceId (idempotent re-run)", async () => {
-    // existing row present
-    enqueueSelect({
-      rows: [{ id: "ci-existing", sourceId: "src-1", contactId: "c-existing" }],
-    })
-    // conversations lookup for existing contact ids
-    enqueueSelect({
-      rows: [{ id: "conv-existing", contactId: "c-existing" }],
-    })
-    // No new contacts → skips cap check, contact insert, etc.
-    // Goes straight to repository.bulkCreate() for messages.
+  it("uses the resolved ContactInbox link for an already-known sourceId (idempotent re-run)", async () => {
+    // Resolved link present without a new contact import — mirrors the
+    // idempotent re-run scenario.
+    stubContactsResolution(
+      [
+        {
+          sourceId: "src-1",
+          contactId: "c-existing",
+          contactInboxId: "ci-existing",
+          conversationId: "conv-existing",
+        },
+      ],
+      0,
+    )
     mockBulkCreate.mockResolvedValueOnce([])
 
     const result = await bulkImportHistorical({
@@ -647,8 +473,8 @@ describe("bulkImportHistorical", () => {
     expect(result.contactInboxIds.get("src-1")).toBe("ci-existing")
   })
 
-  it("dedups batch entries that share the same sourceId (merges messages)", async () => {
-    stubNewContactsTransaction([
+  it("processes batch entries that share a sourceId independently against the resolved shared link", async () => {
+    stubContactsResolution([
       {
         sourceId: "src-shared",
         contactId: "id-1",
@@ -678,17 +504,17 @@ describe("bulkImportHistorical", () => {
   })
 
   // -------------------------------------------------------------------------
-  // H7 — racedSourceIds O(n²) → O(n) via Set
+  // H7 — bulkImportHistorical consumes a large resolved-links map correctly
   // -------------------------------------------------------------------------
 
-  it("H7: racedSourceIds lookup produces correct results with many contacts (Set semantics)", async () => {
-    // Build a scenario where ALL inserted ContactInbox rows "lose the race"
-    // (the production code considers sourceIds not in insertedSourceIds as
-    // raced). We do this by making insertedInboxes return an EMPTY array for
-    // ContactInbox INSERT — so every sourceId is in racedSourceIds — then
-    // stub the winner re-SELECT to return the real rows.
-    //
-    // With N = 50 contacts this exercises the O(n) path without being slow.
+  it("H7: consumes a large resolved-links map correctly (N contacts)", async () => {
+    // The O(n²)→O(n) raced-contact-resolution internals this originally
+    // exercised now live inside `bulkImportChannelContacts`
+    // (`packages/business/src/contact/bulk-import-channel-contacts.ts`), and
+    // ultimately `coexistImportService.resolveOrCreateContactLinks`
+    // (`packages/business/src/coexist-import/service.ts`) — covered there,
+    // not here. Here we only assert the worker correctly consumes a large
+    // resolved-links map end to end into per-contact message imports.
     const N = 50
     const contacts = Array.from({ length: N }, (_, i) => ({
       sourceId: `src-${i}`,
@@ -697,32 +523,8 @@ describe("bulkImportHistorical", () => {
       conversationId: `conv-${i}`,
     }))
 
-    // 1. SELECT existing ContactInbox → none (all are new)
-    enqueueSelect({ rows: [] })
-    // 2. INSERT Contact (terminal)
-    enqueueInsert({ returningRows: contacts.map((c) => ({ id: c.contactId })) })
-    // 3. INSERT ContactInbox — returns EMPTY → ALL sourceIds go to racedSourceIds
-    enqueueInsert({ returningRows: [] })
-    // 4. Race-winner re-SELECT returns all contacts as winners
-    enqueueSelect({
-      rows: contacts.map((c) => ({
-        id: c.contactInboxId,
-        sourceId: c.sourceId,
-        contactId: c.contactId,
-      })),
-    })
-    // 5. DELETE orphan contacts (racedSourceIds.length > 0)
-    _enqueueDelete()
-    // 6. INSERT Conversation — skipped because all raced (conversationsToInsert = [])
-    // 7. SELECT conversations for accepted contacts (via inArray on acceptedContactIds)
-    enqueueSelect({
-      rows: contacts.map((c) => ({
-        id: c.conversationId,
-        contactId: c.contactId,
-      })),
-    })
+    stubContactsResolution(contacts, 0)
 
-    // Each contact's bulkImportMessages call goes through repository.bulkCreate()
     for (let i = 0; i < N; i++) {
       mockBulkCreate.mockResolvedValueOnce([
         { id: `m-${i}`, sourceId: `msg-${i}` },
@@ -742,129 +544,13 @@ describe("bulkImportHistorical", () => {
       batch,
     })
 
-    // trulyNew = 0 (all raced), skippedContacts = 0, importedMessages = N
     expect(result.importedContacts).toBe(0)
     expect(result.skippedContacts).toBe(0)
-    // All contacts resolved via race winners → all messages imported
     expect(result.importedMessages).toBe(N)
     expect(result.contactInboxIds.size).toBe(N)
-    // All N contactInboxIds should be correctly mapped
     for (const c of contacts) {
       expect(result.contactInboxIds.get(c.sourceId)).toBe(c.contactInboxId)
     }
-  })
-
-  it("resolves an entry by scoped user id to the existing row instead of inserting", async () => {
-    // A username-adopter thread keyed by its BSUID, whose BSUID already
-    // belongs to a phone-keyed row in this inbox. Inserting would violate
-    // the partial unique index (inboxId, sourceUserId) and abort the batch;
-    // the entry must resolve to the existing row up front.
-    // 1. SELECT existing (by sourceId OR sourceUserId) → phone-keyed row
-    enqueueSelect({
-      rows: [
-        {
-          id: "ci-old",
-          sourceId: "phone-1",
-          sourceUserId: "user.abc",
-          contactId: "c-old",
-        },
-      ],
-    })
-    // 2. SELECT conversations for existing contacts
-    enqueueSelect({ rows: [{ id: "conv-old", contactId: "c-old" }] })
-    mockBulkCreate.mockResolvedValueOnce([{ id: "m-1", sourceId: "m-src-1" }])
-
-    const result = await bulkImportHistorical({
-      inbox,
-      workspaceId,
-      runId: "12345",
-      batch: [
-        {
-          contact: contact("user.abc", { sourceUserId: "user.abc" }),
-          messages: [msg("m-src-1")],
-        },
-      ],
-    })
-
-    expect(result.importedContacts).toBe(0)
-    expect(result.importedMessages).toBe(1)
-    expect(result.contactInboxIds.get("user.abc")).toBe("ci-old")
-    // No Contact/ContactInbox insert was attempted — the conflict never fires.
-    expect(mockTxInsert).not.toHaveBeenCalled()
-  })
-
-  it("ContactInbox insert uses targetless onConflictDoNothing (covers both identity indexes)", async () => {
-    // 1. SELECT existing → none
-    enqueueSelect({ rows: [] })
-    // 2. INSERT Contact (terminal)
-    enqueueInsert({ returningRows: [{ id: "id-1" }] })
-    // 3. INSERT ContactInbox .returning() — the chain under test
-    const contactInboxInsert = enqueueInsert({
-      returningRows: [{ id: "ci-1", sourceId: "src-1", contactId: "id-1" }],
-    })
-    // 4. INSERT Conversation
-    enqueueInsertNoReturning()
-    // 5. SELECT conversations
-    enqueueSelect({ rows: [{ id: "conv-1", contactId: "id-1" }] })
-
-    await bulkImportHistorical({
-      inbox,
-      workspaceId,
-      runId: "12345",
-      batch: [{ contact: contact("src-1"), messages: [] }],
-    })
-
-    // A target on (inboxId, sourceId) would let a conflict on the partial
-    // (inboxId, sourceUserId) index abort the whole batch — pin targetless.
-    expect(contactInboxInsert.onConflictDoNothing).toHaveBeenCalledWith()
-  })
-
-  it("raced scoped-id entry resolves through the winner row and aliases the import key", async () => {
-    // Concurrent import claimed the BSUID between the resolution SELECT and
-    // the insert: the insert returns no row, the winner is found by scoped
-    // user id under a DIFFERENT sourceId, and the entry's own import key
-    // must still map to the winner's link.
-    // 1. SELECT existing → none
-    enqueueSelect({ rows: [] })
-    // 2. INSERT Contact (terminal)
-    enqueueInsert({ returningRows: [{ id: "id-1" }] })
-    // 3. INSERT ContactInbox → EMPTY: the row lost the race
-    enqueueInsert({ returningRows: [] })
-    // 4. Winner re-SELECT by sourceId → none (loser conflicted on sourceUserId)
-    enqueueSelect({ rows: [] })
-    // 5. Winner re-SELECT by scoped user id → phone-keyed winner row
-    enqueueSelect({
-      rows: [
-        {
-          id: "ci-w",
-          sourceId: "phone-9",
-          sourceUserId: "user.abc",
-          contactId: "c-w",
-        },
-      ],
-    })
-    // 6. DELETE orphan pre-created contacts
-    _enqueueDelete()
-    // 7. Conversation insert skipped (all raced); SELECT conversations
-    enqueueSelect({ rows: [{ id: "conv-w", contactId: "c-w" }] })
-    mockBulkCreate.mockResolvedValueOnce([{ id: "m-1", sourceId: "m-src-1" }])
-
-    const result = await bulkImportHistorical({
-      inbox,
-      workspaceId,
-      runId: "12345",
-      batch: [
-        {
-          contact: contact("user.abc", { sourceUserId: "user.abc" }),
-          messages: [msg("m-src-1")],
-        },
-      ],
-    })
-
-    expect(result.importedContacts).toBe(0)
-    expect(result.importedMessages).toBe(1)
-    // The entry's import key aliases to the winner's contact-inbox row.
-    expect(result.contactInboxIds.get("user.abc")).toBe("ci-w")
   })
 
   // -------------------------------------------------------------------------
@@ -872,8 +558,6 @@ describe("bulkImportHistorical", () => {
   // -------------------------------------------------------------------------
 
   it("H4: bulkImportMessages calls for multiple contacts run in parallel (p-limit concurrency)", async () => {
-    // Set up 4 existing contacts so bulkImportContacts needs no new inserts —
-    // we want to test the parallelism of the message-import loop only.
     const contacts = [
       {
         sourceId: "src-a",
@@ -901,21 +585,7 @@ describe("bulkImportHistorical", () => {
       },
     ]
 
-    // bulkImportContacts: all existing → no cap check needed
-    enqueueSelect({
-      rows: contacts.map((c) => ({
-        id: c.contactInboxId,
-        sourceId: c.sourceId,
-        contactId: c.contactId,
-      })),
-    })
-    // Conversation lookup for existing contacts
-    enqueueSelect({
-      rows: contacts.map((c) => ({
-        id: c.conversationId,
-        contactId: c.contactId,
-      })),
-    })
+    stubContactsResolution(contacts, 0)
 
     // Track concurrency of repository.bulkCreate calls for the message-import phase.
     // Each bulkImportMessages call invokes bulkCreate once (after messages are built).

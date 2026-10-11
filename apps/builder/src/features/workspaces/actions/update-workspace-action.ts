@@ -4,7 +4,7 @@ import { workspaceService } from "@chatbotx.io/business"
 import {
   type WorkspaceIdRequestParams,
   workspaceIdrequestParams,
-} from "@/features/common/schemas"
+} from "@/features/common/schema"
 import {
   workspaceActionClient,
   workspaceActionClientAllowScheduledDeletion,
@@ -46,7 +46,15 @@ export const updateWorkspaceAdvancedAction =
         bindArgsParsedInputs: WorkspaceIdRequestParams
         parsedInput: UpdateWorkspaceAdvancedRequest
       }) => {
-        await workspaceService.update({ id: workspaceId, data: parsedInput })
+        // Same service method as the public settings route. The form sends ""
+        // when no Default Reply flow is picked; that clears it.
+        await workspaceService.updateSettings({
+          id: workspaceId,
+          data: {
+            ...parsedInput,
+            defaultReply: parsedInput.defaultReply || null,
+          },
+        })
       },
     )
 
@@ -61,6 +69,9 @@ export const updateSmartResponseDelayAction = workspaceActionClient
       bindArgsParsedInputs: WorkspaceIdRequestParams
       parsedInput: UpdateSmartResponseDelayRequest
     }) => {
-      await workspaceService.update({ id: workspaceId, data: parsedInput })
+      await workspaceService.updateSettings({
+        id: workspaceId,
+        data: parsedInput,
+      })
     },
   )

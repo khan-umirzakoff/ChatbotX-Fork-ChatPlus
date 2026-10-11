@@ -9,6 +9,8 @@ import {
 import {
   type AppointmentScheduleWindowConfig,
   appointmentScheduleWindowConfigSchema,
+  defaultAppointmentExternalEventAttendeesTemplate,
+  defaultAppointmentExternalEventTitleTemplate,
 } from "@chatbotx.io/database/partials"
 import {
   appointmentCalendarRepository,
@@ -32,6 +34,7 @@ import { ChatbotXException, notFoundException } from "../errors"
 import { flowService } from "../flow/service"
 import { flowVersionService } from "../flow-version"
 import { logger } from "../logger"
+import { assertDeletable } from "../template/installed-resource.service"
 
 const MINUTES_PER_DAY = 1440
 const DATE_LABEL_FORMAT = "yyyy-MM-dd"
@@ -70,6 +73,9 @@ export type UpdateAppointmentCalendarInput = {
   confirmationFlowId?: string | null
   cancellationFlowId?: string | null
   externalConnectionId?: string | null
+  externalEventTitleTemplate?: string | null
+  externalEventDescriptionTemplate?: string | null
+  externalEventAttendeesTemplate?: string | null
   availability: AvailabilityIntervalInput[]
   reminders: ReminderInput[]
 }
@@ -524,6 +530,11 @@ export class AppointmentCalendarService extends BaseService {
             confirmationFlowId: source.confirmationFlowId,
             cancellationFlowId: source.cancellationFlowId,
             externalConnectionId: source.externalConnectionId,
+            externalEventTitleTemplate: source.externalEventTitleTemplate,
+            externalEventDescriptionTemplate:
+              source.externalEventDescriptionTemplate,
+            externalEventAttendeesTemplate:
+              source.externalEventAttendeesTemplate,
             active: false,
           },
           tx,
@@ -562,6 +573,11 @@ export class AppointmentCalendarService extends BaseService {
     if (input.ids.length === 0) {
       return
     }
+    await assertDeletable({
+      workspaceId: input.workspaceId,
+      resourceKind: "calendar",
+      resourceIds: input.ids,
+    })
     await appointmentCalendarRepository.softDeleteMany(input)
   }
 
@@ -575,6 +591,30 @@ export class AppointmentCalendarService extends BaseService {
             {
               workspaceId: input.workspaceId,
               integrationId: input.externalConnectionId,
+            },
+            tx,
+          )
+        }
+        // `confirmationFlowId`/`cancellationFlowId`/`reminders[].flowId` are
+        // client-settable (public API + builder form). A plain FK only
+        // checks the flow exists, not that it belongs to this workspace —
+        // without this, a caller could pin another workspace's flow id onto
+        // their calendar. Mirrors the `externalConnectionId` ownership check
+        // above.
+        const referencedFlowIds = [
+          ...new Set(
+            [
+              input.confirmationFlowId,
+              input.cancellationFlowId,
+              ...input.reminders.map((reminder) => reminder.flowId),
+            ].filter((flowId): flowId is string => flowId != null),
+          ),
+        ]
+        if (referencedFlowIds.length > 0) {
+          await flowService.assertAllExist(
+            {
+              workspaceId: input.workspaceId,
+              flowIds: referencedFlowIds,
             },
             tx,
           )
@@ -602,6 +642,18 @@ export class AppointmentCalendarService extends BaseService {
             confirmationFlowId: input.confirmationFlowId,
             cancellationFlowId: input.cancellationFlowId,
             externalConnectionId: input.externalConnectionId,
+            externalEventTitleTemplate:
+              input.externalEventTitleTemplate ??
+              (input.externalConnectionId
+                ? defaultAppointmentExternalEventTitleTemplate
+                : null),
+            externalEventDescriptionTemplate:
+              input.externalEventDescriptionTemplate,
+            externalEventAttendeesTemplate:
+              input.externalEventAttendeesTemplate ??
+              (input.externalConnectionId
+                ? defaultAppointmentExternalEventAttendeesTemplate
+                : null),
           },
           tx,
         )
@@ -715,6 +767,11 @@ export class AppointmentCalendarService extends BaseService {
       }
     }
 
+    const externalLookupEnd =
+      bounds.start < bounds.end
+        ? bounds.end
+        : new Date(bounds.start.getTime() + calendar.durationMinutes * 60_000)
+
     try {
       const externalBusyIntervals =
         await appointmentExternalCalendarService.getBusyIntervalsForAppointmentCalendar(
@@ -722,7 +779,7 @@ export class AppointmentCalendarService extends BaseService {
             workspaceId: input.workspaceId,
             integrationId: calendar.externalConnectionId,
             timeMin: bounds.start.toISOString(),
-            timeMax: bounds.end.toISOString(),
+            timeMax: externalLookupEnd.toISOString(),
             timeZone: calendarTimezone,
             timeoutMs:
               input.failurePolicy === "empty"
@@ -887,9 +944,11 @@ export class AppointmentCalendarService extends BaseService {
 
     const existingAppointments = await tx.query.appointmentModel.findMany({
       where: {
+        workspaceId: input.workspaceId,
         calendarId: input.calendarId,
         status: "scheduled",
         startAt: { gte: bounds.start, lte: bounds.end },
+        deletedAt: { isNull: true },
       },
       columns: { startAt: true },
     })

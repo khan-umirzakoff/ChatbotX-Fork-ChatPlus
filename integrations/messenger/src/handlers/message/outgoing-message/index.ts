@@ -1,15 +1,19 @@
 import {
+  cardLayouts,
   type SendAudioStepSchema,
   type SendCarouselStepSchema,
   type SendFileStepSchema,
   type SendImageStepSchema,
   type SendMessengerTemplateMessageStepSchema,
+  type SendMultipleImagesStepSchema,
   type SendQuickReplyStepSchema,
   type SendTextStepSchema,
   type SendVideoStepSchema,
+  type StepType,
   stepTypes,
 } from "@chatbotx.io/flow-config"
 import {
+  assertCommentPrivateReplyFollowUpDeliverable,
   ChannelError,
   ChannelErrorCategory,
   contentTypes,
@@ -25,7 +29,7 @@ import {
   type SendFlowStepProps,
 } from "@chatbotx.io/sdk"
 import { sendPrivateReplyMessage } from "../../../apis/comment"
-import { sendPageMessage } from "../../../apis/message"
+import { sendMessage as sendMessageApi } from "../../../apis/message"
 import { ensureMessengerWhitelistedDomain } from "../../../apis/page"
 import { mapToChannelError } from "../../../lib/error-mapper"
 import { logger } from "../../../lib/logger"
@@ -38,14 +42,15 @@ import {
   type MessengerAuthValue,
   type MessengerIntegrationDetail,
 } from "../../../schema"
+import { convertCanonicalQuickReplies } from "./canonical-quick-replies"
 import { resolveMessengerPersonaId } from "./persona"
 import { getAttachmentTemplate } from "./send-attachment"
 import { convertFlowStepCarousel } from "./send-carousel"
 import { convertFlowStepFile } from "./send-file"
 import { convertFlowStepGif } from "./send-gif"
-import { convertFlowStepMedia } from "./send-media"
+import { convertFlowStepMediaV2 } from "./send-media-v2"
 import { buildMessengerTemplateSendRequest } from "./send-messenger-template"
-import { convertCanonicalFacebookQuickReplies } from "./send-quick-replies"
+import { convertFlowStepMultipleImages } from "./send-multiple-images"
 import { convertFlowStepQuickReply } from "./send-quick-reply"
 import { convertFlowStepText } from "./send-text"
 
@@ -108,7 +113,7 @@ const sendPageMessageWithMessengerExtensionWhitelistRetry = async (
   await ensureMessengerExtensionUrlDomain(ctx, messengerExtensionUrl)
 
   try {
-    return await sendPageMessage(ctx.auth, payload)
+    return await sendMessageApi(ctx.auth, payload)
   } catch (error) {
     if (!isMessengerExtensionDomainNotWhitelistedError(error)) {
       throw error
@@ -119,8 +124,40 @@ const sendPageMessageWithMessengerExtensionWhitelistRetry = async (
       )
     }
     await ensureMessengerExtensionUrlDomain(ctx, messengerExtensionUrl)
-    return await sendPageMessage(ctx.auth, payload)
+    return await sendMessageApi(ctx.auth, payload)
   }
+}
+
+export const handledFlowStepTypes = [
+  stepTypes.enum.sendText,
+  stepTypes.enum.sendImage,
+  stepTypes.enum.sendVideo,
+  stepTypes.enum.sendMultipleImages,
+  stepTypes.enum.sendAudio,
+  stepTypes.enum.sendFile,
+  stepTypes.enum.sendGif,
+  stepTypes.enum.sendQuickReply,
+  stepTypes.enum.sendCard,
+  stepTypes.enum.sendCarousel,
+  stepTypes.enum.sendMessengerTemplateMessage,
+] as const satisfies readonly StepType[]
+
+/**
+ * A take-over / forced inbox reply carries `bypassThreadControlLock` in its
+ * message metadata (set by the inbox composer when a human agent takes a thread
+ * over from AI hand-over). Such a reply must always ride the HUMAN_AGENT tag.
+ */
+const isForcedHumanAgentSend = (message: {
+  contentAttributes?: { [x: string]: unknown } | null
+}): boolean => {
+  const metadata = message.contentAttributes?.metadata
+  return (
+    typeof metadata === "object" &&
+    metadata !== null &&
+    "bypassThreadControlLock" in metadata &&
+    (metadata as { bypassThreadControlLock?: unknown })
+      .bypassThreadControlLock === true
+  )
 }
 
 export const sendMessage: MessageHandlers<MessengerAuthValue>["sendMessage"] =
@@ -131,16 +168,21 @@ export const sendMessage: MessageHandlers<MessengerAuthValue>["sendMessage"] =
     } = props
 
     const messageIds: string[] = []
+    let sentCount = 0
     try {
-      const policy = resolveMessengerMessagingPolicy({ contact, sendFrom })
-      const facebookMessages = [...convertMessageToFacebookMessage(message)]
+      const policy = resolveMessagingPolicy({
+        contact,
+        sendFrom,
+        forceHumanAgent: isForcedHumanAgentSend(message),
+      })
+      const facebookMessages = [...convertMessage(message)]
       const lastMessage = facebookMessages.at(-1)
       const nativeQuickReplies = (quickReplies ?? []).filter(
         (button) => button.buttonType !== "url",
       )
       if (lastMessage && nativeQuickReplies.length > 0) {
         lastMessage.quick_replies =
-          convertCanonicalFacebookQuickReplies(nativeQuickReplies)
+          convertCanonicalQuickReplies(nativeQuickReplies)
       }
       for (const facebookMessage of facebookMessages) {
         const payload = buildMessagePayload({
@@ -157,6 +199,7 @@ export const sendMessage: MessageHandlers<MessengerAuthValue>["sendMessage"] =
             ctx,
             payload,
           )
+        sentCount += 1
         if (response.message_id) {
           messageIds.push(response.message_id)
         }
@@ -172,6 +215,7 @@ export const sendMessage: MessageHandlers<MessengerAuthValue>["sendMessage"] =
     // (coexist) cannot dedup the echo against this row and inserts a duplicate.
     return {
       messageIds,
+      sentCount,
     }
   }
 
@@ -182,14 +226,24 @@ export const sendFlowStep: MessageHandlers<MessengerAuthValue>["sendFlowStep"] =
       data: { contact, sendFrom, step, commentAnchor },
     } = props
     const messageIds: string[] = []
+    let sentCount = 0
     try {
       // Messenger utility templates must be sent as a complete Send API request
       // using message.template (name/language/components) — they cannot go through
       // the generic buildMessagePayload spread, which is for plain messages.
       // Known gap: a comment-anchored private reply whose first flow step is a
       // Messenger template is not covered — it falls back to the normal
-      // (messaging-window-gated) send below, same as before this fix.
+      // (messaging-window-gated) send below, same as before this fix. The
+      // guard makes that gap legible rather than silent: in a comment-triggered
+      // private run the template can only land inside the contact's own 24-hour
+      // window, so say so instead of letting Meta reject it.
       if (step.stepType === stepTypes.enum.sendMessengerTemplateMessage) {
+        if (commentAnchor?.replyChannel === "private") {
+          assertCommentPrivateReplyFollowUpDeliverable({
+            commentId: commentAnchor.commentId,
+            lastIncomingMessageAt: contact.lastIncomingMessageAt,
+          })
+        }
         const payload = buildMessengerTemplateSendRequest(
           props as SendFlowStepProps<
             MessengerAuthValue,
@@ -204,26 +258,35 @@ export const sendFlowStep: MessageHandlers<MessengerAuthValue>["sendFlowStep"] =
         logger.info(`Messenger template sent for PSID: ${contact.sourceId}`)
         return {
           messageIds: response.message_id ? [response.message_id] : [],
+          sentCount: 1,
         }
       }
 
-      const policy = resolveMessengerMessagingPolicy({ contact, sendFrom })
-      // Consumed by the first Facebook message yielded below, if a private
-      // comment anchor is present — a single flow step can yield more than
-      // one Facebook message (e.g. text + attachments), so only the very
-      // first send uses the comment_id-anchored API; the rest use the normal
-      // path (the private reply already opened a standard messaging window).
+      const policy = resolveMessagingPolicy({ contact, sendFrom })
+      // Claimed by the first Facebook message yielded below, if an unspent
+      // private comment anchor is present — a single flow step can yield more
+      // than one Facebook message (e.g. text + attachments), so only the very
+      // first send uses the comment_id-anchored API. Everything after it — in
+      // this step or a later one, which arrives with `spent: true` — takes the
+      // normal path, gated by the guard below.
       // A "public" anchor is never honored here — it's delivered via the
       // comment channel's sendComment, not this message channel's
       // sendFlowStep (see send-flow-step.ts). This check is defense-in-depth
       // against a public anchor ever reaching this handler by mistake.
+      const isCommentPrivateRun = commentAnchor?.replyChannel === "private"
       let anchorCommentId =
-        commentAnchor?.replyChannel === "private"
+        isCommentPrivateRun && !commentAnchor.spent
           ? commentAnchor.commentId
           : undefined
-      for await (const facebookMessage of convertFlowStepToFacebookMessage(
-        props,
-      )) {
+      for await (const facebookMessage of convertFlowStep(props)) {
+        // The comment bought exactly one anchored DM and it is gone; a normal
+        // DM only reaches the contact if they have messaged in the last 24h.
+        if (isCommentPrivateRun && !anchorCommentId) {
+          assertCommentPrivateReplyFollowUpDeliverable({
+            commentId: commentAnchor.commentId,
+            lastIncomingMessageAt: contact.lastIncomingMessageAt,
+          })
+        }
         const personaId = resolveMessengerPersonaId(
           ctx.integrationDetail as MessengerIntegrationDetail,
           contact,
@@ -245,6 +308,7 @@ export const sendFlowStep: MessageHandlers<MessengerAuthValue>["sendFlowStep"] =
               }),
             )
         anchorCommentId = undefined
+        sentCount += 1
         if (response.message_id) {
           messageIds.push(response.message_id)
         }
@@ -259,14 +323,15 @@ export const sendFlowStep: MessageHandlers<MessengerAuthValue>["sendFlowStep"] =
     // as the Message row's sourceId (coexist echo dedup — see sendMessage).
     return {
       messageIds,
+      sentCount,
     }
   }
 
-function* convertMessageToFacebookMessage(
+export function* convertMessage(
   message: OutgoingMessage,
 ): Generator<FacebookMessage> {
   if (message.contentType === contentTypes.enum.text) {
-    const templateButtons = getButtonTemplate(message)
+    const templateButtons = getMessageTemplateButtons(message)
     if (message.text && templateButtons.length > 0) {
       yield {
         attachment: {
@@ -283,16 +348,36 @@ function* convertMessageToFacebookMessage(
         text: message.text,
       }
     }
-    for (const attachment of message.attachments || []) {
+    // Multiple images in one outgoing message batch into a single Send API
+    // call via `attachments[]` (Meta's "sending_multiple_attachments" form —
+    // same mechanism the sendMultipleImages flow step uses), instead of one
+    // Send API message per image; every other attachment type still sends as
+    // its own message, since Meta has no equivalent batching for them.
+    const attachments = message.attachments || []
+    const imageAttachments = attachments.filter(
+      (attachment) => attachment.fileType === "image",
+    )
+    const otherAttachments = attachments.filter(
+      (attachment) => attachment.fileType !== "image",
+    )
+
+    if (imageAttachments.length > 1) {
+      yield {
+        attachments: imageAttachments.map((attachment) =>
+          getAttachmentTemplate(attachment.url as string, "image"),
+        ),
+      }
+    } else if (imageAttachments.length === 1) {
+      yield {
+        attachment: getAttachmentTemplate(
+          imageAttachments[0].url as string,
+          "image",
+        ),
+      }
+    }
+
+    for (const attachment of otherAttachments) {
       switch (attachment.fileType) {
-        case "image":
-          yield {
-            attachment: getAttachmentTemplate(
-              attachment.url as string,
-              "image",
-            ),
-          }
-          continue
         case "video":
           yield {
             attachment: getAttachmentTemplate(
@@ -323,7 +408,9 @@ function* convertMessageToFacebookMessage(
   }
 }
 
-const getButtonTemplate = (message: OutgoingMessage): FacebookButton[] => {
+const getMessageTemplateButtons = (
+  message: OutgoingMessage,
+): FacebookButton[] => {
   const attrs = message.contentAttributes
   if (!(attrs && typeof attrs === "object")) {
     return []
@@ -401,7 +488,7 @@ const toFacebookButton = (
   }
 }
 
-const buildMessagePayload = (props: {
+export const buildMessagePayload = (props: {
   contact: OutgoingContact
   message: FacebookMessageAttachmentPayload | FacebookMessage
   messagingType?: "MESSAGE_TAG" | "RESPONSE"
@@ -422,12 +509,19 @@ const buildMessagePayload = (props: {
   }
 }
 
-export function resolveMessengerMessagingPolicy(props: {
+export function resolveMessagingPolicy(props: {
   contact: OutgoingContact
   now?: Date | number
   sendFrom?: "inbox"
+  /**
+   * A take-over / forced reply (the standby send gate was bypassed): always
+   * tag HUMAN_AGENT — a human agent is stepping in, so the tag is used even
+   * inside the 24h window, never gated on elapsed time (still bounded by Meta's
+   * 7-day human-agent limit).
+   */
+  forceHumanAgent?: boolean
 }): MessengerMessagingPolicy {
-  const { contact, sendFrom } = props
+  const { contact, sendFrom, forceHumanAgent } = props
 
   if (sendFrom !== "inbox") {
     return { messagingType: "RESPONSE" }
@@ -449,12 +543,13 @@ export function resolveMessengerMessagingPolicy(props: {
   }
   const elapsedMs = nowMs - lastIncomingMessageAt.getTime()
 
-  if (elapsedMs <= META_RESPONSE_WINDOW_MS) {
-    return { messagingType: "RESPONSE" }
-  }
-
   if (elapsedMs <= META_HUMAN_AGENT_WINDOW_MS) {
-    return { messagingType: "MESSAGE_TAG", tag: "HUMAN_AGENT" }
+    // A take-over reply is always HUMAN_AGENT; a normal inbox reply only needs
+    // the tag once it is past the 24h standard window.
+    if (forceHumanAgent || elapsedMs > META_RESPONSE_WINDOW_MS) {
+      return { messagingType: "MESSAGE_TAG", tag: "HUMAN_AGENT" }
+    }
+    return { messagingType: "RESPONSE" }
   }
 
   throw new ChannelError(
@@ -464,7 +559,7 @@ export function resolveMessengerMessagingPolicy(props: {
   )
 }
 
-async function* convertFlowStepToFacebookMessage(
+async function* convertFlowStep(
   props: SendFlowStepProps<MessengerAuthValue>,
 ): AsyncGenerator<FacebookMessageAttachmentPayload | FacebookMessage> {
   const {
@@ -479,12 +574,20 @@ async function* convertFlowStepToFacebookMessage(
       break
     case stepTypes.enum.sendImage:
     case stepTypes.enum.sendVideo:
-      await (yield* convertFlowStepMedia(
+      await (yield* convertFlowStepMediaV2(
         props as SendFlowStepProps<
           MessengerAuthValue,
           SendImageStepSchema | SendVideoStepSchema
         >,
       ))
+      break
+    case stepTypes.enum.sendMultipleImages:
+      yield* convertFlowStepMultipleImages(
+        props as SendFlowStepProps<
+          MessengerAuthValue,
+          SendMultipleImagesStepSchema
+        >,
+      )
       break
     case stepTypes.enum.sendAudio:
     case stepTypes.enum.sendFile:
@@ -509,12 +612,25 @@ async function* convertFlowStepToFacebookMessage(
         >,
       ) as Generator<FacebookMessage>
       break
+    case stepTypes.enum.sendCard: {
+      const carouselStep: SendCarouselStepSchema = {
+        cards: [step],
+        id: step.id,
+        layout: cardLayouts.enum.horizontal,
+        stepType: stepTypes.enum.sendCarousel,
+      }
+      yield* convertFlowStepCarousel({
+        ...props,
+        data: { ...props.data, step: carouselStep },
+      }) as Generator<FacebookMessage>
+      break
+    }
     case stepTypes.enum.sendCarousel:
       yield* convertFlowStepCarousel(
         props as SendFlowStepProps<MessengerAuthValue, SendCarouselStepSchema>,
       ) as Generator<FacebookMessage>
       break
     default:
-      break
+      throw new Error(`Unsupported Messenger flow step: ${step.stepType}`)
   }
 }

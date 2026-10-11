@@ -1,12 +1,17 @@
 import { createId, zodBigintAsString } from "@chatbotx.io/utils"
 import { z } from "zod"
+import { zodFieldReference } from "../field-reference"
 import { stepTypes } from "./step-action"
 
 export const countCharactersStepSchema = z.object({
-  id: zodBigintAsString(),
-  stepType: z.literal(stepTypes.enum.countCharacters),
-  inputFieldId: z.string().trim().min(1),
-  outputFieldId: z.string().trim().min(1),
+  id: zodBigintAsString().describe(
+    "Step id (numeric string), unique within the flow.",
+  ),
+  stepType: z
+    .literal(stepTypes.enum.countCharacters)
+    .describe('Step type discriminator: "countCharacters".'),
+  inputFieldId: zodFieldReference(),
+  outputFieldId: zodFieldReference(),
 })
 export type CountCharactersStepSchema = z.infer<
   typeof countCharactersStepSchema

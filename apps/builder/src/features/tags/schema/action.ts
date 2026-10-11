@@ -3,8 +3,17 @@ import { z } from "zod"
 import { tagResource } from "./resource"
 
 export const createTagRequest = z.object({
-  name: z.string().trim().min(1).max(255),
-  folderId: zodBigintAsString().nullish(),
+  name: z
+    .string()
+    .trim()
+    .min(1)
+    .max(255)
+    .describe(
+      "Tag label, 1-255 characters. Must be unique within the workspace, so call `tags.list` first to reuse an existing tag.",
+    ),
+  folderId: zodBigintAsString()
+    .nullish()
+    .describe("Folder to place the tag in, or null for root-level."),
 })
 export type CreateTagRequest = z.input<typeof createTagRequest>
 

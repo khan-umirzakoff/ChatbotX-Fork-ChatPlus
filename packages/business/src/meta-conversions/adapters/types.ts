@@ -7,6 +7,7 @@ import type {
   MetaConversionsChannel,
   MetaConversionsIntegrationByChannel,
 } from "../schema"
+import type { ResolvedCapiAccessToken } from "../token"
 
 type WorkspaceIntegrationRef = {
   id: string
@@ -24,8 +25,22 @@ type CapiScopeCacheClaim = WorkspaceIntegrationRef & {
   expectedCapiScopeCheckedAt: Date | null
 }
 
+type CapiScopeCacheRestore = CapiScopeCacheUpdate & {
+  /** Adapter-owned state captured before its successful claim. */
+  claimToken: unknown
+}
+
+type CapiScopeCacheClaimResult<TIntegration> = {
+  integration: TIntegration
+  restore: CapiScopeCacheRestore
+}
+
 type DatasetIdUpdate = WorkspaceIntegrationRef & {
   datasetId: string
+}
+
+type CapiTestEventCodeUpdate = WorkspaceIntegrationRef & {
+  capiTestEventCode: string | null
 }
 
 type CapiCustomConnect = WorkspaceIntegrationRef & {
@@ -59,18 +74,38 @@ export interface CapiSendAdapter<
   ): Promise<DatasetProvisionInput>
   buildScopeCheckInput(
     integration: MetaConversionsIntegrationByChannel[TChannel],
-  ): CapiScopeCheckInput
+  ): CapiScopeCheckInput | Promise<CapiScopeCheckInput>
   claimCapiScopeCacheRefresh(
-    input: CapiScopeCacheClaim,
+    input: CapiScopeCacheClaim & {
+      integration: MetaConversionsIntegrationByChannel[TChannel]
+    },
     tx?: DatabaseClient,
-  ): Promise<MetaConversionsIntegrationByChannel[TChannel] | null>
+  ): Promise<CapiScopeCacheClaimResult<
+    MetaConversionsIntegrationByChannel[TChannel]
+  > | null>
   findWorkspaceIntegration(
     input: WorkspaceIntegrationRef,
+    tx?: DatabaseClient,
+  ): Promise<MetaConversionsIntegrationByChannel[TChannel] | null>
+  resolveCapiAccessToken(
+    integration: MetaConversionsIntegrationByChannel[TChannel],
+  ): Promise<ResolvedCapiAccessToken>
+  resolveCapiScopeState(
+    integration: MetaConversionsIntegrationByChannel[TChannel],
+  ): Promise<{ hasCapiScope: boolean; capiScopeCheckedAt: Date | null }>
+  /** Explicit rollback for a failed scope check, using the claim's own CAS state. */
+  restoreCapiScopeCache(
+    input: CapiScopeCacheRestore,
     tx?: DatabaseClient,
   ): Promise<MetaConversionsIntegrationByChannel[TChannel] | null>
   /** Compare-and-swap write, safe to call from the concurrent send path. */
   updateCapiScopeCache(
     input: CapiScopeCacheUpdate,
+    tx?: DatabaseClient,
+  ): Promise<MetaConversionsIntegrationByChannel[TChannel] | null>
+  /** Set or clear (null) the Events Manager test_event_code. */
+  updateCapiTestEventCode(
+    input: CapiTestEventCodeUpdate,
     tx?: DatabaseClient,
   ): Promise<MetaConversionsIntegrationByChannel[TChannel] | null>
   /**

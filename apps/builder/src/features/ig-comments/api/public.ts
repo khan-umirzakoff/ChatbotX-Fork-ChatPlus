@@ -1,0 +1,177 @@
+import { commentAutomationService } from "@chatbotx.io/business"
+import { igCommentAutomationTypes } from "@chatbotx.io/database/partials"
+import { bulkUpdateIdsRequest } from "@/features/common/schema"
+import {
+  possibleErrorsOnCreatingResource,
+  possibleErrorsOnDeletingResource,
+  possibleErrorsOnFindingResource,
+  possibleErrorsOnListingResource,
+  possibleErrorsOnMutatingResource,
+} from "@/lib/orpc/orpc-error-helper"
+import { workspaceTokenAuthAPIForScope } from "@/orpc"
+import { ensureLiveCommentsSubscriptionForAutomation } from "../lib/ensure-live-comments-subscription"
+import {
+  listInstagramFacebookMedia,
+  listInstagramLoginMedia,
+} from "../lib/instagram-media"
+import {
+  createIgCommentPublicRequest,
+  deleteIgCommentPublicRequest,
+  getIgCommentPublicRequest,
+  igCommentPublicResource,
+  listIgCommentsPublicRequest,
+  listIgCommentsPublicResponse,
+  listInstagramMediaPublicRequest,
+  listInstagramMediaPublicResponse,
+  updateIgCommentPublicRequest,
+} from "../schema/public"
+
+const workspaceTokenAuthAPI = workspaceTokenAuthAPIForScope("automation")
+
+export const igCommentsPublicRouter = {
+  list: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/ig-comments",
+      summary: "List Instagram comment automations",
+      description:
+        "Use this to find automation ids before inspecting one with `igComments.get` or changing one with `igComments.update`. Returns automations in this workspace.",
+      tags: ["IG Comments"],
+    })
+    .input(listIgCommentsPublicRequest)
+    .output(listIgCommentsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(
+      async ({ context, input }) =>
+        await commentAutomationService.listIgComments({
+          ...input,
+          workspaceId: context.workspace.id,
+          includeAllFolders: true,
+        }),
+    ),
+
+  get: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/ig-comments/{id}",
+      summary: "Get Instagram comment automation",
+      description:
+        "Returns one automation's trigger and reply settings. Use `igComments.list` to find its id first.",
+      tags: ["IG Comments"],
+    })
+    .input(getIgCommentPublicRequest)
+    .output(igCommentPublicResource)
+    .errors(possibleErrorsOnFindingResource)
+    .handler(
+      async ({ context, input }) =>
+        await commentAutomationService.findInstagramOrFail({
+          workspaceId: context.workspace.id,
+          id: input.id,
+        }),
+    ),
+
+  create: workspaceTokenAuthAPI
+    .route({
+      method: "POST",
+      path: "/v1/ig-comments",
+      summary: "Create Instagram comment automation",
+      description:
+        "Adds an automation that replies to or hides comments on Instagram media. Use `igComments.listMedia` to find eligible media first.",
+      successStatus: 201,
+      tags: ["IG Comments"],
+    })
+    .input(createIgCommentPublicRequest)
+    .output(igCommentPublicResource)
+    .errors(possibleErrorsOnCreatingResource)
+    .handler(async ({ context, input }) => {
+      const { type, ...data } = input
+      const created = await commentAutomationService.createInstagram({
+        workspaceId: context.workspace.id,
+        type,
+        data,
+      })
+      await ensureLiveCommentsSubscriptionForAutomation({
+        workspaceId: context.workspace.id,
+        type,
+        post: data.post,
+      })
+      return created
+    }),
+
+  update: workspaceTokenAuthAPI
+    .route({
+      method: "PATCH",
+      path: "/v1/ig-comments/{id}",
+      summary: "Update Instagram comment automation",
+      description:
+        "Changes an existing automation's trigger or reply settings. Call `igComments.get` to inspect current values first.",
+      tags: ["IG Comments"],
+    })
+    .input(updateIgCommentPublicRequest)
+    .output(igCommentPublicResource)
+    .errors(possibleErrorsOnMutatingResource)
+    .handler(async ({ context, input }) => {
+      const { id, type: _type, ...data } = input
+      return await commentAutomationService.updateInstagram(
+        { workspaceId: context.workspace.id, id },
+        data,
+      )
+    }),
+
+  delete: workspaceTokenAuthAPI
+    .route({
+      method: "DELETE",
+      path: "/v1/ig-comments/{id}",
+      summary: "Delete Instagram comment automation",
+      description:
+        "Permanently deletes an automation. Use `igComments.list` to find its id first.",
+      successStatus: 204,
+      tags: ["IG Comments"],
+    })
+    .input(deleteIgCommentPublicRequest)
+    .errors(possibleErrorsOnDeletingResource)
+    .handler(async ({ context, input }) => {
+      await commentAutomationService.deleteInstagram({
+        workspaceId: context.workspace.id,
+        id: input.id,
+      })
+    }),
+
+  listMedia: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/ig-comments/instagram-media",
+      summary: "List Instagram media eligible for IG comment automation",
+      description:
+        "Returns Instagram posts/reels from the workspace's connected accounts that `igComments.create` can target.",
+      tags: ["IG Comments"],
+    })
+    .input(listInstagramMediaPublicRequest)
+    .output(listInstagramMediaPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) =>
+      input.variant === "instagram"
+        ? await listInstagramLoginMedia(context.workspace.id)
+        : await listInstagramFacebookMedia(context.workspace.id),
+    ),
+
+  deleteMany: workspaceTokenAuthAPI
+    .route({
+      method: "POST",
+      path: "/v1/ig-comments/bulk-delete",
+      summary: "Delete multiple Instagram comment automations",
+      description:
+        "Permanently deletes several Instagram comment automations in one call; ids of another channel or workspace are ignored. Use `igComments.list` to find their ids first.",
+      successStatus: 204,
+      tags: ["IG Comments"],
+    })
+    .input(bulkUpdateIdsRequest)
+    .errors(possibleErrorsOnDeletingResource)
+    .handler(async ({ context, input }) => {
+      await commentAutomationService.deleteMany({
+        workspaceId: context.workspace.id,
+        ids: input.ids,
+        types: [...igCommentAutomationTypes.options],
+      })
+    }),
+}

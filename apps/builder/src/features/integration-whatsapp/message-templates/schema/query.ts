@@ -6,9 +6,17 @@ import { whatsappMessageTemplateResource } from "./resource"
 
 export const listWhatsappMessageTemplatesRequest = z.object({
   workspaceId: zodBigintAsString(),
-  inboxId: zodBigintAsString().optional(),
-  integrationWhatsappId: zodBigintAsString().optional(),
-  status: whatsappTemplateStatusSchema.optional(),
+  inboxId: zodBigintAsString()
+    .optional()
+    .describe(
+      "Restrict to templates connected to this inbox. Get it from `inboxes.list`.",
+    ),
+  integrationWhatsappId: zodBigintAsString()
+    .optional()
+    .describe("Restrict to templates on this WhatsApp integration."),
+  status: whatsappTemplateStatusSchema
+    .optional()
+    .describe("Restrict to templates with this approval status."),
 })
 export type ListWhatsappMessageTemplatesRequest = z.infer<
   typeof listWhatsappMessageTemplatesRequest
@@ -25,7 +33,12 @@ export type ListWhatsappMessageTemplatesResponse = z.infer<
 
 export const searchMetaCatalogProductsRequest = z.object({
   workspaceId: zodBigintAsString(),
-  keyword: z.string().trim().max(200).optional(),
+  keyword: z
+    .string()
+    .trim()
+    .max(200)
+    .optional()
+    .describe("Case-insensitive text to search product names for."),
 })
 export type SearchMetaCatalogProductsRequest = z.infer<
   typeof searchMetaCatalogProductsRequest

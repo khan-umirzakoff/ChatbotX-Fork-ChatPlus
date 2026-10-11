@@ -1,15 +1,13 @@
 "use server"
 
-import { inboxService, workspaceService } from "@chatbotx.io/business"
-import { db, eq, findOrFail } from "@chatbotx.io/database/client"
-import { integrationWebchatModel } from "@chatbotx.io/database/schema"
+import { integrationWebchatService } from "@chatbotx.io/business"
 import {
   type WorkspaceIdAndIdRequestParams,
   workspaceIdAndIdRequestParams,
-} from "@/features/common/schemas"
-import { workspaceActionClient } from "@/lib/safe-action"
+} from "@/features/common/schema"
+import { workspaceActionClientAllowExpired } from "@/lib/safe-action"
 
-export const deleteWebchatAction = workspaceActionClient
+export const deleteWebchatAction = workspaceActionClientAllowExpired
   .bindArgsSchemas(workspaceIdAndIdRequestParams)
   .action(
     async ({
@@ -17,26 +15,6 @@ export const deleteWebchatAction = workspaceActionClient
     }: {
       bindArgsParsedInputs: WorkspaceIdAndIdRequestParams
     }) => {
-      const [integrationWebchat, workspace] = await Promise.all([
-        findOrFail({
-          table: integrationWebchatModel,
-          where: { workspaceId, id },
-          message: "Integration Webchat not found",
-        }),
-        workspaceService.findById({ id: workspaceId }),
-      ])
-
-      await db.transaction(async (tx) => {
-        await tx
-          .delete(integrationWebchatModel)
-          .where(eq(integrationWebchatModel.id, integrationWebchat.id))
-
-        await inboxService.disconnect({
-          inboxId: integrationWebchat.inboxId,
-          ownerId: workspace.ownerId,
-          workspaceId,
-          tx,
-        })
-      })
+      await integrationWebchatService.delete({ workspaceId, id })
     },
   )

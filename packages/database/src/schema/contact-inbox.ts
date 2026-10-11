@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm"
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -9,12 +10,20 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core"
+import { profileSnapshotStates } from "../partials/contact"
 import { lastUserInputTypes } from "../partials/message"
 import {
   bigintAsString,
   sharedColumns,
   timestampConfig,
 } from "../partials/shared"
+import {
+  type ThreadControlEvent,
+  type ThreadControlRole,
+  type ThreadControlState,
+  threadControlEvents,
+  threadControlStates,
+} from "../partials/thread-control"
 import { contactModel } from "./contact"
 import { inboxModel } from "./inbox"
 
@@ -32,12 +41,52 @@ export type ContactInboxReferral = {
   videoUrl?: string | null
   productId?: string | null
   flowId?: string | null
+  // Google Ads Click-to-Message click (see `@chatbotx.io/utils/google-click`).
+  // `googleClickReceivedAt` is when the carrying message arrived, not the click.
+  gclid?: string | null
+  gbraid?: string | null
+  googleCampaignId?: string | null
+  googleAdGroupId?: string | null
+  googleAdId?: string | null
+  googleClickReceivedAt?: string | null
   raw?: Record<string, unknown>
+}
+
+export const CONTACT_INBOX_IDENTITY_CHANGE_REASONS = {
+  phoneChanged: "phoneChanged",
+  userIdChanged: "userIdChanged",
+  parentFallback: "parentFallback",
+} as const
+
+export type ContactInboxIdentityChangeReason =
+  (typeof CONTACT_INBOX_IDENTITY_CHANGE_REASONS)[keyof typeof CONTACT_INBOX_IDENTITY_CHANGE_REASONS]
+
+export type ContactInboxIdentityHistoryEntry = {
+  sourceId: string
+  sourceUserId: string | null
+  sourceParentUserId: string | null
+  changedAt: string
+  reason: ContactInboxIdentityChangeReason
 }
 
 export const lastUserInputTypeEnum = pgEnum(
   "lastUserInputType",
   lastUserInputTypes.options as [string, ...string[]],
+)
+
+export const threadControlStateEnum = pgEnum(
+  "threadControlState",
+  threadControlStates.options as [string, ...string[]],
+)
+
+export const threadControlEventEnum = pgEnum(
+  "threadControlEvent",
+  threadControlEvents.options as [string, ...string[]],
+)
+
+export const contactInboxProfileSnapshotState = pgEnum(
+  "contactInboxProfileSnapshotState",
+  profileSnapshotStates.options as [string, ...string[]],
 )
 
 /**
@@ -47,6 +96,8 @@ export const lastUserInputTypeEnum = pgEnum(
 export const CONTACT_INBOX_SOURCE_ID_KEY = "ContactInbox_inboxId_sourceId_key"
 export const CONTACT_INBOX_SOURCE_USER_ID_KEY =
   "ContactInbox_inboxId_sourceUserId_key"
+export const CONTACT_INBOX_SOURCE_PARENT_USER_ID_KEY =
+  "ContactInbox_inboxId_sourceParentUserId_key"
 
 export const contactInboxModel = pgTable(
   "ContactInbox",
@@ -68,6 +119,13 @@ export const contactInboxModel = pgTable(
     channel: text().notNull(),
     source: text().notNull(),
     sourceId: text().notNull(),
+    followsBusiness: boolean(),
+    businessFollowsContact: boolean(),
+    accountVerified: boolean(),
+    followerCount: integer(),
+    profileSnapshotState: contactInboxProfileSnapshotState(),
+    profileSnapshotAttempts: integer(),
+    profileSnapshotNextAttemptAt: timestamp(timestampConfig),
     language: text(),
     // Local persona id (MessengerPersona.id) chosen for this contact connection
     // via the "Set Persona" flow action. Resolved to the page's current Facebook
@@ -92,9 +150,34 @@ export const contactInboxModel = pgTable(
     // (e.g. WhatsApp Business-Scoped User ID). Channel-agnostic name — any
     // channel with a secondary scoped identity reuses this column.
     sourceUserId: text(),
+    // Parent channel-scoped user id used only for identity matching. Never
+    // displayed or used to address outbound sends.
+    sourceParentUserId: text(),
     // Channel handle/username for this contact (e.g. WhatsApp `@username`).
     // Display-only, never used as a matching key.
     sourceUsername: text(),
+    sourceIdentityHistory: jsonb().$type<ContactInboxIdentityHistoryEntry[]>(),
+    // Conversation-routing thread control (WhatsApp today). NULL = routing was
+    // never observed for this thread, i.e. single-responder behaviour.
+    threadControlState: threadControlStateEnum().$type<ThreadControlState>(),
+    // Role of the CURRENT owner. Validated on write via `parseThreadControlRole`
+    // (unknown Meta roles are stored as null), hence text, not an enum.
+    threadOwnerRole: text().$type<ThreadControlRole>(),
+    // Meta event time of the last applied transition; orders concurrent events.
+    threadControlUpdatedAt: timestamp(timestampConfig),
+    // The event that produced the current state (tie order + debugging).
+    threadControlLastEvent:
+      threadControlEventEnum().$type<ThreadControlEvent>(),
+    // App id of the CURRENT owner, for channels whose owners are apps rather
+    // than roles (Messenger handover). NULL on role-based channels.
+    threadOwnerAppId: text(),
+    // When the CURRENT non-owned (standby) thread expires, as reported by the
+    // channel (Messenger: Meta's thread_owner expiration). NULL = no channel
+    // expiry known, so the 24h-since-activity rule applies (every WhatsApp row).
+    threadOwnerExpiresAt: timestamp(timestampConfig),
+    // App id of the owner BEFORE the last change: a take overwrites the
+    // current owner, so this is what "return control" hands the thread back to.
+    threadPreviousOwnerAppId: text(),
   },
   (table) => [
     uniqueIndex(CONTACT_INBOX_SOURCE_ID_KEY).using(
@@ -109,6 +192,37 @@ export const contactInboxModel = pgTable(
         table.sourceUserId.asc().nullsLast(),
       )
       .where(sql`${table.sourceUserId} IS NOT NULL`),
+    uniqueIndex(CONTACT_INBOX_SOURCE_PARENT_USER_ID_KEY)
+      .using(
+        "btree",
+        table.inboxId.asc().nullsLast(),
+        table.sourceParentUserId.asc().nullsLast(),
+      )
+      .where(sql`${table.sourceParentUserId} IS NOT NULL`),
+    index("ContactInbox_profileSnapshot_pending_idx")
+      .on(table.profileSnapshotNextAttemptAt, table.id)
+      .where(sql`${table.profileSnapshotState} = 'pending'`),
+    // Lets "the N-th contact of a page in id order" (broadcast audience
+    // window/order, see partials/broadcast.ts) be an ordered index range scan
+    // for a single-inbox audience, instead of the planner choosing between
+    // walking the whole PK in id order and sorting one inbox's rows.
+    index("ContactInbox_inboxId_id_idx").using(
+      "btree",
+      table.inboxId.asc().nullsLast(),
+      table.id.asc().nullsLast(),
+    ),
+    // Bulk AI hand-over disable walks only the threads the AI agent holds. Without
+    // this partial index the keyset page would scan the whole inbox to find
+    // them; it only holds standby + ai_agent rows, so it stays tiny.
+    index("ContactInbox_inboxId_id_ai_held_idx")
+      .using(
+        "btree",
+        table.inboxId.asc().nullsLast(),
+        table.id.asc().nullsLast(),
+      )
+      .where(
+        sql`${table.threadControlState} = 'standby' AND ${table.threadOwnerRole} = 'ai_agent'`,
+      ),
     index("ContactInbox_contactId_lastIncomingMessageAt_idx").using(
       "btree",
       table.contactId.asc().nullsLast(),
@@ -122,5 +236,13 @@ export const contactInboxModel = pgTable(
     index("ContactInbox_referral_ctwaClid_idx")
       .using("btree", sql`(${table.referral}->>'ctwaClid')`)
       .where(sql`${table.referral}->>'ctwaClid' IS NOT NULL`),
+    // Superset covering CTM/CTID (Messenger/Instagram) ad-click attribution,
+    // which has no ctwa_clid equivalent — the attribution key is `adId`.
+    // Scoped to source="ADS" so ig.me SHORTLINK referrals are excluded.
+    index("ContactInbox_referral_adId_idx")
+      .using("btree", sql`(${table.referral}->>'adId')`)
+      .where(
+        sql`${table.referral}->>'adId' IS NOT NULL AND ${table.referral}->>'source' = 'ADS'`,
+      ),
   ],
 )

@@ -1,4 +1,5 @@
 import {
+  adsConversionCapiStatusSchema,
   adsConversionChannelSchema,
   adsConversionEventTypeSchema,
   adsConversionRuleModel,
@@ -11,20 +12,42 @@ const nonEmptyStringArray = z.array(z.string().trim().min(1)).min(1)
 
 export const adsConversionRuleTriggerSchema = z.discriminatedUnion("type", [
   z.object({
-    type: z.literal("templateSent"),
-    templateIds: nonEmptyStringArray,
+    type: z
+      .literal("templateSent")
+      .describe(
+        "Fires when a message template is sent; requires `templateIds`.",
+      ),
+    templateIds: nonEmptyStringArray.describe(
+      "Template ids that trigger this rule when sent.",
+    ),
   }),
   z.object({
-    type: z.literal("tagApplied"),
-    tagIds: nonEmptyStringArray,
+    type: z
+      .literal("tagApplied")
+      .describe(
+        "Fires when a tag is applied to the contact; requires `tagIds`.",
+      ),
+    tagIds: nonEmptyStringArray.describe(
+      "Tag ids that trigger this rule when applied.",
+    ),
   }),
   z.object({
-    type: z.literal("keywordMatched"),
-    automatedResponseIds: nonEmptyStringArray,
+    type: z
+      .literal("keywordMatched")
+      .describe(
+        "Fires when a keyword automation matches; requires `automatedResponseIds`.",
+      ),
+    automatedResponseIds: nonEmptyStringArray.describe(
+      "Keyword automation ids that trigger this rule when matched.",
+    ),
   }),
   z.object({
-    type: z.literal("contactReplied"),
-    firstReplyOnly: z.boolean(),
+    type: z
+      .literal("contactReplied")
+      .describe("Fires when the contact replies; requires `firstReplyOnly`."),
+    firstReplyOnly: z
+      .boolean()
+      .describe("Only trigger on the contact's first reply, not every reply."),
   }),
 ])
 export type AdsConversionRuleTrigger = z.infer<
@@ -39,6 +62,8 @@ export const adsConversionRuleResource = createSelectSchema(
     workspaceId: zodBigintAsString(),
     integrationWhatsappId: zodBigintAsString().nullable(),
     integrationFacebookAdsId: zodBigintAsString().nullable(),
+    integrationMessengerId: zodBigintAsString().nullable(),
+    integrationInstagramId: zodBigintAsString().nullable(),
     trigger: adsConversionRuleTriggerSchema,
   },
 )
@@ -48,7 +73,9 @@ export type AdsConversionRuleResource = z.infer<
 
 export const listAdsConversionRulesInput = z.object({
   workspaceId: zodBigintAsString(),
-  channel: adsConversionChannelSchema.optional(),
+  channel: adsConversionChannelSchema
+    .optional()
+    .describe("Restrict to rules on this channel."),
 })
 export type ListAdsConversionRulesInput = z.infer<
   typeof listAdsConversionRulesInput
@@ -56,14 +83,46 @@ export type ListAdsConversionRulesInput = z.infer<
 
 export const createAdsConversionRuleInput = z.object({
   workspaceId: zodBigintAsString(),
-  channel: adsConversionChannelSchema,
-  integrationWhatsappId: zodBigintAsString().nullable().optional(),
-  integrationFacebookAdsId: zodBigintAsString().nullable().optional(),
-  adAccountId: z.string().trim().min(1).nullable().optional(),
-  eventType: adsConversionEventTypeSchema,
-  trigger: adsConversionRuleTriggerSchema,
-  markAs: z.string().trim().min(1).nullable().optional(),
-  enabled: z.boolean().optional(),
+  channel: adsConversionChannelSchema.describe("Channel this rule applies to."),
+  integrationWhatsappId: zodBigintAsString()
+    .nullable()
+    .optional()
+    .describe("Restrict to this WhatsApp integration."),
+  integrationFacebookAdsId: zodBigintAsString()
+    .nullable()
+    .optional()
+    .describe("Restrict to this Facebook Ads integration."),
+  // Messenger/Instagram FKs (Phase 2 generalization) — mirrors
+  // AdsConversionRule's per-channel FK columns (Phase 1 schema).
+  integrationMessengerId: zodBigintAsString()
+    .nullable()
+    .optional()
+    .describe("Restrict to this Messenger integration."),
+  integrationInstagramId: zodBigintAsString()
+    .nullable()
+    .optional()
+    .describe("Restrict to this Instagram integration."),
+  adAccountId: z
+    .string()
+    .trim()
+    .min(1)
+    .nullable()
+    .optional()
+    .describe("Meta ad account id (act_<id>) to report conversions to."),
+  eventType: adsConversionEventTypeSchema.describe(
+    "Conversion event type this rule reports.",
+  ),
+  trigger: adsConversionRuleTriggerSchema.describe(
+    "Workspace event that fires this rule.",
+  ),
+  markAs: z
+    .string()
+    .trim()
+    .min(1)
+    .nullable()
+    .optional()
+    .describe("Label recorded on the conversion event for this rule."),
+  enabled: z.boolean().optional().describe("Whether the rule is active."),
 })
 export type CreateAdsConversionRuleInput = z.infer<
   typeof createAdsConversionRuleInput
@@ -72,7 +131,7 @@ export type CreateAdsConversionRuleInput = z.infer<
 export const updateAdsConversionRuleInput = createAdsConversionRuleInput
   .partial()
   .extend({
-    id: zodBigintAsString(),
+    id: zodBigintAsString().describe("Ads conversion rule id."),
     workspaceId: zodBigintAsString(),
   })
 export type UpdateAdsConversionRuleInput = z.infer<
@@ -82,7 +141,7 @@ export type UpdateAdsConversionRuleInput = z.infer<
 export const toggleAdsConversionRuleInput = z.object({
   id: zodBigintAsString(),
   workspaceId: zodBigintAsString(),
-  enabled: z.boolean(),
+  enabled: z.boolean().describe("Whether the rule should be active."),
 })
 export type ToggleAdsConversionRuleInput = z.infer<
   typeof toggleAdsConversionRuleInput
@@ -122,9 +181,17 @@ export type IngestAutomaticAdsConversionEventInput = z.infer<
   typeof ingestAutomaticAdsConversionEventInput
 >
 
+/**
+ * `channel`/`integrationId` (Amendment A1): WhatsApp keeps its `ctwaClid`
+ * gate; Messenger gates on ad-referral attribution — see
+ * `adsConversionService.evaluateTemplateSent`. Instagram has no template
+ * entity/step, so the service rejects it rather than accepting a third
+ * channel value here.
+ */
 export const evaluateTemplateSentInput = z.object({
   workspaceId: zodBigintAsString(),
-  integrationWhatsappId: zodBigintAsString(),
+  channel: adsConversionChannelSchema,
+  integrationId: zodBigintAsString(),
   contactInboxId: zodBigintAsString(),
   templateId: z.string().trim().min(1),
 })
@@ -159,9 +226,16 @@ export type EvaluateConversionTriggerOccurrence = z.infer<
   typeof evaluateConversionTriggerOccurrenceSchema
 >
 
+/**
+ * `channel`/`integrationId` generalize the previously WhatsApp-only
+ * `integrationWhatsappId` field so this shape matches
+ * `AdsConversionJobEvaluateConversionTrigger`'s payload 1:1 — the worker
+ * handler stays a thin pass-through (Phase 3).
+ */
 export const evaluateConversionTriggerInput = z.object({
   workspaceId: zodBigintAsString(),
-  integrationWhatsappId: zodBigintAsString(),
+  channel: adsConversionChannelSchema,
+  integrationId: zodBigintAsString(),
   contactInboxId: zodBigintAsString(),
   occurrence: evaluateConversionTriggerOccurrenceSchema,
 })
@@ -189,11 +263,57 @@ const withOrderedDateRange = <Schema extends typeof ctwaDateRangeShape>(
     path: ["until"],
   })
 
+/**
+ * `channel`/`integrationMessengerId`/`integrationInstagramId` are additive
+ * next to `integrationWhatsappId` (Phase 2 generalization) — omitted keeps
+ * every pre-Phase-1 caller's WhatsApp-only behavior unchanged.
+ *
+ * `allChannels` is the "All channels" Ads Analytics dashboard's dedicated
+ * flag — a separate boolean rather than a fake `channel: "all"` DB value so
+ * it can never leak into `AdsConversionChannel`/`adsEligibleChannelTypes`-
+ * gated writer paths (contact-filter, the worker's
+ * `listRetargetContactsInput`, rule/event inserts). It means "drop the
+ * channel filter entirely", never achieved by omitting `channel` — omitted
+ * still defaults to whatsapp (`DEFAULT_ADS_CONVERSION_CHANNEL`) everywhere
+ * else. Only this analytics range schema carries it; the shared export/
+ * retarget writer schemas below (`listAdsConversionExportRowsInput`,
+ * `listRetargetContactsInput`) deliberately do not.
+ */
 const ctwaFunnelShape = ctwaDateRangeShape.extend({
   integrationWhatsappId: zodBigintAsString().optional(),
+  channel: adsConversionChannelSchema.optional(),
+  integrationMessengerId: zodBigintAsString().optional(),
+  integrationInstagramId: zodBigintAsString().optional(),
+  allChannels: z.boolean().optional(),
+  // Viewer IANA timezone for day-bucketing (`getCtwaFunnelTimeseries`'s
+  // repository queries) — mirrors `message-stats.repository.ts`'s
+  // `AT TIME ZONE ${timezone}` pattern. Omitted defaults to "UTC" at the
+  // repository layer, so every pre-migration caller (this field didn't
+  // exist before) keeps its exact prior day-bucketing behavior. `getCtwaFunnel`/
+  // `getCapiDeliverySummary` accept it too (shared shape) but never use it —
+  // neither buckets by day, only the already timezone-anchored [since, until]
+  // window matters for them.
+  timezone: z.string().optional(),
 })
 
-export const getCtwaFunnelInput = withOrderedDateRange(ctwaFunnelShape)
+// `allChannels` aggregates across every ads-eligible channel/integration —
+// there is no single integration to scope to, so combining it with any
+// integration id is a caller bug (the builder page resolves `channel ===
+// "all"` into `allChannels` BEFORE ever calling `perChannelIntegrationIds`,
+// so a well-behaved caller never hits this).
+export const getCtwaFunnelInput = withOrderedDateRange(ctwaFunnelShape).refine(
+  (input) =>
+    !(
+      input.allChannels &&
+      (input.integrationWhatsappId ||
+        input.integrationMessengerId ||
+        input.integrationInstagramId)
+    ),
+  {
+    message: "allChannels cannot be combined with an integration id",
+    path: ["allChannels"],
+  },
+)
 export type GetCtwaFunnelInput = z.input<typeof getCtwaFunnelInput>
 
 export const adsConversionExportSegments = z.enum([
@@ -209,6 +329,9 @@ const adsConversionRowsShape = ctwaDateRangeShape.extend({
   segment: adsConversionExportSegments,
   adId: z.string().trim().min(1).nullable().optional(),
   integrationWhatsappId: zodBigintAsString().optional(),
+  channel: adsConversionChannelSchema.optional(),
+  integrationMessengerId: zodBigintAsString().optional(),
+  integrationInstagramId: zodBigintAsString().optional(),
   afterId: zodBigintAsString().optional(),
 })
 
@@ -231,6 +354,41 @@ export type ListRetargetContactsInput = z.input<
   typeof listRetargetContactsInput
 >
 
+/**
+ * Analytics-only "All channels" export — a SEPARATE shape from
+ * `adsConversionRowsShape`/`listAdsConversionExportRowsInput`, not an
+ * `allChannels` field bolted onto it: that shared shape backs BOTH the
+ * legacy channel-scoped export AND the worker's retarget audience sync
+ * (`listRetargetContactsInput`), and `channel`/integration ids there keep
+ * their "omitted = whatsapp" writer-path default. This shape carries no
+ * channel/integration fields at all — aggregating across every channel has
+ * no single channel or integration to scope to — so there is nothing to
+ * default and nothing for a zod refinement to reject.
+ */
+const allChannelAdsExportRowsShape = ctwaDateRangeShape.extend({
+  segment: adsConversionExportSegments,
+  adId: z.string().trim().min(1).nullable().optional(),
+  afterId: zodBigintAsString().optional(),
+})
+
+export const listAllChannelAdsExportRowsInput = withOrderedDateRange(
+  allChannelAdsExportRowsShape.extend({
+    limit: z.number().int().positive().max(1000),
+  }),
+)
+export type ListAllChannelAdsExportRowsInput = z.input<
+  typeof listAllChannelAdsExportRowsInput
+>
+
+export const updateAdsCapiStatusInput = z.object({
+  id: z.string().min(1),
+  workspaceId: z.string().min(1),
+  from: z.literal("pending"),
+  to: adsConversionCapiStatusSchema.exclude(["pending"]),
+  capiSentAt: z.date().optional(),
+})
+export type UpdateAdsCapiStatusInput = z.infer<typeof updateAdsCapiStatusInput>
+
 export const retargetAdInput = z
   .object({
     segment: adsConversionExportSegments,
@@ -238,6 +396,9 @@ export const retargetAdInput = z
     since: z.coerce.date(),
     until: z.coerce.date(),
     integrationWhatsappId: zodBigintAsString().optional(),
+    channel: adsConversionChannelSchema.optional(),
+    integrationMessengerId: zodBigintAsString().optional(),
+    integrationInstagramId: zodBigintAsString().optional(),
     adAccountId: z.string().trim().min(1),
     audienceName: z.string().trim().min(1).optional(),
     customAudienceId: z.string().trim().min(1).optional(),

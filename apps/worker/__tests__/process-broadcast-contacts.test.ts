@@ -1,16 +1,17 @@
+import { broadcastChannelCapabilities } from "@chatbotx.io/database/partials"
 import { beforeEach, describe, expect, test, vi } from "vitest"
 
-// ── db spies ──────────────────────────────────────────────────────────────────
-const findManyBroadcast = vi.fn()
-const findManyContactsOnBroadcasts = vi.fn()
-const updateWhereSpy = vi.fn()
+// ── service spies (replace direct db.* calls in the handler) ─────────────────
+const listSendableById = vi.fn()
+const listPendingRecipients = vi.fn()
+const markContactFailedSpy = vi.fn()
 
-type UpdateCall = {
-  table: unknown
-  values: Record<string, unknown>
-  condition: unknown
+type MarkContactFailedCall = {
+  broadcastId: string
+  contactId: string
+  reason: string
 }
-const updateCalls: UpdateCall[] = []
+const markContactFailedCalls: MarkContactFailedCall[] = []
 
 // ── queue spies ───────────────────────────────────────────────────────────────
 const chatAddSpy = vi.fn()
@@ -19,73 +20,54 @@ const scheduleAddSpy = vi.fn()
 
 // ── logger spy ────────────────────────────────────────────────────────────────
 const loggerErrorSpy = vi.fn()
+const loggerInfoSpy = vi.fn()
+const loggerDebugSpy = vi.fn()
+
+// ── business service spies ───────────────────────────────────────────────────
+const blockedOwnerGuard = vi.fn()
+// Mutable so the hoisted mock factory closure observes per-test updates.
+const blockedOwnerGuardBlocked = { blocked: false }
+const markHandoffCompleted = vi.fn()
+const markContactSentIfSending = vi.fn()
+const claimDispatchWindow = vi.fn()
 
 // ── mocks ─────────────────────────────────────────────────────────────────────
 vi.mock("@chatbotx.io/business", () => ({
   withBlockedOwnerGuard: async (
-    _workspaceId: unknown,
+    workspaceId: unknown,
     fn: () => Promise<unknown>,
-  ) => fn(),
-}))
-
-vi.mock("@chatbotx.io/database/client", () => ({
-  db: {
-    query: {
-      broadcastModel: {
-        findMany: (...args: unknown[]) => findManyBroadcast(...args),
-      },
-      contactsOnBroadcastsModel: {
-        findMany: (...args: unknown[]) => findManyContactsOnBroadcasts(...args),
-      },
+  ) => {
+    blockedOwnerGuard(workspaceId)
+    if (blockedOwnerGuardBlocked.blocked) {
+      return
+    }
+    return await fn()
+  },
+  broadcastService: {
+    markHandoffCompleted: (...args: unknown[]) => markHandoffCompleted(...args),
+    markContactSentIfSending: (...args: unknown[]) =>
+      markContactSentIfSending(...args),
+    listSendableById: (...args: unknown[]) => listSendableById(...args),
+    listPendingRecipients: (...args: unknown[]) =>
+      listPendingRecipients(...args),
+    markContactFailed: (input: MarkContactFailedCall) => {
+      markContactFailedCalls.push(input)
+      return markContactFailedSpy(input)
     },
-    update: (table: unknown) => ({
-      set: (values: Record<string, unknown>) => ({
-        where: (condition: unknown) => {
-          updateCalls.push({ table, values, condition })
-          return updateWhereSpy()
-        },
-      }),
-    }),
-  },
-  and: (...args: unknown[]) => ({ __and: args }),
-  eq: (a: unknown, b: unknown) => ({ __eq: [a, b] }),
-  sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({
-    __sql: { strings: [...strings], values },
-  }),
-}))
-
-vi.mock("@chatbotx.io/database/schema", () => ({
-  broadcastModel: { id: "broadcast.id", __name: "broadcastModel" },
-  contactsOnBroadcastsModel: {
-    broadcastId: "cob.broadcastId",
-    contactId: "cob.contactId",
-    failedAt: "cob.failedAt",
-    errorContent: "cob.errorContent",
-    __name: "contactsOnBroadcastsModel",
+    claimDispatchWindow: (...args: unknown[]) => claimDispatchWindow(...args),
   },
 }))
 
-vi.mock("@chatbotx.io/database/partials", () => ({
-  broadcastStatuses: {
-    enum: { scheduled: "scheduled", sending: "sending", sent: "sent" },
-  },
-  channelTypes: {
-    enum: {
-      omnichannel: "omnichannel",
-      whatsapp: "whatsapp",
-      messenger: "messenger",
-      instagram: "instagram",
-      telegram: "telegram",
-      tiktok: "tiktok",
-    },
-  },
-}))
+vi.mock("@chatbotx.io/database/partials", async () =>
+  vi.importActual("@chatbotx.io/database/partials"),
+)
 
 vi.mock("@chatbotx.io/flow-config", () => ({
   BROADCAST_PAYLOAD_TYPE: "broadcast",
 }))
 
 vi.mock("@chatbotx.io/worker-config", () => ({
+  BROADCAST_SEND_PRIORITY: 5,
   chatQueue: {
     add: (...args: unknown[]) => chatAddSpy(...args),
   },
@@ -109,7 +91,8 @@ vi.mock("@chatbotx.io/worker-config", () => ({
 
 vi.mock("../src/lib/logger", () => ({
   logger: {
-    info: vi.fn(),
+    info: (...args: unknown[]) => loggerInfoSpy(...args),
+    debug: (...args: unknown[]) => loggerDebugSpy(...args),
     warn: vi.fn(),
     error: (...args: unknown[]) => loggerErrorSpy(...args),
   },
@@ -129,7 +112,10 @@ const makeConversation = (id = "conv-1", contactId = "contact-1") => ({
   workspaceId: WORKSPACE_ID,
 })
 
-const makeContactInbox = (id = "ci-1") => ({ id })
+const makeContactInbox = (id = "ci-1", inboxId = "inbox-1") => ({
+  id,
+  inboxId,
+})
 
 const makeContactOnBroadcast = (overrides: Record<string, unknown> = {}) => ({
   broadcastId: BROADCAST_ID,
@@ -145,59 +131,109 @@ const makeContactOnBroadcast = (overrides: Record<string, unknown> = {}) => ({
 const makeBroadcast = (overrides: Record<string, unknown> = {}) => ({
   id: BROADCAST_ID,
   workspaceId: WORKSPACE_ID,
+  name: "Broadcast",
   status: "sending",
   flowId: null as string | null,
   templateId: null as string | null,
   channel: null as string | null,
   templateData: null as unknown,
+  resumeCount: 0,
+  targetMode: "channel" as string,
+  targets: [] as {
+    inboxId: string
+    flowId?: string | null
+    templateId: string | null
+    templateData: unknown
+  }[],
+  sendRatePerMinute: null as number | null,
   ...overrides,
 })
 
 // ── setup ─────────────────────────────────────────────────────────────────────
 beforeEach(() => {
-  updateCalls.length = 0
+  markContactFailedCalls.length = 0
+  blockedOwnerGuardBlocked.blocked = false
   vi.clearAllMocks()
-  findManyBroadcast.mockResolvedValue([])
-  findManyContactsOnBroadcasts.mockResolvedValue([])
-  updateWhereSpy.mockResolvedValue(undefined)
+  listSendableById.mockResolvedValue([])
+  listPendingRecipients.mockResolvedValue([])
+  markContactFailedSpy.mockResolvedValue(undefined)
   chatAddSpy.mockResolvedValue(undefined)
   integrationAddSpy.mockResolvedValue(undefined)
   scheduleAddSpy.mockResolvedValue(undefined)
+  markHandoffCompleted.mockReset()
+  markHandoffCompleted.mockResolvedValue(true)
+  markContactSentIfSending.mockReset()
+  markContactSentIfSending.mockResolvedValue(undefined)
+  claimDispatchWindow.mockReset()
+  claimDispatchWindow.mockResolvedValue(true)
 })
 
 // ── tests ─────────────────────────────────────────────────────────────────────
 describe("processBroadcastContacts", () => {
   describe("no broadcasts in 'sending' status", () => {
     test("returns { processed: 0 } without any db updates or queue adds", async () => {
-      findManyBroadcast.mockResolvedValue([])
+      listSendableById.mockResolvedValue([])
 
       const result = await processBroadcastContacts(BROADCAST_ID)
 
       expect(result).toEqual({ processed: 0 })
-      expect(updateCalls).toHaveLength(0)
+      expect(markContactFailedCalls).toHaveLength(0)
       expect(chatAddSpy).not.toHaveBeenCalled()
       expect(integrationAddSpy).not.toHaveBeenCalled()
     })
   })
 
-  describe("broadcast has no unsent contacts", () => {
-    test("updates broadcastModel status to 'sent' and returns processed: 0", async () => {
-      findManyBroadcast.mockResolvedValue([makeBroadcast()])
-      findManyContactsOnBroadcasts.mockResolvedValue([])
+  // AGENTS.md invariant 15: a workspace-scoped worker must keep its
+  // blocked-owner guard. The refactor moved every db.* call behind
+  // broadcastService, so this pins that the guard still runs — and still runs
+  // on the broadcast's workspaceId, before any recipient is fetched.
+  describe("blocked-owner guard", () => {
+    test("still gates on the broadcast workspaceId before fetching recipients", async () => {
+      listSendableById.mockResolvedValue([makeBroadcast()])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
+
+      await processBroadcastContacts(BROADCAST_ID)
+
+      expect(blockedOwnerGuard).toHaveBeenCalledWith("workspace-1")
+    })
+
+    test("returns { processed: 0 } and enqueues nothing when the owner is blocked", async () => {
+      listSendableById.mockResolvedValue([makeBroadcast({ flowId: "flow-1" })])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
+      // A blocked owner makes the guard swallow the callback, so
+      // isBlockedWorkspace resolves true.
+      blockedOwnerGuardBlocked.blocked = true
 
       const result = await processBroadcastContacts(BROADCAST_ID)
 
       expect(result).toEqual({ processed: 0 })
-      expect(updateCalls).toHaveLength(1)
-      expect(updateCalls[0].values).toMatchObject({ status: "sent" })
+      expect(listPendingRecipients).not.toHaveBeenCalled()
+      expect(integrationAddSpy).not.toHaveBeenCalled()
+      expect(chatAddSpy).not.toHaveBeenCalled()
+      expect(markContactFailedCalls).toHaveLength(0)
+    })
+  })
+
+  describe("broadcast has no unsent contacts", () => {
+    test("stamps hand-off completion instead of a terminal status and returns processed: 0", async () => {
+      listSendableById.mockResolvedValue([makeBroadcast()])
+      listPendingRecipients.mockResolvedValue([])
+
+      const result = await processBroadcastContacts(BROADCAST_ID)
+
+      expect(result).toEqual({ processed: 0 })
+      expect(markHandoffCompleted).toHaveBeenCalledWith({
+        broadcastId: BROADCAST_ID,
+      })
+      expect(markContactFailedCalls).toHaveLength(0)
       expect(chatAddSpy).not.toHaveBeenCalled()
     })
   })
 
   describe("broadcast with flowId", () => {
     test("enqueues integrationQueue sendFlow with correct payload", async () => {
-      findManyBroadcast.mockResolvedValue([makeBroadcast({ flowId: "flow-1" })])
-      findManyContactsOnBroadcasts.mockResolvedValue([makeContactOnBroadcast()])
+      listSendableById.mockResolvedValue([makeBroadcast({ flowId: "flow-1" })])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
 
       await processBroadcastContacts(BROADCAST_ID)
 
@@ -210,6 +246,9 @@ describe("processBroadcastContacts", () => {
             flowId: "flow-1",
             conversationId: "conv-1",
             contactInboxId: "ci-1",
+            // The flow stop/resume guard's ONE authoritative marker (fix
+            // round 1) — only this, the producer's first dispatch, may set it.
+            initialBroadcastDispatch: true,
             metadata: expect.objectContaining({
               type: "broadcast",
               broadcastId: BROADCAST_ID,
@@ -217,15 +256,17 @@ describe("processBroadcastContacts", () => {
           }),
         }),
         {
-          jobId: "broadcast-send-contact-broadcast-1-contact-1-flow",
+          jobId: "broadcast-send-contact-broadcast-1-contact-1-flow-r0",
+          // Below unprioritized live traffic, so comment replies go first.
+          priority: 5,
           removeOnComplete: { age: 3600, count: 100_000 },
         },
       )
     })
 
     test("does not call chatQueue when only flowId is set", async () => {
-      findManyBroadcast.mockResolvedValue([makeBroadcast({ flowId: "flow-1" })])
-      findManyContactsOnBroadcasts.mockResolvedValue([makeContactOnBroadcast()])
+      listSendableById.mockResolvedValue([makeBroadcast({ flowId: "flow-1" })])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
 
       await processBroadcastContacts(BROADCAST_ID)
 
@@ -237,10 +278,10 @@ describe("processBroadcastContacts", () => {
       "telegram",
       "tiktok",
     ] as const)("enqueues %s flow broadcasts through the integration queue only", async (channel) => {
-      findManyBroadcast.mockResolvedValue([
+      listSendableById.mockResolvedValue([
         makeBroadcast({ flowId: "flow-1", channel }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue([makeContactOnBroadcast()])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
 
       await processBroadcastContacts(BROADCAST_ID)
 
@@ -261,14 +302,14 @@ describe("processBroadcastContacts", () => {
 
   describe("broadcast with templateId on non-messenger channel", () => {
     test("enqueues chatQueue sendWhatsappTemplateMessage with correct payload", async () => {
-      findManyBroadcast.mockResolvedValue([
+      listSendableById.mockResolvedValue([
         makeBroadcast({
           templateId: "tmpl-1",
           channel: "whatsapp",
           templateData: { components: [] },
         }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue([makeContactOnBroadcast()])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
 
       await processBroadcastContacts(BROADCAST_ID)
 
@@ -288,7 +329,9 @@ describe("processBroadcastContacts", () => {
           }),
         }),
         {
-          jobId: "broadcast-send-contact-broadcast-1-contact-1-template",
+          jobId: "broadcast-send-contact-broadcast-1-contact-1-template-r0",
+          // Below unprioritized live traffic, so comment replies go first.
+          priority: 5,
           removeOnComplete: { age: 3600, count: 100_000 },
         },
       )
@@ -297,14 +340,14 @@ describe("processBroadcastContacts", () => {
 
   describe("broadcast with templateId on messenger channel", () => {
     test("enqueues chatQueue sendMessengerTemplateMessage", async () => {
-      findManyBroadcast.mockResolvedValue([
+      listSendableById.mockResolvedValue([
         makeBroadcast({
           templateId: "tmpl-messenger",
           channel: "messenger",
           templateData: { text: "Hello" },
         }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue([makeContactOnBroadcast()])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
 
       await processBroadcastContacts(BROADCAST_ID)
 
@@ -313,7 +356,8 @@ describe("processBroadcastContacts", () => {
         "sendMessengerTemplateMessage",
         expect.objectContaining({ type: "sendMessengerTemplateMessage" }),
         {
-          jobId: "broadcast-send-contact-broadcast-1-contact-1-template",
+          jobId: "broadcast-send-contact-broadcast-1-contact-1-template-r0",
+          priority: 5,
           removeOnComplete: { age: 3600, count: 100_000 },
         },
       )
@@ -321,14 +365,14 @@ describe("processBroadcastContacts", () => {
 
     test("separates buttons from templateData so job receives correct shapes", async () => {
       const buttons = [{ id: "b1", label: "Yes", flowId: "flow-btn" }]
-      findManyBroadcast.mockResolvedValue([
+      listSendableById.mockResolvedValue([
         makeBroadcast({
           templateId: "tmpl-messenger",
           channel: "messenger",
           templateData: { text: "Pick one", buttons },
         }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue([makeContactOnBroadcast()])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
 
       await processBroadcastContacts(BROADCAST_ID)
 
@@ -342,14 +386,14 @@ describe("processBroadcastContacts", () => {
     })
 
     test("templateData is undefined when no non-button fields are present", async () => {
-      findManyBroadcast.mockResolvedValue([
+      listSendableById.mockResolvedValue([
         makeBroadcast({
           templateId: "tmpl-messenger",
           channel: "messenger",
           templateData: { buttons: [{ id: "b1", label: "Yes" }] },
         }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue([makeContactOnBroadcast()])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
 
       await processBroadcastContacts(BROADCAST_ID)
 
@@ -363,67 +407,112 @@ describe("processBroadcastContacts", () => {
 
   describe("successful contact processing", () => {
     test("scopes broadcast lookup when broadcastId is provided", async () => {
-      findManyBroadcast.mockResolvedValue([])
+      listSendableById.mockResolvedValue([])
 
       await processBroadcastContacts("broadcast-filter")
 
-      expect(findManyBroadcast).toHaveBeenCalledWith({
-        where: {
-          id: "broadcast-filter",
-          status: "sending",
-        },
+      // The status/deletedAt predicates now live inside
+      // broadcastService.listSendableById (pinned in
+      // packages/business/__tests__/broadcast-service-prepare.test.ts); the
+      // handler's job is to scope the lookup to the requested broadcast.
+      expect(listSendableById).toHaveBeenCalledWith({
+        broadcastId: "broadcast-filter",
       })
     })
 
     test("fetches only unsent contacts that are not terminal-failed", async () => {
-      findManyBroadcast.mockResolvedValue([makeBroadcast()])
+      listSendableById.mockResolvedValue([makeBroadcast()])
 
       await processBroadcastContacts(BROADCAST_ID)
 
-      expect(findManyContactsOnBroadcasts).toHaveBeenCalledWith({
-        where: {
-          broadcastId: BROADCAST_ID,
-          sent: false,
-          failedAt: { isNull: true },
-        },
-        with: {
-          conversation: true,
-          contactInbox: true,
-        },
+      // The sent/failedAt predicates and the conversation/contactInbox
+      // relations now live inside broadcastService.listPendingRecipients
+      // (pinned in packages/business/__tests__/broadcast-service-prepare.test.ts);
+      // the handler must still page at the 500-row rate limit.
+      expect(listPendingRecipients).toHaveBeenCalledWith({
+        broadcastId: BROADCAST_ID,
         limit: 500,
       })
     })
 
-    test("marks contactOnBroadcast as sent=true after queue add", async () => {
-      findManyBroadcast.mockResolvedValue([
+    test("uses the broadcast's own sendRatePerMinute as the batch limit when set", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({ sendRatePerMinute: 42 }),
+      ])
+
+      await processBroadcastContacts(BROADCAST_ID)
+
+      expect(listPendingRecipients).toHaveBeenCalledWith({
+        broadcastId: BROADCAST_ID,
+        limit: 42,
+      })
+    })
+
+    test("judges fetchedFull against the broadcast's own sendRatePerMinute, not the 500 default", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({
+          templateId: "tmpl-1",
+          channel: "whatsapp",
+          sendRatePerMinute: 3,
+        }),
+      ])
+      listPendingRecipients.mockResolvedValue(
+        Array.from({ length: 3 }, (_, index) =>
+          makeContactOnBroadcast({
+            contactId: `contact-${index}`,
+            contactInboxId: `ci-${index}`,
+          }),
+        ),
+      )
+
+      const result = await processBroadcastContacts(BROADCAST_ID)
+
+      expect(result).toEqual({ processed: 3 })
+      // A full batch at the custom rate keeps driving via the cron, exactly
+      // like a full 500-row batch does at the default rate.
+      expect(markHandoffCompleted).not.toHaveBeenCalled()
+    })
+
+    test("stamps hand-off completion for a partial batch below the custom sendRatePerMinute", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({
+          templateId: "tmpl-1",
+          channel: "whatsapp",
+          sendRatePerMinute: 3,
+        }),
+      ])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
+
+      await processBroadcastContacts(BROADCAST_ID)
+
+      expect(markHandoffCompleted).toHaveBeenCalledWith({
+        broadcastId: BROADCAST_ID,
+      })
+    })
+
+    test("marks contactOnBroadcast sent via markContactSentIfSending after queue add (guard-vs-producer race: the service's own EXISTS guard — not a caller-side status check — is what keeps a stopped broadcast's row from resurrecting)", async () => {
+      listSendableById.mockResolvedValue([
         makeBroadcast({ templateId: "tmpl-1", channel: "whatsapp" }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue([makeContactOnBroadcast()])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
 
       const result = await processBroadcastContacts(BROADCAST_ID)
 
       expect(result).toEqual({ processed: 1 })
-      // update to contactsOnBroadcastsModel
-      const cobUpdate = updateCalls.find(
-        (c) =>
-          (c.table as { __name?: string }).__name ===
-          "contactsOnBroadcastsModel",
-      )
-      expect(cobUpdate).toBeDefined()
-      expect(cobUpdate?.values).toMatchObject({ sent: true })
-      expect(cobUpdate?.condition).toEqual({
-        __and: [
-          { __eq: ["cob.broadcastId", BROADCAST_ID] },
-          { __eq: ["cob.contactId", "contact-1"] },
-        ],
+      expect(markContactSentIfSending).toHaveBeenCalledWith({
+        broadcastId: BROADCAST_ID,
+        contactId: "contact-1",
       })
+      // The sent flag goes through the conditional service call above — the
+      // handler never marks this recipient failed.
+      expect(markContactFailedCalls).toHaveLength(0)
     })
 
     test("processes multiple contacts in the scoped broadcast and returns total count", async () => {
-      findManyBroadcast.mockResolvedValue([
+      listSendableById.mockResolvedValue([
         makeBroadcast({ templateId: "t-1", channel: "whatsapp" }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue([
+      listPendingRecipients.mockResolvedValue([
         makeContactOnBroadcast(),
         makeContactOnBroadcast({
           contactId: "contact-2",
@@ -441,10 +530,10 @@ describe("processBroadcastContacts", () => {
     })
 
     test("does not requeue or finalize on full batch because cron drives the next batch", async () => {
-      findManyBroadcast.mockResolvedValue([
+      listSendableById.mockResolvedValue([
         makeBroadcast({ templateId: "tmpl-1", channel: "whatsapp" }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue(
+      listPendingRecipients.mockResolvedValue(
         Array.from({ length: 500 }, (_, index) =>
           makeContactOnBroadcast({
             contactId: `contact-${index}`,
@@ -457,40 +546,39 @@ describe("processBroadcastContacts", () => {
 
       expect(result).toEqual({ processed: 500 })
       expect(scheduleAddSpy).not.toHaveBeenCalled()
-      expect(
-        updateCalls.some(
-          (call) =>
-            (call.table as { __name?: string }).__name === "broadcastModel" &&
-            call.values.status === "sent",
-        ),
-      ).toBe(false)
+      // The handler never promotes the broadcast to a terminal "sent" status;
+      // only the hand-off stamp is written. `broadcastService` exposes no
+      // status-setting method to this handler, so the only writes it can make
+      // are the hand-off stamp, the per-contact sent flag, and markContactFailed.
+      expect(markContactFailedSpy).not.toHaveBeenCalled()
     })
 
-    test("marks broadcast sent for a partial batch with no retryable error", async () => {
-      findManyBroadcast.mockResolvedValue([
+    test("stamps hand-off completion for a partial batch with no retryable error", async () => {
+      listSendableById.mockResolvedValue([
         makeBroadcast({ templateId: "tmpl-1", channel: "whatsapp" }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue([makeContactOnBroadcast()])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
 
       await processBroadcastContacts(BROADCAST_ID)
 
       expect(scheduleAddSpy).not.toHaveBeenCalled()
-      expect(
-        updateCalls.some(
-          (call) =>
-            (call.table as { __name?: string }).__name === "broadcastModel" &&
-            call.values.status === "sent",
-        ),
-      ).toBe(true)
+      expect(markHandoffCompleted).toHaveBeenCalledWith({
+        broadcastId: BROADCAST_ID,
+      })
+      // The handler never promotes the broadcast to a terminal "sent" status;
+      // only the hand-off stamp is written. `broadcastService` exposes no
+      // status-setting method to this handler, so the only writes it can make
+      // are the hand-off stamp, the per-contact sent flag, and markContactFailed.
+      expect(markContactFailedSpy).not.toHaveBeenCalled()
     })
   })
 
   describe("error handling inside per-contact processing", () => {
     test("throws when queue.add fails so BullMQ can retry and does not mark failedAt", async () => {
-      findManyBroadcast.mockResolvedValue([
+      listSendableById.mockResolvedValue([
         makeBroadcast({ templateId: "tmpl-1", channel: "whatsapp" }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue([makeContactOnBroadcast()])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
 
       const error = new Error("queue unavailable")
       chatAddSpy.mockRejectedValueOnce(error)
@@ -500,36 +588,30 @@ describe("processBroadcastContacts", () => {
       )
 
       expect(loggerErrorSpy).toHaveBeenCalledTimes(1)
-      expect(updateCalls).not.toContainEqual(
-        expect.objectContaining({
-          values: expect.objectContaining({ failedAt: expect.anything() }),
-        }),
-      )
+      expect(markContactFailedSpy).not.toHaveBeenCalled()
     })
 
-    test("throws when sent=true update fails after enqueue and does not mark failedAt", async () => {
-      findManyBroadcast.mockResolvedValue([
+    test("throws when markContactSentIfSending fails after enqueue and does not mark failedAt", async () => {
+      listSendableById.mockResolvedValue([
         makeBroadcast({ templateId: "tmpl-1", channel: "whatsapp" }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue([makeContactOnBroadcast()])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
 
-      updateWhereSpy.mockRejectedValueOnce(new Error("database unavailable"))
+      markContactSentIfSending.mockRejectedValueOnce(
+        new Error("database unavailable"),
+      )
 
       await expect(processBroadcastContacts(BROADCAST_ID)).rejects.toThrow(
         "database unavailable",
       )
 
       expect(chatAddSpy).toHaveBeenCalledTimes(1)
-      expect(updateCalls).not.toContainEqual(
-        expect.objectContaining({
-          values: expect.objectContaining({ failedAt: expect.anything() }),
-        }),
-      )
+      expect(markContactFailedSpy).not.toHaveBeenCalled()
     })
 
     test("marks invalid flow contact failed without throwing or enqueueing", async () => {
-      findManyBroadcast.mockResolvedValue([makeBroadcast({ flowId: "flow-1" })])
-      findManyContactsOnBroadcasts.mockResolvedValue([
+      listSendableById.mockResolvedValue([makeBroadcast({ flowId: "flow-1" })])
+      listPendingRecipients.mockResolvedValue([
         makeContactOnBroadcast({ conversationId: "" }),
       ])
 
@@ -537,21 +619,268 @@ describe("processBroadcastContacts", () => {
 
       expect(result).toEqual({ processed: 0 })
       expect(integrationAddSpy).not.toHaveBeenCalled()
-      expect(updateCalls).toContainEqual(
+      expect(markContactFailedCalls).toContainEqual({
+        broadcastId: BROADCAST_ID,
+        contactId: "contact-1",
+        reason: "missing conversation for flow send",
+      })
+    })
+
+    test("sends each contact with the template chosen for its own page", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({
+          channel: "whatsapp",
+          targetMode: "targets",
+          targets: [
+            {
+              inboxId: "inbox-a",
+              templateId: "template-a",
+              templateData: { body: ["A"] },
+            },
+            {
+              inboxId: "inbox-b",
+              templateId: "template-b",
+              templateData: { body: ["B"] },
+            },
+          ],
+        }),
+      ])
+      listPendingRecipients.mockResolvedValue([
+        makeContactOnBroadcast({
+          contactId: "contact-a",
+          contactInbox: makeContactInbox("ci-a", "inbox-a"),
+        }),
+        makeContactOnBroadcast({
+          contactId: "contact-b",
+          contactInbox: makeContactInbox("ci-b", "inbox-b"),
+        }),
+      ])
+
+      const result = await processBroadcastContacts(BROADCAST_ID)
+
+      expect(result).toEqual({ processed: 2 })
+      expect(chatAddSpy).toHaveBeenCalledTimes(2)
+      const payloads = chatAddSpy.mock.calls.map(
+        (call) => (call[1] as { data: Record<string, unknown> }).data,
+      )
+      expect(payloads).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            templateId: "template-a",
+            templateData: { body: ["A"] },
+            contactInbox: expect.objectContaining({ inboxId: "inbox-a" }),
+          }),
+          expect.objectContaining({
+            templateId: "template-b",
+            templateData: { body: ["B"] },
+            contactInbox: expect.objectContaining({ inboxId: "inbox-b" }),
+          }),
+        ]),
+      )
+      expect(markContactFailedCalls).toHaveLength(0)
+    })
+
+    test("separates per-page Messenger buttons from the target's template params", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({
+          channel: "messenger",
+          targetMode: "targets",
+          targets: [
+            {
+              inboxId: "inbox-a",
+              templateId: "template-a",
+              templateData: {
+                body: ["A"],
+                buttons: [{ id: "b1", label: "Go", flowId: "flow-1" }],
+              },
+            },
+          ],
+        }),
+      ])
+      listPendingRecipients.mockResolvedValue([
+        makeContactOnBroadcast({
+          contactInbox: makeContactInbox("ci-a", "inbox-a"),
+        }),
+      ])
+
+      await processBroadcastContacts(BROADCAST_ID)
+
+      expect(chatAddSpy).toHaveBeenCalledWith(
+        "sendMessengerTemplateMessage",
         expect.objectContaining({
-          values: expect.objectContaining({
-            failedAt: expect.anything(),
-            errorContent: "missing conversation for flow send",
+          data: expect.objectContaining({
+            templateId: "template-a",
+            templateData: { body: ["A"] },
+            buttons: [{ id: "b1", label: "Go", flowId: "flow-1" }],
           }),
         }),
+        expect.anything(),
+      )
+    })
+
+    test("marks a contact failed when its page has no template in a multi-page broadcast", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({
+          channel: "whatsapp",
+          targetMode: "targets",
+          targets: [
+            {
+              inboxId: "inbox-a",
+              templateId: "template-a",
+              templateData: null,
+            },
+          ],
+        }),
+      ])
+      listPendingRecipients.mockResolvedValue([
+        makeContactOnBroadcast({
+          contactId: "contact-other",
+          contactInbox: makeContactInbox("ci-x", "inbox-other"),
+        }),
+      ])
+
+      const result = await processBroadcastContacts(BROADCAST_ID)
+
+      expect(result).toEqual({ processed: 0 })
+      expect(chatAddSpy).not.toHaveBeenCalled()
+      expect(markContactSentIfSending).not.toHaveBeenCalled()
+      expect(markContactFailedCalls).toHaveLength(1)
+      expect(markContactFailedCalls[0].reason).toBe(
+        "no template selected for the contact's page",
+      )
+    })
+
+    test("fails every contact of a targets-mode broadcast whose target rows are gone, without touching legacy columns", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({
+          channel: "whatsapp",
+          targetMode: "targets",
+          templateId: "stale-legacy",
+          templateData: { body: ["stale"] },
+          targets: [],
+        }),
+      ])
+      listPendingRecipients.mockResolvedValue([
+        makeContactOnBroadcast({
+          contactInbox: makeContactInbox("ci-a", "inbox-a"),
+        }),
+      ])
+
+      const result = await processBroadcastContacts(BROADCAST_ID)
+
+      expect(result).toEqual({ processed: 0 })
+      expect(chatAddSpy).not.toHaveBeenCalled()
+      expect(markContactFailedCalls[0].reason).toBe(
+        "no template selected for the contact's page",
+      )
+    })
+
+    test("runs each page's own flow in a targets-mode flow broadcast", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({
+          channel: "whatsapp",
+          targetMode: "targets",
+          targets: [
+            {
+              inboxId: "inbox-a",
+              flowId: "flow-a",
+              templateId: null,
+              templateData: null,
+            },
+            {
+              inboxId: "inbox-b",
+              flowId: "flow-b",
+              templateId: null,
+              templateData: null,
+            },
+          ],
+        }),
+      ])
+      listPendingRecipients.mockResolvedValue([
+        makeContactOnBroadcast({
+          contactId: "contact-a",
+          contactInbox: makeContactInbox("ci-a", "inbox-a"),
+        }),
+        makeContactOnBroadcast({
+          contactId: "contact-b",
+          contactInbox: makeContactInbox("ci-b", "inbox-b"),
+        }),
+      ])
+
+      const result = await processBroadcastContacts(BROADCAST_ID)
+
+      expect(result).toEqual({ processed: 2 })
+      const flowIds = integrationAddSpy.mock.calls.map(
+        (call) => (call[1] as { data: { flowId: string } }).data.flowId,
+      )
+      expect(flowIds).toEqual(expect.arrayContaining(["flow-a", "flow-b"]))
+      expect(chatAddSpy).not.toHaveBeenCalled()
+    })
+
+    test("fails a contact whose page lost its flow (deleted → set null) instead of marking it sent", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({
+          channel: "whatsapp",
+          targetMode: "targets",
+          targets: [
+            {
+              inboxId: "inbox-a",
+              flowId: null,
+              templateId: null,
+              templateData: null,
+            },
+          ],
+        }),
+      ])
+      listPendingRecipients.mockResolvedValue([
+        makeContactOnBroadcast({
+          contactInbox: makeContactInbox("ci-a", "inbox-a"),
+        }),
+      ])
+
+      const result = await processBroadcastContacts(BROADCAST_ID)
+
+      expect(result).toEqual({ processed: 0 })
+      expect(integrationAddSpy).not.toHaveBeenCalled()
+      expect(markContactSentIfSending).not.toHaveBeenCalled()
+      expect(markContactFailedCalls[0].reason).toBe(
+        "no flow or template selected for the contact's page",
+      )
+    })
+
+    test("keeps the legacy single-template path when the broadcast has no targets", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({
+          channel: "whatsapp",
+          templateId: "legacy-template",
+          templateData: { body: ["legacy"] },
+        }),
+      ])
+      listPendingRecipients.mockResolvedValue([
+        makeContactOnBroadcast({
+          contactInbox: makeContactInbox("ci-a", "inbox-any"),
+        }),
+      ])
+
+      await processBroadcastContacts(BROADCAST_ID)
+
+      expect(chatAddSpy).toHaveBeenCalledWith(
+        "sendWhatsappTemplateMessage",
+        expect.objectContaining({
+          data: expect.objectContaining({
+            templateId: "legacy-template",
+            templateData: { body: ["legacy"] },
+          }),
+        }),
+        expect.anything(),
       )
     })
 
     test("marks invalid template contact failed without throwing or enqueueing", async () => {
-      findManyBroadcast.mockResolvedValue([
+      listSendableById.mockResolvedValue([
         makeBroadcast({ templateId: "tmpl-1", channel: "whatsapp" }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue([
+      listPendingRecipients.mockResolvedValue([
         makeContactOnBroadcast({ conversation: null }),
       ])
 
@@ -559,22 +888,21 @@ describe("processBroadcastContacts", () => {
 
       expect(result).toEqual({ processed: 0 })
       expect(chatAddSpy).not.toHaveBeenCalled()
-      expect(updateCalls).toContainEqual(
-        expect.objectContaining({
-          values: expect.objectContaining({
-            failedAt: expect.anything(),
-            errorContent: "missing conversation/contactInbox for template send",
-          }),
-        }),
-      )
+      expect(markContactFailedCalls).toContainEqual({
+        broadcastId: BROADCAST_ID,
+        contactId: "contact-1",
+        reason: "missing conversation/contactInbox for template send",
+      })
     })
 
     test("throws when marking invalid contact failed hits a database error", async () => {
-      findManyBroadcast.mockResolvedValue([makeBroadcast({ flowId: "flow-1" })])
-      findManyContactsOnBroadcasts.mockResolvedValue([
+      listSendableById.mockResolvedValue([makeBroadcast({ flowId: "flow-1" })])
+      listPendingRecipients.mockResolvedValue([
         makeContactOnBroadcast({ conversationId: "" }),
       ])
-      updateWhereSpy.mockRejectedValueOnce(new Error("database unavailable"))
+      markContactFailedSpy.mockRejectedValueOnce(
+        new Error("database unavailable"),
+      )
 
       await expect(processBroadcastContacts(BROADCAST_ID)).rejects.toThrow(
         "database unavailable",
@@ -590,15 +918,34 @@ describe("processBroadcastContacts", () => {
       )
     })
 
+    // A BullMQ jobId containing ":" collides with Redis key namespacing and
+    // silently breaks dedup — see the worker-development skill.
+    test("every downstream jobId is free of the ':' Redis key separator", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({ flowId: "flow-1", templateId: "tmpl-1" }),
+      ])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
+
+      await processBroadcastContacts(BROADCAST_ID)
+
+      const jobIds = [...chatAddSpy.mock.calls, ...integrationAddSpy.mock.calls]
+        .map((call) => (call[2] as { jobId?: string } | undefined)?.jobId)
+        .filter((jobId): jobId is string => typeof jobId === "string")
+      expect(jobIds.length).toBeGreaterThan(0)
+      for (const jobId of jobIds) {
+        expect(jobId).not.toContain(":")
+      }
+    })
+
     test("enqueues flow and template with distinct deterministic jobIds", async () => {
-      findManyBroadcast.mockResolvedValue([
+      listSendableById.mockResolvedValue([
         makeBroadcast({
           flowId: "flow-1",
           templateId: "tmpl-1",
           channel: "whatsapp",
         }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue([makeContactOnBroadcast()])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
 
       await processBroadcastContacts(BROADCAST_ID)
 
@@ -606,7 +953,8 @@ describe("processBroadcastContacts", () => {
         "sendFlow",
         expect.anything(),
         {
-          jobId: "broadcast-send-contact-broadcast-1-contact-1-flow",
+          jobId: "broadcast-send-contact-broadcast-1-contact-1-flow-r0",
+          priority: 5,
           removeOnComplete: { age: 3600, count: 100_000 },
         },
       )
@@ -614,22 +962,23 @@ describe("processBroadcastContacts", () => {
         "sendWhatsappTemplateMessage",
         expect.anything(),
         {
-          jobId: "broadcast-send-contact-broadcast-1-contact-1-template",
+          jobId: "broadcast-send-contact-broadcast-1-contact-1-template-r0",
+          priority: 5,
           removeOnComplete: { age: 3600, count: 100_000 },
         },
       )
     })
 
     test("retries both flow and template with the same deterministic jobIds", async () => {
-      findManyBroadcast.mockResolvedValue([
+      listSendableById.mockResolvedValue([
         makeBroadcast({
           flowId: "flow-1",
           templateId: "tmpl-1",
           channel: "whatsapp",
         }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue([makeContactOnBroadcast()])
-      updateWhereSpy
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
+      markContactSentIfSending
         .mockRejectedValueOnce(new Error("database unavailable"))
         .mockResolvedValue(undefined)
 
@@ -642,35 +991,39 @@ describe("processBroadcastContacts", () => {
       expect(chatAddSpy).toHaveBeenCalledTimes(2)
       expect(integrationAddSpy.mock.calls.map((call) => call[2])).toEqual([
         {
-          jobId: "broadcast-send-contact-broadcast-1-contact-1-flow",
+          jobId: "broadcast-send-contact-broadcast-1-contact-1-flow-r0",
+          priority: 5,
           removeOnComplete: { age: 3600, count: 100_000 },
         },
         {
-          jobId: "broadcast-send-contact-broadcast-1-contact-1-flow",
+          jobId: "broadcast-send-contact-broadcast-1-contact-1-flow-r0",
+          priority: 5,
           removeOnComplete: { age: 3600, count: 100_000 },
         },
       ])
       expect(chatAddSpy.mock.calls.map((call) => call[2])).toEqual([
         {
-          jobId: "broadcast-send-contact-broadcast-1-contact-1-template",
+          jobId: "broadcast-send-contact-broadcast-1-contact-1-template-r0",
+          priority: 5,
           removeOnComplete: { age: 3600, count: 100_000 },
         },
         {
-          jobId: "broadcast-send-contact-broadcast-1-contact-1-template",
+          jobId: "broadcast-send-contact-broadcast-1-contact-1-template-r0",
+          priority: 5,
           removeOnComplete: { age: 3600, count: 100_000 },
         },
       ])
     })
 
     test("never emits a downstream jobId containing ':' (BullMQ rejects it)", async () => {
-      findManyBroadcast.mockResolvedValue([
+      listSendableById.mockResolvedValue([
         makeBroadcast({
           flowId: "flow-1",
           templateId: "tmpl-1",
           channel: "whatsapp",
         }),
       ])
-      findManyContactsOnBroadcasts.mockResolvedValue([makeContactOnBroadcast()])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
 
       await processBroadcastContacts(BROADCAST_ID)
 
@@ -683,6 +1036,292 @@ describe("processBroadcastContacts", () => {
       for (const jobId of jobIds) {
         expect(jobId).not.toContain(":")
       }
+    })
+  })
+
+  describe("hand-off completion", () => {
+    test("does not stamp hand-off when a batch throws part-way (reconcile re-drives it)", async () => {
+      // Same fixture and queue spy as the existing "Retryable error" test in this file.
+      listSendableById.mockResolvedValue([
+        makeBroadcast({ templateId: "tmpl-1", channel: "whatsapp" }),
+      ])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
+      chatAddSpy.mockRejectedValueOnce(new Error("queue unavailable"))
+
+      await expect(processBroadcastContacts(BROADCAST_ID)).rejects.toThrow(
+        "queue unavailable",
+      )
+
+      expect(markHandoffCompleted).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("stop/resume protocol: epoch-suffixed jobIds", () => {
+    // Protocol case "stop -> resume before hand-off": resumeSending bumps
+    // resumeCount, so the resumed run's downstream jobIds use a new epoch
+    // and never collide with a completed job from the pre-stop epoch that
+    // may still be sitting in the queue's 1h removeOnComplete retention
+    // window (see broadcastContactSendJobId's comment in the source file).
+    test("suffixes downstream jobIds with the broadcast row's resumeCount", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({
+          flowId: "flow-1",
+          templateId: "tmpl-1",
+          channel: "whatsapp",
+          resumeCount: 2,
+        }),
+      ])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
+
+      await processBroadcastContacts(BROADCAST_ID)
+
+      expect(integrationAddSpy).toHaveBeenCalledWith(
+        "sendFlow",
+        expect.anything(),
+        expect.objectContaining({
+          jobId: "broadcast-send-contact-broadcast-1-contact-1-flow-r2",
+        }),
+      )
+      expect(chatAddSpy).toHaveBeenCalledWith(
+        "sendWhatsappTemplateMessage",
+        expect.anything(),
+        expect.objectContaining({
+          jobId: "broadcast-send-contact-broadcast-1-contact-1-template-r2",
+        }),
+      )
+    })
+
+    test("a second resume (resumeCount goes 0 -> 1 -> 2) produces a third, still-distinct jobId epoch", async () => {
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
+
+      for (const resumeCount of [0, 1, 2]) {
+        listSendableById.mockResolvedValue([
+          makeBroadcast({
+            templateId: "tmpl-1",
+            channel: "whatsapp",
+            resumeCount,
+          }),
+        ])
+        await processBroadcastContacts(BROADCAST_ID)
+      }
+
+      const jobIds = chatAddSpy.mock.calls.map(
+        (call) => (call[2] as { jobId: string }).jobId,
+      )
+      expect(jobIds).toEqual([
+        "broadcast-send-contact-broadcast-1-contact-1-template-r0",
+        "broadcast-send-contact-broadcast-1-contact-1-template-r1",
+        "broadcast-send-contact-broadcast-1-contact-1-template-r2",
+      ])
+      expect(new Set(jobIds).size).toBe(3)
+    })
+  })
+
+  describe("dispatch window lease (D2)", () => {
+    test("claims the lease before fetching recipients", async () => {
+      listSendableById.mockResolvedValue([makeBroadcast()])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
+
+      await processBroadcastContacts(BROADCAST_ID)
+
+      expect(claimDispatchWindow).toHaveBeenCalledWith({
+        broadcastId: BROADCAST_ID,
+      })
+      expect(claimDispatchWindow.mock.invocationCallOrder[0]).toBeLessThan(
+        listPendingRecipients.mock.invocationCallOrder[0],
+      )
+    })
+
+    test("a refused claim hands off nothing: no fetch, no enqueue, no hand-off stamp, processed 0", async () => {
+      listSendableById.mockResolvedValue([makeBroadcast({ flowId: "flow-1" })])
+      claimDispatchWindow.mockResolvedValue(false)
+
+      const result = await processBroadcastContacts(BROADCAST_ID)
+
+      expect(result).toEqual({ processed: 0 })
+      expect(listPendingRecipients).not.toHaveBeenCalled()
+      expect(chatAddSpy).not.toHaveBeenCalled()
+      expect(integrationAddSpy).not.toHaveBeenCalled()
+      expect(markHandoffCompleted).not.toHaveBeenCalled()
+      expect(markContactFailedCalls).toHaveLength(0)
+    })
+
+    test("logs the refusal at debug level", async () => {
+      listSendableById.mockResolvedValue([makeBroadcast()])
+      claimDispatchWindow.mockResolvedValue(false)
+
+      await processBroadcastContacts(BROADCAST_ID)
+
+      expect(loggerDebugSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ broadcastId: BROADCAST_ID }),
+        expect.stringContaining("dispatch window"),
+      )
+    })
+
+    test("a granted claim runs the hand-off exactly as before", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({ templateId: "tmpl-1", channel: "whatsapp" }),
+      ])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
+      claimDispatchWindow.mockResolvedValue(true)
+
+      const result = await processBroadcastContacts(BROADCAST_ID)
+
+      expect(result).toEqual({ processed: 1 })
+      expect(chatAddSpy).toHaveBeenCalledTimes(1)
+      expect(markHandoffCompleted).toHaveBeenCalledWith({
+        broadcastId: BROADCAST_ID,
+      })
+    })
+  })
+
+  describe("bounded hand-off concurrency", () => {
+    test("hands off 1000 recipients, never exceeding 100 in-flight markContactSentIfSending calls", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({
+          templateId: "tmpl-1",
+          channel: "whatsapp",
+          sendRatePerMinute: 1000,
+        }),
+      ])
+      listPendingRecipients.mockResolvedValue(
+        Array.from({ length: 1000 }, (_, index) =>
+          makeContactOnBroadcast({
+            contactId: `contact-${index}`,
+            contactInboxId: `ci-${index}`,
+            conversation: makeConversation(`conv-${index}`, `contact-${index}`),
+            contactInbox: makeContactInbox(`ci-${index}`, "inbox-1"),
+          }),
+        ),
+      )
+
+      let inFlight = 0
+      let maxInFlight = 0
+      markContactSentIfSending.mockImplementation(async () => {
+        inFlight++
+        maxInFlight = Math.max(maxInFlight, inFlight)
+        // Yield so overlapping calls can actually race.
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        inFlight--
+      })
+
+      const result = await processBroadcastContacts(BROADCAST_ID)
+
+      expect(result).toEqual({ processed: 1000 })
+      expect(markContactSentIfSending).toHaveBeenCalledTimes(1000)
+      expect(maxInFlight).toBeLessThanOrEqual(100)
+      // Deterministic with 1000 recipients and a concurrency cap of 100: the
+      // worker pool always saturates. Pins the exact value so a silent
+      // change to BROADCAST_HANDOFF_CONCURRENCY fails this test.
+      expect(maxInFlight).toBe(100)
+    })
+
+    test("one rejected recipient still lets the other 999 through before the batch error is re-thrown", async () => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({
+          templateId: "tmpl-1",
+          channel: "whatsapp",
+          sendRatePerMinute: 1000,
+        }),
+      ])
+      const recipients = Array.from({ length: 1000 }, (_, index) =>
+        makeContactOnBroadcast({
+          contactId: `contact-${index}`,
+          contactInboxId: `ci-${index}`,
+          conversation: makeConversation(`conv-${index}`, `contact-${index}`),
+          contactInbox: makeContactInbox(`ci-${index}`, "inbox-1"),
+        }),
+      )
+      listPendingRecipients.mockResolvedValue(recipients)
+
+      markContactSentIfSending.mockImplementation(
+        (input: { contactId: string }) => {
+          if (input.contactId === "contact-500") {
+            throw new Error("transient failure")
+          }
+          return Promise.resolve()
+        },
+      )
+
+      await expect(processBroadcastContacts(BROADCAST_ID)).rejects.toThrow(
+        "transient failure",
+      )
+
+      // The other 999 recipients were still handed off and marked sent.
+      expect(markContactSentIfSending).toHaveBeenCalledTimes(1000)
+      expect(chatAddSpy).toHaveBeenCalledTimes(1000)
+      expect(markHandoffCompleted).not.toHaveBeenCalled()
+    })
+
+    test("an invalid recipient is marked failed without incrementing processed, alongside a bounded hand-off", async () => {
+      listSendableById.mockResolvedValue([makeBroadcast({ flowId: "flow-1" })])
+      listPendingRecipients.mockResolvedValue([
+        makeContactOnBroadcast({ conversationId: "" }),
+        makeContactOnBroadcast({
+          contactId: "contact-valid",
+          contactInboxId: "ci-valid",
+        }),
+      ])
+
+      const result = await processBroadcastContacts(BROADCAST_ID)
+
+      expect(result).toEqual({ processed: 1 })
+      expect(markContactFailedCalls).toContainEqual({
+        broadcastId: BROADCAST_ID,
+        contactId: "contact-1",
+        reason: "missing conversation for flow send",
+      })
+      expect(integrationAddSpy).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe("channel coverage (3.9): rate + lease apply before any channel branch", () => {
+    const broadcastChannels = broadcastChannelCapabilities.map(
+      (capability) => capability.channel,
+    )
+
+    test.each(
+      broadcastChannels,
+    )("applies the batch limit and claims the lease before the %s channel branch", async (channel) => {
+      listSendableById.mockResolvedValue([
+        makeBroadcast({
+          channel,
+          flowId: "flow-1",
+          sendRatePerMinute: 17,
+        }),
+      ])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
+
+      await processBroadcastContacts(BROADCAST_ID)
+
+      expect(claimDispatchWindow).toHaveBeenCalledWith({
+        broadcastId: BROADCAST_ID,
+      })
+      expect(listPendingRecipients).toHaveBeenCalledWith({
+        broadcastId: BROADCAST_ID,
+        limit: 17,
+      })
+      expect(claimDispatchWindow.mock.invocationCallOrder[0]).toBeLessThan(
+        listPendingRecipients.mock.invocationCallOrder[0],
+      )
+    })
+
+    test("a refused lease skips every channel's hand-off identically", async () => {
+      claimDispatchWindow.mockResolvedValue(false)
+
+      for (const channel of broadcastChannels) {
+        listSendableById.mockResolvedValue([
+          makeBroadcast({ channel, flowId: "flow-1" }),
+        ])
+
+        const result = await processBroadcastContacts(BROADCAST_ID)
+
+        expect(result).toEqual({ processed: 0 })
+      }
+
+      expect(listPendingRecipients).not.toHaveBeenCalled()
+      expect(chatAddSpy).not.toHaveBeenCalled()
+      expect(integrationAddSpy).not.toHaveBeenCalled()
     })
   })
 })

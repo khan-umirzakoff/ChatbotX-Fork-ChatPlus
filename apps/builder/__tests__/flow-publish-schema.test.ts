@@ -4,10 +4,10 @@ import {
   waitNodeDefaultFn,
 } from "@chatbotx.io/flow-config"
 import { describe, expect, test } from "vitest"
-import { updateFlowVersionSchema } from "@/features/flows/schemas/action"
+import { updateFlowVersionSchema } from "@/features/flows/schema/action"
 
 const defaultNodeProps = {
-  nodeProps: { id: "n1", labelVersion: 1, position: { x: 0, y: 0 } },
+  nodeProps: { id: "1", labelVersion: 1, position: { x: 0, y: 0 } },
   dataProps: {},
   detailProps: {},
 }

@@ -1,11 +1,12 @@
 import { isImageUrl } from "@chatbotx.io/ai"
 import { findOrFail } from "@chatbotx.io/database/client"
 import { conversationModel } from "@chatbotx.io/database/schema"
+import type { MetadataPayload } from "@chatbotx.io/flow-config"
 import {
   type BotResponseTrackingContext,
   ChatJobAction,
   chatQueue,
-  getRedisConnection,
+  getQueueConnection,
   queueNames,
 } from "@chatbotx.io/worker-config"
 import { QueueEvents } from "bullmq"
@@ -27,7 +28,7 @@ function getChatQueueEvents(): QueueEvents {
   }
 
   chatQueueEvents = new QueueEvents(queueNames.enum.chat, {
-    connection: getRedisConnection().duplicate(),
+    connection: getQueueConnection(queueNames.enum.chat).duplicate(),
   })
   return chatQueueEvents
 }
@@ -42,6 +43,8 @@ export async function closeChatQueueEvents(): Promise<void> {
 type SendMessageOptions = {
   forceUrl?: boolean
   storagePath?: string
+  metadata?: MetadataPayload
+  isBulkBroadcast?: boolean
 }
 
 async function enqueueChatMessage(
@@ -73,6 +76,8 @@ async function enqueueChatMessage(
     data: {
       ...data,
       conversation,
+      metadata: options?.metadata,
+      isBulkBroadcast: options?.isBulkBroadcast,
     },
   })
 }

@@ -3,12 +3,9 @@
 import type { ChannelType } from "@chatbotx.io/database/partials"
 import { DataTable } from "@chatbotx.io/ui/components/data-table/data-table"
 import { DataTableColumnHeader } from "@chatbotx.io/ui/components/data-table/data-table-column-header"
+import { DataTableSkeleton } from "@chatbotx.io/ui/components/data-table/data-table-skeleton"
 import { DataTableToolbar } from "@chatbotx.io/ui/components/data-table/data-table-toolbar"
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@chatbotx.io/ui/components/ui/avatar"
+import { Button } from "@chatbotx.io/ui/components/ui/button"
 import { Checkbox } from "@chatbotx.io/ui/components/ui/checkbox"
 import {
   Tooltip,
@@ -16,236 +13,136 @@ import {
   TooltipTrigger,
 } from "@chatbotx.io/ui/components/ui/tooltip"
 import { useDataTable } from "@chatbotx.io/ui/hooks/use-data-table"
-import type { Column, ColumnDef } from "@tanstack/react-table"
+import type { ColumnDef, Row } from "@tanstack/react-table"
 import { format, formatDistanceToNow } from "date-fns"
-import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useFormatter, useTranslations } from "next-intl"
-import { use, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   type ContactFilterCriteria,
   ContactListFilterButton,
   ContactListFilterPanel,
-  EMPTY_CONTACT_FILTER,
   useContactFilterQueryState,
 } from "@/features/contact-filter"
 import { EMAIL_PHONE_RESTRICTED_FILTER_FIELDS } from "@/features/contact-filter/lib/restricted-fields"
-import { client } from "@/lib/orpc/orpc"
-import { InboxIcon } from "../inboxes/components/inbox-icon"
-import { getUserName } from "../users/schemas/resource"
+import { getUserName } from "../users/schema/resource"
+import { ContactNameCell } from "./components/contact-name-cell"
 import { CONTACTS_DEFAULT_PER_PAGE } from "./constants"
 import { ContactListAction } from "./contacts-list-action"
-import type { listContacts } from "./queries/list-contacts.queries"
-import type { ExportContactsFilter } from "./schemas/action"
-import type { ListContactsResponse } from "./schemas/query"
-import type { ContactResource } from "./schemas/resource"
-import { getLatestContactLastReadAt, useAvatarUrl } from "./utils"
+import { useContacts } from "./hooks/use-contacts"
+import { getContactsListInput } from "./lib/contact-list-input"
+import type { ExportContactsFilter } from "./schema/action"
+import type { ContactTableRow } from "./schema/query"
+import { getLatestContactLastReadAt } from "./utils"
 
-const parseSortParam = (value: string | null) => {
-  if (!value) {
-    return []
-  }
-
-  try {
-    const parsed = JSON.parse(value)
-    if (!Array.isArray(parsed)) {
-      return []
-    }
-
-    return parsed.filter(
-      (sort): sort is { id: string; desc: boolean } =>
-        typeof sort?.id === "string" && typeof sort?.desc === "boolean",
-    )
-  } catch {
-    return []
-  }
-}
-
-function NameCell({
-  contact,
+/**
+ * One contact rendered as a card, for the narrow-viewport view of the table.
+ *
+ * Only the fields worth a phone's width survive: identity, who owns the
+ * conversation, and when the contact arrived. Source and last-read stay in the
+ * table, which takes over from `md` up. Every label is a key the table columns
+ * already use, so the card adds no translation surface.
+ */
+function ContactCard({
+  row,
   workspaceId,
 }: {
-  contact: ListContactsResponse["data"][number]
+  row: Row<ContactTableRow>
   workspaceId: string
 }) {
-  const avatarUrl = useAvatarUrl(contact)
-  const conversationId = contact.conversation?.id
-  const inboxHref = conversationId
-    ? `/space/${workspaceId}/inbox?conversationId=${conversationId}`
-    : null
-  const channel = contact.contactInboxes?.[0]?.channel as
-    | ChannelType
-    | undefined
-
-  const avatarVisual = (
-    <div className="relative">
-      <Avatar className="size-9 shrink-0">
-        <AvatarImage
-          alt={contact.fullName ?? ""}
-          className="object-cover"
-          src={avatarUrl}
-        />
-        <AvatarFallback className="bg-gray-300 text-sm dark:bg-zinc-100 dark:text-zinc-800">
-          {contact.fullName?.slice(0, 2) ?? "?"}
-        </AvatarFallback>
-      </Avatar>
-      {channel && (
-        <div className="absolute end-0 bottom-0 ltr:translate-x-1 rtl:-translate-x-1">
-          <InboxIcon
-            channel={channel}
-            iconClassName="size-3"
-            showLabel={false}
-            size="small"
-          />
-        </div>
-      )}
-    </div>
-  )
-
-  const avatarNode = inboxHref ? (
-    <Link href={inboxHref} prefetch={false} target="_blank">
-      {avatarVisual}
-    </Link>
-  ) : (
-    avatarVisual
-  )
-
-  const nameNode = inboxHref ? (
-    <Link
-      className="truncate font-medium leading-5"
-      href={inboxHref}
-      prefetch={false}
-      target="_blank"
-    >
-      {contact.fullName}
-    </Link>
-  ) : (
-    <span className="truncate font-medium leading-5">{contact.fullName}</span>
-  )
+  const t = useTranslations()
+  const contact = row.original
 
   return (
-    <div className="flex max-w-56 items-center gap-3">
-      {avatarNode}
-      <Tooltip>
-        <TooltipTrigger render={nameNode} />
-        <TooltipContent>
-          <p>{contact.fullName}</p>
-        </TooltipContent>
-      </Tooltip>
+    <div className="flex items-start gap-3 rounded-md border p-3">
+      <Checkbox
+        aria-label={t("actions.selectRow")}
+        checked={row.getIsSelected()}
+        className="mt-1 shrink-0"
+        onCheckedChange={(value) => row.toggleSelected(Boolean(value))}
+      />
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <ContactNameCell contact={contact} workspaceId={workspaceId} />
+        <dl className="flex flex-col gap-1 text-muted-foreground text-xs">
+          <div className="flex items-baseline justify-between gap-3">
+            <dt>{t("fields.assignee.label")}</dt>
+            <dd className="truncate text-foreground">
+              {getUserName(
+                contact.conversation?.assignedUser,
+                t("assignAdmin.unAssigned"),
+              )}
+            </dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-3">
+            <dt>{t("fields.createdAt.label")}</dt>
+            <dd className="text-foreground">
+              {format(contact.createdAt, "yyyy/MM/dd")}
+            </dd>
+          </div>
+        </dl>
+      </div>
     </div>
   )
 }
 
 type ContactsTableProps = {
   canViewEmailAndPhone?: boolean
-  initialContactFilter?: ContactFilterCriteria
   workspaceId: string
-  promises: Promise<[Awaited<ReturnType<typeof listContacts>>]>
 }
 
 export function ContactsTable({
   canViewEmailAndPhone = true,
-  initialContactFilter = EMPTY_CONTACT_FILTER,
   workspaceId,
-  promises,
 }: ContactsTableProps) {
   const t = useTranslations()
   const formatter = useFormatter()
   const searchParams = useSearchParams()
   const searchParamsKey = searchParams.toString()
-  const [
-    {
-      data: initialData,
-      pageCount: initialPageCount,
-      totalCount: initialTotalCount,
-      totalCountCapped: initialTotalCountCapped,
-    },
-  ] = use(promises)
-  const [tableData, setTableData] =
-    useState<ListContactsResponse["data"]>(initialData)
-  const [tablePageCount, setTablePageCount] = useState(initialPageCount)
-  const [tableTotalCount, setTableTotalCount] = useState(initialTotalCount)
-  const [tableTotalCountCapped, setTableTotalCountCapped] = useState(
-    initialTotalCountCapped,
-  )
-  const didHydrateInitialDataRef = useRef(false)
   const {
     filter: contactFilter,
     setFilter: setContactFilter,
     isActive: isContactFilterActive,
-  } = useContactFilterQueryState({ initialFilter: initialContactFilter })
-  const [optimisticContactFilter, setOptimisticContactFilter] =
-    useState<ContactFilterCriteria>(contactFilter)
+  } = useContactFilterQueryState()
+  // The URL page the user was on when the filter last changed. Until the
+  // throttled `?page=` reset lands, that stale page is forced to 1 so the new
+  // filter never fetches (or renders) an out-of-range page.
+  const [filterChangedOnPage, setFilterChangedOnPage] = useState<number | null>(
+    null,
+  )
   const [showContactFilterPanel, setShowContactFilterPanel] = useState(
     isContactFilterActive,
   )
-  const isOptimisticContactFilterActive =
-    optimisticContactFilter.conditions.length > 0
   const excludedFilterFields = useMemo(
     () =>
       canViewEmailAndPhone ? [] : [...EMAIL_PHONE_RESTRICTED_FILTER_FIELDS],
     [canViewEmailAndPhone],
   )
 
-  const keyword = useMemo(() => {
-    const params = new URLSearchParams(searchParamsKey)
-    return params.get("keyword") ?? undefined
-  }, [searchParamsKey])
-
-  useEffect(() => {
-    if (!didHydrateInitialDataRef.current) {
-      didHydrateInitialDataRef.current = true
-      return
-    }
-
-    let ignore = false
-    const params = new URLSearchParams(searchParamsKey)
-
-    client.contactsAPIs
-      .listContactsByPOSTAuthenticatedAPI({
-        workspaceId,
-        page: Number(params.get("page") ?? "1"),
-        perPage: Number(
-          params.get("perPage") ?? String(CONTACTS_DEFAULT_PER_PAGE),
-        ),
-        sort: parseSortParam(params.get("sort")),
-        keyword: params.get("keyword") ?? undefined,
-        contactFilter: isContactFilterActive ? contactFilter : undefined,
-      })
-      .then((response) => {
-        if (ignore) {
-          return
-        }
-
-        setTableData(response.data)
-        setTablePageCount(response.pageCount)
-        setTableTotalCount(response.totalCount)
-        setTableTotalCountCapped(response.totalCountCapped)
-      })
-      .catch(() => {
-        if (ignore) {
-          return
-        }
-
-        setTableData(initialData)
-        setTablePageCount(initialPageCount)
-        setTableTotalCount(initialTotalCount)
-        setTableTotalCountCapped(initialTotalCountCapped)
-      })
-
-    return () => {
-      ignore = true
-    }
-  }, [
-    contactFilter,
-    initialData,
-    initialPageCount,
-    initialTotalCount,
-    initialTotalCountCapped,
-    isContactFilterActive,
-    searchParamsKey,
-    workspaceId,
-  ])
+  const searchParamsRecord = useMemo(
+    () => Object.fromEntries(new URLSearchParams(searchParamsKey).entries()),
+    [searchParamsKey],
+  )
+  const urlListInput = useMemo(
+    () => getContactsListInput(workspaceId, searchParamsRecord, contactFilter),
+    [contactFilter, searchParamsRecord, workspaceId],
+  )
+  if (
+    filterChangedOnPage !== null &&
+    urlListInput.page !== filterChangedOnPage
+  ) {
+    setFilterChangedOnPage(null)
+  }
+  const listContactsInput =
+    urlListInput.page === filterChangedOnPage
+      ? { ...urlListInput, page: 1 }
+      : urlListInput
+  const keyword = listContactsInput.keyword
+  const contactsQuery = useContacts(listContactsInput)
+  const contactsResponse = contactsQuery.data
+  const tableData = contactsResponse?.data ?? []
+  const tablePageCount = contactsResponse?.pageCount ?? 0
+  const tableTotalCount = contactsResponse?.totalCount ?? 0
+  const tableTotalCountCapped = contactsResponse?.totalCountCapped ?? false
 
   useEffect(() => {
     if (isContactFilterActive) {
@@ -253,25 +150,16 @@ export function ContactsTable({
     }
   }, [isContactFilterActive])
 
-  useEffect(() => {
-    setOptimisticContactFilter(contactFilter)
-  }, [contactFilter])
-
   const exportFilter = useMemo<ExportContactsFilter>(
-    () => ({
-      keyword,
-      contactFilter: isOptimisticContactFilterActive
-        ? optimisticContactFilter
-        : undefined,
-    }),
-    [keyword, isOptimisticContactFilterActive, optimisticContactFilter],
+    () => ({ keyword, contactFilter: listContactsInput.contactFilter }),
+    [keyword, listContactsInput.contactFilter],
   )
   const totalCountDisplay = formatter.number(tableTotalCount)
   const totalCountLabel = tableTotalCountCapped
     ? t("contacts.countCapped", { count: totalCountDisplay })
     : t("contacts.countExact", { count: totalCountDisplay })
 
-  const columns = useMemo<ColumnDef<ListContactsResponse["data"][number]>[]>(
+  const columns = useMemo<ColumnDef<ContactTableRow>[]>(
     () => [
       {
         id: "select",
@@ -306,7 +194,17 @@ export function ContactsTable({
           />
         ),
         cell: ({ row }) => (
-          <NameCell contact={row.original} workspaceId={workspaceId} />
+          <ContactNameCell
+            avatarClassName="size-9"
+            channel={
+              row.original.contactInboxes?.[0]?.channel as
+                | ChannelType
+                | undefined
+            }
+            contact={row.original}
+            conversationId={row.original.conversation?.id}
+            workspaceId={workspaceId}
+          />
         ),
         meta: {
           label: t("fields.name.label"),
@@ -323,7 +221,7 @@ export function ContactsTable({
       },
       {
         accessorKey: "source",
-        header: ({ column }: { column: Column<ContactResource, unknown> }) => (
+        header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
             title={t("fields.source.label")}
@@ -446,44 +344,67 @@ export function ContactsTable({
       columnPinning: { right: ["actions"] },
     },
     getRowId: (originalRow) => originalRow.id,
-    shallow: false,
+    shallow: true,
     clearOnDefault: true,
   })
 
   const handleContactFilterChange = useCallback(
     (next: ContactFilterCriteria) => {
-      table.setPageIndex(0)
-      setOptimisticContactFilter(next)
-      setContactFilter(next).catch(() => {
-        setOptimisticContactFilter(contactFilter)
-      })
+      if (urlListInput.page !== 1) {
+        setFilterChangedOnPage(urlListInput.page)
+        table.setPageIndex(0)
+      }
+      setContactFilter(next)
     },
-    [contactFilter, setContactFilter, table],
+    [setContactFilter, table, urlListInput.page],
   )
+
+  if (!contactsResponse && contactsQuery.isPending) {
+    return <DataTableSkeleton columnCount={6} filterCount={1} rowCount={10} />
+  }
+
+  if (!contactsResponse && contactsQuery.isError) {
+    return (
+      <div className="flex flex-col items-start gap-3" role="alert">
+        <p>{t("messages.unknownError")}</p>
+        <Button onClick={() => contactsQuery.refetch()} type="button">
+          {t("actions.retry")}
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <DataTable
+      aria-busy={contactsQuery.isFetching}
       className="[&_tbody_td]:py-3 [&_tbody_td]:text-[15px] [&_tbody_tr]:h-16"
+      mobileCard={(row) => <ContactCard row={row} workspaceId={workspaceId} />}
       table={table}
     >
       {showContactFilterPanel && (
         <ContactListFilterPanel
           excludeFields={excludedFilterFields}
-          filter={optimisticContactFilter}
+          filter={contactFilter}
           onFilterChange={handleContactFilterChange}
         />
       )}
+      {contactsQuery.isFetching ? (
+        <span aria-live="polite" className="sr-only" role="status">
+          {t("actions.loading")}
+        </span>
+      ) : null}
       <DataTableToolbar table={table}>
         <span className="whitespace-nowrap text-muted-foreground text-sm">
           {totalCountLabel}
         </span>
         <ContactListFilterButton
-          active={isOptimisticContactFilterActive}
-          filter={optimisticContactFilter}
+          active={isContactFilterActive}
+          filter={contactFilter}
           onToggle={() => setShowContactFilterPanel((current) => !current)}
           open={showContactFilterPanel}
         />
         <ContactListAction
+          disabled={contactsQuery.isPlaceholderData}
           filter={exportFilter}
           table={table}
           workspaceId={workspaceId}

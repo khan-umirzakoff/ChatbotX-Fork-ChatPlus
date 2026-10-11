@@ -1,4 +1,5 @@
 import type Redis from "ioredis"
+import { liveCounterScriptsFactory } from "./live-counter-scripts"
 
 // Server-side Redis (Lua) script: atomically increments a counter only when
 // the key already exists. Registered once per client via `defineCommand`.
@@ -30,9 +31,71 @@ function withIncrIfExists(client: Redis): IncrIfExistsClient {
   return client as IncrIfExistsClient
 }
 
+// Fixed-window rate-limit counter in one round-trip: increments unconditionally,
+// then sets the TTL only on the request that created the key (result === 1) —
+// a plain `EXPIRE` on every call would let a steady stream of requests keep
+// extending the window's TTL indefinitely, which is exactly the bug the
+// separate SETNX-then-INCR two-call pattern was written to avoid.
+const INCR_WITH_WINDOW_LUA = `
+local next = redis.call('INCR', KEYS[1])
+if next == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
+return next
+`
+
+type IncrWithWindowClient = Redis & {
+  incrWithWindow: (key: string, ttlSeconds: string) => Promise<number>
+}
+
+const clientsWithIncrWithWindow = new WeakSet<Redis>()
+
+function withIncrWithWindow(client: Redis): IncrWithWindowClient {
+  if (!clientsWithIncrWithWindow.has(client)) {
+    client.defineCommand("incrWithWindow", {
+      numberOfKeys: 1,
+      lua: INCR_WITH_WINDOW_LUA,
+    })
+    clientsWithIncrWithWindow.add(client)
+  }
+  return client as IncrWithWindowClient
+}
+
+// Reserves the next `span` milliseconds of a shared timeline in one atomic
+// step: the window starts at the later of `now` and where the last reservation
+// ended, and the key then points at this window's end. Callers that each
+// reserve a window this way never overlap, however many run at once. The key
+// expires a minute after the last reserved window ends.
+const RESERVE_TIME_WINDOW_LUA = `
+local now = tonumber(ARGV[1])
+local span = tonumber(ARGV[2])
+local reservedUntil = tonumber(redis.call('GET', KEYS[1]) or '0')
+local start = math.max(now, reservedUntil)
+local finish = start + span
+redis.call('SET', KEYS[1], tostring(finish), 'PX', finish - now + 60000)
+return tostring(start)
+`
+
+type ReserveTimeWindowClient = Redis & {
+  reserveTimeWindow: (key: string, now: string, span: string) => Promise<string>
+}
+
+const clientsWithReserveTimeWindow = new WeakSet<Redis>()
+
+function withReserveTimeWindow(client: Redis): ReserveTimeWindowClient {
+  if (!clientsWithReserveTimeWindow.has(client)) {
+    client.defineCommand("reserveTimeWindow", {
+      numberOfKeys: 1,
+      lua: RESERVE_TIME_WINDOW_LUA,
+    })
+    clientsWithReserveTimeWindow.add(client)
+  }
+  return client as ReserveTimeWindowClient
+}
+
 export const distributedStoreFactory = (
   getRedisClient: () => Promise<Redis>,
 ) => ({
+  ...liveCounterScriptsFactory(getRedisClient),
+
   async put(key: string, value: unknown, ttlInSeconds?: number): Promise<void> {
     const serializedValue = JSON.stringify(value)
     const redisClient = await getRedisClient()
@@ -157,6 +220,15 @@ export const distributedStoreFactory = (
     return result as T
   },
 
+  /**
+   * Partial hash update. A field with value `undefined` (or simply omitted
+   * from `value`) is left untouched — that's the "don't touch this field"
+   * signal a `Partial<T>` update relies on. A field explicitly set to `null`
+   * IS written (serialized as the JSON string `"null"`, which `hgetJson`
+   * parses back to `null`) — that's how a caller clears a nullable field
+   * back to its schema default; skipping it here would make every `null`
+   * write to an already-populated field a silent no-op.
+   */
   async merge<T extends Record<string, unknown>>(
     key: string,
     value: T,
@@ -166,7 +238,7 @@ export const distributedStoreFactory = (
     const serializedFields: Record<string, string> = {}
 
     for (const [field, fieldValue] of Object.entries(value)) {
-      if (fieldValue === null || fieldValue === undefined) {
+      if (fieldValue === undefined) {
         continue
       }
       serializedFields[field] = JSON.stringify(fieldValue)
@@ -306,6 +378,34 @@ export const distributedStoreFactory = (
     const redisClient = await getRedisClient()
     await redisClient.set(key, String(value), "EX", ttlInSeconds)
   },
-})
 
-export type DistributedStore = ReturnType<typeof distributedStoreFactory>
+  /**
+   * Fixed-window rate-limit increment in a single round-trip — replaces the
+   * `setNumberIfNotExists` + `incrementCounter` two-call pattern
+   * (`api-rate-limit.ts`'s original `incrementWindowCounter`), which cost 2
+   * Redis round-trips on the very first request of a window (a failed SETNX
+   * then an INCR) and 1 on every request after. See `INCR_WITH_WINDOW_LUA`
+   * above for why this can't just be `INCR` + unconditional `EXPIRE`.
+   */
+  async incrWithWindow(key: string, ttlSeconds: number): Promise<number> {
+    const redisClient = withIncrWithWindow(await getRedisClient())
+    return await redisClient.incrWithWindow(key, String(ttlSeconds))
+  },
+
+  /**
+   * Reserves `spanMs` milliseconds on the timeline named by `key` and returns
+   * when the reserved window starts (epoch ms) — now, or when the previous
+   * reservation on that key ends, whichever is later. See
+   * `RESERVE_TIME_WINDOW_LUA`. Used to pace bulk work that shares an external
+   * rate limit across callers that do not know about each other.
+   */
+  async reserveTimeWindow(key: string, spanMs: number): Promise<number> {
+    const redisClient = withReserveTimeWindow(await getRedisClient())
+    const start = await redisClient.reserveTimeWindow(
+      key,
+      String(Date.now()),
+      String(Math.max(0, Math.ceil(spanMs))),
+    )
+    return Number(start)
+  },
+})

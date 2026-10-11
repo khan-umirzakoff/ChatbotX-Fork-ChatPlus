@@ -17,8 +17,8 @@ export const automationThrottleType = pgEnum(
 )
 
 /**
- * Postgres source of truth for the hybrid automation throttle (see
- * `docs/plans/default-reply-throttle-hybrid.md`). This model is **typing
+ * Postgres source of truth for the hybrid automation throttle. This model is
+ * **typing
  * only** — the physical table is hash-partitioned by `workspaceId` (×32) via
  * a hand-written migration (`drizzle-database` skill: partitioned tables
  * cannot be expressed through `pgTable`/`make:migration`), mirroring
@@ -64,5 +64,9 @@ export const automationThrottleModel = pgTable(
       name: "AutomationThrottle_pkey",
     }),
     index("AutomationThrottle_lastTriggeredAt_idx").on(table.lastTriggeredAt),
+    // Covers the `ContactInbox -> AutomationThrottle` ON DELETE CASCADE check;
+    // the PK leads with workspaceId so it cannot serve a contactInboxId lookup.
+    // Built per partition + ATTACH (32 HASH partitions).
+    index("AutomationThrottle_contactInboxId_idx").on(table.contactInboxId),
   ],
 )

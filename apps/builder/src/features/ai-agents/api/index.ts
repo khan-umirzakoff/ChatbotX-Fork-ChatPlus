@@ -1,7 +1,5 @@
-import { aiAgentsAuthenticatedAPI } from "./authenticated"
-import aiAgentsWorkspaceTokenAPIs from "./workspace-token"
+import { aiAgentsAuthenticatedAPI } from "./private"
 
 export const aiAgentsAPI = {
   ...aiAgentsAuthenticatedAPI,
-  ...aiAgentsWorkspaceTokenAPIs,
 }

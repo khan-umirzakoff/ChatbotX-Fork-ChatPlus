@@ -5,50 +5,42 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 // (vi.mock calls are hoisted to the top of the file by Vitest)
 // ---------------------------------------------------------------------------
 
-const { mockInsert, mockFindFirst, mockQueueAdd } = vi.hoisted(() => ({
-  mockInsert: vi.fn(),
-  mockFindFirst: vi.fn(),
-  mockQueueAdd: vi.fn(),
-}))
+const { mockFindByPhoneNumberId, mockStagePayload, mockQueueAdd } = vi.hoisted(
+  () => ({
+    mockFindByPhoneNumberId: vi.fn(),
+    mockStagePayload: vi.fn(),
+    mockQueueAdd: vi.fn(),
+  }),
+)
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock("@chatbotx.io/database/client", () => ({
-  db: {
-    insert: mockInsert,
-    update: vi.fn(),
-    select: vi.fn(),
-    query: {
-      integrationWhatsappModel: { findFirst: mockFindFirst },
-      integrationMessengerModel: { findFirst: vi.fn() },
-    },
+// Plain object stubs — never importOriginal @chatbotx.io/database/schema (it
+// opens a real DB connection). This module has no direct model dependency
+// left after the refactor, but keep the mock present in case a sibling import
+// still resolves through it transitively.
+vi.mock("@chatbotx.io/database/repositories", () => ({
+  integrationWhatsappRepository: {
+    findByPhoneNumberId: mockFindByPhoneNumberId,
   },
-  and: vi.fn(),
-  eq: vi.fn(),
-  isNull: vi.fn(),
-  findOrFail: vi.fn(),
+  whatsappCoexistStagingRepository: {
+    stagePayload: mockStagePayload,
+  },
 }))
 
 vi.mock("@chatbotx.io/worker-config", () => ({
+  // Mirrors `buildCoexistFlushJobId`; the real builder is pinned by
+  // `packages/worker-config/__tests__/coexist-job-ids.test.ts`.
+  buildCoexistFlushJobId: (phoneNumberId: string) =>
+    `coexist-flush-v2-${phoneNumberId}`,
   IntegrationJobAction: {
     coexistWhatsappBuffer: "coexistWhatsappBuffer",
     coexistWhatsappFlush: "coexistWhatsappFlush",
     coexistMessengerSync: "coexistMessengerSync",
   },
   integrationQueue: { add: mockQueueAdd },
-}))
-
-vi.mock("@chatbotx.io/database/schema", () => ({
-  whatsappCoexistStagingModel: {
-    id: "id",
-    phoneNumberId: "phoneNumberId",
-    processedAt: "processedAt",
-  },
-  coexistSyncRunModel: { id: "id" },
-  integrationWhatsappModel: {},
-  inboxModel: {},
 }))
 
 vi.mock("@chatbotx.io/utils", async (importOriginal) => {
@@ -66,27 +58,6 @@ vi.mock("@chatbotx.io/utils", async (importOriginal) => {
 import { coexistWhatsappBuffer } from "../src/integration/handlers/coexist/whatsapp-buffer"
 
 // ---------------------------------------------------------------------------
-// Test helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Builds a chainable Drizzle insert stub supporting two call patterns:
- * 1. staging row: .insert(staging).values(...).onConflictDoNothing()
- * 2. run row: .insert(run).values(...).returning([{id:'run-1'}])
- */
-const makeInsertChain = () => {
-  mockInsert.mockImplementation(() => {
-    const chain = {
-      values: vi.fn(),
-      onConflictDoNothing: vi.fn().mockResolvedValue(undefined),
-      returning: vi.fn().mockResolvedValue([{ id: "run-1" }]),
-    }
-    chain.values.mockReturnValue(chain)
-    return chain
-  })
-}
-
-// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -96,13 +67,13 @@ describe("coexistWhatsappBuffer", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
-    makeInsertChain()
+    mockStagePayload.mockResolvedValue(undefined)
   })
 
   it("inserts a row into whatsapp_coexist_staging keyed by phoneNumberId with payload preserved", async () => {
     // Integration must exist — buffer now validates ownership BEFORE insert to
     // avoid orphaned staging rows from a webhook with an unknown phoneNumberId.
-    mockFindFirst.mockResolvedValue({
+    mockFindByPhoneNumberId.mockResolvedValue({
       phoneNumberId,
       coexistEnabled: false,
       inboxId: "inbox-1",
@@ -110,14 +81,14 @@ describe("coexistWhatsappBuffer", () => {
 
     await coexistWhatsappBuffer({ phoneNumberId, payload })
 
-    expect(mockInsert).toHaveBeenCalledOnce()
-    expect(mockInsert.mock.results[0]?.value.values).toHaveBeenCalledWith(
+    expect(mockStagePayload).toHaveBeenCalledOnce()
+    expect(mockStagePayload).toHaveBeenCalledWith(
       expect.objectContaining({ phoneNumberId, payload }),
     )
   })
 
   it("enqueues a single coalesced coexistWhatsappFlush when coexistEnabled === true", async () => {
-    mockFindFirst.mockResolvedValue({
+    mockFindByPhoneNumberId.mockResolvedValue({
       id: "int-1",
       workspaceId: "ws-1",
       phoneNumberId,
@@ -134,12 +105,12 @@ describe("coexistWhatsappBuffer", () => {
     expect(mockQueueAdd).toHaveBeenCalledWith(
       "coexistWhatsappFlush",
       expect.objectContaining({ data: { phoneNumberId } }),
-      expect.objectContaining({ jobId: `coexist-flush-${phoneNumberId}` }),
+      expect.objectContaining({ jobId: `coexist-flush-v2-${phoneNumberId}` }),
     )
   })
 
   it("does NOT enqueue flush when coexistEnabled === false", async () => {
-    mockFindFirst.mockResolvedValue({
+    mockFindByPhoneNumberId.mockResolvedValue({
       phoneNumberId,
       coexistEnabled: false,
       inboxId: "inbox-1",
@@ -151,11 +122,33 @@ describe("coexistWhatsappBuffer", () => {
   })
 
   it("does NOT enqueue flush when integration is not found", async () => {
-    mockFindFirst.mockResolvedValue(null)
+    mockFindByPhoneNumberId.mockResolvedValue(null)
 
     await coexistWhatsappBuffer({ phoneNumberId, payload })
 
     expect(mockQueueAdd).not.toHaveBeenCalled()
+  })
+
+  // Jobs enqueued under the PRE-DEPLOY `coexist-flush-<phone>`
+  // id were retained on completion, and BullMQ dedups on any existing key — the
+  // coalesced flush would stay dead for every number that had already flushed.
+  // The generation prefix is the rollout fix.
+  it("the coalesced flush id carries the v2 generation prefix", async () => {
+    mockFindByPhoneNumberId.mockResolvedValue({
+      id: "int-1",
+      workspaceId: "ws-1",
+      phoneNumberId,
+      coexistEnabled: true,
+      inboxId: "inbox-1",
+    })
+
+    await coexistWhatsappBuffer({ phoneNumberId, payload })
+
+    const jobId = (
+      mockQueueAdd.mock.calls[0]?.[2] as Record<string, unknown> | undefined
+    )?.jobId
+    expect(jobId).toBe(`coexist-flush-v2-${phoneNumberId}`)
+    expect(jobId).not.toBe(`coexist-flush-${phoneNumberId}`)
   })
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -166,7 +159,7 @@ describe("coexistWhatsappBuffer", () => {
   // ─────────────────────────────────────────────────────────────────────────
 
   it("M2: enqueues only the coalesced flush — no per-webhook follow-up job", async () => {
-    mockFindFirst.mockResolvedValue({
+    mockFindByPhoneNumberId.mockResolvedValue({
       id: "int-1",
       workspaceId: "ws-1",
       phoneNumberId,
@@ -180,6 +173,51 @@ describe("coexistWhatsappBuffer", () => {
       (args) => (args[2] as Record<string, unknown> | undefined)?.jobId,
     )
     // Single enqueue with the fixed coalescing jobId — no unique follow-up.
-    expect(jobIds).toEqual([`coexist-flush-${phoneNumberId}`])
+    expect(jobIds).toEqual([`coexist-flush-v2-${phoneNumberId}`])
+  })
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // H1 (brief-coexist-history-lifecycle.md) — a BullMQ job id stays reserved
+  // until the job is REMOVED, not until it finishes. The integration worker
+  // keeps completed jobs (removeOnComplete: {count: 1000}), so without explicit
+  // removal every history payload arriving after the first flush completed was
+  // silently dropped by `EXISTS jobIdKey` in addStandardJob.
+  // ─────────────────────────────────────────────────────────────────────────
+
+  it("the coalesced flush removes itself on complete AND on fail so the jobId frees up", async () => {
+    mockFindByPhoneNumberId.mockResolvedValue({
+      id: "int-1",
+      workspaceId: "ws-1",
+      phoneNumberId,
+      coexistEnabled: true,
+      inboxId: "inbox-1",
+    })
+
+    await coexistWhatsappBuffer({ phoneNumberId, payload })
+
+    expect(mockQueueAdd).toHaveBeenCalledWith(
+      "coexistWhatsappFlush",
+      expect.anything(),
+      expect.objectContaining({
+        jobId: `coexist-flush-v2-${phoneNumberId}`,
+        removeOnComplete: true,
+        removeOnFail: true,
+      }),
+    )
+  })
+
+  it("keeps the delay so burst webhooks still coalesce into one flush", async () => {
+    mockFindByPhoneNumberId.mockResolvedValue({
+      id: "int-1",
+      workspaceId: "ws-1",
+      phoneNumberId,
+      coexistEnabled: true,
+      inboxId: "inbox-1",
+    })
+
+    await coexistWhatsappBuffer({ phoneNumberId, payload })
+
+    const opts = mockQueueAdd.mock.calls[0]?.[2] as Record<string, unknown>
+    expect(opts.delay).toBe(60_000)
   })
 })

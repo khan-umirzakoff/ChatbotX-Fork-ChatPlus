@@ -1,10 +1,7 @@
 "use server"
 
-import { db, eq, findOrFail } from "@chatbotx.io/database/client"
-import {
-  integrationGoogleSheetsModel,
-  integrationModel,
-} from "@chatbotx.io/database/schema"
+import { integrationGoogleSheetService } from "@chatbotx.io/business"
+import { auditService } from "@chatbotx.io/business/audit"
 import {
   type GoogleSheetsAuthValue,
   integration as integrationGoogleSheets,
@@ -12,11 +9,11 @@ import {
 import {
   type WorkspaceIdRequestParams,
   workspaceIdrequestParams,
-} from "@/features/common/schemas"
+} from "@/features/common/schema"
 import { logger } from "@/lib/log"
-import { authActionClient } from "@/lib/safe-action"
+import { workspaceActionClientAllowExpired } from "@/lib/safe-action"
 
-export const disconnectGoogleSheetsAction = authActionClient
+export const disconnectGoogleSheetsAction = workspaceActionClientAllowExpired
   .bindArgsSchemas(workspaceIdrequestParams)
   .action(
     async ({
@@ -24,13 +21,8 @@ export const disconnectGoogleSheetsAction = authActionClient
     }: {
       bindArgsParsedInputs: WorkspaceIdRequestParams
     }) => {
-      const googleSheets = await findOrFail({
-        table: integrationGoogleSheetsModel,
-        where: {
-          workspaceId,
-        },
-        message: "Integration Google Sheets not found",
-      })
+      const googleSheets =
+        await integrationGoogleSheetService.findByWorkspaceIdOrFail(workspaceId)
       try {
         await integrationGoogleSheets.disconnect?.(
           googleSheets.auth as GoogleSheetsAuthValue,
@@ -42,11 +34,14 @@ export const disconnectGoogleSheetsAction = authActionClient
         )
       }
 
-      await db.transaction(async (tx) => {
-        await tx
-          .delete(integrationModel)
-          .where(eq(integrationModel.id, googleSheets.integrationId))
+      await integrationGoogleSheetService.disconnect(googleSheets.integrationId)
+
+      await auditService.record({
+        workspaceId,
+        action: "disconnect",
+        detail: "disconnected the Google Sheets integration",
       })
+
       return
     },
   )

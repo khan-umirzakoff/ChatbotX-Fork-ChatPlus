@@ -1,55 +1,30 @@
 import type { IntegrationWhatsappResource } from "@chatbotx.io/business"
-import { db, eq, findOrFail } from "@chatbotx.io/database/client"
+import { findOrFail } from "@chatbotx.io/database/client"
+import { integrationWhatsappRepository } from "@chatbotx.io/database/repositories"
 import { integrationWhatsappModel } from "@chatbotx.io/database/schema"
 import type {
   InboxModel,
   IntegrationWhatsappModel,
 } from "@chatbotx.io/database/types"
-import type { WhatsappAuthValue } from "@chatbotx.io/integration-whatsapp"
-import type { PaginatedResponse } from "@/features/common/schemas/pagination"
+import type { PaginatedResponse } from "@/features/common/schema/pagination"
 
 type IntegrationWhatsappWithInbox = IntegrationWhatsappResource & {
   inbox?: Pick<InboxModel, "id" | "name">
 }
 
-// Explicit allowlist mirroring `integrationWhatsappResource` (see
-// packages/business/src/integration-whatsapp/schema.ts) so the encrypted
-// `auth` and `capiAccessToken` columns can never reach this client-facing
-// list, even at runtime. Keep this in sync with that pick() when either
-// changes.
-const CLIENT_SAFE_COLUMNS = {
-  id: true,
-  name: true,
-  inboxId: true,
-  displayPhoneNumber: true,
-  tokenRefreshError: true,
-  phoneNumberId: true,
-  wabaId: true,
-  hasCapiScope: true,
-  capiScopeCheckedAt: true,
-  datasetId: true,
-  workspaceId: true,
-  createdAt: true,
-} as const
-
 export const listIntegrationWhatsapps = async (
   props: Pick<IntegrationWhatsappModel, "workspaceId">,
 ): Promise<PaginatedResponse<IntegrationWhatsappWithInbox>> => {
-  const data = await db.query.integrationWhatsappModel.findMany({
-    where: props,
-    columns: CLIENT_SAFE_COLUMNS,
-    orderBy: {
-      createdAt: "asc",
-    },
-    with: {
-      inbox: {
-        columns: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-  })
+  const integrations =
+    await integrationWhatsappRepository.listClientResourcesByWorkspaceId(
+      props.workspaceId,
+    )
+  const data: IntegrationWhatsappWithInbox[] = integrations.map(
+    ({ inbox, ...integration }) => ({
+      ...integration,
+      inbox: inbox ?? undefined,
+    }),
+  )
 
   return { data, pageCount: 1 }
 }
@@ -86,31 +61,3 @@ export const toIntegrationWhatsappLinkable = (
   businessId: integration.businessId,
   wabaId: integration.wabaId,
 })
-
-export const findIntegrationWhatsappById = async (
-  id: IntegrationWhatsappModel["id"],
-): Promise<IntegrationWhatsappModel | null> => {
-  const integration = await db.query.integrationWhatsappModel.findFirst({
-    where: { id },
-  })
-
-  return integration ?? null
-}
-
-export const markWhatsappWebhookVerified = async (
-  id: IntegrationWhatsappModel["id"],
-  current: WhatsappAuthValue,
-): Promise<void> => {
-  const updatedAuth: WhatsappAuthValue = {
-    ...current,
-    metadata: {
-      ...current.metadata,
-      webhookVerifiedAt: new Date().toISOString(),
-    },
-  }
-
-  await db
-    .update(integrationWhatsappModel)
-    .set({ auth: updatedAuth })
-    .where(eq(integrationWhatsappModel.id, id))
-}

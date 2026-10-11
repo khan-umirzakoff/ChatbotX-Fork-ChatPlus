@@ -197,6 +197,8 @@ async function sendQuestion(
         (quickReplies ? data.question.title : questionText(data.question)),
       url: data.question.image?.url,
       quickReplies,
+      metadata: props.metadata,
+      isBulkBroadcast: props.isBulkBroadcast,
     },
   })
   await waitForChatJobCompletion(job, { conversationId: props.conversation.id })
@@ -331,7 +333,7 @@ export async function runQuestionnaireEngine(
   const attributes = conversation.additionalAttributes as
     | ConversationAttributes
     | undefined
-  if (attributes?.challenge) {
+  if (attributes?.challenge?.type === "step") {
     const attempts =
       (props.ctx?.variables.conversation.challengeAttempts?.value as
         | number

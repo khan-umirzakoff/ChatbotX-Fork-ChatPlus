@@ -1,6 +1,5 @@
 "use client"
 
-import type { InstagramAccount } from "@chatbotx.io/integration-instagram"
 import {
   Card,
   CardContent,
@@ -8,25 +7,36 @@ import {
   CardTitle,
 } from "@chatbotx.io/ui/components/ui/card"
 import { useTranslations } from "next-intl"
+import { CONNECT_PICKER_CARD_CLASS } from "@/features/channel-connect/components/connect-picker-card"
+import type { InstagramDirectAccount } from "@/features/integration-instagram/components/instagram-accounts"
 import { InstagramAccounts } from "@/features/integration-instagram/components/instagram-accounts"
 
 export type SelectAccountProps = {
-  account: InstagramAccount
+  sessionId: string
+  account: InstagramDirectAccount
   workspaceId: string
 }
 
-export function SelectAccount({ account, workspaceId }: SelectAccountProps) {
+export function SelectAccount({
+  sessionId,
+  account,
+  workspaceId,
+}: SelectAccountProps) {
   const t = useTranslations()
 
   return (
-    <Card className="mx-auto mt-40 max-w-md">
+    <Card className={CONNECT_PICKER_CARD_CLASS}>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>
           {t("actions.connectFeature", { feature: "Instagram" })}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <InstagramAccounts account={account} workspaceId={workspaceId} />
+        <InstagramAccounts
+          account={account}
+          sessionId={sessionId}
+          workspaceId={workspaceId}
+        />
       </CardContent>
     </Card>
   )

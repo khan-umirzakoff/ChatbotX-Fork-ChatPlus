@@ -5,6 +5,7 @@ import {
   facebookLeadAdsLeadService,
   isRichSystemContactField,
 } from "@chatbotx.io/business"
+import { logProviderError } from "@chatbotx.io/business/error-log"
 import {
   contactSources,
   type FacebookLeadFieldMapping,
@@ -19,6 +20,8 @@ import {
 import type { MessengerAuthValue } from "@chatbotx.io/integration-messenger/schema"
 import type { IncomingContact } from "@chatbotx.io/sdk"
 import type { IntegrationJobProcessLeadgen } from "@chatbotx.io/worker-config"
+import type { Job } from "bullmq"
+import { isFinalAttempt } from "../../../lib/job-attempts"
 import { logger } from "../../../lib/logger"
 import { integrationService } from "../../../services/integrations"
 import { runFlowNode } from "../flow"
@@ -99,6 +102,7 @@ async function applyField(props: {
  */
 export async function processLeadgen(
   data: IntegrationJobProcessLeadgen["data"],
+  job: Job,
 ): Promise<void> {
   const { integrationType, integrationIdentifier, leadgenId, formId } = data
 
@@ -126,6 +130,16 @@ export async function processLeadgen(
     return
   }
 
+  // Hoisted out of the `try` so the `catch` can attribute the Error Log row to
+  // the lead: `psid` and `contact` are block-scoped below and the failure is
+  // only reported once BullMQ's retries are spent, long after the block has
+  // gone. Before this, the row carried no contact attribution at all.
+  let leadPsid: string | undefined
+  // Set once the contact exists and is linked to the claim, so a failure in
+  // the field-mapping or flow steps that follow still resolves to a real
+  // `Contact` in the builder table instead of only a raw PSID.
+  let leadContactId: string | undefined
+
   try {
     const auth = integrationRow.auth as MessengerAuthValue
     const lead = await getLead(
@@ -145,6 +159,8 @@ export async function processLeadgen(
       return
     }
 
+    leadPsid = psid
+
     const incomingContact: IncomingContact = {
       sourceId: psid,
       firstName: findValue(fieldData, "full_name"),
@@ -162,6 +178,8 @@ export async function processLeadgen(
       id: claim.id,
       contactId: contact.id,
     })
+
+    leadContactId = contact.id
 
     // Specific-form automations carry an explicit mapping; the "all forms"
     // automation auto-maps recognized standard fields.
@@ -194,12 +212,15 @@ export async function processLeadgen(
     }
 
     if (automation.flowId) {
-      await runFlowNode({
-        flowId: automation.flowId,
-        conversationId: conversation,
-        contactInboxId: contactInbox,
-        origin: "channel",
-      })
+      await runFlowNode(
+        {
+          flowId: automation.flowId,
+          conversationId: conversation,
+          contactInboxId: contactInbox,
+          origin: "channel",
+        },
+        { flowExecutionKey: job.id },
+      )
     }
 
     await facebookLeadAdsAutomationService.incrementLeadsHandled(automation.id)
@@ -213,6 +234,19 @@ export async function processLeadgen(
         { error: releaseError, leadgenId },
         "processLeadgen: failed to release lead claim",
       )
+    }
+    // Lead Ads rides the `facebook-ads` provider — there is no separate
+    // integration. Logged before the rethrow so BullMQ retry/dead-letter
+    // behaviour is unchanged, and only once the retries are spent so one
+    // logical failure does not write a row per attempt.
+    if (isFinalAttempt(job)) {
+      await logProviderError({
+        provider: "facebook-ads",
+        workspaceId: inbox.workspaceId,
+        contactId: leadContactId,
+        sourceId: leadPsid,
+        error,
+      })
     }
     throw error
   }

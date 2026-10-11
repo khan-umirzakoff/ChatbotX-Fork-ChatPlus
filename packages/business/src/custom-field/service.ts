@@ -4,6 +4,7 @@ import {
   db,
   eq,
   inArray,
+  isDatabaseError,
   type RelationsFieldFilter,
   relationsFilterToSQL,
 } from "@chatbotx.io/database/client"
@@ -22,8 +23,8 @@ import { withCache } from "@chatbotx.io/redis"
 import { createId, isNumericId } from "@chatbotx.io/utils"
 import { customFieldResolutionKey } from "@chatbotx.io/utils/custom-field"
 import { BaseService } from "../base.service"
-import { notFoundException } from "../errors"
-import { folderService } from "../folder/service"
+import { notFoundException, validationException } from "../errors"
+import { folderService, toStoredFolderId } from "../folder/service"
 import type { PaginatedResult } from "../types"
 
 type ListCustomFieldsInput = {
@@ -302,7 +303,11 @@ class CustomFieldService extends BaseService {
     data: CreateCustomFieldData
     tx?: DatabaseClient
   }): Promise<CustomFieldModel> {
-    const { workspaceId, data, tx = db } = props
+    const { workspaceId, tx = db } = props
+    const data = {
+      ...props.data,
+      folderId: toStoredFolderId(props.data.folderId),
+    }
 
     if (data.folderId) {
       await folderService.ensureExists({
@@ -312,20 +317,31 @@ class CustomFieldService extends BaseService {
       })
     }
 
-    const [field] = await tx
-      .insert(customFieldModel)
-      .values({ id: createId(), workspaceId, showInInbox: true, ...data })
-      .returning()
-
-    await this.invalidate({ workspaceId })
-    return field
+    try {
+      const [field] = await tx
+        .insert(customFieldModel)
+        .values({ id: createId(), workspaceId, showInInbox: true, ...data })
+        .returning()
+      await this.invalidate({ workspaceId })
+      return field
+    } catch (error) {
+      if (isDatabaseError(error) && error.cause.code === "23505") {
+        throw validationException("name", "Name is already taken")
+      }
+      throw error
+    }
   }
 
   async update(
     ctx: { workspaceId: string; id: string },
-    data: UpdateCustomFieldData,
+    input: UpdateCustomFieldData,
     tx: DatabaseClient = db,
   ): Promise<CustomFieldModel> {
+    // `folderId` omitted keeps the folder; null or rootFolderId means the root.
+    const data =
+      input.folderId === undefined
+        ? input
+        : { ...input, folderId: toStoredFolderId(input.folderId) }
     const existing = await this.findByKeyOrFail({
       workspaceId: ctx.workspaceId,
       key: ctx.id,
@@ -340,11 +356,19 @@ class CustomFieldService extends BaseService {
       })
     }
 
-    const [updated] = await tx
-      .update(customFieldModel)
-      .set(data)
-      .where(eq(customFieldModel.id, existing.id))
-      .returning()
+    let updated: CustomFieldModel | undefined
+    try {
+      ;[updated] = await tx
+        .update(customFieldModel)
+        .set(data)
+        .where(eq(customFieldModel.id, existing.id))
+        .returning()
+    } catch (error) {
+      if (isDatabaseError(error) && error.cause.code === "23505") {
+        throw validationException("name", "Name is already taken")
+      }
+      throw error
+    }
 
     await this.invalidate({ workspaceId: ctx.workspaceId, ids: [existing.id] })
     return updated

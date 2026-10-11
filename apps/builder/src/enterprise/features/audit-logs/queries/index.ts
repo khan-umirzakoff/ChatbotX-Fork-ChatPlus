@@ -1,14 +1,20 @@
-import { assertEnterpriseFeatures } from "@chatbotx.io/business"
-import { db, relationsFilterToSQL } from "@chatbotx.io/database/client"
-import { auditLogModel, errorLogModel } from "@chatbotx.io/database/schema"
 import {
-  getPaginationWithDefaults,
-  parseOrderByAsObject,
-} from "@chatbotx.io/database/utils"
-import type { PaginatedResponse } from "@/features/common/schemas/pagination"
-import { assertCurrentUserCanAccessChatbot } from "@/lib/auth/utils"
-import type { AuditLogResource } from "../schemas"
-import type { ListAuditLogsRequest } from "../schemas/query"
+  assertEnterpriseFeatures,
+  workspaceMemberService,
+} from "@chatbotx.io/business"
+import { listAuditLogs as listAuditLogsService } from "@chatbotx.io/business/audit"
+import type { PaginatedResponse } from "@/features/common/schema/pagination"
+import { assertWorkspaceSuperAdmin } from "@/lib/auth/assert-workspace-super-admin"
+import type { AuditLogResource } from "../schema"
+import {
+  type ListAuditLogsRequest,
+  parseAuditLogsDateRange,
+} from "../schema/query"
+
+export type AuditLogAdminOption = {
+  id: string
+  label: string
+}
 
 export async function listAuditLogs(
   input: ListAuditLogsRequest,
@@ -16,29 +22,35 @@ export async function listAuditLogs(
   // Defense in depth behind the (enterprise) route-group layout: the layout
   // only blocks page rendering, not direct invocations of this query.
   await assertEnterpriseFeatures()
-  await assertCurrentUserCanAccessChatbot(input.workspaceId)
+  await assertWorkspaceSuperAdmin(input.workspaceId)
 
-  const where = {
+  const dateRange = parseAuditLogsDateRange(input)
+
+  return await listAuditLogsService({
     workspaceId: input.workspaceId,
-    // userId: input.userId !== null ? input.userId : undefined,
-  }
+    page: input.page,
+    perPage: input.perPage,
+    sort: input.sort,
+    keyword: input.keyword,
+    userId: input.userId,
+    dateRange: { start: dateRange.start, end: dateRange.end },
+  })
+}
 
-  const pagination = getPaginationWithDefaults(input)
-  const orderBy = parseOrderByAsObject(errorLogModel, input)
+export async function listAuditLogAdmins(
+  workspaceId: string,
+): Promise<AuditLogAdminOption[]> {
+  await assertEnterpriseFeatures()
+  await assertWorkspaceSuperAdmin(workspaceId)
 
-  const [data, totalRows] = await Promise.all([
-    db.query.auditLogModel.findMany({
-      where,
-      ...pagination,
-      orderBy,
-      with: {
-        user: true,
-      },
-    }),
-    db.$count(auditLogModel, relationsFilterToSQL(auditLogModel, where)),
-  ])
+  const members = await workspaceMemberService.listByWorkspaceId({
+    workspaceId,
+  })
 
-  const pageCount = Math.ceil(totalRows / pagination.limit)
-
-  return { data, pageCount }
+  return members
+    .filter((member) => member.permissions.superAdmin)
+    .map((member) => ({
+      id: member.user.id,
+      label: member.user.name || member.user.email || member.user.id,
+    }))
 }

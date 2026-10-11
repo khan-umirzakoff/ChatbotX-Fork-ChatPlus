@@ -6,21 +6,40 @@ import {
 } from "@/lib/safe-action"
 import { resolveWorkspaceBlockState } from "@/lib/workspace-quota"
 
-const { getAccessState, getAtLimitMap, getForUser, isAtLimit, isCloud } =
-  vi.hoisted(() => ({
-    getAccessState: vi.fn(),
-    getAtLimitMap: vi.fn(),
-    getForUser: vi.fn(),
-    isAtLimit: vi.fn(),
-    isCloud: vi.fn(),
-  }))
+const {
+  getAccessState,
+  hasReachedLimit,
+  getForUser,
+  isAtLimit,
+  isCloud,
+  checkWorkspaceOwnerAccess,
+} = vi.hoisted(() => ({
+  getAccessState: vi.fn(),
+  hasReachedLimit: vi.fn(),
+  getForUser: vi.fn(),
+  isAtLimit: vi.fn(),
+  isCloud: vi.fn(),
+  checkWorkspaceOwnerAccess: vi.fn(),
+}))
 
 vi.mock("@chatbotx.io/business", () => ({
   isPlatformAdmin: vi.fn(),
   isSuperAdmin: vi.fn(),
   isWorkspaceScheduledForDeletion: vi.fn(() => false),
-  quotaEnforcementService: { getAtLimitMap, isAtLimit },
-  userQuotaService: { getAccessState, getAtLimitMap, getForUser },
+  quotaEnforcementService: { hasReachedLimit, isAtLimit },
+  userQuotaService: { getAccessState, getForUser },
+}))
+
+vi.mock("@/lib/workspace/authorize-workspace-access", () => ({
+  checkWorkspaceOwnerAccess,
+  workspaceAccessDenialException: (
+    reason: "trialExpired" | "macLimitReached",
+  ) =>
+    new (class ChatbotXException extends Error {})(
+      reason === "macLimitReached"
+        ? "Monthly active contact limit reached"
+        : "Trial expired",
+    ),
 }))
 
 vi.mock("@chatbotx.io/business/errors", () => ({
@@ -38,9 +57,27 @@ vi.mock("@chatbotx.io/sdk", () => ({
   SdkException: class SdkException extends Error {},
 }))
 
-vi.mock("@chatbotx.io/utils", () => ({
-  zodBigintAsString: () => ({ safeParse: () => ({ data: null }) }),
-}))
+vi.mock("@chatbotx.io/utils", () => {
+  // `@chatbotx.io/database/partials` re-exports every partial schema
+  // (including ones unrelated to this test, e.g. minigame.ts) through one
+  // barrel, and some of those call `zodBigintAsString().nullable()` /
+  // `.optional()` at module-eval time. A stub with only `safeParse` breaks
+  // that eval the moment any test pulls in the real partials barrel — this
+  // proxy chains any further method call back to itself so it never breaks
+  // regardless of which Zod methods a schema happens to chain.
+  const chainable: Record<string, unknown> = {
+    safeParse: () => ({ data: null }),
+  }
+  const proxy = new Proxy(chainable, {
+    get(target, prop) {
+      if (prop in target) {
+        return target[prop as string]
+      }
+      return () => proxy
+    },
+  })
+  return { zodBigintAsString: () => proxy, zodUrlWithVariables: () => proxy }
+})
 
 vi.mock("@/env", () => ({ isCloud }))
 vi.mock("@/features/workspace-members/queries", () => ({
@@ -61,6 +98,11 @@ function createChain(middlewares: unknown[] = []) {
 vi.mock("next-safe-action", () => ({
   DEFAULT_SERVER_ERROR_MESSAGE: "Server error",
   createSafeActionClient: () => createChain(),
+  // The `rejectSupportSession`/`requireContactsAccess` middlewares
+  // are declared with `createMiddleware(...).define(fn)` — this test only
+  // exercises `workspaceActionClient*`, so the mock just needs to make that
+  // call site not throw; the returned middleware fn is never invoked here.
+  createMiddleware: () => ({ define: (fn: unknown) => fn }),
 }))
 
 const activeQuota = {
@@ -75,9 +117,10 @@ const expiredQuota = {
 beforeEach(() => {
   vi.clearAllMocks()
   isCloud.mockReturnValue(true)
-  getAtLimitMap.mockResolvedValue({ mac: false })
+  hasReachedLimit.mockResolvedValue(false)
   getForUser.mockResolvedValue(activeQuota)
   isAtLimit.mockResolvedValue(false)
+  checkWorkspaceOwnerAccess.mockResolvedValue(null)
 })
 
 describe("resolveWorkspaceBlockState", () => {
@@ -86,7 +129,10 @@ describe("resolveWorkspaceBlockState", () => {
 
     expect(result).toMatchObject({ blocked: false, blockReason: null })
     expect(getForUser).toHaveBeenCalledWith("owner-active")
-    expect(getAtLimitMap).toHaveBeenCalledWith("owner-active")
+    expect(hasReachedLimit).toHaveBeenCalledWith({
+      userId: "owner-active",
+      metric: "mac",
+    })
   })
 
   test("blocks a member when the workspace owner quota is expired", async () => {
@@ -101,6 +147,34 @@ describe("resolveWorkspaceBlockState", () => {
     expect(getForUser).toHaveBeenCalledWith("owner-expired")
   })
 
+  test("blocks when the owner reaches the MAC limit", async () => {
+    hasReachedLimit.mockResolvedValue(true)
+
+    await expect(resolveWorkspaceBlockState("owner-id")).resolves.toMatchObject(
+      {
+        blocked: true,
+        blockReason: "mac",
+      },
+    )
+  })
+
+  test("does not block an active owner when a non-MAC limit is full", async () => {
+    getForUser.mockResolvedValue({
+      ...activeQuota,
+      contactsLimit: 0,
+      contactsUsed: 1,
+      macLimit: 10,
+      macUsed: 0,
+    })
+
+    await expect(resolveWorkspaceBlockState("owner-id")).resolves.toMatchObject(
+      {
+        blocked: false,
+        blockReason: null,
+      },
+    )
+  })
+
   test("never blocks a self-hosted workspace", async () => {
     isCloud.mockReturnValue(false)
 
@@ -111,7 +185,7 @@ describe("resolveWorkspaceBlockState", () => {
       trialEndsAt: null,
     })
     expect(getForUser).not.toHaveBeenCalled()
-    expect(getAtLimitMap).not.toHaveBeenCalled()
+    expect(hasReachedLimit).not.toHaveBeenCalled()
   })
 })
 
@@ -119,8 +193,8 @@ describe("workspace action quota gates", () => {
   const workspace = { id: "workspace-id", ownerId: "owner-id" }
   const user = { id: "member-with-an-expired-personal-quota" }
 
-  test("allows an action when the owner is active regardless of the member quota", async () => {
-    getAccessState.mockResolvedValue({ blocked: false, reason: null })
+  test("allows an action when checkWorkspaceOwnerAccess reports no denial", async () => {
+    checkWorkspaceOwnerAccess.mockResolvedValue(null)
     const next = vi.fn()
     const actionGate = (
       workspaceActionClient as unknown as {
@@ -130,16 +204,14 @@ describe("workspace action quota gates", () => {
 
     await actionGate?.({ ctx: { user, workspace }, next })
 
-    expect(getAccessState).toHaveBeenCalledWith("owner-id")
-    expect(isAtLimit).toHaveBeenCalledWith({
-      userId: "owner-id",
-      metric: "mac",
+    expect(checkWorkspaceOwnerAccess).toHaveBeenCalledWith({
+      ownerId: "owner-id",
     })
     expect(next).toHaveBeenCalledWith({ ctx: { user, workspace } })
   })
 
-  test("rejects an action when the owner is expired even if the member is active", async () => {
-    getAccessState.mockResolvedValue({ blocked: true, reason: "status" })
+  test("rejects an action when the owner is trial-expired", async () => {
+    checkWorkspaceOwnerAccess.mockResolvedValue("trialExpired")
     const actionGate = (
       workspaceActionClient as unknown as {
         middlewares: Array<(args: unknown) => Promise<unknown>>
@@ -149,12 +221,13 @@ describe("workspace action quota gates", () => {
     await expect(
       actionGate?.({ ctx: { user, workspace }, next: vi.fn() }),
     ).rejects.toThrow("Trial expired")
-    expect(getAccessState).toHaveBeenCalledWith("owner-id")
+    expect(checkWorkspaceOwnerAccess).toHaveBeenCalledWith({
+      ownerId: "owner-id",
+    })
   })
 
   test("rejects a direct action when the owner's reseller pool reaches its MAC limit", async () => {
-    getAccessState.mockResolvedValue({ blocked: false, reason: null })
-    isAtLimit.mockResolvedValue(true)
+    checkWorkspaceOwnerAccess.mockResolvedValue("macLimitReached")
     const actionGate = (
       workspaceActionClient as unknown as {
         middlewares: Array<(args: unknown) => Promise<unknown>>
@@ -164,14 +237,13 @@ describe("workspace action quota gates", () => {
     await expect(
       actionGate?.({ ctx: { user, workspace }, next: vi.fn() }),
     ).rejects.toThrow("Monthly active contact limit reached")
-    expect(isAtLimit).toHaveBeenCalledWith({
-      userId: "owner-id",
-      metric: "mac",
+    expect(checkWorkspaceOwnerAccess).toHaveBeenCalledWith({
+      ownerId: "owner-id",
     })
   })
 
   test("uses the owner quota for actions allowed during scheduled deletion", async () => {
-    getAccessState.mockResolvedValue({ blocked: false, reason: null })
+    checkWorkspaceOwnerAccess.mockResolvedValue(null)
     const next = vi.fn()
     const actionGate = (
       workspaceActionClientAllowScheduledDeletion as unknown as {
@@ -181,7 +253,9 @@ describe("workspace action quota gates", () => {
 
     await actionGate?.({ ctx: { user, workspace }, next })
 
-    expect(getAccessState).toHaveBeenCalledWith("owner-id")
+    expect(checkWorkspaceOwnerAccess).toHaveBeenCalledWith({
+      ownerId: "owner-id",
+    })
     expect(next).toHaveBeenCalledWith({ ctx: { user, workspace } })
   })
 })

@@ -1,4 +1,11 @@
-export type CapiStatus = "ready" | "notConnected" | "unverified" | "unsupported"
+import { isAwaitingCapiScope } from "./capi-connection-state"
+
+export type CapiStatus =
+  | "ready"
+  | "notConnected"
+  | "missingPermission"
+  | "unverified"
+  | "unsupported"
 
 export const capiStatusConfig = {
   ready: {
@@ -10,6 +17,11 @@ export const capiStatusConfig = {
     labelKey: "metaConversions.status.notConnected",
     className: "border-border bg-muted text-muted-foreground",
     dotClassName: "bg-muted-foreground/60",
+  },
+  missingPermission: {
+    labelKey: "metaConversions.status.missingPermission",
+    className: "border-amber-200 bg-amber-50 text-amber-700",
+    dotClassName: "bg-amber-500",
   },
   unverified: {
     labelKey: "metaConversions.status.unverified",
@@ -30,6 +42,19 @@ export const capiStatusConfig = {
  * In the pick-a-method connect flow, "not connected" covers every
  * non-ready state (never connected, permission declined, or user
  * disconnect) — the chooser below is the call to action either way.
+ *
+ * A dataset that is already provisioned but has neither a manual access
+ * token nor the Meta scope needed to send events is "missingPermission":
+ * the integration is not silently treated as never-connected, it is one
+ * reconnect-and-grant away from working.
+ *
+ * A user-intent disconnect wins over every readiness signal: the stored
+ * dataset, token and scope may all still be present, but the integration
+ * must read as "notConnected" — the same precedence `getCapiConnectionState`
+ * applies when it falls back to the method chooser.
+ *
+ * `capiScopeRequired: false` treats the scope as satisfied (channels exempt
+ * per `capi-scope-policy`); omitted it defaults to `true`.
  */
 export function getCapiStatus(input: {
   hasCapiScope: boolean
@@ -37,18 +62,27 @@ export function getCapiStatus(input: {
   hasDatasetId?: boolean
   credentialAvailable: boolean
   supported?: boolean
+  capiDisconnected?: boolean
+  capiScopeRequired?: boolean
 }): CapiStatus {
+  const hasCapiScope = input.hasCapiScope || input.capiScopeRequired === false
   if (input.supported === false) {
     return "unsupported"
+  }
+  if (input.capiDisconnected) {
+    return "notConnected"
   }
   if (input.hasManualCapiAccessToken && input.hasDatasetId) {
     return "ready"
   }
-  if (input.hasCapiScope && input.hasDatasetId) {
+  if (hasCapiScope && input.hasDatasetId) {
     return "ready"
   }
-  if (input.credentialAvailable) {
-    return "notConnected"
+  if (!input.credentialAvailable) {
+    return "unverified"
   }
-  return "unverified"
+  if (isAwaitingCapiScope({ ...input, hasCapiScope })) {
+    return "missingPermission"
+  }
+  return "notConnected"
 }

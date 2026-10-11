@@ -5,7 +5,7 @@ const { mockSendPageMessage } = vi.hoisted(() => ({
 }))
 
 vi.mock("../src/apis/message", () => ({
-  sendPageMessage: mockSendPageMessage,
+  sendMessage: mockSendPageMessage,
 }))
 
 vi.mock("../src/lib/logger", () => ({
@@ -51,7 +51,7 @@ describe("messenger outgoing handlers return provider message ids", () => {
     } as never)
 
     expect(mockSendPageMessage).toHaveBeenCalledTimes(1)
-    expect(result).toEqual({ messageIds: ["m_provider-1"] })
+    expect(result).toEqual({ messageIds: ["m_provider-1"], sentCount: 1 })
   })
 
   test("sendFlowStep (sendText) returns the Send API message_id", async () => {
@@ -70,6 +70,48 @@ describe("messenger outgoing handlers return provider message ids", () => {
     } as never)
 
     expect(mockSendPageMessage).toHaveBeenCalledTimes(1)
-    expect(result).toEqual({ messageIds: ["m_provider-1"] })
+    expect(result).toEqual({ messageIds: ["m_provider-1"], sentCount: 1 })
+  })
+
+  test("converts a sendCard flow step to a single-card Messenger carousel", async () => {
+    await sendFlowStep({
+      ctx,
+      data: {
+        contact,
+        flowId: "flow-1",
+        flowVersionId: "version-1",
+        step: {
+          id: "step-1",
+          nodeId: "node-1",
+          stepType: "sendCard",
+          title: "Featured product",
+          subtitle: "Limited availability",
+          image: { url: "https://example.com/product.png" },
+          buttons: [],
+        },
+      },
+    } as never)
+
+    expect(mockSendPageMessage).toHaveBeenCalledWith(
+      ctx.auth,
+      expect.objectContaining({
+        message: expect.objectContaining({
+          attachment: {
+            type: "template",
+            payload: expect.objectContaining({
+              elements: [
+                expect.objectContaining({
+                  image_url: "https://example.com/product.png",
+                  subtitle: "Limited availability",
+                  title: "Featured product",
+                }),
+              ],
+              image_aspect_ratio: "horizontal",
+              template_type: "generic",
+            }),
+          },
+        }),
+      }),
+    )
   })
 })

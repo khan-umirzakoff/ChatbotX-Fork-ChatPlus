@@ -1,4 +1,5 @@
-import { listInboxesRequest } from "@chatbotx.io/business"
+import { listInboxesRequest } from "@chatbotx.io/business/inbox/schema"
+import { zodBigintAsString } from "@chatbotx.io/utils"
 import { createSearchParamsCache, parseAsInteger } from "nuqs/server"
 import { z } from "zod"
 import { inboxResource } from "./resource"
@@ -18,6 +19,18 @@ export const publicInboxResource = inboxResource.pick({
   name: true,
   channel: true,
   status: true,
+  sourceId: true,
+  markReadOnOutbound: true,
+})
+
+export const updateInboxPublicRequest = z.object({
+  id: zodBigintAsString().describe("Inbox id. Get it from `inboxes.list`."),
+  markReadOnOutbound: z
+    .boolean()
+    .optional()
+    .describe(
+      "Whether the contact's unread conversation is marked read when an agent or flow sends a message to it.",
+    ),
 })
 
 export const publicListInboxResponse = z.object({
@@ -26,6 +39,10 @@ export const publicListInboxResponse = z.object({
 })
 export type PublicListInboxResponse = z.infer<typeof publicListInboxResponse>
 
+// Back-compat for the deprecated `GET /v1/channels` alias (see
+// `inboxesPublicRouter.listChannels`): the pre-consolidation response
+// exposed `sourceId` as `id`, which is not always numeric (e.g. TikTok uses
+// the account username).
 export const publicListInboxesResponse = z.object({
   data: z.array(
     inboxResource
@@ -35,8 +52,6 @@ export const publicListInboxesResponse = z.object({
         status: true,
       })
       .extend({
-        // The public API exposes sourceId as id, which is not always numeric
-        // (e.g. TikTok uses the account username)
         id: z.string(),
       }),
   ),

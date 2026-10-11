@@ -54,6 +54,9 @@ export interface DataTableRowAction<TData> {
     | "enable"
     | "move"
     | "copyUrl"
+    | "chatWidget"
+    | "publish"
+    | "copyJson"
 }
 
 export type { ColumnDef } from "@tanstack/react-table"

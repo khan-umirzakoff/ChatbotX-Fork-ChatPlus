@@ -30,14 +30,6 @@ vi.mock("@/lib/workspace/load-servable-workspace", () => ({
   loadServableWorkspace: mockLoadServableWorkspace,
 }))
 
-vi.mock("@chatbotx.io/database/client", () => ({
-  db: {
-    query: {
-      magicLinkModel: { findFirst: mockMagicLinkFindFirst },
-    },
-  },
-}))
-
 vi.mock("@chatbotx.io/event-bus", () => ({
   emit: mockEmit,
 }))
@@ -48,6 +40,9 @@ vi.mock("@chatbotx.io/business", () => ({
   },
   inboxService: {
     list: vi.fn(),
+  },
+  magicLinkService: {
+    findByName: mockMagicLinkFindFirst,
   },
   qrCodeService: {
     find: mockQrCodeFind,
@@ -166,6 +161,28 @@ describe("public scheduled-deletion route guards", () => {
     ).rejects.toThrow("notFound")
 
     expect(mockSystemGetMePrivacyData).not.toHaveBeenCalled()
+  })
+
+  test("GDPR me page injects synchronous avatar mirroring", async () => {
+    mockSystemGetMePrivacyData.mockResolvedValue({ language: "en" })
+
+    await MePage({
+      searchParams: Promise.resolve({
+        w: "workspace-1",
+        u: "source-1",
+        ib: "integration-1",
+        id: "form-1",
+        hash: "hash-1",
+      }),
+    })
+
+    expect(mockSystemGetMePrivacyData).toHaveBeenCalledWith({
+      workspaceId: "workspace-1",
+      sourceId: "source-1",
+      integrationId: "integration-1",
+      formId: "form-1",
+      hash: "hash-1",
+    })
   })
 
   test("unsubscribe renders unavailable and skips mutation when the workspace is scheduled for deletion", async () => {

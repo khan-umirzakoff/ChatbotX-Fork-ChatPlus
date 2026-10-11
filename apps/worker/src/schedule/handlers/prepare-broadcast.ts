@@ -1,16 +1,14 @@
 import { broadcastService, conversationService } from "@chatbotx.io/business"
-import { db, eq } from "@chatbotx.io/database/client"
 import {
   type BroadcastStatus,
   broadcastStatuses,
   broadcastSubactions,
   channelTypes,
+  resolveBroadcastAudienceRange,
+  resolveBroadcastTargetInboxIds,
 } from "@chatbotx.io/database/partials"
 import type { ContactFilterCriteriaInput } from "@chatbotx.io/database/queries"
-import {
-  broadcastModel,
-  contactsOnBroadcastsModel,
-} from "@chatbotx.io/database/schema"
+import { purgeBroadcastRecipients } from "@chatbotx.io/database/repositories"
 import {
   broadcastSendJobId,
   ScheduleJobData,
@@ -19,12 +17,15 @@ import {
 import { isBlockedWorkspace } from "../../lib/is-blocked-workspace"
 import { logger } from "../../lib/logger"
 
+// Purge tuning for the stale-recipient cleanup at the start of a prepare run.
+// Normally 0 rows (nothing to clean up), so a generous budget is cheap.
+const PREPARE_PURGE_CHUNK_SIZE = 1000
+const PREPARE_PURGE_INTER_CHUNK_DELAY_MS = 50
+const PREPARE_PURGE_MAX_RUN_DURATION_MS = 60_000
+
 export const prepareBroadcast = async (broadcastId: string) => {
-  const broadcast = await db.query.broadcastModel.findFirst({
-    where: {
-      id: broadcastId,
-      status: "scheduled",
-    },
+  const broadcast = await broadcastService.findScheduledForPrepare({
+    broadcastId,
   })
 
   if (!broadcast) {
@@ -35,6 +36,23 @@ export const prepareBroadcast = async (broadcastId: string) => {
   if (await isBlockedWorkspace(broadcast.workspaceId)) {
     return
   }
+
+  // A prior prepare run may have left stale `ContactOnBroadcast` rows behind
+  // (e.g. a moveToDraft → re-schedule race). Clearing them before rebuilding
+  // the audience stops a later re-schedule from leaking old recipients.
+  // Normally a no-op — 0 rows removed.
+  await purgeBroadcastRecipients({
+    broadcastId,
+    chunkSize: PREPARE_PURGE_CHUNK_SIZE,
+    interChunkDelayMs: PREPARE_PURGE_INTER_CHUNK_DELAY_MS,
+    maxRunDurationMs: PREPARE_PURGE_MAX_RUN_DURATION_MS,
+  })
+
+  // The dispatch epoch read at the start of this run. `moveToDraft` bumps
+  // `resumeCount`, so pinning the promotion UPDATE below to this value
+  // defeats a stale prepare (running behind a moveToDraft → re-schedule
+  // round-trip) from wrongly promoting the NEW schedule's row.
+  const promotionEpoch = broadcast.resumeCount
 
   const parsedChannel = channelTypes.safeParse(broadcast.channel)
   const parsedSubaction = broadcastSubactions.safeParse(broadcast.subaction)
@@ -51,14 +69,11 @@ export const prepareBroadcast = async (broadcastId: string) => {
       broadcastSubactions.enum.messengerTemplateMessage &&
     broadcast.templateId
   ) {
-    const template = await db.query.messengerMessageTemplateModel.findFirst({
-      where: {
-        id: broadcast.templateId,
-        integrationMessenger: { workspaceId: broadcast.workspaceId },
-      },
-      columns: { integrationMessengerId: true },
-    })
-    integrationMessengerId = template?.integrationMessengerId ?? null
+    integrationMessengerId =
+      await broadcastService.resolveTemplateIntegrationMessengerId({
+        workspaceId: broadcast.workspaceId,
+        templateId: broadcast.templateId,
+      })
   }
 
   let hasContactOnBroadcast = false
@@ -68,11 +83,16 @@ export const prepareBroadcast = async (broadcastId: string) => {
     {
       workspaceId: broadcast.workspaceId,
       channels: parsedChannel.success ? [parsedChannel.data] : [],
+      // Targets mode scopes by the target pages (an empty list once every
+      // page is gone means nobody); channel mode leaves it undefined so the
+      // legacy integration columns / channel apply.
+      inboxIds: resolveBroadcastTargetInboxIds(broadcast),
       integrationWhatsappId: broadcast.integrationWhatsappId,
       integrationMessengerId,
       contactFilter:
         broadcast.contactFilter as ContactFilterCriteriaInput | null,
       subaction: parsedSubaction.success ? parsedSubaction.data : undefined,
+      audienceRange: resolveBroadcastAudienceRange(broadcast),
     },
     async (contactInboxes): Promise<boolean | undefined> => {
       const conversations = await conversationService.findDMByContactIds({
@@ -80,9 +100,6 @@ export const prepareBroadcast = async (broadcastId: string) => {
         contactIds: contactInboxes.map(
           (contactInbox) => contactInbox.contactId,
         ),
-        // TikTok resolves its DM by a non-null sourceId; every other channel
-        // keeps the sourceId IS NULL convention.
-        channel: parsedChannel.success ? parsedChannel.data : undefined,
       })
 
       const conversationMap = new Map(
@@ -122,10 +139,7 @@ export const prepareBroadcast = async (broadcastId: string) => {
 
       hasContactOnBroadcast = true
 
-      await db
-        .insert(contactsOnBroadcastsModel)
-        .values(recipients)
-        .onConflictDoNothing()
+      await broadcastService.insertRecipients({ recipients })
 
       contactCount += recipients.length
 
@@ -137,10 +151,24 @@ export const prepareBroadcast = async (broadcastId: string) => {
     ? broadcastStatuses.enum.sending
     : broadcastStatuses.enum.sent
 
-  await db
-    .update(broadcastModel)
-    .set({ status: broadcastStatus, contactCount })
-    .where(eq(broadcastModel.id, broadcastId))
+  const promoted = await broadcastService.promoteAfterPrepare({
+    broadcastId,
+    status: broadcastStatus,
+    contactCount,
+    promotionEpoch,
+  })
+
+  if (!promoted) {
+    // Lost the promotion race — a moveToDraft (or delete) bumped the epoch
+    // or moved the row off `scheduled` since this run started. The audience
+    // rows this run just inserted belong to a stale schedule; the next
+    // prepare (or the cleanup at the top of this function) removes them.
+    logger.warn(
+      { broadcastId, promotionEpoch },
+      "prepareBroadcast: lost the promotion race, skipping sendBroadcast enqueue",
+    )
+    return
+  }
 
   if (broadcastStatus === broadcastStatuses.enum.sent) {
     return

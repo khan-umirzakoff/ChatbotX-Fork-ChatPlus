@@ -1,5 +1,6 @@
 import type {
   BroadcastEventType,
+  CommentAutomationEventType,
   SequenceStepEventType,
 } from "@chatbotx.io/analytics/schemas"
 import type {
@@ -14,7 +15,7 @@ import { z } from "zod"
 import {
   defaultJobOptions,
   fakeQueue,
-  getRedisConnection,
+  getQueueConnection,
   isNoRedisEnv,
 } from "../../lib/connection"
 import { queueNames } from "../../lib/types"
@@ -22,7 +23,7 @@ import { queueNames } from "../../lib/types"
 export const defaultQueue = isNoRedisEnv()
   ? fakeQueue
   : new Queue<DefaultJobData>(queueNames.enum.default, {
-      connection: getRedisConnection(),
+      connection: getQueueConnection(queueNames.enum.default),
       defaultJobOptions,
     })
 
@@ -31,7 +32,6 @@ export const DefaultJobAction = {
   exportCoupons: "exportCoupons",
   bulkTagContacts: "bulkTagContacts",
   runImport: "runImport",
-  sendErrorLog: "sendErrorLog",
   sendAuditLog: "sendAuditLog",
   syncTag: "syncTag",
   syncChannelLabels: "syncChannelLabels",
@@ -40,6 +40,7 @@ export const DefaultJobAction = {
   checkMetaCatalogSync: "checkMetaCatalogSync",
   syncExternalCalendarEvent: "syncExternalCalendarEvent",
   sendAppointmentReminder: "sendAppointmentReminder",
+  installTemplate: "installTemplate",
 } as const
 
 export const syncExternalCalendarEventJobId = (
@@ -60,7 +61,11 @@ export type ExportContactsFilter = {
 export type JobExportContacts = {
   type: typeof DefaultJobAction.exportContacts
   data: {
-    requestedUserId: string
+    // Optional: a workspace-token (public API) export has no session user.
+    // `runJobWithAuditContext` falls back to `SYSTEM_ACTOR` and
+    // `auditService.record`'s `userId` is itself optional, so every consumer
+    // already tolerates this — `fileModel.userId` is nullable too.
+    requestedUserId?: string
     workspaceId: string
     fileId: string
     fields: string[]
@@ -70,6 +75,8 @@ export type JobExportContacts = {
     restrictToAssignedUserId?: string
     outputPath: string
     outputFormat: "csv"
+    ipAddress?: string
+    userAgent?: string
   } & (
     | { contactIds: string[]; filter?: undefined }
     | { contactIds?: undefined; filter: ExportContactsFilter }
@@ -115,6 +122,11 @@ export type JobBulkTagContacts = {
         stepId: string
         eventType: SequenceStepEventType
       }
+    | {
+        source: "commentAutomation"
+        automationId: string
+        eventType: CommentAutomationEventType
+      }
   )
 }
 
@@ -122,28 +134,22 @@ export type JobRunImport = {
   type: typeof DefaultJobAction.runImport
   data: {
     importId: string
-  }
-}
-
-export type JobSendErrorLog = {
-  type: typeof DefaultJobAction.sendErrorLog
-  data: {
-    workspaceId: string
-    error: {
-      message: string
-      stack?: string
-      httpCode: string
-    }
+    ipAddress?: string
+    userAgent?: string
   }
 }
 
 export type JobSendAuditLog = {
   type: typeof DefaultJobAction.sendAuditLog
   data: {
+    auditLogId?: string
     userId: string
     workspaceId: string
     action: string
     detail: string
+    ipAddress?: string
+    userAgent?: string
+    source?: string
   }
 }
 
@@ -251,12 +257,19 @@ export type JobSendAppointmentReminder = {
   data: JobSendAppointmentReminderData
 }
 
+export type JobInstallTemplate = {
+  type: typeof DefaultJobAction.installTemplate
+  data: {
+    installationId: string
+    workspaceId: string
+  }
+}
+
 export type DefaultJobData =
   | JobExportContacts
   | JobExportCoupons
   | JobBulkTagContacts
   | JobRunImport
-  | JobSendErrorLog
   | JobSendAuditLog
   | JobSyncTag
   | JobSyncChannelLabels
@@ -265,3 +278,4 @@ export type DefaultJobData =
   | JobCheckMetaCatalogSync
   | JobSyncExternalCalendarEvent
   | JobSendAppointmentReminder
+  | JobInstallTemplate

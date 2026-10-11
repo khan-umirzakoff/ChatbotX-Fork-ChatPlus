@@ -2,12 +2,9 @@
 
 import {
   type FormFieldType,
-  operatorTypes,
+  type PostTrackingChannel,
+  supportsPostTracking,
 } from "@chatbotx.io/database/partials"
-import {
-  isValidDateTimeFilterValue,
-  valueContainsVariablePlaceholder,
-} from "@chatbotx.io/database/queries/contact-filter/value-format"
 import { ComboboxField } from "@chatbotx.io/ui/components/form/combobox-field"
 import { InputField } from "@chatbotx.io/ui/components/form/input-field"
 import { MultiSelectField } from "@chatbotx.io/ui/components/form/multi-select-field"
@@ -24,18 +21,29 @@ import {
   DialogTitle,
 } from "@chatbotx.io/ui/components/ui/dialog"
 import { Form } from "@chatbotx.io/ui/components/ui/form"
+import {
+  isValidDateTimeFilterValue,
+  valueContainsVariablePlaceholder,
+} from "@chatbotx.io/utils/contact-filter-value-format"
+import {
+  canonicalBooleanLiteral,
+  operatorTypes,
+} from "@chatbotx.io/utils/custom-field"
+import { SiInstagram, SiMessenger } from "@icons-pack/react-simple-icons"
 import { useTranslations } from "next-intl"
 import { type ReactNode, useCallback, useMemo } from "react"
 import { useForm, useWatch } from "react-hook-form"
 import { PlainTextEditorField } from "@/components/tiptap/plain-text-editor-field"
+import { FieldValuePickerPopover } from "@/features/custom-fields/components/field-value-picker-popover"
 import {
   type ContactFilterCondition,
   singleContactFilterConditionSchema,
-} from "../schemas"
+} from "../schema"
 import {
   type ConditionOption,
   type ContactFilterConditionFormDraft,
   type FieldConfig,
+  getBooleanOptions,
   getFieldOptions,
 } from "./contact-filter-config"
 import { CONTACT_FILTER_DIALOG_SIZE_CLASS } from "./contact-filter-dialog-layout"
@@ -57,6 +65,7 @@ import {
   getStaticFieldValueInputConfig,
   staticFieldOperatorRequiresArrayValue,
 } from "./static-field-filter-config"
+import { useChannelPostSelectOptions } from "./use-workspace-option-sources"
 import {
   DATETIME_VALUE_INPUT_KINDS,
   resolveValueInputKind,
@@ -77,8 +86,10 @@ const getFirstEnabledOperator = (
  * Maps a raw form draft to the condition shape validated by
  * `singleContactFilterConditionSchema`. Static fields pass through unchanged;
  * a custom-field config (`customField:<id>`) becomes the dynamic
- * `{ field: "customField", customFieldId, valueType }` branch; a coupon-topic
- * config (`couponTopic:<id>`) becomes `{ field: "couponTopic", topicId }`.
+ * `{ field: "customField", customFieldId, valueType }` branch; a bot-field
+ * config (`botField:<id>`) becomes `{ field: "botField", botFieldId, valueType }`;
+ * a coupon-topic config (`couponTopic:<id>`) becomes
+ * `{ field: "couponTopic", topicId }`.
  */
 export const buildConditionDraft = (
   values: ContactFilterConditionFormDraft,
@@ -93,6 +104,18 @@ export const buildConditionDraft = (
       customFieldId: config.customFieldId,
       valueType: config.formField,
       customFieldType: config.customFieldType,
+      operator,
+    }
+
+    return shouldOmitValue ? draft : { ...draft, value: values.value }
+  }
+
+  if (config?.botFieldId) {
+    const draft = {
+      field: "botField" as const,
+      botFieldId: config.botFieldId,
+      valueType: config.formField,
+      botFieldType: config.customFieldType,
       operator,
     }
 
@@ -120,6 +143,9 @@ export const buildConditionDraft = (
 const resolveDraftFieldName = (condition: ContactFilterCondition): string => {
   if (condition.field === "customField" && "customFieldId" in condition) {
     return `customField:${condition.customFieldId}`
+  }
+  if (condition.field === "botField" && "botFieldId" in condition) {
+    return `botField:${condition.botFieldId}`
   }
   if (condition.field === "couponTopic" && "topicId" in condition) {
     return `couponTopic:${condition.topicId}`
@@ -152,7 +178,9 @@ export const getConditionOptionsForConfig = (
   if (!config) {
     return []
   }
-  if (config.customFieldId) {
+  // `botField` reuses the custom-field operator rules unchanged (see the
+  // `FieldConfig` doc comment on `customFieldType`).
+  if (config.customFieldId || config.botFieldId) {
     return getCustomFieldConditionOptions(config, conditionOptions)
   }
   if (config.topicId) {
@@ -165,7 +193,7 @@ export const getDefaultConditionValue = (
   config: FieldConfig | undefined,
   operator: string,
 ): string | string[] => {
-  if (config?.customFieldId) {
+  if (config?.customFieldId || config?.botFieldId) {
     return getDefaultCustomFieldValue(config, operator)
   }
   if (config?.topicId) {
@@ -192,10 +220,13 @@ type ContactFilterValueFieldsProps = {
   valueType: FormFieldType | null
   valueOptions: SelectOption[]
   customFieldInput?: CustomFieldValueInputConfig
+  /** True when the active field is a custom field or bot field (not static). */
+  isDynamicField?: boolean
+  isChannelPost?: boolean
   enableVariables: boolean
 }
 
-type FreeTextInputKind = "text" | "number" | "date" | "datetime"
+type FreeTextInputKind = "text" | "number" | "date" | "datetime" | "boolean"
 
 type FilterValueInputProps = {
   name: string
@@ -226,23 +257,36 @@ const FILTER_VALUE_INPUT_CONFIG = {
     placeholderKey: "condition.datetimePlaceholder",
     type: undefined,
   },
+  boolean: {
+    placeholderKey: "condition.valuePlaceholder",
+    type: undefined,
+  },
 } as const satisfies Record<
   FreeTextInputKind,
   { placeholderKey: string; type: "number" | undefined }
 >
 
+/**
+ * One icon per post-tracking channel. Typed against `PostTrackingChannel`, so
+ * adding a channel to the capability list is a compile error until it gets one.
+ */
+const POST_CHANNEL_ICONS: Record<PostTrackingChannel, typeof SiInstagram> = {
+  instagram: SiInstagram,
+  messenger: SiMessenger,
+}
+
+const PostChannelIcon = ({ channel }: { channel: string | undefined }) => {
+  if (!(channel && supportsPostTracking(channel))) {
+    return null
+  }
+  const Icon = POST_CHANNEL_ICONS[channel]
+  return <Icon aria-hidden="true" className="ms-2 size-4" />
+}
+
 const BooleanValueField = () => {
   const t = useTranslations()
 
-  return (
-    <SelectField
-      name="value"
-      options={[
-        { label: t("condition.yes"), value: "true" },
-        { label: t("condition.no"), value: "false" },
-      ]}
-    />
-  )
+  return <SelectField name="value" options={getBooleanOptions(t)} />
 }
 
 const FilterValueInput = ({
@@ -255,27 +299,40 @@ const FilterValueInput = ({
   const inputConfig = FILTER_VALUE_INPUT_CONFIG[kind]
   const placeholder = t(inputConfig.placeholderKey)
 
-  if (enableVariables) {
-    return (
+  const renderInput = (inputKey?: number) =>
+    enableVariables ? (
       <PlainTextEditorField
         formItemClassName="w-full"
         inline
+        key={inputKey}
         label={label}
         name={name}
         placeholder={placeholder}
         showEmojiPicker={false}
       />
+    ) : (
+      <InputField
+        key={inputKey}
+        label={label}
+        name={name}
+        placeholder={placeholder}
+        type={inputConfig.type}
+      />
+    )
+
+  // Temporal and boolean values get a click-to-open picker (calendar + time,
+  // or true/false) on top of the free text input, same as the Set Custom
+  // Field step editor. The filter datetime format has no seconds (see
+  // `condition.datetimePlaceholder`).
+  if (kind === "date" || kind === "datetime" || kind === "boolean") {
+    return (
+      <FieldValuePickerPopover kind={kind} name={name} withSeconds={false}>
+        {renderInput}
+      </FieldValuePickerPopover>
     )
   }
 
-  return (
-    <InputField
-      label={label}
-      name={name}
-      placeholder={placeholder}
-      type={inputConfig.type}
-    />
-  )
+  return renderInput()
 }
 
 const IntervalValueInput = ({
@@ -387,6 +444,26 @@ const parseSaveableCondition = ({
     return null
   }
 
+  // Free-typed boolean values (dynamic custom/bot fields only) must be a
+  // recognized literal (or a runtime {{variable}}), and are canonicalized to
+  // "true"/"false" so the SQL predicate and the condition summary see one
+  // spelling. Static booleans are deliberately excluded: they keep the
+  // select UI, their SQL evaluator compares the raw string, and rewriting a
+  // legacy API-saved value on edit would silently change its evaluation.
+  if (
+    valueInputKind === "boolean" &&
+    (config?.customFieldId || config?.botFieldId) &&
+    "value" in parsed.data &&
+    typeof parsed.data.value === "string" &&
+    !valueContainsVariablePlaceholder(parsed.data.value)
+  ) {
+    const canonical = canonicalBooleanLiteral(parsed.data.value)
+    if (canonical === null) {
+      return null
+    }
+    return { ...parsed.data, value: canonical }
+  }
+
   return parsed.data
 }
 
@@ -394,11 +471,84 @@ const ContactFilterValueFields = ({
   valueType,
   valueOptions,
   customFieldInput,
+  isDynamicField,
+  isChannelPost = false,
   enableVariables,
 }: ContactFilterValueFieldsProps) => {
   const kind = resolveValueInputKind(customFieldInput, valueType)
 
+  // Custom/bot boolean fields keep free typing (values are compared
+  // canonically in SQL) with a click-to-open true/false picker, mirroring the
+  // Set Custom Field step. Static boolean fields (strict "true"/"false"
+  // schema) keep the plain select.
+  if (kind === "boolean" && isDynamicField) {
+    return (
+      <FilterValueInput
+        enableVariables={enableVariables}
+        kind="boolean"
+        name="value"
+      />
+    )
+  }
+
+  if (kind === "multiSelect" && isChannelPost) {
+    return <ChannelPostValueField />
+  }
+
   return VALUE_INPUT_RENDERERS[kind]({ enableVariables, valueOptions })
+}
+
+const ChannelPostValueField = () => {
+  const t = useTranslations()
+  const value = useWatch<ContactFilterConditionFormDraft>({ name: "value" })
+  const selectedIds = Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : []
+  const { error, isLoading, onReachEnd, onSearchValueChange, options, retry } =
+    useChannelPostSelectOptions(selectedIds)
+  const statusIndicator = error ? (
+    <div className="px-2 py-1.5 text-center">
+      <button className="text-sm underline" onClick={retry} type="button">
+        {t("states.error")}: {t("actions.retry")}
+      </button>
+    </div>
+  ) : null
+  let emptyIndicator: ReactNode | undefined
+  if (error) {
+    emptyIndicator = statusIndicator
+  } else if (isLoading) {
+    emptyIndicator = t("actions.loading")
+  }
+
+  return (
+    <MultiSelectField
+      emptyIndicator={emptyIndicator}
+      hideSelectAll
+      name="value"
+      onReachEnd={onReachEnd}
+      onSearchValueChange={onSearchValueChange}
+      options={options}
+      renderOption={(option) => (
+        <>
+          <PostChannelIcon channel={option.channel} />
+          {option.href ? (
+            <a
+              aria-label={t("condition.openPost", { post: option.label })}
+              className="ms-2 text-muted-foreground text-xs underline"
+              href={option.href}
+              onClick={(event) => event.stopPropagation()}
+              rel="noreferrer"
+              target="_blank"
+            >
+              {t("condition.openPostLink")}
+            </a>
+          ) : null}
+        </>
+      )}
+      serverSearch
+      statusIndicator={statusIndicator}
+    />
+  )
 }
 
 type ContactFilterConditionDialogProps = {
@@ -519,8 +669,10 @@ export const ContactFilterConditionDialog = ({
         setValue("value", "")
         return
       }
+      const isCustomOrBotFieldConfig =
+        activeConfig?.customFieldId || activeConfig?.botFieldId
       if (
-        activeConfig?.customFieldId &&
+        isCustomOrBotFieldConfig &&
         customFieldOperatorRequiresArrayValue(nextOperator)
       ) {
         if (Array.isArray(currentValue)) {
@@ -533,7 +685,7 @@ export const ContactFilterConditionDialog = ({
         return
       }
       if (
-        !activeConfig?.customFieldId &&
+        !isCustomOrBotFieldConfig &&
         staticFieldOperatorRequiresArrayValue(activeConfig, nextOperator)
       ) {
         if (Array.isArray(currentValue)) {
@@ -609,6 +761,10 @@ export const ContactFilterConditionDialog = ({
                 <ContactFilterValueFields
                   customFieldInput={resolvedFieldInput}
                   enableVariables={enableVariables}
+                  isChannelPost={activeConfig?.optionSource === "channelPosts"}
+                  isDynamicField={Boolean(
+                    activeConfig?.customFieldId || activeConfig?.botFieldId,
+                  )}
                   valueOptions={valueOptions}
                   valueType={valueType}
                 />

@@ -1,0 +1,362 @@
+import { botFieldService } from "@chatbotx.io/business"
+import z from "zod"
+import {
+  possibleErrorsOnCreatingBotField,
+  possibleErrorsOnDeletingTemplateResource,
+  possibleErrorsOnFindingResource,
+  possibleErrorsOnMutatingResource,
+  possibleErrorsOnSettingBotField,
+} from "@/lib/orpc/orpc-error-helper"
+import { workspaceTokenAuthAPIForScope } from "@/orpc"
+
+import {
+  createBotFieldRequest,
+  publicBotFieldIdSchema,
+  resetBotFieldsRequest,
+  updateBotFieldRequest,
+} from "../schema/action"
+import {
+  listBotFieldsPublicRequest,
+  publicListBotFieldsResponse,
+} from "../schema/query"
+import { publicBotFieldResource } from "../schema/resource"
+
+const workspaceTokenAuthAPI = workspaceTokenAuthAPIForScope("automation")
+
+export const botFieldsPublicRouter = {
+  list: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/bot-fields",
+      summary: "Get all bot fields",
+      description:
+        "Use this to find bot field names before reading one with `botFields.get` or setting a value with `botFields.set`. Returns bot fields in this workspace, newest first unless `sort` is given. Filter by `name` (substring) or `folderId`.",
+      tags: ["Bot Fields"],
+    })
+    .input(listBotFieldsPublicRequest)
+    .output(publicListBotFieldsResponse)
+    .errors(possibleErrorsOnFindingResource)
+    .handler(async ({ context, input }) => {
+      const result = await botFieldService.list({
+        ...input,
+        workspaceId: context.workspace.id,
+        sort: input.sort ?? [{ id: "createdAt", desc: true }],
+      })
+      return result
+    }),
+
+  create: workspaceTokenAuthAPI
+    .route({
+      method: "POST",
+      path: "/v1/bot-fields",
+      summary: "Create bot field",
+      description:
+        "Adds a custom bot field definition (a global variable available to every flow). Use `botFields.list` first to avoid duplicating an existing name.",
+      successStatus: 201,
+      tags: ["Bot Fields"],
+    })
+    .input(
+      createBotFieldRequest.extend({
+        value: createBotFieldRequest.shape.value.default(null),
+        description: createBotFieldRequest.shape.description.default(null),
+      }),
+    )
+    .output(publicBotFieldResource)
+    .errors(possibleErrorsOnCreatingBotField)
+    .handler(
+      async ({ context, input }) =>
+        await botFieldService.create({
+          workspaceId: context.workspace.id,
+          data: input,
+        }),
+    ),
+
+  get: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/bot-fields/{idOrName}",
+      summary: "Get bot field",
+      description:
+        "Returns one bot field's current value. Use `botFields.list` to find its id or name first.",
+      tags: ["Bot Fields"],
+    })
+    .input(
+      z.object({
+        idOrName: z
+          .string()
+          .max(255)
+          .describe("Bot field id or name. Get it from `botFields.list`."),
+      }),
+    )
+    .output(publicBotFieldResource)
+    .errors(possibleErrorsOnFindingResource)
+    .handler(
+      async ({ context, input }) =>
+        await botFieldService.findByKeyOrFail({
+          key: input.idOrName,
+          workspaceId: context.workspace.id,
+        }),
+    ),
+
+  set: workspaceTokenAuthAPI
+    .route({
+      method: "PUT",
+      path: "/v1/bot-fields/{idOrName}",
+      summary: "Set bot field value",
+      description:
+        "Changes an existing bot field's value. Call `botFields.get` to inspect the current value first.",
+      tags: ["Bot Fields"],
+    })
+    .input(
+      z.object({
+        idOrName: z
+          .string()
+          .max(255)
+          .describe("Bot field id or name. Get it from `botFields.list`."),
+        value: z.string().max(1000).describe("New value for the bot field."),
+      }),
+    )
+    .output(publicBotFieldResource)
+    .errors(possibleErrorsOnSettingBotField)
+    .handler(async ({ context, input }) => {
+      const { idOrName, ...rest } = input
+      return await botFieldService.updateByKey({
+        workspaceId: context.workspace.id,
+        key: idOrName,
+        data: rest,
+      })
+    }),
+
+  update: workspaceTokenAuthAPI
+    .route({
+      method: "PATCH",
+      path: "/v1/bot-fields/{idOrName}",
+      summary: "Update bot field",
+      description:
+        "Changes a bot field's name, type, description, folder or value; fields you omit are left unchanged. `folderId` is a `customField` folder (`folders.list`), null moves it to the root. A new value must fit the field's (new) type. Renaming to a name already used by a field of the same type returns 422. Use `botFields.set` when you only change the value.",
+      tags: ["Bot Fields"],
+    })
+    .input(
+      updateBotFieldRequest.extend({
+        idOrName: z
+          .string()
+          .max(255)
+          .describe("Bot field id or name. Get it from `botFields.list`."),
+      }),
+    )
+    .output(publicBotFieldResource)
+    .errors(possibleErrorsOnSettingBotField)
+    .handler(async ({ context, input }) => {
+      const { idOrName, ...data } = input
+      // Nothing to change: answer with the field as it is.
+      if (Object.keys(data).length === 0) {
+        return await botFieldService.findByKeyOrFail({
+          workspaceId: context.workspace.id,
+          key: idOrName,
+        })
+      }
+      return await botFieldService.updateByKey({
+        workspaceId: context.workspace.id,
+        key: idOrName,
+        data,
+      })
+    }),
+
+  setMany: workspaceTokenAuthAPI
+    .route({
+      method: "PUT",
+      path: "/v1/bot-fields",
+      summary: "Set multiple bot field values",
+      description:
+        "Changes several bot field values in one call, each entry addressed by id or name. Entries are applied independently, not as one transaction: if one fails (unknown field, value that does not fit its type) the request fails but entries already written stay changed. Use `botFields.list` to find valid ids or names first.",
+      successStatus: 204,
+      tags: ["Bot Fields"],
+    })
+    .input(
+      z.object({
+        fields: z
+          .array(
+            z.union([
+              z.object({
+                id: publicBotFieldIdSchema,
+                value: z
+                  .union([z.string(), z.number()])
+                  .transform(String)
+                  .describe("New value for the bot field."),
+              }),
+              z.object({
+                name: z.string().max(255).describe("Bot field name."),
+                value: z
+                  .union([z.string(), z.number()])
+                  .transform(String)
+                  .describe("New value for the bot field."),
+              }),
+              // Back-compat with the pre-consolidation `setMany` shape (name
+              // only, keyed as `key`) so an existing caller's request body
+              // still validates after `botFields.bulkUpdate` was folded into
+              // this route — `key` behaves exactly like `name` below.
+              z.object({
+                key: z.string().max(255).describe("Bot field name."),
+                value: z
+                  .union([z.string(), z.number()])
+                  .transform(String)
+                  .describe("New value for the bot field."),
+              }),
+            ]),
+          )
+          .describe("Bot fields to update, each addressed by id or name."),
+      }),
+    )
+    .errors(possibleErrorsOnSettingBotField)
+    .handler(async ({ context, input }) => {
+      const resolveKey = (field: (typeof input.fields)[number]): string => {
+        if ("id" in field) {
+          return String(field.id)
+        }
+        return "name" in field ? field.name : field.key
+      }
+      await botFieldService.bulkUpdateByKeys({
+        workspaceId: context.workspace.id,
+        updates: input.fields.map((field) => ({
+          key: resolveKey(field),
+          value: field.value,
+        })),
+      })
+    }),
+
+  // Deprecated — use `botFields.setMany` instead. Kept for backward
+  // compatibility with the pre-consolidation `/bulk-update` path; hidden
+  // from MCP/CLI tool listings. Body shape mirrors `setMany`'s legacy `key`
+  // branch.
+  bulkUpdate: workspaceTokenAuthAPI
+    .route({
+      method: "PUT",
+      path: "/v1/bot-fields/bulk-update",
+      summary: "Bulk update bot field values",
+      description:
+        "Deprecated — `botFields.setMany` now accepts the same entries (by id or name) at `PUT /v1/bot-fields`; this dedicated `/bulk-update` path is kept only for callers that have not migrated. Entries are applied independently, not as one transaction.",
+      successStatus: 204,
+      deprecated: true,
+      tags: ["Bot Fields"],
+    })
+    .input(
+      z.object({
+        fields: z
+          .array(
+            z.union([
+              z.object({
+                id: publicBotFieldIdSchema,
+                value: z
+                  .union([z.string(), z.number()])
+                  .transform(String)
+                  .describe("New value for the bot field."),
+              }),
+              z.object({
+                name: z.string().max(255).describe("Bot field name."),
+                value: z
+                  .union([z.string(), z.number()])
+                  .transform(String)
+                  .describe("New value for the bot field."),
+              }),
+              z.object({
+                key: z.string().max(255).describe("Bot field name."),
+                value: z
+                  .union([z.string(), z.number()])
+                  .transform(String)
+                  .describe("New value for the bot field."),
+              }),
+            ]),
+          )
+          .describe("Bot fields to update, each addressed by id or name."),
+      }),
+    )
+    .errors(possibleErrorsOnSettingBotField)
+    .handler(async ({ context, input }) => {
+      const resolveKey = (field: (typeof input.fields)[number]): string => {
+        if ("id" in field) {
+          return String(field.id)
+        }
+        return "name" in field ? field.name : field.key
+      }
+      await botFieldService.bulkUpdateByKeys({
+        workspaceId: context.workspace.id,
+        updates: input.fields.map((field) => ({
+          key: resolveKey(field),
+          value: field.value,
+        })),
+      })
+    }),
+
+  reset: workspaceTokenAuthAPI
+    .route({
+      method: "POST",
+      path: "/v1/bot-fields/{idOrName}/reset",
+      summary: "Reset bot field value",
+      description:
+        "Clears one bot field's value back to empty while keeping the field itself, so flows that reference it keep working. Use `botFields.list` to find its id or name first; use `botFields.delete` only to remove the field.",
+      tags: ["Bot Fields"],
+    })
+    .input(
+      z.object({
+        idOrName: z
+          .string()
+          .max(255)
+          .describe("Bot field id or name. Get it from `botFields.list`."),
+      }),
+    )
+    .output(publicBotFieldResource)
+    .errors(possibleErrorsOnMutatingResource)
+    .handler(
+      async ({ context, input }) =>
+        await botFieldService.clearValueByKey({
+          workspaceId: context.workspace.id,
+          key: input.idOrName,
+        }),
+    ),
+
+  resetMany: workspaceTokenAuthAPI
+    .route({
+      method: "POST",
+      path: "/v1/bot-fields/bulk-reset",
+      summary: "Reset several bot field values",
+      description:
+        "Clears the values of up to 100 bot fields in one call while keeping the fields themselves. Ids that do not belong to this workspace are ignored. Use `botFields.list` to find ids first.",
+      successStatus: 204,
+      tags: ["Bot Fields"],
+    })
+    .input(resetBotFieldsRequest)
+    .errors(possibleErrorsOnMutatingResource)
+    .handler(async ({ context, input }) => {
+      await botFieldService.bulkClearValues({
+        workspaceId: context.workspace.id,
+        ids: input.ids,
+      })
+    }),
+
+  delete: workspaceTokenAuthAPI
+    .route({
+      method: "DELETE",
+      path: "/v1/bot-fields/{idOrName}",
+      summary: "Delete bot field",
+      description:
+        "Deletes the bot field itself (its definition and value), not just its value. To clear only the value and keep the field, use `botFields.reset`. Use `botFields.list` to find its id or name first.",
+      successStatus: 204,
+      tags: ["Bot Fields"],
+    })
+    .input(
+      z.object({
+        idOrName: z
+          .string()
+          .max(255)
+          .describe("Bot field id or name. Get it from `botFields.list`."),
+      }),
+    )
+    .errors(possibleErrorsOnDeletingTemplateResource)
+    .handler(
+      async ({ context, input }) =>
+        await botFieldService.deleteByKey({
+          workspaceId: context.workspace.id,
+          key: input.idOrName,
+        }),
+    ),
+}

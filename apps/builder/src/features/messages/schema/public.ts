@@ -1,0 +1,119 @@
+import { zodBigintAsString } from "@chatbotx.io/utils"
+import { z } from "zod"
+import { PUBLIC_LIST_MAX_PER_PAGE } from "@/lib/public-api/list"
+import { sendWhatsappTemplateRequest } from "./send-template"
+
+// `workspaceId` comes from `context.workspace.id` on every public route —
+// never accepted in the body, per `public-spec-operations.test.ts`'s
+// zero-exception request-schema sweep. `conversationId` is a path param.
+export const conversationIdPathParam = z.object({
+  conversationId: zodBigintAsString().describe(
+    "Conversation id (numeric string). Get it from `conversations.list`.",
+  ),
+})
+
+export const listConversationMessagesPublicRequest = z.object({
+  conversationId: zodBigintAsString().describe(
+    "Conversation id (numeric string). Get it from `conversations.list`.",
+  ),
+  perPage: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(PUBLIC_LIST_MAX_PER_PAGE)
+    .optional()
+    .default(20)
+    .describe("Number of messages per page."),
+  cursor: z
+    .string()
+    .optional()
+    .describe(
+      "Opaque pagination cursor from a previous response. Omit for the first page.",
+    ),
+})
+
+export const messageIdPathParam = z.object({
+  conversationId: zodBigintAsString().describe(
+    "Conversation id (numeric string). Get it from `conversations.list`.",
+  ),
+  messageId: zodBigintAsString().describe("Message id (numeric string)."),
+})
+
+// The sharded message store needs `createdAt` to locate a message's shard —
+// it must come from the id/createdAt pair returned by `messages.list`, not
+// guessed by the caller. On the GET route oRPC maps this to a query
+// parameter; on the DELETE route it is a request body field (oRPC only
+// maps non-path input into query parameters for GET — every other method,
+// including DELETE, gets a JSON body).
+export const messageIdWithCreatedAtParam = messageIdPathParam.and(
+  z.object({
+    createdAt: z.coerce
+      .date()
+      .describe(
+        "The message's createdAt timestamp, exactly as returned by GET /v1/conversations/{conversationId}/messages. Required to locate the message in sharded storage.",
+      ),
+  }),
+)
+
+// Kept in sync with `editMessage`'s return shape
+// (`@/features/messages/actions/edit-message.action.ts`) via the
+// `satisfies`-style check in that file's test — oRPC output schemas silently
+// strip unknown keys, so a field added to the action's return there without a
+// matching field here would disappear from the public response with no
+// error. There's no single call-site to derive this from (the action returns
+// an inline object literal), so the two are kept in sync by hand plus that
+// coverage check instead.
+export const editMessagePublicResponse = z.object({
+  success: z.boolean(),
+  messageId: z.string(),
+  newText: z.string(),
+  newAttachmentPath: z.string().nullable(),
+  newAttachmentPublicUrl: z.string().nullable(),
+  newAttachmentMimeType: z.string().nullable(),
+  newAttachmentWidth: z.number(),
+  newAttachmentHeight: z.number(),
+  removedAttachment: z.boolean(),
+})
+
+export const changeMessageAttributesPublicResponse = z.object({
+  success: z.boolean(),
+  messageId: z.string(),
+})
+
+export const sendWhatsappTemplatePublicRequest = z
+  .object({
+    templateId: sendWhatsappTemplateRequest.shape.templateId.describe(
+      "Id of an APPROVED WhatsApp template. Get it from `whatsappTemplates.list`.",
+    ),
+    templateParams: z
+      .record(z.string(), z.string())
+      .optional()
+      .describe(
+        'Template values by key, e.g. `{"body.1": "Ada", "header": "https://example.com/a.png"}`. The keys are the `parameters` of `whatsappTemplates.get`. Omit for a template without parameters; a missing, unknown or invalid key is a 422 that lists the keys.',
+      ),
+    templateData: sendWhatsappTemplateRequest.shape.templateData.describe(
+      'Meta-shaped runtime parameters, e.g. `{"body":[{"type":"text","text":"Ada"}]}`, for callers that build them; prefer `templateParams`. Send one or the other.',
+    ),
+    inboxId: sendWhatsappTemplateRequest.shape.inboxId.describe(
+      "WhatsApp inbox to send from; omit to use the contact's most recent one.",
+    ),
+  })
+  .refine((data) => !(data.templateParams && data.templateData), {
+    message: "Send templateParams or templateData, not both",
+    path: ["templateParams"],
+  })
+  .and(conversationIdPathParam)
+
+export const requestCallPermissionPublicRequest = z
+  .object({
+    text: z
+      .string()
+      .trim()
+      .min(1)
+      .max(1024)
+      .describe("Text shown with the permission request."),
+    inboxId: zodBigintAsString()
+      .optional()
+      .describe("WhatsApp inbox to send from; omit to use the contact's."),
+  })
+  .and(conversationIdPathParam)

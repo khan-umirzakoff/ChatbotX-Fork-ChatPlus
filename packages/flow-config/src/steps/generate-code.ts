@@ -1,5 +1,6 @@
 import { createId, zodBigintAsString } from "@chatbotx.io/utils"
 import { z } from "zod"
+import { zodFieldReference } from "../field-reference"
 import { stepTypes } from "./step-action"
 
 export const GenerateCodeType = {
@@ -10,8 +11,12 @@ export const GenerateCodeType = {
 
 export const generateCodeStepSchema = z
   .object({
-    id: zodBigintAsString(),
-    stepType: z.literal(stepTypes.enum.generateCode),
+    id: zodBigintAsString().describe(
+      "Step id (numeric string), unique within the flow.",
+    ),
+    stepType: z
+      .literal(stepTypes.enum.generateCode)
+      .describe('Step type discriminator: "generateCode".'),
     type: z.enum(GenerateCodeType),
     min: z.coerce
       .number()
@@ -19,7 +24,7 @@ export const generateCodeStepSchema = z
       .min(0)
       .max(Number.MAX_SAFE_INTEGER - 1),
     max: z.coerce.number().int().min(0).max(Number.MAX_SAFE_INTEGER),
-    outputFieldId: z.string().trim().min(1),
+    outputFieldId: zodFieldReference(),
   })
   .refine((data) => data.min <= data.max, {
     message: "Max must be greater than or equal to Min",

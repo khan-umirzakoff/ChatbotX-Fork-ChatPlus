@@ -1,11 +1,14 @@
 import { z } from "zod"
+import { googleAdsUploadMethodSchema } from "./google-ads"
 
 export const credentialTypes = z.enum([
   "whatsapp",
   "messenger",
   "instagram",
   "instagramFacebook",
+  "threads",
   "google",
+  "googleAds",
   "zalo",
   "giphy",
   "stripe",
@@ -51,6 +54,9 @@ export const messengerCredentialSchema = z.object({
   version: z.string(),
   verifyToken: z.string(),
   clientSecret: z.string(),
+  // Optional: the credential `value` is stored encrypted as one object, so a
+  // required field would fail to parse every row written before this shipped.
+  marketingMessagesConfigId: z.string().optional(),
 })
 export type MessengerCredential = z.infer<typeof messengerCredentialSchema>
 
@@ -58,6 +64,7 @@ export const messengerCredentialPublicSchema = messengerCredentialSchema.pick({
   clientId: true,
   version: true,
   verifyToken: true,
+  marketingMessagesConfigId: true,
 })
 export type MessengerCredentialPublic = z.infer<
   typeof messengerCredentialPublicSchema
@@ -87,6 +94,23 @@ export const instagramFacebookCredentialPublicSchema =
   instagramCredentialPublicSchema
 export type InstagramFacebookCredentialPublic = InstagramCredentialPublic
 
+export const threadsCredentialSchema = z.object({
+  clientId: z.string(),
+  version: z.string(),
+  verifyToken: z.string(),
+  clientSecret: z.string(),
+})
+export type ThreadsCredential = z.infer<typeof threadsCredentialSchema>
+
+export const threadsCredentialPublicSchema = threadsCredentialSchema.pick({
+  clientId: true,
+  version: true,
+  verifyToken: true,
+})
+export type ThreadsCredentialPublic = z.infer<
+  typeof threadsCredentialPublicSchema
+>
+
 export const googleCredentialSchema = z.object({
   clientId: z.string(),
   clientSecret: z.string(),
@@ -99,6 +123,33 @@ export const googleCredentialPublicSchema = googleCredentialSchema.pick({
 })
 export type GoogleCredentialPublic = z.infer<
   typeof googleCredentialPublicSchema
+>
+
+// Google Ads has its OWN OAuth app, separate from `google` (Sheets / Calendar /
+// sign-in): the sensitive `adwords` scope needs its own Google OAuth
+// verification, which must not gate the other Google features. The developer
+// token (optional; Google ignores it since 2026-09) is a secret and never part of
+// the public projection; only the non-secret boolean `hasDeveloperToken` is
+// exposed so the admin form can show whether one is configured.
+// `uploadMethod` is not secret and is public.
+export const googleAdsCredentialSchema = z.object({
+  clientId: z.string(),
+  clientSecret: z.string(),
+  // Optional: Google ignores the developer token since the 2026-09 sunset.
+  developerToken: z.string().optional(),
+  // Absent (every row saved before the choice existed) = Data Manager.
+  uploadMethod: googleAdsUploadMethodSchema.optional(),
+})
+export type GoogleAdsCredential = z.infer<typeof googleAdsCredentialSchema>
+
+export const googleAdsCredentialPublicSchema = googleAdsCredentialSchema
+  .pick({ clientId: true, uploadMethod: true, developerToken: true })
+  .transform(({ developerToken, ...rest }) => ({
+    ...rest,
+    hasDeveloperToken: Boolean(developerToken),
+  }))
+export type GoogleAdsCredentialPublic = z.infer<
+  typeof googleAdsCredentialPublicSchema
 >
 
 export const zaloCredentialSchema = z.object({
@@ -199,7 +250,9 @@ export const credentialSchemas = {
   messenger: messengerCredentialSchema,
   instagram: instagramCredentialSchema,
   instagramFacebook: instagramFacebookCredentialSchema,
+  threads: threadsCredentialSchema,
   google: googleCredentialSchema,
+  googleAds: googleAdsCredentialSchema,
   zalo: zaloCredentialSchema,
   giphy: giphyCredentialSchema,
   stripe: stripeCredentialSchema,
@@ -214,7 +267,9 @@ export const credentialPublicSchemas = {
   messenger: messengerCredentialPublicSchema,
   instagram: instagramCredentialPublicSchema,
   instagramFacebook: instagramFacebookCredentialPublicSchema,
+  threads: threadsCredentialPublicSchema,
   google: googleCredentialPublicSchema,
+  googleAds: googleAdsCredentialPublicSchema,
   zalo: zaloCredentialPublicSchema,
   giphy: giphyCredentialPublicSchema,
   stripe: stripeCredentialPublicSchema,
@@ -229,7 +284,9 @@ export type CredentialByType = {
   messenger: MessengerCredential
   instagram: InstagramCredential
   instagramFacebook: InstagramFacebookCredential
+  threads: ThreadsCredential
   google: GoogleCredential
+  googleAds: GoogleAdsCredential
   zalo: ZaloCredential
   giphy: GiphyCredential
   stripe: StripeCredential
@@ -244,7 +301,9 @@ export type CredentialPublicByType = {
   messenger: MessengerCredentialPublic
   instagram: InstagramCredentialPublic
   instagramFacebook: InstagramFacebookCredentialPublic
+  threads: ThreadsCredentialPublic
   google: GoogleCredentialPublic
+  googleAds: GoogleAdsCredentialPublic
   zalo: ZaloCredentialPublic
   giphy: GiphyCredentialPublic
   stripe: StripeCredentialPublic
@@ -276,6 +335,9 @@ export const messengerCredentialUpdateSchema = z.object({
   version: z.string().trim().min(1),
   verifyToken: z.string().trim().min(1),
   clientSecret: z.string().trim().min(1),
+  // Optional so existing admins can keep saving without configuring
+  // Marketing Messages.
+  marketingMessagesConfigId: z.string().trim().optional(),
 })
 export type MessengerCredentialUpdate = z.infer<
   typeof messengerCredentialUpdateSchema
@@ -295,6 +357,16 @@ export const instagramFacebookCredentialUpdateSchema =
   instagramCredentialUpdateSchema
 export type InstagramFacebookCredentialUpdate = InstagramCredentialUpdate
 
+export const threadsCredentialUpdateSchema = z.object({
+  clientId: z.string().trim().min(1),
+  version: z.string().trim().min(1),
+  verifyToken: z.string().trim().min(1),
+  clientSecret: z.string().trim().min(1),
+})
+export type ThreadsCredentialUpdate = z.infer<
+  typeof threadsCredentialUpdateSchema
+>
+
 export const googleCredentialUpdateSchema = z.object({
   clientId: z.string().trim().min(1),
   clientSecret: z.string().trim().min(1),
@@ -302,6 +374,20 @@ export const googleCredentialUpdateSchema = z.object({
 })
 export type GoogleCredentialUpdate = z.infer<
   typeof googleCredentialUpdateSchema
+>
+
+// The two secrets are optional on update: a blank client secret keeps the
+// stored one (`updateGoogleAdsSettingsAction` rejects it when none is stored
+// yet); a blank developer token keeps the stored one too. The token is removed
+// only by `clearGoogleAdsDeveloperTokenAction`.
+export const googleAdsCredentialUpdateSchema = z.object({
+  clientId: z.string().trim().min(1),
+  clientSecret: z.string().trim().optional(),
+  developerToken: z.string().trim().optional(),
+  uploadMethod: googleAdsUploadMethodSchema.optional(),
+})
+export type GoogleAdsCredentialUpdate = z.infer<
+  typeof googleAdsCredentialUpdateSchema
 >
 
 export const zaloCredentialUpdateSchema = z.object({

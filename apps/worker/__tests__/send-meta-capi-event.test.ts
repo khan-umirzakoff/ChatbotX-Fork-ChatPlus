@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   refreshCapiScopeCache: vi.fn(),
   ensureDatasetId: vi.fn(),
   findContactInbox: vi.fn(),
+  findContactByIdForWorkspace: vi.fn(),
   withBlockedOwnerGuard: vi.fn(
     async (_workspaceId: string | undefined, fn: () => Promise<void>) =>
       await fn(),
@@ -25,6 +26,12 @@ const mocks = vi.hoisted(() => ({
   sendConversionEvent: vi.fn(),
   resolveCapiAccessToken: vi.fn(),
   defaultQueueAdd: vi.fn(),
+  findWorkspaceById: vi.fn(),
+  logProviderError: vi.fn(),
+}))
+
+vi.mock("@chatbotx.io/business/error-log", () => ({
+  logProviderError: (...args: unknown[]) => mocks.logProviderError(...args),
 }))
 
 vi.mock("@chatbotx.io/business", async () => {
@@ -35,6 +42,9 @@ vi.mock("@chatbotx.io/business", async () => {
     ...actual,
     contactInboxService: {
       findByUncached: mocks.findContactInbox,
+    },
+    contactService: {
+      findById: mocks.findContactByIdForWorkspace,
     },
     instagramIntegrationService: {
       findByIdForWorkspace: mocks.findInstagramIntegration,
@@ -51,8 +61,11 @@ vi.mock("@chatbotx.io/business", async () => {
       refreshCapiScopeCache: mocks.refreshCapiScopeCache,
       ensureDatasetId: mocks.ensureDatasetId,
     },
-    resolveCapiAccessToken: mocks.resolveCapiAccessToken,
+    resolveCapiAccessTokenForChannel: mocks.resolveCapiAccessToken,
     withBlockedOwnerGuard: mocks.withBlockedOwnerGuard,
+    workspaceService: {
+      findById: mocks.findWorkspaceById,
+    },
   }
 })
 
@@ -93,6 +106,7 @@ const pendingEvent = {
   integrationId: "im-1",
   contactInboxId: "ci-1",
   eventName: "LeadSubmitted" as const,
+  actionSource: "business_messaging" as const,
   occurredAt: new Date("2026-08-10T10:00:00.000Z"),
   source: "flowStep" as const,
   sourceKey: "flow:step-1:ci-1:20260810",
@@ -116,6 +130,7 @@ const contactInbox = {
   id: "ci-1",
   inboxId: "inbox-1",
   sourceId: "psid-1",
+  contactId: "contact-1",
 }
 
 const whatsappIntegration = {
@@ -142,6 +157,7 @@ const whatsappContactInbox = {
   inboxId: "inbox-1",
   sourceId: "wa-user-1",
   referral: { ctwaClid: "clid-1" },
+  contactId: "contact-1",
 }
 
 describe("handleSendMetaCapiEvent", () => {
@@ -155,6 +171,13 @@ describe("handleSendMetaCapiEvent", () => {
       async (input: { integration: MessengerIntegration }) => input.integration,
     )
     mocks.findContactInbox.mockResolvedValue(contactInbox)
+    // Workspace-scoped: resolving a truthy row here is what asserts the
+    // contact inbox's contact actually belongs to the event's workspace
+    // (Phase 0 guard).
+    mocks.findContactByIdForWorkspace.mockResolvedValue({
+      id: "contact-1",
+      workspaceId: "ws-1",
+    })
     mocks.ensureDataset.mockResolvedValue("dataset-1")
     mocks.resolveCapiAccessToken.mockResolvedValue({
       accessToken: "token-1",
@@ -172,7 +195,18 @@ describe("handleSendMetaCapiEvent", () => {
     )
     mocks.sendConversionEvent.mockResolvedValue(undefined)
     mocks.updateCapiStatus.mockResolvedValue({ id: "mce-1" })
+    mocks.findWorkspaceById.mockResolvedValue({
+      id: "ws-1",
+      capiLimitedDataUse: false,
+    })
   })
+
+  // Deterministic — matches `hashContactUserData({ id: "contact-1" })`'s
+  // external_id (SHA-256 of the opaque contact id, unnormalized). Computed
+  // independently with `shasum -a 256`, not hand-guessed.
+  const CONTACT_1_EXTERNAL_ID_HASH =
+    "35cbf2467d4fcab72620da43ded47984b0b3edfca1fa34c3fe43dd4917165d8a"
+  const CONTACT_1_USER_DATA = { external_id: [CONTACT_1_EXTERNAL_ID_HASH] }
 
   test("sends a pending event and marks it sent", async () => {
     await handleSendMetaCapiEvent(jobData)
@@ -206,6 +240,7 @@ describe("handleSendMetaCapiEvent", () => {
         messagingChannel: "messenger",
         pageId: "page-1",
         pageScopedUserId: "psid-1",
+        userData: CONTACT_1_USER_DATA,
       },
     })
     expect(mocks.updateCapiStatus).toHaveBeenCalledWith({
@@ -215,6 +250,87 @@ describe("handleSendMetaCapiEvent", () => {
       to: "sent",
       capiSentAt: expect.any(Date),
     })
+  })
+
+  test("forwards the integration's saved test_event_code to the send", async () => {
+    mocks.refreshCapiScopeCache.mockResolvedValue({
+      ...integration,
+      capiTestEventCode: "TEST33520",
+    })
+
+    await handleSendMetaCapiEvent(jobData)
+
+    expect(mocks.sendConversionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ testEventCode: "TEST33520" }),
+    )
+  })
+
+  test("a manualTest event re-reads the integration and sends with the current test code", async () => {
+    mocks.findWorkspaceEvent.mockResolvedValue({
+      ...pendingEvent,
+      source: "manualTest" as const,
+    })
+    mocks.findMessengerIntegration.mockResolvedValue({
+      ...integration,
+      capiTestEventCode: "TEST33520",
+    })
+
+    await handleSendMetaCapiEvent(jobData)
+
+    // Once at job start, once again right before the send.
+    expect(mocks.findMessengerIntegration).toHaveBeenCalledTimes(2)
+    expect(mocks.sendConversionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ testEventCode: "TEST33520" }),
+    )
+  })
+
+  test("a manualTest event whose test code was cleared is marked failed and never sent", async () => {
+    mocks.findWorkspaceEvent.mockResolvedValue({
+      ...pendingEvent,
+      source: "manualTest" as const,
+    })
+
+    await handleSendMetaCapiEvent(jobData)
+
+    expect(mocks.sendConversionEvent).not.toHaveBeenCalled()
+    expect(mocks.updateCapiStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: "mce-1",
+        to: "failed",
+        capiError: "testEventCodeMissing",
+      }),
+    )
+  })
+
+  test("threads limitedDataUse: true from the workspace onto the conversion event payload", async () => {
+    mocks.findWorkspaceById.mockResolvedValue({
+      id: "ws-1",
+      capiLimitedDataUse: true,
+    })
+
+    await handleSendMetaCapiEvent(jobData)
+
+    expect(mocks.sendConversionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: expect.objectContaining({ limitedDataUse: true }),
+      }),
+    )
+  })
+
+  test("a workspace read failure propagates (throws) instead of sending with the wrong LDU state", async () => {
+    mocks.findWorkspaceById.mockRejectedValue(
+      new Error("workspace read failed"),
+    )
+
+    await expect(handleSendMetaCapiEvent(jobData)).rejects.toThrow(
+      "workspace read failed",
+    )
+
+    expect(mocks.sendConversionEvent).not.toHaveBeenCalled()
+    // Not marked failed: this must retry via BullMQ, not terminally fail.
+    expect(mocks.updateCapiStatus).not.toHaveBeenCalledWith(
+      expect.objectContaining({ to: "failed" }),
+    )
   })
 
   test("sends a manual-token event with a stored dataset without refreshing scope", async () => {
@@ -244,6 +360,7 @@ describe("handleSendMetaCapiEvent", () => {
         messagingChannel: "messenger",
         pageId: "page-1",
         pageScopedUserId: "psid-1",
+        userData: CONTACT_1_USER_DATA,
       },
     })
     expect(mocks.updateCapiStatus).toHaveBeenCalledWith({
@@ -298,8 +415,69 @@ describe("handleSendMetaCapiEvent", () => {
         pageScopedUserId: "psid-1",
         value: "10.5",
         currency: "USD",
+        userData: CONTACT_1_USER_DATA,
       },
     })
+  })
+
+  test("forwards contentType and contentIds to the conversion event payload", async () => {
+    mocks.findWorkspaceEvent.mockResolvedValue({
+      ...pendingEvent,
+      contentType: "product" as const,
+      contentIds: ["sku-1", "sku-2"],
+    })
+
+    await handleSendMetaCapiEvent(jobData)
+
+    expect(mocks.sendConversionEvent).toHaveBeenCalledWith({
+      datasetId: "dataset-1",
+      accessToken: "token-1",
+      event: {
+        eventName: "LeadSubmitted",
+        occurredAt: pendingEvent.occurredAt,
+        eventId: "flow:step-1:ci-1:20260810",
+        messagingChannel: "messenger",
+        pageId: "page-1",
+        pageScopedUserId: "psid-1",
+        contentType: "product",
+        contentIds: ["sku-1", "sku-2"],
+        userData: CONTACT_1_USER_DATA,
+      },
+    })
+  })
+
+  test("a non-business_messaging action source identifies the person by hashed data only", async () => {
+    mocks.findWorkspaceEvent.mockResolvedValue({
+      ...pendingEvent,
+      eventName: "Lead",
+      actionSource: "email" as const,
+    })
+
+    await handleSendMetaCapiEvent(jobData)
+
+    expect(mocks.sendConversionEvent).toHaveBeenCalledWith({
+      datasetId: "dataset-1",
+      accessToken: "token-1",
+      event: {
+        eventName: "Lead",
+        occurredAt: pendingEvent.occurredAt,
+        eventId: "flow:step-1:ci-1:20260810",
+        actionSource: "email",
+        userData: CONTACT_1_USER_DATA,
+      },
+    })
+    // A non-messaging event has no channel identity to send, so it must
+    // always carry hashed customer info — `external_id` is the one field
+    // `hashContactUserData` never omits.
+    expect(mocks.sendConversionEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: expect.objectContaining({
+          userData: expect.objectContaining({
+            external_id: [CONTACT_1_EXTERNAL_ID_HASH],
+          }),
+        }),
+      }),
+    )
   })
 
   test("skips when the integration lacks CAPI scope", async () => {
@@ -354,17 +532,18 @@ describe("handleSendMetaCapiEvent", () => {
       to: "failed",
       capiError: "invalid token",
     })
-    expect(mocks.defaultQueueAdd).toHaveBeenCalledWith("sendErrorLog", {
-      type: "sendErrorLog",
-      data: {
+    expect(mocks.logProviderError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: "meta-conversions",
         workspaceId: "ws-1",
-        error: {
-          message: "invalid token",
-          stack: expect.any(String),
-          httpCode: "400",
-        },
-      },
-    })
+        httpCode: "400",
+        // Both identities, not just the channel-side one: `contactId` is the
+        // field the builder's Error Log table renders, and it was already
+        // validated workspace-scoped before the send.
+        contactId: "contact-1",
+        sourceId: "psid-1",
+      }),
+    )
   })
 
   test("throws retryable failures so BullMQ retries", async () => {
@@ -426,7 +605,7 @@ describe("handleSendMetaCapiEvent", () => {
     })
     expect(mocks.refreshCapiScopeCache).not.toHaveBeenCalled()
     expect(mocks.sendConversionEvent).not.toHaveBeenCalled()
-    expect(mocks.defaultQueueAdd).not.toHaveBeenCalled()
+    expect(mocks.logProviderError).not.toHaveBeenCalled()
   })
 
   test("missing contact inbox marks the event failed without sending", async () => {
@@ -443,7 +622,47 @@ describe("handleSendMetaCapiEvent", () => {
     })
     expect(mocks.ensureDatasetId).not.toHaveBeenCalled()
     expect(mocks.sendConversionEvent).not.toHaveBeenCalled()
-    expect(mocks.defaultQueueAdd).not.toHaveBeenCalled()
+    expect(mocks.logProviderError).not.toHaveBeenCalled()
+  })
+
+  test("marks failed when the contact inbox's contact belongs to a different workspace (Phase 0 guard)", async () => {
+    // `contactInboxService.findByUncached` is looked up by id alone, with no
+    // workspace scoping — simulate a foreign/stale contactInboxId by having
+    // the workspace-scoped contact lookup come back empty.
+    mocks.findContactByIdForWorkspace.mockResolvedValue(undefined)
+
+    await handleSendMetaCapiEvent(jobData)
+
+    expect(mocks.findContactByIdForWorkspace).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      id: "contact-1",
+    })
+    expect(mocks.sendConversionEvent).not.toHaveBeenCalled()
+    expect(mocks.updateCapiStatus).toHaveBeenCalledWith({
+      id: "mce-1",
+      workspaceId: "ws-1",
+      from: "pending",
+      to: "failed",
+      capiError: "contactInboxWorkspaceMismatch",
+    })
+  })
+
+  test("marks failed when the contact inbox belongs to a different inbox than the resolved integration (Phase 0 guard)", async () => {
+    mocks.findContactInbox.mockResolvedValue({
+      ...contactInbox,
+      inboxId: "inbox-other",
+    })
+
+    await handleSendMetaCapiEvent(jobData)
+
+    expect(mocks.sendConversionEvent).not.toHaveBeenCalled()
+    expect(mocks.updateCapiStatus).toHaveBeenCalledWith({
+      id: "mce-1",
+      workspaceId: "ws-1",
+      from: "pending",
+      to: "failed",
+      capiError: "contactInboxWorkspaceMismatch",
+    })
   })
 
   describe("whatsapp channel", () => {
@@ -493,6 +712,44 @@ describe("handleSendMetaCapiEvent", () => {
           messagingChannel: "whatsapp",
           wabaId: "waba-1",
           ctwaClid: "clid-1",
+          userData: CONTACT_1_USER_DATA,
+        },
+      })
+      expect(mocks.updateCapiStatus).toHaveBeenCalledWith({
+        id: "mce-1",
+        workspaceId: "ws-1",
+        from: "pending",
+        to: "sent",
+        capiSentAt: expect.any(Date),
+      })
+    })
+
+    test("a whatsapp event with a non-messaging action source and no ctwa_clid is still sent", async () => {
+      // The ctwa_clid gate only applies when the action source actually uses
+      // the messaging identity (`business_messaging`) — an `email` action
+      // source identifies the person via hashed customer info instead, so a
+      // missing ctwa_clid must not skip it.
+      mocks.findWorkspaceEvent.mockResolvedValue({
+        ...whatsappPendingEvent,
+        eventName: "Lead",
+        actionSource: "email" as const,
+      })
+      mocks.findContactInbox.mockResolvedValue({
+        ...whatsappContactInbox,
+        referral: null,
+      })
+
+      await handleSendMetaCapiEvent(jobData)
+
+      expect(mocks.sendConversionEvent).toHaveBeenCalledWith({
+        datasetId: "dataset-1",
+        accessToken: "token-1",
+        event: {
+          eventName: "Lead",
+          occurredAt: whatsappPendingEvent.occurredAt,
+          eventId: "flow:step-1:ci-1:20260810",
+          actionSource: "email",
+          userData: CONTACT_1_USER_DATA,
         },
       })
       expect(mocks.updateCapiStatus).toHaveBeenCalledWith({
@@ -549,22 +806,28 @@ describe("handleSendMetaCapiEvent", () => {
       expect(mocks.sendConversionEvent).not.toHaveBeenCalled()
     })
 
-    test("skips a whatsapp event when the integration lacks CAPI scope", async () => {
-      mocks.refreshCapiScopeCache.mockResolvedValue({
+    test("sends a whatsapp event without CAPI scope and never refreshes it (Meta is the arbiter)", async () => {
+      mocks.findWhatsappIntegration.mockResolvedValue({
         ...whatsappIntegration,
         hasCapiScope: false,
       })
 
       await handleSendMetaCapiEvent(jobData)
 
+      expect(mocks.refreshCapiScopeCache).not.toHaveBeenCalled()
+      expect(mocks.sendConversionEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          datasetId: "dataset-1",
+          accessToken: "token-1",
+        }),
+      )
       expect(mocks.updateCapiStatus).toHaveBeenCalledWith({
         id: "mce-1",
         workspaceId: "ws-1",
         from: "pending",
-        to: "skipped_no_scope",
+        to: "sent",
+        capiSentAt: expect.any(Date),
       })
-      expect(mocks.ensureDatasetId).not.toHaveBeenCalled()
-      expect(mocks.sendConversionEvent).not.toHaveBeenCalled()
     })
 
     test("a whatsapp integration without a disconnect flag still sends", async () => {
@@ -626,6 +889,7 @@ describe("handleSendMetaCapiEvent", () => {
           messagingChannel: "whatsapp",
           wabaId: "waba-1",
           ctwaClid: "clid-1",
+          userData: CONTACT_1_USER_DATA,
         },
       })
       expect(mocks.updateCapiStatus).toHaveBeenCalledWith({

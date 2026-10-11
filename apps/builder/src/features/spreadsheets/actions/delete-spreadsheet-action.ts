@@ -1,13 +1,12 @@
 "use server"
 
-import { and, db, eq, inArray } from "@chatbotx.io/database/client"
-import { spreadsheetModel } from "@chatbotx.io/database/schema"
+import { spreadsheetService } from "@chatbotx.io/business"
 import {
   type BulkUpdateIdsRequest,
   bulkUpdateIdsRequest,
   type WorkspaceIdRequestParams,
   workspaceIdrequestParams,
-} from "@/features/common/schemas"
+} from "@/features/common/schema"
 import { workspaceActionClient } from "@/lib/safe-action"
 
 export const deleteSpreadsheetAction = workspaceActionClient
@@ -21,13 +20,9 @@ export const deleteSpreadsheetAction = workspaceActionClient
       bindArgsParsedInputs: WorkspaceIdRequestParams
       parsedInput: BulkUpdateIdsRequest
     }) => {
-      await db
-        .delete(spreadsheetModel)
-        .where(
-          and(
-            eq(spreadsheetModel.workspaceId, workspaceId),
-            inArray(spreadsheetModel.id, parsedInput.ids),
-          ),
-        )
+      await spreadsheetService.deleteMany({
+        workspaceId,
+        ids: parsedInput.ids,
+      })
     },
   )

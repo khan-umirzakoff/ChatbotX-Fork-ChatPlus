@@ -14,6 +14,7 @@ import { z } from "zod"
 import { logger } from "../../lib/logger"
 import { getContactFieldMap } from "./contact-field-map"
 import type { ExecuteStepProps } from "./flow"
+import { logStepProviderError } from "./flow-utils"
 import type { ExecuteStepResult } from "./step"
 
 const WHITESPACE_PATTERN = /\s+/
@@ -214,6 +215,7 @@ export const addSendGridContact = async (
       },
       "SendGrid add-contact step failed",
     )
+    await logStepProviderError("sendgrid", props, error)
     return { status: "error", errorMessage: normalized.message, result: null }
   }
 }

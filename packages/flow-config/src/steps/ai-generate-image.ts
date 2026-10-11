@@ -1,6 +1,7 @@
 import { createId, zodBigintAsString } from "@chatbotx.io/utils"
 import { z } from "zod"
 
+import { zodFieldReference } from "../field-reference"
 import {
   errorStateDefaultFn,
   errorStateSchema,
@@ -31,22 +32,26 @@ export const IMAGE_DEFAULT_EXTENSION = "png" as const
 export const IMAGE_DEFAULT_MIME_TYPE = "image/png" as const
 
 export const defaultModels = {
-  openai: "gpt-image-1",
-  gemini: "gemini-3.1-flash-image-preview",
+  openai: "gpt-image-2",
+  gemini: "gemini-3.1-flash-image",
 } as const
 
 export const aiGenerateImageProvider = z.enum(["openai", "gemini"])
 export type AIGenerateImageProvider = z.infer<typeof aiGenerateImageProvider>
 
 export const aiGenerateImageSchema = z.object({
-  id: zodBigintAsString(),
-  stepType: z.literal(stepTypes.enum.aiGenerateImage),
+  id: zodBigintAsString().describe(
+    "Step id (numeric string), unique within the flow.",
+  ),
+  stepType: z
+    .literal(stepTypes.enum.aiGenerateImage)
+    .describe('Step type discriminator: "aiGenerateImage".'),
   provider: aiGenerateImageProvider,
   model: z.string().trim().min(1),
   prompt: z.string().trim().min(1),
   quality: aiGenerateImageQuality,
   size: z.string().trim().min(1),
-  outputFieldId: z.string().trim().min(1),
+  outputFieldId: zodFieldReference(),
   states: z.tuple([successStateSchema, errorStateSchema]).optional(),
 })
 

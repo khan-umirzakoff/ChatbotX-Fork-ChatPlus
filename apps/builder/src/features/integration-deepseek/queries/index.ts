@@ -1,11 +1,9 @@
-import { db } from "@chatbotx.io/database/client"
-import type { IntegrationDeepseekResource } from "../schemas/resource"
+import { integrationDeepSeekService } from "@chatbotx.io/business"
+import type { IntegrationDeepseekResource } from "../schema/resource"
 
 export const findIntegrationDeepSeek = async ({
   workspaceId,
 }: {
   workspaceId: string
 }): Promise<IntegrationDeepseekResource | null> =>
-  (await db.query.integrationDeepseekModel.findFirst({
-    where: { workspaceId },
-  })) ?? null
+  (await integrationDeepSeekService.findByWorkspaceId(workspaceId)) ?? null

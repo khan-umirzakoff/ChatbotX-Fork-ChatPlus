@@ -30,20 +30,26 @@ import {
   CustomFieldOperationSelect,
   CustomFieldSelect,
 } from "@/features/custom-fields/custom-field-select"
-import { useCustomFieldStore } from "@/features/custom-fields/provider/custom-field-store-context"
+import { findFieldByReference } from "@/features/custom-fields/lib/find-field-by-reference"
+import {
+  useBotFields,
+  useCustomFields,
+} from "@/features/custom-fields/provider/custom-field-hook"
 import { useWorkspaceId } from "@/hooks/routing"
 import { getBrowserTimezone } from "../../contact-filter/lib/timezone"
 import { addContactCustomFieldAction } from "../actions/add-contact-custom-field.action"
-import { addContactCustomFieldRequest } from "../schemas/contact-custom-field"
+import { addContactCustomFieldRequest } from "../schema/contact-custom-field"
 
 type AddContactCustomFieldDialogProps = {
   trigger: ReactElement
   ids: string[]
+  onSuccess?: () => void
 }
 
 export default function AddContactCustomFieldDialog({
   trigger,
   ids,
+  onSuccess,
 }: AddContactCustomFieldDialogProps) {
   const t = useTranslations()
   const [open, setOpen] = useState(false)
@@ -63,6 +69,7 @@ export default function AddContactCustomFieldDialog({
           )
           form.reset()
           setOpen(false)
+          onSuccess?.()
         },
         onError: ({ error }) => {
           if (error.serverError) {
@@ -132,10 +139,25 @@ export default function AddContactCustomFieldDialog({
   )
 }
 
-export const SetCustomField = ({ parentName }: { parentName?: string }) => {
+export const SetCustomField = ({
+  parentName,
+  includeBotFields = false,
+}: {
+  parentName?: string
+  /**
+   * Also offers Account Fields (bot fields) in the picker. Defaults to false:
+   * this component is shared with the contact bulk-edit dialog
+   * (`AddContactCustomFieldDialog`), which must stay contact-pure. Only the
+   * trigger `setCustomField` action editor opts in.
+   */
+  includeBotFields?: boolean
+}) => {
   const form = useFormContext()
   const t = useTranslations()
-  const customFields = useCustomFieldStore((state) => state.customFields)
+  const workspaceId = useWorkspaceId()
+  const customFields = useCustomFields(workspaceId).data ?? []
+  const botFields =
+    useBotFields(workspaceId, { enabled: includeBotFields }).data ?? []
 
   const getFieldName = (field: string) => {
     if (!parentName) {
@@ -149,19 +171,17 @@ export const SetCustomField = ({ parentName }: { parentName?: string }) => {
     name: getFieldName("customFieldId"),
   })
 
-  const selectedCustomFieldType = useMemo(() => {
-    if (!watchCustomFieldId) {
-      return null
-    }
-    const selectedCustomField = customFields.find(
-      (field) => field.id === watchCustomFieldId,
-    )
-    return selectedCustomField?.type ?? null
-  }, [watchCustomFieldId, customFields])
+  const selectedCustomFieldType = useMemo(
+    () =>
+      findFieldByReference(watchCustomFieldId, { customFields, botFields })
+        ?.type ?? null,
+    [watchCustomFieldId, customFields, botFields],
+  )
 
   return (
     <>
       <CustomFieldSelect
+        includeBotFields={includeBotFields}
         name={getFieldName("customFieldId")}
         onValueChange={() => {
           form.resetField(getFieldName("value"))

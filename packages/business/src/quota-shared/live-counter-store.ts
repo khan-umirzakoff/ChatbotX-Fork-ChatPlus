@@ -1,4 +1,10 @@
-import { db, eq, type PgTable, sql } from "@chatbotx.io/database/client"
+import {
+  type DatabaseClient,
+  db,
+  eq,
+  type PgTable,
+  sql,
+} from "@chatbotx.io/database/client"
 import { cacheConnections, distributedStore } from "@chatbotx.io/redis"
 import { cacheKeyFor, liveKeyFor } from "@chatbotx.io/utils"
 import type { PgColumn } from "drizzle-orm/pg-core"
@@ -225,24 +231,81 @@ export class LiveCounterStore<TRow> {
     }
   }
 
-  /** Increment the live counter (cold-seeding first so it starts from the DB base). */
+  /**
+   * Forget all volatile state for a scope: delete the live-counter hash and the
+   * cached row. Use when the underlying entity no longer exists (e.g. a deleted
+   * user), so a stale live key can't keep a reconcile job walking a ghost id.
+   * Never throws.
+   */
+  async clearLive(id: string): Promise<void> {
+    try {
+      const client = await cacheConnections.useExisting()
+      await client.del(this.liveKey(id))
+    } catch (err) {
+      logger.warn(
+        { err },
+        `${this.config.label}: clearLive failed to delete the live key`,
+      )
+    }
+    await this.invalidate(id)
+  }
+
+  /**
+   * Atomically admit one live unit within `limit`. A missing field is cold-seeded
+   * through the existing DB-backed path and retried once. Refusals return
+   * `null`; Redis failures and a second missing result propagate to the caller.
+   */
+  async admit(
+    id: string,
+    metric: QuotaMetric,
+    limit: number | null,
+  ): Promise<number | null> {
+    const key = this.liveKey(id)
+    let result = await distributedStore.admitWithinLimit(key, metric, limit)
+
+    if (result.status === "missing") {
+      await this.getLiveCount(id, metric)
+      result = await distributedStore.admitWithinLimit(key, metric, limit)
+    }
+
+    if (result.status === "missing") {
+      throw new Error(
+        `${this.config.label}: live counter missing after cold seed for ${metric}`,
+      )
+    }
+
+    const valueByStatus = {
+      admitted: result.value,
+      refused: null,
+    } as const
+    return valueByStatus[result.status]
+  }
+
+  /**
+   * Increment the live counter (cold-seeding first so it starts from the DB
+   * base). Resolves `true` when Redis took the increment, `false` when the
+   * best-effort write was swallowed — so a caller that later has to undo it
+   * knows whether there is anything to undo.
+   */
   async incrementBy(
     id: string,
     metric: QuotaMetric,
     count: number,
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (count <= 0) {
-      return
+      return false
     }
     try {
       const client = await cacheConnections.useExisting()
       await this.getLiveCount(id, metric)
       await client.hincrby(this.liveKey(id), metric, count)
+      return true
     } catch (err) {
       logger.warn(
         { err },
         `${this.config.label}: Redis increment failed for ${metric}, counter will reconcile on next sync`,
       )
+      return false
     }
   }
 
@@ -260,11 +323,17 @@ export class LiveCounterStore<TRow> {
       return
     }
     try {
-      const client = await cacheConnections.useExisting()
       await this.getLiveCount(id, metric)
-      const next = await client.hincrby(this.liveKey(id), metric, -count)
-      if (next < 0) {
-        await client.hset(this.liveKey(id), metric, "0")
+      const next = await distributedStore.decrementFloor(
+        this.liveKey(id),
+        metric,
+        count,
+      )
+      if (next === null) {
+        logger.warn(
+          { id, metric },
+          `${this.config.label}: live counter missing after cold seed; decrement ignored`,
+        )
       }
     } catch (err) {
       logger.warn(
@@ -284,11 +353,17 @@ export class LiveCounterStore<TRow> {
    * (insert-or-update), targeting the single `${metric}Used` column. Throws on
    * an unmapped metric rather than silently incrementing the wrong column, and
    * on a non-positive `count` rather than writing a no-op / negative seed.
+   *
+   * `tx` defaults to the global `db`. Pass the caller's transaction when the
+   * row's parent (e.g. a `Workspace` created earlier in the same uncommitted
+   * transaction) is invisible to any other connection — the FK check on this
+   * insert would otherwise fail.
    */
   async upsertMetricBy(
     id: string,
     metric: QuotaMetric,
     count: number,
+    tx: DatabaseClient = db,
   ): Promise<void> {
     if (count <= 0) {
       return
@@ -309,7 +384,7 @@ export class LiveCounterStore<TRow> {
       syncedAt: new Date(),
     } as Record<string, unknown>
 
-    await db
+    await tx
       .insert(this.config.table)
       .values(values as never)
       .onConflictDoUpdate({
@@ -361,14 +436,51 @@ export class LiveCounterStore<TRow> {
    * double-count a cold counter. The live step is best-effort (swallowed on a
    * Redis error, re-grounded on the next reconcile); the DB upsert is
    * authoritative and a real failure throws and surfaces to the caller — so a
-   * Redis outage can never lose a durable count.
+   * Redis outage can never lose a durable count. When the durable write is the
+   * one that fails, the live `+count` is taken back first so the two stores
+   * do not drift until the next reconcile. Resolves whether the live counter
+   * took the increment, so a caller whose `tx` later rolls back knows whether
+   * {@link rollbackLive} has anything to undo.
    */
-  async consume(id: string, metric: QuotaMetric, count = 1): Promise<void> {
+  async consume(
+    id: string,
+    metric: QuotaMetric,
+    count = 1,
+    tx?: DatabaseClient,
+  ): Promise<boolean> {
+    if (count <= 0) {
+      return false
+    }
+    const liveIncremented = await this.incrementBy(id, metric, count)
+    try {
+      await this.upsertMetricBy(id, metric, count, tx)
+    } catch (err) {
+      // Only undo a live +count that actually landed; without this the
+      // counter would sit one above the durable row until the reconcile.
+      if (liveIncremented) {
+        await this.decrementBy(id, metric, count)
+      }
+      throw err
+    }
+    await this.invalidate(id)
+    return liveIncremented
+  }
+
+  /**
+   * Undo only the Redis half of a {@link consume} whose durable write was made
+   * on a transaction that has since rolled back. The row is already gone with
+   * the transaction, so decrementing it again would leave the DB one below the
+   * live counter.
+   */
+  async rollbackLive(
+    id: string,
+    metric: QuotaMetric,
+    count = 1,
+  ): Promise<void> {
     if (count <= 0) {
       return
     }
-    await this.incrementBy(id, metric, count)
-    await this.upsertMetricBy(id, metric, count)
+    await this.decrementBy(id, metric, count)
     await this.invalidate(id)
   }
 

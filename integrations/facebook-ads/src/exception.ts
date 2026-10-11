@@ -1,4 +1,5 @@
 import { SdkException, UNKNOWN_ERROR } from "@chatbotx.io/sdk"
+import { formatGraphError } from "@chatbotx.io/utils/graph-error"
 import { isHTTPError } from "ky"
 import { facebookAdsLogger } from "./logger"
 
@@ -17,20 +18,6 @@ type GraphErrorBody = {
 
 function asObject<T>(value: unknown): T | undefined {
   return typeof value === "object" && value !== null ? (value as T) : undefined
-}
-
-// Prefer Facebook's human-readable error (error_user_title/error_user_msg)
-// over the terse generic `message` (e.g. "Invalid parameter").
-function pickErrorMessage(err?: GraphErrorBody["error"]): string | undefined {
-  if (!err) {
-    return
-  }
-  if (err.error_user_msg) {
-    return err.error_user_title
-      ? `${err.error_user_title}: ${err.error_user_msg}`
-      : err.error_user_msg
-  }
-  return err.message
 }
 
 export class FacebookAdsException extends SdkException {
@@ -68,7 +55,16 @@ export const rescue = async <T>(
   try {
     return await fn()
   } catch (error) {
-    facebookAdsLogger.error(error, `Facebook Ads API call failed: ${endpoint}`)
+    // Never pass Ky's raw HTTPError to Pino: its enumerable options can include
+    // the JSON request body and therefore the Meta access token. Log only the
+    // safe, structured fields below.
+    facebookAdsLogger.error(
+      {
+        endpoint,
+        status: isHTTPError(error) ? error.response.status : undefined,
+      },
+      "Facebook Ads API call failed",
+    )
 
     if (error instanceof FacebookAdsException) {
       throw error
@@ -77,12 +73,11 @@ export const rescue = async <T>(
     if (isHTTPError(error)) {
       const err = asObject<GraphErrorBody>(error.data)?.error
       throw new FacebookAdsException(
-        pickErrorMessage(err) ?? UNKNOWN_ERROR.message,
+        formatGraphError(err) ?? UNKNOWN_ERROR.message,
         error.response.status,
         err?.code ?? "facebookAdsError",
         err?.error_subcode,
         err?.type,
-        error,
       )
     }
 
@@ -92,7 +87,6 @@ export const rescue = async <T>(
       "facebookAdsError",
       undefined,
       undefined,
-      error,
     )
   }
 }

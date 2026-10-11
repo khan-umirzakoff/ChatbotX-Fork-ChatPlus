@@ -21,6 +21,24 @@ export const eventContextSchema = z.object({
   contactInboxId: z.string().optional(),
   inboxId: z.string().optional(),
   sequenceStepId: z.string().optional(),
+  /**
+   * The contact's channel-side id (`ContactInbox.sourceId`) — a Messenger PSID,
+   * an IGSID, a WhatsApp `wa_id`. NOT the provider *message* id: that is
+   * `messageActionSchema.sourceId`, which lives on `action`, not here.
+   *
+   * Carried so `recordProviderErrorLog` can put it on `ErrorLog.sourceId`,
+   * which is the only thing attributing a failure that has no `Contact` row yet
+   * (a creation-path `getProfile` failure, a Lead Ads lead). No surface renders
+   * it today — the builder's table shows `contactId` only and the
+   * `analytics`-scoped public route strips it — so treat it as stored, not
+   * displayed. Every emit site builds `context` from a `ContactInbox` it
+   * already holds, so this costs no extra read.
+   *
+   * `.optional()` because `emit` serializes with `JSON.stringify`, which drops
+   * `undefined` keys — an absent source id must be absent, not null, to survive
+   * the round trip through the Redis stream unchanged.
+   */
+  sourceId: z.string().optional(),
 })
 
 export type EventContext = z.infer<typeof eventContextSchema>
@@ -44,6 +62,14 @@ export const flowClickActionSchema = z.object({
   nodeId: z.string().optional(),
   broadcastId: z.string().optional(),
   sequenceStepId: z.string().optional(),
+  /**
+   * Set when the flow that sent this button was a comment automation's reply.
+   * Unlike `broadcastId`/`sequenceStepId` it names the automation, not the
+   * exact reply — a Facebook comment id is `{storyId}_{commentId}` and the
+   * button payload carries bigints only. See
+   * `markClickedForAutomationContacts`.
+   */
+  commentAutomationId: z.string().optional(),
   magicLinkId: z.string().optional(),
   clickType: clickTypeSchema,
 })
@@ -68,6 +94,38 @@ const baseMessagePayloadSchema = z.object({
 export const sentPayloadSchema = baseMessagePayloadSchema.extend({})
 export const failedPayloadSchema = baseMessagePayloadSchema.extend({
   errorData: z.unknown(),
+  /**
+   * Stack frames of the value that was actually thrown, captured at the emit
+   * site with `resolveStackFrames` and destined for `ErrorLog.stackTrace`.
+   *
+   * It rides beside `errorData` rather than inside it because `errorData` is
+   * whatever `parseSdkError` produced — a `ParsedError`, which has no `stack`
+   * and is also what the provider-facing shape is validated against. By the
+   * time `recordProviderErrorLog` reads this payload the `Error` is long gone,
+   * so a stack it did not carry can never be recovered.
+   *
+   * Optional: emitters with no local throw (a provider's async delivery status)
+   * leave it unset, as do in-flight payloads written before this shipped.
+   * `JSON.stringify` drops `undefined` keys, so absent must mean absent.
+   */
+  errorStack: z.string().optional(),
+  /**
+   * Whether another `message:failed` for this same send is still to come — a
+   * BullMQ attempt still in hand, or a caller that catches and re-emits.
+   *
+   * One send can emit this event several times, so a listener that reacts only
+   * to its final outcome — `recordProviderErrorLog` — needs to know which
+   * emission ends it, or it records the failure twice or not at all. Only the
+   * emitter can tell: `errorData.isRetryable` describes the provider's error,
+   * not what the worker will do with it, and the two disagree exactly where it
+   * matters (`shouldSuppressRetryableChannelError` abandons a retryable send on
+   * its first attempt).
+   *
+   * Optional: emitters with nothing following them (a provider's async delivery
+   * status) leave it unset, and listeners fall back to the error's own
+   * retryability.
+   */
+  willRetry: z.boolean().optional(),
 })
 export const deliveredPayloadSchema = baseMessagePayloadSchema.extend({})
 export const seenPayloadSchema = baseMessagePayloadSchema.extend({})

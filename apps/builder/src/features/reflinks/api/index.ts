@@ -1,7 +1,5 @@
-import { refLinkAuthenticatedAPI } from "./authenticated"
-import refLinksWorkspaceTokenAPIs from "./workspace-token"
+import { refLinkAuthenticatedAPI } from "./private"
 
 export const refLinksAPI = {
   ...refLinkAuthenticatedAPI,
-  ...refLinksWorkspaceTokenAPIs,
 }

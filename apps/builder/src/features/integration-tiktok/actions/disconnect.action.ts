@@ -1,12 +1,14 @@
 "use server"
 
-import { inboxService, workspaceService } from "@chatbotx.io/business"
-import { db, eq, findOrFail } from "@chatbotx.io/database/client"
-import { integrationTiktokModel } from "@chatbotx.io/database/schema"
+import {
+  tiktokIntegrationService,
+  workspaceService,
+} from "@chatbotx.io/business"
+import { auditService } from "@chatbotx.io/business/audit"
 import {
   type WorkspaceIdAndIdRequestParams,
   workspaceIdAndIdRequestParams,
-} from "@/features/common/schemas"
+} from "@/features/common/schema"
 import { workspaceActionClientAllowExpired } from "@/lib/safe-action"
 
 export const disconnectTiktokAction = workspaceActionClientAllowExpired
@@ -18,24 +20,20 @@ export const disconnectTiktokAction = workspaceActionClientAllowExpired
       bindArgsParsedInputs: WorkspaceIdAndIdRequestParams
     }) => {
       const [integrationTiktok, workspace] = await Promise.all([
-        findOrFail({
-          table: integrationTiktokModel,
-          where: { workspaceId, id },
-          message: "Integration TikTok not found",
-        }),
+        tiktokIntegrationService.findById({ id, workspaceId }),
         workspaceService.findById({ id: workspaceId }),
       ])
 
-      await db.transaction(async (tx) => {
-        await tx
-          .delete(integrationTiktokModel)
-          .where(eq(integrationTiktokModel.id, integrationTiktok.id))
-        await inboxService.disconnect({
-          inboxId: integrationTiktok.inboxId,
-          ownerId: workspace.ownerId,
-          workspaceId,
-          tx,
-        })
+      await tiktokIntegrationService.disconnect({
+        workspaceId,
+        id: integrationTiktok.id,
+        inboxId: integrationTiktok.inboxId,
+        ownerId: workspace.ownerId,
+      })
+
+      await auditService.record({
+        action: "disconnect",
+        detail: `disconnected the TikTok channel (#${integrationTiktok.id})`,
       })
     },
   )

@@ -8,8 +8,13 @@ import {
 import { flowModel, flowVersionModel } from "@chatbotx.io/database/schema"
 import type { FlowVersionModel } from "@chatbotx.io/database/types"
 import { withCache } from "@chatbotx.io/redis"
+import { createId } from "@chatbotx.io/utils"
 import { BaseService } from "../base.service"
+import { conversationService } from "../conversation/service"
 import { notFoundException } from "../errors"
+import { logger } from "../logger"
+import { smartDelayService } from "../smart-delay/service"
+import { assertFlowGraphPublishable } from "./assert-publishable"
 
 class FlowVersionService extends BaseService {
   async findDraft(
@@ -126,6 +131,8 @@ class FlowVersionService extends BaseService {
   }
 
   async restore({ version }: { version: FlowVersionModel }): Promise<void> {
+    assertFlowGraphPublishable({ nodes: version.nodes, edges: version.edges })
+
     await db.transaction(async (tx) => {
       await tx
         .update(flowVersionModel)
@@ -282,8 +289,189 @@ class FlowVersionService extends BaseService {
     )
   }
 
+  /**
+   * Updates a draft flow version's nodes/edges in place — used for autosave
+   * while editing, distinct from `publish` which cuts a new immutable
+   * version. Mirrors `publish`'s not-found handling: a missing/non-draft
+   * version throws rather than silently no-op'ing.
+   */
+  async updateDraft(input: {
+    workspaceId: string
+    id: string
+    nodes: FlowVersionModel["nodes"]
+    edges: FlowVersionModel["edges"]
+  }): Promise<void> {
+    const flowVersion = await db.query.flowVersionModel.findFirst({
+      where: {
+        id: input.id,
+        workspaceId: input.workspaceId,
+        isDraft: true,
+      },
+    })
+
+    if (!flowVersion) {
+      throw notFoundException("Draft flow version not found")
+    }
+
+    await db
+      .update(flowVersionModel)
+      .set({
+        nodes: input.nodes,
+        edges: input.edges,
+      })
+      .where(eq(flowVersionModel.id, flowVersion.id))
+  }
+
+  /**
+   * Same as `updateDraft`, but resolves the draft version from a flow id
+   * instead of a flow-version id — for callers (like the public API) that
+   * only know the flow.
+   */
+  async updateDraftByFlowId(input: {
+    workspaceId: string
+    flowId: string
+    nodes: FlowVersionModel["nodes"]
+    edges: FlowVersionModel["edges"]
+  }): Promise<void> {
+    const draftVersion = await this.findDraft({
+      flowId: input.flowId,
+      workspaceId: input.workspaceId,
+    })
+
+    if (!draftVersion) {
+      throw notFoundException("Draft flow version not found")
+    }
+
+    await db
+      .update(flowVersionModel)
+      .set({
+        nodes: input.nodes,
+        edges: input.edges,
+      })
+      .where(eq(flowVersionModel.id, draftVersion.id))
+  }
+
   async invalidateList(flowId: string): Promise<void> {
     await this.invalidateCacheTags(`flows:${flowId}:versions`)
+  }
+
+  /**
+   * Version by explicit id, scoped only to workspace — no `flowId`, no
+   * `isDraft` filter, and never throws. Matches the worker's
+   * `detectFlowVersion` exact where-clause; do NOT reuse `findById` (which
+   * requires `flowId`, forces `isDraft: false`, and throws).
+   */
+  async findByIdForWorkspace(props: {
+    versionId: string
+    workspaceId: string
+    tx?: DatabaseClient
+  }): Promise<FlowVersionModel | undefined> {
+    const { versionId, workspaceId, tx = db } = props
+    return await tx.query.flowVersionModel.findFirst({
+      where: { id: versionId, workspaceId },
+    })
+  }
+
+  /**
+   * Publishes the flow's draft version as a new immutable version: resets
+   * every other `isLatest` version for the flow, syncs the draft's
+   * nodes/edges to what was just published, inserts the new published
+   * version, and repoints `Flow.currentVersionId` at it — all in one
+   * transaction, mirroring `publish-flow-action.ts` verbatim.
+   */
+  async publish(input: {
+    workspaceId: string
+    flowId: string
+    nodes: FlowVersionModel["nodes"]
+    edges: FlowVersionModel["edges"]
+  }): Promise<void> {
+    assertFlowGraphPublishable({ nodes: input.nodes, edges: input.edges })
+
+    const flow = await db.query.flowModel.findFirst({
+      where: {
+        id: input.flowId,
+        workspaceId: input.workspaceId,
+      },
+      with: {
+        flowVersions: {
+          where: {
+            isDraft: true,
+          },
+        },
+      },
+    })
+
+    if (!flow || flow.flowVersions.length === 0) {
+      throw notFoundException("Flow not found")
+    }
+
+    const draftVersion = flow.flowVersions[0]
+
+    const newVersionId = createId()
+    await db.transaction(async (tx) => {
+      // Remove all other latest versions
+      await tx
+        .update(flowVersionModel)
+        .set({
+          isLatest: false,
+        })
+        .where(
+          and(
+            eq(flowVersionModel.flowId, flow.id),
+            eq(flowVersionModel.isLatest, true),
+          ),
+        )
+
+      await tx
+        .update(flowVersionModel)
+        .set({
+          nodes: input.nodes,
+          edges: input.edges,
+        })
+        .where(eq(flowVersionModel.id, draftVersion.id))
+
+      await tx.insert(flowVersionModel).values({
+        id: newVersionId,
+        workspaceId: flow.workspaceId,
+        flowId: flow.id,
+        isDraft: false,
+        isLatest: true,
+        nodes: input.nodes,
+        edges: input.edges,
+        startNodeId: draftVersion.startNodeId,
+      })
+
+      await tx
+        .update(flowModel)
+        .set({
+          currentVersionId: newVersionId,
+        })
+        .where(eq(flowModel.id, flow.id))
+    })
+
+    await this.invalidateCacheTags(`flows:${flow.id}:versions`)
+
+    // Fire-and-forget: publishing must never fail or wait on cleanup;
+    // stale state also resolves itself at the worker.
+    Promise.all([
+      smartDelayService.cancelQuickReplyFollowUpsForStaleVersion({
+        workspaceId: input.workspaceId,
+        flowId: flow.id,
+        currentFlowVersionId: newVersionId,
+      }),
+      conversationService.clearQuickReplyChallengesForStaleVersion({
+        workspaceId: input.workspaceId,
+        flowId: flow.id,
+        currentFlowVersionId: newVersionId,
+      }),
+    ]).catch((error) => {
+      logger.warn(
+        { err: error, flowId: flow.id },
+        "publish: failed to clear pending quick reply state",
+      )
+    })
+
+    await this.audit("publish", `published a flow (#${flow.id})`)
   }
 }
 

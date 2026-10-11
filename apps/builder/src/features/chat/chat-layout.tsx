@@ -1,33 +1,31 @@
 "use client"
 
 import type { ConversationAttributes } from "@chatbotx.io/database/partials"
-import { Button } from "@chatbotx.io/ui/components/ui/button"
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@chatbotx.io/ui/components/ui/resizable"
 import {
-  BotIcon,
-  Loader2Icon,
-  MessagesSquareIcon,
-  UserRoundIcon,
-} from "lucide-react"
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@chatbotx.io/ui/components/ui/sheet"
+import { useIsMobileState } from "@chatbotx.io/ui/hooks/use-mobile"
+import { Loader2Icon } from "lucide-react"
 import { useTranslations } from "next-intl"
-import { useAction } from "next-safe-action/hooks"
 import { useEffect, useState } from "react"
-import { toast } from "sonner"
-import { ContactInboxPanel } from "../contacts/contact-inbox-panel"
-import { disableBotAction } from "../conversations/actions/disable-bot.action"
-import ConversationList from "../conversations/conversation-list"
+import { useConversationIdParam } from "../conversations/hooks/use-conversation-id-param"
 import type { ConversationResource } from "../conversations/schema/resource"
+import { useCallPlaybackStore } from "../messages/store/call-playback-store"
 import {
-  BOT_DISABLE_DURATION_MS,
-  isConversationActive,
-} from "../conversations/utils/bot-state"
-import { MessageInput } from "../messages/components/message-input"
-import MessageHead from "../messages/message-head"
-import { MessageList } from "../messages/message-list"
+  ContactDetailPane,
+  ConversationListPane,
+  MessageThreadPane,
+  type PaneState,
+} from "./chat-panes"
 import { ChatRealtime } from "./chat-realtime"
 import { useChatStore } from "./store/chat-store-provider"
 
@@ -51,11 +49,47 @@ export const ChatLayout = (props: ChatLayoutProps) => {
     isLoadingConversation,
     isBootstrappingUrlConversation,
     activeConversationId,
-    updateConversation,
+    setActiveConversationId,
   } = useChatStore((state) => state)
 
   const [activeConversation, setActiveConversation] =
     useState<ConversationResource | null>(null)
+  // The mobile contact sheet is bound to the conversation it was opened for:
+  // selecting a different thread closes it, while realtime `conversations`
+  // churn can never close it.
+  const [contactSheetConversationId, setContactSheetConversationId] = useState<
+    string | null
+  >(null)
+  if (
+    contactSheetConversationId !== null &&
+    contactSheetConversationId !== activeConversationId
+  ) {
+    // Reset during render (not in an effect) so returning to the original
+    // thread later does not reopen a sheet the user never reopened.
+    setContactSheetConversationId(null)
+  }
+  const isContactSheetOpen =
+    contactSheetConversationId !== null &&
+    contactSheetConversationId === activeConversationId
+  const conversationIdParam = useConversationIdParam()
+
+  // The shared call-recording `<audio>` element (`callPlaybackStore`) is a
+  // module singleton with no lifecycle of its own — nothing else stops it
+  // when the inbox unmounts or the route changes, so a playing recording
+  // would otherwise keep audible after the user navigates away entirely.
+  useEffect(
+    () => () => {
+      useCallPlaybackStore.getState().reset()
+    },
+    [],
+  )
+
+  // The inbox mounts three heavy, self-fetching panes. Choosing the layout in
+  // CSS would mount all of them in both arrangements, so the choice is made in
+  // JS — and rendering waits for the first measurement rather than guessing
+  // desktop and remounting everything a frame later.
+  const isMobile = useIsMobileState()
+
   const isResolvingConversation =
     (isFirstLoadConversation && isLoadingConversation) ||
     isBootstrappingUrlConversation
@@ -63,25 +97,6 @@ export const ChatLayout = (props: ChatLayoutProps) => {
     activeConversation ||
     isFirstLoadConversation ||
     isBootstrappingUrlConversation
-  )
-
-  const { execute: disableBot, isExecuting: isDisablingBot } = useAction(
-    disableBotAction.bind(null, workspaceId),
-    {
-      onSuccess: () => {
-        if (activeConversation) {
-          updateConversation(activeConversation.id, {
-            botEnabled: false,
-            botResumeAt: new Date(Date.now() + BOT_DISABLE_DURATION_MS),
-          })
-        }
-      },
-      onError: ({ error }) => {
-        if (error.serverError) {
-          toast.error(error.serverError)
-        }
-      },
-    },
   )
 
   useEffect(() => {
@@ -99,108 +114,122 @@ export const ChatLayout = (props: ChatLayoutProps) => {
     }
   }, [activeConversationId, conversations])
 
+  const paneState: PaneState = {
+    activeConversation,
+    isResolvingConversation,
+    shouldShowEmptyState,
+  }
+
   return (
-    <ResizablePanelGroup className="h-full items-stretch">
-      {/* CONVERSATION LIST */}
-      <ResizablePanel
-        className="p-3"
-        defaultSize={`${layout[0] ?? 25}%`}
-        maxSize={"30%"}
-        minSize={"20%"}
-      >
-        <ConversationList
-          canViewEmailAndPhone={canViewEmailAndPhone}
-          workspaceId={workspaceId}
-        />
-      </ResizablePanel>
-
-      <ResizableHandle withHandle />
-
-      {/* MESSAGE LIST */}
-      <ResizablePanel className="pt-3" defaultSize={`${layout[1] ?? 50}%`}>
-        {isResolvingConversation && (
-          <Loader2Icon className="mx-auto my-4 animate-spin" />
-        )}
-        {activeConversation && (
-          <div className="flex h-full w-full flex-col">
-            <MessageHead />
-            {isConversationActive(activeConversation) && (
-              <Button
-                className="rounded-none"
-                disabled={isDisablingBot}
-                onClick={() => {
-                  disableBot({ ids: [activeConversation.id] })
-                }}
-                variant="secondary"
-              >
-                <BotIcon />
-                {t("messages.botIsActive")}
-              </Button>
-            )}
-            <MessageList />
-            <MessageInput />
-          </div>
-        )}
-        {shouldShowEmptyState && (
-          <div
-            aria-live="polite"
-            className="flex h-full w-full flex-col items-center justify-center px-6 text-center"
-          >
-            <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-muted">
-              <MessagesSquareIcon
-                aria-hidden="true"
-                className="size-7 text-muted-foreground"
+    <>
+      {/*
+        Kept outside the panes: on mobile the message pane unmounts whenever the
+        user goes back to the list, and the realtime socket must not go with it.
+      */}
+      <ChatRealtime />
+      {/*
+        The VoIP provider (single `useWhatsappVoipCall` peer/hook instance),
+        the call panel and `WhatsappCallInfoSheet` now
+        mount once at the workspace layout level, gated by
+        `callingEnabled`/`callHistoryEnabled` — see
+        `components/workspace-realtime-shell.tsx`. Every consumer here
+        (`ConversationListPane`'s rows render their own Answer/Reject
+        buttons) still reaches the same context because this pane tree is
+        rendered inside that shell's `{children}`.
+      */}
+      {isMobile === undefined && (
+        <div className="flex min-h-0 flex-1 items-center justify-center">
+          <Loader2Icon className="animate-spin" />
+        </div>
+      )}
+      {isMobile === true && (
+        // Fills the height `FullBleed` derives from the shell rather than
+        // naming a viewport unit of its own — see the desktop group below.
+        <div className="flex min-h-0 flex-1 flex-col">
+          {activeConversationId ? (
+            <MessageThreadPane
+              {...paneState}
+              onBack={() => {
+                conversationIdParam.clear()
+                setActiveConversationId(null)
+              }}
+              onOpenContact={() =>
+                setContactSheetConversationId(activeConversationId ?? null)
+              }
+              workspaceId={workspaceId}
+            />
+          ) : (
+            <div className="min-h-0 flex-1 overflow-y-auto p-3">
+              <ConversationListPane
+                canViewEmailAndPhone={canViewEmailAndPhone}
+                workspaceId={workspaceId}
               />
             </div>
-            <h3 className="font-semibold text-base">
-              {t("messages.selectConversationTitle")}
-            </h3>
-            <p className="mt-1 max-w-sm text-muted-foreground text-sm">
-              {t("messages.selectConversationDescription")}
-            </p>
-          </div>
-        )}
-        <ChatRealtime />
-      </ResizablePanel>
+          )}
 
-      <ResizableHandle withHandle />
-
-      {/* CONTACT DETAIL */}
-      <ResizablePanel
-        className="overflow-y-auto! h-screen px-4 py-3"
-        defaultSize={`${layout[2] ?? 25}%`}
-        maxSize={"30%"}
-        minSize={"20%"}
-      >
-        {isResolvingConversation && (
-          <Loader2Icon className="mx-auto my-4 animate-spin" />
-        )}
-        {activeConversation && (
-          <ContactInboxPanel
-            activeConversationId={activeConversation.id}
-            workspaceId={workspaceId}
-          />
-        )}
-        {shouldShowEmptyState && (
-          <div
-            aria-live="polite"
-            className="flex h-full w-full flex-col items-center justify-center px-6 text-center"
+          <Sheet
+            onOpenChange={(open) =>
+              setContactSheetConversationId(
+                open ? (activeConversationId ?? null) : null,
+              )
+            }
+            open={isContactSheetOpen}
           >
-            <div className="mb-4 flex size-14 items-center justify-center rounded-full bg-muted">
-              <UserRoundIcon
-                aria-hidden="true"
-                className="size-7 text-muted-foreground"
-              />
-            </div>
-            <h3 className="font-semibold text-base">
-              {t("messages.selectConversationContactTitle")}
-            </h3>
-            <p className="mt-1 max-w-sm text-muted-foreground text-sm">
-              {t("messages.selectConversationContactDescription")}
-            </p>
-          </div>
-        )}
-      </ResizablePanel>
-    </ResizablePanelGroup>
+            <SheetContent
+              className="w-[85vw] overflow-y-auto px-4 py-3 sm:max-w-sm"
+              side="right"
+            >
+              <SheetHeader className="sr-only">
+                <SheetTitle>{t("fields.contact.label")}</SheetTitle>
+                <SheetDescription>
+                  {t("messages.selectConversationContactDescription")}
+                </SheetDescription>
+              </SheetHeader>
+              <ContactDetailPane {...paneState} workspaceId={workspaceId} />
+            </SheetContent>
+          </Sheet>
+        </div>
+      )}
+      {isMobile === false && (
+        // Height comes from `flex-1`, never a `height` class: `PanelGroup`
+        // hard-codes an inline `height: 100%`, which beats any stylesheet rule,
+        // so `h-[100dvh]`/`h-full` here are silently dead and the group
+        // collapses to its panes' content height — a short inbox with dead
+        // space under it on a tall viewport.
+        <ResizablePanelGroup className="min-h-0 flex-1 items-stretch">
+          {/* CONVERSATION LIST */}
+          <ResizablePanel
+            className="p-3"
+            defaultSize={`${layout[0] ?? 25}%`}
+            maxSize={"30%"}
+            minSize={"20%"}
+          >
+            <ConversationListPane
+              canViewEmailAndPhone={canViewEmailAndPhone}
+              workspaceId={workspaceId}
+            />
+          </ResizablePanel>
+
+          <ResizableHandle withHandle />
+
+          {/* MESSAGE LIST */}
+          <ResizablePanel className="pt-3" defaultSize={`${layout[1] ?? 50}%`}>
+            <MessageThreadPane {...paneState} workspaceId={workspaceId} />
+          </ResizablePanel>
+
+          <ResizableHandle withHandle />
+
+          {/* CONTACT DETAIL */}
+          <ResizablePanel
+            className="overflow-y-auto! h-full min-h-0 px-4 py-3"
+            defaultSize={`${layout[2] ?? 25}%`}
+            maxSize={"30%"}
+            minSize={"20%"}
+          >
+            <ContactDetailPane {...paneState} workspaceId={workspaceId} />
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      )}
+    </>
   )
 }

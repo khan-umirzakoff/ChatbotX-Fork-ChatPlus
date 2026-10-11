@@ -5,9 +5,12 @@ import {
   claudeModelOptions,
   claudeModels,
   deepseekModels,
+  geminiAnalyzeImageModelOptions,
   geminiModelOptions,
   geminiModels,
   openaiAnalyzeImageModelOptions,
+  openaiImageModelOptions,
+  openaiImageModels,
   openaiModelOptions,
   openaiModels,
   openrouterAnalyzeImageModelOptions,
@@ -20,7 +23,9 @@ vi.mock("@chatbotx.io/database/client", () => ({
   db: { query: {} },
 }))
 
-const { normalizeAIModelId } = await import("../src/server/factory")
+const { createAIImageModelInstance, normalizeAIModelId } = await import(
+  "../src/server/factory"
+)
 
 describe("AI model catalog", () => {
   test("keeps provider defaults valid", () => {
@@ -45,17 +50,43 @@ describe("AI model catalog", () => {
       { options: openaiModelOptions, schema: openaiModels },
       { options: openaiAnalyzeImageModelOptions, schema: openaiModels },
       { options: geminiModelOptions, schema: geminiModels },
+      { options: geminiAnalyzeImageModelOptions, schema: geminiModels },
       { options: claudeModelOptions, schema: claudeModels },
       { options: claudeAnalyzeImageModelOptions, schema: claudeModels },
       { options: openrouterModelOptions, schema: openrouterModels },
       { options: openrouterAnalyzeImageModelOptions, schema: openrouterModels },
       { options: openrouterExtractFileModelOptions, schema: openrouterModels },
+      { options: openaiImageModelOptions, schema: openaiImageModels },
     ]
 
     for (const group of optionGroups) {
       for (const option of group.options) {
         expect(group.schema.safeParse(option.value).success).toBe(true)
       }
+    }
+  })
+
+  test("does not accept retired or malformed native Claude model ids", () => {
+    const retiredOrMalformedIds = [
+      "claude-3-5-sonnet-20241022",
+      "claude-3-5-haiku-20241022",
+      "claude-3-opus-20240229",
+      "claude-3-sonnet-20240229",
+      "claude-3-haiku-20240307",
+      "claude-opus-4.6",
+      "claude-4.5-haiku-20251001",
+      "claude-4.5-sonnet-20250929",
+      "claude-4.5-opus-20251101",
+    ]
+
+    const exposedValues = [
+      ...claudeModelOptions,
+      ...claudeAnalyzeImageModelOptions,
+    ].map((option) => option.value)
+
+    for (const modelId of retiredOrMalformedIds) {
+      expect(claudeModels.safeParse(modelId).success).toBe(false)
+      expect(exposedValues).not.toContain(modelId)
     }
   })
 
@@ -81,8 +112,65 @@ describe("AI model catalog", () => {
     expect(
       normalizeAIModelId("openrouter", "anthropic/claude-3-5-sonnet"),
     ).toBe("anthropic/claude-sonnet-4.5")
-    expect(normalizeAIModelId("deepseek", "deepseek-chat")).toBe(
-      "deepseek-v4-flash",
+    expect(() => normalizeAIModelId("deepseek", "deepseek-chat")).toThrow(
+      "requires a mode-aware migration",
     )
+    expect(normalizeAIModelId("deepseek", "deepseek-v4-flash")).toBe(
+      "deepseek-flash",
+    )
+  })
+
+  test("normalizes every safely migratable persisted model id", () => {
+    const migrations = [
+      ["claude", "claude-3-5-sonnet-20241022", "claude-sonnet-4-6"],
+      ["claude", "claude-3-5-haiku-20241022", "claude-haiku-4-5-20251001"],
+      ["claude", "claude-3-opus-20240229", "claude-opus-4-8"],
+      ["gemini", "gemini-3-flash", "gemini-3.5-flash"],
+      ["gemini", "gemini-2.5-flash-lite", "gemini-3.5-flash"],
+      ["gemini", "gemini-2.5-flash", "gemini-3.5-flash"],
+      ["gemini", "gemini-2.5-pro", "gemini-3.5-flash"],
+      ["gemini", "gemini-3.1-flash-image-preview", "gemini-3.1-flash-image"],
+      ["openrouter", "google/gemini-2.5-pro-preview", "google/gemini-2.5-pro"],
+    ] as const
+
+    for (const [provider, legacyId, canonicalId] of migrations) {
+      expect(normalizeAIModelId(provider, legacyId)).toBe(canonicalId)
+      expect(normalizeAIModelId(provider, canonicalId)).toBe(canonicalId)
+    }
+  })
+
+  test("keeps newly exposed vision models capability-safe", () => {
+    const openAIAnalyzeIds = openaiAnalyzeImageModelOptions.map(
+      (option) => option.value,
+    )
+    const geminiAnalyzeIds = geminiAnalyzeImageModelOptions.map(
+      (option) => option.value,
+    )
+    expect(openAIAnalyzeIds).toEqual(
+      expect.arrayContaining(["gpt-6-astra", "gpt-6-sol", "gpt-6-luna"]),
+    )
+    expect(geminiAnalyzeIds).toEqual(
+      expect.arrayContaining([
+        "gemini-3.8-flash",
+        "gemini-3.7-flash",
+        "gemini-3.6-flash",
+      ]),
+    )
+  })
+
+  test("creates an image model for every newly exposed OpenAI image id", () => {
+    const integration = {
+      auth: { authType: "secretText", secretText: "test-key" },
+    } as Parameters<typeof createAIImageModelInstance>[0]["model"]
+
+    for (const modelId of ["gpt-image-2.5-sunburst", "gpt-image-2.5-flare"]) {
+      expect(() =>
+        createAIImageModelInstance({
+          model: integration,
+          modelId,
+          provider: "openai",
+        }),
+      ).not.toThrow()
+    }
   })
 })

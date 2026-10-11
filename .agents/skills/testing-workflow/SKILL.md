@@ -5,7 +5,7 @@ description: Use when adding or changing tests, or before considering a change d
 
 # Testing Workflow (ChatbotX)
 
-The verification gate every change passes before it is "done". CI currently does **not** run these (it builds Docker images only), so they are enforced locally — run them yourself, do not assume CI catches regressions.
+The verification gate every change passes before it is "done". CI runs Types, Lint, and Tests on every PR and on push to `main` (`.github/workflows/ci.yml`), so a failure here blocks the merge — run the gate locally first rather than discovering it in CI.
 
 ## The gate sequence (run in order, fix before advancing)
 
@@ -26,12 +26,26 @@ The verification gate every change passes before it is "done". CI currently does
 - Test the boundary that matters: actions, routes, repositories, worker handlers, channel send/receive.
 - Mock the database client for unit tests; use the repository/service layer, never `db` directly.
 
+## Testing TanStack Query hooks
+
+Mock `@/lib/orpc/orpc` (`vi.hoisted` + `vi.mock`, same pattern as
+`chat-store.test.ts`) so the hook's underlying `client.*` call is a spy, then
+wrap the component under test in a fresh `QueryClientProvider` per test
+(`new QueryClient({ defaultOptions: { queries: { retry: false } } })`) so
+query state doesn't leak between tests. See `__tests__/use-ai-agents.test.tsx`
+for the reference: dedup across two readers, `enabled` guard on missing input,
+error surfacing without throwing, and invalidation triggering a refetch.
+
 ## What to test first (highest signal in this repo)
 
 - New oRPC route / server action → its happy path + auth-scoping + one failure path.
+- New public procedure (required for every feature/operation — AGENTS.md invariant 23) → it appears in the generated spec with a sane `operationId`/`summary` (`public-spec-operations.test.ts`, `public-spec-mcp.test.ts`), and a token without its scope is rejected (add it to the area's `apps/builder/__tests__/<area>-public-scope.test.ts`, or create one following `workspace-token-scope-enforcement.test.ts`).
+- Result-returning public procedure (link, preview, test run, stats, export, AI generation) → assert the response is the machine-usable result (the `url`, ids, JSON fields) and that it equals what the UI path gets from the same shared function; if it has side effects (sends, runs, spends quota), assert it is `POST` so a `read_only` token cannot call it.
+- New service method → unit test in `packages/business/__tests__`, mocking the repositories/services it calls — this is the layer that carries validation, cache invalidation, and events, so it's the highest-signal place to test new business logic (see `.agents/rules/data-access.md`).
 - New repository method → query correctness incl. `workspaceId` scoping.
 - New worker consumer → success / error / retry / idempotency on re-run.
 - New channel integration → webhook receive parse + outgoing send mapping.
+- Public handler and private action converge on one service method → assert both call sites resolve to the same method call, with only the caller's scope differing. See `apps/builder/__tests__/contacts-crud-public-api.test.ts` (public, unscoped) alongside `apps/builder/__tests__/contacts-permissions.test.ts` (private, scoped) — both exercise `contactService.list`/`count`, never a parallel implementation.
 
 ## Stop condition
 

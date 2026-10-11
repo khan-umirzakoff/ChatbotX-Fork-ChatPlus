@@ -14,6 +14,7 @@ import { normalizeError } from "universal-error-normalizer"
 import { logger } from "../../lib/logger"
 import { getContactFieldMap } from "./contact-field-map"
 import type { ExecuteStepProps } from "./flow"
+import { logStepProviderError } from "./flow-utils"
 import type { ExecuteStepResult } from "./step"
 
 export const DRIP_LOCK_TIMEOUT_SECONDS = 30
@@ -123,6 +124,7 @@ export const subscribeDripSubscriber = async (
       { ...logContext, error: normalized },
       "Drip sync-subscriber step failed",
     )
+    await logStepProviderError("drip", props, error)
     return {
       status: "error",
       errorMessage: normalized.message,

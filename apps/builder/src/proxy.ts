@@ -7,24 +7,9 @@ import { getSessionCookie } from "better-auth/cookies"
 import { headers } from "next/headers"
 import { type NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth/auth"
+import { isPublicRoute } from "@/lib/public-routes"
 import { httpLogger } from "./lib/log"
 
-const publicRoutes = [
-  "/integrations",
-  "/r",
-  "/l",
-  "/dynamic-images",
-  "/auth",
-  "/api",
-  "/ws",
-  "/storage",
-  "/checkout",
-  "/unsubscribe",
-  "/email-topic",
-  "/extensions",
-  "/booking",
-  "/portal/redeem",
-]
 const signinPath = "/auth/sign-in"
 
 async function _logRequest(request: NextRequest) {
@@ -106,19 +91,9 @@ function buildSigninUrl(
   return signinUrl
 }
 
-function isPublicRoute(pathname: string) {
-  for (const route of publicRoutes) {
-    if (pathname.startsWith(route)) {
-      return true
-    }
-  }
-  return false
-}
-
 export const config = {
   matcher: [
-    "/((?!webchat|zalo_verifier|pricing|chat-widget|assets|ws|storage|_next/static|_next/image|favicon.ico|avatars|.*.svg|brand|openapi.json|dynamic-image/).*)",
+    "/((?!zalo_verifier|pricing|chat-widget|assets|ws|storage|_next/static|_next/image|favicon.ico|avatars|.*.svg|brand|openapi.json|dynamic-image/|media/attachment/|media/avatar/|mini-game/).*)",
     "/api/presigned-upload",
-    "/api/whatsapp/:path*",
   ],
 }
