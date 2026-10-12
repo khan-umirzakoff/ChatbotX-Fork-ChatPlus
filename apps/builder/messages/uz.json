@@ -4938,8 +4938,679 @@
         "columnInbox": "Kiruvchi quti",
         "columnDirection": "Yoʻnalish",
         "columnAgent": "Operator",
-        "columnDuration": "Davomiylik"
+        "columnDuration": "Davomiylik",
+        "columnDate": "Sana",
+        "directionInbound": "Kiruvchi",
+        "directionOutbound": "Chiquvchi",
+        "kindOngoing": "Davom etmoqda",
+        "kindAnsweredInbound": "Javob berilgan",
+        "kindAnsweredOutbound": "Javob berilgan",
+        "openConversation": "Suhbatni ochish",
+        "unknownContact": "Nomaʼlum kontakt",
+        "emptyFilteredTitle": "Bu filtrga mos qoʻngʻiroqlar yoʻq",
+        "emptyFilteredDescription": "Boshqa filtrni sinab koʻring yoki barcha qoʻngʻiroqlarni koʻrish uchun uni tozalang.",
+        "loadMoreError": "Boshqa qoʻngʻiroqlarni yuklab boʻlmadi. Qayta urinib koʻring.",
+        "callInformation": "Qoʻngʻiroq maʼlumotlari"
+      },
+      "permissionRequestTitle": "Qoʻngʻiroq ruxsatini soʻrash",
+      "permissionRequestDescription": "Bu mijozdan WhatsAppda biznesingizdan qoʻngʻiroqlarga ruxsat berishni soʻrang. Meta har bir mijozga 24 soatda 1 ta va 7 kunda 2 ta soʻrov yuborishga ruxsat beradi.",
+      "permissionRequestBodyLabel": "Xabar",
+      "permissionRequestDefaultBody": "Sizga tezroq yordam berish uchun WhatsApp orqali qoʻngʻiroq qilmoqchimiz. Sizga qoʻngʻiroq qilishimizga ruxsat berasizmi?",
+      "permissionRequestSent": "Qoʻngʻiroq ruxsati soʻrovi yuborildi",
+      "inAppCallingLabel": "Ilova ichidan qoʻngʻiroq (beta)",
+      "inAppCallingHelper": "Operatorlar brauzerda javob berishi uchun bu raqamning WhatsApp qoʻngʻiroqlarini kiruvchi xabarlarga yoʻnaltirish.",
+      "recordingLabel": "Qoʻngʻiroqlarni yozib olish",
+      "recordingHelper": "Kiruvchi xabarlarda javob berilgan yoki amalga oshirilgan qoʻngʻiroqlar audiosini suhbatga saqlash.",
+      "recordingInProgress": "Yozib olish soʻraldi",
+      "incomingCall": "Kiruvchi WhatsApp qoʻngʻirogʻi…",
+      "voipConnecting": "Ulanmoqda…",
+      "unknownCaller": "Nomaʼlum qoʻngʻiroq qiluvchi",
+      "incomingCallBanner": "Kiruvchi WhatsApp qoʻngʻirogʻi",
+      "answer": "Javob berish",
+      "reject": "Rad etish",
+      "ringingBadge": "Jiringlamoqda",
+      "ringingCountdown": "{seconds} s",
+      "updateFailedTitle": "Meta oʻzgarishni rad etdi",
+      "callContact": "WhatsApp orqali qoʻngʻiroq",
+      "dialing": "Qoʻngʻiroq qilinmoqda…",
+      "startCall": "WhatsApp qoʻngʻirogʻini boshlash",
+      "retentionLabel": "Yozuvlarni saqlash muddati (kun)",
+      "retentionHelper": "Qoʻngʻiroq yozuvlari butunlay oʻchirilishidan oldin qancha vaqt saqlanadi.",
+      "transcriptionLabel": "Qoʻngʻiroqlarni transkripsiya qilish",
+      "transcriptionHelper": "Har bir yozib olingan qoʻngʻiroqning matnli transkriptini qoʻshish. Yozib olish yoqilgan boʻlishi kerak.",
+      "preflight": {
+        "title": "Qoʻngʻiroqlarga yaroqlilik",
+        "appSubscriptionMissing": "Avval Meta App Dashboard da bu ilova uchun WhatsApp webhookini sozlang, soʻng qayta urinib koʻring.",
+        "appSubscriptionFailed": "Ilovaning “calls” webhook obunasini tekshirib boʻlmadi. Birozdan soʻng qayta urinib koʻring.",
+        "callsNotSubscribed": "Bu ilova “calls” webhook maydoniga obuna boʻlmagan, shuning uchun qoʻngʻiroq hodisalari ChatbotX ga yetib kelmaydi (Meta xatoligi 138018: texnik shartlar bajarilmagan — WABA ga obuna boʻlgan kamida bitta ilovada calls webhook maydoni ham borligiga ishonch hosil qiling).",
+        "fixButton": "Tuzatish",
+        "fixSuccess": "Ilova endi WhatsApp qoʻngʻiroq webhooklariga obuna boʻldi.",
+        "manualIntegrationNotice": "Bu raqam qoʻlda ulangan va bu yerda ilova hisob maʼlumotlari yoʻq. Meta App Dashboard da ilovangiz uchun “calls” webhook maydoniga obuna boʻling.",
+        "coexistenceWarning": "Bu raqam WhatsApp Business ilovasi bilan birgalikda ishlash (coexistence) rejimidan foydalanadi, Meta esa unda qoʻngʻiroqlarni qoʻllab-quvvatlamaydi. Uni faqat Cloud API ga oʻtkazing."
+      },
+      "recordingActivity": {
+        "showTranscript": "Transkriptni koʻrsatish",
+        "hideTranscript": "Transkriptni yashirish"
+      },
+      "outbound": {
+        "needsPermission": "Bu kontaktga qoʻngʻiroq qilish uchun ruxsat kerak. Avval ruxsat soʻrang.",
+        "permissionCheckFailed": "Hozir bu kontakt uchun qoʻngʻiroq ruxsatingizni tekshirib boʻlmadi. Birozdan soʻng qayta urinib koʻring.",
+        "businessCallingUnavailable": "WhatsApp bu raqam uchun biznes tomonidan boshlanadigan qoʻngʻiroqlarni yoqmagan. Bu mamlakatda mavjudlik va Meta tomonidan akkauntning yaroqliligiga bogʻliq, shuning uchun uni bu yerda yoqib boʻlmaydi.",
+        "callAlreadyInProgress": "Bu kontaktga qoʻngʻiroq allaqachon davom etmoqda.",
+        "dailyLimitReached": "Hozircha bu kontakt bilan ulangan qoʻngʻiroqlar limitiga yetdingiz.",
+        "ineligibleNumber": "Bu raqam biznes tomonidan boshlanadigan qoʻngʻiroqlar uchun yaroqli emas.",
+        "recipientUncallable": "Hozir bu kontaktga WhatsAppda qoʻngʻiroq qilib boʻlmaydi.",
+        "temporarilyDisabled": "Qoʻngʻiroq sifati sababli bu raqam uchun qoʻngʻiroqlar vaqtincha oʻchirilgan.",
+        "rateLimited": "Qoʻngʻiroq urinishlari juda koʻp. Birozdan soʻng qayta urinib koʻring.",
+        "paymentIssue": "WhatsApp Business akkauntingizda toʻlov bilan bogʻliq muammo bor.",
+        "callingNotEnabled": "Bu WhatsApp raqami uchun qoʻngʻiroqlar yoqilmagan.",
+        "callFailed": "Qoʻngʻiroqni amalga oshirib boʻlmadi. Qayta urinib koʻring.",
+        "callAccessDenied": "Bu kontaktga qoʻngʻiroq qilishga ruxsatingiz yoʻq.",
+        "calling": "Qoʻngʻiroq qilinmoqda…",
+        "ringback": "Jiringlamoqda…",
+        "micPermissionDenied": "Mikrofonga ruxsat berilmadi. Brauzer sozlamalarida mikrofonga ruxsat bering va qayta urinib koʻring.",
+        "micNotFound": "Mikrofon topilmadi. Mikrofonni ulang va qayta urinib koʻring."
+      },
+      "card": {
+        "audioCall": "Audio qoʻngʻiroq",
+        "recordingUnavailable": "Yozuv endi mavjud emas",
+        "recordingNotCaptured": "Bu qoʻngʻiroq uchun yozuv mavjud emas",
+        "recordingProcessing": "Yozuv qayta ishlanmoqda…",
+        "moreOptions": "Boshqa variantlar",
+        "download": "Yuklab olish",
+        "openCallInformation": "Qoʻngʻiroq maʼlumotlarini ochish",
+        "transcript": "Transkript",
+        "aiSummary": "AI xulosasi",
+        "transcriptUnavailable": "Transkript hali tayyor emas",
+        "summaryUnavailable": "AI xulosasi hali tayyor emas",
+        "play": "Ijro etish",
+        "pause": "Pauza",
+        "seek": "Oʻtkazish",
+        "mute": "Ovozni oʻchirish",
+        "unmute": "Ovozni yoqish",
+        "playbackFailed": "Ijro etib boʻlmadi",
+        "answeredBy": "{name} javob berdi",
+        "calledBy": "{name} qoʻngʻiroq qildi",
+        "callFailed": "Qoʻngʻiroqda muammo",
+        "callBack": "Qayta qoʻngʻiroq qilish"
+      },
+      "sheet": {
+        "title": "Qoʻngʻiroq maʼlumotlari",
+        "summaryTab": "AI xulosasi",
+        "transcriptTab": "Transkript",
+        "searchLabel": "Transkriptdan qidirish",
+        "searchPlaceholder": "Transkriptdan qidirish…",
+        "transcriptUnavailable": "Bu qoʻngʻiroq tili uchun transkript mavjud emas",
+        "transcriptError": "Transkriptni yuklab boʻlmadi. Ulanishingizni tekshiring va qayta urinib koʻring.",
+        "noSearchResults": "Mos qismlar yoʻq",
+        "playSegment": "Shu yerdan ijro etish",
+        "summaryKeyPoints": "Asosiy fikrlar",
+        "summaryActionItems": "Bajariladigan ishlar",
+        "regenerate": "Qayta yaratish",
+        "regenerateConfirmTitle": "AI xulosasi qayta yaratilsinmi?",
+        "regenerateConfirmDescription": "Bu joriy xulosani yangi yaratilgani bilan almashtiradi.",
+        "summaryEmpty": "Bu qoʻngʻiroq uchun hali AI xulosasi yoʻq.",
+        "generateSummary": "Xulosa yaratish"
+      },
+      "summaryDialog": {
+        "title": "AI xulosasini yaratish",
+        "description": "Bu qoʻngʻiroqni umumlashtirish uchun ulangan AI provayderini tanlang.",
+        "noProviderTitle": "AI provayderi ulanmagan",
+        "noProviderDescription": "Qoʻngʻiroq xulosalarini yaratish uchun AI integratsiyasini ulang.",
+        "connectLink": "AI sozlamalariga oʻtish",
+        "generate": "Yaratish",
+        "generating": "Yaratilmoqda…",
+        "generateFailed": "Xulosani yaratib boʻlmadi. Qayta urinib koʻring.",
+        "retry": "Qayta urinish",
+        "emptyTranscriptTooltip": "Bu qoʻngʻiroqda hali umumlashtirish uchun transkript yoʻq"
+      },
+      "panel": {
+        "eyebrowCalling": "QOʻNGʻIROQ QILINMOQDA…",
+        "eyebrowIncoming": "KIRUVCHI QOʻNGʻIROQ",
+        "eyebrowOnCall": "QOʻNGʻIROQDA",
+        "statusPreparing": "Tayyorlanmoqda…",
+        "statusWaitingForMic": "Mikrofonga ruxsat kutilmoqda…",
+        "statusDeclined": "Rad etildi",
+        "statusCallFailed": "Qoʻngʻiroq muvaffaqiyatsiz",
+        "statusCallEnded": "Qoʻngʻiroq tugadi",
+        "end": "Tugatish",
+        "minimize": "Kichraytirish",
+        "goToConversation": "Suhbatga oʻtish",
+        "expand": "Kattalashtirish",
+        "dismiss": "Yopish",
+        "statusNoAnswer": "Javob yoʻq",
+        "eyebrowCallEnded": "QOʻNGʻIROQ TUGADI",
+        "statusConnectionLost": "Aloqa uzildi",
+        "answerFailed": "Qoʻngʻiroqqa javob berib boʻlmadi. Mikrofon ulangan va brauzeringizda ruxsat berilganini tekshiring, soʻng qayta urinib koʻring.",
+        "ringingListTitle": "{count, plural, one {# ta kiruvchi qoʻngʻiroq} other {# ta kiruvchi qoʻngʻiroq}}"
+      },
+      "capability": {
+        "title": "Qoʻngʻiroqlarga yaroqlilik",
+        "enableCalling": "Qoʻngʻiroqlarni Sozlamalar > Kanallar > WhatsApp > Qoʻngʻiroqlar boʻlimida yoqing.",
+        "reconnectChannel": "Sozlamalar > Kanallar boʻlimiga oʻting va WhatsApp kanalini qayta ulang.",
+        "ok": "OK",
+        "micPermissionTitle": "Mikrofon ruxsati",
+        "dialFailureTitle": "Qoʻngʻiroqni amalga oshirib boʻlmadi"
+      },
+      "manualIntegrationCallWarning": {
+        "title": "Qoʻlda ulangan raqam",
+        "callsSubscription": "Bu WhatsApp raqami qoʻlda ulangan. Meta ilovangiz calls webhook maydoniga obuna boʻlganiga ishonch hosil qiling (Meta App Dashboard → WhatsApp → Configuration → Webhook fields → calls) — aks holda chiquvchi qoʻngʻiroqlar ulanmaydi va kiruvchi qoʻngʻiroqlar jiringlamaydi.",
+        "unsignedWebhook": "Bu raqamda Meta App Secret ham sozlanmagan, shuning uchun uning kiruvchi webhooklari imzo bilan tekshirilmaydi.",
+        "callAnyway": "Baribir qoʻngʻiroq qilish"
+      },
+      "replaceConfirm": {
+        "title": "{current} bilan qoʻngʻiroq tugatilsinmi?",
+        "description": "Siz {current} bilan gaplashyapsiz. {incoming} ga javob bersangiz, bu qoʻngʻiroq darhol tugatiladi.",
+        "confirm": "Tugatish va javob berish",
+        "cancel": "Qoʻngʻiroqda qolish"
+      },
+      "answerCaller": "{name} qoʻngʻirogʻiga javob berish",
+      "rejectCaller": "{name} qoʻngʻirogʻini rad etish",
+      "hours": {
+        "title": "Qoʻngʻiroq vaqtlari",
+        "description": "Mijozlar bu raqamga faqat shu soatlarda qoʻngʻiroq qila oladi. Bu vaqtdan tashqarida WhatsApp oʻrniga chatda yozishni yoki (qayta qoʻngʻiroq soʻrovlari yoqilgan boʻlsa) qayta qoʻngʻiroq soʻrashni taklif qiladi va keyingi qoʻngʻiroq qilish mumkin boʻlgan vaqtni koʻrsatadi.",
+        "enabledLabel": "Qoʻngʻiroqlarni faqat qoʻngʻiroq vaqtlarida qabul qilish",
+        "timezoneLabel": "Vaqt mintaqasi",
+        "closed": "Yopiq",
+        "openTimeLabel": "{day}: ochilish vaqti",
+        "closeTimeLabel": "{day}: yopilish vaqti",
+        "addRangeLabel": "{day} kuniga soat qoʻshish",
+        "removeRangeLabel": "{day} kunidagi soatlarni olib tashlash",
+        "overnightHint": "Har bir kun 23:59 da tugaydi. Yarim tundan keyin ham ochiq boʻlish uchun qolgan soatlarni keyingi kunga qoʻshing.",
+        "days": {
+          "monday": "Dushanba",
+          "tuesday": "Seshanba",
+          "wednesday": "Chorshanba",
+          "thursday": "Payshanba",
+          "friday": "Juma",
+          "saturday": "Shanba",
+          "sunday": "Yakshanba"
+        },
+        "errors": {
+          "rangeOrder": "Yopilish vaqti ochilish vaqtidan keyin boʻlishi kerak.",
+          "rangeOverlap": "Bu kundagi soatlar bir-biriga toʻgʻri kelib qolgan.",
+          "noOpenHours": "Kamida bitta kunga soat qoʻshing."
+        }
+      },
+      "inboundLabel": "Kiruvchi qoʻngʻiroqlarni qabul qilish",
+      "inboundHelper": "Mijozlar qoʻngʻiroq qila olsin. Kiruvchi xabarlarda jiringlamasdan faqat chiquvchi qoʻngʻiroqlarni qilish uchun oʻchiring."
+    }
+  },
+  "zalo": {
+    "title": "Zalo OA",
+    "reconnect": "Qayta ulash",
+    "duplicated": "Bu Zalo OA akkaunti boshqa ish maydoniga allaqachon ulangan.",
+    "tagSync": {
+      "title": "Teglarni sinxronlash",
+      "description": "Mahalliy teg biriktirishlarini bu Zalo OA ga aks ettirish.",
+      "toggleSuccess": "Teglarni sinxronlash sozlamasi yangilandi.",
+      "enabledSince": "{date} dan beri yoqilgan",
+      "disabled": "Oʻchirilgan"
+    },
+    "refreshPermissions": "Ruxsatlarni yangilash"
+  },
+  "telegram": {
+    "description": "Bu integratsiya Telegram botlarini yaratish imkonini beradi.",
+    "title": "Telegram"
+  },
+  "invitation": {
+    "chatbotInvitationDescription1": "{chatbotName} ga qoʻshiling",
+    "chatbotInvitationDescription2": "{userName} sizni {chatbotName} ga qoʻshilishga taklif qildi.",
+    "invalidInvitation": "Bu taklif yaroqsiz yoki muddati tugagan.",
+    "workspaceUnavailable": "Bu ish maydoni endi mavjud emas."
+  },
+  "inboxes": {
+    "markReadOnOutbound": {
+      "label": "Bot xabarlarini oʻqilgan deb belgilash",
+      "enabled": "Yoqilgan",
+      "disabled": "Oʻchirilgan",
+      "description": "Yoqilganda bot oʻz xabarlarini avtomatik ravishda oʻqilgan deb belgilaydi"
+    }
+  },
+  "inboxTeams": {
+    "title": "Kiruvchi quti jamoalari"
+  },
+  "userPersistentMenus": {
+    "title": "Foydalanuvchi doimiy menyulari"
+  },
+  "webhooks": {
+    "title": "Webhooklar"
+  },
+  "reflinks": {
+    "title": "Kirish nuqtasi havolalari",
+    "description": "Oqimlarni boshlaydigan va kanallardan ref payloadlarni oladigan kalit soʻzli havolalar.",
+    "chatWidget": {
+      "title": "Chat vidjeti",
+      "description": "Saytingizda chat kanallaringiz tugmalarini koʻrsating. Tashrif buyuruvchi ulardan birini bosib chatni boshlaydi va shu ref havola oqimini ishga tushiradi.",
+      "authorizedDomains": {
+        "label": "Ruxsat etilgan domenlar",
+        "placeholder": "example.com",
+        "description": "Vidjetni faqat shu domenlar va ularning subdomenlari koʻrsata oladi. Istalgan saytga ruxsat berish uchun boʻsh qoldiring.",
+        "invalid": "Bular toʻgʻri domen emas: {domains}. Faqat domenni kiriting, masalan, example.com."
+      },
+      "channels": {
+        "label": "Kanallar",
+        "description": "Kanalni vidjetdan yashirish uchun uni oʻchiring.",
+        "empty": "Hali chat havolasi bor kanal ulanmagan.",
+        "profileLinkOnly": "Profil sahifasini ochadi — ref havola oqimi ishga tushmaydi."
+      },
+      "preview": "Oldindan koʻrish",
+      "embedCodeDescription": "Bu kodni saytingizdagi yopuvchi body tegidan oldin joylashtiring. Saqlangan oʻzgarishlar avtomatik qoʻllanadi, uni qayta joylashtirish shart emas.",
+      "savedSuccess": "Chat vidjeti sozlamalari saqlandi",
+      "poweredBy": "Taqdim etuvchi:",
+      "toggleLabel": "Biz bilan yozishing",
+      "logo": {
+        "description": "Tashrif buyuruvchilar vidjetni ochish uchun bosadigan dumaloq tugma. Kvadrat rasm tanlang yoki standart chat belgisidan foydalanish uchun boʻsh qoldiring.",
+        "choose": "Media kutubxonasidan tanlash",
+        "notImage": "Logotip rasm boʻlishi kerak."
+      },
+      "brandUrl": {
+        "label": "Yoʻnaltirish URL manzili",
+        "placeholder": "https://example.com",
+        "description": "Vidjetdagi “Taqdim etuvchi” qatoridagi brend nomingiz qayerga olib borishi. Brend nomi belgilanganda majburiy.",
+        "requiredWithName": "Bu brend nomi uchun yoʻnaltirish URL manzilini kiriting."
+      },
+      "brandName": {
+        "description": "Vidjetdagi “Taqdim etuvchi” qatorida koʻrsatiladi. Yoʻnaltirish URL manzili belgilanganda majburiy. Bu qatorni yashirish uchun ikkalasini ham boʻsh qoldiring.",
+        "requiredWithUrl": "Bu yoʻnaltirish URL manzili uchun brend nomini kiriting."
+      },
+      "logoBackgroundColor": {
+        "label": "Belgi fon rangi",
+        "description": "Standart chat belgisining foni. Oʻqilishi oson boʻlishi uchun belgi oq yoki qora rangga oʻzgaradi."
       }
     }
+  },
+  "qrCodes": {
+    "title": "QR kodlar",
+    "description": "Chatbot oqimlaringizga olib boradigan QR kodlar yarating."
+  },
+  "dynamicImages": {
+    "title": "Dinamik rasmlar",
+    "description": "Fon va matn/rasm/QR qatlamlaridan har bir kontakt uchun shaxsiylashtirilgan rasmlar yarating.",
+    "publicUrl": {
+      "label": "Ommaviy URL",
+      "hint": "Shaxsiylashtirilgan rasmlarni yuborish uchun URL manzilni nusxalab, oqim, ommaviy xabar yoki ketma-ketlikka joylashtiring."
+    },
+    "editor": {
+      "addElement": "Element qoʻshish",
+      "addImage": "Rasm qoʻshish",
+      "addText": "Matn qoʻshish",
+      "addQrCode": "QR kod qoʻshish",
+      "template": "Shablon",
+      "templateDialogTitle": "Shablonni tanlang",
+      "templateDialogDescription": "Shablon tanlash joriy barcha qatlamlarni almashtiradi.",
+      "layers": "Qatlamlar",
+      "noLayers": "Hali qatlamlar yoʻq. Boshlash uchun element qoʻshing.",
+      "deleteLayer": "Qatlamni oʻchirish",
+      "layerNameImage": "Rasm",
+      "layerNameText": "Matn",
+      "layerNameQrCode": "QR kod",
+      "editElement": "Elementni tahrirlash",
+      "selectElementHint": "Xususiyatlarini tahrirlash uchun kanvasdagi elementni tanlang.",
+      "width": "Kenglik",
+      "height": "Balandlik",
+      "priority": "Ustuvorlik",
+      "imageType": "Rasm turi",
+      "imageTypeUrl": "Rasm URL manzili",
+      "imageTypeAvatarUser": "Kontakt avatari",
+      "imageTypeCustomField": "Maxsus maydon",
+      "imageUrl": "Rasm URL manzili",
+      "uploadImage": "Rasm yuklash",
+      "customField": "Maxsus maydon",
+      "imageStyle": "Rasm uslubi",
+      "imageStyleSquare": "Kvadrat",
+      "imageStyleCircle": "Doira",
+      "qrText": "QR kod mazmuni",
+      "qrSize": "Oʻlcham",
+      "qrColor": "Rang",
+      "qrLogo": "Logotip",
+      "uploadLogo": "Logotip yuklash",
+      "textContent": "Matn mazmuni",
+      "fontSize": "Shrift oʻlchami",
+      "fontFamily": "Shrift",
+      "fontFamilyArial": "Arial",
+      "fontFamilySerif": "Serif",
+      "fontFamilyRoboto": "Roboto",
+      "fontFamilyGreatVibes": "Great Vibes",
+      "align": "Tekislash",
+      "alignLeft": "Chapga",
+      "alignCenter": "Markazga",
+      "alignRight": "Oʻngga",
+      "color": "Rang",
+      "bold": "Qalin",
+      "italic": "Kursiv",
+      "uppercase": "Bosh harflar"
+    },
+    "preview": {
+      "error": "Bogʻlangan dinamik rasmni yuklab boʻlmadi. U oʻchirilgan boʻlishi mumkin."
+    }
+  },
+  "magicLinks": {
+    "title": "Sehrli havolalar",
+    "description": "Query parametrlari bilan URL manzilingizga yoʻnaltiruvchi chuqur havolalar yarating."
+  },
+  "QRCode": {
+    "title": "QR kod",
+    "description": "Odamlar kuzatuv havolangizni ochishi uchun bu kodni ulashing."
+  },
+  "trigger": {
+    "when": "Bu sodir boʻlganda",
+    "conditions": {
+      "tagApplied": "Teg qoʻyildi",
+      "tagRemoved": "Teg olib tashlandi",
+      "dateTimeBasedTrigger": "Sana va vaqtga asoslangan trigger",
+      "customFieldValueChanged": "Maxsus maydon oʻzgardi",
+      "contactInfoUpdated": "Telefon yoki email yangilandi",
+      "conversationTransferredToHuman": "Suhbat operatorga oʻtkazildi",
+      "conversationTransferredToBot": "Suhbat botga oʻtkazildi",
+      "newContact": "Yangi kontakt",
+      "contactUnsubscribedFormBroadcast": "Kontakt ommaviy xabarlardan obunani bekor qildi",
+      "archived": "Arxivlandi",
+      "followUp": "Kuzatuv",
+      "conversationAssigned": "Suhbat biriktirildi",
+      "conversationUnassigned": "Suhbat biriktirishdan chiqarildi",
+      "incomingCall": "Kiruvchi qoʻngʻiroq",
+      "missedAudioCall": "Javobsiz audio qoʻngʻiroq",
+      "callEnded": "Qoʻngʻiroq tugadi",
+      "ticketCreated": "Tiket yaratildi",
+      "ticketMovedToStage": "Tiket bosqichga koʻchirildi",
+      "ticketValueChanged": "Tiket qiymati oʻzgardi",
+      "ticketStatusChanged": "Tiket holati oʻzgardi",
+      "ticketPriorityChanged": "Tiket ustuvorligi oʻzgardi",
+      "subscribedToSequence": "Ketma-ketlikka obuna boʻldi",
+      "unsubscribedFromSequence": "Ketma-ketlikdan chiqdi",
+      "WhatsappShoppingCartSent": "WhatsApp xarid savati yuborildi",
+      "userAskedAboutProduct": "Foydalanuvchi mahsulot haqida soʻradi",
+      "cartAbandoned": "Savat tashlab ketildi",
+      "newOrder": "Yangi buyurtma",
+      "orderAccepted": "Buyurtma qabul qilindi",
+      "orderShipped": "Buyurtma joʻnatildi",
+      "orderConcluded": "Buyurtma yakunlandi",
+      "orderCancelled": "Buyurtma bekor qilindi",
+      "categoryAddedToCart": "Kategoriya savatga qoʻshildi",
+      "productAddedToCart": "Mahsulot savatga qoʻshildi",
+      "productRemovedFromCart": "Mahsulot savatdan olib tashlandi",
+      "productOrdered": "Mahsulot buyurtma qilindi",
+      "contactReferredANewContact": "Kontakt yangi kontaktni taklif qildi",
+      "contactReferredExistingContact": "Kontakt mavjud kontaktni taklif qildi",
+      "callRecorded": "Qoʻngʻiroq yozib olindi",
+      "callTranscribed": "Qoʻngʻiroq transkripsiya qilindi"
+    },
+    "actions": {
+      "addTag": "Teg qoʻshish",
+      "removeTag": "Tegni olib tashlash",
+      "setCustomField": "Maxsus maydonni belgilash",
+      "clearCustomField": "Maxsus maydonni tozalash",
+      "startAnotherFlow": "Boshqa oqimni boshlash",
+      "notifyAdmins": "Adminlarni xabardor qilish",
+      "sendMetaCapiEvent": "Meta CAPI hodisasini yuborish",
+      "transferConversationToHuman": "Suhbatni operatorga oʻtkazish",
+      "sendGoogleAdsConversion": "Google Ads konversiyasini yuborish"
+    },
+    "triggerGoesOff": "Trigger ishga tushadi",
+    "before": "Oldin",
+    "after": "Keyin",
+    "atTheDayOf": "Oʻsha kuni",
+    "day": "Kun",
+    "hour": "Soat",
+    "minute": "Daqiqa",
+    "at": "Vaqti"
+  },
+  "errorLogs": {
+    "title": "Xatolik jurnallari",
+    "unknownContact": "Nomaʼlum kontakt"
+  },
+  "developerAccessToken": {
+    "title": "API kirish tokeni",
+    "description": "Ish maydoningiz ommaviy API larga kira olishi uchun token yarating. Bu tokenni sir saqlang va hech kimga bermang.",
+    "createDialogTitle": "API token yaratish",
+    "namePlaceholder": "masalan, Zapier integratsiyasi",
+    "empty": "Hali API tokenlar yoʻq.",
+    "defaultBadge": "Standart",
+    "allScopes": "Barcha doiralar"
+  },
+  "contacts": {
+    "title": "Kontaktlar",
+    "exportPreparing": "Eksport tayyorlanmoqda…",
+    "exportPreparingDescription": "CSV faylingiz yaratilmoqda. Bu biroz vaqt olishi mumkin.",
+    "exportReadyTitle": "Eksport tayyor",
+    "exportReadyDescription": "Quyidagi havolani nusxalang yoki faylni toʻgʻridan-toʻgʻri yuklab oling.",
+    "exportDownloadCount": "Yuklab olish ({count})",
+    "exportFailed": "Eksport qilib boʻlmadi. Qayta urinib koʻring.",
+    "copyLink": "Havolani nusxalash",
+    "linkCopied": "Havola buferga nusxalandi",
+    "countExact": "{count} ta kontakt",
+    "countCapped": "{count}+ ta kontakt",
+    "exportAllNotice": "Joriy filtrga mos barcha kontaktlar eksport qilinadi.",
+    "exportTakingLong": "Eksport kutilganidan uzoqroq davom etmoqda",
+    "exportTakingLongDescription": "Eksport hali qayta ishlanmoqda. Bu oynani yopib, bir necha daqiqadan soʻng eksport tarixidan tekshirishingiz mumkin."
+  },
+  "contactScan": {
+    "menu": {
+      "importFromFile": "Fayldan import qilish",
+      "automaticScan": "Mijozlarni avtomatik skanerlash"
+    },
+    "title": "Mijozlarni avtomatik skanerlash",
+    "submit": "Avtomatik skanerlash",
+    "fields": {
+      "inbox": "Kiruvchi quti",
+      "scanFrom": "Kiruvchi qutini quyidagi vaqtdan skanerlash"
+    },
+    "hint": {
+      "range": "Tizim sahifaga {from} dan hozirgacha yozgan mijozlarni skanerlaydi.",
+      "beforeChoose": "Skanerlashdan soʻng bu funksiyadan qayta foydalanish uchun yana 24 soat kutishingiz kerak."
+    },
+    "status": {
+      "idle": "Bu kiruvchi quti uchun hali skanerlash oʻtkazilmagan. Boshlanish sanasini tanlang va birinchi avtomatik mijozlar skanerlashini ishga tushiring.",
+      "running": "Tizim avtomatik skanerlashni bajarmoqda; taxminiy yakunlanish vaqti {eta}.",
+      "nextScan": "Keyingi skanerlash vaqti: {at}",
+      "finished": "Tizim oxirgi mijozlar skanerlash soʻrovini {at} da yakunladi.",
+      "total": "Jami skanerlangan mijozlar: {count}",
+      "waitCooldown": "Bu funksiyadan qayta foydalanish uchun yana 24 soat kutishingiz kerak.",
+      "failed": "Oxirgi skanerlash muvaffaqiyatsiz boʻldi. Kutish muddati tugagach, qayta urinib koʻrishingiz mumkin.",
+      "partial": "Oxirgi skanerlash qisman yakunlandi — baʼzi suhbatlarni import qilib boʻlmadi."
+    },
+    "errors": {
+      "contactScanFromTimeInvalid": "Skanerlash boshlanish vaqti oʻtmishda boʻlishi kerak.",
+      "contactScanInboxNotFound": "Kiruvchi quti topilmadi.",
+      "contactScanChannelUnsupported": "Bu kanal mijozlarni avtomatik skanerlashni qoʻllab-quvvatlamaydi.",
+      "contactScanIntegrationDisconnected": "Bu kiruvchi quti ulanmagan.",
+      "contactScanCooldown": "Bu kiruvchi quti yaqinda skanerlangan. Qayta skanerlashdan oldin kuting.",
+      "contactScanAlreadyRunning": "Bu kiruvchi quti uchun skanerlash allaqachon ishlamoqda.",
+      "contactScanForbidden": "Mijozlarni avtomatik skanerlashni ishga tushirishga ruxsatingiz yoʻq."
+    },
+    "histories": {
+      "title": "Skanerlash tarixi",
+      "columns": {
+        "channel": "Kanal",
+        "scanFrom": "Skanerlash boshlanishi",
+        "importedContacts": "Import qilingan kontaktlar",
+        "scannedConversations": "Skanerlangan suhbatlar",
+        "finishedAt": "Yakunlangan vaqt",
+        "error": "Xatolik"
+      },
+      "status": {
+        "init": "Navbatda",
+        "running": "Ishlamoqda",
+        "succeeded": "Muvaffaqiyatli",
+        "partial": "Qisman",
+        "failed": "Muvaffaqiyatsiz"
+      },
+      "empty": "Hali skanerlash oʻtkazilmagan."
+    }
+  },
+  "auditLogs": {
+    "title": "Audit jurnallari",
+    "columns": {
+      "user": "Foydalanuvchi",
+      "action": "Amal",
+      "detail": "Tafsilot",
+      "ipAddress": "IP manzil",
+      "date": "Sana"
+    },
+    "filters": {
+      "from": "Dan",
+      "to": "Gacha",
+      "user": "Foydalanuvchi",
+      "userPlaceholder": "Foydalanuvchi ID si",
+      "keyword": "Kalit soʻz",
+      "keywordPlaceholder": "Amal, tafsilot yoki IP manzil",
+      "allAdmins": "Barcha adminlar"
+    }
+  },
+  "customFields": {
+    "title": "Maxsus maydonlar",
+    "variables": {
+      "rawGroup": "Xom maxsus maydonlar"
+    }
+  },
+  "keywords": {
+    "title": "Kalit soʻzlar",
+    "tabs": {
+      "contact": "Kontakt",
+      "page": "Sahifa"
+    },
+    "descriptions": {
+      "contactTitle": "Kontakt kalit soʻzlari",
+      "contact": "Kontakt ish maydoningizga kalit soʻz bor xabar yuborganda avtomatik javob berish.",
+      "pageTitle": "Sahifa kalit soʻzlari",
+      "page": "Siz kontaktga kalit soʻz bor xabar yuborganingizda avtomatik javob berish."
+    },
+    "pageWarning": "Sahifa kalit soʻzi bor xabar mazmuni mijozga xabarlarning cheksiz takrorlanib yuborilishiga olib kelishi mumkin. Bunday holatga duch kelsangiz, sahifa kalit soʻzini darhol oʻchiring!"
+  },
+  "triggers": {
+    "title": "Triggerlar"
+  },
+  "appointments": {
+    "title": "Uchrashuvlar",
+    "statuses": {
+      "scheduled": "Rejalashtirilgan",
+      "cancelled": "Bekor qilingan"
+    },
+    "messages": {
+      "empty": "Hali uchrashuvlar yoʻq."
+    }
+  },
+  "appointmentManagement": {
+    "title": "Uchrashuvlar",
+    "singular": "Uchrashuv",
+    "unknownContact": "Nomaʼlum kontakt",
+    "searchPlaceholder": "Ism boʻyicha qidirish...",
+    "tabs": {
+      "next": "Kelgusi",
+      "past": "Oʻtgan"
+    },
+    "fields": {
+      "name": "Ism",
+      "date": "Sana",
+      "status": "Holat",
+      "calendar": "Taqvim"
+    },
+    "statuses": {
+      "scheduled": "Rejalashtirilgan",
+      "cancelled": "Bekor qilingan"
+    },
+    "actions": {
+      "cancelAppointment": "Uchrashuvni bekor qilish"
+    },
+    "dialogs": {
+      "cancelTitle": "Uchrashuvni bekor qilish",
+      "cancelDescription": "Bu uchrashuvni bekor qiling va bekor qilish bilan bogʻliq amallarni ishga tushiring.",
+      "deleteTitle": "Uchrashuvni oʻchirish",
+      "deleteDescription": "Bu uchrashuvni boshqaruv roʻyxatidan oʻchirish. Bekor qilish oqimi ishga tushmaydi."
+    },
+    "messages": {
+      "cancelled": "Uchrashuv bekor qilindi.",
+      "deleted": "Uchrashuv oʻchirildi."
+    }
+  },
+  "users": {
+    "title": "Foydalanuvchilar"
+  },
+  "sequences": {
+    "title": "Ketma-ketliklar",
+    "subscribers": "Obunachilar",
+    "step": "Xabar",
+    "addStep": "Xabar qoʻshish",
+    "addFirstStep": "Birinchi xabarni qoʻshish",
+    "noSteps": "Hali xabarlar yoʻq. Boshlash uchun birinchi xabaringizni qoʻshing.",
+    "selectFlow": "Oqimni tanlang",
+    "confirmDeleteStep": "Bu xabarni oʻchirishni xohlaysizmi?",
+    "delayUnits": {
+      "immediate": "Darhol",
+      "minutes": "Daqiqa",
+      "hours": "Soat",
+      "days": "Kun",
+      "specificTime": "Aniq vaqt"
+    },
+    "timeValidation": "Xabar vaqti oldingi xabardan keyin boʻlishi kerak",
+    "validation": {
+      "exception": "Tekshiruv xatoligi",
+      "nameExists": "Bunday nomli ketma-ketlik allaqachon mavjud"
+    },
+    "sendLabel": "Yuborish",
+    "selectFlowFirst": "Xabarni faollashtirishdan oldin oqimni tanlang",
+    "invalidTimeRange": "Boshlanish vaqti tugash vaqtidan oldin boʻlishi kerak",
+    "schedule": "Jadval",
+    "scheduleDescription": "Xabarlar qachon yuborilishini sozlang",
+    "sendTime": "Yuborish vaqti",
+    "sendTimeDescription": "Xabarlar faqat shu vaqt oraligʻida yuboriladi",
+    "timezone": "Vaqt mintaqasi",
+    "timezoneDescription": "Barcha vaqtlar chatbotingiz vaqt mintaqasida",
+    "enableSchedule": "Jadvalni yoqish",
+    "startTime": "Boshlanish vaqti",
+    "endTime": "Tugash vaqti",
+    "allDay": "Kun boʻyi",
+    "customTime": "Maxsus vaqt",
+    "enrollmentSettings": "Roʻyxatga olish sozlamalari",
+    "enrollmentDescription": "Kontaktlar bu ketma-ketlikka qanday qoʻshilishini boshqaring",
+    "allowReEnrollment": "Qayta qoʻshishga ruxsat berish",
+    "allowReEnrollmentDescription": "Kontaktlar bir necha marta qoʻshilishi mumkin",
+    "skipWeekends": "Dam olish kunlarini oʻtkazib yuborish",
+    "skipWeekendsDescription": "Shanba va yakshanba kunlari xabar yubormaslik",
+    "unenrollOnReply": "Javob berilganda chiqarish",
+    "unenrollOnReplyDescription": "Kontakt javob berganda uni ketma-ketlikdan chiqarish",
+    "performance": "Samaradorlik",
+    "enrolled": "Qoʻshilganlar",
+    "completed": "Yakunlaganlar",
+    "openRate": "Ochilish darajasi",
+    "clickRate": "Bosish darajasi",
+    "replyRate": "Javob darajasi",
+    "unsubscribeRate": "Obunani bekor qilish darajasi",
+    "overview": "Umumiy koʻrinish",
+    "analytics": "Analitika",
+    "stats": {
+      "sent": "Yuborildi",
+      "delivered": "Yetkazildi",
+      "seen": "Koʻrildi",
+      "clicked": "Bosildi",
+      "failed": "Muvaffaqiyatsiz",
+      "noContacts": "Kontaktlar topilmadi",
+      "pageInfo": "{page}/{pageCount}-sahifa",
+      "selectedAll": "Hammasi tanlandi",
+      "selectedCount": "{count} ta tanlandi",
+      "tagAllDialogDescription": "Teglar barcha tanlangan kontaktlarga qoʻshiladi.",
+      "tagDialogDescription": "Teglar {count} ta kontaktga qoʻshiladi.",
+      "tagQueued": "{count} ta kontaktga fon rejimida teg qoʻshilmoqda.",
+      "loadingMore": "Yana yuklanmoqda..."
+    },
+    "settings": "Sozlamalar",
+    "flow": "Oqim",
+    "active": "Faol",
+    "messageSentAtLeast": "Bu xabar oldingi xabardan kamida",
+    "afterPreviousMessage": "keyin yuboriladi (kun = 24 soat)",
+    "anyTime": "Istalgan vaqt",
+    "setTimeRange": "Vaqt oraligʻini belgilash",
+    "selectDays": "Kunlarni tanlang",
+    "allDays": "Barcha kunlar",
+    "deselectAll": "Tanlovni bekor qilish",
+    "monday": "Dushanba",
+    "tuesday": "Seshanba",
+    "wednesday": "Chorshanba",
+    "thursday": "Payshanba",
+    "friday": "Juma",
+    "saturday": "Shanba",
+    "sunday": "Yakshanba",
+    "afterText": "Keyin"
   }
 }
