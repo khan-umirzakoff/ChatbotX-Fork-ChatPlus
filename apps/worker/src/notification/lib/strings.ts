@@ -128,6 +128,14 @@ const strings = {
     sentAttachments: (count: number) => `A trimis ${count} atașamente`,
     assignedConversation: "Ți-a fost atribuită o conversație",
   },
+  ru: {
+    newMessage: "Новое сообщение",
+    sharedLocation: "Отправлена геопозиция",
+    sentLink: "Отправлена ссылка",
+    sentAttachment: "Отправлено вложение",
+    sentAttachments: (count: number) => `Вложений: ${count}`,
+    assignedConversation: "Вам назначен диалог",
+  },
   sv: {
     newMessage: "Nytt meddelande",
     sharedLocation: "Delade en plats",
