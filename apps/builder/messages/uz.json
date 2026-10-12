@@ -2495,5 +2495,875 @@
       "dataManager": "Data Manager API (tavsiya etiladi)",
       "legacy": "Eski yuklash API si"
     }
+  },
+  "metaConversions": {
+    "flowStep": {
+      "whatsappNote": "WhatsApp hodisalari faqat click-to-WhatsApp reklamasidan boshlangan suhbatlar uchun yuboriladi.",
+      "description": "Messenger, Instagram yoki WhatsApp uchun LeadSubmitted hodisasini navbatga qoʻyish."
+    },
+    "title": "Conversions API",
+    "description": "Messenger, Instagram va WhatsApp suhbatlaridagi konversiya hodisalarini Metaga yuboring.",
+    "datasetId": "Dataset ID",
+    "reconnect": "Ruxsatlarni qayta ulash",
+    "connectViaFacebook": "Facebook orqali ulash",
+    "unsupportedExplanation": "Bu Instagram akkaunti Instagram Business Login orqali ulangan. Meta Conversions API dan foydalanish uchun akkauntni Facebook orqali ulang.",
+    "status": {
+      "title": "Meta Conversions API",
+      "ready": "Tayyor",
+      "missingPermission": "Ruxsat kerak",
+      "unverified": "Tasdiqlanmagan",
+      "unsupported": "Qoʻllab-quvvatlanmaydi",
+      "notConnected": "Ulanmagan"
+    },
+    "statusDescriptions": {
+      "ready": "Bu integratsiyada Conversions API hodisalari uchun zarur Meta ruxsati bor.",
+      "missingPermission": "Bu integratsiyani qayta ulang va soʻralgan Meta ruxsatini bering.",
+      "unverified": "Platforma ilovasi sozlamalari mavjud emas, shuning uchun CAPI ruxsatini tekshirib boʻlmaydi.",
+      "unsupported": "Instagram uchun Meta Conversions API Facebook Login for Business orqali ulangan akkauntni talab qiladi.",
+      "notConnected": "Conversions API — bu reklama samaradorligini oshirish uchun Meta bilan maʼlumot ulashish imkonini beruvchi Meta Business vositasi."
+    },
+    "errors": {
+      "reconnect": "Meta CAPI ni qayta ulashni boshlab boʻlmadi.",
+      "messengerNotFound": "Messenger integratsiyasi topilmadi.",
+      "instagramNotFound": "Instagram integratsiyasi topilmadi.",
+      "instagramRequiresFacebook": "Instagram CAPI Facebook orqali ulanishni talab qiladi.",
+      "saveFailed": "Saqlab boʻlmadi. Qayta urinib koʻring.",
+      "datasetRequired": "Kirish tokenini qoʻshishdan oldin Dataset ID ni saqlang.",
+      "invalidToken": "Bu token datasetga kira olmadi.",
+      "invalidDatasetId": "Toʻgʻri Dataset ID kiriting (faqat raqamlar).",
+      "whatsappNotFound": "WhatsApp integratsiyasi topilmadi.",
+      "testEventCodeRequired": "Test hodisasini yuborishdan oldin test hodisasi kodini saqlang.",
+      "invalidTestEventCode": "Test hodisasi kodi faqat harflar, raqamlar, defis yoki pastki chiziqdan iborat boʻlishi mumkin (maks. 64).",
+      "invalidMessagingId": "Messaging ID faqat harflar, raqamlar, defis yoki pastki chiziqdan iborat boʻlishi mumkin (maks. 512).",
+      "capiDisconnected": "Bu kanal uchun Meta CAPI uzilgan. Test hodisasini yuborishdan oldin uni qayta ulang."
+    },
+    "fields": {
+      "eventType": {
+        "label": "Hodisa turi",
+        "leadSubmitted": "Lid yuborildi",
+        "purchase": "Xarid",
+        "initiateCheckout": "Toʻlovni boshlash",
+        "addToCart": "Savatga qoʻshish",
+        "viewContent": "Kontentni koʻrish",
+        "orderCreated": "Buyurtma yaratildi",
+        "orderShipped": "Buyurtma joʻnatildi",
+        "orderDelivered": "Buyurtma yetkazildi",
+        "orderCanceled": "Buyurtma bekor qilindi",
+        "orderReturned": "Buyurtma qaytarildi",
+        "cartAbandoned": "Savat tashlab ketildi",
+        "qualifiedLead": "Sifatli lid",
+        "ratingProvided": "Baho berildi",
+        "reviewProvided": "Sharh qoldirildi",
+        "addPaymentInfo": "Toʻlov maʼlumotlarini qoʻshish",
+        "addToWishlist": "Istaklar roʻyxatiga qoʻshish",
+        "completeRegistration": "Roʻyxatdan oʻtishni yakunlash",
+        "contact": "Aloqa",
+        "customizeProduct": "Mahsulotni moslashtirish",
+        "donate": "Xayriya",
+        "findLocation": "Joylashuvni topish",
+        "lead": "Lid",
+        "schedule": "Uchrashuvga yozilish",
+        "search": "Qidiruv",
+        "startTrial": "Sinov davrini boshlash",
+        "submitApplication": "Ariza yuborish",
+        "subscribe": "Obuna boʻlish",
+        "custom": "Maxsus hodisa…",
+        "groups": {
+          "commerce": "Savdo",
+          "leads": "Lidlar",
+          "orders": "Buyurtmalar",
+          "feedback": "Fikr-mulohaza",
+          "leadsAndSignups": "Lidlar va roʻyxatdan oʻtishlar",
+          "other": "Boshqa"
+        }
+      },
+      "value": "Qiymat",
+      "valuePlaceholder": "masalan, 250",
+      "currency": "Valyuta",
+      "currencyPlaceholder": "masalan, USD",
+      "contentCategory": "Kontent kategoriyasi",
+      "contentCategoryPlaceholder": "Hodisaga bogʻliq kontent kategoriyasi",
+      "contentName": "Kontent nomi",
+      "contentNamePlaceholder": "Hodisaga bogʻliq sahifa yoki mahsulot nomi",
+      "orderId": "Buyurtma ID si",
+      "orderIdPlaceholder": "masalan, ORDER-12345",
+      "contents": {
+        "label": "Pozitsiyalar",
+        "item": "pozitsiya",
+        "id": "Mahsulot ID si",
+        "quantity": "Miqdor",
+        "itemPrice": "Birlik narxi"
+      },
+      "customEventName": "Maxsus hodisa nomi",
+      "customEventNamePlaceholder": "masalan, MyCustomEvent",
+      "contentType": {
+        "label": "Kontent turi",
+        "product": "Mahsulot",
+        "product_group": "Mahsulotlar guruhi"
+      },
+      "contentIds": "Kontent ID lari",
+      "contentIdsPlaceholder": "masalan, 123,456"
+    },
+    "datasetIdPlaceholder": "Events Manager dan Dataset ID ni joylashtiring",
+    "saveDataset": "Saqlash",
+    "accessToken": "Kirish tokeni (ixtiyoriy)",
+    "accessTokenHint": "Hodisalarni ulangan sahifa tokeni oʻrniga oʻz tokeningiz bilan yuborish uchun Events Manager dagi tokenni joylashtiring. Dataset ID talab qilinadi.",
+    "accessTokenPlaceholder": "Events Manager kirish tokeni",
+    "saveToken": "Tokenni saqlash",
+    "tokenSaved": "Token saqlandi",
+    "removeToken": "Olib tashlash",
+    "saved": "Saqlandi",
+    "help": {
+      "delay": "Hodisalar Events Manager da paydo boʻlishi va Ads Manager da Meta Leads sifatida koʻrinishi uchun 40 daqiqagacha vaqt ketishi mumkin."
+    },
+    "connected": "Ulangan",
+    "disconnect": "Uzish",
+    "openEventManager": "Event Manager ni ochish",
+    "methods": {
+      "oauth": {
+        "title": "Facebook orqali ulash",
+        "description": "Sahifangizning mavjud ulanishidan foydalaning, soʻng Dataset ID ni tanlang.",
+        "connect": "Dataset yaratish",
+        "connectedLabel": "Facebook orqali"
+      },
+      "custom": {
+        "title": "Maxsus ulanish",
+        "description": "Meta Events Manager dagi Dataset ID va kirish tokenidan foydalaning.",
+        "start": "Maxsus ulanishni sozlash",
+        "connect": "Ulash",
+        "connectedLabel": "Maxsus"
+      },
+      "whatsapp": {
+        "title": "WhatsApp orqali ulash",
+        "description": "WhatsApp ulanishingizdan foydalaning, soʻng Dataset ID ni tanlang.",
+        "connect": "Dataset yaratish",
+        "connectedLabel": "WhatsApp orqali"
+      }
+    },
+    "finalize": {
+      "title": "Dataset ID ni tanlang",
+      "description": "Mavjud Dataset ID ni kiriting yoki avtomatik yaratish uchun boʻsh qoldiring.",
+      "save": "Saqlash",
+      "createDataset": "Dataset yaratish",
+      "caveat": "Bu sahifa yoki Instagram akkauntiga bogʻlanmagan Dataset ID hodisalarni toʻgʻri atributsiya qilmasligi mumkin. Bogʻlangan datasetni avtomatik yaratish uchun bu maydonni boʻsh qoldiring."
+    },
+    "whatsapp": {
+      "connect": "Ulash"
+    },
+    "limitedDataUse": {
+      "label": "Cheklangan maʼlumotlardan foydalanish (AQSh maxfiyligi)",
+      "description": "Tegishli AQSh shtatlaridagi foydalanuvchilar uchun Metaning hodisa maʼlumotlaridan foydalanishini cheklash. Meta foydalanuvchi joylashuvini shu hodisadan avtomatik aniqlaydi; ChatbotX joylashuv maʼlumotlarini yubormaydi."
+    },
+    "actionSource": {
+      "label": "Amal manbasi",
+      "help": "Bu hodisa qayerda sodir boʻlgan. Metaning action source hujjatlariga qarang.",
+      "business_messaging": "Biznes yozishmalari",
+      "email": "Email",
+      "phone_call": "Telefon qoʻngʻirogʻi",
+      "chat": "Chat",
+      "physical_store": "Jismoniy doʻkon",
+      "system_generated": "Tizim tomonidan yaratilgan",
+      "other": "Boshqa"
+    },
+    "dialog": {
+      "title": "Meta CAPI",
+      "advanced": "Kengaytirilgan"
+    },
+    "testEvents": {
+      "title": "Test hodisalari",
+      "description": "Events Manager → Test events boʻlimidagi test_event_code ni joylashtiring. U oʻrnatilgan paytda bu kanaldagi har bir hodisa toʻliq payload (qiymat, valyuta, kontent ID lari) bilan Test events koʻrinishiga yoʻnaltiriladi va hisobotlarda hisobga olinmaydi. Ishingiz tugagach, uni tozalang.",
+      "codeLabel": "Test hodisasi kodi",
+      "codePlaceholder": "masalan, TEST12345",
+      "save": "Kodni saqlash",
+      "clear": "Tozalash",
+      "saved": "Test hodisasi kodi saqlandi.",
+      "cleared": "Test hodisasi kodi tozalandi. Hodisalar yana jonli.",
+      "send": "Test hodisasini yuborish",
+      "sent": "Test hodisasi yuborildi. U bir daqiqa ichida Events Manager dagi Test events boʻlimida paydo boʻladi.",
+      "sendHint": "Siz kiritgan messaging id ga bitta namunaviy Purchase (100 USD) yuboradi. Saqlangan kontaktdan foydalanilmaydi.",
+      "activeNotice": "Test rejimi yoqilgan: kod tozalanmaguncha bu kanaldagi hodisalar hisobotlarda hisobga olinmaydi.",
+      "openTestEvents": "Test events ni ochish",
+      "dialogTitle": "Test hodisasini yuborish",
+      "dialogDescription": "Test hodisasi kodingiz bilan bitta namunaviy Purchase (100 USD) yuboriladi. Events Manager → Test events → Messaging → Graph API Explorer dagi namunaviy messaging id ni joylashtiring, shunda hech narsa haqiqiy kontaktga bogʻlanmaydi.",
+      "messagingIdLabel": {
+        "messenger": "Kontakt ID si (page_scoped_user_id)",
+        "instagram": "Kontakt ID si (ig_sid)",
+        "whatsapp": "Click ID (ctwa_clid)"
+      },
+      "messagingIdPlaceholder": "Metadagi namunaviy qiymatni joylashtiring",
+      "messagingIdHint": "Faqat harflar, raqamlar, defis va pastki chiziq (maks. 512).",
+      "cancel": "Bekor qilish",
+      "confirmSend": "Yuborish"
+    }
+  },
+  "googleAds": {
+    "title": "Google Ads",
+    "description": "Google reklamasini bosib kelgan kontaktlar uchun Google Ads ga oflayn konversiyalarni yuboring.",
+    "notAvailable": {
+      "description": "Platformaning Google Ads hisob maʼlumotlari (OAuth client ID va secret) sozlanmagan. Platforma administratoridan ularni Google Ads platforma sozlamalariga qoʻshishni soʻrang."
+    },
+    "connect": {
+      "scopes": "Biz Google Ads akkauntlaringiz va konversiya amallarini oʻqish hamda siz nomingizdan konversiyalarni yuborish uchun ruxsat soʻraymiz.",
+      "button": "Google Ads ni ulash",
+      "reconnect": "Qayta ulash",
+      "unnamedAccount": "Google Ads akkaunti",
+      "viaManager": "{manager} menejer orqali",
+      "statusLabel": "Ulanish holati",
+      "needsReauthDescription": "Google ruxsati bekor qilingan yoki muddati tugagan. Konversiyalarni yuborishni davom ettirish uchun qayta ulang.",
+      "pausedDescription": "Bu ulanish pauzada, shuning uchun konversiyalar yuborilmayapti.",
+      "degradedDescription": "Google Ads xatoliklar bilan javob bermoqda. Konversiyalar avtomatik qayta yuboriladi.",
+      "howItWorks": "Qanday ishlaydi",
+      "steps": {
+        "signIn": "Reklamalaringizni boshqaradigan Google akkaunti bilan kiring.",
+        "chooseAccount": "Google Ads akkauntini tanlang.",
+        "pickAction": "Oqimlaringizda konversiya amalini tanlang."
+      },
+      "uploadMethod": "Yuklash usuli: {method}"
+    },
+    "status": {
+      "connected": "Ulangan",
+      "degraded": "Nosoz",
+      "needsReauth": "Qayta ulash kerak",
+      "paused": "Pauzada",
+      "disconnected": "Uzilgan"
+    },
+    "picker": {
+      "title": "Google Ads akkauntini tanlang",
+      "legend": "Google Ads akkauntlari",
+      "loading": "Google Ads ulanishi yuklanmoqda",
+      "loadError": "Google Ads ga ulanish urinishini yuklab boʻlmadi.",
+      "waiting": "Google kirishni tasdiqlashi kutilmoqda…",
+      "noTargets": "Bu Google akkaunti uchun Google Ads akkauntlari topilmadi.",
+      "alreadyThisWorkspace": "Bu ish maydoniga allaqachon ulangan",
+      "alreadyOtherWorkspace": "Boshqa ish maydoniga allaqachon ulangan",
+      "notSelectable": "Bu akkauntni tanlab boʻlmaydi",
+      "connectSelected": "Akkauntni ulash",
+      "sessionExpired": "Ulanish urinishining muddati tugadi. Davom etish uchun qayta ulaning.",
+      "sessionCancelled": "Ulanish urinishi bekor qilindi.",
+      "stalled": "Kirish yakunlanmadi. Qayta urinish uchun “Google Ads ni ulash”dan foydalaning.",
+      "dismiss": "Yopish",
+      "cancelFailed": "Ulanish urinishini bekor qilib boʻlmadi. Qayta urinib koʻring.",
+      "connectErrorTitle": "Google Ads ni ulab boʻlmadi",
+      "errors": {
+        "stateMismatch": "Kirishni tasdiqlab boʻlmadi. Davom etish uchun qayta ulaning.",
+        "expired": "Ulanish urinishining muddati tugadi. Davom etish uchun qayta ulaning.",
+        "providerDenied": "Google ruxsati berilmadi. Qayta ulaning va soʻralgan ruxsatlarga rozilik bering.",
+        "exchangeFailed": "Google orqali kirishni yakunlab boʻlmadi. Davom etish uchun qayta ulaning.",
+        "providerError": "Google xatolik qaytardi. Birozdan soʻng qayta ulanib koʻring.",
+        "noCandidates": "Bu Google foydalanuvchisi uchun faol Google Ads akkaunti topilmadi. Bekor qilingan, toʻxtatilgan yoki toʻliq sozlanmagan akkauntlardan foydalanib boʻlmaydi. Faol Google Ads akkauntini boshqaradigan Google akkaunti bilan kiring.",
+        "alreadyConnected": "Bu Google Ads akkaunti allaqachon ulangan.",
+        "quotaExceeded": "Tarifingizdagi ulanishlar limitiga yetildi.",
+        "trialExpired": "Sinov davringiz tugagan, shuning uchun yangi ulanishlar qoʻshib boʻlmaydi.",
+        "internalError": "Ulanishda nimadir xato ketdi. Qayta urinib koʻring.",
+        "providerUnavailable": "Google Ads vaqtincha mavjud emas, shuning uchun ulanishni yakunlab boʻlmadi. Birozdan soʻng qayta urinib koʻring.",
+        "developerTokenMissing": "Google Ads toʻliq sozlanmagan: platformaning Google hisob maʼlumotlari toʻliq emas. Administratordan Google Ads hisob maʼlumotlarini tekshirishni soʻrang.",
+        "developerTokenNotApproved": "Google Ads hisob maʼlumotlarida saqlangan developer tokenni Google rad etdi. Token ixtiyoriy: administratordan uni olib tashlashni yoki toʻgʻrisiga almashtirishni soʻrang.",
+        "projectNotApproved": "Google Cloud loyihangiz hali production Google Ads akkauntlari uchun tasdiqlanmagan. Google Cloud Console da (Google Ads API → Overview) loyiha uchun Explorer yoki Basic kirishga ariza bering, soʻng qayta ulaning.",
+        "permissionDenied": "Bu Google foydalanuvchisida Google Ads akkauntlariga kirish ruxsati yoʻq. Google Ads akkauntiga kirish huquqi bor Google foydalanuvchisi bilan kiring.",
+        "apiNotEnabled": "Google Cloud loyihasi uchun Google Ads API yoqilmagan. Administratordan uni yoqishni soʻrang, soʻng qayta urinib koʻring.",
+        "credentialsInvalid": "Google kirish maʼlumotlarini rad etdi. Davom etish uchun qayta ulaning.",
+        "scopeMissing": "Barcha ruxsatlar berilmadi. Google Ads uchun Google Ads akkauntingizga kirish va konversiyalarni yuborish ruxsati kerak. Qayta ulaning va barcha ruxsatlarni belgilang.",
+        "legacyUploadNotAllowed": "Google bu akkaunt uchun eski yuklash API sidan foydalanishga ruxsat bermaydi. Hisob maʼlumotlarini Data Manager ga oʻtkazing va bu ish maydonini qayta ulang."
+      }
+    },
+    "setup": {
+      "conversionCustomer": "Konversiya akkaunti",
+      "notResolved": "Hali aniqlanmagan",
+      "retry": "Sozlashni qayta urinish",
+      "dataTermsWarning": "Bu akkaunt uchun mijoz maʼlumotlari shartlari qabul qilinmagan. Ularni Google Ads da qabul qiling, soʻng sozlashni qayta urining.",
+      "errors": {
+        "conversionCustomerInaccessible": "Bu Google kirishi bilan konversiya akkauntiga kirib boʻlmaydi. Google Ads dagi kirish huquqingizni tekshiring va qayta urining.",
+        "customerDataTermsNotAccepted": "Bu akkaunt uchun mijoz maʼlumotlari shartlari qabul qilinmagan. Ularni Google Ads da qabul qiling, soʻng sozlashni qayta urining.",
+        "syncFailed": "Google Ads dan konversiya amallarini oʻqib boʻlmadi. Birozdan soʻng sozlashni qayta urining.",
+        "developerTokenMissing": "Platformaning Google Ads hisob maʼlumotlari (OAuth client ID va secret) sozlanmagan."
+      }
+    },
+    "conversionActions": {
+      "title": "Konversiya amallari",
+      "description": "Faqat kliklardan konversiyalarni import qiladigan yoqilgan amallar konversiyalarni qabul qila oladi.",
+      "helpLink": "Google Ads yordami",
+      "sync": "Konversiya amallarini sinxronlash",
+      "syncedAt": "Oxirgi sinxronlash: {date}",
+      "neverSynced": "Hali sinxronlanmagan",
+      "empty": "Konversiya amallari topilmadi. Google Ads da oflayn import konversiya amalini yarating, soʻng sinxronlang.",
+      "name": "Nomi",
+      "category": "Kategoriya",
+      "counting": "Hisoblash",
+      "status": "Holat",
+      "onePerClickNote": "iOS kliklarini (gbraid) bu amalga yuborib boʻlmaydi. Ularni qabul qilish uchun “Every” hisoblash usulidan foydalaning.",
+      "externalNote": "Qoʻllab-quvvatlanmaydi: bu amal tashqi atributsiyadan foydalanadi, uni Google Data Manager orqali yuborib boʻlmaydi.",
+      "count": "{count, plural, one {# ta konversiya amali} other {# ta konversiya amali}}"
+    },
+    "events": {
+      "title": "Konversiyalar tarixi",
+      "description": "Google Ads ga yuborilgan soʻnggi konversiyalar. Click ID lar yashirilgan.",
+      "empty": "Oqim yoki trigger konversiya yuborgach, ular shu yerda paydo boʻladi.",
+      "emptyFiltered": "Bu holatga mos konversiyalar yoʻq.",
+      "loadError": "Konversiyalar tarixini yuklab boʻlmadi.",
+      "page": "{page}/{pages}-sahifa",
+      "filter": {
+        "label": "Holat",
+        "all": "Barcha holatlar"
+      },
+      "columns": {
+        "status": "Holat",
+        "action": "Konversiya amali",
+        "channel": "Kanal",
+        "clickId": "Click ID",
+        "occurredAt": "Sodir boʻlgan",
+        "actions": "Amallar",
+        "dedup": "Takrorlanishni oldini olish",
+        "consent": "Rozilik holati",
+        "matching": "Moslashtirish",
+        "properties": "Xususiyatlar"
+      },
+      "status": {
+        "pending": "Kutilmoqda",
+        "sending": "Yuborilmoqda",
+        "sent": "Yuborildi",
+        "processed": "Qayta ishlandi",
+        "failed": "Muvaffaqiyatsiz",
+        "skippedNoAccount": "Oʻtkazib yuborildi: akkaunt yoʻq",
+        "skippedExpired": "Oʻtkazib yuborildi: muddati oʻtgan"
+      },
+      "processing": {
+        "processing": "Google qayta ishlamoqda",
+        "success": "Qabul qilindi",
+        "partialSuccess": "Qisman qabul qilindi",
+        "failed": "Rad etildi",
+        "unknown": "Natija nomaʼlum",
+        "timedOut": "Vaqt tugadi"
+      },
+      "stage": {
+        "delivery": "Yetkazib boʻlmadi",
+        "processing": "Qayta ishlab boʻlmadi",
+        "timeout": "Vaqt tugadi"
+      },
+      "consent": {
+        "adUserDataFull": "Reklama uchun foydalanuvchi maʼlumotlari: {status}",
+        "adPersonalizationFull": "Reklama personalizatsiyasi: {status}",
+        "status": {
+          "granted": "Berilgan",
+          "denied": "Rad etilgan",
+          "notProvided": "Berilmagan",
+          "notSupported": "Qoʻllab-quvvatlanmaydi (eski yuklash)"
+        },
+        "adUserDataShort": "Maʼlumotlar: {status}",
+        "adPersonalizationShort": "Pers.: {status}",
+        "delivery": {
+          "toSend": "Yuboriladi",
+          "notSent": "Yuborilmagan",
+          "unknown": "Tasdiqlanmagan"
+        }
+      },
+      "dedup": {
+        "click": "Har bir klik uchun",
+        "id": "ID: {id}",
+        "event": "Har bir ishga tushishda"
+      },
+      "matching": {
+        "enabled": "Sozlangan: {fields}",
+        "withheldConsent": "Ushlab qolingan (rozilik yoʻq): {fields}",
+        "unsupportedTransport": "Yuborilmagan (eski usul): {fields}"
+      },
+      "timeProvided": "Koʻrsatilgan vaqt",
+      "timeProvidedTooltip": "Bu konversiya vaqti qadam ishlagan vaqtdan emas, qadamning oʻzidan olingan."
+    },
+    "validate": {
+      "open": "Soʻrovni tekshirish",
+      "title": "Soʻrovni tekshirish",
+      "description": "Sozlamalarni tekshirish: Google soʻrovni konversiyani qayd etmasdan tekshiradi.",
+      "conversionAction": "Konversiya amali",
+      "clickIdType": "Click ID turi",
+      "clickIdTypes": {
+        "gclid": "GCLID",
+        "gbraid": "GBRAID"
+      },
+      "clickId": "Click ID",
+      "submit": "Tekshiruvni boshlash",
+      "ok": "Google bu sozlamalarni qabul qildi. Hech narsa qayd etilmadi.",
+      "reasons": {
+        "accountNotReady": "Google Ads hali tayyor emas. Akkauntingizni ulash va sozlashni yakunlang, soʻng qayta urinib koʻring.",
+        "needsReauth": "Google Ads ulanishini qayta ulash kerak.",
+        "rejected": "Google bu soʻrovni rad etdi",
+        "legacyUploadNotAllowed": "Google bu akkaunt uchun eski yuklash API sidan foydalanishga ruxsat bermaydi. Hisob maʼlumotlarini Data Manager ga oʻtkazing va bu ish maydonini qayta ulang."
+      },
+      "invalid": "Konversiya amalini tanlang va toʻgʻri click ID kiriting.",
+      "consentIncluded": "Rozilik kiritilgan: {values}.",
+      "consentNone": "Bu testda rozilik kiritilmagan.",
+      "consentVariableSkipped": "Kontakt maydonidan olinadigan rozilikni sinab boʻlmaydi, shuning uchun u chiqarib tashlandi.",
+      "consentNotSentLegacy": "Reklama personalizatsiyasi ({status}) eski yuklash usulida yuborilmaydi."
+    },
+    "conversionFields": {
+      "conversionAction": "Konversiya amali",
+      "unavailableOption": "{id} (mavjud emas)",
+      "unavailableWarning": "Tanlangan konversiya amali endi mavjud emas yoki yoqilmagan. Nashr qilishdan oldin boshqasini tanlang.",
+      "externalOption": "{name} (tashqi atributsiya, qoʻllab-quvvatlanmaydi)",
+      "loading": "Konversiya amallari yuklanmoqda",
+      "loadError": "Google Ads konversiya amallaringizni yuklab boʻlmadi.",
+      "notConnected": "Konversiyalarni yuborish uchun Google Ads ni ulang.",
+      "noActions": "Yoqilgan konversiya amallari topilmadi. Ularni Google Ads sozlamalarida sinxronlang.",
+      "openSettings": "Google Ads sozlamalarini ochish",
+      "needsReauth": "Google Ads ulanishini qayta ulash kerak.",
+      "dedupModeClick": "Har bir reklama klikiga bir marta",
+      "dedupModeClickHelp": "Bu konversiya amalini har bir reklama kliki uchun bir marta hisoblaydi.",
+      "dedupModeIdHelp": "Har bir alohida ID uchun bir marta hisoblaydi.",
+      "dedupModeId": "Har bir buyurtma yoki hodisa ID siga bir marta",
+      "dedupModeEvent": "Har safar ishga tushganda",
+      "dedupModeEventHelp": "Har safar ishga tushganda, hatto bir xil reklama kliki uchun ham yangi konversiya qayd etadi. Ayni bir ishga tushishning qayta urinishi ikki marta hisoblanmaydi.",
+      "dedupId": "Buyurtma yoki hodisa ID si",
+      "dedupIdPlaceholder": "masalan, '{{order_number}}'",
+      "dedupIdHelp": "Qayta urinishlar va importlar uchun bir xil ID dan foydalaning. Har bir xarid yoki hodisa uchun alohida ID ishlating.",
+      "dedupIdExample": "Chat savdolarida buyurtma ID si yoʻqmi? Kontaktni har bir savdo uchun belgilanadigan maydon bilan birlashtiring, masalan, {example}. Joriy vaqtdan foydalanmang: u har safar oʻzgaradi.",
+      "dedupIdInfoLabel": "Buyurtma yoki hodisa ID si haqida",
+      "dedupLeadIdNote": "Har bir alohida ID ayni bir klikdan kelgan yangi lid sifatida hisoblanadi.",
+      "dedupClickNote": "Ayni bir klikdan qilingan takroriy xaridlar hisoblanmaydi.",
+      "dedupLegacyNote": "Eski yuklash: Google shifrlangan ID oladi.",
+      "additionalOptions": "Qoʻshimcha sozlamalar",
+      "additionalOptionsCount": "{count} ta belgilangan",
+      "customerMatching": "Mijozlarni moslashtirish",
+      "customerMatchingCount": "{count} ta yoqilgan",
+      "customerMatchingLegacy": "Eski yuklash usulida qoʻllab-quvvatlanmaydi. Undan foydalanish uchun ulanishni Data Manager API ga oʻtkazing.",
+      "customerMatchingTermsNotAccepted": "Google Ads konversiya sozlamalarida mijoz maʼlumotlari shartlari qabul qilinmaguncha yuborilmaydi.",
+      "learnMore": "Batafsil",
+      "matchEmailLabel": "Email",
+      "matchPhoneLabel": "Telefon raqami",
+      "matchEmailPlaceholder": "'{{email}}'",
+      "matchPhonePlaceholder": "'{{phone}}'",
+      "customerTypeLabel": "Mijoz turi",
+      "customerValueBucketLabel": "Mijoz qiymati",
+      "customerPropertiesLegacy": "Eski yuklash usulida qoʻllab-quvvatlanmaydi. Undan foydalanish uchun ulanishni Data Manager API ga oʻtkazing.",
+      "conversionTime": "Konversiya vaqti",
+      "conversionTimePlaceholder": "Bu qadam ishlagan vaqtdan foydalanish uchun boʻsh qoldiring",
+      "valuePlaceholder": "Ixtiyoriy, masalan, 250",
+      "currencyPlaceholder": "Ixtiyoriy, USD",
+      "validation": {
+        "dedupIdRequired": "ID kiriting yoki “Har bir reklama klikiga bir marta”ni tanlang.",
+        "dedupIdTooLong": "64 ta belgidan oshmasin.",
+        "matchTemplateInvalid": "Faqat bitta oʻzgaruvchidan foydalaning, masalan, '{{email}}'. Doimiy qiymatga ruxsat berilmaydi.",
+        "customerTypeInvalid": "NEW yoki RETURNING, yoki '{{customer_type}}' kabi oʻzgaruvchidan foydalaning.",
+        "customerValueBucketInvalid": "LOW, MEDIUM yoki HIGH, yoki '{{customer_value}}' kabi oʻzgaruvchidan foydalaning.",
+        "timeFormat": "Vaqt mintaqasi koʻrsatilgan sanadan foydalaning, masalan, 2026-10-08T14:30:00+07:00.",
+        "timeInvalidDate": "Bunday sana mavjud emas.",
+        "currencyRequired": "Qiymat belgilasangiz, valyutani ham qoʻshing.",
+        "valueRequired": "Valyuta belgilasangiz, qiymatni ham qoʻshing.",
+        "conversionActionRequired": "Konversiya amalini tanlang.",
+        "valueInvalid": "Oddiy raqamdan foydalaning, masalan, 19.99.",
+        "valueTooLarge": "Bu qiymat juda katta.",
+        "currencyInvalid": "3 harfli valyuta kodidan foydalaning, masalan, USD."
+      },
+      "consentInvalid": "Rozilik sozlamalarini oʻqib boʻlmayapti, shuning uchun bu qadam muvaffaqiyatsiz boʻladi.",
+      "consentFixLink": "Ularni sozlamalarda tuzating",
+      "dedupModeLabel": "Takroriy konversiyalarning oldini olish"
+    },
+    "summary": {
+      "conversionAction": "Konversiya amali {id}",
+      "notConfigured": "Konversiya amalini tanlang",
+      "dedupClick": "Har bir reklama klikiga bir marta",
+      "dedupId": "ID: {id}",
+      "dedupEvent": "Har safar ishga tushganda"
+    },
+    "consent": {
+      "title": "Konversiya maʼlumotlari uchun rozilik",
+      "description": "Mijozlar oʻz maʼlumotlarini reklama uchun ulashishga rozi boʻlganmi. Bu ish maydoni yuboradigan barcha konversiyalarga taalluqli.",
+      "learnMore": "Batafsil",
+      "notConnected": "Google Ads akkaunti ulangach, konversiyalarga qoʻllanadi.",
+      "adUserData": {
+        "label": "Reklama uchun foydalanuvchi maʼlumotlari"
+      },
+      "adPersonalization": {
+        "label": "Reklama personalizatsiyasi"
+      },
+      "source": {
+        "notProvided": "Berilmagan",
+        "granted": "Doim berilgan",
+        "denied": "Doim rad etilgan",
+        "variable": "Kontakt maydonidan"
+      },
+      "help": {
+        "notProvided": "Chiqarib tashlanadi. Google akkauntingizning standart roziligidan foydalanadi.",
+        "granted": "Har bir konversiyada mijoz rozi boʻlgani koʻrsatiladi.",
+        "denied": "Har bir konversiyada mijoz rad etgani koʻrsatiladi.",
+        "variable": "“{granted}” yoki “{denied}” dan foydalaning. Boʻsh qiymat oʻtkazib yuboriladi; boshqa har qanday qiymat qadamni muvaffaqiyatsiz qiladi."
+      },
+      "templatePlaceholder": "masalan, '{{gdpr_consent}}'",
+      "templateLabel": "{setting} kontakt maydoni",
+      "validation": {
+        "templateRequired": "Kontakt maydonini qoʻying, masalan, '{{gdpr_consent}}'.",
+        "templateTooLong": "200 ta belgidan oshmasin."
+      },
+      "legacy": {
+        "title": "Eski yuklash usulida yuborilmaydi",
+        "body": "Eski yuklash usuli faqat reklama uchun foydalanuvchi maʼlumotlari roziligini qabul qiladi. Uni yuborish uchun Data Manager bilan qayta ulaning."
+      },
+      "save": "Saqlash",
+      "saved": "Rozilik sozlamalari saqlandi",
+      "invalidStored": "Saqlangan rozilik sozlamalarini oʻqib boʻlmadi. Yangi sozlamalarni saqlamaguningizcha konversiya yuboradigan qadamlar muvaffaqiyatsiz boʻladi."
+    },
+    "errors": {
+      "supportSession": "Platforma qoʻllab-quvvatlash sessiyalari Google Ads ulanishini oʻzgartira olmaydi yoki konversiya yubora olmaydi.",
+      "developerTokenMissing": "Google Ads hali mavjud emas: platformaning Google Ads hisob maʼlumotlari (OAuth client ID va secret) sozlanmagan.",
+      "notConnected": "Bu ish maydoni uchun Google Ads ulanmagan.",
+      "sessionNotFound": "Bu Google Ads ulanish urinishi topilmadi yoki muddati tugagan. Qaytadan boshlang.",
+      "pickFailed": "Bu Google Ads akkauntini ulab boʻlmadi. U boshqa joyga ulangan boʻlishi yoki urinish muddati tugagan boʻlishi mumkin.",
+      "notRetryable": "Bu konversiyani qayta yuborib boʻlmaydi: faqat muvaffaqiyatsiz konversiyalarni qayta yuborish mumkin.",
+      "authorizationUnavailable": "Google orqali kirishni boshlab boʻlmadi. Birozdan soʻng qayta urinib koʻring.",
+      "credentialSecretsRequired": "Client secretni kiriting. U hali saqlanmagan."
+    },
+    "enums": {
+      "category": {
+        "default": "Standart",
+        "purchase": "Xarid",
+        "addToCart": "Savatga qoʻshish",
+        "beginCheckout": "Toʻlovni boshlash",
+        "subscribePaid": "Pullik obuna",
+        "phoneCallLead": "Telefon qoʻngʻirogʻidan lid",
+        "importedLead": "Import qilingan lid",
+        "submitLeadForm": "Lid formasini yuborish",
+        "bookAppointment": "Uchrashuvga yozilish",
+        "signup": "Roʻyxatdan oʻtish",
+        "requestQuote": "Narx soʻrash",
+        "getDirections": "Yoʻnalish olish",
+        "outboundClick": "Tashqi havolaga klik",
+        "contact": "Aloqa",
+        "engagement": "Faollik",
+        "storeVisit": "Doʻkonga tashrif",
+        "storeSale": "Doʻkondagi savdo",
+        "qualifiedLead": "Sifatli lid",
+        "convertedLead": "Konversiyalangan lid",
+        "pageView": "Sahifani koʻrish",
+        "download": "Yuklab olish",
+        "lead": "Lid"
+      },
+      "countingType": {
+        "onePerClick": "Har bir klikka bitta",
+        "manyPerClick": "Har bir klikka bir nechta"
+      },
+      "actionStatus": {
+        "enabled": "Yoqilgan",
+        "removed": "Olib tashlangan",
+        "hidden": "Yashirin"
+      },
+      "unknown": "Boshqa ({value})"
+    },
+    "uploadMethods": {
+      "dataManager": "Data Manager",
+      "legacy": "Eski yuklash"
+    },
+    "stepErrors": {
+      "google_ads_unsupported_channel": "Bu kontaktning kanali Google Ads konversiyalarini yubora olmaydi.",
+      "google_ads_no_click": "Kontakt Google reklamasini bosib kelmagan.",
+      "google_ads_no_account": "Tayyor Google Ads akkaunti ulanmagan.",
+      "google_ads_unknown_conversion_action": "Konversiya amali endi mavjud emas. Sinxronlang va boshqasini tanlang.",
+      "google_ads_action_disabled": "Konversiya amali Google Ads da yoqilmagan.",
+      "google_ads_incompatible_action": "Bu amal har bir klikka bitta konversiya hisoblaydi, Google esa bu iOS klik uchun bunga ruxsat bermaydi.",
+      "google_ads_unsupported_action": "Bu amal tashqi atributsiyadan foydalanadi, u bunday konversiyalarni qabul qila olmaydi.",
+      "google_ads_invalid_value": "Qiymat yoki valyuta notoʻgʻri edi.",
+      "google_ads_invalid_input": "Qadam sozlamalari notoʻgʻri edi.",
+      "google_ads_record_failed": "Konversiyani saqlab boʻlmadi.",
+      "google_ads_missing_dedup_id": "Buyurtma yoki hodisa ID si boʻsh edi.",
+      "google_ads_invalid_dedup_id": "Buyurtma yoki hodisa ID si 64 ta belgidan uzun edi.",
+      "google_ads_missing_occurrence_key": "Bu ishga tushishda barqaror identifikator yoʻq edi, shuning uchun konversiya qayd etilmadi.",
+      "google_ads_invalid_customer_property": "Mijoz turi yoki mijoz qiymati ruxsat etilgan qiymat emas edi.",
+      "google_ads_invalid_consent_config": "Saqlangan rozilik sozlamalarini oʻqib boʻlmadi.",
+      "google_ads_invalid_consent_value": "Rozilik maydonida “granted” yoki “denied” dan boshqa qiymat bor edi.",
+      "google_ads_invalid_conversion_time": "Konversiya vaqti vaqt mintaqasi koʻrsatilgan toʻgʻri sana emas edi yoki kelajakdagi vaqt edi."
+    },
+    "stats": {
+      "filters": {
+        "allChannels": "Barcha kanallar",
+        "allActions": "Barcha amallar",
+        "channelLabel": "Kanal",
+        "actionLabel": "Konversiya amali"
+      },
+      "tiles": {
+        "confirmed": "Tasdiqlangan",
+        "awaitingGoogle": "Google kutilmoqda",
+        "queued": "Navbatda",
+        "failed": "Muvaffaqiyatsiz",
+        "skipped": "Oʻtkazib yuborilgan",
+        "deliveryRate": "Yetkazish darajasi",
+        "confirmedHelp": "Google bu konversiyalarni qayd etganini tasdiqladi.",
+        "awaitingGoogleHelp": "Googlega yuborildi, Google qayta ishlashni yakunlashi kutilmoqda.",
+        "queuedHelp": "Yuborilishi kutilmoqda.",
+        "failedHelp": "Google tomonidan qabul qilinmagan yoki qayta ishlanmagan.",
+        "skippedHelp": "Yuborilmagan: tayyor akkaunt yoʻq yoki Google uchun juda eski.",
+        "deliveryRateHelp": "Tasdiqlangan ÷ (tasdiqlangan + muvaffaqiyatsiz). Navbatdagi, kutilayotgan va oʻtkazib yuborilganlar hisobga olinmaydi."
+      },
+      "confirmedValue": "Tasdiqlangan qiymat",
+      "confirmedValueItem": "{value} ({count, plural, one {# ta konversiya} other {# ta konversiya}})",
+      "moreCurrencies": "Yana +{count}",
+      "chart": {
+        "title": "Kunlik konversiyalar",
+        "viewAsTable": "Jadval koʻrinishida",
+        "tableCaption": "Kunlik konversiyalar",
+        "dateColumn": "Sana"
+      },
+      "byAction": {
+        "title": "Konversiya amallari boʻyicha",
+        "truncated": "Eng koʻp konversiyali 50 ta amal koʻrsatilmoqda."
+      },
+      "byChannel": {
+        "title": "Kanallar boʻyicha",
+        "confirmedCount": "{count, plural, one {# ta tasdiqlangan} other {# ta tasdiqlangan}}"
+      },
+      "failures": {
+        "title": "Bosqichlar boʻyicha muvaffaqiyatsizliklar",
+        "unknown": "Nomaʼlum"
+      },
+      "empty": {
+        "title": "Bu davrda konversiyalar yoʻq",
+        "description": "Oqim qadami yoki trigger konversiya yuborgach, ular shu yerda paydo boʻladi."
+      },
+      "error": {
+        "title": "Statistikani yuklab boʻlmadi",
+        "retry": "Qayta urinish"
+      },
+      "viewStatistics": "Statistikani koʻrish",
+      "deliveryRateNone": "—",
+      "deliveryRateNoneHelp": "Bu davrda tasdiqlangan yoki muvaffaqiyatsiz konversiyalar yoʻq.",
+      "actionFallback": "{id} amali",
+      "openSettings": "Google Ads sozlamalarini ochish",
+      "outcome": {
+        "title": "Natijalar ulushi"
+      },
+      "googleReport": {
+        "title": "Google Ads hisoboti",
+        "description": "Shu kunlar uchun Google Ads oʻzi qayd etgan konversiyalar, ChatbotX yuborgan va Google tasdiqlaganlar bilan yonma-yon.",
+        "sent": "ChatbotX tasdiqlagan",
+        "reported": "Google hisobotida",
+        "note": "Google hisobotlarini yangilashi uchun bir necha soat ketishi mumkin va hisoblash amalning oʻz sozlamalariga bogʻliq, shuning uchun kichik farqlar odatiy holdir.",
+        "unavailable": "Google Ads hisobotlari hozir mavjud emas."
+      }
+    }
+  },
+  "flows": {
+    "title": "Oqimlar",
+    "export": {
+      "notPublished": "Bu oqim hech qachon nashr qilinmagan. Eksport qilishdan oldin uni nashr qiling.",
+      "failed": "Eksport qilib boʻlmadi. Qayta urinib koʻring."
+    },
+    "quickReplies": {
+      "limitReached": "Tezkor javoblar limitiga yetildi ({max})."
+    },
+    "quickReplySettings": {
+      "open": "Tezkor javob sozlamalari",
+      "title": "Tezkor javoblarni sozlash",
+      "chooseNextStep": "Keyingi qadamni tanlang",
+      "followUp": {
+        "label": "Kontakt javob bermasa, qayta yozish",
+        "waitFor": "Kutish vaqti",
+        "divider": "Agar kontakt javob bermasa, quyidagi bilan qayta yozish",
+        "windowHint": "Messenger va Instagram faqat kontaktning oxirgi xabaridan keyin 24 soat ichida yuborishga ruxsat beradi; undan keyingi eslatmalar u yerda oʻtkazib yuboriladi.",
+        "handle": "Javob yoʻq"
+      },
+      "retry": {
+        "label": "Javob tezkor javob boʻlmasa, qayta soʻrash",
+        "message": "Qayta soʻrash xabari",
+        "messageDefault": "Iltimos, quyidagi variantlardan birini bosing 👇",
+        "count": "Qayta soʻrashlar soni",
+        "countOption": "{count, plural, =0 {Qayta soʻramaslik} one {# marta} other {# marta}}",
+        "divider": "Qayta soʻrashlar soni oshib ketganda",
+        "handle": "Qayta soʻrashlar tugadi",
+        "getUserDataConflict": "Bu xabarda “Foydalanuvchi maʼlumotlarini olish” qadami boʻlsa, qayta soʻrash mavjud emas."
+      }
+    },
+    "buttons": {
+      "limitReached": "Tugmalar limitiga yetildi ({max})."
+    },
+    "aiGenerateText": {
+      "label": "{name}: matn yaratish"
+    },
+    "aiGenerateImage": {
+      "label": "{name}: rasm yaratish"
+    },
+    "aiEditImage": {
+      "label": "{name}: rasmni tahrirlash"
+    },
+    "aiAnalyzeImage": {
+      "label": "{name}: rasmni tahlil qilish"
+    },
+    "aiExtractData": {
+      "label": "{name}: maʼlumot ajratib olish"
+    },
+    "openaiCompatible": {
+      "empty": "Bu qadamdan foydalanishdan oldin integratsiya sozlamalarida OpenAI bilan mos provayderni ulang.",
+      "integration": "OpenAI bilan mos provayder"
+    },
+    "actions": {
+      "addContactNotes": "Kontaktga izoh qoʻshish",
+      "addContactTag": "Kontaktga teg qoʻshish",
+      "aiDeleteMessageHistory": "Xabarlar tarixini oʻchirish",
+      "aiExtractData": "AI maʼlumot ajratib olish",
+      "aiAnalyzeImage": "AI rasmni tahlil qilish",
+      "aiSpeechToText": "AI nutqni matnga aylantirish",
+      "aiGenerateImage": "AI rasm yaratish",
+      "aiGenerateTextAgent": "AI matn yaratuvchi agent",
+      "aiTextToSpeech": "AI matnni nutqqa aylantirish",
+      "archiveConversation": "Suhbatni arxivlash",
+      "assignConversation": "Suhbatni biriktirish",
+      "appointmentScheduling": "Uchrashuvni rejalashtirish",
+      "autoAssignConversation": "Suhbatni avtomatik biriktirish",
+      "blockContact": "Kontaktni bloklash",
+      "broadcastActions": "Ommaviy xabar amallari",
+      "callApi": "Tashqi API soʻrovi",
+      "make": "Make",
+      "triggerN8n": "n8n ni ishga tushirish",
+      "triggers": "Triggerlar",
+      "questionnaires": "Soʻrovnomalar",
+      "setUpCoupon": "Kuponni sozlash",
+      "markCouponUsed": "Kuponni ishlatilgan deb belgilash",
+      "executeJavascript": "JavaScript kodini bajarish",
+      "chooseChannel": "Kanalni tanlash",
+      "clearCustomField": "Maxsus maydonni tozalash",
+      "condition": "Shart",
+      "contactActions": "Kontakt amallari",
+      "countCharacters": "Belgilarni sanash",
+      "deleteContact": "Kontaktni oʻchirish",
+      "emailActions": "Email amallari",
+      "flowActions": "Oqim amallari",
+      "followConversation": "Suhbatni kuzatish",
+      "formatDate": "Sanani formatlash",
+      "generateCode": "Kod yaratish",
+      "getDataFromJson": "JSON dan maʼlumot olish",
+      "inboxActions": "Kiruvchi xabarlar amallari",
+      "markEmailVerified": "Emailni tasdiqlangan deb belgilash",
+      "activeCampaignSyncContact": "Kontaktni ActiveCampaign ga qoʻshish",
+      "facebookCustomAudience": "Facebook Custom Audience",
+      "sendMetaCapiEvent": "Meta CAPI hodisasini yuborish",
+      "mailchimpAddMember": "Kontaktni MailChimp ga qoʻshish",
+      "mailerLiteAddSubscriber": "Kontaktni MailerLite ga qoʻshish",
+      "klaviyoSyncProfile": "Kontaktni Klaviyo ga qoʻshish",
+      "moosendCreateContact": "Kontaktni Moosend ga qoʻshish",
+      "dripSubscribeSubscriber": "Kontaktni Drip ga qoʻshish",
+      "getResponseAddContact": "Kontaktni GetResponse ga qoʻshish",
+      "sendGridAddContact": "Kontaktni SendGrid ga qoʻshish",
+      "messenger": "Messenger",
+      "openWebsite": "Saytni ochish",
+      "optInEmail": "Email olishga obuna qilish",
+      "optOutEmail": "Email olishdan chiqarish",
+      "performAction": "Amalni bajarish",
+      "removeContactTag": "Kontakt tegini olib tashlash",
+      "setMessengerUserPersistentMenu": "Foydalanuvchi doimiy menyusini belgilash",
+      "enableMessengerComposer": "Messenger kiritish maydonini yoqish",
+      "disableMessengerComposer": "Messenger kiritish maydonini oʻchirish",
+      "setMessengerPersona": "Personani belgilash",
+      "updateMessengerContactData": "Kontakt maʼlumotlarini yangilash",
+      "sendAudio": "Audio yuborish",
+      "sendCard": "Karta yuborish",
+      "sendExternalFlow": "Tashqi oqimni boshlash",
+      "sendExternalNode": "Tashqi tugunni boshlash",
+      "sendFile": "Fayl yuborish",
+      "sendGif": "GIF yuborish",
+      "sendImage": "Rasm yuborish",
+      "sendMultipleImages": "Bir nechta rasm",
+      "sendMessage": "Xabar yuborish",
+      "sendNode": "Boshqa tugunni boshlash",
+      "sendText": "Matn yuborish",
+      "sendVideo": "Video yuborish",
+      "sendTemplateMessage": "Shablon xabar",
+      "whatsappOptionList": "Variantlar roʻyxati",
+      "noTemplatesAvailable": "Shablonlar mavjud emas",
+      "inboxesUnavailable": "Kanallarni yuklab boʻlmadi",
+      "noFlowsAvailable": "Oqimlar mavjud emas",
+      "setCustomField": "Maxsus maydonni belgilash",
+      "startAnotherNode": "Boshqa tugunni boshlash",
+      "startExternalFlow": "Tashqi oqimni boshlash",
+      "startExternalNode": "Tashqi tugunni boshlash",
+      "startFlow": "Oqimni boshlash",
+      "subscribeBroadcast": "Ommaviy xabarlarga obuna qilish",
+      "tools": "Vositalar",
+      "transferConversationToBot": "Suhbatni botga oʻtkazish",
+      "transferConversationToHuman": "Suhbatni operatorga oʻtkazish",
+      "unarchiveConversation": "Suhbatni arxivdan chiqarish",
+      "unassignConversation": "Suhbatni biriktirishdan chiqarish",
+      "markConversationAsUnread": "Suhbatni oʻqilmagan deb belgilash",
+      "markConversationAsRead": "Suhbatni oʻqilgan deb belgilash",
+      "unfollowConversation": "Suhbatni kuzatishni toʻxtatish",
+      "unsubscribeBroadcast": "Ommaviy xabarlardan obunani bekor qilish",
+      "getUserData": "Foydalanuvchi maʼlumotlarini olish",
+      "sendCarousel": "Karusel yuborish",
+      "actions": "Amallar",
+      "findGif": "GIF topish",
+      "spreadsheetGetRow": "Qatorni olish",
+      "spreadsheetUpdateRow": "Qatorni yangilash",
+      "spreadsheetSendData": "Maʼlumot yuborish",
+      "spreadsheetGetRandomRow": "Tasodifiy qatorni olish",
+      "spreadsheetClearRow": "Qatorni tozalash",
+      "typing": "Yozmoqda",
+      "sequenceActions": "Ketma-ketlik amallari",
+      "subscribeSequence": "Ketma-ketlikka obuna qilish",
+      "unsubscribeSequence": "Ketma-ketlikdan chiqarish",
+      "splitTraffic": "Trafikni taqsimlash",
+      "aiEditImage": "AI rasmni tahrirlash",
+      "whatsappFlow": "WhatsApp Flow",
+      "import": "Oqimni import qilish",
+      "export": "Eksport",
+      "importStarted": "Oqim import qilinmoqda. Natijalarni import tarixida koʻring.",
+      "importJsonOnly": "Faqat JSON fayllar",
+      "whatsappCallButton": "WhatsApp orqali qoʻngʻiroq",
+      "metaConversions": "Meta Conversions API",
+      "threadControl": "Suhbatni boshqarish (Thread Control)",
+      "sendGoogleAdsConversion": "Google Ads konversiyasini yuborish"
+    },
+    "splitTraffic": {
+      "balanceHint": "Umumiy yigʻindi 100% boʻlishi kerak.",
+      "addVariation": "Yangi variant"
+    },
+    "condition": {
+      "addCase": "Yangi shartni tekshirish",
+      "caseTitle": "{index}-holat",
+      "otherwise": "Foydalanuvchi bu shartlarga mos kelmaydi"
+    },
+    "whatsappOptionList": {
+      "buttonLabel": "Tugma matni",
+      "optionTitle": "Sarlavha",
+      "optionDescription": "Tavsif",
+      "addOption": "Yangi qoʻshish",
+      "editButtonTitle": "Tugmani tahrirlash",
+      "editOptionTitle": "Variantni tahrirlash"
+    },
+    "whatsappFlow": {
+      "buttonLabel": "Tugma matni",
+      "editDialogTitle": "WhatsApp Flow ni tahrirlash",
+      "selectFlow": "WhatsApp Flow",
+      "selectFlowPlaceholder": "Flow ni tanlang",
+      "startScreen": "Boshlangʻich ekran",
+      "selectScreenPlaceholder": "Ekranni tanlang",
+      "fieldMappings": "Javobni maxsus maydonlarga saqlash",
+      "paramKey": "Parametr",
+      "customField": "Maxsus maydon",
+      "selectCustomFieldPlaceholder": "Maxsus maydonni tanlang",
+      "addMapping": "Moslashtirish qoʻshish",
+      "addCustomField": "Yangi qoʻshish"
+    },
+    "sendCarousel": {
+      "addSlide": "Slayd qoʻshish",
+      "removeSlide": "Slaydni olib tashlash",
+      "whatsappLinkButtonIgnored": "WhatsAppda bu kartadagi havola ishlamaydi: havola tugmasi bor kartada boshqa tugmalar boʻlishi mumkin emas. U oʻrniga javob sifatida yuboriladi."
+    },
+    "sendMultipleImages": {
+      "removeImage": "Rasmni olib tashlash",
+      "selectImage": "Rasmlarni tanlang"
+    },
+    "additionalSteps": "Qoʻshimcha qadamlar",
+    "delayType": {
+      "datetimeCustomField": "Sana va vaqt maxsus maydoni",
+      "datetimeCustomFieldValue": "{customField}",
+      "duration": "Davomiylik",
+      "durationValue": "{duration}",
+      "date": "Sana",
+      "specificDate": "Aniq sana",
+      "specificDateValue": "{date}",
+      "random": "Tasodifiy"
+    },
+    "formatTimezone": {
+      "timezone": "Akkaunt vaqt mintaqasi",
+      "contactTimezone": "Kontakt vaqt mintaqasi"
+    },
+    "fields": {
+      "selectTemplatePlaceholder": "WhatsApp shablonini tanlang",
+      "selectMessengerTemplatePlaceholder": "Messenger shablonini tanlang"
+    }
   }
 }
