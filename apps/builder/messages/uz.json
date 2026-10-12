@@ -659,7 +659,7 @@
       "existingContact": "Mavjud kontakt",
       "hasContactInfo": "Telefon va email",
       "currentChannel": "Kanal",
-      "inbox": "Kiruvchi xabarlar",
+      "inbox": "Kiruvchi quti",
       "subjectToEuRules": "YI qoidalariga boʻysunadi",
       "timezone": "Vaqt mintaqasi",
       "hasOpportunity": "Bitimi bor (ochiq, yutilgan, yutqazilgan)",
@@ -1439,17 +1439,17 @@
       "label": "Xabar kiritish maydonini yashirish"
     },
     "inbox": {
-      "label": "Kiruvchi xabarlar",
-      "placeholder": "Kiruvchi xabarlar qutisini tanlang"
+      "label": "Kiruvchi quti",
+      "placeholder": "Kiruvchi qutini tanlang"
     },
     "inboxTeam": {
-      "label": "Kiruvchi xabarlar jamoasi"
+      "label": "Kiruvchi quti jamoasi"
     },
     "teamMembers": {
       "label": "Jamoa aʼzolari"
     },
     "inboxTeamMember": {
-      "label": "Kiruvchi xabarlar jamoasi aʼzosi"
+      "label": "Kiruvchi quti jamoasi aʼzosi"
     },
     "inputCustomField": {
       "label": "Kiritiladigan maxsus maydon"
@@ -4276,7 +4276,670 @@
     "flowResponse": {
       "viewResponse": "Javobni koʻrish",
       "title": "Flow javobi",
-      "description": "Mijozning shu WhatsApp Flow da yuborgan javoblari."
+      "description": "Mijozning shu WhatsApp Flow da yuborgan javoblari.",
+      "empty": "Bu javobda javoblar yoʻq.",
+      "failed": "Javobni yuklab boʻlmadi.",
+      "noAnswer": "Javob yoʻq",
+      "labelsUnavailable": "Flow savollarini yuklab boʻlmadi, shuning uchun ularning oʻrniga maydon nomlari koʻrsatilmoqda.",
+      "yes": "Ha",
+      "no": "Yoʻq"
+    }
+  },
+  "instagram": {
+    "description": "Bu integratsiya Instagram botlarini yaratish imkonini beradi.",
+    "selectInstagramAccount": "Instagram akkauntini tanlang",
+    "iceBreakers": "Ice Breakers",
+    "iceBreakersDescription": "Ice breakers foydalanuvchilarga tez-tez beriladigan savollar roʻyxatini koʻrsatib, botingiz bilan suhbatni boshlash imkonini beradi.",
+    "reconnect": "Qayta ulash",
+    "title": "Instagram",
+    "tabs": {
+      "generalSettings": "Umumiy sozlamalar",
+      "conversionsApi": "Reklamani optimallashtirish"
+    },
+    "selectPage": {
+      "noAccountsTitle": "Instagram akkauntlari topilmadi",
+      "noAccountsDescription": "Siz boshqaradigan Facebook sahifalarida Instagram Business akkauntlari topilmadi. Instagramni qayta ulang va soʻralgan barcha ruxsatlarni bering.",
+      "alreadyConnectedNote": "Bu akkaunt allaqachon ulangan",
+      "tryAgain": "Qayta ulanib koʻring"
+    }
+  },
+  "coexist": {
+    "title": "Mavjud kontaktlar va yozishmalar tarixi sinxronlansinmi?",
+    "descriptionWhatsapp": "Yoqilganda bu WhatsApp raqamidan kontaktlar va 6 oygacha boʻlgan yozishmalar tarixi import qilinadi.",
+    "descriptionMessenger": "Yoqilganda bu sahifadan mavjud Messenger kontaktlari va 3 oygacha boʻlgan suhbatlar tarixi import qilinadi.",
+    "descriptionInstagram": "Yoqilganda bu Instagram akkauntidan mavjud Instagram kontaktlari va 3 oygacha boʻlgan suhbatlar tarixi import qilinadi.",
+    "enable": "Sinxronlashni yoqish",
+    "decline": "Sinxronlamaslik",
+    "billingNote": "Katta sahifalar uchun bu bir necha soat davom etishi mumkin.",
+    "toggleLabel": "Mavjud kontaktlar va yozishmalar tarixini sinxronlash",
+    "toggleHelper": "Qayta yoqish faqat Metada buferlangan maʼlumotlar boʻlsa ishlaydi (ulangandan keyin 24 soat ichida). Aks holda uzib, qayta ulang.",
+    "toggleHelperMessenger": "Qayta yoqish faqat Metada buferlangan maʼlumotlar boʻlsa ishlaydi (ulangandan keyin 24 soat ichida). Aks holda Messenger sahifasini uzib, qayta ulang.",
+    "toggleHelperWhatsapp": "Qayta yoqish faqat Metada buferlangan maʼlumotlar boʻlsa ishlaydi (ulangandan keyin 24 soat ichida). Aks holda WhatsApp raqamini uzib, qayta ulang.",
+    "aiReadsSyncedHistoryLabel": "AI sinxronlangan tarixni oʻqiydi",
+    "aiReadsSyncedHistoryHelper": "Oʻchirilganda AI faqat yangi xabarlarni koʻradi.",
+    "success": {
+      "enabled": "Sinxronlash boshlandi. Oldingi kontaktlar va xabarlar tez orada paydo boʻladi.",
+      "disabled": "Sinxronlash oʻchirildi."
+    },
+    "errors": {
+      "alreadyTriggered": "Bu raqam uchun sinxronlash allaqachon ishga tushirilgan. Meta tarixiy maʼlumotlarni yetkazishini kuting.",
+      "windowExpired": "24 soatlik sinxronlash muddati tugadi. Qayta sinxronlash uchun bu raqamni uzib, qayta ulang.",
+      "notEligible": "Bu raqam tarixiy sinxronlash uchun mos emas.",
+      "triggerFailed": "Sinxronlashni boshlab boʻlmadi. Keyinroq qayta urinib koʻring.",
+      "unknown": "Sinxronlashni yoqib boʻlmadi. Keyinroq qayta urinib koʻring."
+    }
+  },
+  "messenger": {
+    "description": "Bu integratsiya Messenger botlarini yaratish imkonini beradi.",
+    "welcomeMessage": "Salomlashuv xabari",
+    "welcomeMessageDescription": "Bu foydalanuvchi botingizdan oladigan birinchi xabar. U foydalanuvchi bot bilan birinchi marta “Get Started” tugmasini bosib muloqot qilganda yuboriladi.",
+    "conversationStarters": "Suhbat boshlovchilar",
+    "conversationStartersDescription": "Suhbat boshlovchilar foydalanuvchilarga tez-tez beriladigan savollar roʻyxati orqali biznesingiz bilan suhbatni boshlash imkonini beradi.",
+    "persistentMenu": "Doimiy menyu",
+    "persistentMenuDescription": "Menyu foydalanuvchilarga bot imkoniyatlarini osonroq topish va ulardan foydalanishga yordam berish uchun sozlanishi mumkin. Menyu foydalanuvchilar uchun doim mavjud. Unda foydalanuvchilar istalgan vaqtda ishlata oladigan asosiy amallar boʻlishi kerak. Menyu yangi va qaytgan foydalanuvchilarga botingizning asosiy imkoniyatlarini oson tushuntiradi.",
+    "dynamicPersistentMenu": "Dinamik doimiy menyu",
+    "dynamicPersistentMenuDescription": "Doimiy menyuni istalgan vaqtda foydalanuvchi darajasida dinamik oʻzgartirish imkonini beradi.",
+    "botProfile": "Bot profili",
+    "botProfileDescription": "Bu sozlama botingiz uchun boshqa nom va rasm belgilash imkonini beradi",
+    "personas": "Personalar",
+    "personasDescription": "Bu sozlama botingiz uchun boshqa nom va rasm belgilash imkonini beradi",
+    "defaultPersona": "Standart persona",
+    "reconnect": "Qayta ulash",
+    "reconnectDescription": "Messenger botingiz javob bermasa yoki xatolik jurnalida ruxsat xatosini koʻrsangiz, botni doim qayta ulang.",
+    "selectPage": {
+      "noPagesTitle": "Facebook sahifalari topilmadi",
+      "noPagesDescription": "Business Manager ichidagi sahifalar ulanish vaqtida Business Manager ga kirish ruxsatini talab qiladi. Messengerni qayta ulang va soʻralgan barcha ruxsatlarni bering.",
+      "alreadyConnectedNote": "Bu sahifa allaqachon ulangan",
+      "tryAgain": "Qayta ulanib koʻring"
+    },
+    "title": "Facebook Messenger",
+    "tabs": {
+      "generalSettings": "Umumiy sozlamalar",
+      "messageTemplates": "Xabar shablonlari",
+      "conversionsApi": "Reklamani optimallashtirish"
+    },
+    "messageTemplate": {
+      "params": {
+        "postbackPayload": "Tugma payloadi",
+        "postbackPayloadPlaceholder": "Payload kiriting (ixtiyoriy)"
+      },
+      "create": {
+        "trigger": "Yangi shablon yaratish",
+        "header": "Sarlavha",
+        "headerType": "Sarlavha turi",
+        "none": "Yoʻq",
+        "text": "Matn",
+        "textAndImage": "Matn + rasm",
+        "image": "Rasm",
+        "imageHint": "PNG, JPG yoki GIF. Rasm yuborishdan oldin yuklanadi.",
+        "noImageSelected": "Rasm tanlanmagan",
+        "body": "Asosiy matn",
+        "buttons": "Tugmalar",
+        "addButton": "Tugma qoʻshish",
+        "addVariable": "Oʻzgaruvchi qoʻshish",
+        "buttonText": "Tugma matni",
+        "buttonType": "Tugma turi",
+        "visitWebsite": "Saytga oʻtish",
+        "callPhoneNumber": "Telefon raqamiga qoʻngʻiroq qilish",
+        "postback": "Tugma"
+      },
+      "clone": {
+        "title": "Xabar shablonini klonlash",
+        "titleWithName": "Xabar shablonini klonlash: {name}",
+        "channelsLabel": "Maqsadli kanallar",
+        "channelsPlaceholder": "Kanallarni tanlang",
+        "succeededCount": "{count} ta kanalga muvaffaqiyatli klonlandi",
+        "failedCount": "{count} ta kanalga klonlab boʻlmadi",
+        "partialSuccess": "{succeeded} ta kanalga klonlandi; {failed} ta kanalda muvaffaqiyatsiz",
+        "result": {
+          "title": "Klonlash natijalari",
+          "succeededTitle": "Muvaffaqiyatli",
+          "pendingTitle": "Meta tekshiruvi kutilmoqda",
+          "close": "Yopish"
+        }
+      }
+    },
+    "tagSync": {
+      "title": "Teglarni sinxronlash",
+      "description": "Bu ish maydoni va ulangan kanal oʻrtasida teglarni ikki tomonlama sinxronlash.",
+      "toggleSuccess": "Teglarni sinxronlash sozlamasi yangilandi.",
+      "enabledSince": "{date} dan beri yoqilgan",
+      "disabled": "Oʻchirilgan",
+      "labelSync": "Teglarni sinxronlash",
+      "on": "Yoqilgan",
+      "off": "Oʻchirilgan",
+      "termsRequired": "Sahifa admini Facebook Page Contact Terms shartlarini qabul qilishi kerak:"
+    }
+  },
+  "omnichannel": {
+    "title": "Omnikanal"
+  },
+  "openai": {
+    "connect": {
+      "description": "Biznes maʼlumotlaringizga asoslangan AI yordamida foydalanuvchilarga tabiiy javob bering."
+    },
+    "title": "OpenAI"
+  },
+  "claude": {
+    "autoReply": {
+      "description": "Biznes maʼlumotlaringizga asoslangan AI yordamida foydalanuvchilarga tabiiy javob berish uchun AI avtomatik javobini yoqing.",
+      "label": "AI avtomatik javob"
+    },
+    "connect": {
+      "description": "Biznes maʼlumotlaringizga asoslangan AI yordamida foydalanuvchilarga tabiiy javob bering.",
+      "label": "Claude AI"
+    },
+    "title": "Claude AI"
+  },
+  "deepseek": {
+    "autoReply": {
+      "description": "Biznes maʼlumotlaringizga asoslangan AI yordamida foydalanuvchilarga tabiiy javob berish uchun AI avtomatik javobini yoqing.",
+      "label": "AI avtomatik javob"
+    },
+    "connect": {
+      "description": "Biznes maʼlumotlaringizga asoslangan AI yordamida foydalanuvchilarga tabiiy javob bering.",
+      "label": "DeepSeek"
+    },
+    "title": "DeepSeek"
+  },
+  "openrouter": {
+    "autoReply": {
+      "description": "OpenRouter asosidagi AI avtomatik javobini yoqing.",
+      "label": "AI avtomatik javob"
+    },
+    "connect": {
+      "description": "Bitta API kaliti orqali 300 dan ortiq AI modellaridan foydalaning.",
+      "label": "OpenRouter"
+    },
+    "title": "OpenRouter"
+  },
+  "openaiCompatible": {
+    "addProvider": "AI provayder qoʻshish",
+    "addProviderModel": "{name} qoʻshish",
+    "apiKeyKeepExisting": "Mavjud API kalitini saqlab qolish uchun boʻsh qoldiring.",
+    "autoReply": {
+      "description": "Bu provayderdan avtomatik AI javoblari uchun foydalanishga ruxsat berish.",
+      "label": "AI avtomatik javob"
+    },
+    "connect": {
+      "description": "AI agentning zaxira modellari uchun OpenAI bilan mos provayderlarni ulang.",
+      "label": "OpenAI bilan mos provayderlar"
+    },
+    "empty": "OpenAI bilan mos provayderlar sozlanmagan.",
+    "fields": {
+      "baseURL": "Asosiy URL",
+      "defaultModel": "Standart model",
+      "enabled": "Yoqilgan"
+    },
+    "provider": "AI provayderi",
+    "title": "OpenAI bilan mos",
+    "validation": {
+      "invalidBaseURL": "Asosiy URL notoʻgʻri yoki ruxsat etilmagan.",
+      "presetAlreadyConnected": "Bu tayyor sozlama ushbu ish maydoni uchun allaqachon ulangan."
+    }
+  },
+  "settings": {
+    "title": "Sozlamalar",
+    "agents": {
+      "description": "AI agentlar tavsifi",
+      "title": "AI agentlar"
+    },
+    "automatedResponses": {
+      "title": "Kalit soʻzlar"
+    },
+    "openai": {
+      "description": "OpenAI integratsiyasi tavsifi",
+      "title": "OpenAI integratsiyasi"
+    },
+    "claude": {
+      "description": "Claude integratsiyasi tavsifi",
+      "title": "Claude integratsiyasi"
+    },
+    "deepseek": {
+      "description": "DeepSeek integratsiyasi tavsifi",
+      "title": "DeepSeek integratsiyasi"
+    }
+  },
+  "auth": {
+    "orContinueWith": "Yoki quyidagi orqali davom eting",
+    "continueWithFacebook": "Facebook orqali davom etish",
+    "continueWithGoogle": "Google orqali davom etish",
+    "continueWithEmail": "Email orqali davom etish",
+    "continueWithMagicLink": "Sehrli havola orqali davom etish",
+    "dontHaveAnAccount": "Akkauntingiz yoʻqmi?",
+    "alreadyHaveAnAccount": "Akkauntingiz bormi?",
+    "signUp": "Roʻyxatdan oʻtish",
+    "acceptTermsAndPolicy": "Davom etish tugmasini bosib, quyidagilarga rozilik bildirasiz:",
+    "and": "va",
+    "privacyPolicy": "Maxfiylik siyosati",
+    "termsOfService": "Foydalanish shartlari",
+    "signInTitle": "{name} ga kirish",
+    "forgotPasswordTitle": "Parolingizni unutdingizmi?",
+    "forgotPasswordDescription": "Xavotir olmang! Parolni tiklash boʻyicha koʻrsatmalar bilan havola yuboramiz.",
+    "checkYourEmail": "Emailingizni tekshiring",
+    "magicLinkSent": "Emailingizga tasdiqlash havolasini yubordik",
+    "magicLinkSentDescription": "Davom etish uchun emailingizdagi havolani bosing.",
+    "didNotReceiveEmail": "Xat kelmadimi? Spam jildini tekshiring.",
+    "trySigningInAgain": "Boshqa email bilan qayta kirib koʻrishingiz ham mumkin.",
+    "signIn": "Kirish",
+    "signUpSuccess": "Roʻyxatdan muvaffaqiyatli oʻtdingiz. Tasdiqlash uchun emailingizni tekshiring.",
+    "forgotPassword": "Parolni unutdingizmi?",
+    "rememberedPassword": "Parolingiz esingizga tushdimi?",
+    "forgotPasswordEmailSent": "Parolni tiklash boʻyicha koʻrsatmalar bilan email yubordik.",
+    "magicLinkSentTitle": "Sehrli havola yuborildi",
+    "passwordResetSuccess": "Parol muvaffaqiyatli tiklandi",
+    "resetPasswordTitle": "Parolingizni tiklang",
+    "resetPasswordDescription": "Quyida yangi parolingizni kiriting.",
+    "signUpTitle": "{name} da roʻyxatdan oʻtish",
+    "changePasswordTitle": "Parolingizni oʻzgartiring",
+    "changePasswordDescription": "Davom etishdan oldin yangi parol oʻrnating.",
+    "passwordChangeSuccess": "Parol oʻzgartirildi",
+    "oauthError": {
+      "accountNotLinked": "Bu email bilan akkaunt allaqachon mavjud va uni bogʻlab boʻlmadi. Avvalgidek kiring yoki qoʻllab-quvvatlash xizmatiga murojaat qiling.",
+      "unableToLinkAccount": "Bu kirishni mavjud akkauntga bogʻlab boʻlmadi. Avvalgidek kiring yoki qoʻllab-quvvatlash xizmatiga murojaat qiling.",
+      "sessionExpired": "Kirish urinishining muddati tugadi. Qayta urinib koʻring.",
+      "accessDenied": "Kirish bekor qilindi.",
+      "generic": "Kirib boʻlmadi. Qayta urinib koʻring."
+    }
+  },
+  "emailTopics": {
+    "title": "Email mavzulari"
+  },
+  "tags": {
+    "title": "Teglar"
+  },
+  "texts": {
+    "or": "yoki"
+  },
+  "theme": {
+    "dark": "Qorongʻi",
+    "light": "Yorugʻ",
+    "system": "Tizim"
+  },
+  "validation": {
+    "maxSize": "Fayl hajmi ruxsat etilgan limitdan oshib ketdi",
+    "maxItemsReached": "Har bir ish maydoni uchun koʻpi bilan {max} ta {feature} ruxsat etiladi",
+    "maxCharacters": "Koʻpi bilan {max} ta belgi.",
+    "invalidApiKey": "API kaliti notoʻgʻri",
+    "maxMustBeGreaterThanMin": "{maxField} {minField} dan katta yoki unga teng boʻlishi kerak"
+  },
+  "webchat": {
+    "chatUnavailable": "Bu chat hozircha mavjud emas.",
+    "description": "Mijozlaringiz toʻgʻridan-toʻgʻri saytingizda biznesingizdan tezkor avtomatik javoblar olsin",
+    "rateLimitExceeded": "Soʻrovlar juda koʻp. Birozdan soʻng qayta urinib koʻring.",
+    "title": "Veb-chat",
+    "workspaceUnavailable": "Bu ish maydoni endi mavjud emas.",
+    "unauthorizedDomain": {
+      "description": "Bu sayt ushbu chat vidjetini yuklashga ruxsatga ega emas.",
+      "title": "Veb-chat mavjud emas"
+    }
+  },
+  "whatsapp": {
+    "category": {
+      "marketing": {
+        "description": "Marketing kategoriyasi tavsifi",
+        "label": "Marketing"
+      },
+      "utility": {
+        "description": "Utility kategoriyasi tavsifi",
+        "label": "Utility"
+      }
+    },
+    "commands": {
+      "description": "Bular WhatsApp botga nima qilish kerakligini aytadigan maxsus kalit soʻzlar",
+      "label": "Buyruqlar"
+    },
+    "autoConnect": {
+      "inProgress": "Ulanmoqda…"
+    },
+    "connectExisting": "Mavjud WhatsApp Business akkauntini ulash",
+    "embeddedSignupDone": "Roʻyxatdan oʻtish yakunlandi — bu varaqni yopishingiz mumkin.",
+    "embeddedSignupPopupBlocked": "Bu sayt uchun qalqib chiquvchi oynalarga ruxsat bering, soʻng qayta urinib koʻring.",
+    "fillRequiredFields": "Barcha majburiy maydonlarni toʻldiring",
+    "continueManualConnect": "Davom etish — qoʻlda ulash",
+    "icebreakers": {
+      "description": "Bular odamlar sizga osongina bera oladigan umumiy savollar.",
+      "label": "Icebreakers"
+    },
+    "manualConnect": "System User Access token yordamida qoʻlda ulash.",
+    "manualOnboarding": {
+      "title": "WhatsApp kiruvchi qutingiz tayyor!",
+      "description": "Meta ilovangizda webhook URL va tasdiqlash tokenini sozlang. Quyidagi qiymatlardan foydalaning.",
+      "webhookUrl": "Webhook URL",
+      "verifyToken": "Webhook tasdiqlash tokeni",
+      "qrCodeHint": "Webhook URL manzilini ochish uchun QR kodni skanerlang",
+      "moreSettings": "Boshqa sozlamalar",
+      "goToInbox": "Oʻsha yerga oʻtish",
+      "multipleTitle": "WhatsApp kiruvchi qutilaringiz tayyor!"
+    },
+    "phoneVerification": {
+      "title": "WhatsApp telefon raqamini tasdiqlash",
+      "description": "Metadan tasdiqlash kodini soʻrang, kodni shu yerga kiriting va telefon raqami avtomatik roʻyxatdan oʻtkaziladi.",
+      "errorTitle": "Telefon raqamini tasdiqlash talab qilinadi",
+      "methods": {
+        "sms": "SMS",
+        "voice": "Ovozli qoʻngʻiroq"
+      },
+      "actions": {
+        "sendCode": "Kod yuborish",
+        "resendIn": "{seconds} soniyadan soʻng qayta yuborish",
+        "verify": "Roʻyxatdan oʻtkazish",
+        "skip": "Oʻtkazib yuborish"
+      },
+      "fields": {
+        "code": {
+          "label": "Tasdiqlash kodi",
+          "placeholder": "Meta OTP kodini kiriting"
+        }
+      },
+      "messages": {
+        "codeSent": "Tasdiqlash kodi {method} orqali yuborildi.",
+        "cooldown": "Yangi kod soʻrashdan oldin {seconds} soniya kuting.",
+        "verified": "Telefon raqami muvaffaqiyatli tasdiqlandi va roʻyxatdan oʻtkazildi."
+      },
+      "errors": {
+        "integrationNotFound": "WhatsApp integratsiyasi topilmadi.",
+        "codeNotSent": "WhatsApp tasdiqlash kodini yuborib boʻlmadi.",
+        "codeNotVerified": "WhatsApp tasdiqlash kodini tasdiqlab boʻlmadi.",
+        "registrationFailed": "WhatsApp telefon raqamini tasdiqlab boʻlmadi."
+      },
+      "queueProgress": "{total} tadan {current}-si tasdiqlanmoqda"
+    },
+    "connect": {
+      "errors": {
+        "appSettingsNotFound": "WhatsApp ilovasi sozlamalari topilmadi.",
+        "wabaResolveFailed": "Avtorizatsiyadan WhatsApp Business akkauntini aniqlab boʻlmadi."
+      }
+    },
+    "reconnect": {
+      "errors": {
+        "notFound": "WhatsApp integratsiyasi topilmadi.",
+        "phoneNumberMismatch": "Qayta ulanish kutilgan WhatsApp Business akkauntini qaytardi, lekin bu ish maydoniga ulangan telefon raqamini emas.",
+        "wabaMismatch": "Qayta ulanish boshqa WhatsApp Business akkauntini qaytardi. Ayni shu akkauntni qayta ulang."
+      }
+    },
+    "marketingMessageLite": "Marketing Message Lite",
+    "messageTemplate": {
+      "carouselImage": {
+        "label": "Karusel rasmi"
+      },
+      "carouselVideo": {
+        "label": "Karusel videosi"
+      },
+      "document": {
+        "label": "Hujjat"
+      },
+      "image": {
+        "label": "Rasm"
+      },
+      "location": {
+        "label": "Joylashuv"
+      },
+      "text": {
+        "label": "Matn"
+      },
+      "video": {
+        "label": "Video"
+      },
+      "viewCatalog": {
+        "label": "Katalogni koʻrish"
+      },
+      "viewProduct": {
+        "label": "Mahsulotni koʻrish"
+      },
+      "params": {
+        "couponCode": "Kupon kodi",
+        "couponCodePlaceholder": "Kupon kodini kiriting",
+        "flowToken": "Flow tokeni",
+        "flowTokenPlaceholder": "Flow tokenini kiriting",
+        "flowNotSynced": "Yuborilgan maydonlarni moslashtirish uchun WhatsApp flowlarini sinxronlang.",
+        "catalogProductId": "Katalog mahsuloti",
+        "catalogProductIdPlaceholder": "Mahsulotlarni qidirish…",
+        "catalogUseDefault": "Katalogning standart miniatyurasidan foydalanish",
+        "catalogNotConnectedGuidance": "Mahsulot tanlash uchun Meta katalogini ulang.",
+        "catalogSetupLink": "Katalog sozlamalariga oʻtish",
+        "catalogSelectedProductFallback": "Mahsulot: {retailerId}",
+        "carouselCard": "{index}-karta",
+        "limitedTimeOffer": "Taklifning tugash vaqti",
+        "limitedTimeOfferPlaceholder": "Tugash sanasi va vaqtini tanlang",
+        "limitedTimeOfferHelp": "Taklifning tugash vaqti aynan tanlanganidek yuboriladi.",
+        "limitedTimeOfferBadge": "{date} da tugaydi",
+        "limitedTimeOfferExpiredBadge": "{date} da tugagan",
+        "location": "Joylashuv",
+        "latitude": "Kenglik",
+        "longitude": "Uzunlik",
+        "locationName": "Joy nomi (ixtiyoriy)",
+        "locationAddress": "Manzil (ixtiyoriy)",
+        "enterFormatUrl": "{format} URL manzilini kiriting",
+        "mpmSections": "Mahsulotlar",
+        "mpmSectionTitlePlaceholder": "Boʻlim sarlavhasi (ixtiyoriy)",
+        "mpmAddSection": "Boʻlim qoʻshish",
+        "mpmRemoveSection": "Boʻlimni olib tashlash",
+        "mpmAddProduct": "Mahsulot qoʻshish",
+        "mpmRemoveProduct": "Mahsulotni olib tashlash",
+        "mpmNoProductsHelp": "Nashr qilishdan oldin kamida bitta mahsulot qoʻshing.",
+        "mpmSectionLimitReached": "Maksimal 10 ta boʻlimga yetildi.",
+        "mpmProductLimitReached": "Maksimal 30 ta mahsulotga yetildi.",
+        "mpmProductsSummary": "{sectionCount} ta boʻlimda {productCount} ta mahsulot",
+        "unsupportedButtonParam": "Bu tugma turi hali qoʻllab-quvvatlanmaydi."
+      }
+    },
+    "sampleBodyCardContent": {
+      "label": "Karta asosiy matni namunasi"
+    },
+    "sampleBodyContent": {
+      "label": "Asosiy matn namunasi"
+    },
+    "sampleHeaderContent": {
+      "label": "Sarlavha namunasi"
+    },
+    "showFooter": {
+      "label": "Pastki yozuvni koʻrsatish"
+    },
+    "showHeader": {
+      "label": "Sarlavhani koʻrsatish"
+    },
+    "tabs": {
+      "accountHealths": "Akkaunt holati",
+      "automation": "Avtomatlashtirish",
+      "ecommerce": "Elektron tijorat",
+      "flows": "Flowlar",
+      "messageTemplates": "Xabar shablonlari",
+      "profile": "Profil",
+      "usefulLinks": "Foydali havolalar",
+      "conversionsApi": "Reklamani optimallashtirish",
+      "settings": "Sozlamalar",
+      "calls": "Qoʻngʻiroqlar"
+    },
+    "accountHealths": {
+      "title": "WhatsApp akkauntingizni boshqaring",
+      "description": "WhatsApp akkauntingiz holati, xabar yuborish limitlari va sifatini koʻrib chiqing. Kerak boʻlsa, sozlamalarni yangilang yoki muammolarni hal qiling",
+      "goToBusinessManager": "Meta Business Manager ga oʻtish",
+      "unavailable": {
+        "title": "Akkaunt holati vaqtincha mavjud emas",
+        "description": "Hozir bu WhatsApp telefon raqamini Metadan yuklab boʻlmadi. Bu sahifadagi boshqa tiklash amallari mavjud."
+      },
+      "fields": {
+        "displayPhoneNumber": {
+          "label": "Koʻrsatiladigan telefon raqami",
+          "tooltip": "Mijozlar biznesingizga yozganda ularga koʻrsatiladigan telefon raqami."
+        },
+        "businessName": {
+          "label": "Biznes nomi",
+          "tooltip": "WhatsApp biznesining tasdiqlangan koʻrsatiladigan nomi."
+        },
+        "displayNameStatus": {
+          "label": "Koʻrsatiladigan nom holati",
+          "tooltip": "WhatsApp biznesingiz koʻrsatiladigan nomining tasdiqlash holati."
+        },
+        "qualityRating": {
+          "label": "Sifat reytingi",
+          "tooltip": "Oxirgi 7 kundagi mijozlar fikriga asoslangan sifat reytingi."
+        },
+        "messagingLimitTier": {
+          "label": "Xabar yuborish limiti darajasi",
+          "tooltip": "Biznesingiz 24 soatlik siljuvchi oraliqda xabar yubora oladigan noyob mijozlarning maksimal soni."
+        },
+        "accountMode": {
+          "label": "Akkaunt rejimi",
+          "tooltip": "WhatsApp Business akkaunti jonli yoki sandbox rejimida ekanligi."
+        },
+        "marketingMessages": {
+          "label": "Marketing Messages (MM Lite)",
+          "tooltip": "WhatsApp Business akkauntining Marketing Messages Lite API ga ulanish holati.",
+          "status": {
+            "INELIGIBLE_ON_BEHALF_OF_WABA": "Mos emas: OBO modeli",
+            "INELIGIBLE_INACTIVE_OR_RESTRICTED": "Mos emas: faol emas yoki cheklangan",
+            "INELIGIBLE_COUNTRY_NOT_SUPPORTED": "Mos emas: mamlakat qoʻllab-quvvatlanmaydi",
+            "INELIGIBLE_USING_WHATSAPP_BUSINESS_APP": "Mos emas: WhatsApp Business ilovasidan foydalanilmoqda",
+            "ELIGIBLE": "Mos",
+            "PENDING_VALID_PAYMENT_METHOD": "Toʻgʻri toʻlov usuli kutilmoqda",
+            "PENDING_INTERNAL_SETUP": "Ichki sozlash kutilmoqda",
+            "ONBOARDED": "Ulangan"
+          },
+          "description": {
+            "INELIGIBLE_ON_BEHALF_OF_WABA": "WhatsApp Business akkaunti qoʻllab-quvvatlanmaydigan OBO modelidan foydalanadi. Avval WABA egaligini mijozga oʻtkazishingiz yoki Intent API orqali ulanishingiz kerak.",
+            "INELIGIBLE_INACTIVE_OR_RESTRICTED": "WhatsApp Business akkaunti faol emas yoki siyosat buzilishi sababli xabar yuborishi cheklangan.",
+            "INELIGIBLE_COUNTRY_NOT_SUPPORTED": "WhatsApp Business akkaunti MM Lite API qoʻllab-quvvatlanmaydigan hududda joylashgan.",
+            "INELIGIBLE_USING_WHATSAPP_BUSINESS_APP": "WhatsApp Business telefon raqami WhatsApp Business ilovasida ishlatilmoqda.",
+            "ELIGIBLE": "WhatsApp Business akkaunti MM Lite API ga ulanishi va undan foydalanishi mumkin.",
+            "PENDING_VALID_PAYMENT_METHOD": "WhatsApp Business akkaunti uchun toʻgʻri toʻlov usulini sozlash talab qilinadi.",
+            "PENDING_INTERNAL_SETUP": "WhatsApp Business akkaunti MM Lite API dan foydalanish uchun sozlanmoqda va biznes mijozi yoki hamkordan boshqa amal talab qilinmaydi. Avtomatik sozlash jarayoni taxminan oʻn daqiqadan kam vaqt oladi. account_update webhookiga obuna boʻling va AD_ACCOUNT_LINKED hodisasini kuting. Agar sozlash oʻn daqiqadan koʻp davom etsa va webhook kelmagan boʻlsa, qoʻllab-quvvatlash xizmatiga murojaat yuboring.",
+            "ONBOARDED": "WhatsApp Business akkaunti muvaffaqiyatli ulandi va MM Lite API dan foydalanishga tayyor."
+          }
+        },
+        "webhookConfiguration": {
+          "label": "Webhook sozlamasi",
+          "tooltip": "WhatsApp hodisalarini qabul qilish uchun sozlangan webhook holati.",
+          "configured": "Webhook muvaffaqiyatli sozlangan",
+          "notConfigured": "Webhook sozlanmagan"
+        },
+        "phoneNumberHealth": {
+          "label": "Telefon raqami holati",
+          "tooltip": "Bu telefon raqami xabar yubora oladimi va unga taʼsir qilayotgan muammolar.",
+          "headline": "Telefon raqami - {status}"
+        },
+        "wabaHealth": {
+          "label": "WhatsApp Business akkaunti holati",
+          "tooltip": "WhatsApp Business akkaunti xabar yubora oladimi va unga taʼsir qilayotgan muammolar.",
+          "headline": "WhatsApp Business akkaunti (WABA ID: {id}) - {status}",
+          "headlineNoId": "WhatsApp Business akkaunti - {status}"
+        }
+      },
+      "messagingLimitTier": {
+        "TIER_50": "24 soatda 50 ta mijoz",
+        "TIER_250": "24 soatda 250 ta mijoz",
+        "TIER_1K": "24 soatda 1 000 ta mijoz",
+        "TIER_10K": "24 soatda 10 000 ta mijoz",
+        "TIER_100K": "24 soatda 100 000 ta mijoz",
+        "TIER_UNLIMITED": "24 soatda cheklanmagan mijozlar",
+        "UNKNOWN": "Nomaʼlum"
+      },
+      "displayNameStatus": {
+        "APPROVED": "Tasdiqlangan",
+        "AVAILABLE_WITHOUT_REVIEW": "Tekshiruvsiz mavjud",
+        "DECLINED": "Rad etilgan",
+        "EXPIRED": "Muddati tugagan",
+        "NONE": "Yoʻq",
+        "PENDING_REVIEW": "Tekshiruv kutilmoqda"
+      },
+      "accountMode": {
+        "LIVE": "Jonli",
+        "SANDBOX": "Sandbox"
+      },
+      "canSendMessage": {
+        "AVAILABLE": "MAVJUD",
+        "LIMITED": "CHEKLANGAN",
+        "BLOCKED": "BLOKLANGAN",
+        "UNKNOWN": "NOMAʼLUM"
+      },
+      "health": {
+        "label": "Biznes holati",
+        "tooltip": "WhatsApp akkauntingiz holati va xabar yuborish imkoniyatining umumiy koʻrinishi.",
+        "blockedMessage": "Telefon raqamingizdan xabar yuborish bloklangan.",
+        "problem": "Muammo:",
+        "possibleSolution": "Mumkin boʻlgan yechim:",
+        "noIssues": "Muammolar aniqlanmadi",
+        "entityHeadline": "{type} (ID: {id})",
+        "entityHeadlineNoId": "{type}",
+        "entityTooltip": "Bu {type} xabar yubora oladimi va unga taʼsir qilayotgan muammolar.",
+        "entityTypes": {
+          "PHONE_NUMBER": "Telefon raqami",
+          "WABA": "WhatsApp Business akkaunti",
+          "BUSINESS": "Biznes",
+          "MESSAGE_TEMPLATE": "Xabar shabloni",
+          "APP": "Ilova"
+        }
+      }
+    },
+    "templateFooter": {
+      "label": "Shablon pastki yozuvi"
+    },
+    "templateHeader": {
+      "label": "Shablon sarlavhasi"
+    },
+    "transferPhoneNumber": "Raqamni boshqa WhatsApp provayderidan koʻchirish",
+    "selectPage": {
+      "tryAgain": "Qayta ulanib koʻring"
+    },
+    "manualAppSecretMissingNotice": "Meta App Secret qoʻshmaguningizcha webhook imzolari tekshirilmaydi.",
+    "calls": {
+      "title": "WhatsApp qoʻngʻiroqlari",
+      "description": "Mijozlarga WhatsAppda biznesingizga qoʻngʻiroq qilish imkonini bering va bu raqam uchun qoʻngʻiroqlar qanday ishlashini boshqaring.",
+      "enableLabel": "Qoʻngʻiroqlarni yoqish",
+      "enableHelper": "Bu raqam uchun WhatsApp qoʻngʻiroqlarini yoqish.",
+      "iconVisibilityLabel": "Mijozlarga qoʻngʻiroq tugmasini koʻrsatish",
+      "iconVisibilityHelper": "Qoʻngʻiroq tugmasini mijozning WhatsApp ilovasida koʻrsatadi. Kiruvchi xabarlarga taʼsir qilmaydi.",
+      "callbackPermissionLabel": "Qayta qoʻngʻiroq qilish uchun ruxsat soʻrash",
+      "callbackPermissionHelper": "Javobsiz yoki tugagan qoʻngʻiroqdan soʻng mijozdan unga qayta qoʻngʻiroq qilishga ruxsat soʻrash.",
+      "propagationNote": "Meta oʻzgarishlarni darhol qoʻllaydi, lekin mijozning WhatsApp ilovasida ular 7 kungacha kechikib koʻrinishi mumkin.",
+      "loadFailed": "Qoʻngʻiroq sozlamalarini Metadan yuklab boʻlmadi. Bu raqam ulanishini tekshiring va qayta urinib koʻring.",
+      "errors": {
+        "notFound": "WhatsApp integratsiyasi topilmadi",
+        "notWhatsappConversation": "Bu suhbat WhatsAppda emas",
+        "callNotFound": "Qoʻngʻiroq topilmadi",
+        "callNotReady": "Qoʻngʻiroq hali javob berishga tayyor emas — qayta urinib koʻring",
+        "inAppCallingUnavailable": "Bu serverda ilova ichidan qoʻngʻiroq qilish sozlanmagan",
+        "noCallPermission": "Kontakt qoʻngʻiroq qilishga ruxsat bermagan",
+        "permissionRequestLimitReached": "WhatsApp har bir kontaktga 7 kunda faqat 2 marta qoʻngʻiroq ruxsatini soʻrashga imkon beradi. Bu kontakt bu limitga yetgan — keyinroq qayta urinib koʻring.",
+        "audioConnectFailed": "Qoʻngʻiroq audiosini ulab boʻlmadi",
+        "updateFailed": "Meta qoʻngʻiroq sozlamalaridagi oʻzgarishni rad etdi",
+        "savedOnMetaOnly": "Meta oʻzgarishni saqladi, lekin bu ish maydoni saqlamadi. Yakunlash uchun qayta saqlang.",
+        "bicUnavailable": "Bu mamlakat uchun biznes tomonidan boshlanadigan qoʻngʻiroqlar mavjud emas",
+        "callAlreadyInProgress": "Bu kontaktga qoʻngʻiroq allaqachon davom etmoqda",
+        "hangupFailed": "Qoʻngʻiroqni tugatib boʻlmadi",
+        "voipCannotAnswer": "Bu qoʻngʻiroqqa endi javob berib boʻlmaydi",
+        "voipCallEnded": "Qoʻngʻiroq javob berilishidan oldin tugadi",
+        "voipAnswerFailed": "WhatsApp qoʻngʻirogʻiga javob berib boʻlmadi",
+        "voipRejectFailed": "WhatsApp qoʻngʻirogʻini rad etib boʻlmadi",
+        "voipHangupFailed": "WhatsApp qoʻngʻirogʻini tugatib boʻlmadi",
+        "voipNotReservedAgent": "Siz bu qoʻngʻiroqqa biriktirilgan operator emassiz",
+        "voipCallAccessDenied": "Bu qoʻngʻiroqni boshqarish uchun ruxsatingiz yoʻq",
+        "voipTurnCredentialsRateLimited": "Qoʻngʻiroqni sozlash soʻrovlari juda koʻp. Birozdan soʻng qayta urinib koʻring.",
+        "callNoLongerRinging": "Bu qoʻngʻiroq endi jiringlamayapti",
+        "transcriptionRequiresRecording": "Transkripsiyani yoqishdan oldin qoʻngʻiroqni yozib olishni yoqing.",
+        "supportSessionCallingBlocked": "Platforma qoʻllab-quvvatlash sessiyasi davomida qoʻngʻiroqlar mavjud emas.",
+        "callingAccessDenied": "Bu ish maydonida qoʻngʻiroqlarga kirish huquqingiz yoʻq.",
+        "callArtifactAccessDenied": "Bu qoʻngʻiroqni koʻrishga ruxsatingiz yoʻq.",
+        "callHistoryAccessDenied": "Bu ish maydonida qoʻngʻiroqlar tarixiga kirish huquqingiz yoʻq."
+      },
+      "page": {
+        "title": "Qoʻngʻiroqlar",
+        "subtitle": "Bu ish maydonining qoʻngʻiroqlar tarixi",
+        "emptyTitle": "Hali qoʻngʻiroqlar yoʻq",
+        "emptyDescription": "Jamoangiz WhatsApp qoʻngʻiroqlarini amalga oshirishni yoki qabul qilishni boshlagach, ular shu yerda paydo boʻladi.",
+        "loadMore": "Yana yuklash",
+        "allActivity": "Barcha qoʻngʻiroqlar",
+        "filterMissed": "Javobsiz",
+        "filterNoReply": "Javob berilmagan",
+        "allInboxes": "Barcha kiruvchi qutilar",
+        "allAgents": "Barcha operatorlar",
+        "columnContact": "Kontakt",
+        "columnInbox": "Kiruvchi quti",
+        "columnDirection": "Yoʻnalish",
+        "columnAgent": "Operator",
+        "columnDuration": "Davomiylik"
+      }
     }
   }
 }
