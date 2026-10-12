@@ -4155,7 +4155,7 @@
     "messageDeleted": "Сообщение удалено.",
     "sendFailed": "Не удалось отправить",
     "repliedToStory": "Ответ на вашу сторис",
-    "sentAttachments": "{count, plural, one {Отправлено # вложение} other {Отправлено вложений: #}}",
+    "sentAttachments": "{count, plural, one {Отправлено вложение} other {Отправлено вложений: #}}",
     "deleteComment": "Удалить комментарий",
     "deleteCommentConfirmation": "Вы действительно хотите удалить этот комментарий? Ответы на него тоже будут удалены — и во входящих, и на Facebook. Это действие нельзя отменить.",
     "deleteMessageSuccess": "Сообщение удалено",
@@ -6352,8 +6352,8 @@
     },
     "reminderTimingLabels": {
       "minutes": "{count, plural, one {за # минуту} other {за # мин}}",
-      "hours": "{count, plural, one {за # час} other {за # ч}}",
-      "days": "{count, plural, one {за # день} other {за # дн.}}"
+      "hours": "{count, plural, one {за час} other {за # ч}}",
+      "days": "{count, plural, one {за день} other {за # дн.}}"
     },
     "weekdays": {
       "0": "Воскресенье",
