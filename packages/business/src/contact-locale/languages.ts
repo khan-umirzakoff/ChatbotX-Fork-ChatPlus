@@ -26,6 +26,7 @@ export const contactLanguageOptions = [
   { value: "ru", labelKey: "condition.languages.ru", locale: "ru_RU" },
   { value: "ar", labelKey: "condition.languages.ar", locale: "ar_SA" },
   { value: "hi", labelKey: "condition.languages.hi", locale: "hi_IN" },
+  { value: "uz", labelKey: "condition.languages.uz", locale: "uz_UZ" },
 ] as const satisfies readonly ContactLanguageOption[]
 
 export const supportedContactLanguages: ReadonlySet<string> = new Set(
