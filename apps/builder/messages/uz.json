@@ -1,0 +1,2499 @@
+{
+  "actions": {
+    "copy": "Nusxalash",
+    "copyUrl": "URL manzilni nusxalash",
+    "chatWidget": "Chat vidjeti",
+    "actions": "Amallar",
+    "add": "Qoʻshish",
+    "addVariable": "Oʻzgaruvchi qoʻshish",
+    "addFeature": "{feature} qoʻshish",
+    "addFlowReply": "Oqim javobini qoʻshish",
+    "addMore": "Yana qoʻshish",
+    "addTag": "Teg qoʻshish",
+    "addAction": "Amal qoʻshish",
+    "addCondition": "Shart qoʻshish",
+    "addTextReply": "Matnli javob qoʻshish",
+    "markAsFollowUp": "Kuzatuvga qoʻshish",
+    "removeFromFollowUp": "Kuzatuvdan olib tashlash",
+    "markAsUnread": "Oʻqilmagan deb belgilash",
+    "archive": "Arxivlash",
+    "unarchive": "Arxivdan chiqarish",
+    "archiveConversation": "Suhbatni arxivlash",
+    "assign": "Biriktirish",
+    "assignConversation": "Suhbatni biriktirish",
+    "back": "Orqaga",
+    "billing": "Toʻlovlar",
+    "redeem": "Qoʻllash",
+    "blockContact": "Kontaktni bloklash",
+    "unblockContact": "Kontaktni blokdan chiqarish",
+    "undo": "Amalni bekor qilish",
+    "redo": "Qayta bajarish",
+    "cancel": "Bekor qilish",
+    "clear": "Tozalash",
+    "clearCustomField": "Maxsus maydonni tozalash",
+    "collapse": "Yigʻish",
+    "expand": "Yoyish",
+    "confirm": "Tasdiqlash",
+    "connect": "Ulash",
+    "continue": "Davom etish",
+    "create": "Yaratish",
+    "loading": "Yuklanmoqda...",
+    "createFeature": "{feature} yaratish",
+    "delete": "Oʻchirish",
+    "deleteContact": "Kontaktni oʻchirish",
+    "disableBot": "Botni oʻchirib qoʻyish",
+    "disconnect": "Uzish",
+    "download": "Yuklab olish",
+    "downloadTemplate": "Shablonni yuklab olish",
+    "edit": "Tahrirlash",
+    "editFeature": "{feature}ni tahrirlash",
+    "enableBot": "Botni yoqish",
+    "export": "Eksport",
+    "getEmbedCode": "Joylashtirish kodini olish",
+    "getID": "ID olish",
+    "getTools": "Vositalarni olish",
+    "import": "Import",
+    "exportContacts": "Kontaktlarni eksport qilish",
+    "filter": "Filtr",
+    "selectFile": "Faylni tanlash",
+    "insertLink": "Havola qoʻyish",
+    "addNew": "Yangi qoʻshish",
+    "send": "Yuborish",
+    "loginWithMagicLink": "Sehrli havola orqali kirish",
+    "manage": "Boshqarish",
+    "admin": "Admin",
+    "more": "Yana",
+    "moreOptions": "Boshqa variantlar",
+    "moreSettings": "Boshqa sozlamalar",
+    "openMenu": "Menyuni ochish",
+    "openWebchat": "Veb-chatni ochish",
+    "removeTag": "Tegni olib tashlash",
+    "rename": "Nomini oʻzgartirish",
+    "reset": "Asliga qaytarish",
+    "save": "Saqlash",
+    "selectAll": "Barchasini tanlash",
+    "unselect": "Tanlovni bekor qilish",
+    "selectRow": "Qatorni tanlash",
+    "sendFlow": "Oqim yuborish",
+    "sendMessage": "Xabar yuborish",
+    "setCustomField": "Maxsus maydonni belgilash",
+    "synchronize": "Sinxronlash",
+    "syncMetaCatalog": "Meta katalogini sinxronlash",
+    "testNow": "Hozir sinash",
+    "toggle": "Almashtirish",
+    "toggleTheme": "Mavzuni almashtirish",
+    "transferConversationToBot": "Suhbatni botga oʻtkazish",
+    "update": "Yangilash",
+    "updatePayment": "Toʻlovni yangilash",
+    "upgradePlan": "Tarifni oshirish",
+    "upgradeToPro": "Pro tarifiga oʻtish",
+    "uploadFile": "Fayl yuklash",
+    "view": "Koʻrish",
+    "viewAnalytics": "Analitikani koʻrish",
+    "duplicate": "Nusxa yaratish",
+    "getDraftLink": "Qoralama havolasini olish",
+    "getPublishedLink": "Nashr qilingan havolani olish",
+    "getMessengerAdsJson": "Messenger Ads uchun JSON olish",
+    "getMessengerAdPayload": "Messenger Ad uchun payload olish",
+    "ok": "OK",
+    "next": "Keyingi",
+    "prev": "Oldingi",
+    "moveEarlier": "Oldinroqqa surish",
+    "moveLater": "Keyinroqqa surish",
+    "analytics": "Analitika",
+    "deleteAnalytics": "Analitikani oʻchirish",
+    "flowVersions": "Oqim versiyalari",
+    "revertToPublished": "Nashr qilingan versiyaga qaytarish",
+    "search": "Qidirish",
+    "pleaseSelect": "Tanlang",
+    "noRecordFound": "Hech narsa topilmadi.",
+    "typeMessage": "Xabar yozing",
+    "enterText": "Matn kiriting",
+    "enterFieldAndPressEnter": "{field} kiriting va Enter tugmasini bosing",
+    "addAnother": "Yana qoʻshish...",
+    "messagePlaceholder": "Xabar...",
+    "signOut": "Chiqish",
+    "backToSignIn": "Kirish sahifasiga qaytish",
+    "connectFeature": "{feature} ulash",
+    "scanQRCode": "Meni kamera bilan skanerlang",
+    "inviteFeature": "{feature} taklif qilish",
+    "joinTheTeam": "Jamoaga qoʻshilish",
+    "chooseChannel": "Kanalni tanlang",
+    "chooseSubaction": "Ichki amalni tanlang",
+    "resend": "Qayta yuborish",
+    "publish": "Nashr qilish",
+    "setStartNode": "Boshlangʻich tugun qilish",
+    "getNodeId": "Tugun ID sini olish",
+    "setAsDefaultAgent": "Standart qilish",
+    "unsetDefaultAgent": "Standartdan olib tashlash",
+    "clickToEdit": "Tahrirlash uchun bosing",
+    "move": "Koʻchirish",
+    "moveUp": "Yuqoriga",
+    "moveDown": "Pastga",
+    "removeAssignee": "Masʼulni olib tashlash",
+    "sendMail": "Xat yuborish",
+    "wait": "Kutish",
+    "followUp": "Kuzatuv",
+    "landingPage": "Landing sahifa",
+    "generate": "Yaratish",
+    "regenerate": "Qayta yaratish",
+    "qrCode": "QR kod",
+    "addSequence": "Ketma-ketlik qoʻshish",
+    "removeSequence": "Ketma-ketlikni olib tashlash",
+    "activate": "Faollashtirish",
+    "deactivate": "Faolsizlantirish",
+    "onFailure": "Xatolik boʻlsa",
+    "onSkip": "Oʻtkazib yuborilsa",
+    "onSuccess": "Muvaffaqiyatli boʻlsa",
+    "clone": "Klonlash",
+    "remove": "Olib tashlash",
+    "restore": "Tiklash",
+    "loadMore": "Yana yuklash",
+    "retry": "Qayta urinish",
+    "saveAsDraft": "Qoralama sifatida saqlash",
+    "schedule": "Rejalashtirish",
+    "moveToDraft": "Qoralamaga oʻtkazish",
+    "stop": "Toʻxtatish",
+    "resume": "Davom ettirish"
+  },
+  "errors": {
+    "superAdminRequired": "Buni bajarish uchun ish maydonining super admini boʻlishingiz kerak."
+  },
+  "states": {
+    "success": "Muvaffaqiyatli",
+    "error": "Xatolik",
+    "skip": "Oʻtkazib yuborish"
+  },
+  "admins": {
+    "title": "Adminlar",
+    "adminActivityLogs": "Adminlar faoliyati jurnali"
+  },
+  "assignAdmin": {
+    "assignConversation": "Suhbatni biriktirish",
+    "assignedToMe": "Menga biriktirilgan",
+    "assignedTo": "{name} ga biriktirilgan",
+    "unAssigned": "Biriktirilmagan",
+    "user": "Foydalanuvchi"
+  },
+  "aiAgent": {
+    "defaultAgent": "Standart agent",
+    "description": "Ish maydoningiz imkoniyatlarini aqlli avtomatlashtirish va javoblar bilan kengaytirish uchun AI agentlarni boshqaring va sozlang.",
+    "title": "AI agentlar",
+    "name": "Agentlar"
+  },
+  "aiAgentActions": {
+    "title": "AI amallari",
+    "description": "AI mijozlar bilan suhbat davomida amallarni avtomatik bajarsin.",
+    "when": "Qachon",
+    "whenPlaceholder": "AI buni qachon bajarishi kerakligini tasvirlang...",
+    "whatShouldAIDo": "AI nima qilishi kerak?",
+    "action": "{number}-amal",
+    "actionType": "Amal turi",
+    "addRule": "Qoida qoʻshish",
+    "addAction": "Amal qoʻshish",
+    "duplicateRule": "Qoidadan nusxa olish",
+    "removeRule": "Qoidani olib tashlash",
+    "removeAction": "Amalni olib tashlash",
+    "moveUp": "Amalni yuqoriga surish",
+    "moveDown": "Amalni pastga surish",
+    "flow": "Oqim",
+    "admin": "Admin",
+    "tag": "Teg",
+    "customField": "Maxsus maydon",
+    "actionPrompt": {
+      "label": "Amal prompti",
+      "description": "Faqat AI amal qoidalarini baholaganda ishlatiladigan maxfiy koʻrsatmalar.",
+      "placeholder": "Mos amal qoidalari uchun ixtiyoriy koʻrsatmalar qoʻshing...",
+      "open": "Amal promptini sozlash",
+      "reset": "Asliga qaytarish"
+    },
+    "actionTypes": {
+      "sendFlow": "Oqim yuborish",
+      "assignConversation": "Suhbatni adminga biriktirish",
+      "removeAssignment": "Biriktirishni olib tashlash",
+      "transferToHuman": "Suhbatni operatorga oʻtkazish",
+      "addTag": "Teg qoʻshish",
+      "removeTag": "Tegni olib tashlash",
+      "setCustomField": "Maxsus maydonni belgilash",
+      "clearCustomField": "Maxsus maydonni tozalash",
+      "markFollowUp": "Kuzatuvga qoʻshish",
+      "removeFollowUp": "Kuzatuvdan olib tashlash",
+      "transferToBot": "Suhbatni botga oʻtkazish",
+      "archive": "Arxivlash",
+      "blockContact": "Kontaktni bloklash"
+    }
+  },
+  "aiFiles": {
+    "description": "Agentlaringizga PDF, hujjatlar va boshqa fayllarga kirish imkonini bering",
+    "title": "Bilimlar bazasi",
+    "noEmbeddingProvider": "Embedding provayderi sozlanmagan. AI fayl embeddinglari uchun OpenAI yoki Gemini integratsiyasi kerak. DeepSeek va Claude embedding modellarini qoʻllab-quvvatlamaydi."
+  },
+  "aiFunctions": {
+    "description": "AI agentingizni aqlliroq qilish uchun LLM funksiyalarini sozlang",
+    "title": "AI funksiyalari"
+  },
+  "aiMcpServers": {
+    "description": "AI ni MCP orqali tashqi tizimlarga ulang",
+    "title": "MCP serverlar",
+    "tools": {
+      "label": "Mavjud vositalar"
+    }
+  },
+  "analytics": {
+    "contacts": "Kontaktlar",
+    "newContacts": "Yangi kontaktlar",
+    "activeContacts": "Faol kontaktlar",
+    "botMessagesByResult": "Bot qabul qilgan xabarlar",
+    "botMessagesNoResponse": "Javobsiz qolgan qabul qilingan xabarlar",
+    "botMessagesWithResponse": "Javob berilgan qabul qilingan xabarlar",
+    "aiProvider": "AI provayderi",
+    "responseCount": "Javoblar soni",
+    "percentage": "Foiz",
+    "responseTime": "Javob vaqti",
+    "firstResponseTime": "Birinchi javob vaqti",
+    "totalContacts": "Jami kontaktlar",
+    "averageResponseTime": "Oʻrtacha javob vaqti (daqiqa)",
+    "averageResponseTimeHelp": "Operator mijoz xabariga javob berishi uchun ketadigan oʻrtacha vaqt.",
+    "averageFirstResponseTimeByAdmin": "Operatorlarning birinchi javobi uchun oʻrtacha vaqt (daqiqa)",
+    "averageFirstResponseTimeByAdminHelp": "Operator mijoz xabariga birinchi javobni berishi uchun ketadigan oʻrtacha vaqt.",
+    "averageResponseTimeByAdmin": "Operatorlarning oʻrtacha javob vaqti (daqiqa)",
+    "averageDurationOfConversation": "Suhbatning oʻrtacha davomiyligi (daqiqa)",
+    "averageDurationOfConversationHelp": "Suhbat botga oʻtkazilishidan oldin operator tomonidan olib borilgan oʻrtacha vaqt.",
+    "success": "Muvaffaqiyatli",
+    "fallback": "Zaxira javob",
+    "admins": "Operatorlar",
+    "messages": "Xabarlar",
+    "conversations": "Suhbatlar",
+    "assignedConversations": {
+      "title": "Biriktirilgan suhbatlar",
+      "helpText": "Kiruvchi xabarlar boʻlimidan yoki bot tomonidan biriktirilgan suhbatlar."
+    },
+    "messagesSentByHumanOrBot": "Operator/bot yuborgan xabarlar",
+    "human": "Operator",
+    "bot": "Bot",
+    "conversationsMovedToHumanOrBot": "Operatorga/botga oʻtkazilgan suhbatlar",
+    "uniqueConversationsByAdmins": "Operatorlarning noyob suhbatlari",
+    "uniqueConversationsByAdminsHelp": "Operator kamida bitta xabar yuborgan kontaktlar soni.",
+    "messagesSentByAdmins": "Operatorlar yuborgan xabarlar",
+    "messagesSentByAdminsHelp": "Kiruvchi xabarlar boʻlimidan yuborilgan xabarlar.",
+    "allContactsByChannel": "Kanallar boʻyicha barcha kontaktlar",
+    "newContactsByChannel": "Kanallar boʻyicha yangi kontaktlar",
+    "newContactsBySource": "Manbalar boʻyicha yangi kontaktlar",
+    "assignedConversationsByAdmins": "Operatorlarga biriktirilgan suhbatlar",
+    "assignedConversationsByAdminsHelp": "Kiruvchi xabarlar boʻlimidan yoki bot tomonidan biriktirilgan suhbatlar.",
+    "followUpConversations": "Kuzatuvdagi suhbatlar",
+    "followUpConversationsHelp": "Kiruvchi xabarlar boʻlimida yoki bot tomonidan kuzatuvga qoʻshilgan suhbatlar.",
+    "archivedConversations": "Arxivlangan suhbatlar",
+    "blockedConversations": "Bloklangan suhbatlar",
+    "blockedConversationsHelp": "Akkauntingiz bloklagan suhbatlar.",
+    "blockedContacts": "Bloklangan kontaktlar",
+    "blockedContactsHelp": "Akkauntingizdan xabar olishni istamagan kontaktlar",
+    "newContactsByCountry": "Mamlakatlar boʻyicha yangi kontaktlar",
+    "date": "Sana",
+    "total": "Jami",
+    "messagesSent": "Yuborilgan xabarlar",
+    "selectRange": "Oraliqni tanlang",
+    "dateFilterPreset": "Sana filtri shabloni",
+    "noResults": "Natija yoʻq.",
+    "noData": "Maʼlumot yoʻq",
+    "errorLogRetentionNotice": "Xatolik jurnallarining faqat oxirgi {days} kunligi saqlanadi.",
+    "comingSoon": "Tez orada",
+    "unknown": "Nomaʼlum",
+    "pagination": {
+      "selectedRows": "{total} ta qatordan {selected} tasi tanlandi.",
+      "rowsPerPage": "Sahifadagi qatorlar",
+      "pageOf": "{page}/{pageCount}-sahifa",
+      "firstPage": "Birinchi sahifaga oʻtish",
+      "previousPage": "Oldingi sahifaga oʻtish",
+      "nextPage": "Keyingi sahifaga oʻtish",
+      "lastPage": "Oxirgi sahifaga oʻtish",
+      "totalRows": "{total} ta qator"
+    },
+    "sessionsThroughTheRef": "“{ref}” Ref orqali kunlik sessiyalar",
+    "sessionsThroughTheMagicLink": "“{ref}” sehrli havola orqali kunlik sessiyalar",
+    "repliesToComments": "Izohlarga javoblar",
+    "repliesByDate": "Sana boʻyicha javoblar",
+    "userCommentsOnThisPost": "Ushbu postdagi foydalanuvchi izohlari",
+    "botRepliesToComments": "Botning izohlarga javoblari",
+    "comment": "Izoh",
+    "message": "Xabar",
+    "searchByDate": "Sana boʻyicha qidirish...",
+    "publicReply": "Ochiq javob",
+    "privateReply": "Shaxsiy javob"
+  },
+  "flowAnalytics": {
+    "nodes": {
+      "start": "Boshlanish",
+      "notFound": "Tugun topilmadi"
+    },
+    "stats": {
+      "sent": "Yuborildi",
+      "delivered": "Yetkazildi",
+      "seen": "Koʻrildi",
+      "clicked": "Bosildi",
+      "waiting": "Kutilmoqda"
+    }
+  },
+  "autoAssignConversation": {
+    "rule": {
+      "allTime": "Suhbatlarni teng taqsimlash (butun davr)",
+      "label": "Biriktirish qoidasi",
+      "last24Hours": "Suhbatlarni teng taqsimlash (oxirgi 24 soat)",
+      "last8Hours": "Suhbatlarni teng taqsimlash (oxirgi 8 soat)",
+      "lastHour": "Suhbatlarni teng taqsimlash (oxirgi soat)"
+    },
+    "users": {
+      "label": "Foydalanuvchilar"
+    }
+  },
+  "automatedResponse": {
+    "setting": {
+      "description": "Avtomatik javoblar tavsifi",
+      "label": "Avtomatik javoblar"
+    }
+  },
+  "billing": {
+    "title": "Toʻlovlar",
+    "plan": {
+      "label": "Tarif: {plan}",
+      "currentLabel": "Joriy tarif",
+      "free": "Bepul"
+    },
+    "usage": {
+      "contacts": "Kontaktlar",
+      "mac": "Oylik faol kontaktlar",
+      "botMessages": "Bot xabarlari",
+      "monthlyBotMessages": "Bot xabarlari (oylik)",
+      "workspaces": "Ish maydonlari",
+      "channels": "Kanallar",
+      "teamMembers": "Jamoa aʼzolari"
+    },
+    "limitReached": {
+      "workspaces": "Ish maydonlari limitiga yetdingiz. Koʻproq yaratish uchun tarifingizni oshiring.",
+      "channels": "Kanallar limitiga yetdingiz. Koʻproq ulash uchun tarifingizni oshiring.",
+      "teamMembers": "Jamoa aʼzolari limitiga yetdingiz. Koʻproq taklif qilish uchun tarifingizni oshiring.",
+      "contacts": "Kontaktlar limitiga yetdingiz. Koʻproq qoʻshish uchun tarifingizni oshiring.",
+      "mac": "Oylik faol kontaktlar limitiga yetdingiz. Koʻproq kontaktga yetib borish uchun tarifingizni oshiring."
+    },
+    "pastDue": {
+      "message": "Oxirgi toʻlovingiz amalga oshmadi. Ish maydoningiz faol qolishi uchun toʻlov usulini yangilang."
+    },
+    "trial": {
+      "planName": "Sinov davri",
+      "daysLeft": "Sinov davri: {days} kun qoldi",
+      "endsTomorrow": "Sinov davri ertaga tugaydi",
+      "expired": "Sinov davringiz tugadi — ish maydoningiz faol qolishi uchun tarifni oshiring",
+      "dismiss": "Yopish"
+    },
+    "trialExpired": {
+      "title": "Bepul sinov davringiz tugadi",
+      "description": "Ish maydonlaringizdan foydalanishni davom ettirish uchun tarifga obuna boʻling.",
+      "cta": "Tariflarni koʻrish",
+      "bannerTitle": "Sinov davri tugadi",
+      "bannerDescription": "Yangi resurslar yaratish oʻchirilgan. Kanallarni uzishingiz va ish maydonini oʻchirishni rejalashtirishingiz mumkin.",
+      "bannerCta": "Tarifni oshirish",
+      "createDisabled": "Yangi {feature} yaratish oʻchirilgan. Davom etish uchun tarifni oshiring."
+    },
+    "macLimitReached": {
+      "bannerTitle": "Oylik faol kontaktlar limitiga yetildi",
+      "bannerDescription": "Tarifingizni oshirmaguningizcha xabar yuborish va qabul qilish toʻxtatildi.",
+      "bannerCta": "Tarifni oshirish",
+      "createDisabled": "Tarifingizni oshirmaguningizcha yangi {feature} yaratish oʻchirilgan."
+    }
+  },
+  "broadcasts": {
+    "title": "Ommaviy xabarlar",
+    "status": {
+      "scheduled": "Rejalashtirilgan",
+      "sent": "Yakunlangan",
+      "sending": "Jarayonda",
+      "cancelled": "Bekor qilingan",
+      "draft": "Qoralama",
+      "failed": "Muvaffaqiyatsiz"
+    },
+    "stats": {
+      "sent": "Yuborildi",
+      "delivered": "Yetkazildi",
+      "seen": "Koʻrildi",
+      "clicked": "Bosildi",
+      "failed": "Muvaffaqiyatsiz",
+      "noContacts": "Kontaktlar topilmadi",
+      "pageInfo": "{page}/{pageCount}-sahifa",
+      "selectedAll": "Hammasi tanlandi",
+      "selectedCount": "{count} ta tanlandi",
+      "tagAllDialogDescription": "Teglar barcha tanlangan kontaktlarga qoʻshiladi.",
+      "tagDialogDescription": "Teglar {count} ta kontaktga qoʻshiladi.",
+      "tagQueued": "{count} ta kontaktga fon rejimida teg qoʻshilmoqda.",
+      "loadingMore": "Yana yuklanmoqda...",
+      "receivers": "Qabul qiluvchilar"
+    },
+    "messengerList": {
+      "title": "Messenger roʻyxati",
+      "description": "Reklama boʻlishi mumkin va faqat Messenger roʻyxatingizga obuna boʻlganlarga yuboriladi."
+    },
+    "messengerActiveContacts": {
+      "title": "Messenger faol kontaktlari",
+      "description": "Reklama boʻlishi mumkin va faqat oxirgi 24 soat ichida botingizga yozgan foydalanuvchilarga yuboriladi."
+    },
+    "messengerAccountUpdate": {
+      "title": "Messenger akkaunt yangilanishi",
+      "description": "Foydalanuvchini ilovasi yoki akkauntidagi bir martalik oʻzgarish haqida xabardor qiling."
+    },
+    "messengerConfirmedEventUpdate": {
+      "title": "Messenger tasdiqlangan tadbir yangilanishi",
+      "description": "Foydalanuvchiga u roʻyxatdan oʻtgan tadbir (masalan, sotib olingan chiptalar) boʻyicha eslatma yoki yangiliklarni yuboring. Bu tegdan boʻlib oʻtadigan va davom etayotgan tadbirlar uchun foydalanish mumkin."
+    },
+    "messengerPostPurchaseUpdate": {
+      "title": "Messenger xariddan keyingi yangilanish",
+      "description": "Foydalanuvchini yaqindagi xaridi boʻyicha yangilik haqida xabardor qiling. Tranzaksiya tasdigʻi (hisob-faktura yoki chek), yetkazib berish holati haqida bildirishnomalar (mahsulot yoʻlda, joʻnatildi, yetkazildi yoki kechikmoqda)."
+    },
+    "allContacts": {
+      "title": "Barcha kontaktlar",
+      "description": "Barcha kontaktlarga oqim yuborish."
+    },
+    "receiversCount": "Qabul qiluvchilar: {count}",
+    "receiversLoading": "Qabul qiluvchilar: yuklanmoqda...",
+    "whatsappTemplateMessage": {
+      "title": "Shablon xabar",
+      "description": "Kontaktlaringizga WhatsApp shablon xabarini yuboring"
+    },
+    "messengerTemplateMessage": {
+      "title": "Shablon xabar",
+      "description": "Kontaktlaringizga Messenger shablon xabarini yuboring"
+    },
+    "whatsappWithin24Hours": {
+      "title": "24 soat ichidagi faol kontaktlar",
+      "description": "Reklama boʻlishi mumkin va faqat oxirgi 24 soat ichida botingizga yozgan foydalanuvchilarga yuboriladi."
+    },
+    "instagramActiveContacts": {
+      "title": "Instagram",
+      "description": "Reklama boʻlishi mumkin va faqat oxirgi 24 soat ichida botingizga yozgan foydalanuvchilarga yuboriladi."
+    },
+    "telegramAllContacts": {
+      "title": "Telegram",
+      "description": "Telegram kontaktlaringizga ommaviy xabar yubormoqchi boʻlsangiz, ushbu xabar turidan foydalaning."
+    },
+    "tiktokActiveContacts": {
+      "title": "TikTok",
+      "description": "Reklama boʻlishi mumkin va faqat oxirgi 24 soat ichida botingizga yozgan foydalanuvchilarga yuboriladi. TikTok ommaviy xabarlari faqat matn va rasmlarni qoʻllab-quvvatlaydi."
+    },
+    "flowType": {
+      "flow": {
+        "title": "Oqim",
+        "description": "Kontaktlaringizga oqim yuboring"
+      },
+      "template": {
+        "title": "Shablon",
+        "description": "Kontaktlaringizga shablon yuboring"
+      }
+    },
+    "detail": {
+      "title": "Ommaviy xabar tafsilotlari",
+      "subaction": "Ichki amal",
+      "audienceFilter": "Auditoriya filtri",
+      "noAudienceFilter": "Auditoriya filtri yoʻq",
+      "template": "Shablon",
+      "integration": "Integratsiya"
+    },
+    "filters": {
+      "all": "Hammasi"
+    },
+    "views": {
+      "table": "Jadval",
+      "calendar": "Taqvim"
+    },
+    "panel": {
+      "collapse": "Panelni yigʻish",
+      "expand": "Panelni yoyish"
+    },
+    "empty": {
+      "title": "Hali ommaviy xabarlar yoʻq",
+      "description": "Kontaktlaringizga yetib borish uchun birinchi ommaviy xabaringizni yarating.",
+      "filteredTitle": "Mos ommaviy xabarlar yoʻq",
+      "filteredDescription": "Boshqa holatni tanlang yoki qidiruvni tozalang."
+    },
+    "scheduleDialog": {
+      "title": "Ommaviy xabarni rejalashtirish",
+      "description": "“{name}” qachon yuborilishini tanlang."
+    },
+    "deleteDialog": {
+      "title": "{count, plural, one {Ommaviy xabarni oʻchirish} other {Ommaviy xabarlarni oʻchirish}}",
+      "description": "{count, plural, one {“{name}” oʻchiriladi. Uning maʼlumotlari fon rejimida oʻchiriladi.} other {# ta ommaviy xabar oʻchiriladi. Ularning maʼlumotlari fon rejimida oʻchiriladi.}}",
+      "partial": "{requested} tadan {deleted} tasi oʻchirildi — qolganlarining holati oʻzgargan"
+    },
+    "calendar": {
+      "today": "Bugun",
+      "apply": "Qoʻllash",
+      "more": "Yana +{count}",
+      "ranges": {
+        "month": "Oy",
+        "week": "Hafta",
+        "day": "Kun",
+        "custom": "Boshqa"
+      },
+      "previous": "Oldingi",
+      "next": "Keyingi",
+      "emptyDay": "Bu kunda ommaviy xabarlar yoʻq",
+      "emptyRange": "Bu oraliqda ommaviy xabarlar yoʻq",
+      "jumpToDate": "Sanaga oʻtish"
+    },
+    "fields": {
+      "id": "ID"
+    },
+    "moveToDraftDialog": {
+      "title": "Qoralamaga oʻtkazish",
+      "description": "“{name}” rejadan olib tashlanadi va qoralamalarga qaytariladi."
+    },
+    "stopDialog": {
+      "title": "Ommaviy xabarni toʻxtatish",
+      "description": "“{name}” uchun qolgan xabarlar taxminan bir daqiqa ichida toʻxtaydi. Kanalga allaqachon uzatilgan bir nechtasi baribir yetkazilishi mumkin. Keyinroq davom ettirishingiz mumkin — faqat xabar olmaganlar oladi."
+    },
+    "resumeDialog": {
+      "title": "Ommaviy xabarni davom ettirish",
+      "description": "“{name}” hali olmagan qabul qiluvchilarga yuborishni davom ettiradi."
+    },
+    "planLimitDialog": {
+      "title": "Tarifingizni oshiring",
+      "sendRate": "Joriy {plan} tarifingiz ommaviy xabarlarni daqiqasiga eng koʻpi {rate} ta xabar tezligida yuboradi. Ommaviy xabarlarni {multiplier} baravargacha tezroq yuborish uchun tarifingizni oshiring.",
+      "activeBroadcasts": "Joriy {plan} tarifingizda bir vaqtning oʻzida {max, plural, one {# ta ommaviy xabar} other {# ta ommaviy xabar}} ishlaydi. Bir vaqtda koʻproq ommaviy xabar ishga tushirish uchun tarifingizni oshiring."
+    },
+    "sendLimit": {
+      "title": "Limit",
+      "hint": "Barcha mos kontaktlarga yuborish uchun boʻsh qoldiring.",
+      "rateHint": "Standart tezlikdan foydalanish uchun boʻsh qoldiring.",
+      "rangeSummary": "Kontaktlar #{start} – #{end}",
+      "rangeFromSummary": "#{start}-kontaktdan boshlab",
+      "rangeLabel": "Kontaktlar oraligʻi",
+      "fromLabel": "Dan",
+      "toLabel": "Gacha",
+      "allPlaceholder": "Hammasi",
+      "rangeEndBeforeStart": "Oxirgi pozitsiya boshlangʻich pozitsiyadan oldin boʻlmasligi kerak"
+    }
+  },
+  "commentAutomation": {
+    "stats": {
+      "sent": "Yuborildi",
+      "delivered": "Yetkazildi",
+      "seen": "Koʻrildi",
+      "clicked": "Bosildi",
+      "failed": "Muvaffaqiyatsiz",
+      "missed": "Oʻtkazib yuborilganlar",
+      "noContacts": "Kontaktlar topilmadi",
+      "noComment": "(matn yoʻq)",
+      "pageInfo": "{page}/{pageCount}-sahifa",
+      "selectedAll": "Hammasi tanlandi",
+      "selectedCount": "{count} ta tanlandi",
+      "tagAllDialogDescription": "Teglar barcha tanlangan kontaktlarga qoʻshiladi.",
+      "tagDialogDescription": "Teglar {count} ta kontaktga qoʻshiladi.",
+      "tagQueued": "{count} ta kontaktga fon rejimida teg qoʻshilmoqda.",
+      "loadingMore": "Yana yuklanmoqda...",
+      "receivers": "Qabul qiluvchilar"
+    },
+    "missReasons": {
+      "outsideSchedule": "Jadvaldan tashqari",
+      "postNotMatched": "Post tanlanmagan",
+      "commentIsReply": "Izohga javob",
+      "keywordsNotMatched": "Kalit soʻzlar mos kelmadi",
+      "contactNotNew": "Kontakt yangi emas",
+      "alreadyRepliedOnPost": "Bu postda allaqachon javob berilgan",
+      "engagedOnOtherPost": "Boshqa postda allaqachon faollik koʻrsatgan",
+      "mentionCountNotMatched": "Belgilashlar soni mos kelmadi"
+    },
+    "replyTo": {
+      "mentions": "Yetarlicha belgilash boʻlgan izohlar",
+      "mentionCount": "Belgilangan odamlar soni",
+      "mentionCountDescription": "Faqat kamida shuncha odamni (@ism) belgilagan izohlar mos keladi.",
+      "mentionCountOption": "{count, plural, one {# kishi} other {# kishi}}"
+    },
+    "excludeKeywordsType": {
+      "equal": "Quyidagiga teng izohlar",
+      "contain": "Quyidagini oʻz ichiga olgan izohlar"
+    },
+    "hideComments": {
+      "hasGif": "GIF bor",
+      "hasEmoji": "Emoji bor"
+    },
+    "trackUserTags": {
+      "label": "Foydalanuvchi boshqa foydalanuvchilarni belgilashini kuzatish",
+      "descriptionText": "Har bir izohda belgilangan akkauntlarni sanaydi va ularni kontaktning barcha izohlar boʻyicha umumiy hisobiga qoʻshadi. Barcha belgilangan akkauntlar uchun '{{total_tagged}}', sahifangizga hech qachon yozmagan yoki kontakt boʻlmagan akkauntlar uchun '{{total_new_tagged}}' dan foydalaning."
+    },
+    "card": {
+      "reply": "Javob berish"
+    },
+    "liveBadge": "Jonli",
+    "postTypeDialog": {
+      "title": "Post turini tanlang"
+    }
+  },
+  "condition": {
+    "unknownValue": "Nomaʼlum",
+    "yes": "Ha",
+    "no": "Yoʻq",
+    "valuePlaceholder": "...",
+    "datePlaceholder": "YYYY-MM-DD",
+    "datetimePlaceholder": "YYYY-MM-DD HH:mm",
+    "datetimeInvalid": "Sanani YYYY-MM-DD HH:mm koʻrinishida yoki oʻzgaruvchi sifatida kiriting",
+    "openPost": "{post} ni ochish",
+    "openPostLink": "Ochish",
+    "postWithoutCaption": "Izohsiz post",
+    "operator": {
+      "and": "Barcha shartlar",
+      "or": "Istalgan shart"
+    },
+    "fields": {
+      "locale": "Til",
+      "language": "Til",
+      "fullName": "Toʻliq ism",
+      "country": "Mamlakat",
+      "continent": "Qitʼa",
+      "gender": "Jins",
+      "subscribedToBroadcast": "Ommaviy xabarlarga obuna boʻlgan",
+      "contactCreatedDate": "Kontakt yaratilgan sana",
+      "contactCreatedDateMinutesAgo": "Kontakt yaratilgan sana (necha daqiqa oldin)",
+      "source": "Manba",
+      "conversationTransferredToHuman": "Suhbat operatorga oʻtkazilgan",
+      "interactedInLast24H": "Oxirgi 24 soatda faol boʻlgan",
+      "interactedInLast24h": "Oxirgi 24 soatda faol boʻlgan",
+      "followUp": "Kuzatuv",
+      "isGuestUser": "Mehmon foydalanuvchi",
+      "existingContact": "Mavjud kontakt",
+      "hasContactInfo": "Telefon va email",
+      "currentChannel": "Kanal",
+      "inbox": "Kiruvchi xabarlar",
+      "subjectToEuRules": "YI qoidalariga boʻysunadi",
+      "timezone": "Vaqt mintaqasi",
+      "hasOpportunity": "Bitimi bor (ochiq, yutilgan, yutqazilgan)",
+      "hasOpenOpportunity": "Ochiq bitimi bor",
+      "hasWonOpportunity": "Yutilgan bitimi bor",
+      "hasLostOpportunity": "Yutqazilgan bitimi bor",
+      "instagramStoryReply": "Xabar Instagram storyga javob",
+      "followsBusinessOnInstagram": "Instagramda biznesga obuna boʻlgan",
+      "businessFollowsUserOnInstagram": "Biznes Instagramda foydalanuvchiga obuna boʻlgan",
+      "verifiedAccountOnInstagram": "Instagramda tasdiqlangan akkaunt",
+      "followerCountOnInstagram": "Instagramdagi obunachilar soni",
+      "lastSent": "Oxirgi yuborilgan",
+      "lastDelivered": "Oxirgi yetkazilgan",
+      "lastSeen": "Oxirgi koʻrilgan",
+      "lastSeenMinutesAgo": "Oxirgi koʻrilgan (necha daqiqa oldin)",
+      "lastInteraction": "Oxirgi muloqot",
+      "lastInteractionMinutesAgo": "Oxirgi muloqot (necha daqiqa oldin)",
+      "unreplied": "Javob berilmagan",
+      "unread": "Oʻqilmagan",
+      "appliedJobs": "Topshirilgan arizalar",
+      "tags": "Teglar",
+      "customFields": "Maxsus maydonlar",
+      "phone": "Telefon",
+      "completedWhatsAppFlows": "Yakunlangan WhatsApp Flows",
+      "messengerList": "Messenger roʻyxati",
+      "subscribedToDripCampaign": "Drip kampaniyaga obuna boʻlgan",
+      "conversationAssigned": "Suhbat biriktirilgan",
+      "entryPointsLinks": "Kirish nuqtalari havolalari",
+      "sentMessage": "Yuborilgan xabar",
+      "keywordsReceived": "Qabul qilingan kalit soʻzlar",
+      "executedFlow": "Bajarilgan oqim",
+      "executedStep": "Bajarilgan qadam",
+      "consecutiveAiFailures": "AI ketma-ket muvaffaqiyatsizliklari soni",
+      "questionnaireStarted": "Soʻrovnoma boshlangan",
+      "questionnaireInProgress": "Soʻrovnoma jarayonda",
+      "questionnaireFinished": "Soʻrovnoma yakunlangan",
+      "couponTopic": "Kupon",
+      "votedOnPoll": "Soʻrovnomada ovoz bergan",
+      "lastComment": "Oxirgi izoh",
+      "commentedOnPost": "Postga izoh qoldirgan",
+      "reactedOnPost": "Postga reaksiya bildirgan",
+      "lastTotalTaggedUsers": "Oxirgi belgilangan foydalanuvchilar soni",
+      "lastTotalNewTaggedUsers": "Oxirgi belgilangan yangi foydalanuvchilar soni",
+      "email": "Email",
+      "phoneWasVerified": "Telefon tasdiqlangan",
+      "optedInForSms": "SMS olishga rozilik bergan",
+      "broadcastSent": "Ommaviy xabar yuborildi",
+      "broadcastDelivered": "Ommaviy xabar yetkazildi",
+      "broadcastSeen": "Ommaviy xabar koʻrildi",
+      "broadcastClicked": "Ommaviy xabar bosildi",
+      "broadcastFailed": "Ommaviy xabar muvaffaqiyatsiz",
+      "emailWasVerified": "Email tasdiqlangan",
+      "optedInForEmail": "Email olishga rozilik bergan",
+      "emailSent": "Email yuborildi",
+      "emailDelivered": "Email yetkazildi",
+      "emailOpened": "Email ochildi",
+      "emailClicked": "Email bosildi",
+      "isWithinWorkingHours": "Ish vaqti ichida",
+      "currentDate": "Joriy sana",
+      "currentTime": "Joriy vaqt",
+      "currentDayOfMonth": "Oyning joriy kuni",
+      "currentDayOfWeek": "Haftaning joriy kuni",
+      "currentMonth": "Joriy oy",
+      "bought": "Sotib olgan",
+      "boughtItems": "Mahsulotlarni sotib olgan",
+      "totalSpent": "Jami sarflangan",
+      "numberOfOrders": "Buyurtmalar soni",
+      "shoppingCartTotal": "Savat jami summasi",
+      "shoppingCartSubtotal": "Savat oraliq summasi",
+      "shoppingCartIsEmpty": "Savat boʻsh",
+      "shoppingCartContainsItems": "Savatda mahsulotlar bor",
+      "lastSentMessageFailed": "Oxirgi yuborilgan xabar muvaffaqiyatsiz",
+      "lastUserInput": "Foydalanuvchining oxirgi kiritgani",
+      "lastUserInputType": "Foydalanuvchi oxirgi kiritgan maʼlumot turi",
+      "archived": "Arxivlangan",
+      "blocked": "Bloklangan",
+      "noAdminReply": "Admin javobi yoʻq",
+      "contactCreatedAt": "Kontakt yaratilgan vaqt",
+      "fromCtwaAd": "Reklamadan kelgan",
+      "fromGoogleAd": "Google Ads reklamasidan kelgan",
+      "ctwaConversion": "Reklama konversiyasi",
+      "lastUserInputTypes": {
+        "text": "Matn",
+        "location": "Joylashuv",
+        "refLink": "Ref havola",
+        "image": "Rasm",
+        "video": "Video",
+        "audio": "Audio",
+        "gif": "GIF",
+        "file": "Fayl"
+      },
+      "ctwaConversionTypes": {
+        "lead": "Lid",
+        "purchase": "Xarid"
+      }
+    },
+    "fieldGroups": {
+      "opportunity": "Bitim",
+      "instagram": "Instagram",
+      "analytics": "Analitika",
+      "facebookInstagramComment": "Facebook/Instagram izohi",
+      "broadcastWhatsapp": "Ommaviy xabar (WhatsApp)",
+      "systemTime": "Tizim vaqti",
+      "ecommerce": "Elektron tijorat",
+      "systemFields": "Tizim maydonlari",
+      "topicCoupon": "Mavzu kuponi",
+      "customFields": "Maxsus maydonlar",
+      "botFields": "Bot maydonlari",
+      "email": "Email",
+      "sms": "SMS",
+      "ctwaAds": "Reklama"
+    },
+    "languages": {
+      "ar": "Arab tili",
+      "de": "Nemis tili",
+      "en": "Ingliz tili",
+      "es": "Ispan tili",
+      "fil": "Filippin tili",
+      "fr": "Fransuz tili",
+      "hi": "Hind tili",
+      "id": "Indonez tili",
+      "it": "Italyan tili",
+      "ja": "Yapon tili",
+      "km": "Kxmer tili",
+      "ko": "Koreys tili",
+      "lo": "Laos tili",
+      "ms": "Malay tili",
+      "my": "Birma tili",
+      "nl": "Niderland tili",
+      "pt": "Portugal tili",
+      "ru": "Rus tili",
+      "th": "Tay tili",
+      "vi": "Vyetnam tili",
+      "zh": "Xitoy tili"
+    },
+    "sources": {
+      "direct": "Toʻgʻridan-toʻgʻri",
+      "comments": "Izohlar",
+      "ads": "Reklama",
+      "fbLeadAd": "FB Lead Ad",
+      "inboundMessage": "Kiruvchi xabar",
+      "imported": "Import qilingan",
+      "api": "API",
+      "webchat": "Veb-chat",
+      "botLink": "Bot havolasi",
+      "chatPlugin": "Chat plagini"
+    },
+    "ctwaRetarget": {
+      "segments": {
+        "conversations": "Reklama orqali suhbat boshlaganlar",
+        "leads": "Reklamadan kelgan sifatli lidlar",
+        "purchases": "Reklama orqali xarid qilganlar"
+      },
+      "adPrefix": "reklama",
+      "allAds": "barcha reklamalar"
+    }
+  },
+  "channels": {
+    "title": "Kanallar",
+    "duplicated": {
+      "generic": "Bu akkaunt boshqa ish maydoniga allaqachon ulangan.",
+      "instagram": "Bu Instagram akkaunti boshqa ish maydoniga allaqachon ulangan.",
+      "messenger": "Bu Facebook sahifasi boshqa ish maydoniga allaqachon ulangan.",
+      "telegram": "Bu Telegram bot boshqa ish maydoniga allaqachon ulangan.",
+      "threads": "Bu Threads akkaunti boshqa ish maydoniga allaqachon ulangan.",
+      "tiktok": "Bu TikTok akkaunti boshqa ish maydoniga allaqachon ulangan.",
+      "whatsapp": "Bu WhatsApp raqami boshqa ish maydoniga allaqachon ulangan.",
+      "zalo": "Bu Zalo OA boshqa ish maydoniga allaqachon ulangan."
+    },
+    "missingScopes": {
+      "generic": "Ulanish bekor qilindi: baʼzi ruxsatlar berilmadi. Qayta ulaning va soʻralgan barcha ruxsatlarni qabul qiling.",
+      "tiktok": "TikTok ulanishi bekor qilindi: baʼzi ruxsatlar berilmadi. Qayta ulaning va soʻralgan barcha ruxsatlarni qabul qiling."
+    },
+    "reconnect": {
+      "success": "Kanal muvaffaqiyatli qayta ulandi.",
+      "errors": {
+        "notFound": "Qayta ulanadigan kanal topilmadi.",
+        "pageNotFound": "Avtorizatsiya qilingan Facebook akkauntida bu sahifaga kirish huquqi yoʻq. Toʻgʻri akkaunt bilan kiring va soʻralgan barcha ruxsatlarni bering.",
+        "accountNotFound": "Avtorizatsiya qilingan akkaunt ulangan akkauntga mos kelmaydi. Toʻgʻri akkaunt bilan kiring.",
+        "cancelled": "Qayta ulanish bekor qilindi. Qayta urinib koʻring va soʻralgan ruxsatlarni bering.",
+        "failed": "Qayta ulanib boʻlmadi. Qayta urinib koʻring."
+      }
+    },
+    "tokenRefreshErrorDialog": {
+      "title": "Shoshilinch",
+      "description": "Quyidagi kanallar kirish tokenini avtomatik yangilay olmadi. Xabar yuborish va qabul qilishni davom ettirish uchun ularni qayta ulang.",
+      "cta": "Qayta ulash"
+    },
+    "refreshAllTokens": {
+      "button": "Barcha ruxsatlarni yangilash",
+      "resultSuccess": "{refreshed} ta kanal yangilandi.",
+      "resultWithFailures": "{refreshed} ta kanal yangilandi, {failed} tasi muvaffaqiyatsiz."
+    },
+    "connectMany": {
+      "coexist": {
+        "running": "Tarix sinxronizatsiyasi boshlanmoqda…",
+        "done": "Tarix sinxronizatsiyasi boshlandi",
+        "failed": "Tarix sinxronizatsiyasi muvaffaqiyatsiz"
+      },
+      "selectAll": "Barchasini tanlash",
+      "selected": "{count}/{max} tanlandi",
+      "dialogTitleRunning": "{count} ta {feature} ulanmoqda…",
+      "dialogTitleDone": "{total} tadan {connected} tasi ulandi",
+      "progress": "{done}/{total}",
+      "progressAnnouncement": "{total} tadan {done} tasi yakunlandi",
+      "status": {
+        "waiting": "Kutilmoqda",
+        "connecting": "Ulanmoqda…",
+        "connected": "Ulangan",
+        "duplicated": "Allaqachon ulangan",
+        "limitReached": "Limitga yetildi",
+        "failed": "Muvaffaqiyatsiz",
+        "timedOut": "Vaqt tugadi",
+        "cancelled": "Bekor qilindi"
+      },
+      "reason": {
+        "notSelectable": "Bu elementni tanlab boʻlmaydi.",
+        "channelLimit": "Kanallar limitiga yetildi.",
+        "workspaceLimit": "Ish maydonlari limitiga yetildi.",
+        "providerRejected": "Provayder bu soʻrovni rad etdi.",
+        "inProgress": "Ulanish allaqachon jarayonda.",
+        "unknown": "Nimadir xato ketdi.",
+        "followUpFailed": "Sozlash yakunlanmadi — kanal sozlamalarida yakunlang.",
+        "webhookSubscribeFailed": "Ulandi, lekin webhook obunasi muvaffaqiyatsiz — ulanish sozlamalaridan qayta urinib koʻring."
+      },
+      "sessionError": {
+        "sessionExpired": "Sessiyangiz muddati tugadi. Qayta ulaning.",
+        "notMember": "Siz endi bu ish maydonining aʼzosi emassiz.",
+        "trialExpired": "Sinov davringiz tugadi.",
+        "macLimitReached": "Akkauntingiz limitiga yetdingiz.",
+        "credentialMissing": "Hisob maʼlumotlari yetishmayapti. Qayta ulaning."
+      },
+      "cancelRemaining": "Qolganlarini bekor qilish",
+      "retryFailed": "Muvaffaqiyatsizlarini qayta urinish ({count})",
+      "retry": "Qayta urinish",
+      "goToChannels": "Kanallarga oʻtish",
+      "close": "Yopish",
+      "leaveNotice": "Sahifadan chiqib ketishingiz mumkin; ulangan akkauntlar saqlanib qoladi",
+      "stepConnecting": "Ulanmoqda",
+      "stepCoexist": "Tarixni sinxronlash",
+      "validation": {
+        "min": "Kamida 1 tasini tanlang",
+        "max": "Koʻpi bilan {max} tagacha tanlash mumkin",
+        "duplicate": "Takroriy tanlov"
+      },
+      "progressLabel": "Jarayon"
+    }
+  },
+  "workspace": {
+    "schedule": {
+      "title": "Faol soatlarni belgilash",
+      "description": "Boshlanish va tugash vaqtini tanlang. Agar tugash vaqti boshlanish vaqtidan oldin boʻlsa, jadval tun boʻyi ishlaydi.",
+      "startTime": "Boshlanish vaqti",
+      "endTime": "Tugash vaqti",
+      "alwaysRun": "Doim ishlasin",
+      "save": "Saqlash",
+      "invalidTimeRange": "Boshlanish va tugash vaqti har xil boʻlishi kerak",
+      "timeRequired": "Boshlanish va tugash vaqtini tanlang",
+      "activated": "Ish maydoni faollashtirildi",
+      "deactivated": "Ish maydoni faolsizlantirildi",
+      "activeHours": "{startTime} dan {endTime} gacha faol",
+      "permissionRequired": "Ish maydonining faol soatlarini faqat super admin oʻzgartira oladi"
+    },
+    "deletion": {
+      "title": "Ish maydonini oʻchirish",
+      "description": "Bu ish maydonini butunlay oʻchirish. Barcha kontaktlar, sozlamalar va maʼlumotlar tasdiqlaganingizdan 24 soat oʻtib oʻchiriladi.",
+      "schedule": "Ish maydonini oʻchirish",
+      "confirmTitle": "Bu ish maydoni oʻchirilsinmi?",
+      "confirmDescription": "Barcha kontaktlar, sozlamalar va maʼlumotlar tasdiqlaganingizdan 24 soat oʻtib butunlay oʻchiriladi. Shu vaqtgacha oʻchirishni istalgan payt bekor qilishingiz mumkin.",
+      "pending": "Bu ish maydoni {countdown} ({date}) oʻchiriladi. Shu vaqtgacha buni istalgan payt bekor qilishingiz mumkin.",
+      "pendingFallback": "tez orada",
+      "undone": "Ish maydonini oʻchirish bekor qilindi",
+      "bannerTitle": "Ish maydonini oʻchirish rejalashtirilgan",
+      "bannerDescription": "Bu ish maydoni oʻchirishga rejalashtirilgan. Undan foydalanishni davom ettirish uchun quyida oʻchirishni bekor qiling.",
+      "pendingBlockedToast": "Bu ish maydoni oʻchirishga rejalashtirilgan. Kirishni tiklash uchun ish maydoni adminiga murojaat qiling.",
+      "navDisabledTooltip": "Ish maydonini oʻchirish rejalashtirilgan paytda mavjud emas",
+      "badge": "Oʻchirish rejalashtirilgan",
+      "purging": "Ish maydoni oʻchirilmoqda.",
+      "alreadyStarted": "Ish maydonini oʻchirish allaqachon boshlangan."
+    },
+    "supportAccess": {
+      "bannerTitle": "Platforma qoʻllab-quvvatlash sessiyasi",
+      "bannerDescription": "Platforma qoʻllab-quvvatlash xodimi {time} gacha bu ish maydoniga vaqtinchalik kirish huquqiga ega.",
+      "cardTitle": "Platforma qoʻllab-quvvatlash xizmatiga kirish",
+      "cardDescription": "Platforma qoʻllab-quvvatlash jamoasiga bu ish maydonini 7 kun davomida toʻliq huquq bilan ochishga ruxsat bering. Istalgan vaqtda oʻchirib qoʻyishingiz mumkin.",
+      "enabledUntil": "{time} gacha yoqilgan",
+      "permissionRequired": "Platforma qoʻllab-quvvatlash xizmatiga kirishni oʻzgartirish uchun super admin boʻlishingiz kerak.",
+      "enabledToast": "Platforma qoʻllab-quvvatlash xizmatiga kirish yoqildi.",
+      "disabledToast": "Platforma qoʻllab-quvvatlash xizmatiga kirish oʻchirildi.",
+      "toggleError": "Nimadir xato ketdi. Qayta urinib koʻring."
+    }
+  },
+  "workspaces": {
+    "list": {
+      "title": "Ish maydonlari roʻyxati"
+    }
+  },
+  "workspaceToken": {
+    "title": "Ish maydoni tokeni"
+  },
+  "dialog": {
+    "deleteConfirmation": "Ishonchingiz komilmi?\nBu amalni bekor qilib boʻlmaydi.\nBu sizning {feature} maʼlumotingizni serverlarimizdan butunlay oʻchirib yuboradi."
+  },
+  "fields": {
+    "optionalHint": "(ixtiyoriy)",
+    "marketingMessagesConfigId": {
+      "label": "Marketing Messages konfiguratsiya ID si",
+      "description": "marketing_messages_messenger ruxsatini soʻrash uchun ishlatiladigan Facebook Login for Business konfiguratsiya ID si."
+    },
+    "omnichannel": {
+      "label": "Omnikanal"
+    },
+    "smtp": {
+      "label": "SMTP"
+    },
+    "messenger": {
+      "label": "Messenger"
+    },
+    "image": {
+      "label": "Rasm"
+    },
+    "instagram": {
+      "label": "Instagram",
+      "loginTitle": "Instagram orqali kirish",
+      "loginDescription": "Instagram Business akkauntingizni toʻgʻridan-toʻgʻri Instagram OAuth orqali ulang.",
+      "facebookLoginTitle": "Facebook orqali kirish",
+      "facebookLoginDescription": "Facebook sahifangizga bogʻlangan Instagram akkauntini Facebook OAuth orqali ulang.",
+      "connectViaFacebook": "Instagramni Facebook orqali ulash",
+      "viaFacebookTitle": "Facebook orqali Instagram",
+      "cloneFromMessenger": "Messengerdan nusxalash",
+      "clonedFromMessenger": "Messengerdan nusxalangan"
+    },
+    "threads": {
+      "label": "Threads"
+    },
+    "zalo": {
+      "label": "Zalo OA"
+    },
+    "telegram": {
+      "label": "Telegram",
+      "botToken": "Bot tokeni",
+      "connectInstructions": {
+        "step1": "Telegramda <link>@BotFather</link> ni oching.",
+        "step2": "<strong>/newbot</strong> buyrugʻini yuboring va koʻrsatmalarga amal qiling.",
+        "step3": "Botni yaratganingizdan soʻng bot API tokenini olasiz. API tokenini nusxalab, quyiga joylashtiring."
+      }
+    },
+    "matchAll": {
+      "label": "Quyidagi barcha shartlarga mos kelsin"
+    },
+    "matchAny": {
+      "label": "Quyidagi shartlardan biriga mos kelsin"
+    },
+    "condition": {
+      "label": "Shart"
+    },
+    "actions": {
+      "label": "Amallar"
+    },
+    "tags": {
+      "label": "Teglar"
+    },
+    "customFields": {
+      "label": "Maxsus maydonlar"
+    },
+    "pipelines": {
+      "label": "Voronkalar"
+    },
+    "sequences": {
+      "label": "Ketma-ketliklar"
+    },
+    "ecommerce": {
+      "label": "Elektron tijorat"
+    },
+    "entryPointLink": {
+      "label": "Kirish nuqtasi havolasi"
+    },
+    "assignedId": {
+      "label": "Kimga biriktirish"
+    },
+    "operator": {
+      "label": "Operator",
+      "is": "Teng",
+      "isNot": "Teng emas",
+      "in": "Ichida",
+      "notIn": "Ichida emas",
+      "isEmpty": "Qiymati yoʻq",
+      "isNotEmpty": "Istalgan qiymati bor",
+      "gt": "Katta",
+      "lt": "Kichik",
+      "gte": "Katta yoki teng",
+      "lte": "Kichik yoki teng",
+      "contains": "Oʻz ichiga oladi",
+      "notContains": "Oʻz ichiga olmaydi",
+      "startsWith": "Bilan boshlanadi",
+      "endsWith": "Bilan tugaydi",
+      "isBetween": "Oraliqda",
+      "notBetween": "Oraliqda emas",
+      "used": "Foydalanilgan"
+    },
+    "contactFilter": {
+      "allConditions": "Quyidagi barcha shartlar",
+      "anyConditions": "Quyidagi shartlardan istalgani.",
+      "label": "Kontakt filtri",
+      "onlyContactsMatch": "Faqat quyidagiga mos kontaktlar",
+      "moreOptions": "Boshqa variantlar"
+    },
+    "contactNote": {
+      "label": "Kontakt izohi"
+    },
+    "chooseTime": {
+      "label": "Vaqtni tanlang"
+    },
+    "notificationType": {
+      "label": "Bildirishnoma turi",
+      "notifyAdmin": "Adminni xabardor qilish",
+      "newMessageToHuman": "Operatorga yangi xabar",
+      "newOrder": "Yangi buyurtma"
+    },
+    "notificationChannel": {
+      "label": "Bildirishnoma kanali",
+      "messenger": "Messenger",
+      "email": "Email",
+      "telegram": "Telegram",
+      "browser": "Brauzer"
+    },
+    "accessToken": {
+      "label": "Kirish tokeni"
+    },
+    "botField": {
+      "label": "Bot maydoni"
+    },
+    "agent": {
+      "label": "Agent"
+    },
+    "aiAgent": {
+      "label": "AI agent",
+      "loadError": "AI agentlarni yuklab boʻlmadi. Qayta urinib koʻring."
+    },
+    "aiQueuedMessages": {
+      "label": "AI navbatidagi xabarlar"
+    },
+    "aiFile": {
+      "label": "AI fayli"
+    },
+    "aiFunction": {
+      "label": "AI funksiyasi"
+    },
+    "alphanumericLength": {
+      "label": "Harf-raqamli uzunlik"
+    },
+    "analytics": {
+      "label": "Analitika"
+    },
+    "apiKey": {
+      "label": "API kaliti"
+    },
+    "auth": {
+      "label": "Avtorizatsiya"
+    },
+    "authorizedDomain": {
+      "description": "Veb-chatingizga kirishga ruxsat berilgan domenlar yoki subdomenlar.",
+      "label": "Ruxsat etilgan domen{plural, select, 1 {lar} other {}}"
+    },
+    "webSearchAuthorizedDomains": {
+      "label": "Web Search vositasi uchun ruxsat etilgan saytlar",
+      "placeholder": "example.com",
+      "tooltip": "AI agent kira oladigan domenlar roʻyxati. Barcha domenlarga ruxsat berish uchun boʻsh qoldiring."
+    },
+    "authToken": {
+      "label": "Token"
+    },
+    "authType": {
+      "headers": "Maxsus header",
+      "token": "Token"
+    },
+    "automatedResponse": {
+      "label": "Avtomatik javob"
+    },
+    "avatar": {
+      "label": "Profil rasmi"
+    },
+    "reflink": {
+      "label": "Kirish nuqtasi havolasi"
+    },
+    "qrCode": {
+      "label": "QR kod"
+    },
+    "dynamicImage": {
+      "label": "Dinamik rasm"
+    },
+    "minigame": {
+      "label": "Mini oʻyin"
+    },
+    "savePayloadToCustomField": {
+      "label": "Payloadni maxsus maydonga saqlash"
+    },
+    "bot": {
+      "label": "Bot"
+    },
+    "botResponse": {
+      "label": "Bot javobi"
+    },
+    "brandColor": {
+      "description": "Bu rang landing sahifa, emaillar va veb-chatdagi tugmalarda brendingizga moslash uchun ishlatiladi.",
+      "label": "Brend rangi"
+    },
+    "broadcast": {
+      "label": "Ommaviy xabar"
+    },
+    "trigger": {
+      "label": "Trigger"
+    },
+    "webhook": {
+      "label": "Webhook"
+    },
+    "button": {
+      "label": "Tugma",
+      "whenPressed": "Bu tugma bosilganda"
+    },
+    "buttonLabel": {
+      "label": "Tugma matni"
+    },
+    "category": {
+      "label": "Kategoriya"
+    },
+    "completed": {
+      "label": "Yakunlangan"
+    },
+    "workspace": {
+      "label": "Ish maydoni"
+    },
+    "workspaceId": {
+      "description": "Ish maydoningizning noyob identifikatori.",
+      "label": "Ish maydoni ID si"
+    },
+    "workspaceName": {
+      "label": "Akkaunt nomi"
+    },
+    "contact": {
+      "label": "Kontakt"
+    },
+    "contacts": {
+      "label": "Kontaktlar"
+    },
+    "conversation": {
+      "label": "Suhbat"
+    },
+    "conversationStarter": {
+      "description": "Suhbat boshlovchilar foydalanuvchi bilan suhbatni boshlash uchun ishlatiladi.",
+      "label": "Suhbat boshlovchi{plural, select, 1 {lar} other {}}",
+      "type": {
+        "openWebsite": "Saytni ochish",
+        "sendFlow": "Oqim yuborish",
+        "sendText": "Matn yuborish"
+      }
+    },
+    "createdAt": {
+      "label": "Yaratilgan sana"
+    },
+    "currentTime": {
+      "label": "Joriy vaqt"
+    },
+    "bookingCalendar": {
+      "label": "Bron qilish taqvimi"
+    },
+    "bookingDate": {
+      "label": "Bron sanasi"
+    },
+    "bookingLink": {
+      "label": "Bron havolasi"
+    },
+    "customRange": {
+      "label": "Boshqa oraliq"
+    },
+    "customCss": {
+      "label": "Maxsus CSS"
+    },
+    "theme": {
+      "label": "Mavzu",
+      "placeholder": "Mavzuni tanlang"
+    },
+    "customJS": {
+      "label": "Maxsus JS",
+      "placeholder": "Maxsus JavaScript kiriting"
+    },
+    "customCSS": {
+      "label": "Maxsus CSS",
+      "placeholder": "Maxsus CSS kiriting"
+    },
+    "customField": {
+      "label": "Maxsus maydon",
+      "savePayloadTo": "Javobni maxsus maydonga saqlash",
+      "set_value": "Qiymat berish",
+      "append": "Oxiriga qoʻshish",
+      "prepend": "Boshiga qoʻshish",
+      "increase": "Oshirish",
+      "decrease": "Kamaytirish",
+      "groupSystemFields": "Tizim maydonlari",
+      "groupCustomFields": "Maxsus maydonlar",
+      "groupAccountFields": "Bot maydonlari"
+    },
+    "dataCollect": {
+      "label": "Maʼlumot yigʻish"
+    },
+    "defaultReply": {
+      "description": "Ish maydoni foydalanuvchi xabariga qanday javob berishni bilmaganda yuboradigan standart javob.",
+      "label": "Standart javob"
+    },
+    "defaultReplyFrequency": {
+      "description": "Standart javob oqimi bir kanaldagi bitta kontakt uchun qanchalik tez-tez ishga tushishi mumkinligini belgilaydi.",
+      "label": "Standart javobning ishga tushish chastotasi",
+      "options": {
+        "allTime": "Har safar",
+        "oncePerHour": "Soatiga bir marta",
+        "oncePerDay": "24 soatda bir marta"
+      }
+    },
+    "smartResponseDelaySeconds": {
+      "description": "Foydalanuvchining oxirgi xabaridan keyin bot javob berishdan oldin qancha kutishini belgilang. Agar foydalanuvchi yana xabar yuborsa, taymer qayta boshlanadi va xabarlar bitta javobga jamlanadi.",
+      "label": "Bot javobi kechikishi",
+      "minutes": "{count, plural, one {# daqiqa} other {# daqiqa}}",
+      "seconds": "{count, plural, one {# soniya} other {# soniya}}"
+    },
+    "delayType": {
+      "label": "Kechikish turi",
+      "placeholder": "Kechikish turi"
+    },
+    "delayUnit": {
+      "days": "Kun",
+      "hours": "Soat",
+      "minutes": "Daqiqa",
+      "seconds": "Soniya"
+    },
+    "description": {
+      "label": "Tavsif",
+      "placeholder": "Tavsif kiriting"
+    },
+    "developmentMode": {
+      "description": "Botingiz faqat bot adminlari uchun ishlaydi. Agar botni hali qurayotgan boʻlsangiz va admin boʻlmaganlar undan foydalanishini istamasangiz, bu sozlamani yoqing.",
+      "label": "Ishlab chiqish rejimi"
+    },
+    "email": {
+      "label": "Email",
+      "placeholder": "Email kiriting"
+    },
+    "embedCode": {
+      "description": "Chat vidjetini joylashtirish uchun bu kodni nusxalab, saytingizga qoʻying.",
+      "label": "Joylashtirish kodi",
+      "securityNote": "Xavfsizlik eslatmasi",
+      "securityNoteDescription": "Bu vidjet faqat veb-chat sozlamalarida ruxsat etilgan domenlarda ishlaydi. Domeningizni ruxsat etilgan domenlar roʻyxatiga qoʻshganingizga ishonch hosil qiling."
+    },
+    "processingStatus": {
+      "label": "Qayta ishlash holati"
+    },
+    "enable": {
+      "label": "Yoqish"
+    },
+    "file": {
+      "label": "Fayl"
+    },
+    "link": {
+      "label": "Havola"
+    },
+    "message": {
+      "label": "Xabar"
+    },
+    "filter": {
+      "label": "Filtr"
+    },
+    "finalMessage": {
+      "label": "Yakuniy xabar"
+    },
+    "firstName": {
+      "label": "Ism",
+      "placeholder": "Ismni kiriting"
+    },
+    "countryCode": {
+      "label": "Mamlakat kodi"
+    },
+    "contactId": {
+      "label": "Kontakt ID si"
+    },
+    "channelIdentity": {
+      "psid": "PSID",
+      "igsid": "IGSID",
+      "whatsappId": "WhatsApp ID",
+      "bsuid": "BSUID",
+      "zaloUserId": "Zalo foydalanuvchi ID si",
+      "telegramChatId": "Telegram chat ID si",
+      "tiktokUserId": "TikTok foydalanuvchi ID si",
+      "threadsUsername": "Threads foydalanuvchi nomi",
+      "webchatGuestId": "Veb-chat mehmon ID si",
+      "externalId": "Tashqi ID",
+      "channelId": "Kanal ID si"
+    },
+    "flow": {
+      "label": "Oqim"
+    },
+    "flowId": {
+      "label": "Oqim ID si"
+    },
+    "flows": {
+      "aiGenerateText": "{aiName}: matn yaratish",
+      "aiGenerateImage": "{aiName}: rasm yaratish",
+      "aiEditImage": "{aiName}: rasmni tahrirlash",
+      "aiAnalyzeImage": "{aiName}: rasmni tahlil qilish",
+      "aiExtractData": "{aiName}: maʼlumot ajratib olish",
+      "aiSpeechToText": "{aiName}: nutqni matnga aylantirish",
+      "aiTextToSpeech": "{aiName}: matnni nutqqa aylantirish",
+      "label": "Oqimlar",
+      "placeholder": "Oqimni tanlang",
+      "aiGenerateTextAgent": "{aiName}: matn yaratuvchi agent",
+      "aiDeleteMessageHistory": "{aiName}: xabarlar tarixini oʻchirish"
+    },
+    "steps": {
+      "label": "Tugun",
+      "placeholder": "Tugunni tanlang"
+    },
+    "folder": {
+      "label": "Jild"
+    },
+    "format": {
+      "label": "Format"
+    },
+    "framework": {
+      "angular": "Angular",
+      "ember": "Ember",
+      "react": "React",
+      "svelte": "Svelte",
+      "vue": "Vue"
+    },
+    "function": {
+      "label": "Funksiya"
+    },
+    "gemini": {
+      "label": "Gemini"
+    },
+    "geminiModel": {
+      "label": "Gemini modeli"
+    },
+    "gender": {
+      "female": "Ayol",
+      "label": "Jins",
+      "male": "Erkak",
+      "unknown": "Nomaʼlum"
+    },
+    "googleSheets": {
+      "label": "Google Sheets"
+    },
+    "activeCampaign": {
+      "label": "ActiveCampaign"
+    },
+    "getResponse": {
+      "label": "GetResponse"
+    },
+    "mailchimp": {
+      "label": "Mailchimp"
+    },
+    "mailerLite": {
+      "label": "MailerLite"
+    },
+    "klaviyo": {
+      "label": "Klaviyo"
+    },
+    "moosend": {
+      "label": "Moosend"
+    },
+    "host": {
+      "label": "Xost",
+      "placeholder": "smtp.example.com"
+    },
+    "hideHeader": {
+      "label": "Sarlavhani yashirish"
+    },
+    "hideMessageInput": {
+      "label": "Xabar kiritish maydonini yashirish"
+    },
+    "inbox": {
+      "label": "Kiruvchi xabarlar",
+      "placeholder": "Kiruvchi xabarlar qutisini tanlang"
+    },
+    "inboxTeam": {
+      "label": "Kiruvchi xabarlar jamoasi"
+    },
+    "teamMembers": {
+      "label": "Jamoa aʼzolari"
+    },
+    "inboxTeamMember": {
+      "label": "Kiruvchi xabarlar jamoasi aʼzosi"
+    },
+    "inputCustomField": {
+      "label": "Kiritiladigan maxsus maydon"
+    },
+    "insertLink": {
+      "label": "Havola qoʻyish"
+    },
+    "instructions": {
+      "label": "Tizim xabari (prompt)"
+    },
+    "isDefault": {
+      "label": "Standart deb belgilash"
+    },
+    "isRichResponse": {
+      "description": "Oddiy matn oqimi oʻrniga xabarlar va amallardan iborat tuzilmali JSON qaytarish.",
+      "label": "Boy javob"
+    },
+    "language": {
+      "description": "Kontakt tili nomaʼlum boʻlsa, kontaktlarga standart til beriladi.",
+      "label": "Til",
+      "placeholder": "Tilni tanlang"
+    },
+    "lastName": {
+      "label": "Familiya",
+      "placeholder": "Familiyani kiriting"
+    },
+    "last30days": {
+      "label": "Oxirgi 30 kun"
+    },
+    "last7days": {
+      "label": "Oxirgi 7 kun"
+    },
+    "lastInput": {
+      "label": "Oxirgi kiritilgan"
+    },
+    "lastUserInputTypes": {
+      "text": "Matn",
+      "location": "Joylashuv",
+      "refLink": "Ref havola",
+      "image": "Rasm",
+      "video": "Video",
+      "audio": "Audio",
+      "gif": "GIF",
+      "file": "Fayl"
+    },
+    "lastMonth": {
+      "label": "Oʻtgan oy"
+    },
+    "lifeTime": {
+      "label": "Butun davr"
+    },
+    "locale": {
+      "label": "Lokal"
+    },
+    "errorLog": {
+      "label": "Xatolik jurnali"
+    },
+    "inputType": {
+      "label": "Kiritish turi",
+      "options": {
+        "text": "Matn",
+        "image": "Rasm",
+        "file": "Fayl"
+      }
+    },
+    "extractFields": {
+      "label": "Ajratib olinadigan maydonlar",
+      "key": {
+        "label": "JSON kaliti",
+        "placeholder": "masalan, email, phone, address"
+      },
+      "customFieldId": {
+        "label": "Maxsus maydonga saqlash"
+      },
+      "description": {
+        "label": "Tavsif (ixtiyoriy)",
+        "placeholder": "Nimani ajratib olish kerakligini tasvirlang"
+      }
+    },
+    "max": {
+      "label": "Maksimum"
+    },
+    "maxOutputTokens": {
+      "label": "Maksimal tokenlar"
+    },
+    "mcpServer": {
+      "label": "MCP server"
+    },
+    "template": {
+      "label": "Shablon"
+    },
+    "systemFunction": {
+      "label": "Tizim funksiyasi",
+      "names": {
+        "connectUserToHuman": "Foydalanuvchini operatorga ulash",
+        "documentReader": "Hujjat oʻquvchi",
+        "imageReader": "Rasm oʻquvchi",
+        "urlContext": "URL oʻquvchi",
+        "webSearch": "Veb-qidiruv"
+      }
+    },
+    "min": {
+      "label": "Minimum"
+    },
+    "model": {
+      "label": "Model"
+    },
+    "name": {
+      "label": "Nomi",
+      "placeholder": "Nomini kiriting",
+      "searchPlaceholder": "Nom boʻyicha qidirish..."
+    },
+    "selectUsers": {
+      "label": "Foydalanuvchilarni tanlang"
+    },
+    "node": {
+      "label": "Tugun"
+    },
+    "noResults": {
+      "label": "Hech narsa topilmadi"
+    },
+    "notes": {
+      "label": "Izohlar"
+    },
+    "numericLength": {
+      "label": "Raqamli uzunlik"
+    },
+    "numericValue": {
+      "label": "Raqamli qiymat"
+    },
+    "openai": {
+      "label": "OpenAI"
+    },
+    "operation": {
+      "label": "Operatsiya"
+    },
+    "outputCustomField": {
+      "label": "Natija uchun maxsus maydon",
+      "javascriptOptional": "Ixtiyoriy. Qaytarilgan qiymatni toʻliq saqlaydi. Alohida maydonlarni yozish uchun yuqoridagi JSON path moslashtirishidan foydalaning.",
+      "javascriptDumpLabel": "Toʻliq JSON natija (ixtiyoriy)"
+    },
+    "javascriptCode": {
+      "label": "JavaScript kodi",
+      "placeholder": "return (input.first_name || 'there').toUpperCase()",
+      "description": "Sof JavaScriptdan foydalaning va qiymat qaytaring. Tarmoq, fayllar, API va tashqi kutubxonalar mavjud emas. Kontakt va tizim maʼlumotlari `input` obyektida mavjud.",
+      "objectMapping": "Qaytarilgan qiymatdagi istalgan JSON pathni istalgan maxsus maydonga xuddi External API Request kabi moslashtiring. Pathlar va maydonlarni oʻzingiz tanlaysiz."
+    },
+    "httpMethod": {
+      "label": "Metod"
+    },
+    "requestUrl": {
+      "label": "URL",
+      "placeholder": "https://api.example.com/endpoint"
+    },
+    "requestHeaders": {
+      "label": "Headerlar",
+      "keyPlaceholder": "Header",
+      "valuePlaceholder": "Qiymat"
+    },
+    "requestBody": {
+      "label": "Body",
+      "keyPlaceholder": "Maydon",
+      "valuePlaceholder": "Qiymat"
+    },
+    "bodyType": {
+      "label": "Body turi",
+      "options": {
+        "allContactData": "Kontaktning barcha maʼlumotlari",
+        "json": "JSON",
+        "formEncoded": "Form Encoded"
+      }
+    },
+    "statusCode": {
+      "label": "Status kodi"
+    },
+    "outputMessage": {
+      "label": "Natija xabari",
+      "placeholder": "Natija xabari qanday?"
+    },
+    "paymentHistory": {
+      "label": "Toʻlovlar tarixi"
+    },
+    "paymentMethods": {
+      "label": "Toʻlov usullari"
+    },
+    "persistentMenu": {
+      "description": "Doimiy menyular foydalanuvchi bilan suhbatni boshlash uchun ishlatiladi.",
+      "label": "Doimiy menyu{plural, select, 1 {lar} other {}}",
+      "type": {
+        "openWebsite": "Saytni ochish",
+        "sendFlow": "Oqim yuborish"
+      }
+    },
+    "userPersistentMenu": {
+      "pageDefault": "Standart",
+      "label": "Foydalanuvchi doimiy menyusi"
+    },
+    "phoneNumber": {
+      "label": "Telefon raqami"
+    },
+    "phoneNumberId": {
+      "label": "Telefon raqami",
+      "noPhoneNumbersFound": "Bu akkaunt uchun telefon raqamlari topilmadi"
+    },
+    "port": {
+      "label": "Port",
+      "placeholder": "587"
+    },
+    "provider": {
+      "label": "Provayder",
+      "placeholder": "Provayderni tanlang"
+    },
+    "prompt": {
+      "label": "Prompt",
+      "placeholder": "Prompt kiriting"
+    },
+    "userMessage": {
+      "label": "Foydalanuvchi xabari"
+    },
+    "pageUserName": {
+      "label": "Sahifa foydalanuvchi nomi"
+    },
+    "waUserId": {
+      "label": "WhatsApp foydalanuvchi ID si"
+    },
+    "waUserName": {
+      "label": "WhatsApp foydalanuvchi nomi"
+    },
+    "purpose": {
+      "label": "Maqsad",
+      "placeholder": "Bu funksiya nima qiladi?"
+    },
+    "question": {
+      "label": "Savol",
+      "placeholder": "Bugun ochiqmisiz?"
+    },
+    "imageProfileUrl": {
+      "label": "Profil rasmi URL manzili"
+    },
+    "persona": {
+      "label": "Persona",
+      "pageDefault": "Standart persona"
+    },
+    "quickReply": {
+      "label": "Tezkor javob"
+    },
+    "search": {
+      "placeholder": "Qidirish..."
+    },
+    "logo": {
+      "label": "Logotip"
+    },
+    "logoLight": {
+      "label": "Logotip (yorugʻ)"
+    },
+    "logoDark": {
+      "label": "Logotip (qorongʻi)"
+    },
+    "favicon": {
+      "label": "Favicon"
+    },
+    "brandName": {
+      "label": "Brend nomi",
+      "placeholder": "Brend nomini kiriting"
+    },
+    "policyUrl": {
+      "label": "Maxfiylik siyosati URL manzili"
+    },
+    "termsOfServiceUrl": {
+      "label": "Foydalanish shartlari URL manzili"
+    },
+    "showLogo": {
+      "label": "Shaxsiy logotipni koʻrsatish"
+    },
+    "quality": {
+      "label": "Sifat",
+      "options": {
+        "auto": "Avto",
+        "hd": "HD",
+        "md": "Oʻrta",
+        "ld": "Past"
+      }
+    },
+    "size": {
+      "label": "Oʻlcham",
+      "options": {
+        "auto": "Avto",
+        "square1024": "Kvadrat - 1024×1024",
+        "landscape1536x1024": "Gorizontal - 1536×1024",
+        "portrait1024x1536": "Vertikal - 1024×1536",
+        "dalle2_256": "256×256",
+        "dalle2_512": "512×512",
+        "dalle3_1792x1024": "1792×1024"
+      }
+    },
+    "status": {
+      "label": "Holat",
+      "pending": "Kutilmoqda",
+      "processing": "Qayta ishlanmoqda",
+      "installing": "Oʻrnatilmoqda",
+      "completed": "Yakunlangan",
+      "partial": "Qisman",
+      "failed": "Muvaffaqiyatsiz",
+      "success": "Muvaffaqiyatli",
+      "error": "Xatolik"
+    },
+    "subtitle": {
+      "placeholder": "Kichik sarlavhani kiriting"
+    },
+    "syncToMessenger": {
+      "label": "Messenger bilan sinxronlash"
+    },
+    "tag": {
+      "label": "Teg"
+    },
+    "emailTopic": {
+      "label": "Email mavzusi"
+    },
+    "emailTopics": {
+      "label": "Email mavzulari"
+    },
+    "emailTopicSent": {
+      "label": "Yuborildi"
+    },
+    "emailTopicDelivered": {
+      "label": "Yetkazildi (%)"
+    },
+    "emailTopicSeen": {
+      "label": "Koʻrildi (%)"
+    },
+    "emailTopicClicked": {
+      "label": "Bosildi (%)"
+    },
+    "targetCountry": {
+      "description": "Kontaktlaringizning aksariyati yashaydigan mamlakat.",
+      "label": "Asosiy mamlakat"
+    },
+    "team": {
+      "label": "Jamoa"
+    },
+    "rememberConversation": {
+      "label": "Suhbatni eslab qolish"
+    },
+    "temperature": {
+      "label": "Temperatura"
+    },
+    "templateMessages": {
+      "label": "Shablon xabarlar"
+    },
+    "text": {
+      "label": "Matn",
+      "placeholder": "Matn kiriting"
+    },
+    "thisMonth": {
+      "label": "Shu oy"
+    },
+    "timezone": {
+      "description": "Kontaktning vaqt mintaqasi nomaʼlum boʻlsa, kontaktlarga shu vaqt mintaqasi beriladi.",
+      "label": "Vaqt mintaqasi"
+    },
+    "title": {
+      "placeholder": "Sarlavhani kiriting"
+    },
+    "today": {
+      "label": "Bugun"
+    },
+    "tools": {
+      "label": "Vositalar",
+      "placeholder": "Vositalarni tanlang"
+    },
+    "triggerFlowId": {
+      "label": "Ishga tushiriladigan oqim ID si",
+      "placeholder": "Qaysi oqim ishga tushiriladi?"
+    },
+    "type": {
+      "label": "Turi",
+      "placeholder": "Turini tanlang"
+    },
+    "lastRead": {
+      "label": "Oxirgi oʻqilgan"
+    },
+    "assignee": {
+      "label": "Masʼul"
+    },
+    "modified": {
+      "label": "Oʻzgartirilgan"
+    },
+    "estimatedContacts": {
+      "label": "Taxminiy kontaktlar"
+    },
+    "scheduledAt": {
+      "label": "Rejalashtirilgan vaqt"
+    },
+    "channel": {
+      "label": "Kanal"
+    },
+    "comment": {
+      "label": "Izoh"
+    },
+    "directMessage": {
+      "label": "Shaxsiy xabar"
+    },
+    "updatedAt": {
+      "label": "Yangilangan sana"
+    },
+    "url": {
+      "label": "URL",
+      "placeholder": "URL kiriting"
+    },
+    "userId": {
+      "label": "Foydalanuvchi ID si",
+      "placeholders": {
+        "instagram": "Instagram foydalanuvchi ID si",
+        "messenger": "Messenger PSID",
+        "telegram": "Telegram chat ID si",
+        "tiktok": "TikTok foydalanuvchi ID si",
+        "zalo": "Zalo foydalanuvchi ID si"
+      }
+    },
+    "userTags": {
+      "label": "Foydalanuvchi qoʻygan teglar"
+    },
+    "username": {
+      "label": "Foydalanuvchi nomi",
+      "placeholder": "user@example.com"
+    },
+    "keywords": {
+      "label": "Kalit soʻzlar"
+    },
+    "value": {
+      "label": "Qiymat"
+    },
+    "wabaId": {
+      "label": "WABA ID"
+    },
+    "webchat": {
+      "label": "Veb-chat"
+    },
+    "welcomeFlowId": {
+      "description": "Foydalanuvchi veb-chatingizni ochganda salomlashuv xabari avtomatik yuboriladi.",
+      "label": "Salomlashuv oqimi"
+    },
+    "whatsapp": {
+      "label": "WhatsApp"
+    },
+    "sms": {
+      "label": "SMS"
+    },
+    "viber": {
+      "label": "Viber"
+    },
+    "viberBm": {
+      "label": "Viber BM"
+    },
+    "voice": {
+      "label": "Ovoz"
+    },
+    "googleBm": {
+      "label": "Google BM"
+    },
+    "landingPage": {
+      "label": "Landing sahifa"
+    },
+    "whatsappFlow": {
+      "label": "WhatsApp Flow"
+    },
+    "shortText": {
+      "label": "Qisqa matn",
+      "placeholder": "Matn kiriting"
+    },
+    "number": {
+      "label": "Raqam",
+      "placeholder": "Raqam kiriting"
+    },
+    "date": {
+      "label": "Sana"
+    },
+    "datetime": {
+      "label": "Sana va vaqt"
+    },
+    "boolean": {
+      "label": "Mantiqiy",
+      "placeholder": "Rost yoki yolgʻonni tanlang",
+      "true": "Rost",
+      "false": "Yolgʻon"
+    },
+    "longText": {
+      "label": "Uzun matn"
+    },
+    "replyFormat": {
+      "label": "Javob formati",
+      "number": "Raqam",
+      "text": "Matn",
+      "email": "Email",
+      "phone": "Telefon",
+      "image": "Rasm",
+      "file": "Fayl",
+      "link": "Havola",
+      "date": "Sana",
+      "datetime": "Sana va vaqt",
+      "location": "Joylashuv",
+      "anyInput": "Istalgan kiritish",
+      "locationDescription": "WhatsAppda bu Metaning “Joylashuvni yuborish” tugmasini yuboradi va belgini kutadi. Boshqa kanallar soʻrovni matn sifatida yuboradi; ulashilgan belgi yoki yozilgan lat,lng ham qadamni yakunlaydi."
+    },
+    "workspaceMember": {
+      "label": "Ish maydoni aʼzosi"
+    },
+    "yesterday": {
+      "label": "Kecha"
+    },
+    "permissions": {
+      "label": "Ruxsatlar",
+      "superAdmin": "Super admin",
+      "analytics": "Analitika",
+      "flows": "Oqimlar",
+      "contacts": "Kontaktlar / Kiruvchi xabarlar",
+      "onlyAssignedContacts": "Faqat biriktirilgan kontaktlar",
+      "emailAndPhone": "Email va telefon",
+      "broadcast": "Ommaviy xabar",
+      "ecommerce": "Elektron tijorat"
+    },
+    "member": {
+      "label": "Aʼzo"
+    },
+    "schedule": {
+      "label": "Jadval",
+      "now": "Hozir",
+      "scheduled": "Keyinroqqa rejalashtirish"
+    },
+    "inputFieldId": {
+      "label": "Kiritiladigan maxsus maydon"
+    },
+    "aiEditImage": {
+      "inputFieldId": {
+        "label": "Rasm"
+      }
+    },
+    "inputText": {
+      "label": "Kiritiladigan matn"
+    },
+    "outputFieldId": {
+      "label": "Natijani maxsus maydonga saqlash"
+    },
+    "audio": {
+      "label": "Audio maydoni"
+    },
+    "voiceType": {
+      "label": "Ovoz turi",
+      "placeholder": "Ovoz turini tanlang"
+    },
+    "voiceTone": {
+      "label": "Ovoz ohangi (ixtiyoriy)",
+      "placeholder": "Quvnoq ohangda gapiring."
+    },
+    "jsonPath": {
+      "placeholder": "JSON pathni kiriting",
+      "targetThisRow": "Bu qatorni JSON dan toʻldirish"
+    },
+    "jsonSource": {
+      "title": "JSON pathni tanlang",
+      "tabs": {
+        "testResponse": "Test javobi",
+        "pasteSample": "Namunani joylashtirish"
+      },
+      "pastePlaceholder": "Namuna JSON javobini joylashtiring",
+      "invalidJson": "JSON notoʻgʻri",
+      "noTestResponse": "Jonli javobni koʻrish uchun “Hozir sinash”ni bosing",
+      "activeTarget": "{row}-qator toʻldirilmoqda",
+      "showMore": "Koʻproq koʻrsatish",
+      "showMoreCount": "Yana {count} tasini koʻrsatish"
+    },
+    "spreadsheets": {
+      "label": "Jadvallar"
+    },
+    "retryMessage": {
+      "label": "Qayta soʻrash xabari"
+    },
+    "skipButtonLabel": {
+      "label": "Oʻtkazib yuborish tugmasi matni"
+    },
+    "autoSkipTime": {
+      "label": "Avtomatik oʻtkazib yuborish vaqti"
+    },
+    "autoSkipFailAttempts": {
+      "label": "Avtomatik oʻtkazib yuborishgacha xato urinishlar"
+    },
+    "showHint": {
+      "label": "Maslahatni koʻrsatish",
+      "description": "Kontaktning telefon raqami yoki emailini tezkor javob sifatida taklif qilish. Faqat Messenger va Instagramda ishlaydi."
+    },
+    "autoSkip": {
+      "label": "Avtomatik oʻtkazib yuborish"
+    },
+    "spreadsheet": {
+      "label": "Jadval"
+    },
+    "worksheet": {
+      "label": "Ishchi varaq"
+    },
+    "source": {
+      "label": "Manba",
+      "placeholder": "Manbani tanlang"
+    },
+    "password": {
+      "label": "Parol",
+      "placeholder": "••••••••"
+    },
+    "passwordConfirmation": {
+      "label": "Parolni qayta kiriting"
+    },
+    "newPassword": {
+      "label": "Yangi parol"
+    },
+    "currentPassword": {
+      "label": "Joriy parol"
+    },
+    "developerAccessToken": {
+      "label": "API kirish tokeni"
+    },
+    "fullName": {
+      "label": "Toʻliq ism"
+    },
+    "botFields": {
+      "label": "Bot maydonlari"
+    },
+    "keyword": {
+      "label": "Kalit soʻz",
+      "searchPlaceholder": "Kalit soʻzni qidirish..."
+    },
+    "templateId": {
+      "label": "WhatsApp shabloni",
+      "placeholder": "Shablonni tanlang"
+    },
+    "messengerTemplateId": {
+      "label": "Messenger shabloni"
+    },
+    "whatsappChannel": {
+      "label": "WhatsApp kanali"
+    },
+    "messengerChannel": {
+      "label": "Messenger kanali"
+    },
+    "whatsappChannels": {
+      "label": "WhatsApp kanallari"
+    },
+    "messengerChannels": {
+      "label": "Messenger sahifalari"
+    },
+    "messages": {
+      "label": "Xabarlar"
+    },
+    "shortcut": {
+      "label": "Qisqa buyruq"
+    },
+    "savedReplies": {
+      "label": "Saqlangan javoblar"
+    },
+    "role": {
+      "label": "Rol"
+    },
+    "plan": {
+      "label": "Tarif"
+    },
+    "price": {
+      "label": "Narx"
+    },
+    "annualPrice": {
+      "label": "Yillik narx"
+    },
+    "limitContacts": {
+      "label": "Maksimal kontaktlar soni"
+    },
+    "marketingFeatures": {
+      "label": "Marketing imkoniyatlari roʻyxati",
+      "description": "Mijozlarga koʻrinadigan mahsulot imkoniyatlari roʻyxati. Narxlar jadvallarida koʻrsatiladi."
+    },
+    "currency": {
+      "label": "Valyuta"
+    },
+    "clientId": {
+      "label": "Client ID"
+    },
+    "clientSecret": {
+      "label": "Client Secret",
+      "keepHint": "Saqlangan client secretni qoldirish uchun boʻsh qoldiring.",
+      "isSet": "Client secret oʻrnatilgan.",
+      "isNotSet": "Client secret oʻrnatilmagan."
+    },
+    "verifyToken": {
+      "label": "Webhook Verify Token"
+    },
+    "apiVersion": {
+      "label": "API versiyasi"
+    },
+    "configId": {
+      "label": "App Config ID"
+    },
+    "systemUserId": {
+      "label": "System User ID"
+    },
+    "systemUserToken": {
+      "label": "System User Token"
+    },
+    "businessId": {
+      "label": "Business ID"
+    },
+    "businessName": {
+      "label": "Biznes nomi"
+    },
+    "publishableKey": {
+      "label": "Publishable Key"
+    },
+    "secretKey": {
+      "label": "Secret Key"
+    },
+    "freeTrial": {
+      "label": "Bepul sinov davri",
+      "suffix": "kun"
+    },
+    "pricing": {
+      "label": "Narxlar"
+    },
+    "sequence": {
+      "label": "Ketma-ketlik"
+    },
+    "from": {
+      "label": "Kimdan"
+    },
+    "fromAddress": {
+      "label": "Joʻnatuvchi manzili",
+      "placeholder": "noreply@example.com"
+    },
+    "messageTemplate": {
+      "label": "Xabar shabloni"
+    },
+    "preheader": {
+      "label": "Preheader"
+    },
+    "subject": {
+      "label": "Mavzu"
+    },
+    "to": {
+      "label": "Kimga"
+    },
+    "smtpChannel": {
+      "label": "SMTP kanali"
+    },
+    "magicLink": {
+      "label": "Sehrli havola",
+      "nameHint": "Ommaviy kuzatuv URL manzilida /r/{workspaceId}/ dan keyin qoʻshiladi. Faqat harflar, raqamlar, pastki chiziq va defisdan foydalaning.",
+      "urlHint": "URL manzilida qoʻsh jingalak qavslardan foydalaning, masalan, https://example.com/page?utm_campaign='{{campaign}}'. Qiymatlar kuzatuv havolasining query stringidan olinadi."
+    },
+    "appId": {
+      "label": "App ID"
+    },
+    "appSecret": {
+      "label": "App Secret"
+    },
+    "version": {
+      "label": "Versiya"
+    },
+    "webhookVerifyToken": {
+      "label": "Webhook Verify Token"
+    },
+    "heading": {
+      "label": "Sarlavha",
+      "placeholder": "Sarlavhani kiriting"
+    },
+    "import": {
+      "label": "Import",
+      "uploading": "Yuklanmoqda…",
+      "fileTooLarge": "Fayl {size} MB limitidan oshib ketdi.",
+      "unsupportedFileType": "Bu fayl turi qoʻllab-quvvatlanmaydi.",
+      "unableToReadHeaders": "Import sarlavhalarini oʻqib boʻlmadi.",
+      "uploadError": "Faylni yuklab boʻlmadi.",
+      "histories": {
+        "title": "Import tarixi",
+        "recent": "Soʻnggi importlar",
+        "progress": "Jarayon",
+        "success": "Muvaffaqiyatli",
+        "failed": "Muvaffaqiyatsiz",
+        "completedAt": "Yakunlangan vaqt",
+        "errorDetails": "Import xatoliklari",
+        "row": "{row}-qator",
+        "unsupportedChannelStep": "{channel} kanali {block} ni qoʻllab-quvvatlamaydi.",
+        "channelStepConstraintExceeded": "{block} {channel} limitidan oshib ketdi: {actual} {unit}, maksimum {allowed}.",
+        "channelStepConstraintExceededGeneric": "{channel} kanali joriy {block} sozlamasini qoʻllab-quvvatlamaydi."
+      }
+    },
+    "line": {
+      "label": "Chiziq"
+    },
+    "spacing": {
+      "label": "Oraliq"
+    },
+    "code": {
+      "label": "Kod",
+      "placeholder": "Kodni kiriting"
+    },
+    "authCallbackUrl": {
+      "label": "Auth Callback URL",
+      "hint": "Aynan shu URL manzilni provayder ilovangizda OAuth redirect URI sifatida roʻyxatdan oʻtkazing. Oʻz ilovangiz va faol maxsus domeningiz boʻlsa, u maxsus domeningizda boʻladi; aks holda platforma xostida boʻladi."
+    },
+    "signInCallbackUrl": {
+      "label": "Sign-in Callback URL",
+      "hint": "Google orqali kirishni yoqish uchun buni Google ilovangizning ruxsat etilgan redirect URI larga qoʻshing."
+    },
+    "adsDeveloperToken": {
+      "label": "Google Ads developer token",
+      "hint": "Ixtiyoriy: Google endi developer token talab qilmaydi. Saqlangan tokenni qoldirish uchun boʻsh qoldiring.",
+      "isSet": "Developer token oʻrnatilgan.",
+      "isNotSet": "Developer token oʻrnatilmagan.",
+      "clear": "Tozalash",
+      "cleared": "Developer token tozalandi."
+    },
+    "googleAdsCallbackUrl": {
+      "hint": "Google Ads uchun Google ilovangizdan alohida, adwords va datamanager scopelari yoqilgan maxsus Google OAuth ilovasidan foydalaning. U alohida Google OAuth tekshiruvidan oʻtishi kerak."
+    },
+    "webhookUrl": {
+      "label": "Webhook URL",
+      "hint": "Aynan shu Webhook URL manzilini provayder ilovangizda roʻyxatdan oʻtkazing. Oʻz ilovangiz va faol maxsus domeningiz boʻlsa, u maxsus domeningizda boʻladi; aks holda platforma xostida boʻladi."
+    },
+    "tiktok": {
+      "label": "TikTok",
+      "accessToken": "Kirish tokeni",
+      "openId": "Open ID",
+      "clientId": "Client ID",
+      "clientSecret": "Client Secret",
+      "displayName": "Koʻrsatiladigan ism",
+      "needsReauthorizationForComments": "Bu ulanish izohlarni avtomatlashtirishdan oldin avtorizatsiya qilingan. Izoh hodisalarini qabul qilishni boshlash uchun uni qayta ulang.",
+      "connectInstructions": {
+        "step1": "<link>developers.tiktok.com</link> saytida TikTok ilovasini yarating.",
+        "step2": "Akkauntingizni avtorizatsiya qiling va <strong>access token</strong>, <strong>open ID</strong> hamda <strong>client secret</strong> ni nusxalang.",
+        "step3": "Ulanish uchun hisob maʼlumotlarini quyiga joylashtiring."
+      },
+      "commentToMessage": "Izohdan xabarga",
+      "commentToMessageDescription": "Bu akkauntga yuqori niyatli izohlarga shaxsiy xabar bilan javob berish imkonini beradi. Shaxsiy javobdan foydalanadigan TikTok izoh avtomatizatsiyalari uchun talab qilinadi.",
+      "commentToMessageEligibility": "Faqat Vyetnam, Indoneziya yoki Tailandda roʻyxatdan oʻtgan, 18 yoshdan katta shaxsga tegishli, roʻyxatdan oʻtgan biznes boʻlgan yoki Messaging Ads ishlatgan va xabar ruxsatlari “Requests” ga sozlangan Business akkauntlar uchun mavjud.",
+      "commentToMessageUnknown": "TikTok bilan hali tekshirilmagan — joriy sozlamani oʻqish uchun yangilang."
+    },
+    "drip": {
+      "label": "Drip"
+    },
+    "sendGrid": {
+      "label": "SendGrid"
+    },
+    "currentVersion": "Joriy",
+    "consecutiveFailedReply": {
+      "label": "Ketma-ket muvaffaqiyatsiz javoblar"
+    },
+    "currentStep": {
+      "label": "Joriy qadam"
+    },
+    "fbChatLink": {
+      "label": "Facebook Inbox havolasi"
+    },
+    "inboxLink": {
+      "label": "Kiruvchi xabarlar havolasi"
+    },
+    "instagramBusinessFollowsUser": {
+      "label": "Instagram biznesi foydalanuvchiga obuna"
+    },
+    "instagramFollowers": {
+      "label": "Instagram obunachilari"
+    },
+    "instagramFollowsBusiness": {
+      "label": "Instagramda biznesga obuna"
+    },
+    "instagramUsername": {
+      "label": "Instagram foydalanuvchi nomi"
+    },
+    "instagramVerified": {
+      "label": "Instagramda tasdiqlangan"
+    },
+    "lastAd": {
+      "label": "Oxirgi reklama"
+    },
+    "lastAdSourcePlatform": {
+      "label": "Oxirgi reklama manbasi platformasi"
+    },
+    "lastAdSourceUrl": {
+      "label": "Oxirgi reklama manbasi URL manzili"
+    },
+    "lastButtonTitle": {
+      "label": "Oxirgi tugma nomi"
+    },
+    "lastCommentId": {
+      "label": "Oxirgi izoh ID si"
+    },
+    "lastCommentedPostText": {
+      "label": "Oxirgi izoh qoldirilgan post matni"
+    },
+    "lastCtwa": {
+      "label": "Oxirgi CTWA"
+    },
+    "lastFbComment": {
+      "label": "Oxirgi FB izohi"
+    },
+    "lastInputFailure": {
+      "label": "Oxirgi kiritish xatosi"
+    },
+    "lastInteraction": {
+      "label": "Oxirgi muloqot"
+    },
+    "lastLatitude": {
+      "label": "Oxirgi kenglik"
+    },
+    "lastLongitude": {
+      "label": "Oxirgi uzunlik"
+    },
+    "lastOutboundMessageAt": {
+      "label": "Oxirgi chiquvchi xabar vaqti"
+    },
+    "lastPostId": {
+      "label": "Oxirgi post ID si"
+    },
+    "lastSeen": {
+      "label": "Oxirgi koʻrilgan"
+    },
+    "lastStep": {
+      "label": "Oxirgi qadam"
+    },
+    "me": {
+      "label": "Mening maʼlumotlarim havolasi"
+    },
+    "phone": {
+      "label": "Telefon"
+    },
+    "phoneAndEmail": {
+      "label": "Telefon va email"
+    },
+    "timezoneName": {
+      "label": "Vaqt mintaqasi nomi"
+    },
+    "totalNewTagged": {
+      "label": "Jami yangi belgilanganlar"
+    },
+    "totalTagged": {
+      "label": "Jami belgilanganlar"
+    },
+    "userChannel": {
+      "label": "Foydalanuvchi kanali"
+    },
+    "userExternalId": {
+      "label": "Foydalanuvchining tashqi ID si"
+    },
+    "userHash": {
+      "label": "Foydalanuvchi hashi"
+    },
+    "userSource": {
+      "label": "Foydalanuvchi manbasi"
+    },
+    "webchatParentUrl": {
+      "label": "Veb-chat joylashgan sahifa URL manzili"
+    },
+    "make": {
+      "inviteUrl": "Taklif havolasi",
+      "inviteUrlHint": "Nashr qilingan Make maxsus ilovangiz uchun taklif havolasi (masalan, https://eu2.make.com/app/invite/...)."
+    },
+    "makeEvents": {
+      "label": "Hodisalar",
+      "placeholder": "Hodisa nomini yozing va Enter tugmasini bosing",
+      "description": "Bir yoki bir nechta hodisa nomini qoʻshing. Make shu hodisalardan biri uchun webhook ulasa, bu qadam ishlaganda maʼlumotlar unga yuboriladi."
+    },
+    "n8nEvents": {
+      "label": "Hodisalar",
+      "placeholder": "Hodisa nomini yozing va Enter tugmasini bosing",
+      "description": "Bir yoki bir nechta hodisa nomini qoʻshing. n8n shu hodisalardan biri uchun webhook ulasa, bu qadam ishlaganda maʼlumotlar unga yuboriladi."
+    },
+    "enabled": {
+      "label": "Yoqilgan"
+    },
+    "api": {
+      "label": "API",
+      "description": "HTTP bilan ishlay oladigan istalgan ilovani kanal sifatida ulang. Ilovangiz kiruvchi xabarlarni REST API mizga yuboradi, biz esa javoblarni callback URL manzilingizga yetkazamiz.",
+      "callbackUrl": {
+        "label": "Callback URL",
+        "description": "Chiquvchi javoblarni shu manzilga har bir inbox uchun alohida secret bilan imzolab POST qilamiz.",
+        "notSet": "Oʻrnatilmagan"
+      },
+      "token": "Token",
+      "rotateToken": "Tokenni yangilash",
+      "status": {
+        "enabled": "Yoqilgan",
+        "disabled": "Oʻchirilgan"
+      },
+      "tokenReveal": {
+        "title": "API tokeningizni nusxalang",
+        "description": "Bu token faqat bir marta koʻrsatiladi. Uni xavfsiz joyda saqlang — keyin uni qayta koʻra olmaysiz.",
+        "done": "Tayyor"
+      }
+    },
+    "tokenPermission": {
+      "label": "Ruxsat",
+      "full": "Toʻliq kirish",
+      "readOnly": "Faqat oʻqish"
+    },
+    "tokenScopes": {
+      "label": "Doiralar",
+      "contacts": "Kontaktlar",
+      "inbox": "Kiruvchi xabarlar",
+      "automation": "Avtomatlashtirish",
+      "broadcasts": "Ommaviy xabarlar",
+      "analytics": "Analitika",
+      "ecommerce": "Elektron tijorat",
+      "channels": "Kanallar",
+      "integrations": "Integratsiyalar",
+      "minigames": "Mini oʻyinlar",
+      "appointments": "Uchrashuvlar",
+      "media": "Media",
+      "ads": "Reklama",
+      "settings": "Sozlamalar",
+      "miniApps": "Mini ilovalar"
+    },
+    "adReferral": {
+      "label": "Reklama",
+      "ctwa": "CTWA",
+      "ctm": "CTM",
+      "ctid": "CTID",
+      "googleAds": "Google Ads",
+      "googleAdsWhatsapp": "GA CCWA",
+      "googleAdsMessenger": "GA CCTM"
+    },
+    "adSource": {
+      "label": "Reklama manbasi"
+    },
+    "manualAppSecret": {
+      "label": "Meta App Secret (ixtiyoriy)",
+      "description": "Bu qoʻlda ulanish uchun webhook imzosini tekshirishni yoqadi. Uni Meta ilovangiz panelida Settings > Basic boʻlimida topasiz."
+    },
+    "lastCallRecorded": {
+      "label": "Oxirgi qoʻngʻiroq yozuvi"
+    },
+    "lastCallTranscript": {
+      "label": "Oxirgi qoʻngʻiroq transkripti"
+    },
+    "sendRatePerMinute": {
+      "label": "Daqiqasiga xabarlar"
+    },
+    "adsUploadMethod": {
+      "label": "Yuklash usuli",
+      "hint": "Data Manager tavsiya etiladi. Eski yuklash API si faqat Google hali ruxsat beradigan Google Cloud loyihalarida ishlaydi va Data Manager ruxsatidan foydalanmaydi. Oʻzgarish faqat yangi ulanishlarga taʼsir qiladi: mavjud ish maydonlarini qayta ulang.",
+      "dataManager": "Data Manager API (tavsiya etiladi)",
+      "legacy": "Eski yuklash API si"
+    }
+  }
+}
