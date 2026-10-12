@@ -16,6 +16,7 @@ import ptPT from "../../messages/pt-PT.json"
 import ro from "../../messages/ro.json"
 import sv from "../../messages/sv.json"
 import tr from "../../messages/tr.json"
+import uz from "../../messages/uz.json"
 import vi from "../../messages/vi.json"
 import zhCN from "../../messages/zh-CN.json"
 import zhTW from "../../messages/zh-TW.json"
@@ -40,6 +41,7 @@ export const messagesByLocale: Record<Locale, Record<string, unknown>> = {
   ro,
   sv,
   tr,
+  uz,
   vi,
   "zh-CN": zhCN,
   "zh-TW": zhTW,
