@@ -48,11 +48,11 @@
     "edit": "Tahrirlash",
     "editFeature": "{feature}ni tahrirlash",
     "enableBot": "Botni yoqish",
-    "export": "Eksport",
+    "export": "Eksport qilish",
     "getEmbedCode": "Joylashtirish kodini olish",
     "getID": "ID olish",
     "getTools": "Vositalarni olish",
-    "import": "Import",
+    "import": "Import qilish",
     "exportContacts": "Kontaktlarni eksport qilish",
     "filter": "Filtr",
     "selectFile": "Faylni tanlash",
@@ -3298,7 +3298,7 @@
       "aiEditImage": "AI rasmni tahrirlash",
       "whatsappFlow": "WhatsApp Flow",
       "import": "Oqimni import qilish",
-      "export": "Eksport",
+      "export": "Eksport qilish",
       "importStarted": "Oqim import qilinmoqda. Natijalarni import tarixida koʻring.",
       "importJsonOnly": "Faqat JSON fayllar",
       "whatsappCallButton": "WhatsApp orqali qoʻngʻiroq",
@@ -3545,7 +3545,7 @@
         "whatsapp": "WhatsApp"
       },
       "manageAdsAccounts": "Reklama akkauntlarini boshqarish",
-      "export": "Eksport",
+      "export": "Eksport qilish",
       "selectAll": "Barchasini tanlash",
       "whatsappAsset": "WhatsApp aktivi",
       "selectWhatsappAsset": "WhatsApp aktivini tanlang",
@@ -7017,6 +7017,995 @@
         "description": "Qayta ishlatiladigan brezent sumka",
         "category": "Aksessuarlar",
         "vendor": "Namuna brend"
+      }
+    }
+  },
+  "metaCatalog": {
+    "title": "Meta katalogini sinxronlash",
+    "connect": "Metani ulash",
+    "connectDescription": "Mahsulotlaringizni mavjud katalogga yuborish uchun Meta Business akkauntini ulang.",
+    "tabs": {
+      "sync": "Metaga sinxronlash",
+      "import": "Metadan sinxronlash",
+      "history": "Tarix",
+      "connection": "Ulanish"
+    },
+    "catalogId": "Meta katalog ID si",
+    "catalogIdPlaceholder": "Commerce Manager dagi katalog ID sini kiriting",
+    "createCatalog": {
+      "trigger": "Yangi katalog yaratish",
+      "description": "Business Manager ingizda boʻsh savdo katalogi yaratiladi va bu ish maydoni uchun ishlatiladi.",
+      "business": "Business Manager",
+      "businessPlaceholder": "Business Manager ni tanlang",
+      "noBusinesses": "Bu Meta akkaunti hech qanday Business Manager ni boshqarmaydi, shuning uchun bu yerda katalog yaratib boʻlmaydi.",
+      "name": "Katalog nomi",
+      "confirm": "Katalog yaratish",
+      "created": "Katalog yaratildi.",
+      "errors": {
+        "businesses": "Business Manager laringizni yuklab boʻlmadi.",
+        "create": "Katalogni yaratib boʻlmadi."
+      }
+    },
+    "importDescription": "Meta katalogidagi mahsulotlarni ish maydoningizga olib keling. ID ni Commerce Manager da topasiz.",
+    "importCatalogAction": "Import",
+    "importProgress": "Meta mahsulotlari import qilinmoqda: {imported}/{total}",
+    "importQueued": "Import boshlanishi kutilmoqda…",
+    "importResult": "{total} ta Meta mahsulotidan {imported} tasi import qilindi",
+    "retryImport": "Importni qayta urinish",
+    "syncNow": "Hozir sinxronlash",
+    "syncSelectionRequired": "Yubormoqchi boʻlgan mahsulotlarni tanlang, soʻng sinxronlashni ishga tushiring.",
+    "syncSelectionCount": "Tanlangan {count} ta mahsulot Meta katalogiga yuboriladi.",
+    "connectionInfo": {
+      "heading": "Ulangan Meta katalogi",
+      "noCatalog": "Hali katalog tanlanmagan",
+      "lastCatalogId": "Oxirgi Meta katalog ID si",
+      "businessId": "Business ID",
+      "authMode": "Avtorizatsiya",
+      "tokenExpiresAt": "Token muddati tugaydi",
+      "lastImportedAt": "Oxirgi import",
+      "unknown": "Mavjud emas",
+      "never": "Hech qachon",
+      "noExpiry": "Muddati tugamaydi",
+      "authModes": {
+        "oauth": "OAuth",
+        "fbe": "Facebook Business Extension"
+      },
+      "connectionStatuses": {
+        "active": "Faol",
+        "invalid": "Qayta ulash kerak"
+      }
+    },
+    "disconnect": "Uzish",
+    "reconnect": "Qayta ulash",
+    "reconnectWarning": "Meta tokeni notoʻgʻri yoki yetti kun ichida muddati tugaydi.",
+    "requirements": {
+      "intro": "Messenger Shopping ga sinxronlanadigan mahsulotlar quyidagi talablarga javob berishi kerak:",
+      "description": {
+        "label": "Batafsil tavsif",
+        "value": "Sarlavhadan tashqari texnik xususiyatlar, materiallar, foydalanish holatlari va ajralib turadigan jihatlarni yoriting."
+      },
+      "image": {
+        "label": "Mahsulot rasmi",
+        "value": "Kamida 500px × 500px yuqori aniqlikda, fayl hajmi 8MB gacha."
+      },
+      "video": {
+        "label": "Mahsulot videosi",
+        "value": "Fayl hajmi 200MB gacha."
+      },
+      "price": {
+        "label": "Narx",
+        "value": "Har bir mahsulotning narxi boʻlishi kerak."
+      },
+      "minimumItems": "Mijozlar tanlay olishi uchun kamida 6 ta mahsulotni nashr qiling."
+    },
+    "historyEmpty": "Hali sinxronlash yoki import oʻtkazilmagan.",
+    "historyFailures": "{failed} ta muvaffaqiyatsiz · {skipped} ta oʻtkazib yuborilgan",
+    "historyCatalog": "Katalog {id}",
+    "diagnostics": "Xatolik va oʻtkazib yuborilgan elementlar tafsilotlari",
+    "itemError": "Element {id}: {reason}",
+    "itemSkipped": "Element {id}: oʻtkazib yuborildi — {reason}",
+    "skipReasons": {
+      "missingImage": "rasm yoʻq",
+      "missingDescription": "tavsif yoʻq",
+      "missingStoreUrl": "doʻkon URL manzili sozlanmagan",
+      "hasVariants": "variantlar hali qoʻllab-quvvatlanmaydi"
+    },
+    "statuses": {
+      "queued": "Navbatda",
+      "running": "Ishlamoqda",
+      "succeeded": "Muvaffaqiyatli",
+      "partial": "Qisman yakunlangan",
+      "failed": "Muvaffaqiyatsiz"
+    },
+    "directions": {
+      "push": "Metaga yuborildi",
+      "import": "Metadan import qilindi"
+    },
+    "messages": {
+      "catalogSelected": "Katalog importi boshlandi.",
+      "syncStarted": "Meta katalogini sinxronlash boshlandi.",
+      "disconnected": "Meta katalogi uzildi."
+    },
+    "errors": {
+      "load": "Meta katalog sozlamalarini yuklab boʻlmadi.",
+      "connect": "Meta katalogini ulab boʻlmadi.",
+      "catalog": "Bu katalogni tanlab boʻlmadi.",
+      "sync": "Katalog sinxronlashini boshlab boʻlmadi.",
+      "disconnect": "Meta katalogini uzib boʻlmadi.",
+      "invalidAppSettings": "Meta ilovasi sozlamalari sozlanmagan.",
+      "emptyScope": "Tanlangan sinxronlash doirasida mahsulotlar yoʻq.",
+      "alreadyRunning": "Meta katalogini sinxronlash yoki import qilish allaqachon ishlamoqda. Uning tugashini kuting.",
+      "queueImport": "Meta katalogi importini navbatga qoʻyib boʻlmadi.",
+      "queueSync": "Meta katalogi sinxronlashini navbatga qoʻyib boʻlmadi."
+    }
+  },
+  "helpMenu": {
+    "title": "Yordam",
+    "ariaLabel": "Yordam menyusini ochish"
+  },
+  "helpItems": {
+    "title": "Yordam havolalari",
+    "addTitle": "Yordam havolasini qoʻshish",
+    "editTitle": "Yordam havolasini tahrirlash",
+    "addButton": "Havola qoʻshish",
+    "empty": "Hali yordam havolalari sozlanmagan.",
+    "fields": {
+      "name": "Nomi",
+      "namePlaceholder": "masalan, Hujjatlar",
+      "url": "URL",
+      "urlPlaceholder": "https://docs.example.com",
+      "icon": "Belgi",
+      "iconPlaceholder": "masalan, book-open, star, circle-question-mark",
+      "position": "Tartib",
+      "iconSearchLink": "Lucide belgilarini koʻrish →"
+    }
+  },
+  "minigames": {
+    "title": "Geymifikatsiya",
+    "description": "Mijozlaringiz uchun omadli oʻyinlar (lucky draw) yarating va boshqaring.",
+    "types": {
+      "luckyWheel": "Omad gʻildiragi",
+      "jackpot": "Jekpot",
+      "gashapon": "Gashapon",
+      "drawLots": "Qurʼa tashlash",
+      "scratchOff": "Qirib yutish"
+    },
+    "createDialog": {
+      "title": "Mini oʻyin turini tanlang",
+      "comingSoon": "Tez orada"
+    },
+    "prizeSettings": {
+      "sumOfProbabilities": "Barcha ehtimolliklar yigʻindisi: {value}%",
+      "loseProbability": "Yutqazish ehtimoli: {value}%",
+      "winProbability": "Yutish ehtimoli: {value}%",
+      "newPrize": "Yangi sovgʻa",
+      "prizeNameCustomFieldLabel": "Sovgʻa nomini maxsus maydonga saqlash"
+    },
+    "prizeItemDialog": {
+      "prizeTitle": "Sovgʻani tahrirlash",
+      "nonWinningTitle": "Yutuqsiz natija sozlamasini tahrirlash",
+      "prizeNameLabel": "Sovgʻa nomi",
+      "nonWinningTitleLabel": "Sarlavha",
+      "loseImageDescription": "Tavsiya etilgan oʻlcham 120x120px",
+      "quantityLabel": "Sovgʻalar soni",
+      "quantityDescription": "Bu sovgʻani yana necha marta yutish mumkin; har safar yutilganda 1 taga kamayadi. Cheksiz qilish uchun boʻsh qoldiring."
+    },
+    "outcomeMessage": {
+      "enableWin": "Sovgʻa yutgan gʻolibga xabar yuborish",
+      "enableLose": "Oʻyinchi yutmaganda xabar yuborish",
+      "mode": "Xabar turi",
+      "modeText": "Matn",
+      "modeFlow": "Oqim",
+      "text": "Xabar"
+    },
+    "winningMessageDialog": {
+      "title": "Yutuq xabari sozlamalari",
+      "titleLabel": "Sarlavha",
+      "prizeNameHint": "Sovgʻa nomini qoʻyish uchun sarlavha va tavsifda '{{prize_name}}' dan foydalanishingiz mumkin.",
+      "acceptButtonText": "Qabul qilish tugmasi matni",
+      "shareButtonText": "Ulashish tugmasi matni",
+      "shareButtonDescription": "Ulashish tugmasi tavsifi"
+    },
+    "nonWinningMessageDialog": {
+      "title": "Yutuqsiz natija xabari sozlamalari",
+      "titleLabel": "Sarlavha",
+      "shareButtonText": "Ulashish tugmasi matni",
+      "shareButtonDescription": "Ulashish tugmasi tavsifi"
+    },
+    "preview": {
+      "start": "Boshlanish",
+      "shareWithFriends": "Doʻstlar bilan ulashish",
+      "jackpotHeader": "JEKPOT",
+      "jackpotBanner": "Jekpot",
+      "luckyWheelHeader": "OMAD GʻILDIRAGI",
+      "gashaponHeader": "GASHAPON",
+      "drawLotsHeader": "QURʼA TASHLASH",
+      "scratchOffHeader": "QIRIB YUTING",
+      "scratchOffCardTitle": "Omadli yulduz qirib ochiladigan chiptalari",
+      "comingSoon": "Bu oʻyin turi uchun batafsil oldindan koʻrish tez orada"
+    },
+    "form": {
+      "generalSettingsTitle": "Umumiy sozlama",
+      "appearanceTitle": "Tashqi koʻrinish",
+      "playerSettingsTitle": "Oʻyinchi sozlamalari",
+      "prizeSettingsTitle": "Sovgʻa sozlamalari",
+      "validationFailed": "Saqlashdan oldin belgilangan maydonlarni tuzating."
+    },
+    "generalSettings": {
+      "showName": "Koʻrinadigan",
+      "playedAt": "Oʻynalgan vaqt",
+      "rulesDescription": "Qoidalar tavsifi",
+      "openerTags": "Oʻyin havolasini ochgan kontaktlarga teg qoʻyish",
+      "playerTags": "Oʻyinchilarga teg qoʻyish",
+      "newFriendTags": "Yangi doʻstlarga teg qoʻyish"
+    },
+    "appearance": {
+      "backgroundColor": "Fon rangi",
+      "machineColor": "Apparat rangi",
+      "decorativeColor": "Bezak rangi",
+      "ruleTextColor": "Qoidalar matni rangi",
+      "backgroundImage": "Fon rasmi",
+      "backgroundImageDescription": "Tavsiya etilgan kenglik: 1024px",
+      "prizeDescriptionImage": "Sovgʻa tavsifi rasmi (ixtiyoriy)",
+      "prizeDescriptionImageDescription": "Tavsiya etilgan kenglik: 750px",
+      "startButtonImage": "Boshlash tugmasi rasmi",
+      "startButtonImageDescription": "Tavsiya etilgan oʻlcham: 360x105px"
+    },
+    "playerSettings": {
+      "drawsPerPerson": "Har bir kishi uchun oʻyin imkoniyatlari soni",
+      "maxSharesPerPerson": "Taklif qilinganlar uchun maksimal bonus urinishlar",
+      "maxSharesPerPersonHint": "Bu oʻyinchining taklif havolasi orqali qoʻshilib, sizga yozgan har bir doʻsti unga shu limitgacha 1 ta qoʻshimcha urinish beradi. Taklif bonuslarini oʻchirish uchun 0 kiriting. Bonus urinishlar keyingi qayta tiklanishdan oldin ishlatilishi kerak.",
+      "sharingNode": "Ulashish tuguni",
+      "sharingNodeHint": "Doʻst bu oʻyinchining ulashish havolasini ochganda ishga tushadigan oqim qadami. Ulashish tugmasini yashirish uchun boʻsh qoldiring.",
+      "resetPolicyLabel": "Urinishlarni qayta tiklash",
+      "resetNever": "Urinishlar sonini qayta tiklamaslik",
+      "resetEveryNDays": "Urinishlar sonini har ... qayta tiklash",
+      "resetIntervalDaysSuffix": "kunda"
+    },
+    "publicUrl": {
+      "label": "Ommaviy URL",
+      "hint": "Bu mini oʻyinni ulashish uchun URL manzilni nusxalab, oqim, ommaviy xabar yoki ketma-ketlikka joylashtiring."
+    },
+    "play": {
+      "close": "Yopish",
+      "drawsRemaining": "{count} ta urinish qoldi",
+      "noDrawsLeft": "Bu mini oʻyin uchun urinishlaringiz tugadi.",
+      "notStartedYet": "Bu mini oʻyin hali boshlanmagan.",
+      "ended": "Bu mini oʻyin tugagan.",
+      "forbiddenTitle": "Kirish taqiqlangan",
+      "forbiddenDescription": "Bu havola notoʻgʻri yoki muddati tugagan.",
+      "comingSoonTitle": "Tez orada",
+      "comingSoonDescription": "Bu mini oʻyin turini hali oʻynab boʻlmaydi.",
+      "rateLimited": "Soʻrovlar juda koʻp. Birozdan soʻng qayta urinib koʻring."
+    },
+    "list": {
+      "gamesPlayed": "Oʻynalgan oʻyinlar",
+      "participants": "Ishtirokchilar",
+      "winners": "Gʻoliblar",
+      "shares": "Takliflar"
+    },
+    "history": {
+      "title": "Tarix",
+      "played": "Oʻyinlar",
+      "remaining": "Qolgan urinishlar",
+      "shares": "Takliflar",
+      "openedAt": "Birinchi ochilgan",
+      "lastPlayedAt": "Oxirgi oʻynalgan",
+      "unknownContact": "Nomaʼlum kontakt",
+      "conversationNotFound": "Bu kontakt uchun suhbat topilmadi",
+      "popupBlocked": "Bu sayt uchun qalqib chiquvchi oynalarga ruxsat bering, soʻng qayta urinib koʻring.",
+      "record": "Yozuv",
+      "recordDialog": {
+        "title": "Oʻyin yozuvi",
+        "win": "Yutdi",
+        "lose": "Sovgʻasiz",
+        "empty": "Hali oʻyin yozuvlari yoʻq"
+      }
+    }
+  },
+  "mediaLibrary": {
+    "title": "Media kutubxonasi",
+    "searchPlaceholder": "Fayllarni qidirish...",
+    "newFolder": "Yangi jild",
+    "recent": "Soʻnggi",
+    "favourite": "Sevimlilar",
+    "upload": "Yuklash",
+    "select": "Tanlash",
+    "bulkSelect": "Ommaviy tanlash",
+    "deleteFolder": "Jildni oʻchirish",
+    "renameFolder": "Jild nomini oʻzgartirish",
+    "noFiles": "Fayllar topilmadi",
+    "noFolders": "Hali jildlar yoʻq",
+    "folderNamePlaceholder": "Jild nomi",
+    "confirmDeleteFolder": "Jild va undagi barcha fayllar oʻchirilsinmi?",
+    "confirmDeleteFolderDescription": "Bu jilddagi barcha fayllar serverdan butunlay oʻchiriladi. Bu amalni bekor qilib boʻlmaydi.",
+    "confirmDeleteFile": "Fayl oʻchirilsinmi?",
+    "confirmDeleteFileDescription": "Bu fayl serverdan butunlay oʻchiriladi.",
+    "addToFavourites": "Sevimlilarga qoʻshish",
+    "removeFromFavourites": "Sevimlilardan olib tashlash",
+    "deleteFile": "Faylni oʻchirish",
+    "selectOnlyOneFile": "Faqat 1 tagacha fayl tanlashingiz mumkin",
+    "confirmDeleteFiles": "{count, plural, =1 {1 ta fayl oʻchirilsinmi?} other {# ta fayl oʻchirilsinmi?}}",
+    "confirmDeleteFilesDescription": "Bu fayllar serverdan butunlay oʻchiriladi. Bu amalni bekor qilib boʻlmaydi.",
+    "filesCount": "{count, plural, =0 {Fayllar yoʻq} =1 {1 ta fayl} other {# ta fayl}}",
+    "openMediaLibrary": "Media kutubxonasini ochish",
+    "uploadFailed": "{name} ni yuklab boʻlmadi"
+  },
+  "adsCampaign": {
+    "title": "Reklama",
+    "createCta": "Reklama yaratish",
+    "prereq": {
+      "notConnected": "Bu kanal uchun xabar reklamalarini yaratish uchun Facebook Ads ni ulang.",
+      "connectCta": "Facebook Ads ni ulash"
+    },
+    "specialAdCategory": {
+      "none": "Yoʻq",
+      "housing": "Uy-joy",
+      "employment": "Ish bilan taʼminlash",
+      "credit": "Kredit",
+      "issues": "Ijtimoiy masalalar, saylovlar yoki siyosat",
+      "financialProducts": "Moliyaviy mahsulotlar va xizmatlar",
+      "onlineGambling": "Onlayn qimor va oʻyinlar"
+    },
+    "fields": {
+      "objective": {
+        "label": "Maqsad",
+        "value": "Faollik (xabarlar)"
+      },
+      "specialAdCategory": {
+        "label": "Maxsus reklama kategoriyasi",
+        "description": "Cheklangan kategoriyani tanlash Meta shu kategoriya uchun ruxsat bermaydigan yosh, jins va boshqa nishonlashni olib tashlaydi.",
+        "restrictedNote": "Cheklangan maxsus reklama kategoriyasi tanlangani uchun yosh va jins boʻyicha nishonlash oʻchirilgan."
+      },
+      "adAccount": {
+        "label": "Reklama akkaunti"
+      },
+      "whatsappPage": {
+        "label": "Facebook sahifasi",
+        "description": "WhatsApp reklamalari baribir bogʻlangan Facebook sahifasini talab qiladi — foydalaniladigan ulangan sahifani tanlang."
+      },
+      "dailyBudget": {
+        "label": "Kunlik byudjet",
+        "placeholder": "masalan, 2000",
+        "description": "Summani reklama akkauntingiz valyutasining eng kichik birligida kiriting (masalan, USD uchun sentlarda)."
+      },
+      "countries": {
+        "label": "Mamlakatlar"
+      },
+      "ageRange": {
+        "min": "Minimal yosh",
+        "max": "Maksimal yosh"
+      },
+      "gender": {
+        "label": "Jins",
+        "male": "Erkak",
+        "female": "Ayol"
+      },
+      "schedule": {
+        "start": "Boshlanish vaqti",
+        "end": "Tugash vaqti"
+      },
+      "destination": {
+        "label": "Yoʻnalish"
+      },
+      "callToAction": {
+        "label": "Harakatga chaqiruv",
+        "derivedNote": "Harakatga chaqiruv tugmasi ({type}) kanal asosida avtomatik aniqlanadi."
+      },
+      "specialAdCategoryCountry": {
+        "label": "Reklama kategoriyasi mamlakati",
+        "description": "Ijtimoiy masalalar, saylovlar yoki siyosat kategoriyasi uchun Meta talab qiladi — bunday reklamalarni berishga ruxsatingiz bor mamlakat."
+      }
+    },
+    "welcomeMessage": {
+      "title": "Salomlashuv xabari",
+      "label": "Salomlashuv xabari",
+      "description": "Kimdir shu reklamadan suhbat boshlaganda avtomatik yuboriladi.",
+      "mode": {
+        "default": "Metaning standart xabaridan foydalanish",
+        "single": "Bitta xabar",
+        "templates": "5 tagacha xabar variantini sinash"
+      },
+      "messageLabel": "Xabar",
+      "templateLabel": "{index}-variant",
+      "headingPlaceholder": "Sarlavha (ixtiyoriy)",
+      "addTemplate": "Variant qoʻshish",
+      "templatesLimit": "{max} tagacha variantni sinash mumkin."
+    },
+    "creative": {
+      "mediaRequired": "Davom etish uchun rasm yoki video yuklang.",
+      "mediaType": {
+        "label": "Kreativ media",
+        "orVideo": "yoki video",
+        "selectAdAccountFirst": "Media yuklashdan oldin reklama akkauntini tanlang.",
+        "uploadImage": "Rasm yuklash",
+        "uploadVideo": "Video yuklash"
+      },
+      "uploading": "Yuklanmoqda...",
+      "imageUploadFailed": "Rasmni yuklab boʻlmadi. Qayta urinib koʻring.",
+      "videoProcessing": "Video qayta ishlanmoqda...",
+      "videoReady": "Video tayyor",
+      "videoProcessingFailed": "Videoni qayta ishlab boʻlmadi. Boshqa faylni sinab koʻring.",
+      "previewAlt": "Kreativni oldindan koʻrish",
+      "primaryText": "Asosiy matn",
+      "headline": "Sarlavha"
+    },
+    "wizard": {
+      "createDraft": "Pauzadagi qoralama sifatida yaratish",
+      "campaignStep": {
+        "title": "Kampaniya",
+        "namePlaceholder": "Bu reklamaga nom bering"
+      },
+      "adSetStep": {
+        "title": "Reklama toʻplami"
+      },
+      "creativeStep": {
+        "title": "Reklama kreativi"
+      },
+      "preflightStep": {
+        "title": "Koʻrib chiqish"
+      },
+      "errors": {
+        "nameRequired": "Bu reklama uchun nom kiriting.",
+        "adAccountRequired": "Reklama akkauntini tanlang.",
+        "budgetRequired": "Kunlik byudjetni kiriting.",
+        "countryRequired": "Kamida bitta mamlakatni tanlang.",
+        "mediaRequired": "Rasm yoki video yuklang."
+      }
+    },
+    "preflight": {
+      "title": "Xulosa",
+      "pausedNote": "Bu reklama pauzadagi qoralama sifatida yaratiladi. Uni nashr qilmaguningizcha hech narsa ishga tushmaydi va pul sarflanmaydi."
+    },
+    "publishConfirm": {
+      "title": "Bu reklama nashr qilinsinmi?",
+      "description": "Nashr qilish kampaniya, reklama toʻplami va reklamani ketma-ket faollashtiradi. Koʻrsatish boshlangach, Meta byudjetingizni sarflay boshlaydi.",
+      "confirm": "Nashr qilish"
+    },
+    "list": {
+      "viewOnMeta": "Metada koʻrish",
+      "empty": "Hali xabar reklamalari yoʻq.",
+      "createState": "Qoralama holati",
+      "actions": "Amallar",
+      "notPublishedYet": "Hali nashr qilinmagan",
+      "draftReady": "Qoralama tayyor",
+      "createFailed": "Yaratib boʻlmadi",
+      "creating": "Yaratilmoqda...",
+      "publish": "Nashr qilish",
+      "pause": "Pauza"
+    },
+    "messages": {
+      "created": "Reklama qoralamasi yaratildi.",
+      "actionSucceeded": "Tayyor."
+    },
+    "box": {
+      "ctwa": {
+        "title": "CTWA",
+        "description": "Click-to-WhatsApp reklamalarini shu yerda yarating va boshqaring."
+      },
+      "ctm": {
+        "title": "CTM",
+        "description": "Click-to-Messenger reklamalarini shu yerda yarating va boshqaring."
+      },
+      "ctid": {
+        "title": "CTID",
+        "description": "Click-to-Instagram reklamalarini shu yerda yarating va boshqaring."
+      },
+      "connectCta": "Facebook Ads ni ulash",
+      "reconnectCta": "Qayta ulash",
+      "reconnectNeeded": "Bu ulanishni qayta ulash kerak.",
+      "refresh": "Yangilash",
+      "whatsappPageRequiredNote": "Click-to-WhatsApp reklamalari baribir bogʻlangan Facebook sahifasini talab qiladi (Meta talabi) — uni reklama yaratishda tanlaysiz.",
+      "emptyDashboardNote": "Shu yerda yaratilgan reklamalar endi bu kanalning reklama panelida avtomatik paydo boʻladi — uning akkauntlari va xarajatlarini koʻrish uchun u yerdagi filtrdan shu integratsiyani tanlang."
+    },
+    "insights": {
+      "title": "Samaradorlik",
+      "empty": "Hali maʼlumot yoʻq",
+      "impressions": "Koʻrsatishlar",
+      "reach": "Qamrov",
+      "spend": "Xarajat",
+      "clicks": "Kliklar",
+      "conversations": "Suhbatlar",
+      "costPerConversation": "Suhbat narxi",
+      "costPerConversationTooltip": "Boshlangan har bir xabar suhbatining oʻrtacha narxi.",
+      "datePresetLabel": "Davr:",
+      "datePreset": {
+        "maximum": "Har safar",
+        "last_30d": "Oxirgi 30 kun",
+        "last_7d": "Oxirgi 7 kun"
+      }
+    }
+  },
+  "accountFields": {
+    "title": "Bot maydonlari"
+  },
+  "openLink": {
+    "title": "Havolani ochish",
+    "invalidTitle": "Havola notoʻgʻri.",
+    "invalidDescription": "Bu havola notoʻgʻri yoki muddati tugagan.",
+    "openZaloGroup": "Zalo guruhini ochish",
+    "openZalo": "Zalo ni ochish",
+    "openMessenger": "Messenger ni ochish"
+  },
+  "conversationRouting": {
+    "owner": {
+      "metaAi": "Meta AI",
+      "partner": "Hamkor",
+      "partnerWithRole": "Hamkor · {role}",
+      "self": "siz"
+    },
+    "roles": {
+      "ai_agent": "Meta AI",
+      "ctwa": "Click-to-WhatsApp reklamalari",
+      "customer_service": "Mijozlarga xizmat koʻrsatish",
+      "escalation": "Eskalatsiya",
+      "marketing": "Marketing",
+      "utility": "Utility"
+    },
+    "pill": {
+      "standby": "Kutish rejimi ({owner})",
+      "owned": "Faol",
+      "tooltip": "{owner} boshqarmoqda"
+    },
+    "release": {
+      "label": "Boʻshatish",
+      "tooltip": "Boshqa ilovalar javob bera olishi uchun bu suhbatni boʻshatish",
+      "success": "Suhbat boʻshatildi"
+    },
+    "pass": {
+      "menuItem": "Eskalatsiyaga oʻtkazish",
+      "title": "Eskalatsiya hamkoriga oʻtkazilsinmi?",
+      "description": "Bu suhbat eskalatsiya hamkoringizga topshirilsinmi? Suhbat qaytib kelguncha javoblaringiz toʻxtatiladi.",
+      "confirm": "Oʻtkazish",
+      "success": "Suhbat eskalatsiya hamkoriga oʻtkazildi"
+    },
+    "aiHandover": {
+      "label": "BizAI",
+      "tooltip": "Bu suhbatni AI yordamchiga qaytarib berish",
+      "title": "AI yordamchiga qaytarib berilsinmi?",
+      "description": "AI yordamchi bu mijozga javob berishni davom ettiradi. Suhbat sizga qaytib kelguncha javoblaringiz toʻxtatiladi. Meta yordamchi har bir xabarga javob berishini kafolatlamaydi.",
+      "confirm": "Qaytarib berish",
+      "success": "Suhbat AI yordamchiga qaytarib berildi"
+    },
+    "composer": {
+      "aiStandbyHint": "Javob berish bu suhbatni AI yordamchidan oʻz zimmangizga oladi.",
+      "title": "Siz kutish rejimidasiz (faqat tinglash)",
+      "description": "Bu suhbatni uchinchi tomon hamkori olib bormoqda. Takroriy javoblarning oldini olish uchun xabar maydoni qulflangan.",
+      "takeOver": "Oʻz zimmamga olish",
+      "takeOverSuccess": "Endi bu suhbatni siz olib bormoqdasiz",
+      "notEscalation": "Faqat eskalatsiya hamkori oʻz zimmasiga olishi mumkin. Yoʻnaltirish Meta Business Suite da sozlanadi.",
+      "notPrimaryReceiver": "Oʻz zimmasiga olishi uchun bu ilova sahifaning asosiy qabul qiluvchisi boʻlishi kerak. Buni sahifaning Handover Protocol sozlamalarida belgilang.",
+      "learnMore": "Batafsil",
+      "dismiss": "Baribir yuborish"
+    },
+    "divider": {
+      "ownerHandling": "Endi bu suhbatni {owner} olib bormoqda",
+      "handedOver": "{previousOwner} bu suhbatni sizga qaytarib berdi",
+      "selfHandling": "Endi bu suhbatni siz olib bormoqdasiz",
+      "takenOver": "Siz bu suhbatni oʻz zimmangizga oldingiz",
+      "released": "Suhbat boʻshatildi",
+      "passed": "Suhbat eskalatsiya hamkoriga oʻtkazildi",
+      "serviceRejected": "Xabar yuborilmadi: bu suhbatni {owner} olib bormoqda"
+    },
+    "context": {
+      "title": "Suhbat konteksti",
+      "summaryBadge": "AI xulosasi",
+      "historyBadge": "Tarix",
+      "customer": "Mijoz",
+      "business": "Biznes",
+      "handoverNote": "Topshirish izohi: {note}",
+      "showAll": "Hammasini koʻrsatish ({count})",
+      "showLess": "Kamroq koʻrsatish"
+    },
+    "echo": {
+      "partner": "Hamkor"
+    },
+    "panel": {
+      "title": "Suhbatni yoʻnaltirish",
+      "threadState": "Suhbat holati",
+      "threadStateOwned": "Egallangan",
+      "threadStateStandby": "Kutish rejimi",
+      "threadStateIdle": "Boʻsh",
+      "currentOwner": "Joriy egasi",
+      "noOwner": "Egasi yoʻq",
+      "roleLabel": "Sizning rolingiz",
+      "selfOwned": "Faol — suhbatni olib bormoqda",
+      "selfStandby": "Kutish rejimi — faqat tinglash",
+      "selfIdle": "Boʻsh — kutilmoqda",
+      "hintOwned": "Ishingiz tugagach, boshqa ilovalar javob bera olishi uchun boʻshating.",
+      "hintStandby": "Hamkor buni olib borayotgan paytda mijoz takroriy javob olmasligi uchun xabarlaringiz ushlab turiladi. Javob berish uchun xabar maydonidan oʻz zimmangizga oling.",
+      "hintIdle": "Mijozning keyingi xabari kim javob berishini hal qiladi.",
+      "syncOwner": "Egasini sinxronlash",
+      "syncOwnerSuccess": "Egasi sinxronlandi"
+    },
+    "settings": {
+      "title": "Topshirishdan keyin davom ettirish oqimi",
+      "description": "Hamkor suhbatni qaytarib berganda ishga tushadigan avtomatlashtirish.",
+      "resumeFlowLabel": "Oqimni tanlang",
+      "resumeFlowPlaceholder": "Oqimni tanlang",
+      "info": "Boshqaruv qaytarib berilganda bu oqim avtomatik boshlanadi. Shundan soʻng suhbat xulosasi va yozishmalar tarixi jonli chatda operatorlaringizga koʻrsatiladi.",
+      "save": "Oʻzgarishlarni saqlash",
+      "clearFlow": "Oqimni tozalash",
+      "adminOnly": "Yoʻnaltirishni faqat ish maydoni adminlari oʻzgartira oladi",
+      "flowNotFound": "Tanlangan oqim topilmadi yoki faol emas",
+      "integrationNotFound": "WhatsApp raqami topilmadi",
+      "messengerIntegrationNotFound": "Messenger sahifasi topilmadi"
+    },
+    "errors": {
+      "unsupported": "Bu kanalda suhbatni yoʻnaltirish mavjud emas",
+      "notFound": "Bu suhbat ushbu kanalda emas",
+      "actionFailed": "Suhbatni yoʻnaltirishni yangilab boʻlmadi. Qayta urinib koʻring."
+    },
+    "step": {
+      "action": "Amal",
+      "release": "Suhbatni boʻshatish",
+      "pass": "Eskalatsiya hamkoriga oʻtkazish",
+      "helper": "Faqat WhatsApp. Boshqa kanallarda yoki suhbat bu yerda egallanmagan boʻlsa, qadam Xatolik yoʻlidan boradi."
+    },
+    "template": {
+      "sent": "Shablon yuborildi"
+    }
+  },
+  "miniApps": {
+    "title": "Mini ilovalar",
+    "description": "WhatsApp Flow formalarini yarating va ularni istalgan kanalda havola sifatida ulashing.",
+    "feature": "Mini ilova",
+    "deleteWhatsappChoice": "“Oʻchirish” WhatsAppda allaqachon nashr qilingan Flowlarni saqlab qoladi. “Oʻchirish va WhatsApp Flow ni olib tashlash” ularni Metadan ham olib tashlaydi: qoralama Flowlar oʻchiriladi, nashr qilingan Flowlar esa eskirgan deb belgilanadi, chunki Meta ularni oʻchirishga ruxsat bermaydi.",
+    "deleteWhatsappFailed": "Mini ilova oʻchirildi, lekin {count} ta WhatsApp Flow ni Metada olib tashlab boʻlmadi. Ularni WhatsApp Manager da olib tashlang.",
+    "deleteWithWhatsapp": "Oʻchirish va WhatsApp Flow ni olib tashlash",
+    "publicUrl": {
+      "label": "Ommaviy URL",
+      "hint": "URL manzilni nusxalab, oqim, ommaviy xabar yoki ketma-ketlikka joylashtiring. Shu tarzda yuborilganda har bir javob uni ochgan kontaktga bogʻlanadi."
+    },
+    "table": {
+      "whatsapp": "WhatsApp",
+      "notPublished": "Nashr qilinmagan",
+      "submissions": "Javoblar",
+      "copyJson": "JSON ni nusxalash"
+    },
+    "submissions": {
+      "title": "Javoblar",
+      "submittedAt": "Yuborilgan vaqt",
+      "contact": "Kontakt",
+      "anonymous": "Anonim",
+      "yes": "Ha",
+      "no": "Yoʻq",
+      "unknownContact": "Nomaʼlum kontakt",
+      "conversationNotFound": "Bu kontaktda hali suhbat yoʻq.",
+      "openConversationFailed": "Suhbatni ochib boʻlmadi."
+    },
+    "editor": {
+      "namePlaceholder": "Mini ilova nomi",
+      "undo": "Amalni bekor qilish",
+      "redo": "Qayta bajarish",
+      "preview": "Oldindan koʻrish",
+      "viewJson": "JSON ni koʻrish",
+      "saveFailed": "Mini ilovani saqlab boʻlmadi",
+      "noIssues": "Muammolar yoʻq",
+      "issuesCount": "{count, plural, one {# ta muammo} other {# ta muammo}}",
+      "addScreen": "Ekran qoʻshish",
+      "newScreenTitle": "Yangi ekran",
+      "searchComponents": "Komponentlarni qidirish",
+      "paletteHint": "Qoʻshish uchun bosing yoki ekranga torting",
+      "dropHere": "Komponentlarni shu yerga tashlang",
+      "emptyScreen": "Komponentlarni chapdan torting yoki qoʻshish uchun birini bosing",
+      "slotThen": "Keyin",
+      "slotElse": "Aks holda",
+      "slotCase": "Holat: {value}",
+      "noCondition": "Hali shart yoʻq",
+      "drag": "Koʻchirish uchun torting",
+      "duplicate": "Nusxa yaratish",
+      "remove": "Olib tashlash",
+      "cannotDropHere": "Bu komponentni bu yerga joylashtirib boʻlmaydi",
+      "previewSubmitted": "Oldindan koʻrish yuborildi: {answers}"
+    },
+    "screen": {
+      "title": "Ekran",
+      "screenTitle": "Sarlavha",
+      "screenId": "Ekran ID si",
+      "screenIdHint": "Faqat harflar va pastki chiziq. Navigatsiyada va Flow JSON da ishlatiladi.",
+      "terminal": "Oxirgi ekran",
+      "terminalHint": "Flow shu yerda tugashi mumkin. Unga flow ni yakunlaydigan Footer kerak.",
+      "remove": "Ekranni oʻchirish"
+    },
+    "inspector": {
+      "default": "Standart",
+      "commaSeparated": "Qiymatlarni vergul bilan ajrating.",
+      "uploadImage": "Rasmni tanlang",
+      "imageTooLarge": "Rasm siqilgandan keyin ham juda katta. Kichikrogʻini sinab koʻring.",
+      "moveUp": "Yuqoriga",
+      "moveDown": "Pastga",
+      "removeItem": "Olib tashlash",
+      "optionTitle": "Sarlavha",
+      "optionId": "ID",
+      "addOption": "Variant qoʻshish",
+      "addImage": "Rasm qoʻshish",
+      "noAction": "Amal yoʻq",
+      "chooseAction": "Amalni tanlang",
+      "noOtherScreen": "Oʻtish uchun boshqa ekran qoʻshing.",
+      "completeHint": "Flow ni yakunlaydi va barcha javoblarni yuboradi.",
+      "endText": "Oʻngdagi matn",
+      "badge": "Nishon",
+      "conditionHint": "Rost boʻlsa “Unda”, aks holda “Aks holda” koʻrsatiladi. Misol: {example}",
+      "switchValueHint": "Nomi shu qiymatga teng boʻlgan holatni koʻrsatadi.",
+      "cases": "Holatlar",
+      "addCase": "Holat qoʻshish",
+      "casesHint": "Har bir holat nomi yuqoridagi qiymat bilan solishtiriladi.",
+      "nameHint": "Javoblardagi maydon kaliti. Harflar, raqamlar va pastki chiziq.",
+      "markdownHint": "# sarlavhalar, **qalin**, *kursiv*, ~~chizilgan~~, roʻyxatlar va [havolalar](https://…) qoʻllab-quvvatlanadi.",
+      "patternHint": "Javob mos kelishi kerak boʻlgan ixtiyoriy muntazam ifoda.",
+      "saveToCustomField": "Maxsus maydonga saqlash",
+      "chooseCustomField": "Maxsus maydonni tanlang",
+      "customFieldHint": "Kontakt mini ilova havolasi orqali javob yuborganda, javob shu maydonga saqlanadi.",
+      "imageLoadFailed": "Bu rasmni yuklab boʻlmadi. JPEG, PNG, WebP yoki GIF rasmni tanlang.",
+      "answerReference": "Javobga havola",
+      "answerReferenceHint": "Bu javobdan foydalanish uchun uni matn yoki shartga joylashtiring.",
+      "copyReference": "Nusxalash",
+      "variablesHint": "Maxsus maydon qoʻyish uchun {open} yozing yoki {button} ni bosing. Qiymatlar faqat maʼlum kontakt uchun veb-havolada koʻrinadi."
+    },
+    "json": {
+      "title": "Flow JSON",
+      "description": "WhatsApp Flow JSON (7.3 versiya). Uni WhatsApp Manager yoki Flows Playground ga joylashtiring.",
+      "copy": "JSON ni nusxalash",
+      "contactVariablesWarning": "Bu JSON da hali '{{first_name}}' kabi maxsus maydonlar bor. WhatsApp ularni aynan yozilganidek koʻrsatadi, shuning uchun WhatsAppga joylashtirishdan oldin ularni olib tashlang."
+    },
+    "publish": {
+      "open": "WhatsAppga nashr qilish",
+      "title": "WhatsAppga nashr qilish",
+      "description": "Bu mini ilovani WhatsApp Flow sifatida yaratadi yoki yangilaydi va nashr qiladi. Soʻng uni “WhatsApp Flow yuborish” qadami bilan yuborishingiz mumkin.",
+      "number": "WhatsApp raqami",
+      "noNumbers": "Avval WhatsApp raqamini ulang.",
+      "unsavedChanges": "Saqlanmagan oʻzgarishlar bor. WhatsApp eng soʻnggi versiyani olishi uchun avval saqlang.",
+      "submit": "Nashr qilish",
+      "success": "WhatsAppga nashr qilindi",
+      "draftOnly": "Xatoliklar sababli Meta Flow ni qoralama sifatida qoldirdi",
+      "failed": "WhatsAppga nashr qilib boʻlmadi",
+      "contactVariables": "Bu mini ilova matnlarida maxsus maydonlarni koʻrsatadi. Ular hozircha faqat veb-havolada ishlaydi — WhatsAppga nashr qilishdan oldin ularni olib tashlang."
+    },
+    "runner": {
+      "back": "Orqaga",
+      "doneTitle": "Rahmat!",
+      "doneDescription": "Javoblaringiz yuborildi.",
+      "errors": {
+        "required": "Bu maydon majburiy",
+        "invalidEmail": "Toʻgʻri email manzilini kiriting",
+        "invalidFormat": "Format notoʻgʻri",
+        "tooShort": "Javob juda qisqa",
+        "selectMore": "Koʻproq variant tanlang",
+        "selectFewer": "Kamroq variant tanlang",
+        "uploadMore": "Koʻproq fayl qoʻshing"
+      }
+    },
+    "public": {
+      "notFoundTitle": "Mini ilova mavjud emas",
+      "notFoundDescription": "Bu havola notoʻgʻri yoki mini ilova oʻchirilgan.",
+      "rateLimited": "Javoblar juda koʻp yuborildi. Birozdan soʻng qayta urinib koʻring.",
+      "submitFailed": "Javoblaringizni yuborib boʻlmadi. Qayta urinib koʻring."
+    },
+    "view": {
+      "selectPlaceholder": "Tanlash",
+      "calendarSingle": "Taqvim",
+      "calendarRange": "Sana oraligʻi",
+      "readMore": "Batafsil oʻqish",
+      "takePhoto": "Rasmga oling yoki tanlang",
+      "uploadDocument": "Hujjat yuklash",
+      "previousImage": "Oldingi rasm",
+      "nextImage": "Keyingi rasm"
+    },
+    "categories": {
+      "text": "Matn",
+      "input": "Kiritish",
+      "selection": "Tanlash",
+      "media": "Media",
+      "navigation": "Navigatsiya",
+      "container": "Konteynerlar"
+    },
+    "components": {
+      "TextHeading": "Sarlavha",
+      "TextSubheading": "Kichik sarlavha",
+      "TextBody": "Asosiy matn",
+      "TextCaption": "Izoh matni",
+      "RichText": "Formatlangan matn",
+      "TextInput": "Matn kiritish",
+      "TextArea": "Matn maydoni",
+      "Dropdown": "Ochiladigan roʻyxat",
+      "RadioButtonsGroup": "Bitta tanlov",
+      "CheckboxGroup": "Koʻp variantli tanlov",
+      "ChipsSelector": "Chiplar",
+      "DatePicker": "Sana tanlash",
+      "CalendarPicker": "Taqvim",
+      "OptIn": "Rozilik",
+      "PhotoPicker": "Rasm yuklash",
+      "DocumentPicker": "Hujjat yuklash",
+      "Image": "Rasm",
+      "ImageCarousel": "Rasmlar karuseli",
+      "EmbeddedLink": "Havola",
+      "NavigationList": "Navigatsiya roʻyxati",
+      "Footer": "Pastki tugma",
+      "Form": "Forma",
+      "If": "Agar / Aks holda",
+      "Switch": "Tanlov (Switch)"
+    },
+    "actions": {
+      "navigate": "Ekranga oʻtish",
+      "complete": "Flow ni yakunlash",
+      "open_url": "URL ni ochish"
+    },
+    "defaults": {
+      "heading": "Sarlavha",
+      "subheading": "Kichik sarlavha",
+      "body": "Asosiy matn",
+      "caption": "Izoh matni",
+      "richText": "## Sarlavha\n\nBiroz **formatlangan** matn.",
+      "textInputLabel": "Javobingiz",
+      "textAreaLabel": "Tafsilotlar",
+      "dropdownLabel": "Bittasini tanlang",
+      "radioLabel": "Bittasini tanlang",
+      "checkboxLabel": "Istalganini tanlang",
+      "chipsLabel": "Istalganini tanlang",
+      "dateLabel": "Sana",
+      "calendarLabel": "Sana",
+      "optInLabel": "Shartlarga roziman",
+      "photoLabel": "Rasmlarni yuklang",
+      "documentLabel": "Hujjatlarni yuklang",
+      "linkText": "Batafsil",
+      "footerLabel": "Davom etish",
+      "option": "Variant",
+      "navigationItem": "Element",
+      "imageAlt": "Rasm"
+    },
+    "properties": {
+      "text": "Matn",
+      "label": "Yorliq",
+      "name": "Maydon kaliti",
+      "description": "Tavsif",
+      "title": "Sarlavha",
+      "required": "Majburiy",
+      "helperText": "Yordamchi matn",
+      "errorMessage": "Xatolik xabari",
+      "initValue": "Boshlangʻich qiymat",
+      "inputType": "Kiritish turi",
+      "labelVariant": "Katta yorliq",
+      "pattern": "Shablon (pattern)",
+      "minChars": "Minimal belgilar",
+      "maxChars": "Maksimal belgilar",
+      "maxLength": "Maksimal uzunlik",
+      "fontWeight": "Shrift uslubi",
+      "strikethrough": "Ustidan chizilgan",
+      "markdown": "Markdown",
+      "dataSource": "Variantlar",
+      "mediaSize": "Rasm oʻlchami",
+      "minSelectedItems": "Minimal tanlanganlar",
+      "maxSelectedItems": "Maksimal tanlanganlar",
+      "minDate": "Eng erta sana",
+      "maxDate": "Eng kech sana",
+      "unavailableDates": "Mavjud boʻlmagan sanalar",
+      "mode": "Rejim",
+      "minDays": "Minimal kunlar",
+      "maxDays": "Maksimal kunlar",
+      "includeDays": "Tanlash mumkin boʻlgan hafta kunlari",
+      "photoSource": "Rasm manbasi",
+      "minUploadedPhotos": "Minimal rasmlar",
+      "maxUploadedPhotos": "Maksimal rasmlar",
+      "minUploadedDocuments": "Minimal hujjatlar",
+      "maxUploadedDocuments": "Maksimal hujjatlar",
+      "maxFileSizeKb": "Maksimal fayl hajmi (KB)",
+      "allowedMimeTypes": "Ruxsat etilgan fayl turlari",
+      "src": "Rasm",
+      "width": "Kenglik",
+      "height": "Balandlik",
+      "scaleType": "Masshtab",
+      "aspectRatio": "Tomonlar nisbati",
+      "altText": "Alternativ matn",
+      "images": "Rasmlar",
+      "listItems": "Elementlar",
+      "leftCaption": "Chap izoh",
+      "centerCaption": "Markaziy izoh",
+      "rightCaption": "Oʻng izoh",
+      "enabled": "Yoqilgan",
+      "condition": "Shart",
+      "value": "Qiymat",
+      "action": "Bosilganda",
+      "screenId": "Ekran ID si"
+    },
+    "options": {
+      "inputType": {
+        "text": "Matn",
+        "number": "Raqam",
+        "email": "Email",
+        "password": "Parol",
+        "passcode": "Parol kodi",
+        "phone": "Telefon"
+      },
+      "fontWeight": {
+        "normal": "Oddiy",
+        "bold": "Qalin",
+        "italic": "Kursiv",
+        "bold_italic": "Qalin kursiv"
+      },
+      "scaleType": {
+        "cover": "Toʻldirish",
+        "contain": "Sigʻdirish"
+      },
+      "mediaSize": {
+        "regular": "Oddiy",
+        "large": "Katta"
+      },
+      "mode": {
+        "single": "Bitta sana",
+        "range": "Sana oraligʻi"
+      },
+      "photoSource": {
+        "camera_gallery": "Kamera va galereya",
+        "camera": "Faqat kamera",
+        "gallery": "Faqat galereya"
+      },
+      "weekday": {
+        "Mon": "Du",
+        "Tue": "Se",
+        "Wed": "Ch",
+        "Thu": "Pa",
+        "Fri": "Ju",
+        "Sat": "Sh",
+        "Sun": "Ya"
+      }
+    },
+    "issues": {
+      "definition_invalid": "Mini ilova maʼlumotlari notoʻgʻri.",
+      "screen_id_invalid": "Ekran ID si faqat harflar va pastki chiziqdan iborat boʻlishi mumkin.",
+      "screen_id_reserved": "“SUCCESS” WhatsApp tomonidan band qilingan. Boshqa ekran ID sini tanlang.",
+      "screen_id_duplicate": "Bu ID boshqa ekranda allaqachon ishlatilgan.",
+      "no_terminal_screen": "Kamida bitta ekranni oxirgi ekran deb belgilang.",
+      "terminal_screen_without_complete": "Oxirgi ekranga flow ni yakunlaydigan Footer kerak.",
+      "screen_without_exit": "Bu ekrandan davom etish imkoni yoʻq. Boshqa ekranga oʻtadigan Footer yoki havola qoʻshing.",
+      "screen_unreachable": "Hech bir ekran bu ekranga oʻtmaydi.",
+      "too_many_components": "Ekranda koʻpi bilan {max} ta komponent boʻlishi mumkin.",
+      "component_limit": "Ekranda koʻpi bilan {max} × {type} boʻlishi mumkin.",
+      "picker_conflict": "Ekranda bir vaqtda ham rasm yuklash, ham hujjat yuklash boʻlishi mumkin emas.",
+      "picker_multiple_in_complete": "{property} ni 1 ga oʻrnating: flow yakunlanganda WhatsApp faqat bitta fayl yuboradi.",
+      "footer_not_last": "Footer ekrandagi oxirgi komponent boʻlishi kerak.",
+      "footer_in_nested_branch": "Footer faqat birinchi darajali If tarmogʻida bevosita turishi mumkin.",
+      "footer_missing_in_branch": "Agar bir tarmoqda Footer boʻlsa, boshqa tarmoqda ham boʻlishi kerak.",
+      "navigation_list_with_footer": "Navigatsiya roʻyxati Footer bilan bitta ekranda boʻlishi mumkin emas.",
+      "navigation_list_on_terminal": "Navigatsiya roʻyxati oxirgi ekranda boʻlishi mumkin emas.",
+      "if_too_deep": "If bloklarini koʻpi bilan {max} darajagacha ichma-ich joylash mumkin.",
+      "if_then_empty": "“Unda” tarmogʻida kamida bitta komponent boʻlishi kerak.",
+      "switch_no_cases": "Kamida bitta holat qoʻshing.",
+      "child_not_allowed": "Bu komponentni {parent} ichiga joylashtirib boʻlmaydi.",
+      "name_invalid": "Maydon kaliti uchun harflar, raqamlar va pastki chiziqdan foydalaning.",
+      "name_duplicate": "“{name}” maydon kaliti allaqachon ishlatilgan.",
+      "property_required": "{property} majburiy.",
+      "property_too_long": "{property} koʻpi bilan {max} ta belgidan iborat boʻlishi mumkin.",
+      "property_too_short": "{property} da kamida {min} ta element boʻlishi kerak.",
+      "property_invalid": "{property} notoʻgʻri.",
+      "option_duplicate_id": "Har bir variantning noyob ID si boʻlishi kerak.",
+      "min_greater_than_max": "{property} maksimumdan katta boʻlishi mumkin emas.",
+      "action_required": "Bosilganda nima sodir boʻlishini tanlang.",
+      "action_not_allowed": "Bu amalga bu yerda ruxsat berilmagan.",
+      "navigate_target_missing": "Maqsadli ekran endi mavjud emas.",
+      "navigate_self": "Ekran oʻziga oʻzi oʻta olmaydi.",
+      "expression_invalid": "Ifodani oʻqib boʻlmayapti. Qoʻshtirnoq va qavslarni tekshiring.",
+      "reference_invalid": "{reference} toʻgʻri havola emas.",
+      "reference_unknown": "{reference} hech qaysi maydonga mos kelmaydi.",
+      "data_reference_unsupported": "{reference}: ekran maʼlumotlari qoʻllab-quvvatlanmaydi. Uning oʻrniga forma maydonlaridan foydalaning.",
+      "property_unknown": "WhatsApp bu komponentda “{name}” xususiyatini qabul qilmaydi.",
+      "complete_on_non_terminal": "“Flow ni yakunlash” faqat oxirgi ekranda ishlatilishi mumkin.",
+      "footer_captions_invalid": "Yo markaziy izohdan, yoki chap va oʻng izohdan birga foydalaning.",
+      "options_with_images_limit": "Rasmlar bilan ochiladigan roʻyxatda koʻpi bilan {max} ta variant boʻlishi mumkin.",
+      "navigation_badge_multiple": "Navigatsiya roʻyxatida faqat bitta elementda nishon boʻlishi mumkin.",
+      "contact_variable_whatsapp": "Maxsus maydonlar faqat veb-havolada koʻrinadi; WhatsApp ularni hali qoʻllab-quvvatlamaydi. WhatsAppga nashr qilishdan oldin ularni olib tashlang."
+    },
+    "upload": {
+      "choosePhotos": "Rasmlarni tanlang yoki suratga oling",
+      "chooseDocuments": "Fayllarni tanlang",
+      "remove": "Olib tashlash",
+      "count": "{count}/{max}",
+      "errors": {
+        "empty": "Fayl boʻsh.",
+        "too_large": "Fayl juda katta.",
+        "type_not_allowed": "Bu fayl turiga ruxsat berilmagan.",
+        "rate_limited": "Yuklashlar juda koʻp. Birozdan soʻng qayta urinib koʻring.",
+        "upload_failed": "Faylni yuklab boʻlmadi. Qayta urinib koʻring."
       }
     }
   }
