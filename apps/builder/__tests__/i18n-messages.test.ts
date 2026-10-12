@@ -37,7 +37,7 @@ const icuHeaderPattern =
   /\{([A-Za-z][\w.-]*),\s*(plural|select|selectordinal)\s*,/g
 const icuCategoryPattern = /^\s*(=?[\w-]+)\s*\{/
 const zeroWidthPattern = /\u200b|\u200c|\u200d|\ufeff/
-const completeCatalogLocales = ["az", "en", "vi"] as const
+const completeCatalogLocales = ["az", "en", "uz", "vi"] as const
 const cjkCatalogLocales = ["zh-TW", "zh-CN"].filter((locale) =>
   isLocale(locale),
 )
@@ -247,6 +247,8 @@ describe("locale resolution", () => {
     ["zh-hans", expectedSimplifiedChineseLocale],
     ["zh-Hans-CN", expectedSimplifiedChineseLocale],
     ["zh", expectedSimplifiedChineseLocale],
+    ["uz", "uz"],
+    ["uz-Latn-UZ", "uz"],
     ["xx", "en"],
   ] as const)("resolves %s to %s", (input, expected) => {
     expect(resolveLocale(input)).toBe(expected)
