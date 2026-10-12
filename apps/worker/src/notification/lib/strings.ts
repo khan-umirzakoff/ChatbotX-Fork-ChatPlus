@@ -144,6 +144,14 @@ const strings = {
     sentAttachments: (count: number) => `${count} ek gönderdi`,
     assignedConversation: "Size bir görüşme atandı",
   },
+  uz: {
+    newMessage: "Yangi xabar",
+    sharedLocation: "Joylashuvni ulashdi",
+    sentLink: "Havola yubordi",
+    sentAttachment: "Fayl yubordi",
+    sentAttachments: (count: number) => `${count} ta fayl yubordi`,
+    assignedConversation: "Sizga suhbat biriktirildi",
+  },
   "zh-CN": {
     newMessage: "新消息",
     sharedLocation: "分享了位置",
