@@ -17,7 +17,7 @@ RUN turbo prune builder --docker
 
 # Install dependencies
 FROM base AS deps
-# The v1.14 compiler graph exceeds a 4 GB V8 heap even with isolated workers.
+# Give compiler workers headroom; the enclosing builder caps aggregate RAM.
 ENV NODE_OPTIONS="--max-old-space-size=8192"
 
 WORKDIR /app

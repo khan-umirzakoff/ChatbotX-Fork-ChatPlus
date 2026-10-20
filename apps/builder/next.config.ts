@@ -36,8 +36,8 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   experimental: {
-    // The v1.14 module graph exceeds 24 GB with Turbopack. Build with isolated
-    // Webpack workers and bound prerender concurrency for deployment hosts.
+    // Isolate Webpack compilation and bound prerender concurrency to keep
+    // production builds within the deployment host's memory budget.
     webpackBuildWorker: true,
     webpackMemoryOptimizations: true,
     cpus: 2,
