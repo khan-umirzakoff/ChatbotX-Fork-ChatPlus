@@ -9,7 +9,10 @@ const withNextIntl = createNextIntlPlugin({
 })
 
 const appUrl = env.NEXT_PUBLIC_BUILDER_URL.replace(/\/$/, "")
-const storageUrl = env.NEXT_PUBLIC_STORAGE_URL ?? `${appUrl}/storage`
+const storageUrl = (env.NEXT_PUBLIC_STORAGE_URL ?? `${appUrl}/storage`).replace(
+  /\/$/,
+  "",
+)
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
