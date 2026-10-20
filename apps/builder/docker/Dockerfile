@@ -17,7 +17,8 @@ RUN turbo prune builder --docker
 
 # Install dependencies
 FROM base AS deps
-ENV NODE_OPTIONS="--max-old-space-size=4096"
+# The v1.14 compiler graph exceeds a 4 GB V8 heap even with isolated workers.
+ENV NODE_OPTIONS="--max-old-space-size=8192"
 
 WORKDIR /app
 COPY --from=pre /app/out/json/ .
@@ -40,7 +41,7 @@ COPY --from=pre /app/out/full/ .
 ENV BETTER_AUTH_SECRET="docker-build-time-placeholder-not-used-at-runtime-0"
 ENV BETTER_AUTH_URL="http://localhost:3000"
 
-# - `.next/cache` cache mount: Turbopack's filesystem cache, local to the build.
+# - `.next/cache` cache mount: Webpack's filesystem cache, local to the build.
 #   Not persisted across CI runs — `turbo.json` excludes `.next/cache/**` from the
 #   build outputs, so restoring it can never turn a turbo cache miss into a hit;
 #   it only ever warmed an already-executing build, at a much higher CI cost.
