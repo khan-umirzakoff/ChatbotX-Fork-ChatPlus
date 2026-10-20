@@ -11,6 +11,8 @@ import { queueNames } from "../../lib/types"
 
 export const ScheduleJobData = {
   enqueueBroadcast: "enqueueBroadcast",
+  enqueueRecurringBroadcasts: "enqueueRecurringBroadcasts",
+  materializeRecurringBroadcasts: "materializeRecurringBroadcasts",
   prepareBroadcast: "prepareBroadcast",
   sendBroadcast: "sendBroadcast",
   reconcileBroadcasts: "reconcileBroadcasts",
@@ -25,6 +27,9 @@ export const ScheduleJobData = {
   reconcileTenants: "reconcileTenants",
   reconcileMac: "reconcileMac",
   maintainMacPartitions: "maintainMacPartitions",
+  maintainLeaderboardPartitions: "maintainLeaderboardPartitions",
+  finishOverdueLeaderboards: "finishOverdueLeaderboards",
+  maintainLeaderboardRankings: "maintainLeaderboardRankings",
   scanCoexistRuns: "scanCoexistRuns",
   scanContactScans: "scanContactScans",
   scanAiHandoverBulkRuns: "scanAiHandoverBulkRuns",
@@ -39,6 +44,8 @@ export const ScheduleJobData = {
   purgeBroadcasts: "purgeBroadcasts",
   purgeAutomationThrottle: "purgeAutomationThrottle",
   purgeErrorLogs: "purgeErrorLogs",
+  redispatchInboundWebhookRequests: "redispatchInboundWebhookRequests",
+  purgeInboundWebhookRequests: "purgeInboundWebhookRequests",
   purgeCommentAutomationEvents: "purgeCommentAutomationEvents",
   refreshChannelTokens: "refreshChannelTokens",
   unsubscribeExpiredTrials: "unsubscribeExpiredTrials",
@@ -81,6 +88,30 @@ export const PURGE_BROADCAST_CONCURRENCY = 5
 export const broadcastSendJobId = (broadcastId: string) =>
   `broadcast-send-${broadcastId}`
 
+/** Shared by every producer of a `prepareBroadcast` job, so the same broadcast is never prepared twice. */
+export const broadcastPrepareJobId = (broadcastId: string) =>
+  `schedule-prepare-broadcast-${broadcastId}`
+
+/** Series handled by one `materializeRecurringBroadcasts` job. */
+export const MATERIALIZE_BATCH_SIZE = 100
+/** Series a schedule-worker slot materializes in parallel inside one job. */
+export const MATERIALIZE_ITEM_CONCURRENCY = 10
+/**
+ * BullMQ priority of `materializeRecurringBroadcasts` batches. Jobs without a
+ * priority run before any prioritized job, so a burst of due series always
+ * yields to the other schedule jobs (crons, prepare/send broadcast). No other
+ * schedule job is prioritized, so the queue's prioritized count is exactly the
+ * pending batches.
+ */
+export const MATERIALIZE_RECURRING_BROADCASTS_PRIORITY = 10
+
+/** No `:` — BullMQ rejects it in a custom job id. */
+export const materializeBatchJobId = (
+  dueAtMs: number,
+  page: number,
+  chunk: number,
+) => `broadcast-recurrence-${dueAtMs}-${page}-${chunk}`
+
 export const teardownExpiredTrialJobId = (userId: string) =>
   `teardown-expired-trial-${userId}`
 
@@ -96,6 +127,24 @@ export type ScheduleJobEnqueueBroadcast = {
   data: {
     schedulesAt: Date
   }
+}
+
+export type ScheduleJobEnqueueRecurringBroadcasts = {
+  type: typeof ScheduleJobData.enqueueRecurringBroadcasts
+  data: Record<string, never>
+}
+
+/** One due slot: the series, its workspace (for the blocked-owner guard) and the armed instant. */
+export type MaterializeRecurringBroadcastItem = {
+  recurrenceId: string
+  workspaceId: string
+  occurrenceAtMs: number
+}
+
+/** Turns due slots of repeating broadcasts into runs; the runs are then sent by the existing pipeline. */
+export type ScheduleJobMaterializeRecurringBroadcasts = {
+  type: typeof ScheduleJobData.materializeRecurringBroadcasts
+  data: { items: MaterializeRecurringBroadcastItem[] }
 }
 
 export type ScheduleJobPrepareBroadcast = {
@@ -188,6 +237,21 @@ export type ScheduleJobMaintainMacPartitions = {
   data: Record<string, never>
 }
 
+export type ScheduleJobMaintainLeaderboardPartitions = {
+  type: typeof ScheduleJobData.maintainLeaderboardPartitions
+  data: Record<string, never>
+}
+
+export type ScheduleJobFinishOverdueLeaderboards = {
+  type: typeof ScheduleJobData.finishOverdueLeaderboards
+  data: Record<string, never>
+}
+
+export type ScheduleJobMaintainLeaderboardRankings = {
+  type: typeof ScheduleJobData.maintainLeaderboardRankings
+  data: Record<string, never>
+}
+
 export type ScheduleJobPurgeCoexistStaging = {
   type: typeof ScheduleJobData.purgeCoexistStaging
   data: Record<string, never>
@@ -242,6 +306,16 @@ export type ScheduleJobPurgeErrorLogs = {
   data: Record<string, never>
 }
 
+export type ScheduleJobRedispatchInboundWebhookRequests = {
+  type: typeof ScheduleJobData.redispatchInboundWebhookRequests
+  data: Record<string, never>
+}
+
+export type ScheduleJobPurgeInboundWebhookRequests = {
+  type: typeof ScheduleJobData.purgeInboundWebhookRequests
+  data: Record<string, never>
+}
+
 export type ScheduleJobPurgeCommentAutomationEvents = {
   type: typeof ScheduleJobData.purgeCommentAutomationEvents
   data: Record<string, never>
@@ -279,6 +353,8 @@ export type ScheduleJobSweepStaleWhatsappCalls = {
 export type ScheduleJobData =
   | ScheduleJobBroadcast
   | ScheduleJobEnqueueBroadcast
+  | ScheduleJobEnqueueRecurringBroadcasts
+  | ScheduleJobMaterializeRecurringBroadcasts
   | ScheduleJobPrepareBroadcast
   | ScheduleJobFinalizeBroadcasts
   | ScheduleJobReconcileBroadcasts
@@ -292,6 +368,9 @@ export type ScheduleJobData =
   | ScheduleJobReconcileTenants
   | ScheduleJobReconcileMac
   | ScheduleJobMaintainMacPartitions
+  | ScheduleJobMaintainLeaderboardPartitions
+  | ScheduleJobFinishOverdueLeaderboards
+  | ScheduleJobMaintainLeaderboardRankings
   | ScheduleJobScanCoexistRuns
   | ScheduleJobScanContactScans
   | ScheduleJobScanAiHandoverBulkRuns
@@ -307,6 +386,8 @@ export type ScheduleJobData =
   | ScheduleJobPurgeBroadcasts
   | ScheduleJobPurgeAutomationThrottle
   | ScheduleJobPurgeErrorLogs
+  | ScheduleJobRedispatchInboundWebhookRequests
+  | ScheduleJobPurgeInboundWebhookRequests
   | ScheduleJobPurgeCommentAutomationEvents
   | ScheduleJobRefreshChannelTokens
   | ScheduleJobUnsubscribeExpiredTrials

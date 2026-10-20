@@ -1,5 +1,6 @@
 import {
   integrationMetaCatalogService,
+  productMessageService,
   productService,
 } from "@chatbotx.io/business"
 import { notFoundException } from "@chatbotx.io/business/errors"
@@ -65,6 +66,8 @@ import {
   metaCatalogSyncRunPublicResource,
   publicProductDetailResource,
   publicProductResource,
+  searchMetaCatalogItemsPublicRequest,
+  searchMetaCatalogItemsPublicResponse,
   selectMetaCatalogPublicRequest,
   startProductImportPublicRequest,
   startProductImportPublicResponse,
@@ -72,6 +75,10 @@ import {
   updateProductPublicRequest,
 } from "../schema/public"
 import { listProductsRequest } from "../schema/query"
+import {
+  listSendableProductsRequest,
+  listSendableProductsResponse,
+} from "../schema/sendable"
 
 const workspaceTokenAuthAPI = workspaceTokenAuthAPIForScope("ecommerce")
 
@@ -91,6 +98,27 @@ export const productsPublicRouter = {
       const state = await getMetaCatalogState(context.workspace.id)
       return metaCatalogStatePublicResponse.parse(state)
     }),
+
+  searchMetaCatalogItems: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/products/meta-catalog/items",
+      summary: "Search Meta Catalog items",
+      description:
+        "Searches the workspace's connected Meta Catalog by product name and returns each item's `retailerId`, the id flow steps use to reference a catalog product (e.g. `thumbnailProductId` of a `sendViewCatalog` step). Returns at most 20 items ordered by name, so pass `keyword` to narrow the search. `connected` is false when no catalog is connected; connect one in the builder (see `products.getMetaCatalog`).",
+      tags: ["Products"],
+    })
+    .input(searchMetaCatalogItemsPublicRequest)
+    .output(searchMetaCatalogItemsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(
+      async ({ context, input }) =>
+        await integrationMetaCatalogService.searchProductsForSend({
+          keyword: input.keyword,
+          retailerId: input.retailerId,
+          workspaceId: context.workspace.id,
+        }),
+    ),
 
   disconnectMetaCatalog: workspaceTokenAuthAPI
     .route({
@@ -357,6 +385,26 @@ export const productsPublicRouter = {
     .handler(
       async ({ context, input }) =>
         await productService.list({
+          ...input,
+          workspaceId: context.workspace.id,
+        }),
+    ),
+
+  listSendable: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/products/sendable",
+      summary: "List sendable products",
+      description:
+        "Lists the products a `sendProducts` flow step can show on a channel: active products linked in the workspace's connected Meta Catalog. Put the returned ids in the step's `sections[].productIds`. `ready` is false, with a `reason`, when the channel cannot send products or no catalog is connected. See `capabilities.get` for per-channel limits.",
+      tags: ["Products"],
+    })
+    .input(withPublicPaging(listSendableProductsRequest))
+    .output(listSendableProductsResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(
+      async ({ context, input }) =>
+        await productMessageService.listSendable({
           ...input,
           workspaceId: context.workspace.id,
         }),

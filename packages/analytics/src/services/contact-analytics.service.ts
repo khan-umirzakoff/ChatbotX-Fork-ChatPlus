@@ -1,6 +1,6 @@
 import { contactRepository } from "@chatbotx.io/database/repositories"
 import type { MessageFailedPayload } from "@chatbotx.io/flow-config"
-import { invalidateCacheByTags } from "@chatbotx.io/redis"
+import { invalidateCacheByTags, withCache } from "@chatbotx.io/redis"
 import { parsedErrorSchema } from "@chatbotx.io/sdk"
 import { toDate } from "../lib/date"
 import {
@@ -11,11 +11,14 @@ import type {
   ContactCountsSchema,
   ContactStats,
   ContactsByDimension,
-  TimeRangeQuery,
+  ContactsByDimensionQuery,
+  FilteredTimeRangeQuery,
 } from "../schemas"
+import { analyticsFilterCacheKey } from "../schemas/common"
 import type { ContactEventType } from "../schemas/contact-event"
 
 const USER_BLOCKED_CATEGORY = "user_blocked"
+const TOTAL_CONTACTS_CACHE_TTL_SECONDS = 120
 
 export class ContactAnalyticsService {
   recordEvents(
@@ -26,7 +29,7 @@ export class ContactAnalyticsService {
   }
 
   getStatsByMinute(
-    props: TimeRangeQuery & {
+    props: FilteredTimeRangeQuery & {
       eventTypes?: ContactEventType[]
     },
   ): Promise<ContactStats[]> {
@@ -34,7 +37,7 @@ export class ContactAnalyticsService {
   }
 
   getStatsByHour(
-    props: TimeRangeQuery & {
+    props: FilteredTimeRangeQuery & {
       eventTypes?: ContactEventType[]
     },
   ): Promise<ContactStats[]> {
@@ -42,7 +45,7 @@ export class ContactAnalyticsService {
   }
 
   getStatsByDay(
-    props: TimeRangeQuery & {
+    props: FilteredTimeRangeQuery & {
       eventTypes?: ContactEventType[]
     },
   ): Promise<ContactStats[]> {
@@ -50,43 +53,49 @@ export class ContactAnalyticsService {
   }
 
   getContactCountsPerDay(
-    props: TimeRangeQuery,
+    props: FilteredTimeRangeQuery,
   ): Promise<ContactCountsSchema[]> {
     return contactStatsRepository.getContactCountsPerDay(props)
   }
 
-  getNewContactsPerDay(props: TimeRangeQuery): Promise<ContactCountsSchema[]> {
+  getNewContactsPerDay(
+    props: FilteredTimeRangeQuery,
+  ): Promise<ContactCountsSchema[]> {
     return contactStatsRepository.getNewContactsPerDay(props)
   }
 
-  getNewContactsCount(props: TimeRangeQuery): Promise<number> {
+  getNewContactsCount(props: FilteredTimeRangeQuery): Promise<number> {
     return contactStatsRepository.getNewContactsCount(props)
   }
 
   getBlockedContactsPerDay(
-    props: TimeRangeQuery,
+    props: FilteredTimeRangeQuery,
   ): Promise<ContactCountsSchema[]> {
     return contactStatsRepository.getBlockedContactsPerDay(props)
   }
 
-  getBlockedContactsCount(props: TimeRangeQuery): Promise<number> {
+  getBlockedContactsCount(props: FilteredTimeRangeQuery): Promise<number> {
     return contactStatsRepository.getBlockedContactsCount(props)
   }
 
-  getContactsCount(props: TimeRangeQuery): Promise<number> {
+  getContactsCount(props: FilteredTimeRangeQuery): Promise<number> {
     return contactStatsRepository.getContactsCount(props)
   }
 
-  getContactsByCountry(props: TimeRangeQuery): Promise<ContactsByDimension[]> {
-    return contactStatsRepository.getContactsByCountry(props)
-  }
-
-  getContactsByChannel(props: TimeRangeQuery): Promise<ContactsByDimension[]> {
-    return contactStatsRepository.getContactsByChannel(props)
-  }
-
-  getContactsBySource(props: TimeRangeQuery): Promise<ContactsByDimension[]> {
-    return contactStatsRepository.getContactsBySource(props)
+  getContactsByDimension(
+    props: ContactsByDimensionQuery,
+  ): Promise<ContactsByDimension[]> {
+    if (props.metric !== "total") {
+      return contactStatsRepository.getContactsByDimension(props)
+    }
+    // The total scans the workspace's whole history up to `to`, so it is the
+    // only metric cached. `from` and the timezone do not affect it and stay out
+    // of the key; short TTL, no tags, a handful of rows per entry.
+    return withCache(
+      `analytics:contacts-by-dimension:total:${props.workspaceId}:${props.dimension}:${props.to.toISOString()}:${analyticsFilterCacheKey(props)}`,
+      () => contactStatsRepository.getContactsByDimension(props),
+      { ttl: TOTAL_CONTACTS_CACHE_TTL_SECONDS },
+    )
   }
 
   async handleBlocked(payloads: MessageFailedPayload[]): Promise<void> {
@@ -111,6 +120,7 @@ export class ContactAnalyticsService {
         contactId,
         occurredAt: toDate(payload.occurredAt),
         channel: payload.context.channel,
+        inboxId: payload.context.inboxId,
         metadata: {
           triggerContext: {
             triggerSource: "worker",

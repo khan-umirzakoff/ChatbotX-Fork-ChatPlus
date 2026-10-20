@@ -9,6 +9,11 @@ vi.mock("@chatbotx.io/business", () => ({
 
 // `ref.ts` imports this for its `minigame-share` branch. Left unmocked it
 // pulls the whole business barrel in and the suite fails to import at all.
+vi.mock("@chatbotx.io/business/leaderboard", () => ({
+  leaderboardScoringService: { creditReferral: vi.fn() },
+  leaderboardService: { findUnscoped: vi.fn() },
+}))
+
 vi.mock("@chatbotx.io/business/minigame", () => ({
   minigameService: { findUnscoped: vi.fn() },
   minigameContactService: { creditSharedLinkReferral: vi.fn() },
@@ -24,7 +29,10 @@ vi.mock("@chatbotx.io/database/client", () => ({
 // module scope. A Proxy sentinel satisfies vitest's "does this export
 // exist" check for any table name without listing the whole schema.
 vi.mock("@chatbotx.io/database/schema", () => {
+  const schema = { pick: vi.fn(() => schema) }
   const overrides = {
+    createSelectSchema: vi.fn(() => schema),
+    integrationWebchatModel: {},
     flowModel: { id: "flowModel.id" },
     flowVersionModel: { id: "flowVersionModel.id" },
     reflinkModel: { id: "reflinkModel.id" },

@@ -10,17 +10,25 @@ const mockResolveTenantSettings = vi.fn()
 const mockBroadcastToWorkspaceParty = vi.fn()
 const mockIntegrationQueueAdd = vi.fn()
 const mockFlowExists = vi.fn()
+const mockFindOrCreate = vi.fn()
+const mockPrepareProductMessage = vi.fn()
+const mockFindMediaFilesByIds = vi.fn()
+const mockCopyObject = vi.fn()
 
 vi.mock("@chatbotx.io/database/repositories", () => ({
   createMessageRepository: mockCreateMessageRepository,
   flowRepository: { existsInWorkspace: mockFlowExists },
-  mediaLibraryFileRepository: { findByPath: vi.fn(), findById: vi.fn() },
+  mediaLibraryFileRepository: {
+    findByPath: vi.fn(),
+    findById: vi.fn(),
+    findByIds: mockFindMediaFilesByIds,
+  },
 }))
 
 vi.mock("@chatbotx.io/filesystem", () => ({
   guessFileTypeFromMimeType: vi.fn(() => "image"),
   pathJoin: (...parts: string[]) => parts.join("/"),
-  uploader: { copyObject: vi.fn(), getPresignedDownload: vi.fn() },
+  uploader: { copyObject: mockCopyObject, getPresignedDownload: vi.fn() },
   uploadMultipleFiles: vi.fn(async () => []),
 }))
 
@@ -51,9 +59,28 @@ vi.mock("../src/contact-inbox/service", () => ({
 vi.mock("../src/conversation/service", () => ({
   conversationService: {
     markAgentReplied: mockMarkAgentReplied,
-    findOrCreate: vi.fn(),
+    findOrCreate: mockFindOrCreate,
   },
 }))
+
+vi.mock("../src/workspace/service", () => ({
+  workspaceService: { find: vi.fn() },
+}))
+
+vi.mock("../src/working-hours/service", () => ({
+  workingHoursService: { findForAgent: vi.fn() },
+}))
+
+vi.mock("@chatbotx.io/event-bus", () => ({ emit: vi.fn() }))
+
+vi.mock("../src/product-message/service", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/product-message/service")>()
+  return {
+    ...actual,
+    productMessageService: { prepareOutgoing: mockPrepareProductMessage },
+  }
+})
 
 vi.mock("../src/platform/settings", () => ({
   resolveTenantSettings: mockResolveTenantSettings,
@@ -243,5 +270,308 @@ describe("messageService.createOutgoing with a flow", () => {
     ).rejects.toMatchObject({ code: "notFound", httpStatusCode: 404 })
 
     expect(mockIntegrationQueueAdd).not.toHaveBeenCalled()
+  })
+})
+
+describe("messageService.createOutgoing with products", () => {
+  const products = {
+    display: "products" as const,
+    header: "Picks",
+    body: "Look",
+    sections: [{ productIds: ["1", "2"] }],
+  }
+  const productMessage = {
+    display: "products" as const,
+    header: "Picks",
+    body: "Look",
+    sections: [{ items: [{ productId: "1" }, { productId: "2" }] }],
+  }
+  const prepared = {
+    message: productMessage,
+    missing: [],
+    text: "Look",
+    contentAttributes: { type: "product_message", payload: productMessage },
+  }
+  const whatsappContactInbox = { ...contactInbox, channel: "whatsapp" }
+
+  const send = (
+    input: Record<string, unknown> = {},
+    user: { id: string } | undefined = { id: "user-1" },
+  ) =>
+    createOutgoing({
+      conversation: conversation as never,
+      contactInbox: whatsappContactInbox as never,
+      input: { products, ...input } as never,
+      user: user as never,
+    })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockResolveTenantSettings.mockResolvedValue({
+      storageUrl: "https://storage.example.com",
+    })
+    mockMarkAgentReplied.mockResolvedValue(undefined)
+    mockUpdateTracking.mockResolvedValue(null)
+    mockRepositoryCreate.mockImplementation((input) =>
+      Promise.resolve({
+        id: "msg-1",
+        ...input,
+        sourceId: null,
+        updatedAt: input.createdAt,
+      }),
+    )
+    mockCreateMessageRepository.mockResolvedValue({
+      create: mockRepositoryCreate,
+      createWithAttachments: vi.fn(),
+    })
+    mockChatQueueAdd.mockResolvedValue(undefined)
+    mockBroadcastToWorkspaceParty.mockResolvedValue(undefined)
+    mockPrepareProductMessage.mockResolvedValue(prepared)
+  })
+
+  const expectNothingCreated = () => {
+    expect(mockRepositoryCreate).not.toHaveBeenCalled()
+    expect(mockBroadcastToWorkspaceParty).not.toHaveBeenCalled()
+    expect(mockChatQueueAdd).not.toHaveBeenCalled()
+  }
+
+  test("stores the prepared message, publishes it and queues the channel send", async () => {
+    await send({ clientId: "client-1" })
+
+    expect(mockPrepareProductMessage).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      channel: "whatsapp",
+      content: products,
+      onMissing: "reject",
+    })
+    expect(mockRepositoryCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        text: "Look",
+        contentType: "text",
+        contentAttributes: prepared.contentAttributes,
+      }),
+    )
+    expect(mockBroadcastToWorkspaceParty).toHaveBeenCalledTimes(1)
+    expect(mockChatQueueAdd).toHaveBeenCalledWith(
+      "sendChannelMessage",
+      expect.objectContaining({
+        data: expect.objectContaining({ sendFrom: "inbox" }),
+      }),
+    )
+  })
+
+  test("does not run outbound keyword automations on the product text", async () => {
+    await send()
+
+    const queued = mockChatQueueAdd.mock.calls.map(([name]) => name)
+    expect(queued).toEqual(["sendChannelMessage"])
+  })
+
+  test("keeps the routing-bypass flag next to the product entity", async () => {
+    await send({ bypassThreadControlLock: true })
+
+    expect(mockRepositoryCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentAttributes: {
+          ...prepared.contentAttributes,
+          metadata: { bypassThreadControlLock: true },
+        },
+      }),
+    )
+  })
+
+  test.each([
+    ["channelUnsupported", ["channelUnsupported"]],
+    ["catalogNotConnected", ["catalogNotConnected"]],
+    ["noProductsSendable", ["noProductsSendable"]],
+    ["productsNotSendable", ["productsNotSendable", ["7", "8"]]],
+  ] as const)("a %s message is refused with its reason and nothing is created", async (reason, args) => {
+    const { ProductMessageUnresolvableError } = await import("../src/errors")
+    mockPrepareProductMessage.mockRejectedValue(
+      new ProductMessageUnresolvableError(
+        ...(args as ConstructorParameters<
+          typeof ProductMessageUnresolvableError
+        >),
+      ),
+    )
+
+    await expect(send()).rejects.toMatchObject({
+      code: "productMessageUnresolvable",
+      httpStatusCode: 422,
+      reason,
+    })
+    expectNothingCreated()
+  })
+
+  test("a message that breaks the channel's rules is refused and nothing is created", async () => {
+    const { validationException } = await import("../src/errors")
+    mockPrepareProductMessage.mockRejectedValue(
+      validationException("products", "Invalid product message", {
+        issues: "header: sendProductsFieldRequired",
+      }),
+    )
+
+    await expect(send()).rejects.toMatchObject({
+      code: "validation",
+      httpStatusCode: 422,
+    })
+    expectNothingCreated()
+  })
+
+  test.each([
+    ["a comment reply", { replyToMessageId: "parent-1" }],
+    ["a private reply", { isPrivateReply: true }],
+  ])("refuses products as %s before resolving anything or creating a conversation", async (_name, extra) => {
+    await expect(send(extra)).rejects.toMatchObject({
+      code: "validation",
+      httpStatusCode: 422,
+      field: "products",
+    })
+    expect(mockPrepareProductMessage).not.toHaveBeenCalled()
+    expect(mockFindOrCreate).not.toHaveBeenCalled()
+    expectNothingCreated()
+  })
+
+  test("a plain text send never touches the product service", async () => {
+    await createOutgoing({
+      conversation: conversation as never,
+      contactInbox: whatsappContactInbox as never,
+      input: { text: "hello" },
+      user: { id: "user-1" } as never,
+    })
+
+    expect(mockPrepareProductMessage).not.toHaveBeenCalled()
+    expect(mockChatQueueAdd.mock.calls.map(([name]) => name)).toContain(
+      "checkOutboundAutomatedResponse",
+    )
+  })
+})
+
+describe("messageService.createOutgoing image limits per channel", () => {
+  const imageFile = (id: string) => ({
+    id,
+    name: `${id}.png`,
+    path: `public/space/ws-1/media-library/${id}.png`,
+    mimeType: "image/png",
+    size: 10,
+  })
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockResolveTenantSettings.mockResolvedValue({
+      storageUrl: "https://storage.example.com",
+    })
+    mockCreateMessageRepository.mockResolvedValue({
+      create: mockRepositoryCreate,
+      createWithAttachments: vi.fn(async (input) => ({
+        id: "msg-1",
+        ...input,
+        attachments: [],
+      })),
+    })
+    mockChatQueueAdd.mockResolvedValue(undefined)
+    mockFindMediaFilesByIds.mockImplementation(({ ids }: { ids: string[] }) =>
+      Promise.resolve([...ids].reverse().map(imageFile)),
+    )
+    mockFindOrCreate.mockResolvedValue({ id: "dm-conv", workspaceId: "ws-1" })
+  })
+
+  const send = (channel: string, input: Record<string, unknown>) =>
+    createOutgoing({
+      conversation: conversation as never,
+      contactInbox: { ...contactInbox, channel } as never,
+      input: input as never,
+    })
+
+  test("refuses images on a threads conversation", async () => {
+    await expect(
+      send("threads", { text: "hi", mediaFileIds: ["f1"] }),
+    ).rejects.toMatchObject({
+      code: "imagesNotSupportedOnChannel",
+      data: { reason: "imagesNotSupported", channel: "threads", max: 0 },
+    })
+    expect(mockChatQueueAdd).not.toHaveBeenCalled()
+  })
+
+  test("refuses images on an instagram comment reply", async () => {
+    await expect(
+      send("instagram", {
+        text: "hi",
+        mediaFileIds: ["f1"],
+        replyToMessageId: "parent-1",
+      }),
+    ).rejects.toMatchObject({ code: "imagesNotSupportedOnChannel" })
+  })
+
+  test("refuses a second image on a messenger comment reply", async () => {
+    await expect(
+      send("messenger", {
+        text: "hi",
+        mediaFileIds: ["f1", "f2"],
+        replyToMessageId: "parent-1",
+      }),
+    ).rejects.toMatchObject({
+      code: "imagesNotSupportedOnChannel",
+      data: { reason: "tooManyImages", max: 1 },
+    })
+  })
+
+  test("sends images on an instagram private reply, which lands in the DMs", async () => {
+    await expect(
+      send("instagram", {
+        text: "hi",
+        mediaFileIds: ["f1"],
+        replyToMessageId: "parent-1",
+        isPrivateReply: true,
+      }),
+    ).resolves.toMatchObject({ id: "msg-1" })
+  })
+
+  test("sends several images on a messenger private reply", async () => {
+    await expect(
+      send("messenger", {
+        text: "hi",
+        mediaFileIds: ["f1", "f2", "f3"],
+        replyToMessageId: "parent-1",
+        isPrivateReply: true,
+      }),
+    ).resolves.toMatchObject({ id: "msg-1" })
+  })
+
+  test("refuses images on a tiktok private reply", async () => {
+    await expect(
+      send("tiktok", {
+        text: "hi",
+        mediaFileIds: ["f1"],
+        replyToMessageId: "parent-1",
+        isPrivateReply: true,
+      }),
+    ).rejects.toMatchObject({ code: "imagesNotSupportedOnChannel" })
+  })
+
+  test("loads every media file in one query and keeps the caller's order", async () => {
+    await send("messenger", { text: "hi", mediaFileIds: ["f1", "f2", "f3"] })
+
+    expect(mockFindMediaFilesByIds).toHaveBeenCalledTimes(1)
+    expect(mockCopyObject.mock.calls.map((call) => call[0])).toEqual([
+      "public/space/ws-1/media-library/f1.png",
+      "public/space/ws-1/media-library/f2.png",
+      "public/space/ws-1/media-library/f3.png",
+    ])
+  })
+
+  test("fails when one media file is missing", async () => {
+    mockFindMediaFilesByIds.mockResolvedValue([imageFile("f1")])
+
+    await expect(
+      send("messenger", { text: "hi", mediaFileIds: ["f1", "f2"] }),
+    ).rejects.toThrow("Media library file not found")
+  })
+
+  test("sends images in a messenger message thread", async () => {
+    await expect(
+      send("messenger", { text: "hi", mediaFileIds: ["f1", "f2"] }),
+    ).resolves.toMatchObject({ id: "msg-1" })
+    expect(mockChatQueueAdd).toHaveBeenCalled()
   })
 })

@@ -4,6 +4,10 @@ import {
   resolveTemplateParams,
 } from "@chatbotx.io/business"
 import { notFoundException } from "@chatbotx.io/business/errors"
+import {
+  IMAGES_NOT_SUPPORTED_ON_CHANNEL_CODE,
+  PRODUCT_MESSAGE_UNRESOLVABLE_CODE,
+} from "@chatbotx.io/database/partials"
 import { z } from "zod"
 import {
   ENGLISH_CALL_PERMISSION_MESSAGES,
@@ -25,10 +29,12 @@ import { listMessagesResponse } from "@/features/messages/schema/query"
 import { messageResourceWithRelations } from "@/features/messages/schema/resource"
 import { mcpSpec } from "@/lib/orpc/mcp-annotations"
 import {
+  imagesNotSupportedOnChannel,
   possibleErrorsOnCreatingResource,
   possibleErrorsOnDeletingResource,
   possibleErrorsOnFindingResource,
   possibleErrorsOnMutatingResource,
+  productMessageUnresolvable,
 } from "@/lib/orpc/orpc-error-helper"
 import { workspaceTokenAuthAPIForScope } from "@/orpc"
 import {
@@ -116,6 +122,7 @@ export const messagesPublicRouter = {
         workspaceId: context.workspace.id,
         conversationId,
         request: { ...request, templateData },
+        sender: { initiatedBy: "api" },
       })
       return { queued: true as const }
     }),
@@ -209,13 +216,17 @@ export const messagesPublicRouter = {
       path: "/v1/conversations/{conversationId}/messages",
       summary: "Send message on conversation",
       description:
-        "Use this to reply in an existing conversation by conversationId. Sends an outgoing text/media message on an existing conversation. To message a contact without first resolving their conversation id, use `contacts.sendMessage` instead.",
+        "Use this to reply in an existing conversation by conversationId. Sends an outgoing text, media or catalog product message (`products`, on channels with product messages such as WhatsApp; ids from `products.listSendable`) on an existing conversation. To message a contact without first resolving their conversation id, use `contacts.sendMessage` instead. Images are refused with `imagesNotSupportedOnChannel` (422, `data.reason`/`data.max`) where the channel can't carry them: Threads, Instagram and TikTok comment replies, or more than one image on a Messenger comment reply. To send a saved reply, pass its `text` and its `images[].mediaLibraryFileId` as `mediaFileIds` (from `savedReplies.list`).",
       successStatus: 201,
       tags: ["Messages"],
     })
     .input(createMessageRequest.and(conversationIdPathParam))
     .output(messageResourceWithRelations.nullable())
-    .errors(possibleErrorsOnCreatingResource)
+    .errors({
+      ...possibleErrorsOnCreatingResource,
+      [PRODUCT_MESSAGE_UNRESOLVABLE_CODE]: productMessageUnresolvable,
+      [IMAGES_NOT_SUPPORTED_ON_CHANNEL_CODE]: imagesNotSupportedOnChannel,
+    })
     .handler(async ({ context, input }) => {
       const workspaceId = context.workspace.id
 

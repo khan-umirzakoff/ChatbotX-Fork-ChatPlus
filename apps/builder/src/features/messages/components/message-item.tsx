@@ -6,9 +6,13 @@ import type {
   MessageTemplateEntity,
 } from "@chatbotx.io/sdk"
 import {
+  getInboundOrder,
+  getReferredProduct,
+  getViewCatalogEntity,
   getWhatsappCallEntity,
   getWhatsappCallPermissionReply,
   getWhatsappFlowResponse,
+  isMessageProductEntity,
 } from "@chatbotx.io/sdk"
 import {
   Avatar,
@@ -41,6 +45,7 @@ import {
   PhoneOffIcon,
   ReplyIcon,
   RotateCwIcon,
+  StoreIcon,
   ThumbsUp,
 } from "lucide-react"
 import Image from "next/image"
@@ -55,9 +60,12 @@ import {
   isThreadControlEcho,
 } from "../lib/thread-control-content"
 import type { MessageResourceWithRelations } from "../schema/resource"
+import { InboundOrderBubble } from "./inbound-order-bubble"
 import { MessageActions, MessageActionsEditor } from "./message-actions"
 import { MessageBubble } from "./message-bubble"
 import { MessageErrorBadge } from "./message-error-badge"
+import { ProductMessageBubble } from "./product-message-bubble"
+import { ReferredProductContext } from "./referred-product-context"
 import { ThreadControlContextCard } from "./thread-control-context-card"
 import { ThreadControlDivider } from "./thread-control-divider"
 import { WhatsappCallCard } from "./whatsapp-call-card"
@@ -160,8 +168,12 @@ export const MessageItem = (props: MessageItemProps) => {
   // A partner's reply seen on the standby feed: outgoing side, but in the
   // muted bubble and captioned, so it never reads as the agent's own message.
   const isPartnerEcho = isThreadControlEcho(message.contentAttributes)
+  // An inbound cart renders as its own bubble; the stored text is only its
+  // plain-text summary for keywords and previews.
+  const inboundOrder = getInboundOrder(message.contentAttributes)
   const suppressRawText = Boolean(
-    whatsappCall ||
+    inboundOrder ||
+      whatsappCall ||
       callPermissionReply ||
       threadControlActivity ||
       threadControlContext,
@@ -745,8 +757,45 @@ const WhatsappCallPermissionReply = ({
   )
 }
 
+/**
+ * What the contact sees under a "view catalog" message: the footer and the
+ * channel's own button. It is only a picture of that button — nothing here opens
+ * a catalog — so it is disabled.
+ */
+const ViewCatalogCard = ({ footer }: { footer?: string }) => {
+  const t = useTranslations("messages")
+
+  return (
+    <div className="mt-1 flex flex-col gap-1">
+      {footer ? (
+        <p
+          className="line-clamp-2 whitespace-pre-line break-words text-muted-foreground text-xs"
+          data-slot="view-catalog-footer"
+        >
+          {footer}
+        </p>
+      ) : null}
+      <Button
+        className="w-full bg-secondary text-secondary-foreground disabled:bg-muted disabled:text-muted-foreground sm:w-auto sm:min-w-60 dark:bg-secondary dark:text-secondary-foreground dark:disabled:bg-muted dark:disabled:text-muted-foreground"
+        data-slot="view-catalog-button"
+        disabled
+        size="sm"
+        variant="outline"
+      >
+        <StoreIcon />
+        {t("viewCatalog")}
+      </Button>
+    </div>
+  )
+}
+
 const RenderContentAttributes = (props: MessageItemProps) => {
   const { message, onPostback } = props
+  const viewCatalog = getViewCatalogEntity(message.contentAttributes)
+  if (viewCatalog) {
+    return <ViewCatalogCard footer={viewCatalog.footer} />
+  }
+
   const whatsappCall = getWhatsappCallEntity(message.contentAttributes)
   if (whatsappCall) {
     return (
@@ -797,6 +846,20 @@ const RenderContentAttributes = (props: MessageItemProps) => {
   )
   if (threadControlContext) {
     return <ThreadControlContextCard data={threadControlContext} />
+  }
+
+  if (isMessageProductEntity(message.contentAttributes)) {
+    return <ProductMessageBubble message={message.contentAttributes.payload} />
+  }
+
+  const inboundOrder = getInboundOrder(message.contentAttributes)
+  if (inboundOrder) {
+    return <InboundOrderBubble order={inboundOrder} />
+  }
+
+  const referredProduct = getReferredProduct(message.contentAttributes)
+  if (referredProduct) {
+    return <ReferredProductContext reference={referredProduct} />
   }
 
   const contentAttributes = message.contentAttributes as

@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm"
 import {
   boolean,
   index,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -58,6 +59,25 @@ export const conversationModel = pgTable(
     currentStep: text(),
     adminRepliedAt: timestamp(timestampConfig),
     contactRepliedAt: timestamp(timestampConfig),
+    /** Start of the open window in which a human reply is owed (DM only). */
+    awaitingHumanReplySince: timestamp(timestampConfig),
+    /**
+     * Last instant a HUMAN closed the reply window (agent reply claim, an
+     * external native-app echo, archive); stale inbound events are ignored.
+     * Bot closes do not advance it.
+     */
+    awaitingHumanReplyClosedAt: timestamp(timestampConfig),
+    /** Instant `assignedUserId` last changed to a non-null user. */
+    assignedUserAt: timestamp(timestampConfig),
+    /**
+     * Response SLA snapshot of the open waiting window (see
+     * `ResponseSlaPolicy`): the working-time deadline, the instant it turns
+     * "breaching", and the target it was computed from. Set and cleared
+     * together with `awaitingHumanReplySince`; all NULL while no SLA applies.
+     */
+    responseDueAt: timestamp(timestampConfig),
+    responseSlaBreachingAt: timestamp(timestampConfig),
+    responseSlaTargetSeconds: integer(),
   },
   (table) => [
     uniqueIndex("Conversation_contactId_sourceId_key")
@@ -67,6 +87,10 @@ export const conversationModel = pgTable(
       .on(table.contactId)
       .where(sql`${table.sourceId} IS NULL`),
     index("Conversation_contactId_idx").on(table.contactId),
+    // Inbox SLA filter: only the (few) conversations with an open SLA window.
+    index("Conversation_workspaceId_responseDueAt_idx")
+      .on(table.workspaceId, table.responseDueAt)
+      .where(sql`${table.responseDueAt} IS NOT NULL`),
     index("Conversation_aiContextLastMessageId_idx").on(
       table.aiContextLastMessageId,
     ),

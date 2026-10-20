@@ -1,5 +1,11 @@
 import { BROADCAST_PLAN_LIMIT_CODE } from "@chatbotx.io/business/errors"
-import { broadcastPlanLimitDataSchema } from "@chatbotx.io/database/partials"
+import {
+  broadcastPlanLimitDataSchema,
+  IMAGES_NOT_SUPPORTED_ON_CHANNEL_CODE,
+  imagesNotSupportedOnChannelDataSchema,
+  PRODUCT_MESSAGE_UNRESOLVABLE_CODE,
+  productMessageUnresolvableDataSchema,
+} from "@chatbotx.io/database/partials"
 import type { ErrorMap } from "@orpc/server"
 import { z } from "zod"
 import { DENIAL_MESSAGES } from "@/lib/workspace/authorize-workspace-access"
@@ -20,8 +26,31 @@ const broadcastPlanLimit = {
   data: broadcastPlanLimitDataSchema,
 }
 
+/**
+ * A product message that cannot be sent as asked. `data.reason` says why, so an
+ * agent can branch on it instead of parsing the message.
+ */
+export const productMessageUnresolvable = {
+  message: "The product message cannot be sent",
+  status: 422,
+  data: productMessageUnresolvableDataSchema,
+}
+
+/**
+ * The conversation's channel can't carry the message's images (Threads,
+ * Instagram/TikTok comment replies) or not that many (a Messenger comment
+ * reply takes one). `data.reason` and `data.max` say which.
+ */
+export const imagesNotSupportedOnChannel = {
+  message: "The channel can't send these images",
+  status: 422,
+  data: imagesNotSupportedOnChannelDataSchema,
+}
+
 export const STRUCTURED_ERROR_CODES: ReadonlySet<string> = new Set([
   BROADCAST_PLAN_LIMIT_CODE,
+  PRODUCT_MESSAGE_UNRESOLVABLE_CODE,
+  IMAGES_NOT_SUPPORTED_ON_CHANNEL_CODE,
 ])
 
 /**
@@ -163,6 +192,65 @@ export const possibleErrorsOnMutatingResource = {
   notFound,
   businessError,
   ...possibleIdempotencyErrors,
+} satisfies ErrorMap
+
+const decisionValidationErrors = {
+  invalidDecisionContract: {
+    message: "The AI Router decision contract is invalid",
+    status: 400,
+  },
+  invalidDecisionEndpoint: {
+    message: "The AI Router provider endpoint is invalid",
+    status: 400,
+  },
+  invalidDecisionModel: {
+    message: "The AI Router model configuration is invalid",
+    status: 400,
+  },
+  invalidDecisionReference: {
+    message: "An AI Router configuration reference is unavailable or invalid",
+    status: 400,
+  },
+} satisfies ErrorMap
+
+export const possibleErrorsOnCreatingDecisionConnection = {
+  ...decisionValidationErrors,
+  ...possibleIdempotencyErrors,
+} satisfies ErrorMap
+
+export const possibleErrorsOnMutatingDecisionConnection = {
+  notFound,
+  ...decisionValidationErrors,
+  ...possibleIdempotencyErrors,
+} satisfies ErrorMap
+
+export const possibleErrorsOnTestingDecisionConnection = {
+  notFound,
+  invalidDecisionModel: decisionValidationErrors.invalidDecisionModel,
+  decisionConnectionTestThrottled: {
+    message:
+      "An AI Router connection test is already running or was run recently",
+    status: 429,
+  },
+  ...possibleIdempotencyErrors,
+} satisfies ErrorMap
+
+export const possibleErrorsOnCreatingDecisionProfile = {
+  ...decisionValidationErrors,
+  ...possibleIdempotencyErrors,
+} satisfies ErrorMap
+
+export const possibleErrorsOnMutatingDecisionProfile = {
+  notFound,
+  ...decisionValidationErrors,
+  ...possibleIdempotencyErrors,
+} satisfies ErrorMap
+
+/** Sending a message that may carry products (`contacts.sendMessage`). */
+export const possibleErrorsOnSendingMessage = {
+  ...possibleErrorsOnMutatingResource,
+  [PRODUCT_MESSAGE_UNRESOLVABLE_CODE]: productMessageUnresolvable,
+  [IMAGES_NOT_SUPPORTED_ON_CHANNEL_CODE]: imagesNotSupportedOnChannel,
 } satisfies ErrorMap
 
 /** WhatsApp calling settings/hours: Meta or the local mirror failing is a 502. */
@@ -582,6 +670,53 @@ export const possibleErrorsOnMutatingMinigame = {
 } satisfies ErrorMap
 
 /**
+ * Leaderboard status machine and score edits (`@chatbotx.io/business/leaderboard`)
+ * reject out-of-state operations with these codes. Same declare-or-vanish
+ * rule as the minigame pair above.
+ */
+const leaderboardStateErrors = {
+  leaderboardActionNotAllowed: {
+    message: "This action is not allowed in the leaderboard's current status",
+    status: 409,
+  },
+  leaderboardFinished: {
+    message: "Scores are locked because the leaderboard has finished",
+    status: 409,
+  },
+  leaderboardNotPublished: {
+    message: "Publish the leaderboard before editing scores",
+    status: 409,
+  },
+  leaderboardParticipantBanned: {
+    message: "This participant is banned",
+    status: 409,
+  },
+} satisfies ErrorMap
+
+export const possibleErrorsOnMutatingLeaderboard = {
+  notFound,
+  businessError,
+  ...leaderboardStateErrors,
+  ...possibleIdempotencyErrors,
+} satisfies ErrorMap
+
+export const possibleErrorsOnTriggeringLeaderboardRewards = {
+  ...possibleErrorsOnMutatingLeaderboard,
+  leaderboardNotFinished: {
+    message: "Rewards can only be sent after the leaderboard finishes",
+    status: 409,
+  },
+  leaderboardRewardFlowMissing: {
+    message: "Choose a reward flow first",
+    status: 422,
+  },
+  leaderboardRewardsAlreadySent: {
+    message: "Rewards were already sent",
+    status: 409,
+  },
+} satisfies ErrorMap
+
+/**
  * Email topic create/update reject a duplicate name with `nameTaken` at 400
  * (`packages/business/src/email-topic/service.ts`), and create surfaces a
  * 404 when `folderId` names a folder that does not exist in the workspace
@@ -690,6 +825,11 @@ const channelHidden = {
 export const possibleErrorsOnCreatingConnection = {
   connectionProviderDedicatedOnly,
   businessError,
+  notFound,
+  channelLimitReached: {
+    message: "Channel limit reached for this plan",
+    status: 400,
+  },
   connectionAlreadyConnected: {
     message: "This provider is already connected in this workspace",
     status: 409,

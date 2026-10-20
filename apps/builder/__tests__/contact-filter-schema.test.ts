@@ -11,6 +11,7 @@ import {
   contactFilterCriteriaSchema,
   couponTopicConditionSchema,
   customFieldConditionSchema,
+  leaderboardScoreConditionSchema,
   singleContactFilterConditionSchema,
 } from "@/features/contact-filter/schema"
 import { staticFieldFilter } from "@/features/contact-filter/schema/static-field-filter"
@@ -697,5 +698,94 @@ describe("listContactsRequest contactFilter preprocess", () => {
 
     expect(parsed.contactFilter).toBeUndefined()
     expect(parsed.keyword).toBe("Acme")
+  })
+})
+
+describe("leaderboardScoreConditionSchema", () => {
+  test("accepts a numeric comparison and coerces numbers to strings", () => {
+    const parsed = leaderboardScoreConditionSchema.safeParse({
+      field: "leaderboardScore",
+      leaderboardId: "77",
+      operator: operatorTypes.enum.gte,
+      value: 100,
+    })
+    expect(parsed.success).toBe(true)
+    expect(parsed.data?.value).toBe("100")
+  })
+
+  test("rejects other operators and non-numeric values", () => {
+    expect(
+      leaderboardScoreConditionSchema.safeParse({
+        field: "leaderboardScore",
+        leaderboardId: "77",
+        operator: operatorTypes.enum.contains,
+        value: "1",
+      }).success,
+    ).toBe(false)
+    expect(
+      leaderboardScoreConditionSchema.safeParse({
+        field: "leaderboardScore",
+        leaderboardId: "77",
+        operator: operatorTypes.enum.gt,
+        value: "abc",
+      }).success,
+    ).toBe(false)
+  })
+
+  test("is part of the single-condition union (flow Condition step)", () => {
+    expect(
+      singleContactFilterConditionSchema.safeParse({
+        field: "leaderboardScore",
+        leaderboardId: "77",
+        operator: operatorTypes.enum.lt,
+        value: "5",
+      }).success,
+    ).toBe(true)
+  })
+})
+
+describe("flow-only contact filter fields", () => {
+  const workingHoursCriteria = {
+    operator: "and",
+    conditions: [
+      {
+        field: "isWithinWorkingHours",
+        operator: "in",
+        value: ["assignedAgent"],
+      },
+    ],
+  }
+
+  test("are rejected by the list/audience criteria schema", async () => {
+    const { contactFilterCriteriaSchema } = await import(
+      "@/features/contact-filter/schema"
+    )
+    expect(
+      contactFilterCriteriaSchema.safeParse(workingHoursCriteria).success,
+    ).toBe(false)
+  })
+
+  test("are accepted by the flow Condition criteria schema", async () => {
+    const { flowConditionFilterCriteriaSchema } = await import(
+      "@/features/contact-filter/schema"
+    )
+    expect(
+      flowConditionFilterCriteriaSchema.safeParse(workingHoursCriteria).success,
+    ).toBe(true)
+  })
+
+  test("only allow in / notIn with a value", async () => {
+    const { flowConditionFilterCriteriaSchema } = await import(
+      "@/features/contact-filter/schema"
+    )
+    const withCondition = (condition: Record<string, unknown>) =>
+      flowConditionFilterCriteriaSchema.safeParse({
+        operator: "and",
+        conditions: [{ field: "isWithinWorkingHours", ...condition }],
+      }).success
+
+    expect(withCondition({ operator: "notIn", value: ["1"] })).toBe(true)
+    expect(withCondition({ operator: "eq", value: "1" })).toBe(false)
+    expect(withCondition({ operator: "in" })).toBe(false)
   })
 })

@@ -1,6 +1,12 @@
 // @vitest-environment node
 
 import { beforeEach, describe, expect, test, vi } from "vitest"
+import {
+  contactsByDimensionPublicRequest,
+  timeRangePublicRequest,
+  timeRangeWithGranularityDMPublicRequest,
+  timeRangeWithGranularityMHDPublicRequest,
+} from "@/features/analytics/schema/public"
 
 // `@chatbotx.io/analytics`'s barrel re-exports its services, which import
 // repositories that open a real `pg.Pool` via `@chatbotx.io/database/client`
@@ -17,6 +23,7 @@ type RouteConfig = {
   method: string
   path: string
   summary: string
+  description?: string
   tags: string[]
   successStatus?: number
 }
@@ -66,9 +73,7 @@ const contactAnalyticsService = {
   getBlockedContactsCount: vi.fn(),
   getNewContactsCount: vi.fn(),
   getContactsCount: vi.fn(),
-  getContactsByCountry: vi.fn(),
-  getContactsByChannel: vi.fn(),
-  getContactsBySource: vi.fn(),
+  getContactsByDimension: vi.fn(),
 }
 
 const macAnalyticsService = {
@@ -80,6 +85,10 @@ const messageAnalyticsService = {
   getMessagesByAdmin: vi.fn(),
   getHumanAgentStats: vi.fn(),
   getMessagesBySender: vi.fn(),
+}
+
+const agentResponseAnalyticsService = {
+  getAgentResponseSeries: vi.fn(),
 }
 
 const conversationAnalyticsService = {
@@ -129,6 +138,7 @@ const commentAutomationAnalyticsService = {
 }
 
 vi.mock("@chatbotx.io/analytics", () => ({
+  agentResponseAnalyticsService,
   commentAutomationAnalyticsService,
   contactAnalyticsService,
   macAnalyticsService,
@@ -144,8 +154,10 @@ vi.mock("@chatbotx.io/analytics", () => ({
 
 const flowServiceMock = { findById: vi.fn() }
 const smartDelayServiceMock = { countByFlowStep: vi.fn() }
+const inboxServiceMock = { listAnalyticsFilterOptions: vi.fn() }
 vi.mock("@chatbotx.io/business", () => ({
   flowService: flowServiceMock,
+  inboxService: inboxServiceMock,
   smartDelayService: smartDelayServiceMock,
 }))
 
@@ -215,6 +227,52 @@ describe("GET /v1/analytics/contacts-count", () => {
   })
 })
 
+describe("GET /v1/analytics/contacts-by-dimension", () => {
+  const procedure = findProcedure("GET", "/v1/analytics/contacts-by-dimension")
+  const range = {
+    from: new Date("2026-10-01T00:00:00.000Z"),
+    to: new Date("2026-10-07T23:59:59.999Z"),
+    timezone: "UTC",
+  }
+
+  test("sources workspaceId from context and forwards dimension and metric", async () => {
+    const rows = [{ dimension: "messenger", count: 3, uniqueContacts: 3 }]
+    contactAnalyticsService.getContactsByDimension.mockResolvedValueOnce(rows)
+
+    const result = await procedure.handler?.({
+      context: { workspace: { id: "workspace-1" } },
+      input: { ...range, dimension: "channel", metric: "total" },
+    })
+
+    expect(contactAnalyticsService.getContactsByDimension).toHaveBeenCalledWith(
+      {
+        ...range,
+        dimension: "channel",
+        metric: "total",
+        workspaceId: "workspace-1",
+      },
+    )
+    expect(result).toEqual({ data: rows })
+  })
+
+  test("request schema defaults metric to new and rejects total for country", () => {
+    const defaulted = contactsByDimensionPublicRequest.parse({
+      from: range.from.toISOString(),
+      to: range.to.toISOString(),
+      dimension: "country",
+    })
+    expect(defaulted.metric).toBe("new")
+
+    const rejected = contactsByDimensionPublicRequest.safeParse({
+      from: range.from.toISOString(),
+      to: range.to.toISOString(),
+      dimension: "country",
+      metric: "total",
+    })
+    expect(rejected.success).toBe(false)
+  })
+})
+
 describe("GET /v1/analytics/conversation-handoffs", () => {
   const procedure = findProcedure("GET", "/v1/analytics/conversation-handoffs")
 
@@ -229,6 +287,88 @@ describe("GET /v1/analytics/conversation-handoffs", () => {
     expect(conversationAnalyticsService.getHandoffsByDay).toHaveBeenCalledWith(
       expect.objectContaining({ workspaceId: "workspace-1" }),
     )
+  })
+})
+
+describe("GET /v1/analytics/human-agent-stats", () => {
+  const procedure = findProcedure("GET", "/v1/analytics/human-agent-stats")
+
+  test("documents response-time fields instead of denying them", () => {
+    const description = procedure.route.description ?? ""
+    expect(description).not.toContain("no response-time metric")
+    expect(description).toContain("avgWorkingFirstResponseSeconds")
+    expect(description).toContain("SECONDS")
+    expect(description).toContain("`null`")
+  })
+
+  test("returns response-time measures and strips workspaceId", async () => {
+    messageAnalyticsService.getHumanAgentStats.mockResolvedValueOnce([
+      {
+        workspaceId: "workspace-1",
+        adminId: "5",
+        assignedConversations: 1,
+        messagesSent: 2,
+        uniqueContacts: 1,
+        avgResponseSeconds: 30,
+        avgWorkingResponseSeconds: null,
+        avgFirstResponseSeconds: 40,
+        avgWorkingFirstResponseSeconds: null,
+        responseCount: 3,
+        firstResponseCount: 1,
+      },
+    ])
+
+    const result = await procedure.handler?.({
+      context: { workspace: { id: "workspace-1" } },
+      input: { from: new Date(), to: new Date(), timezone: "UTC" },
+    })
+
+    expect(result).toMatchObject({
+      data: [{ adminId: "5", avgResponseSeconds: 30, responseCount: 3 }],
+    })
+  })
+})
+
+describe("GET /v1/analytics/agent-response-series", () => {
+  const procedure = findProcedure("GET", "/v1/analytics/agent-response-series")
+
+  test("sources workspaceId from context, not input, and returns the service rows", async () => {
+    const row = {
+      adminId: "5",
+      workspaceId: "workspace-1",
+      date: "2026-01-02",
+      userName: "Ann",
+      userEmail: "ann@example.com",
+      avgResponseSeconds: 30,
+      avgWorkingResponseSeconds: null,
+      avgFirstResponseSeconds: 40,
+      avgWorkingFirstResponseSeconds: null,
+      responseCount: 3,
+      firstResponseCount: 1,
+    }
+    agentResponseAnalyticsService.getAgentResponseSeries.mockResolvedValueOnce([
+      row,
+    ])
+
+    const result = await procedure.handler?.({
+      context: { workspace: { id: "workspace-1" } },
+      input: { from: new Date(), to: new Date(), timezone: "UTC" },
+    })
+
+    expect(
+      agentResponseAnalyticsService.getAgentResponseSeries,
+    ).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId: "workspace-1", timezone: "UTC" }),
+    )
+    expect(result).toEqual({ data: [row] })
+  })
+
+  test("description states units, null semantics and timezone", () => {
+    const description = procedure.route.description ?? ""
+    expect(description).toContain("SECONDS")
+    expect(description).toContain("`null`")
+    expect(description).toContain("timezone")
+    expect(description).toContain("analytics.humanAgentStats")
   })
 })
 
@@ -642,5 +782,133 @@ describe("comment automation request validation", () => {
     expect(schema.safeParse({ ...ok, timezone: "Asia/Hanoi" }).success).toBe(
       false,
     )
+  })
+})
+
+describe("analytics channel / integration filters", () => {
+  const range = {
+    from: new Date("2026-10-01T00:00:00.000Z"),
+    to: new Date("2026-10-07T23:59:59.999Z"),
+    timezone: "UTC",
+  }
+  const wire = {
+    from: range.from.toISOString(),
+    to: range.to.toISOString(),
+  }
+
+  test.each([
+    ["time range", timeRangePublicRequest],
+    [
+      "time range with hour granularity",
+      timeRangeWithGranularityMHDPublicRequest,
+    ],
+    [
+      "time range with day/month granularity",
+      timeRangeWithGranularityDMPublicRequest,
+    ],
+  ])("%s accepts optional channels and inboxIds", (_name, schema) => {
+    expect(schema.safeParse(wire).success).toBe(true)
+    const parsed = schema.parse({
+      ...wire,
+      channels: ["messenger"],
+      inboxIds: ["12"],
+    })
+    expect(parsed.channels).toEqual(["messenger"])
+    expect(parsed.inboxIds).toEqual(["12"])
+  })
+
+  test("wraps a single query value (`?channels=messenger`) into an array", () => {
+    const parsed = timeRangePublicRequest.parse({
+      ...wire,
+      channels: "messenger",
+      inboxIds: "12",
+    })
+    expect(parsed.channels).toEqual(["messenger"])
+    expect(parsed.inboxIds).toEqual(["12"])
+    expect(
+      timeRangePublicRequest.safeParse({ ...wire, channels: "nope" }).success,
+    ).toBe(false)
+  })
+
+  test("rejects an unknown channel and an overflowing inbox id", () => {
+    expect(
+      timeRangePublicRequest.safeParse({ ...wire, channels: ["nope"] }).success,
+    ).toBe(false)
+    expect(
+      timeRangePublicRequest.safeParse({
+        ...wire,
+        inboxIds: ["99999999999999999999"],
+      }).success,
+    ).toBe(false)
+  })
+
+  test("contacts-by-dimension accepts language and the filters", () => {
+    const parsed = contactsByDimensionPublicRequest.parse({
+      ...wire,
+      dimension: "language",
+      channels: ["whatsapp"],
+    })
+    expect(parsed.dimension).toBe("language")
+    expect(parsed.channels).toEqual(["whatsapp"])
+  })
+
+  test("forwards the filters to the service together with the context workspace", async () => {
+    contactAnalyticsService.getNewContactsPerDay.mockResolvedValueOnce([])
+    const procedure = findProcedure(
+      "GET",
+      "/v1/analytics/new-contact-counts-per-day",
+    )
+
+    await procedure.handler?.({
+      context: { workspace: { id: "workspace-1" } },
+      input: { ...range, channels: ["messenger"], inboxIds: ["7"] },
+    })
+
+    expect(contactAnalyticsService.getNewContactsPerDay).toHaveBeenCalledWith({
+      ...range,
+      channels: ["messenger"],
+      inboxIds: ["7"],
+      workspaceId: "workspace-1",
+    })
+  })
+
+  test("cached counts use one key per normalized filter", async () => {
+    contactAnalyticsService.getNewContactsCount.mockResolvedValue(1)
+    const procedure = findProcedure("GET", "/v1/analytics/new-contacts-count")
+    const call = (extra: Record<string, unknown>) =>
+      procedure.handler?.({
+        context: { workspace: { id: "workspace-1" } },
+        input: { ...range, ...extra },
+      })
+
+    await call({})
+    await call({ channels: [], inboxIds: [] })
+    await call({ channels: ["whatsapp", "messenger"] })
+    await call({ channels: ["messenger", "whatsapp", "messenger"] })
+    await call({ inboxIds: ["5"] })
+
+    const keys = withCache.mock.calls.map(([key]) => key)
+    expect(keys[0]).toBe(keys[1])
+    expect(keys[2]).toBe(keys[3])
+    expect(new Set([keys[0], keys[2], keys[4]]).size).toBe(3)
+  })
+
+  test("filterOptions lists the workspace's inboxes from the context workspace only", async () => {
+    const rows = [
+      { id: "1", name: "Shop", channel: "messenger" },
+      { id: "2", name: "Sales", channel: "whatsapp" },
+    ]
+    inboxServiceMock.listAnalyticsFilterOptions.mockResolvedValueOnce(rows)
+    const procedure = findProcedure("GET", "/v1/analytics/filter-options")
+
+    const result = await procedure.handler?.({
+      context: { workspace: { id: "workspace-1" } },
+      input: { workspaceId: "someone-elses" },
+    })
+
+    expect(inboxServiceMock.listAnalyticsFilterOptions).toHaveBeenCalledWith(
+      "workspace-1",
+    )
+    expect(result).toEqual({ data: rows })
   })
 })

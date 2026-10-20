@@ -15,6 +15,7 @@ import { archiveConversationStepSchema } from "./steps/archive-conversation"
 import { assignConversationStepSchema } from "./steps/assign-conversation"
 import { autoAssignConversationStepSchema } from "./steps/auto-assign-conversation"
 import { blockContactStepSchema } from "./steps/block-contact"
+import { changeGamificationScoreStepSchema } from "./steps/change-gamification-score"
 import { clearCustomFieldStepSchema } from "./steps/clear-custom-field"
 import { countCharactersStepSchema } from "./steps/count-characters"
 import { markCouponUsedStepSchema, setUpCouponStepSchema } from "./steps/coupon"
@@ -24,6 +25,7 @@ import { disableMessengerComposerStepSchema } from "./steps/disable-messenger-co
 import { dripSubscribeSubscriberSchema } from "./steps/drip-subscribe-subscriber"
 import { enableBotStepSchema } from "./steps/enable-bot"
 import { enableMessengerComposerStepSchema } from "./steps/enable-messenger-composer"
+import { evaluateDecisionStepSchema } from "./steps/evaluate-decision"
 import { executeJavascriptStepSchema } from "./steps/execute-javascript"
 import { externalRequestStepSchema } from "./steps/external-request"
 import { facebookCustomAudienceSchema } from "./steps/facebook-custom-audience"
@@ -96,6 +98,7 @@ const contactSteps = [
   questionnairesStepSchema,
   setUpCouponStepSchema,
   markCouponUsedStepSchema,
+  changeGamificationScoreStepSchema,
 ]
 
 const broadcastSteps = [
@@ -115,6 +118,7 @@ const toolSteps = [
   countCharactersStepSchema,
   externalRequestStepSchema,
   executeJavascriptStepSchema,
+  evaluateDecisionStepSchema,
 ]
 
 const triggerSteps = [makeStepSchema, triggerN8nStepSchema]

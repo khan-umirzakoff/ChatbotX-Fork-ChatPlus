@@ -1,18 +1,20 @@
 "use client"
 
 import {
+  hasSameStructure,
   isFileAnswer,
   type MiniAppDefinition,
   type MiniAppFileAnswer,
 } from "@chatbotx.io/mini-app"
 import { useTranslations } from "next-intl"
-import { useCallback } from "react"
+import { useCallback, useState } from "react"
 import { toast } from "sonner"
+import { saveMiniAppScreenAction } from "../actions/save-mini-app-screen.action"
 import { submitMiniAppAction } from "../actions/submit-mini-app.action"
 import {
   type MiniAppUploader,
   MiniAppUploaderContext,
-} from "../components/file-upload-field"
+} from "../renderer/file-upload-field"
 import { MiniAppRunner } from "./mini-app-runner"
 
 const HTTP_CREATED = 201
@@ -68,14 +70,18 @@ const toSubmittedAnswers = (answers: Record<string, unknown>) =>
 
 export function PublicMiniApp({
   miniAppId,
-  definition,
+  definition: initialDefinition,
   token,
+  resume,
 }: {
   miniAppId: string
   definition: MiniAppDefinition
   token?: string
+  resume?: string
 }) {
   const t = useTranslations("miniApps.public")
+  // Replaced after each screen is saved, so `{{variables}}` show new values.
+  const [definition, setDefinition] = useState(initialDefinition)
   const upload = useCallback<MiniAppUploader>(
     ({ inputName, file, onProgress }) =>
       postUpload({ miniAppId, token, inputName, file, onProgress }),
@@ -91,6 +97,7 @@ export function PublicMiniApp({
           const result = await submitMiniAppAction({
             miniAppId,
             token,
+            resume,
             answers: toSubmittedAnswers(answers),
             timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           })
@@ -100,6 +107,28 @@ export function PublicMiniApp({
             throw new Error(message)
           }
         }}
+        onNavigate={
+          token
+            ? async (screenKey, answers) => {
+                const result = await saveMiniAppScreenAction({
+                  miniAppId,
+                  token,
+                  screenKey,
+                  answers: toSubmittedAnswers(answers),
+                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                })
+                const next = result?.data?.definition
+                // The author may have changed the Mini App since this page
+                // opened; swapping screens mid-form would lose the visitor's
+                // place, so only refreshed texts are taken.
+                if (next) {
+                  setDefinition((current) =>
+                    hasSameStructure(current, next) ? next : current,
+                  )
+                }
+              }
+            : undefined
+        }
       />
     </MiniAppUploaderContext.Provider>
   )

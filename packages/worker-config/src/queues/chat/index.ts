@@ -16,12 +16,15 @@ import type {
   SendImageStepSchema,
   SendMessengerTemplateMessageStepSchema,
   SendMultipleImagesStepSchema,
+  SendProductsStepSchema,
   SendQuickReplyStepSchema,
   SendTextStepSchema,
   SendVideoStepSchema,
+  SendViewCatalogStepSchema,
   SendWaTemplateMessageStepSchema,
   WaTemplateParams,
   WhatsappCallButtonStepSchema,
+  WhatsappLocationStepSchema,
 } from "@chatbotx.io/flow-config"
 import type { CommentAnchor, MessageButtonTemplate } from "@chatbotx.io/sdk"
 import { Queue } from "bullmq"
@@ -90,6 +93,9 @@ export type ChatJobSendFlowStep = {
       | SendWaTemplateMessageStepSchema
       | SendMessengerTemplateMessageStepSchema
       | WhatsappCallButtonStepSchema
+      | SendProductsStepSchema
+      | WhatsappLocationStepSchema
+      | SendViewCatalogStepSchema
     trackingContext?: BotResponseTrackingContext
     metadata?: MetadataPayload
     /**
@@ -152,6 +158,15 @@ export type ChatJobSendWhatsappTemplateToConversation = {
     templateId: string
     templateData?: WaTemplateParams
     metadata?: MetadataPayload
+    /**
+     * Who triggered the send. Only `user` (a workspace member in the inbox)
+     * counts as a human agent message in analytics. Absent — automations
+     * (flows, broadcasts) and jobs queued before this field — counts as a bot
+     * message, like `api`.
+     */
+    initiatedBy?: "user" | "api"
+    /** The member behind `initiatedBy: "user"`. */
+    adminId?: string
   }
 }
 

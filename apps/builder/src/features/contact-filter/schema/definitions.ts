@@ -38,6 +38,17 @@ export type ContactFilterOptionSource =
   | "assignees"
   | "ctwaConversionTypes"
   | "channelPosts"
+  | "workingHours"
+
+/**
+ * Where a contact-filter field may be used. `contacts` is every list/audience
+ * surface (contacts, conversations, broadcast audience and their public APIs);
+ * `flowCondition` is the flow Condition step, which evaluates the filter at
+ * runtime. A field limited to `flowCondition` is rejected by the schemas of
+ * every other surface, not just hidden from their pickers.
+ */
+export const CONTACT_FILTER_SURFACES = ["contacts", "flowCondition"] as const
+export type ContactFilterSurface = (typeof CONTACT_FILTER_SURFACES)[number]
 
 export type ContactFilterFieldDefinition = {
   field: ContactFilterField
@@ -49,16 +60,26 @@ export type ContactFilterFieldDefinition = {
    * (e.g. superseded by another) without breaking saved filters/broadcasts.
    */
   hidden?: boolean
+  /** Surfaces that accept this field. Omitted = every surface. */
+  surfaces?: readonly ContactFilterSurface[]
 }
+
+export const isFieldOnSurface = (
+  def: ContactFilterFieldDefinition,
+  surface: ContactFilterSurface,
+): boolean => !def.surfaces || def.surfaces.includes(surface)
 
 const conditionSchemaForDef = (def: ContactFilterFieldDefinition) =>
   staticFieldFilter(def.field)
 
 /**
  * One row per supported filter field: drives Zod `contactFilter` conditions and UI `FieldConfig`.
- * Keep ordering aligned with product (combobox order).
+ * Array order IS the "add condition" picker order: ungrouped contact-info
+ * fields render first, then each group lists its fields in this order
+ * (`getFieldOptions`). Keep related fields adjacent so the list scans quickly.
  */
 export const CONTACT_FILTER_FIELD_DEFINITIONS = [
+  // --- Contact info (ungrouped, rendered first in the picker) ---
   {
     field: contactFilterFields.enum.locale,
     schemaKind: "multiSelect",
@@ -103,17 +124,22 @@ export const CONTACT_FILTER_FIELD_DEFINITIONS = [
     optionSource: "none",
   },
   {
+    field: contactFilterFields.enum.contactCreatedDateMinutesAgo,
+    schemaKind: "number",
+    optionSource: "none",
+  },
+  {
     field: contactFilterFields.enum.source,
     schemaKind: "multiSelect",
     optionSource: "contactSources",
   },
   {
-    field: contactFilterFields.enum.conversationTransferredToHuman,
+    field: contactFilterFields.enum.interactedInLast24h,
     schemaKind: "boolean",
     optionSource: "none",
   },
   {
-    field: contactFilterFields.enum.interactedInLast24h,
+    field: contactFilterFields.enum.conversationTransferredToHuman,
     schemaKind: "boolean",
     optionSource: "none",
   },
@@ -133,6 +159,19 @@ export const CONTACT_FILTER_FIELD_DEFINITIONS = [
     optionSource: "none",
   },
   {
+    field: contactFilterFields.enum.existingContact,
+    schemaKind: "boolean",
+    optionSource: "none",
+    // Superseded by `hasContactInfo`; hidden from the picker but still valid so
+    // existing filters/broadcasts keep resolving.
+    hidden: true,
+  },
+  {
+    field: contactFilterFields.enum.hasContactInfo,
+    schemaKind: "multiSelect",
+    optionSource: "contactInfoFilterValues",
+  },
+  {
     field: contactFilterFields.enum.currentChannel,
     schemaKind: "multiSelect",
     optionSource: "channels",
@@ -147,51 +186,7 @@ export const CONTACT_FILTER_FIELD_DEFINITIONS = [
     schemaKind: "multiSelect",
     optionSource: "timezones",
   },
-  {
-    field: contactFilterFields.enum.lastSeen,
-    schemaKind: "datetime",
-    optionSource: "none",
-  },
-  {
-    field: contactFilterFields.enum.lastSent,
-    schemaKind: "datetime",
-    optionSource: "none",
-  },
-  {
-    field: contactFilterFields.enum.lastInteraction,
-    schemaKind: "datetime",
-    optionSource: "none",
-  },
-  {
-    field: contactFilterFields.enum.contactCreatedDateMinutesAgo,
-    schemaKind: "number",
-    optionSource: "none",
-  },
-  {
-    field: contactFilterFields.enum.lastSeenMinutesAgo,
-    schemaKind: "number",
-    optionSource: "none",
-  },
-  {
-    field: contactFilterFields.enum.lastInteractionMinutesAgo,
-    schemaKind: "number",
-    optionSource: "none",
-  },
-  {
-    field: contactFilterFields.enum.lastUserInput,
-    schemaKind: "text",
-    optionSource: "none",
-  },
-  {
-    field: contactFilterFields.enum.lastComment,
-    schemaKind: "text",
-    optionSource: "none",
-  },
-  {
-    field: contactFilterFields.enum.commentedOnPost,
-    schemaKind: "multiSelect",
-    optionSource: "channelPosts",
-  },
+  // --- Instagram ---
   {
     field: contactFilterFields.enum.followsBusinessOnInstagram,
     schemaKind: "boolean",
@@ -212,31 +207,100 @@ export const CONTACT_FILTER_FIELD_DEFINITIONS = [
     schemaKind: "number",
     optionSource: "none",
   },
+  // --- Analytics ---
   {
-    field: contactFilterFields.enum.lastUserInputType,
-    schemaKind: "select",
-    optionSource: "lastUserInputTypes",
-  },
-  {
-    field: contactFilterFields.enum.email,
-    schemaKind: "text",
+    field: contactFilterFields.enum.lastSent,
+    schemaKind: "datetime",
     optionSource: "none",
   },
   {
-    field: contactFilterFields.enum.phone,
-    schemaKind: "text",
+    field: contactFilterFields.enum.lastSeen,
+    schemaKind: "datetime",
     optionSource: "none",
   },
   {
-    field: contactFilterFields.enum.hasContactInfo,
-    schemaKind: "multiSelect",
-    optionSource: "contactInfoFilterValues",
+    field: contactFilterFields.enum.lastSeenMinutesAgo,
+    schemaKind: "number",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.lastInteraction,
+    schemaKind: "datetime",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.lastInteractionMinutesAgo,
+    schemaKind: "number",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.unreplied,
+    schemaKind: "boolean",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.unread,
+    schemaKind: "boolean",
+    optionSource: "none",
   },
   {
     field: contactFilterFields.enum.tags,
     schemaKind: "multiSelect",
     optionSource: "tags",
   },
+  {
+    field: contactFilterFields.enum.subscribedToDripCampaign,
+    schemaKind: "multiSelect",
+    optionSource: "sequences",
+  },
+  {
+    field: contactFilterFields.enum.conversationAssigned,
+    schemaKind: "multiSelect",
+    optionSource: "assignees",
+  },
+  {
+    field: contactFilterFields.enum.entryPointsLinks,
+    schemaKind: "multiSelect",
+    optionSource: "reflinks",
+  },
+  {
+    field: contactFilterFields.enum.consecutiveAiFailures,
+    schemaKind: "number",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.questionnaireStarted,
+    schemaKind: "boolean",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.questionnaireInProgress,
+    schemaKind: "boolean",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.questionnaireFinished,
+    schemaKind: "boolean",
+    optionSource: "none",
+  },
+  // --- Facebook/Instagram comment ---
+  {
+    field: contactFilterFields.enum.lastComment,
+    schemaKind: "text",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.commentedOnPost,
+    schemaKind: "multiSelect",
+    optionSource: "channelPosts",
+  },
+  // --- SMS ---
+  {
+    field: contactFilterFields.enum.phone,
+    schemaKind: "text",
+    optionSource: "none",
+  },
+  // --- Broadcast (WhatsApp) ---
   {
     field: contactFilterFields.enum.broadcastSent,
     schemaKind: "multiSelect",
@@ -262,57 +326,10 @@ export const CONTACT_FILTER_FIELD_DEFINITIONS = [
     schemaKind: "multiSelect",
     optionSource: "broadcasts",
   },
+  // --- Email ---
   {
-    field: contactFilterFields.enum.subscribedToDripCampaign,
-    schemaKind: "multiSelect",
-    optionSource: "sequences",
-  },
-  {
-    field: contactFilterFields.enum.entryPointsLinks,
-    schemaKind: "multiSelect",
-    optionSource: "reflinks",
-  },
-  {
-    field: contactFilterFields.enum.questionnaireStarted,
-    schemaKind: "boolean",
-    optionSource: "none",
-  },
-  {
-    field: contactFilterFields.enum.questionnaireInProgress,
-    schemaKind: "boolean",
-    optionSource: "none",
-  },
-  {
-    field: contactFilterFields.enum.questionnaireFinished,
-    schemaKind: "boolean",
-    optionSource: "none",
-  },
-  {
-    field: contactFilterFields.enum.conversationAssigned,
-    schemaKind: "multiSelect",
-    optionSource: "assignees",
-  },
-  {
-    field: contactFilterFields.enum.unreplied,
-    schemaKind: "boolean",
-    optionSource: "none",
-  },
-  {
-    field: contactFilterFields.enum.unread,
-    schemaKind: "boolean",
-    optionSource: "none",
-  },
-  {
-    field: contactFilterFields.enum.existingContact,
-    schemaKind: "boolean",
-    optionSource: "none",
-    // Superseded by `hasContactInfo`; hidden from the picker but still valid so
-    // existing filters/broadcasts keep resolving.
-    hidden: true,
-  },
-  {
-    field: contactFilterFields.enum.consecutiveAiFailures,
-    schemaKind: "number",
+    field: contactFilterFields.enum.email,
+    schemaKind: "text",
     optionSource: "none",
   },
   {
@@ -325,6 +342,7 @@ export const CONTACT_FILTER_FIELD_DEFINITIONS = [
     schemaKind: "boolean",
     optionSource: "none",
   },
+  // --- Ads (CTWA / Google) ---
   {
     field: contactFilterFields.enum.fromCtwaAd,
     schemaKind: "boolean",
@@ -340,7 +358,34 @@ export const CONTACT_FILTER_FIELD_DEFINITIONS = [
     schemaKind: "multiSelect",
     optionSource: "ctwaConversionTypes",
   },
+  // --- System fields ---
+  {
+    field: contactFilterFields.enum.isWithinWorkingHours,
+    schemaKind: "multiSelect",
+    optionSource: "workingHours",
+    // Evaluated against `now()`, so it only means something at runtime.
+    surfaces: ["flowCondition"],
+  },
+  {
+    field: contactFilterFields.enum.lastUserInput,
+    schemaKind: "text",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.lastUserInputType,
+    schemaKind: "select",
+    optionSource: "lastUserInputTypes",
+  },
 ] as const satisfies readonly ContactFilterFieldDefinition[]
 
+/** Condition schemas accepted on `surface` (field definitions filtered by `surfaces`). */
+const conditionSchemasForSurface = (surface: ContactFilterSurface) =>
+  CONTACT_FILTER_FIELD_DEFINITIONS.filter((def) =>
+    isFieldOnSurface(def, surface),
+  ).map((def) => conditionSchemaForDef(def))
+
 export const contactFilterConditionSchemas =
-  CONTACT_FILTER_FIELD_DEFINITIONS.map((def) => conditionSchemaForDef(def))
+  conditionSchemasForSurface("contacts")
+
+export const flowConditionFilterConditionSchemas =
+  conditionSchemasForSurface("flowCondition")

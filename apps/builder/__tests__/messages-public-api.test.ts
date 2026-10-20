@@ -61,8 +61,8 @@ vi.mock("@chatbotx.io/business", () => ({
   resolveTemplateParams,
 }))
 
-vi.mock("@chatbotx.io/business/errors", () => ({
-  BROADCAST_PLAN_LIMIT_CODE: "broadcastPlanLimit",
+vi.mock("@chatbotx.io/business/errors", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@chatbotx.io/business/errors")>()),
   notFoundException: (message: string) => new Error(message),
 }))
 
@@ -283,6 +283,61 @@ describe("POST /v1/conversations/{conversationId}/messages", () => {
     )
     expect(result).toEqual({ id: "msg-1" })
   })
+
+  test("hands a product message to createOutgoing unchanged, on the requested inbox", async () => {
+    conversationService.findByOrFail.mockResolvedValueOnce({
+      id: "conv-1",
+      contactId: "contact-1",
+    })
+    conversationService.resolveContactInboxForConversation.mockResolvedValueOnce(
+      { id: "contact-inbox-1" },
+    )
+    messageService.createOutgoing.mockResolvedValueOnce({ id: "msg-1" })
+
+    const input = {
+      conversationId: "conv-1",
+      inboxId: "inbox-1",
+      products: {
+        display: "products",
+        body: "Look",
+        sections: [{ productIds: ["1", "2"] }],
+      },
+    }
+    await procedure.handler?.({ context, input })
+
+    expect(
+      conversationService.resolveContactInboxForConversation,
+    ).toHaveBeenCalledWith(expect.objectContaining({ inboxId: "inbox-1" }))
+    expect(messageService.createOutgoing).toHaveBeenCalledWith(
+      expect.objectContaining({ input }),
+    )
+  })
+
+  test("lets an unsendable product message surface as the service's error", async () => {
+    conversationService.findByOrFail.mockResolvedValueOnce({
+      id: "conv-1",
+      contactId: "contact-1",
+    })
+    conversationService.resolveContactInboxForConversation.mockResolvedValueOnce(
+      { id: "contact-inbox-1" },
+    )
+    const error = Object.assign(new Error("Product message cannot be sent"), {
+      code: "productMessageUnresolvable",
+      httpStatusCode: 422,
+      data: { reason: "channelUnsupported" },
+    })
+    messageService.createOutgoing.mockRejectedValueOnce(error)
+
+    await expect(
+      procedure.handler?.({
+        context,
+        input: {
+          conversationId: "conv-1",
+          products: { display: "products", sections: [{ productIds: ["1"] }] },
+        },
+      }),
+    ).rejects.toBe(error)
+  })
 })
 
 describe("PUT /v1/conversations/{conversationId}/messages/{messageId}", () => {
@@ -398,6 +453,8 @@ describe("POST /v1/conversations/{conversationId}/whatsapp-template", () => {
       workspaceId: "workspace-1",
       conversationId: "9",
       request: { templateId: "5", templateData: { params: [] }, inboxId: "3" },
+      // An API send is not an agent reply: no human-sent analytics event.
+      sender: { initiatedBy: "api" },
     })
   })
 
@@ -430,6 +487,7 @@ describe("POST /v1/conversations/{conversationId}/whatsapp-template", () => {
       workspaceId: "workspace-1",
       conversationId: "9",
       request: { templateId: "5", templateData: nested },
+      sender: { initiatedBy: "api" },
     })
   })
 

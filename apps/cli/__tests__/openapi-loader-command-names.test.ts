@@ -229,6 +229,20 @@ describe("pathAndMethodToCommandName — bot field reset", () => {
   })
 })
 
+describe("pathAndMethodToCommandName — response SLA singleton", () => {
+  test("reads, replaces and deletes the one policy without colliding", () => {
+    expect(pathAndMethodToCommandName("/v1/response-sla", "get")).toBe(
+      "response-sla:get",
+    )
+    expect(pathAndMethodToCommandName("/v1/response-sla", "put")).toBe(
+      "response-sla:update",
+    )
+    expect(pathAndMethodToCommandName("/v1/response-sla", "delete")).toBe(
+      "response-sla:delete",
+    )
+  })
+})
+
 describe("pathAndMethodToCommandName — workspace settings singleton", () => {
   test("GET and PATCH on the same path get distinct commands", () => {
     expect(pathAndMethodToCommandName("/v1/workspace/settings", "GET")).toBe(
@@ -268,6 +282,47 @@ describe("pathAndMethodToCommandName — products imports collection", () => {
   })
 })
 
+describe("pathAndMethodToCommandName — AI Router", () => {
+  test("each connection and profile operation keeps a distinct CLI command", () => {
+    const names = [
+      pathAndMethodToCommandName("/v1/decision-connections", "GET"),
+      pathAndMethodToCommandName("/v1/decision-connections", "POST"),
+      pathAndMethodToCommandName("/v1/decision-connections/{id}", "PUT"),
+      pathAndMethodToCommandName(
+        "/v1/decision-connections/{id}/status",
+        "PATCH",
+      ),
+      pathAndMethodToCommandName("/v1/decision-connections/{id}/test", "POST"),
+      pathAndMethodToCommandName("/v1/decision-profiles", "GET"),
+      pathAndMethodToCommandName("/v1/decision-profiles", "POST"),
+      pathAndMethodToCommandName("/v1/decision-profiles", "DELETE"),
+      pathAndMethodToCommandName("/v1/decision-profiles/{id}", "GET"),
+      pathAndMethodToCommandName("/v1/decision-profiles/{id}", "PUT"),
+      pathAndMethodToCommandName("/v1/decision-profiles/{id}/status", "PATCH"),
+      pathAndMethodToCommandName(
+        "/v1/decision-profiles/global-router-destinations",
+        "GET",
+      ),
+    ]
+
+    expect(names).toEqual([
+      "decision-connections:list",
+      "decision-connections:create",
+      "decision-connections:update",
+      "decision-connections:status:update",
+      "decision-connections:test",
+      "decision-profiles:list",
+      "decision-profiles:create",
+      "decision-profiles:delete",
+      "decision-profiles:get",
+      "decision-profiles:update",
+      "decision-profiles:status:update",
+      "decision-profiles:global-router-destinations",
+    ])
+    expect(new Set(names)).toHaveLength(names.length)
+  })
+})
+
 describe("pathAndMethodToCommandName — meta catalog singleton", () => {
   test("GET (state) and POST (create) get distinct commands", () => {
     expect(pathAndMethodToCommandName("/v1/products/meta-catalog", "GET")).toBe(
@@ -276,5 +331,39 @@ describe("pathAndMethodToCommandName — meta catalog singleton", () => {
     expect(
       pathAndMethodToCommandName("/v1/products/meta-catalog", "POST"),
     ).toBe("products:meta-catalog:create")
+  })
+})
+
+describe("pathAndMethodToCommandName — repeating broadcasts", () => {
+  // A command whose derived name collides is silently dropped by the CLI, so
+  // the three new operations are pinned here.
+  test("each new broadcast operation gets its own command name", () => {
+    const names = [
+      pathAndMethodToCommandName("/v1/broadcasts/preview-recurrence", "POST"),
+      pathAndMethodToCommandName("/v1/broadcasts/{idOrName}/run-groups", "GET"),
+      pathAndMethodToCommandName(
+        "/v1/broadcasts/{idOrName}/occurrences",
+        "GET",
+      ),
+    ]
+    expect(names).toEqual([
+      "broadcasts:preview-recurrence",
+      "broadcasts:run-groups:list",
+      "broadcasts:occurrences:list",
+    ])
+    expect(new Set(names).size).toBe(names.length)
+  })
+
+  test("they do not collide with the existing broadcast commands", () => {
+    const existing = [
+      pathAndMethodToCommandName("/v1/broadcasts", "GET"),
+      pathAndMethodToCommandName("/v1/broadcasts/{idOrName}", "GET"),
+      pathAndMethodToCommandName("/v1/broadcasts/{idOrName}/audience", "GET"),
+      pathAndMethodToCommandName("/v1/broadcasts/{id}/contacts", "GET"),
+      pathAndMethodToCommandName("/v1/broadcasts/audience/preview", "POST"),
+    ]
+    expect(existing).not.toContain("broadcasts:preview-recurrence")
+    expect(existing).not.toContain("broadcasts:run-groups:list")
+    expect(existing).not.toContain("broadcasts:occurrences:list")
   })
 })

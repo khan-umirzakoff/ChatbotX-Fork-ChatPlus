@@ -19,7 +19,10 @@ import {
   type ContactFilterCriteriaInput,
   contactFilterHasPredicate,
 } from "@chatbotx.io/database/queries"
-import { contactRepository } from "@chatbotx.io/database/repositories"
+import {
+  contactInboxRepository,
+  contactRepository,
+} from "@chatbotx.io/database/repositories"
 import {
   contactInboxModel,
   contactModel,
@@ -45,6 +48,7 @@ import { NO_AVATAR_SENTINEL_KEY } from "../media/no-avatar-sentinel"
 import { messageCleanupService } from "../message-cleanup/service"
 import { quotaEnforcementService } from "../quota-enforcement/service"
 import { userQuotaService } from "../user-quota/service"
+import { resolveWorkingHoursTimezone } from "../working-hours/timezone"
 import { workspaceService } from "../workspace/service"
 import { workspaceUsageService } from "../workspace-usage/service"
 import { emitContactInfoChangeEvents } from "./contact-info-changes"
@@ -193,6 +197,7 @@ class ContactService extends BaseService {
           occurredAt,
           source: contactInbox.source,
           channel: contactInbox.channel,
+          inboxId: contactInbox.inboxId,
           sourceId: contactInbox.sourceId,
           metadata: {
             triggerContext: {
@@ -219,21 +224,49 @@ class ContactService extends BaseService {
   }) {
     const contact = await contactService.block(ctx)
 
-    emit("analytics:dashboard", {
-      eventType: "contact:blocked",
-      workspaceId: ctx.workspaceId,
-      contactId: contact.id,
-      occurredAt: contact.blockedAt ?? new Date(),
-      country: contact.country,
-      metadata: {
-        triggerContext: {
-          triggerSource: "api",
-          triggerHandler: "blockContactAction",
-          triggerType: "contact_blocked",
-          origin: "manual",
+    // One event per inbox, like delete, so a channel/inbox filter attributes the
+    // block; a contact without inboxes still records one unattributed event.
+    // The block is already committed: a failed lookup must not fail it, only
+    // leave the event unattributed.
+    const contactInboxes = await contactInboxRepository
+      .listAnalyticsAttributionByContact({
+        workspaceId: ctx.workspaceId,
+        contactId: contact.id,
+      })
+      .catch((err: unknown) => {
+        logger.warn(
+          { err, contactId: contact.id },
+          "Block analytics attribution lookup failed; event stays unattributed",
+        )
+        return []
+      })
+    const occurredAt = contact.blockedAt ?? new Date()
+    const attributions =
+      contactInboxes.length > 0
+        ? contactInboxes
+        : [{ inboxId: null, channel: null, source: null, sourceId: null }]
+
+    for (const attribution of attributions) {
+      emit("analytics:dashboard", {
+        eventType: "contact:blocked",
+        workspaceId: ctx.workspaceId,
+        contactId: contact.id,
+        occurredAt,
+        country: contact.country,
+        channel: attribution.channel,
+        inboxId: attribution.inboxId,
+        source: attribution.source,
+        sourceId: attribution.sourceId,
+        metadata: {
+          triggerContext: {
+            triggerSource: "api",
+            triggerHandler: "blockContactAction",
+            triggerType: "contact_blocked",
+            origin: "manual",
+          },
         },
-      },
-    })
+      })
+    }
   }
 
   async unblockAndRecord(ctx: {
@@ -343,13 +376,46 @@ class ContactService extends BaseService {
       return false
     }
 
-    const where = buildContactWhere({ workspaceId, contactFilter })
+    const where = buildContactWhere({
+      workspaceId,
+      contactFilter: await this.withWorkingHoursTimezone(
+        workspaceId,
+        contactFilter,
+      ),
+    })
     const match = await db.query.contactModel.findFirst({
       columns: { id: true },
       where: { ...where, id: contactId },
     })
 
     return Boolean(match)
+  }
+
+  /**
+   * `isWithinWorkingHours` reads `now()` in the workspace timezone; resolve it
+   * here (cached workspace row, same rule as routing) instead of looking the
+   * zone up in SQL. Only paid when the filter actually uses the field.
+   */
+  private async withWorkingHoursTimezone(
+    workspaceId: string,
+    contactFilter: ContactFilterCriteriaInput,
+  ): Promise<ContactFilterCriteriaInput> {
+    const usesWorkingHours = contactFilter.conditions.some(
+      (condition) =>
+        (condition as { field?: string }).field === "isWithinWorkingHours",
+    )
+    if (!usesWorkingHours) {
+      return contactFilter
+    }
+    const workspace = await workspaceService.find({
+      where: { id: workspaceId },
+    })
+    return {
+      ...contactFilter,
+      workingHoursTimezone: resolveWorkingHoursTimezone(
+        workspace ?? { id: workspaceId },
+      ),
+    }
   }
 
   // ─── Reads (NO cache — write-path only) ─────────────────────────────────
@@ -630,6 +696,26 @@ class ContactService extends BaseService {
       richSystemFieldToContactData(fieldName, value),
       tx,
     )
+  }
+
+  /**
+   * Writes several rich system fields in ONE update. Fields are applied in key
+   * order and later ones win where they overlap (`full_name` after `first_name`
+   * sets both name columns), exactly as sequential `setRichSystemFieldByKey`
+   * calls would — but without a read-modify-write and event round trip each.
+   */
+  async applyRichSystemFields(input: {
+    workspaceId: string
+    contactId: string
+    fields: Partial<Record<RichSystemContactField, string>>
+    tx?: DatabaseClient
+  }): Promise<ContactModel | null> {
+    const { workspaceId, contactId, fields, tx = db } = input
+    const data = mergeRichSystemFields(fields)
+    if (Object.keys(data).length === 0) {
+      return null
+    }
+    return await this.update({ workspaceId, id: contactId }, data, tx)
   }
 
   async unsetRichSystemFieldByKey(input: {
@@ -961,6 +1047,7 @@ class ContactService extends BaseService {
       source: contactInbox.source,
       sourceId: contactInbox.sourceId,
       channel: inbox.channel,
+      inboxId: inbox.id,
       metadata: {
         triggerContext: {
           triggerSource: "api",
@@ -1212,6 +1299,18 @@ function richSystemFieldToContactData(
     default:
       return {}
   }
+}
+
+/** The merged column writes of several rich system fields; later ones win. */
+export function mergeRichSystemFields(
+  fields: Partial<Record<RichSystemContactField, string>>,
+): ContactWriteData {
+  return Object.assign(
+    {},
+    ...Object.entries(fields).map(([fieldName, value]) =>
+      richSystemFieldToContactData(fieldName as RichSystemContactField, value),
+    ),
+  )
 }
 
 function withContactAccessScope<TWhere extends Record<string, unknown>>(

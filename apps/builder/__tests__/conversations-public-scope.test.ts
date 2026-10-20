@@ -127,6 +127,11 @@ const buildConversationFixture = () => ({
   botEnabled: true,
   botResumeAt: null,
   archivedAt: null,
+  assignedUserAt: null,
+  responseDueAt: null,
+  responseSlaBreachingAt: null,
+  responseSlaTargetSeconds: null,
+  awaitingHumanReplySince: null,
   additionalAttributes: null,
   contactLastReadAt: null,
   agentLastReadAt: null,
@@ -194,5 +199,20 @@ describe("real router: conversations public API scope wiring", () => {
     await expect(invoke(conversationsPublicRouter.get)).resolves.toMatchObject({
       data: { id: "1" },
     })
+  })
+
+  test("the bookkeeping-only awaitingHumanReplyClosedAt column is not in the output", async () => {
+    findWorkspaceByTokenHash.mockResolvedValue(authResult(null))
+    conversationService.findWithFullRelations.mockResolvedValue({
+      ...buildConversationFixture(),
+      awaitingHumanReplyClosedAt: null,
+    })
+
+    const result = (await invoke(conversationsPublicRouter.get)) as {
+      data: Record<string, unknown>
+    }
+    expect(result.data).not.toHaveProperty("awaitingHumanReplyClosedAt")
+    expect(result.data).toHaveProperty("awaitingHumanReplySince")
+    expect(result.data).toHaveProperty("assignedUserAt")
   })
 })

@@ -3,6 +3,7 @@ import {
   contactService,
   conversationService,
   inboxTeamService,
+  listOnShiftUserIds,
   workspaceMemberService,
 } from "@chatbotx.io/business"
 import { requestThreadControlAction } from "@chatbotx.io/channel-registry/thread-control"
@@ -18,6 +19,7 @@ import {
   type DisableBotStepSchema,
   type EnableBotStepSchema,
   type FollowConversationStepSchema,
+  isProactiveOutboundMetadata,
   type MarkConversationAsReadStepSchema,
   type MarkConversationAsUnreadStepSchema,
   type ThreadControlStepSchema,
@@ -126,6 +128,44 @@ export async function stepAssignConversation({
   })
 }
 
+/**
+ * Keeps only the candidates currently on shift. When none is on shift and no
+ * team is a candidate, the full list is returned unchanged, so this feature
+ * never leaves a conversation unassigned.
+ */
+async function preferOnShiftUsers(props: {
+  workspaceId: string
+  conversationId: string
+  users: { userId: string }[]
+  fallBackToAllUsers: boolean
+}): Promise<{ userId: string }[]> {
+  const { workspaceId, conversationId, users, fallBackToAllUsers } = props
+  if (users.length === 0) {
+    return users
+  }
+  const onShift = await listOnShiftUserIds({
+    workspaceId,
+    userIds: users.map((user) => user.userId),
+    at: new Date(),
+  })
+  const onShiftUsers = users.filter((user) => onShift.has(user.userId))
+  if (onShiftUsers.length === users.length) {
+    return users
+  }
+  if (onShiftUsers.length === 0 && fallBackToAllUsers) {
+    return users
+  }
+  logger.debug(
+    {
+      workspaceId,
+      conversationId,
+      skippedOffShift: users.length - onShiftUsers.length,
+    },
+    "Auto assign skipped off-shift agents",
+  )
+  return onShiftUsers
+}
+
 export async function stepAutoAssignConversation({
   conversation,
   step,
@@ -181,11 +221,27 @@ export async function stepAutoAssignConversation({
     }
   > = {}
 
+  let requiredInboxTeams: { id: string }[] = []
+  if (inboxTeamIds.length > 0) {
+    requiredInboxTeams = await inboxTeamService.listExistingIds({
+      workspaceId: conversation.workspaceId,
+      ids: inboxTeamIds,
+    })
+  }
+
   let requiredUsers: { userId: string }[] = []
   if (userIds.length > 0) {
     requiredUsers = await workspaceMemberService.listExistingUserIds({
       workspaceId: conversation.workspaceId,
       userIds,
+    })
+    requiredUsers = await preferOnShiftUsers({
+      workspaceId: conversation.workspaceId,
+      conversationId: conversation.id,
+      users: requiredUsers,
+      // A team is always available, so off-shift users are dropped when one can
+      // take the conversation; only users-only candidates fall back to everyone.
+      fallBackToAllUsers: requiredInboxTeams.length === 0,
     })
     for (const u of requiredUsers) {
       allocation[`u_${u.userId}`] = {
@@ -196,18 +252,12 @@ export async function stepAutoAssignConversation({
     }
   }
 
-  let requiredInboxTeams: { id: string }[] = []
-  if (inboxTeamIds.length > 0) {
-    requiredInboxTeams = await inboxTeamService.listExistingIds({
-      workspaceId: conversation.workspaceId,
-      ids: inboxTeamIds,
-    })
-    for (const t of requiredInboxTeams) {
-      allocation[`t_${t.id}`] = {
-        assignedUserId: null,
-        assignedInboxTeamId: t.id,
-        count: 0,
-      }
+  // Teams are added after users so a tie on load keeps picking a user first.
+  for (const t of requiredInboxTeams) {
+    allocation[`t_${t.id}`] = {
+      assignedUserId: null,
+      assignedInboxTeamId: t.id,
+      count: 0,
     }
   }
 
@@ -220,6 +270,7 @@ export async function stepAutoAssignConversation({
   }
 
   const conversationCount = await conversationService.countByAssignee({
+    workspaceId: conversation.workspaceId,
     filterConditions: filterConversationConditions,
     userIds: requiredUsers.map((r) => r.userId),
     inboxTeamIds: requiredInboxTeams.map((r) => r.id),
@@ -425,10 +476,22 @@ export async function stepUnfollowConversation({
 
 export async function stepDisableBot({
   conversation,
+  startedByContactMessage,
+  isBulkBroadcast,
+  metadata,
 }: ExecuteStepProps<DisableBotStepSchema>) {
+  // Only a run positively known to react to the contact's message may reopen
+  // the waiting-for-human window; broadcast, sequence, trigger-started and
+  // delay-resumed runs (and any unknown origin) must not, or a pause days
+  // later would fabricate a response time from the old message.
+  const reactsToContactMessage =
+    startedByContactMessage === true &&
+    !isBulkBroadcast &&
+    !isProactiveOutboundMetadata(metadata)
   await conversationService.disableBotState({
     workspaceId: conversation.workspaceId,
     conversations: [conversation],
+    reopenUnansweredHumanReplyWindow: reactsToContactMessage,
     triggerContext: {
       triggerSource: "worker",
       triggerHandler: "stepDisableBot",

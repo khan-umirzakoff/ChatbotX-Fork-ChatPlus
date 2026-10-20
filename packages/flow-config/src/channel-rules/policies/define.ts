@@ -1,7 +1,8 @@
 import type { ChannelType } from "@chatbotx.io/utils/channel"
 import { type StepType, stepTypes } from "../../steps/step-action"
+import type { ProductMessageCapability } from "../product-message-rules"
 
-export const CHANNEL_POLICY_VERSION = 1
+export const CHANNEL_POLICY_VERSION = 2
 
 export const stepSupport = {
   full: "full",
@@ -46,6 +47,7 @@ const stepExecutionKinds = {
   setUpCoupon: "worker",
   markCouponUsed: "worker",
   condition: "worker",
+  evaluateDecision: "worker",
   disableBot: "worker",
   enableBot: "worker",
   assignConversation: "worker",
@@ -85,6 +87,7 @@ const stepExecutionKinds = {
   startExternalFlow: "worker",
   startExternalNode: "worker",
   openWebsite: "worker",
+  openMiniApp: "worker",
   addNotes: "worker",
   subscribeBroadcast: "worker",
   unsubscribeBroadcast: "worker",
@@ -102,12 +105,16 @@ const stepExecutionKinds = {
   sendGridAddContact: "worker",
   klaviyoSyncProfile: "worker",
   subscribeSequence: "worker",
+  changeGamificationScore: "worker",
   unsubscribeSequence: "worker",
   email: "worker",
+  sendViewCatalog: "channel",
   sendWaTemplateMessage: "channel",
   whatsappOptionList: "channel",
   whatsappCallButton: "channel",
   whatsappFlow: "channel",
+  sendProducts: "channel",
+  whatsappLocation: "channel",
   sendMessengerTemplateMessage: "channel",
   facebookCustomAudience: "worker",
   sendMetaCapiEvent: "worker",
@@ -128,17 +135,34 @@ export const channelDeliverableStepTypes = [
   stepTypes.enum.sendImage,
   stepTypes.enum.sendMessengerTemplateMessage,
   stepTypes.enum.sendMultipleImages,
+  stepTypes.enum.sendProducts,
   stepTypes.enum.sendQuickReply,
   stepTypes.enum.sendText,
   stepTypes.enum.sendVideo,
+  stepTypes.enum.sendViewCatalog,
   stepTypes.enum.sendWaTemplateMessage,
   stepTypes.enum.whatsappCallButton,
   stepTypes.enum.whatsappFlow,
+  stepTypes.enum.whatsappLocation,
   stepTypes.enum.whatsappOptionList,
 ] as const satisfies readonly StepType[]
 
 export type ChannelDeliverableStepType =
   (typeof channelDeliverableStepTypes)[number]
+
+/**
+ * Steps a channel has to declare support for itself: omnichannel is a
+ * lowest-common-denominator authoring surface, so it must not inherit them
+ * from `channelDeliverableStepTypes`.
+ */
+const channelOptInStepTypes: readonly ChannelDeliverableStepType[] = [
+  stepTypes.enum.sendProducts,
+]
+
+export const omnichannelDeliverableStepTypes: readonly ChannelDeliverableStepType[] =
+  channelDeliverableStepTypes.filter(
+    (stepType) => !channelOptInStepTypes.includes(stepType),
+  )
 
 export type ChannelFlowPolicy = {
   limits: {
@@ -146,14 +170,19 @@ export type ChannelFlowPolicy = {
     buttonLabel: number
     cardTitle?: number
     text: number
+    /** Declared only by channels that can deliver `sendViewCatalog`. */
+    viewCatalog?: { footer: number; text: number }
   }
   quickRepliesShareButtonSlots: boolean
   steps: Record<StepType, StepSupport>
+  /** Present only on channels that can render `sendProducts`. */
+  productMessages?: ProductMessageCapability
 }
 
 type ChannelFlowPolicyDefinition = {
   limits: ChannelFlowPolicy["limits"]
   quickRepliesShareButtonSlots?: boolean
+  productMessages?: ProductMessageCapability
   supported?: readonly ChannelDeliverableStepType[]
   noButtons?: readonly ChannelDeliverableStepType[]
 }
@@ -186,6 +215,9 @@ export const defineChannelFlowPolicy = (
     quickRepliesShareButtonSlots:
       definition.quickRepliesShareButtonSlots ?? false,
     steps,
+    ...(definition.productMessages
+      ? { productMessages: definition.productMessages }
+      : {}),
   }
 }
 

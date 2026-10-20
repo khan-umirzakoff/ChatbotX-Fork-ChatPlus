@@ -1,11 +1,12 @@
 "use client"
 
 import {
+  appendScreen,
   collectAllNames,
   createNode,
-  createScreen,
   duplicateNode,
   findNode,
+  findScreen,
   insertNode,
   type MiniAppComponentType,
   type MiniAppDefaultText,
@@ -16,11 +17,13 @@ import {
   moveNode,
   removeNode,
   removeScreen,
+  slotEntries,
   updateNodeCustomField,
   updateNodeProps,
   updateNodeSlots,
 } from "@chatbotx.io/mini-app"
 import { createStore } from "zustand/vanilla"
+import { moveItem } from "../lib/list-editing"
 
 const HISTORY_LIMIT = 100
 /** Edits to the same node within this window collapse into one undo step. */
@@ -52,10 +55,10 @@ export type MiniAppEditorActions = {
   updateNodeProps: (nodeId: string, props: Record<string, unknown>) => void
   updateNodeSlots: (
     nodeId: string,
-    slots: Record<string, MiniAppNode[]>,
+    entries: [slot: string, children: MiniAppNode[]][],
   ) => void
   setNodeCustomField: (nodeId: string, customFieldId: string | null) => void
-  addScreen: (title: string) => void
+  addScreen: (title: string, text: MiniAppDefaultText) => void
   updateScreen: (
     screenKey: string,
     patch: Partial<Omit<MiniAppScreen, "key" | "children">>,
@@ -79,9 +82,7 @@ export const resolveInsertTarget = (
     ? findNode(definition, selectedNodeId)
     : undefined
   if (selected && selected.screen.key === screenKey) {
-    const firstSlot = selected.node.slots
-      ? Object.keys(selected.node.slots)[0]
-      : undefined
+    const firstSlot = slotEntries(selected.node)[0]?.[0]
     if (firstSlot) {
       return {
         address: { screenKey, parentId: selected.node.id, slot: firstSlot },
@@ -90,10 +91,7 @@ export const resolveInsertTarget = (
     }
     return { address: selected.address, index: selected.index + 1 }
   }
-  const screen = definition.screens.find(
-    (candidate) => candidate.key === screenKey,
-  )
-  const children = screen?.children ?? []
+  const children = findScreen(definition, screenKey)?.children ?? []
   // Keep a root Footer last, where Meta requires it.
   const footerLast = children.at(-1)?.type === "Footer"
   return {
@@ -194,14 +192,13 @@ export const createMiniAppEditorStore = (initial: {
       setNodeCustomField: (nodeId, customFieldId) =>
         commit(updateNodeCustomField(get().definition, nodeId, customFieldId)),
 
-      updateNodeSlots: (nodeId, slots) =>
-        commit(updateNodeSlots(get().definition, nodeId, slots)),
+      updateNodeSlots: (nodeId, entries) =>
+        commit(updateNodeSlots(get().definition, nodeId, entries)),
 
-      addScreen: (title) => {
-        const { definition } = get()
-        const screen = createScreen(definition, title)
-        commit({ screens: [...definition.screens, screen] })
-        set({ selectedScreenKey: screen.key, selectedNodeId: null })
+      addScreen: (title, text) => {
+        const result = appendScreen(get().definition, title, text)
+        commit(result.definition)
+        set({ selectedScreenKey: result.screenKey, selectedNodeId: null })
       },
 
       updateScreen: (screenKey, patch) => {
@@ -229,13 +226,11 @@ export const createMiniAppEditorStore = (initial: {
       },
 
       moveScreen: (from, to) => {
-        const screens = [...get().definition.screens]
-        const [moved] = screens.splice(from, 1)
-        if (!moved) {
-          return
+        const { screens } = get().definition
+        const moved = moveItem(screens, from, to)
+        if (moved !== screens) {
+          commit({ screens: moved })
         }
-        screens.splice(to, 0, moved)
-        commit({ screens })
       },
 
       undo: () => {

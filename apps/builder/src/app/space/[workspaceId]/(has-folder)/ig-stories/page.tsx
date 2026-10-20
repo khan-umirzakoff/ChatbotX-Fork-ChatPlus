@@ -1,3 +1,4 @@
+import { folderTypes } from "@chatbotx.io/database/partials"
 import {
   Card,
   CardContent,
@@ -8,9 +9,13 @@ import { getIdFromParams } from "@chatbotx.io/utils"
 import { notFound } from "next/navigation"
 import { getTranslations } from "next-intl/server"
 import type { SearchParams } from "nuqs/server"
+import SharedFolderSlot from "@/features/folders/shared-folder-slot"
 import { IgStoriesTable } from "@/features/ig-stories/ig-stories-table"
 import { listIgStories } from "@/features/ig-stories/queries"
-import { listIgStoriesSearchParamsCache } from "@/features/ig-stories/schema/action"
+import {
+  listIgStoriesSearchParamsCache,
+  resolveTriggerFilter,
+} from "@/features/ig-stories/schema/action"
 
 export default async function IgStoriesPage(props: {
   params: Promise<{ workspaceId: string }>
@@ -25,7 +30,13 @@ export default async function IgStoriesPage(props: {
   const search = await listIgStoriesSearchParamsCache.parse(searchParams)
   const t = await getTranslations()
 
-  const promises = Promise.all([listIgStories({ ...search, workspaceId })])
+  const promises = Promise.all([
+    listIgStories({
+      ...search,
+      workspaceId,
+      trigger: resolveTriggerFilter(search.trigger),
+    }),
+  ])
 
   return (
     <Card>
@@ -35,6 +46,11 @@ export default async function IgStoriesPage(props: {
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <SharedFolderSlot
+          folderType={folderTypes.enum.igStory}
+          searchParams={props.searchParams}
+          workspaceId={workspaceId}
+        />
         <IgStoriesTable promises={promises} workspaceId={workspaceId} />
       </CardContent>
     </Card>

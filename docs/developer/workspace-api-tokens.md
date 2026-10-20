@@ -42,7 +42,17 @@ plain `text[]`, so adding a scope is an enum change, never a migration.
 The `analytics` scope covers both `/v1/error-logs`
 (`apps/builder/src/features/error-logs/api/public.ts`) and, as of the public
 analytics router, every `/v1/analytics/*` route
-(`apps/builder/src/features/analytics/api/public.ts`).
+(`apps/builder/src/features/analytics/api/public.ts`), including
+`analytics.agentResponseSeries` (`GET /v1/analytics/agent-response-series`,
+per-agent daily reply-time averages) and the response-time fields of
+`analytics.humanAgentStats`.
+
+The `inbox` scope also covers the Working Hours routes
+(`apps/builder/src/features/working-hours/api/public.ts`, router key
+`workingHours`: `GET/POST /v1/working-hours`, `GET/PATCH/DELETE
+/v1/working-hours/{id}`, `PUT /v1/working-hours/{id}/members`), next to
+Inbox Teams. A token without `inbox` gets 403; a `read_only` token is blocked
+on the mutations. See `docs/working-hours.md`.
 
 The `appointments` scope existed in the enum and UI registry for some time
 before any endpoint used it — see "Appointments scope — endpoint-to-scope
@@ -372,6 +382,19 @@ an endpoint's scope.
     operations accept optional nullable `sendRatePerMinute` (1-1000): omit it
     to keep the stored rate, or send `null` to clear it and use the applicable
     default when activation succeeds.
+  - *Repeating broadcasts use the same scope and the same plan gates* —
+    `create`/`updateDraft`/`schedule` with `schedulesType: "recurring"`
+    activate a series. At activation only an explicit over-cap
+    `sendRatePerMinute` returns `403 broadcastPlanLimit`; the
+    active-broadcast cap is applied per run, so a run that finds no free slot
+    is not an error but a `skipped/planLimit` row in
+    `GET /v1/broadcasts/{idOrName}/occurrences`.
+    The three read/preview operations (`preview-recurrence`, `run-groups`,
+    `occurrences`) are part of the `broadcasts` scope; `occurrences` and
+    `run-groups` return counts and run ids, never contact PII.
+    `skip-occurrence` / `restore-occurrence` skip or restore runs of a
+    repeating broadcast by local `dates` or `occurrenceAts` (also `broadcasts` scope, workspace-scoped
+    lookup, rejected with 422 once the run started).
   - *`GET /v1/broadcasts/{idOrName}/audience` returns full contact PII*
     (email, phone, gender) with no field-level gating, including for a
     `read_only` token — unlike the write paths (`create`/`updateDraft`/
@@ -442,7 +465,12 @@ an endpoint's scope.
     `markReadOnOutbound` only and needs the `inbox` scope.
 
 - **Integrations** — covers workspace integrations, AI provider credentials,
-  external webhooks, and event webhooks. A token scoped to `["integrations"]`
+  external webhooks, event webhooks, and inbound webhooks
+  (`/v1/inbound-webhooks…`, `/v1/inbound-webhook-channels`; see
+  `docs/inbound-webhooks.md`). The endpoint URL an inbound webhook returns
+  embeds a secret, so treat it like a credential (it is omitted for
+  `read_only` tokens), and `getRequest` only returns
+  the stored payload (which may hold personal data) with `includePayload=true`. A token scoped to `["integrations"]`
   is not authorized for channel configuration or operations.
 
 - **Conversation routing and AI hand-over** — `POST
@@ -526,11 +554,15 @@ an endpoint's scope.
   them. Scope `channels`: `PUT /v1/{whatsapp,messenger,instagram}-channels/{id}/capi/dataset`,
   `.../capi/test-event-code` and `POST .../capi/test-event` (the dataset is
   validated with Meta; while a test event code is set every CAPI event goes to
-  Test Events). The channel list shows `capiTestEventCode` and
-  `capiDisconnected`. `PUT .../{id}/capi/dataset` without `datasetId` creates
-  a dataset with the channel's stored token (either way it reconnects a
-  disconnected channel) and `DELETE .../{id}/capi` disconnects; custom connect stays private because it
-  takes an access token. Scope `broadcasts`: `GET /v1/whatsapp/templates/{id}`,
+  Test Events). The channel list shows `capiConnected` (events are sent right
+  now), `capiTestEventCode` and `capiDisconnected`; `hasCapiScope` is a legacy
+  cached flag. `PUT .../{id}/capi/dataset` without `datasetId` creates a
+  dataset with the channel's stored token (either way it clears a disconnect,
+  but sending resumes only when `capiConnected` reads true afterwards) and
+  `DELETE .../{id}/capi` disconnects and removes a dedicated token. The
+  dedicated Conversions API token is minted by the Connect button on the
+  channel's Ads tab (a browser OAuth step with no token-based equivalent), and
+  custom connect stays private because it takes an access token. Scope `broadcasts`: `GET /v1/whatsapp/templates/{id}`,
   `POST /v1/whatsapp-channels/{id}/templates/sync`,
   `GET /v1/whatsapp/templates/catalog-products`, and WhatsApp Flows
   (`GET /v1/whatsapp/flows`, `.../{flowId}/screens`,

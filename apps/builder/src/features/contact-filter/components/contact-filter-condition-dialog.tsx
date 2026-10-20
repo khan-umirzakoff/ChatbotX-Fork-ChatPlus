@@ -37,7 +37,7 @@ import { PlainTextEditorField } from "@/components/tiptap/plain-text-editor-fiel
 import { FieldValuePickerPopover } from "@/features/custom-fields/components/field-value-picker-popover"
 import {
   type ContactFilterCondition,
-  singleContactFilterConditionSchema,
+  singleFlowConditionFilterConditionSchema,
 } from "../schema"
 import {
   type ConditionOption,
@@ -59,6 +59,10 @@ import {
   getCustomFieldValueInputConfig,
   getDefaultCustomFieldValue,
 } from "./custom-field-filter-config"
+import {
+  getLeaderboardScoreConditionOptions,
+  getLeaderboardScoreValueInputConfig,
+} from "./leaderboard-score-filter-config"
 import {
   getDefaultStaticFieldValue,
   getStaticFieldConditionOptions,
@@ -84,7 +88,7 @@ const getFirstEnabledOperator = (
 
 /**
  * Maps a raw form draft to the condition shape validated by
- * `singleContactFilterConditionSchema`. Static fields pass through unchanged;
+ * `singleFlowConditionFilterConditionSchema`. Static fields pass through unchanged;
  * a custom-field config (`customField:<id>`) becomes the dynamic
  * `{ field: "customField", customFieldId, valueType }` branch; a bot-field
  * config (`botField:<id>`) becomes `{ field: "botField", botFieldId, valueType }`;
@@ -132,6 +136,15 @@ export const buildConditionDraft = (
     return shouldOmitValue ? draft : { ...draft, value: values.value }
   }
 
+  if (config?.leaderboardId) {
+    return {
+      field: "leaderboardScore" as const,
+      leaderboardId: config.leaderboardId,
+      operator,
+      value: values.value,
+    }
+  }
+
   return shouldOmitValue
     ? {
         field: values.field,
@@ -149,6 +162,9 @@ const resolveDraftFieldName = (condition: ContactFilterCondition): string => {
   }
   if (condition.field === "couponTopic" && "topicId" in condition) {
     return `couponTopic:${condition.topicId}`
+  }
+  if (condition.field === "leaderboardScore" && "leaderboardId" in condition) {
+    return `leaderboardScore:${condition.leaderboardId}`
   }
   return condition.field
 }
@@ -186,6 +202,9 @@ export const getConditionOptionsForConfig = (
   if (config.topicId) {
     return getCouponTopicConditionOptions(conditionOptions)
   }
+  if (config.leaderboardId) {
+    return getLeaderboardScoreConditionOptions(conditionOptions)
+  }
   return getStaticFieldConditionOptions(config, conditionOptions)
 }
 
@@ -198,6 +217,9 @@ export const getDefaultConditionValue = (
   }
   if (config?.topicId) {
     return getDefaultCouponTopicValue(config, operator)
+  }
+  if (config?.leaderboardId) {
+    return ""
   }
   return getDefaultStaticFieldValue(config, operator)
 }
@@ -430,7 +452,7 @@ const parseSaveableCondition = ({
   config: FieldConfig | undefined
   valueInputKind: ValueInputKind
 }): ContactFilterCondition | null => {
-  const parsed = singleContactFilterConditionSchema.safeParse(
+  const parsed = singleFlowConditionFilterConditionSchema.safeParse(
     buildConditionDraft(draft, config),
   )
   if (!parsed.success) {
@@ -625,8 +647,15 @@ export const ContactFilterConditionDialog = ({
     () => getStaticFieldValueInputConfig(activeConfig, watchOperator),
     [activeConfig, watchOperator],
   )
+  const leaderboardScoreInput = useMemo(
+    () => getLeaderboardScoreValueInputConfig(activeConfig),
+    [activeConfig],
+  )
   const resolvedFieldInput =
-    customFieldInput ?? couponTopicInput ?? staticFieldInput
+    customFieldInput ??
+    couponTopicInput ??
+    leaderboardScoreInput ??
+    staticFieldInput
   const valueInputKind = useMemo(
     () => resolveValueInputKind(resolvedFieldInput, valueType),
     [resolvedFieldInput, valueType],

@@ -1,6 +1,8 @@
 import {
+  agentResponseSeriesRowSchema,
   botMessageStatsSchema,
   commentAutomationTimeseriesRow,
+  contactsByDimensionFields,
   conversationArchivedStatsSchema,
   conversationAssignedByAdminStatsSchema,
   conversationAssignedStatsSchema,
@@ -18,14 +20,17 @@ import {
   getSequenceStepStatsRequest,
   getSequenceStepStatsResponse,
   humanAgentStatsSchema,
+  isSupportedDimensionMetric,
   messagesByAdminStatsSchema,
   messagesBySenderStatsSchema,
   refLinkTimeseriesRow,
-  timeRangeQuerySchema,
-  timeRangeQueryWithGranularityDMSchema,
-  timeRangeQueryWithGranularityMHDSchema,
+  timeRangeQueryWithFilterSchema,
+  timeRangeQueryWithGranularityDMFilterSchema,
+  timeRangeQueryWithGranularityMHDFilterSchema,
   uniqueConversationsByAdminStatsSchema,
+  unsupportedDimensionMetricIssue,
 } from "@chatbotx.io/analytics/schemas"
+import { analyticsFilterOptionResource } from "@chatbotx.io/business/inbox/schema"
 import { zodBigintAsString } from "@chatbotx.io/utils"
 import { z } from "zod"
 import { ianaTimezoneSchema } from "@/lib/public-api/iana-timezone"
@@ -36,21 +41,19 @@ import { publicListRequest, withPublicPaging } from "@/lib/public-api/list"
 // resolved workspace in the handler, never accepted from client input)
 // ─────────────────────────────────────────────────────────────────────────
 
-export const timeRangePublicRequest = timeRangeQuerySchema.omit({
+export const timeRangePublicRequest = timeRangeQueryWithFilterSchema.omit({
   workspaceId: true,
 })
 
 export const timeRangeWithGranularityMHDPublicRequest =
-  timeRangeQueryWithGranularityMHDSchema.omit({ workspaceId: true })
+  timeRangeQueryWithGranularityMHDFilterSchema.omit({ workspaceId: true })
 
 export const timeRangeWithGranularityDMPublicRequest =
-  timeRangeQueryWithGranularityDMSchema.omit({ workspaceId: true })
+  timeRangeQueryWithGranularityDMFilterSchema.omit({ workspaceId: true })
 
-export const contactsByDimensionPublicRequest = timeRangePublicRequest.extend({
-  dimension: z
-    .enum(["country", "channel", "source"])
-    .describe("How to group contact counts."),
-})
+export const contactsByDimensionPublicRequest = timeRangePublicRequest
+  .extend(contactsByDimensionFields)
+  .refine(isSupportedDimensionMetric, unsupportedDimensionMetricIssue)
 
 // ─────────────────────────────────────────────────────────────────────────
 // Contact stats
@@ -77,6 +80,10 @@ export const messagesByAdminPublicResponse = z.object({
 
 export const humanAgentStatsPublicResponse = z.object({
   data: z.array(humanAgentStatsSchema.omit({ workspaceId: true })),
+})
+
+export const agentResponseSeriesPublicResponse = z.object({
+  data: z.array(agentResponseSeriesRowSchema.omit({ workspaceId: true })),
 })
 
 export const messagesBySenderPublicResponse = z.object({
@@ -325,3 +332,11 @@ export {
   listCommentAutomationErrorsResponse as commentAutomationErrorsPublicResponse,
   listCommentAutomationTextTotalsResponse as commentAutomationTextTotalsPublicResponse,
 } from "@chatbotx.io/analytics/schemas"
+
+// ─────────────────────────────────────────────────────────────────────────
+// Filter options (the channels / inboxes an analytics call can narrow to)
+// ─────────────────────────────────────────────────────────────────────────
+
+export const filterOptionsPublicResponse = z.object({
+  data: z.array(analyticsFilterOptionResource),
+})

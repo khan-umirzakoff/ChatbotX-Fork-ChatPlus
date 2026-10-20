@@ -4,6 +4,7 @@ import type {
   TriggerModel,
   WorkspaceModel,
 } from "@chatbotx.io/database/types"
+import type { DecisionFlowOrigin } from "@chatbotx.io/events"
 
 export type TriggerWithConditions = TriggerModel & {
   conditions: ConditionModel[]
@@ -28,10 +29,24 @@ export type ConditionEvaluationContext = {
   workspace: WorkspaceModel
 }
 
+/** What asked for the action to run; scopes dedup keys and attributes failures. */
+export type ActionSource =
+  | { kind: "trigger"; triggerId: string }
+  | { kind: "inboundWebhook"; inboundWebhookId: string }
+
+/**
+ * How one action ended. A failure throws; anything that returns was handled,
+ * and `skipped` says it did nothing (no conversation, inactive flow, …) so the
+ * caller can tell that apart from an action that ran.
+ */
+export type ActionExecutionOutcome =
+  | { status: "succeeded" }
+  | { status: "skipped"; reason: string }
+
 export type ActionExecutionContext = {
   action: Record<string, unknown>
   contactId: string
-  triggerId: string
+  source: ActionSource
   workspaceId: string
   /**
    * The `ContactInbox` that owns the conversation/event that fired this
@@ -41,6 +56,7 @@ export type ActionExecutionContext = {
    * which fall back by design.
    */
   contactInboxId?: string
+  decisionFlowOrigin?: DecisionFlowOrigin
   /**
    * Durable key of this occurrence of the action: identical on every retry of
    * the job that produced it, different for each run and each action. Unset
@@ -58,6 +74,7 @@ export type ActionExecutionContext = {
 export type TriggerExecutionInput = {
   contactId: string
   contactInboxId?: string
+  decisionFlowOrigin?: DecisionFlowOrigin
   /** The trigger queue job id; stable across retries of that job. */
   occurrenceId?: string
 }

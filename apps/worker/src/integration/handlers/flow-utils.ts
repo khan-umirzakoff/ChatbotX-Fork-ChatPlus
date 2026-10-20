@@ -47,6 +47,7 @@ export type ExecuteMultipleStepsProps = {
   nodeVisits?: NodeVisits
   triggerMessageId?: string
   triggerMessageCreatedAt?: Date
+  startedByContactMessage?: boolean
   commentAnchor?: CommentAnchor
   appointmentId?: string
   flowExecutionKey?: string
@@ -136,7 +137,9 @@ export const STEP_PRODUCES_MESSAGE: Record<StepType, boolean> = {
   questionnaires: false,
   setUpCoupon: false,
   markCouponUsed: false,
+  changeGamificationScore: false,
   condition: false,
+  evaluateDecision: false,
 
   // Inbox Operations (I_)
   disableBot: false,
@@ -188,6 +191,7 @@ export const STEP_PRODUCES_MESSAGE: Record<StepType, boolean> = {
 
   // External/Others (X_)
   openWebsite: false,
+  openMiniApp: false,
   addNotes: false,
 
   // Broadcast Operations (B_)
@@ -222,7 +226,10 @@ export const STEP_PRODUCES_MESSAGE: Record<StepType, boolean> = {
   sendWaTemplateMessage: true,
   whatsappOptionList: true,
   whatsappCallButton: true,
+  sendViewCatalog: true,
   whatsappFlow: true,
+  sendProducts: true,
+  whatsappLocation: true,
   sendMessengerTemplateMessage: true,
 
   // Messenger Operations (N_)
@@ -296,6 +303,9 @@ export async function sendFlow(
           appointmentId: props.appointmentId,
           sendFrom: props.sendFrom,
           nodeVisits: props.nodeVisits,
+          triggerMessageId: props.triggerMessageId,
+          triggerMessageCreatedAt: props.triggerMessageCreatedAt,
+          startedByContactMessage: props.startedByContactMessage,
           commentAnchor: props.commentAnchor,
           origin: webhookChannelOrigin(),
         },

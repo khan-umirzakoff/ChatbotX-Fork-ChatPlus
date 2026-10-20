@@ -13,10 +13,13 @@ import {
   workspaceService,
 } from "@chatbotx.io/business"
 import { resolveLastUserInputTracking } from "@chatbotx.io/business/contact-inbox"
-import { finalizeContactProfile } from "@chatbotx.io/business/contact-locale"
+import {
+  finalizeContactProfile,
+  normalizeLanguage,
+} from "@chatbotx.io/business/contact-locale"
 import { ChatbotXException } from "@chatbotx.io/business/errors"
 import { getPublicFileUrl } from "@chatbotx.io/business/utils"
-import { db, eq, findOrFail } from "@chatbotx.io/database/client"
+import { findOrFail } from "@chatbotx.io/database/client"
 import {
   type ConversationAttributes,
   channelTypes,
@@ -270,14 +273,14 @@ export async function handleCreateWebchatMessage({
       })),
     }
 
-    await db
-      .update(conversationModel)
-      .set({
-        contactLastReadAt: now,
-        lastActivityAt: message.createdAt,
-        contactRepliedAt: message.createdAt,
-      })
-      .where(eq(conversationModel.id, conversation.id))
+    await conversationService.updateFlowStepState({
+      workspaceId: conversation.workspaceId,
+      conversationId: conversation.id,
+      contactLastReadAt: now,
+      lastActivityAt: message.createdAt,
+      contactRepliedAt: message.createdAt,
+      humanReplyWindow: { open: message.createdAt },
+    })
 
     await contactInboxService.updateTracking({
       contactInboxId: contactInbox.id,
@@ -392,6 +395,8 @@ export async function handleCreateWebchatMessage({
         source: contactInbox.source,
         sourceId: contactInbox.sourceId,
         channel: contactInbox.channel,
+        inboxId: contactInbox.inboxId,
+        language: normalizeLanguage(contactInbox.language) ?? null,
         metadata: {
           triggerContext: {
             triggerSource: "api",

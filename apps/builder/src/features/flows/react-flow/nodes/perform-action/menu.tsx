@@ -43,6 +43,7 @@ import {
   StarOffIcon,
   TagIcon,
   TicketPercentIcon,
+  TrophyIcon,
   UserIcon,
   UserRoundXIcon,
   WebhookIcon,
@@ -567,6 +568,11 @@ export const performActionMenus = (t: TranslationFn): MenuItem[] => [
         stepType: stepTypes.enum.setUpCoupon,
       },
       {
+        label: t("flows.actions.changeGamificationScore"),
+        icon: TrophyIcon,
+        stepType: stepTypes.enum.changeGamificationScore,
+      },
+      {
         label: t("flows.actions.getDataFromJson"),
         icon: CodeIcon,
         stepType: stepTypes.enum.getDataFromJson,
@@ -595,6 +601,11 @@ export const performActionMenus = (t: TranslationFn): MenuItem[] => [
         label: t("flows.actions.executeJavascript"),
         icon: CodeIcon,
         stepType: stepTypes.enum.executeJavascript,
+      },
+      {
+        label: t("decision.evaluateDecision"),
+        icon: BotIcon,
+        stepType: stepTypes.enum.evaluateDecision,
       },
     ],
   },

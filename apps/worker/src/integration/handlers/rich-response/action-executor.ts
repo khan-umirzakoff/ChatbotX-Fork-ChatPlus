@@ -4,6 +4,7 @@ import {
   conversationService,
   flowService,
   isRichSystemContactField,
+  isUserOnShift,
   workspaceMemberService,
 } from "@chatbotx.io/business"
 import { webhookChannelOrigin } from "@chatbotx.io/events/context"
@@ -155,8 +156,10 @@ async function executeRichAction(
         conversationId: context.conversationId,
         contactId: context.contactId,
         reason: "user_requested_human",
+        reopenUnansweredHumanReplyWindow: true,
         source: "ai_system_tool",
         channel: context.channel,
+        inboxId: context.inboxId,
       })
       return
     case "assign_conversation": {
@@ -166,6 +169,22 @@ async function executeRichAction(
       })
       if (!member) {
         throw new Error("Workspace member not found")
+      }
+      // Like every automated assignment, never hand it to an off-shift agent.
+      if (
+        !(await isUserOnShift({
+          workspaceId: context.workspaceId,
+          userId: action.admin_id,
+        }))
+      ) {
+        logger.debug(
+          {
+            workspaceId: context.workspaceId,
+            conversationId: context.conversationId,
+          },
+          "Assignment skipped: the target agent is off shift",
+        )
+        return
       }
       await conversationService.updateAssignment({
         workspaceId: context.workspaceId,

@@ -5,7 +5,10 @@ import type {
   CallRecordedMetadata,
   CallTranscribedMetadata,
   IncomingCallMetadata,
+  ShoppingCartSentMetadata,
+  UserAskedAboutProductMetadata,
 } from "./base-emitter"
+import type { DecisionFlowOrigin } from "./decision-flow-lineage"
 import { logger } from "./logger"
 import { TriggerEventEmitter } from "./trigger/emitter"
 import { WebhookEventEmitter } from "./webhook/emitter"
@@ -134,6 +137,7 @@ export const emitCustomFieldChanged = async (
   oldValue: unknown,
   newValue: unknown,
   contactInboxId?: string,
+  decisionFlowOrigin?: DecisionFlowOrigin,
 ) =>
   await emitToAllEmitters(
     "customFieldChanged",
@@ -144,6 +148,7 @@ export const emitCustomFieldChanged = async (
     oldValue,
     newValue,
     contactInboxId,
+    decisionFlowOrigin,
   )
 
 // Contact info events
@@ -294,6 +299,35 @@ export const emitCallTranscribed = async (
   metadata: CallTranscribedMetadata,
 ) =>
   await emitToAllEmitters("callTranscribed", workspaceId, contactId, metadata)
+
+// Catalog events (channel-neutral — `metadata.channel` names the source)
+export const emitShoppingCartSent = async (
+  workspaceId: string,
+  contactId: string,
+  metadata: ShoppingCartSentMetadata,
+  contactInboxId?: string,
+) =>
+  await emitToAllEmitters(
+    "shoppingCartSent",
+    workspaceId,
+    contactId,
+    metadata,
+    contactInboxId,
+  )
+
+export const emitUserAskedAboutProduct = async (
+  workspaceId: string,
+  contactId: string,
+  metadata: UserAskedAboutProductMetadata,
+  contactInboxId?: string,
+) =>
+  await emitToAllEmitters(
+    "userAskedAboutProduct",
+    workspaceId,
+    contactId,
+    metadata,
+    contactInboxId,
+  )
 
 // Sequence events
 export const emitSequenceSubscribed = async (

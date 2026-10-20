@@ -34,7 +34,9 @@ export function EditIgStoryForm({
     mode: "onChange",
     defaultValues: {
       name: initialData.name,
+      inboxId: initialData.inboxId,
       type: variant,
+      trigger: initialData.trigger,
       folderId: initialData.folderId ?? undefined,
       story: initialData.story,
       reply: initialData.reply,
@@ -70,6 +72,7 @@ export function EditIgStoryForm({
       <IgStoryForm
         form={typedForm}
         isSubmitting={isPending}
+        isTriggerLocked
         onCancel={() => router.push(`/space/${workspaceId}/ig-stories`)}
         onSubmit={handleSubmit}
         submitLabel={t("actions.save")}

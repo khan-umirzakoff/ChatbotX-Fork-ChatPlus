@@ -15,8 +15,16 @@ import {
   uploader,
   uploadMultipleFiles,
 } from "@chatbotx.io/filesystem"
+import type { SendProductsContent } from "@chatbotx.io/flow-config"
 import { RealtimeEventType } from "@chatbotx.io/partysocket-config"
 import { createId } from "@chatbotx.io/utils"
+import { channelTypes } from "@chatbotx.io/utils/channel"
+import {
+  checkInboxImages,
+  type InboxReplyKind,
+  isImageMimeType,
+  resolveInboxReplyKind,
+} from "@chatbotx.io/utils/inbox-image-support"
 import {
   ChatJobAction,
   chatQueue,
@@ -25,14 +33,22 @@ import {
 } from "@chatbotx.io/worker-config"
 import { contactInboxService } from "../contact-inbox/service"
 import { conversationService } from "../conversation/service"
-import { ChatbotXException, notFoundException } from "../errors"
+import {
+  ChatbotXException,
+  ImagesNotSupportedOnChannelError,
+  notFoundException,
+  validationException,
+} from "../errors"
 import { logger } from "../logger"
 import { publishToWorkspaceParty } from "../platform/realtime-broadcast"
 import { resolveTenantSettings } from "../platform/settings"
+import { productMessageService } from "../product-message/service"
 import { getPublicFileUrl } from "../utils"
+import { recordAgentReply } from "../working-hours/agent-reply-metric"
 
 type CreateOutgoingInput = (
   | { flowId: string; nodeId?: string }
+  | { products: SendProductsContent }
   | {
       text?: string
       files?: File[]
@@ -100,6 +116,92 @@ const copyMediaLibraryFileToConversationAttachment = async (props: {
   }
 }
 
+/**
+ * Loads the Media Library rows a send refers to (by path, id or ids), each
+ * scoped to the workspace so a caller can't reference another workspace's
+ * storage object.
+ */
+const resolveMediaLibraryFiles = async (
+  workspaceId: string,
+  input: CreateOutgoingInput,
+): Promise<CopyableMediaLibraryFile[]> => {
+  if ("mediaFile" in input && input.mediaFile) {
+    // Legacy path-based selection, still used by public oRPC APIs.
+    const mediaLibraryFile = await mediaLibraryFileRepository.findByPath({
+      workspaceId,
+      path: input.mediaFile.path,
+    })
+    if (!mediaLibraryFile) {
+      throw new ChatbotXException("Media library file not found")
+    }
+    return [mediaLibraryFile]
+  }
+
+  let mediaFileIds: string[] = []
+  if ("mediaFileId" in input && input.mediaFileId) {
+    mediaFileIds = [input.mediaFileId]
+  } else if ("mediaFileIds" in input && input.mediaFileIds) {
+    mediaFileIds = input.mediaFileIds
+  }
+  if (mediaFileIds.length === 0) {
+    return []
+  }
+
+  const files = await mediaLibraryFileRepository.findByIds({
+    workspaceId,
+    ids: mediaFileIds,
+  })
+  const filesById = new Map(files.map((file) => [file.id, file]))
+  // Kept in the caller's order — it is the order the attachments are sent.
+  return mediaFileIds.map((mediaFileId) => {
+    const mediaLibraryFile = filesById.get(mediaFileId)
+    if (!mediaLibraryFile) {
+      throw new ChatbotXException("Media library file not found")
+    }
+    return mediaLibraryFile
+  })
+}
+
+const hasDeviceFiles = (input: CreateOutgoingInput): boolean =>
+  "files" in input && Boolean(input.files) && (input.files?.length ?? 0) > 0
+
+const countImages = (
+  input: CreateOutgoingInput,
+  mediaLibraryFiles: CopyableMediaLibraryFile[],
+): number => {
+  if ("files" in input && input.files && input.files.length > 0) {
+    return input.files.filter((file) => isImageMimeType(file.type)).length
+  }
+  return mediaLibraryFiles.filter((file) => isImageMimeType(file.mimeType))
+    .length
+}
+
+/**
+ * Refuses images where the channel can't deliver them (Threads, Instagram
+ * and TikTok comment replies) or more than it can carry (one on a Messenger
+ * comment reply), instead of letting the send handler drop them silently.
+ */
+const assertChannelAcceptsImages = (props: {
+  channel: string
+  kind: InboxReplyKind
+  imageCount: number
+}) => {
+  const channel = channelTypes.safeParse(props.channel)
+  // A channel string outside the enum has no known limits — let the send
+  // handler decide, as before.
+  if (!channel.success) {
+    return
+  }
+  const result = checkInboxImages({ ...props, channel: channel.data })
+  if (!result.ok) {
+    throw new ImagesNotSupportedOnChannelError({
+      reason: result.reason,
+      channel: props.channel,
+      max: result.max,
+    })
+  }
+}
+
 /** Carries the bypass flag to the send worker via `metadata`. */
 const withBypassThreadControlLock = (
   contentAttributes: Record<string, unknown> | null,
@@ -125,6 +227,9 @@ export const createOutgoing = async (props: {
   user?: UserModel
 }) => {
   const { conversation, input: parsedInput, user, contactInbox } = props
+  const sender = user
+    ? ({ kind: "agent", userId: user.id } as const)
+    : ({ kind: "other" } as const)
 
   if ("flowId" in parsedInput) {
     // The worker resolves the flow inside the conversation's workspace and
@@ -148,8 +253,58 @@ export const createOutgoing = async (props: {
         sendFrom: "inbox",
       },
     })
+    // Claimed only after a successful enqueue so a failed send keeps the
+    // window open. An inbox "send flow" counts as a human reply.
+    await recordAgentReply({
+      conversationId: conversation.id,
+      workspaceId: conversation.workspaceId,
+      contactInbox,
+      at: new Date(),
+      sender,
+      eventId: `reply:flow:${createId()}`,
+    })
     return null
   }
+
+  // A product message is a standalone DM; a comment reply would be routed to
+  // the comment handler, which cannot send it.
+  if (
+    "products" in parsedInput &&
+    (parsedInput.replyToMessageId || parsedInput.isPrivateReply)
+  ) {
+    throw validationException(
+      "products",
+      "Products can't be sent as a comment reply",
+    )
+  }
+  // Resolved before any row exists, so a message that cannot be sent leaves
+  // nothing behind. A caller asked for exactly these products, so a message
+  // that would go out without some of them is refused rather than trimmed.
+  const productMessage =
+    "products" in parsedInput
+      ? await productMessageService.prepareOutgoing({
+          workspaceId: conversation.workspaceId,
+          channel: contactInbox.channel,
+          content: parsedInput.products,
+          onMissing: "reject",
+        })
+      : undefined
+
+  // Resolved and checked before any row or object exists, so a send the
+  // channel cannot deliver is refused instead of silently losing its images.
+  // Device files win over media library ids (as the upload branch below
+  // does), so ids sent alongside files are never looked up.
+  const mediaLibraryFiles = hasDeviceFiles(parsedInput)
+    ? []
+    : await resolveMediaLibraryFiles(conversation.workspaceId, parsedInput)
+  assertChannelAcceptsImages({
+    channel: contactInbox.channel,
+    kind: resolveInboxReplyKind({
+      hasReplyTarget: Boolean(parsedInput.replyToMessageId),
+      isPrivateReply: Boolean(parsedInput.isPrivateReply),
+    }),
+    imageCount: countImages(parsedInput, mediaLibraryFiles),
+  })
 
   const { storageUrl } = await resolveTenantSettings({
     workspaceId: conversation.workspaceId,
@@ -178,56 +333,15 @@ export const createOutgoing = async (props: {
       parsedInput.files,
       `public/space/${conversation.workspaceId}/conversations/${targetConversation.id}`,
     )
-  } else if ("mediaFile" in parsedInput && parsedInput.mediaFile) {
-    // Legacy path-based selection, still used by public oRPC APIs.
-    const mediaLibraryFile = await mediaLibraryFileRepository.findByPath({
-      workspaceId: conversation.workspaceId,
-      path: parsedInput.mediaFile.path,
-    })
-    if (!mediaLibraryFile) {
-      throw new ChatbotXException("Media library file not found")
-    }
-
-    uploadedFiles = [
-      await copyMediaLibraryFileToConversationAttachment({
-        mediaLibraryFile,
-        workspaceId: conversation.workspaceId,
-        conversationId: targetConversation.id,
-      }),
-    ]
-  } else if ("mediaFileId" in parsedInput && parsedInput.mediaFileId) {
-    const mediaLibraryFile = await mediaLibraryFileRepository.findById({
-      workspaceId: conversation.workspaceId,
-      id: parsedInput.mediaFileId,
-    })
-    if (!mediaLibraryFile) {
-      throw new ChatbotXException("Media library file not found")
-    }
-
-    uploadedFiles = [
-      await copyMediaLibraryFileToConversationAttachment({
-        mediaLibraryFile,
-        workspaceId: conversation.workspaceId,
-        conversationId: targetConversation.id,
-      }),
-    ]
-  } else if ("mediaFileIds" in parsedInput && parsedInput.mediaFileIds) {
+  } else if (mediaLibraryFiles.length > 0) {
     uploadedFiles = await Promise.all(
-      parsedInput.mediaFileIds.map(async (mediaFileId) => {
-        const mediaLibraryFile = await mediaLibraryFileRepository.findById({
-          workspaceId: conversation.workspaceId,
-          id: mediaFileId,
-        })
-        if (!mediaLibraryFile) {
-          throw new ChatbotXException("Media library file not found")
-        }
-
-        return copyMediaLibraryFileToConversationAttachment({
+      mediaLibraryFiles.map((mediaLibraryFile) =>
+        copyMediaLibraryFileToConversationAttachment({
           mediaLibraryFile,
           workspaceId: conversation.workspaceId,
           conversationId: targetConversation.id,
-        })
-      }),
+        }),
+      ),
     )
   }
 
@@ -235,9 +349,11 @@ export const createOutgoing = async (props: {
 
   const parentId = parsedInput.replyToMessageId ?? null
 
+  const plainText = "text" in parsedInput ? (parsedInput.text ?? null) : null
+
   const now = new Date()
   const messageInput = {
-    text: "text" in parsedInput ? (parsedInput.text ?? null) : null,
+    text: productMessage ? productMessage.text : plainText,
     messageType: "outgoing" as const,
     workspaceId: conversation.workspaceId,
     conversationId: targetConversation.id,
@@ -251,7 +367,8 @@ export const createOutgoing = async (props: {
       : ("message" as const),
     parentId,
     contentAttributes: withBypassThreadControlLock(
-      parsedInput.contentAttributes ??
+      productMessage?.contentAttributes ??
+        parsedInput.contentAttributes ??
         (parsedInput.isPrivateReply ? { isPrivateReply: true } : null),
       parsedInput.bypassThreadControlLock,
     ),
@@ -267,12 +384,6 @@ export const createOutgoing = async (props: {
     attachmentInputs.length > 0
       ? await repository.createWithAttachments(messageInput, attachmentInputs)
       : await repository.create(messageInput)
-
-  await conversationService.markAgentReplied({
-    id: targetConversation.id,
-    workspaceId: conversation.workspaceId,
-    at: now,
-  })
 
   await contactInboxService.updateTracking({
     contactInboxId: contactInbox.id,
@@ -330,7 +441,7 @@ export const createOutgoing = async (props: {
           : []),
       ),
     },
-    ...(user && messageInput.text
+    ...(user && messageInput.text && !productMessage
       ? [
           {
             jobType: ChatJobAction.checkOutboundAutomatedResponse,
@@ -378,6 +489,15 @@ export const createOutgoing = async (props: {
   if (sendChannelMessageError !== undefined) {
     throw sendChannelMessageError
   }
+
+  await recordAgentReply({
+    conversationId: targetConversation.id,
+    workspaceId: conversation.workspaceId,
+    contactInbox,
+    at: now,
+    sender,
+    eventId: `reply:${message.id}`,
+  })
 
   return messageWithAttachments
 }

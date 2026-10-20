@@ -3,17 +3,25 @@
 import { describe, expect, it } from "vitest"
 import { sanitizeMiniAppAnswers } from "../src/answers"
 import {
+  appendScreen,
   collectAllNames,
   createNode,
   createScreen,
   createStarterDefinition,
   duplicateNode,
   findNode,
+  getSlotOwnerType,
   insertNode,
+  isTerminalScreen,
   moveNode,
   removeNode,
   removeScreen,
+  screenActions,
+  slotEntries,
   toAlphabeticIndex,
+  updateNodeCustomField,
+  updateNodeProps,
+  updateNodeSlots,
 } from "../src/tree"
 import { validateMiniApp } from "../src/validate"
 import { twoScreenDefinition } from "./fixtures"
@@ -142,12 +150,132 @@ describe("tree helpers", () => {
     expect(findNode(removeNode(definition, "n_name"), "n_name")).toBeUndefined()
   })
 
-  it("clears navigate actions pointing to a removed screen", () => {
+  it("ends the flow on the new last screen when the last screen is removed", () => {
     const definition = removeScreen(twoScreenDefinition(), "s_confirm")
     expect(definition.screens).toHaveLength(1)
     expect(
       findNode(definition, "n_next")?.node.props["on-click-action"],
+    ).toEqual({ name: "complete" })
+  })
+
+  it("clears NavigationList items that navigated to a removed screen", () => {
+    const definition = twoScreenDefinition()
+    definition.screens.push({
+      key: "s_menu",
+      id: "MENU",
+      title: "Menu",
+      children: [
+        {
+          id: "n_menu",
+          type: "NavigationList",
+          props: {
+            name: "menu",
+            "list-items": [
+              {
+                id: "back",
+                "main-content": { title: "Back" },
+                "on-click-action": { name: "navigate", next: "s_welcome" },
+              },
+              {
+                id: "confirm",
+                "main-content": { title: "Confirm" },
+                "on-click-action": { name: "navigate", next: "s_confirm" },
+              },
+            ],
+          },
+        },
+      ],
+    })
+    const items = findNode(removeScreen(definition, "s_confirm"), "n_menu")
+      ?.node.props["list-items"] as Record<string, unknown>[]
+    expect(items.map((item) => item["on-click-action"])).toEqual([
+      { name: "navigate", next: "s_welcome" },
+      undefined,
+    ])
+  })
+
+  it("replaces a node's props and custom field without touching the input", () => {
+    const definition = twoScreenDefinition()
+    const withProps = updateNodeProps(definition, "n_name", { name: "x" })
+    expect(findNode(withProps, "n_name")?.node.props).toEqual({ name: "x" })
+    expect(findNode(definition, "n_name")?.node.props.name).toBe("full_name")
+    expect(updateNodeProps(definition, "n_missing", {})).toBe(definition)
+
+    const linked = updateNodeCustomField(definition, "n_name", "cf_1")
+    expect(findNode(linked, "n_name")?.node.customFieldId).toBe("cf_1")
+    const unlinked = updateNodeCustomField(linked, "n_name", null)
+    expect(findNode(unlinked, "n_name")?.node.customFieldId).toBeUndefined()
+    expect(updateNodeCustomField(definition, "n_missing", "cf_1")).toBe(
+      definition,
+    )
+  })
+
+  it("resolves the container type that owns a slot", () => {
+    const definition = twoScreenDefinition()
+    const form = createNode("Form", new Set())
+    const withForm = insertNode(definition, { screenKey: "s_welcome" }, 0, form)
+    expect(getSlotOwnerType(withForm, { screenKey: "s_welcome" })).toBe(
+      "Screen",
+    )
+    expect(
+      getSlotOwnerType(withForm, {
+        screenKey: "s_welcome",
+        parentId: form.id,
+        slot: "children",
+      }),
+    ).toBe("Form")
+    expect(
+      getSlotOwnerType(withForm, { screenKey: "s_welcome", parentId: "nope" }),
     ).toBeUndefined()
+  })
+
+  it("moves the end of the flow to an appended screen", () => {
+    const { definition, screenKey } = appendScreen(
+      twoScreenDefinition(),
+      "Thanks",
+    )
+    const [welcome, confirm, added] = definition.screens
+    expect(added?.key).toBe(screenKey)
+    expect(welcome && isTerminalScreen(welcome)).toBe(false)
+    expect(confirm && isTerminalScreen(confirm)).toBe(false)
+    expect(added && isTerminalScreen(added)).toBe(true)
+    expect(
+      confirm && screenActions(confirm).map((action) => action.name),
+    ).toEqual(["navigate"])
+  })
+
+  it("keeps Switch cases in order after jsonb sorts their keys", () => {
+    const takenNames = new Set<string>()
+    let definition = twoScreenDefinition()
+    const node = createNode("Switch", takenNames)
+    definition = insertNode(definition, { screenKey: "s_welcome" }, 0, node)
+    definition = updateNodeSlots(definition, node.id, [
+      ["basic", []],
+      ["pro", []],
+      ["vip", []],
+    ])
+    const stored = findNode(definition, node.id)?.node
+    // Postgres jsonb returns keys shortest first.
+    const reloaded = stored && {
+      ...stored,
+      slots: { pro: [], vip: [], basic: [] },
+    }
+    expect(reloaded && slotEntries(reloaded).map(([key]) => key)).toEqual([
+      "basic",
+      "pro",
+      "vip",
+    ])
+  })
+
+  it("lists If branches as then, else without a stored order", () => {
+    expect(
+      slotEntries({
+        id: "n_if",
+        type: "If",
+        props: {},
+        slots: { else: [], then: [] },
+      }).map(([key]) => key),
+    ).toEqual(["then", "else"])
   })
 })
 

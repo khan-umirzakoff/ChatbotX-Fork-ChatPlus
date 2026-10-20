@@ -43,6 +43,8 @@ export const queueGroupByName: Record<QueueName, QueueGroup> = {
   low: "hot",
   // Rate-limited background enrichment; must not compete with chat/integration.
   profileSnapshot: "bulk",
+  // Leaderboard scoring: bursty (livestream comments) but never latency-critical.
+  leaderboard: "bulk",
 }
 
 function resolveGroupUrl(group: QueueGroup): string {
@@ -109,4 +111,7 @@ export const fakeQueue = {
   addBulk: () => Promise.resolve(""),
   getJob: () => Promise.resolve(undefined),
   remove: () => Promise.resolve(0),
+  getWaitingCount: () => Promise.resolve(0),
+  getPrioritizedCount: () => Promise.resolve(0),
+  getDelayedCount: () => Promise.resolve(0),
 }

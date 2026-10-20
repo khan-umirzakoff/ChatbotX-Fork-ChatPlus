@@ -299,6 +299,11 @@ exports[`public API spec — operation naming guard > operation list (operationI
   },
   {
     "method": "GET",
+    "operationId": "analytics.agentResponseSeries",
+    "path": "/v1/analytics/agent-response-series",
+  },
+  {
+    "method": "GET",
     "operationId": "analytics.blockedContactsCount",
     "path": "/v1/analytics/blocked-contacts-count",
   },
@@ -396,6 +401,11 @@ exports[`public API spec — operation naming guard > operation list (operationI
     "method": "GET",
     "operationId": "analytics.conversationHandoffs",
     "path": "/v1/analytics/conversation-handoffs",
+  },
+  {
+    "method": "GET",
+    "operationId": "analytics.filterOptions",
+    "path": "/v1/analytics/filter-options",
   },
   {
     "method": "GET",
@@ -648,6 +658,16 @@ exports[`public API spec — operation naming guard > operation list (operationI
     "path": "/v1/broadcasts/{id}/contacts",
   },
   {
+    "method": "GET",
+    "operationId": "broadcasts.listOccurrences",
+    "path": "/v1/broadcasts/{idOrName}/occurrences",
+  },
+  {
+    "method": "GET",
+    "operationId": "broadcasts.listRunGroups",
+    "path": "/v1/broadcasts/{idOrName}/run-groups",
+  },
+  {
     "method": "POST",
     "operationId": "broadcasts.moveToDraft",
     "path": "/v1/broadcasts/{id}/move-to-draft",
@@ -659,8 +679,18 @@ exports[`public API spec — operation naming guard > operation list (operationI
   },
   {
     "method": "POST",
+    "operationId": "broadcasts.previewRecurrence",
+    "path": "/v1/broadcasts/preview-recurrence",
+  },
+  {
+    "method": "POST",
     "operationId": "broadcasts.resend",
     "path": "/v1/broadcasts/{id}/resend",
+  },
+  {
+    "method": "POST",
+    "operationId": "broadcasts.restoreOccurrence",
+    "path": "/v1/broadcasts/{id}/restore-occurrence",
   },
   {
     "method": "POST",
@@ -671,6 +701,11 @@ exports[`public API spec — operation naming guard > operation list (operationI
     "method": "POST",
     "operationId": "broadcasts.schedule",
     "path": "/v1/broadcasts/{id}/schedule",
+  },
+  {
+    "method": "POST",
+    "operationId": "broadcasts.skipOccurrence",
+    "path": "/v1/broadcasts/{id}/skip-occurrence",
   },
   {
     "method": "POST",
@@ -736,6 +771,11 @@ exports[`public API spec — operation naming guard > operation list (operationI
     "method": "GET",
     "operationId": "commentAutomations.getMissedCommentRun",
     "path": "/v1/comment-automations/{id}/missed-comment-runs",
+  },
+  {
+    "method": "GET",
+    "operationId": "commentAutomations.listAccounts",
+    "path": "/v1/comment-automations/accounts",
   },
   {
     "method": "POST",
@@ -1259,6 +1299,66 @@ exports[`public API spec — operation naming guard > operation list (operationI
   },
   {
     "method": "POST",
+    "operationId": "decisionConnections.create",
+    "path": "/v1/decision-connections",
+  },
+  {
+    "method": "GET",
+    "operationId": "decisionConnections.list",
+    "path": "/v1/decision-connections",
+  },
+  {
+    "method": "PATCH",
+    "operationId": "decisionConnections.setEnabled",
+    "path": "/v1/decision-connections/{id}/status",
+  },
+  {
+    "method": "POST",
+    "operationId": "decisionConnections.test",
+    "path": "/v1/decision-connections/{id}/test",
+  },
+  {
+    "method": "PUT",
+    "operationId": "decisionConnections.update",
+    "path": "/v1/decision-connections/{id}",
+  },
+  {
+    "method": "POST",
+    "operationId": "decisionProfiles.create",
+    "path": "/v1/decision-profiles",
+  },
+  {
+    "method": "DELETE",
+    "operationId": "decisionProfiles.deleteMany",
+    "path": "/v1/decision-profiles",
+  },
+  {
+    "method": "GET",
+    "operationId": "decisionProfiles.get",
+    "path": "/v1/decision-profiles/{id}",
+  },
+  {
+    "method": "GET",
+    "operationId": "decisionProfiles.list",
+    "path": "/v1/decision-profiles",
+  },
+  {
+    "method": "GET",
+    "operationId": "decisionProfiles.listGlobalRouterDestinations",
+    "path": "/v1/decision-profiles/global-router-destinations",
+  },
+  {
+    "method": "PATCH",
+    "operationId": "decisionProfiles.setEnabled",
+    "path": "/v1/decision-profiles/{id}/status",
+  },
+  {
+    "method": "PUT",
+    "operationId": "decisionProfiles.update",
+    "path": "/v1/decision-profiles/{id}",
+  },
+  {
+    "method": "POST",
     "operationId": "dynamicImages.create",
     "path": "/v1/dynamic-images",
   },
@@ -1564,6 +1664,66 @@ exports[`public API spec — operation naming guard > operation list (operationI
   },
   {
     "method": "GET",
+    "operationId": "inboundWebhookChannels.list",
+    "path": "/v1/inbound-webhook-channels",
+  },
+  {
+    "method": "POST",
+    "operationId": "inboundWebhooks.create",
+    "path": "/v1/inbound-webhooks",
+  },
+  {
+    "method": "DELETE",
+    "operationId": "inboundWebhooks.delete",
+    "path": "/v1/inbound-webhooks/{id}",
+  },
+  {
+    "method": "POST",
+    "operationId": "inboundWebhooks.deleteMany",
+    "path": "/v1/inbound-webhooks/bulk-delete",
+  },
+  {
+    "method": "GET",
+    "operationId": "inboundWebhooks.get",
+    "path": "/v1/inbound-webhooks/{id}",
+  },
+  {
+    "method": "GET",
+    "operationId": "inboundWebhooks.getRequest",
+    "path": "/v1/inbound-webhooks/{id}/requests/{requestId}",
+  },
+  {
+    "method": "GET",
+    "operationId": "inboundWebhooks.list",
+    "path": "/v1/inbound-webhooks",
+  },
+  {
+    "method": "GET",
+    "operationId": "inboundWebhooks.listRequests",
+    "path": "/v1/inbound-webhooks/{id}/requests",
+  },
+  {
+    "method": "POST",
+    "operationId": "inboundWebhooks.previewMapping",
+    "path": "/v1/inbound-webhooks/preview-mapping",
+  },
+  {
+    "method": "POST",
+    "operationId": "inboundWebhooks.regenerateToken",
+    "path": "/v1/inbound-webhooks/{id}/regenerate-token",
+  },
+  {
+    "method": "PUT",
+    "operationId": "inboundWebhooks.update",
+    "path": "/v1/inbound-webhooks/{id}",
+  },
+  {
+    "method": "PATCH",
+    "operationId": "inboundWebhooks.updateSettings",
+    "path": "/v1/inbound-webhooks/{id}/settings",
+  },
+  {
+    "method": "GET",
     "operationId": "inboxes.list",
     "path": "/v1/inboxes",
   },
@@ -1731,6 +1891,126 @@ exports[`public API spec — operation naming guard > operation list (operationI
     "method": "PATCH",
     "operationId": "keywords.updateStatus",
     "path": "/v1/keywords/{id}/status",
+  },
+  {
+    "method": "GET",
+    "operationId": "leaderboards.auditLog.list",
+    "path": "/v1/leaderboards/{id}/audit-log",
+  },
+  {
+    "method": "POST",
+    "operationId": "leaderboards.create",
+    "path": "/v1/leaderboards",
+  },
+  {
+    "method": "GET",
+    "operationId": "leaderboards.defaultRules",
+    "path": "/v1/leaderboards/default-rules",
+  },
+  {
+    "method": "DELETE",
+    "operationId": "leaderboards.delete",
+    "path": "/v1/leaderboards/{id}",
+  },
+  {
+    "method": "POST",
+    "operationId": "leaderboards.export",
+    "path": "/v1/leaderboards/{id}/export",
+  },
+  {
+    "method": "POST",
+    "operationId": "leaderboards.finish",
+    "path": "/v1/leaderboards/{id}/finish",
+  },
+  {
+    "method": "GET",
+    "operationId": "leaderboards.get",
+    "path": "/v1/leaderboards/{id}",
+  },
+  {
+    "method": "GET",
+    "operationId": "leaderboards.getExport",
+    "path": "/v1/leaderboards/exports/{fileId}",
+  },
+  {
+    "method": "GET",
+    "operationId": "leaderboards.getViewLink",
+    "path": "/v1/leaderboards/{id}/view-link",
+  },
+  {
+    "method": "GET",
+    "operationId": "leaderboards.list",
+    "path": "/v1/leaderboards",
+  },
+  {
+    "method": "POST",
+    "operationId": "leaderboards.participants.adjust",
+    "path": "/v1/leaderboards/{id}/participants/{contactId}/adjust",
+  },
+  {
+    "method": "POST",
+    "operationId": "leaderboards.participants.ban",
+    "path": "/v1/leaderboards/{id}/participants/{contactId}/ban",
+  },
+  {
+    "method": "GET",
+    "operationId": "leaderboards.participants.history",
+    "path": "/v1/leaderboards/{id}/participants/{contactId}/history",
+  },
+  {
+    "method": "GET",
+    "operationId": "leaderboards.participants.list",
+    "path": "/v1/leaderboards/{id}/participants",
+  },
+  {
+    "method": "POST",
+    "operationId": "leaderboards.participants.reset",
+    "path": "/v1/leaderboards/{id}/participants/{contactId}/reset",
+  },
+  {
+    "method": "POST",
+    "operationId": "leaderboards.participants.unban",
+    "path": "/v1/leaderboards/{id}/participants/{contactId}/unban",
+  },
+  {
+    "method": "POST",
+    "operationId": "leaderboards.pause",
+    "path": "/v1/leaderboards/{id}/pause",
+  },
+  {
+    "method": "POST",
+    "operationId": "leaderboards.publish",
+    "path": "/v1/leaderboards/{id}/publish",
+  },
+  {
+    "method": "POST",
+    "operationId": "leaderboards.resetPoints",
+    "path": "/v1/leaderboards/{id}/reset-points",
+  },
+  {
+    "method": "POST",
+    "operationId": "leaderboards.start",
+    "path": "/v1/leaderboards/{id}/start",
+  },
+  {
+    "method": "GET",
+    "operationId": "leaderboards.telegramChats",
+    "path": "/v1/leaderboards/telegram-chats",
+  },
+  {
+    "method": "GET",
+    "operationId": "leaderboards.top",
+    "path": "/v1/leaderboards/{id}/top",
+  },
+  {
+    "method": "POST",
+    "operationId": "leaderboards.triggerRewards",
+    "path": "/v1/leaderboards/{id}/trigger-rewards",
+  },
+  {
+    "method": "PUT",
+    "operationId": "leaderboards.update",
+    "path": "/v1/leaderboards/{id}",
   },
   {
     "method": "POST",
@@ -1983,6 +2263,16 @@ exports[`public API spec — operation naming guard > operation list (operationI
     "path": "/v1/mini-apps/bulk-delete",
   },
   {
+    "method": "DELETE",
+    "operationId": "miniApps.deleteWhatsappDraft",
+    "path": "/v1/mini-apps/{id}/whatsapp-draft/{integrationWhatsappId}",
+  },
+  {
+    "method": "POST",
+    "operationId": "miniApps.duplicate",
+    "path": "/v1/mini-apps/{id}/duplicate",
+  },
+  {
     "method": "GET",
     "operationId": "miniApps.get",
     "path": "/v1/mini-apps/{id}",
@@ -1991,6 +2281,11 @@ exports[`public API spec — operation naming guard > operation list (operationI
     "method": "GET",
     "operationId": "miniApps.getFlowJson",
     "path": "/v1/mini-apps/{id}/flow-json",
+  },
+  {
+    "method": "GET",
+    "operationId": "miniApps.getWhatsappPreview",
+    "path": "/v1/mini-apps/{id}/whatsapp-preview",
   },
   {
     "method": "GET",
@@ -2006,6 +2301,16 @@ exports[`public API spec — operation naming guard > operation list (operationI
     "method": "POST",
     "operationId": "miniApps.publishWhatsapp",
     "path": "/v1/mini-apps/{id}/publish-whatsapp",
+  },
+  {
+    "method": "POST",
+    "operationId": "miniApps.publishWhatsappDraft",
+    "path": "/v1/mini-apps/{id}/whatsapp-draft/publish",
+  },
+  {
+    "method": "POST",
+    "operationId": "miniApps.pushWhatsappDraft",
+    "path": "/v1/mini-apps/{id}/whatsapp-draft",
   },
   {
     "method": "PATCH",
@@ -2154,8 +2459,18 @@ exports[`public API spec — operation naming guard > operation list (operationI
   },
   {
     "method": "GET",
+    "operationId": "products.listSendable",
+    "path": "/v1/products/sendable",
+  },
+  {
+    "method": "GET",
     "operationId": "products.peekImportHeaders",
     "path": "/v1/products/imports/files/{fileId}/headers",
+  },
+  {
+    "method": "GET",
+    "operationId": "products.searchMetaCatalogItems",
+    "path": "/v1/products/meta-catalog/items",
   },
   {
     "method": "POST",
@@ -2296,6 +2611,21 @@ exports[`public API spec — operation naming guard > operation list (operationI
     "method": "PUT",
     "operationId": "reflinks.updateChatWidget",
     "path": "/v1/ref-links/{id}/chat-widget",
+  },
+  {
+    "method": "DELETE",
+    "operationId": "responseSla.delete",
+    "path": "/v1/response-sla",
+  },
+  {
+    "method": "GET",
+    "operationId": "responseSla.get",
+    "path": "/v1/response-sla",
+  },
+  {
+    "method": "PUT",
+    "operationId": "responseSla.update",
+    "path": "/v1/response-sla",
   },
   {
     "method": "POST",
@@ -2806,6 +3136,56 @@ exports[`public API spec — operation naming guard > operation list (operationI
     "method": "POST",
     "operationId": "whatsappTemplates.sync",
     "path": "/v1/whatsapp-channels/{id}/templates/sync",
+  },
+  {
+    "method": "POST",
+    "operationId": "workingHours.create",
+    "path": "/v1/working-hours",
+  },
+  {
+    "method": "POST",
+    "operationId": "workingHours.createHoliday",
+    "path": "/v1/working-hours-holidays",
+  },
+  {
+    "method": "DELETE",
+    "operationId": "workingHours.delete",
+    "path": "/v1/working-hours/{id}",
+  },
+  {
+    "method": "DELETE",
+    "operationId": "workingHours.deleteHoliday",
+    "path": "/v1/working-hours-holidays/{id}",
+  },
+  {
+    "method": "GET",
+    "operationId": "workingHours.get",
+    "path": "/v1/working-hours/{id}",
+  },
+  {
+    "method": "GET",
+    "operationId": "workingHours.list",
+    "path": "/v1/working-hours",
+  },
+  {
+    "method": "GET",
+    "operationId": "workingHours.listHolidays",
+    "path": "/v1/working-hours-holidays",
+  },
+  {
+    "method": "PUT",
+    "operationId": "workingHours.setMembers",
+    "path": "/v1/working-hours/{id}/members",
+  },
+  {
+    "method": "PATCH",
+    "operationId": "workingHours.update",
+    "path": "/v1/working-hours/{id}",
+  },
+  {
+    "method": "PATCH",
+    "operationId": "workingHours.updateHoliday",
+    "path": "/v1/working-hours-holidays/{id}",
   },
   {
     "method": "GET",

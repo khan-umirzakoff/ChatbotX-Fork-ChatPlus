@@ -20,13 +20,16 @@ import { sendGifStepSchema } from "../steps/send-gif"
 import { sendImageStepSchema } from "../steps/send-image"
 import { sendMessengerTemplateMessageStepSchema } from "../steps/send-messenger-message-template"
 import { sendMultipleImagesStepSchema } from "../steps/send-multiple-images"
+import { sendProductsStepSchema } from "../steps/send-products"
 import { MAX_QUICK_REPLIES } from "../steps/send-quick-reply"
 import { sendTextStepSchema } from "../steps/send-text"
 import { sendVideoStepSchema } from "../steps/send-video"
+import { sendViewCatalogStepSchema } from "../steps/send-view-catalog"
 import { sendWaTemplateMessageStepSchema } from "../steps/send-wa-message-template"
 import { typingStepSchema } from "../steps/typing"
 import { whatsappCallButtonStepSchema } from "../steps/whatsapp-call-button"
 import { whatsappFlowStepSchema } from "../steps/whatsapp-flow"
+import { whatsappLocationStepSchema } from "../steps/whatsapp-location"
 import { whatsappOptionListStepSchema } from "../steps/whatsapp-option-list"
 import {
   baseNodeDataSchema,
@@ -62,8 +65,11 @@ export const sendMessageNodeSchema = baseNodeSchema.extend({
             sendWaTemplateMessageStepSchema,
             sendMessengerTemplateMessageStepSchema,
             whatsappOptionListStepSchema,
+            sendViewCatalogStepSchema,
             whatsappCallButtonStepSchema,
             whatsappFlowStepSchema,
+            sendProductsStepSchema,
+            whatsappLocationStepSchema,
             ...actionSteps,
           ]),
         ),
@@ -122,6 +128,13 @@ export const isBulkOutboundMetadata = (
   "type" in metadata &&
   (metadata.type === SEQUENCE_SCHEDULE_PAYLOAD_TYPE ||
     (metadata.type === BROADCAST_PAYLOAD_TYPE && isBulkBroadcast))
+
+/**
+ * Proactive sends (broadcast / sequence schedule) are not replies to the
+ * contact's last message, so they must not close the waiting-for-human window.
+ */
+export const isProactiveOutboundMetadata = (metadata: unknown): boolean =>
+  isBulkOutboundMetadata(metadata, true)
 
 export const COMMENT_AUTOMATION_PAYLOAD_TYPE = "commentAutomation"
 export const UPDATE_STATUS_PAYLOAD_TYPE = "updateStatus"

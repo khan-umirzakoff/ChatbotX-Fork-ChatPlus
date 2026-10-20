@@ -1,5 +1,6 @@
 {
   "actions": {
+    "scrollToBottom": "Aşağı sürüşdür",
     "copy": "Kopyala",
     "copyUrl": "URL-i kopyala",
     "chatWidget": "Çat vidceti",
@@ -154,7 +155,9 @@
     "schedule": "Planlaşdır",
     "moveToDraft": "Qaralamalara köçür",
     "stop": "Dayandır",
-    "resume": "Davam et"
+    "resume": "Davam et",
+    "viewRuns": "İcraları göstər",
+    "editSchedule": "Cədvəli redaktə et"
   },
   "errors": {
     "superAdminRequired": "Bunu etmək üçün iş sahəsinin super administratoru olmalısınız."
@@ -257,6 +260,13 @@
     "averageFirstResponseTimeByAdmin": "Operatorların orta ilk cavab müddəti (dəqiqə)",
     "averageFirstResponseTimeByAdminHelp": "Operatorun müştərinin mesajına ilk cavabı verməsi üçün sərf etdiyi orta müddət.",
     "averageResponseTimeByAdmin": "Operatorların orta cavab müddəti (dəqiqə)",
+    "withinWorkingHoursHelp": "Yalnız əməkdaşın iş saatları daxilindəki vaxtı hesablayır.",
+    "withinWorkingHoursLabel": "İş saatları daxilində",
+    "noResponseData": "Bu dövrdə cavab yoxdur və ya cədvəl təyin olunmayıb.",
+    "averageFirstResponseTimeWithinWorkingHoursByAdmin": "İnsan əməkdaşlar üzrə iş saatları daxilində orta ilk cavab vaxtı (dəqiqə)",
+    "averageFirstResponseTimeWithinWorkingHoursByAdminHelp": "İnsan əməkdaşın müştərinin mesajına ilk cavabı verməsi üçün iş saatları daxilində sərf etdiyi orta vaxt.",
+    "averageResponseTimeWithinWorkingHoursByAdmin": "İnsan əməkdaşlar üzrə iş saatları daxilində orta cavab vaxtı (dəqiqə)",
+    "averageResponseTimeWithinWorkingHoursByAdminHelp": "İnsan əməkdaşın müştərinin mesajına cavab verməsi üçün iş saatları daxilində sərf etdiyi orta vaxt.",
     "averageDurationOfConversation": "Söhbətin orta müddəti (dəqiqə)",
     "averageDurationOfConversationHelp": "Söhbət bota ötürülənədək operatorun onu idarə etdiyi orta müddət.",
     "success": "Uğurlu",
@@ -288,7 +298,7 @@
     "blockedConversationsHelp": "Hesabınızın blokladığı söhbətlər.",
     "blockedContacts": "Bloklanmış kontaktlar",
     "blockedContactsHelp": "Hesabınızdan mesaj almaq istəməyən kontaktlar",
-    "newContactsByCountry": "Ölkələr üzrə yeni kontaktlar",
+    "newContactsByLanguage": "Dilə görə yeni kontaktlar",
     "date": "Tarix",
     "total": "Cəmi",
     "messagesSent": "Göndərilmiş mesajlar",
@@ -319,7 +329,19 @@
     "message": "Mesaj",
     "searchByDate": "Tarix üzrə axtarış...",
     "publicReply": "İctimai cavab",
-    "privateReply": "Şəxsi cavab"
+    "privateReply": "Şəxsi cavab",
+    "filters": {
+      "allChannels": "Bütün kanallar",
+      "allInboxes": "Bütün gələnlər qutuları",
+      "searchPlaceholder": "Axtar...",
+      "empty": "Nəticə tapılmadı.",
+      "clear": "Təmizlə",
+      "close": "Bağla",
+      "options": "Mövcud seçimlər",
+      "remove": "Sil",
+      "filterHint": "Filtrlər yalnız filtrləmə əlavə olunduqdan sonra qeydə alınan hadisələri sayır: köhnə hadisələrin gələnlər qutusu yoxdur, köhnə bot və söhbət hadisələrinin isə kanalı da yoxdur. Hamısı həmişə hər şeyi sayır.",
+      "tooManyInboxes": "Ən çox {max} gələnlər qutusu seçin və ya Hamısını işarələyin."
+    }
   },
   "flowAnalytics": {
     "nodes": {
@@ -409,7 +431,10 @@
       "sending": "İcra olunur",
       "cancelled": "Ləğv edilib",
       "draft": "Qaralama",
-      "failed": "Uğursuz"
+      "failed": "Uğursuz",
+      "recurring": "Təkrarlanan",
+      "paused": "Dayandırılıb",
+      "ended": "Bitib"
     },
     "stats": {
       "sent": "Göndərilib",
@@ -493,7 +518,9 @@
       "audienceFilter": "Auditoriya süzgəci",
       "noAudienceFilter": "Auditoriya süzgəci yoxdur",
       "template": "Şablon",
-      "integration": "İnteqrasiya"
+      "integration": "İnteqrasiya",
+      "schedule": "Təkrar cədvəli",
+      "runOf": "<link>{name}</link> icrası"
     },
     "filters": {
       "all": "Hamısı"
@@ -542,15 +569,20 @@
     },
     "moveToDraftDialog": {
       "title": "Qaralamalara köçür",
-      "description": "\"{name}\" üçün planlaşdırma ləğv ediləcək və o, yenidən qaralamalara köçürüləcək."
+      "description": "\"{name}\" üçün planlaşdırma ləğv ediləcək və o, yenidən qaralamalara köçürüləcək.",
+      "templateTitle": "Cədvəli redaktə et",
+      "templateDescription": "\"{name}\" dayandırılır və cədvəli dəyişə bilməyiniz üçün qaralamalara qaytarılır."
     },
     "stopDialog": {
       "title": "Kütləvi göndərişi dayandır",
-      "description": "\"{name}\" üçün qalan mesajların göndərilməsi təxminən bir dəqiqə ərzində dayanacaq. Artıq kanala ötürülmüş bir neçə mesaj yenə də çatdırıla bilər. Daha sonra davam edə bilərsiniz: yalnız hələ mesaj göndərilməmiş alıcılar onu alacaq."
+      "description": "\"{name}\" üçün qalan mesajların göndərilməsi təxminən bir dəqiqə ərzində dayanacaq. Artıq kanala ötürülmüş bir neçə mesaj yenə də çatdırıla bilər. Daha sonra davam edə bilərsiniz: yalnız hələ mesaj göndərilməmiş alıcılar onu alacaq.",
+      "templateTitle": "Təkrarlanan yayımı dayandır",
+      "templateDescription": "\"{name}\" yeni icra yaratmağı dayandırır. Artıq göndərilən icra davam edir. Sonra davam etdirə bilərsiniz; fasilə zamanı icralar keçilir."
     },
     "resumeDialog": {
       "title": "Kütləvi göndərişə davam et",
-      "description": "\"{name}\" hələ onu almamış alıcılara göndərilməyə davam edəcək."
+      "description": "\"{name}\" hələ onu almamış alıcılara göndərilməyə davam edəcək.",
+      "templateDescription": "\"{name}\" növbəti planlaşdırılmış vaxtdan yenidən təkrarlanır. Fasilə zamanı icralar keçildi."
     },
     "planLimitDialog": {
       "title": "Planınızı yüksəldin",
@@ -568,6 +600,63 @@
       "toLabel": "Son",
       "allPlaceholder": "Hamısı",
       "rangeEndBeforeStart": "Son mövqe başlanğıc mövqeyindən əvvəl olmamalıdır"
+    },
+    "recurring": {
+      "nextRun": "Növbəti icra {when}",
+      "paused": "Dayandırılıb",
+      "ended": "Bitib {when} · {count, plural, one {# icra} other {# icra}}",
+      "runs": "{count, plural, one {# icra} other {# icra}}",
+      "noUpcomingSends": "Daha göndəriş yoxdur — qalan tarixlər keçilir"
+    },
+    "runs": {
+      "back": "Təkrarlanan yayımlar",
+      "pausedNotice": "{when} tarixindən dayandırılıb. Fasilə zamanı icralar keçilir.",
+      "groupBy": "İcraları qruplaşdır",
+      "grouping": {
+        "day": "Gün",
+        "week": "Həftə",
+        "month": "Ay"
+      },
+      "totals": "{runs, plural, one {# icra} other {# icra}} ({slots, plural, one {# vaxtdan} other {# vaxtdan}})",
+      "error": "İcralar yüklənmədi.",
+      "retry": "Yenidən cəhd et",
+      "empty": "Hələ icra yoxdur. İlk icra növbəti planlaşdırılmış vaxtda başlayır.",
+      "loadMore": "Daha çox yüklə",
+      "weekOf": "{date} həftəsi",
+      "groupSummary": "{created, plural, one {# icra} other {# icra}}{missed, plural, =0 {} other { · # buraxıldı}}{skipped, plural, =0 {} other { · # keçildi}}",
+      "deliveredRate": "{rate} çatdırıldı",
+      "notSent": "Göndərilmədi — {reason}",
+      "earlierSlots": "{count, plural, one {# əvvəlki vaxt} other {# əvvəlki vaxt}} buraxıldı",
+      "stalled": "Ilişib",
+      "lateByMinutes": "{count, plural, one {# dəqiqə gecikmə} other {# dəqiqə gecikmə}}",
+      "lateByHours": "{count, plural, one {# saat gecikmə} other {# saat gecikmə}}",
+      "recipients": "{count, plural, one {# alıcı} other {# alıcı}}",
+      "reasons": {
+        "catchUpSuperseded": "platforma işləmirdi; əvəzində sonrakı icra göndərildi",
+        "paused": "cədvəl dayandırılmışdı",
+        "draft": "yayım redaktə olunurdu",
+        "blockedOwner": "hesab bloklanıb",
+        "planLimit": "plan limiti dolub",
+        "noTargets": "göndərmək üçün səhifə yoxdur",
+        "undeliverable": "axın və ya şablon əlçatan deyil",
+        "excludedDate": "Keçilmiş tarix"
+      },
+      "outcomes": {
+        "created": "Göndərildi",
+        "skipped": "Keçildi",
+        "missed": "Buraxıldı"
+      },
+      "upcoming": {
+        "title": "Gələcək göndərişlər",
+        "empty": "Gələcək göndəriş yoxdur",
+        "skip": "Keç",
+        "restore": "Bərpa et",
+        "skippedBadge": "Keçilib",
+        "skipped": "{date} keçildi",
+        "restored": "{date} bərpa edildi",
+        "undo": "Geri al",
+        "error": "Bu göndərişi artıq dəyişmək olmaz"
+      }
     }
   },
   "commentAutomation": {
@@ -623,6 +712,17 @@
     "liveBadge": "Canlı",
     "postTypeDialog": {
       "title": "Paylaşım növünü seçin"
+    },
+    "account": {
+      "label": "Hesab",
+      "description": "Bu avtomatlaşdırmanın cavab verdiyi qoşulmuş hesab. Bu kanalın bütün qoşulmuş hesablarında cavab vermək üçün “Bütün hesablar” seçin.",
+      "all": "Bütün hesablar",
+      "placeholder": "Hesab seçin",
+      "required": "Bir neçə hesab qoşulub: birini seçin və ya qəsdən “Bütün hesablar” seçin.",
+      "targetsCleared": "Seçilmiş paylaşımlar başqa hesaba aid ola biləcəyi üçün təmizləndi.",
+      "column": "Hesab",
+      "disconnected": "Bağlantısı kəsilmiş hesab",
+      "disconnectedDescription": "Bu avtomatlaşdırma artıq qoşulmayan hesaba bağlıdır, ona görə heç bir şərhə cavab vermir. Hesabı yenidən qoşun və ya başqasını seçin."
     }
   },
   "condition": {
@@ -697,6 +797,7 @@
       "questionnaireInProgress": "Sorğu anketi davam edir",
       "questionnaireFinished": "Sorğu anketi tamamlanıb",
       "couponTopic": "Kupon",
+      "leaderboardScore": "Oyun xalları",
       "votedOnPoll": "Sorğuda səs verib",
       "lastComment": "Son şərh",
       "commentedOnPost": "Paylaşıma şərh yazıb",
@@ -749,7 +850,8 @@
         "video": "Video",
         "audio": "Səs",
         "gif": "GIF",
-        "file": "Fayl"
+        "file": "Fayl",
+        "storyMention": "Hekayədə qeyd"
       },
       "ctwaConversionTypes": {
         "lead": "Potensial müştəri",
@@ -766,6 +868,7 @@
       "ecommerce": "Elektron ticarət",
       "systemFields": "Sistem sahələri",
       "topicCoupon": "Kupon mövzusu",
+      "leaderboard": "Oyun xalları",
       "customFields": "Fərdi sahələr",
       "botFields": "Bot sahələri",
       "email": "E-poçt",
@@ -806,7 +909,8 @@
       "api": "API",
       "webchat": "Veb söhbət",
       "botLink": "Bot keçidi",
-      "chatPlugin": "C. söhbət əlavəsi"
+      "chatPlugin": "C. söhbət əlavəsi",
+      "inboundWebhook": "Daxil olan webhook"
     },
     "ctwaRetarget": {
       "segments": {
@@ -950,6 +1054,7 @@
       "permissionRequired": "Platforma dəstəyinin girişini dəyişmək üçün super administrator olmalısınız.",
       "enabledToast": "Platforma dəstəyinin girişi aktivləşdirildi.",
       "disabledToast": "Platforma dəstəyinin girişi deaktivdir.",
+      "consentDisabled": "Platform support access is available to platform administrators without this setting.",
       "toggleError": "Xəta baş verdi. Yenidən cəhd edin."
     }
   },
@@ -1494,7 +1599,8 @@
       "video": "Video",
       "audio": "Səs",
       "gif": "GIF",
-      "file": "Fayl"
+      "file": "Fayl",
+      "storyMention": "Hekayədə qeyd"
     },
     "lastMonth": {
       "label": "Keçən ay"
@@ -1978,7 +2084,8 @@
     "schedule": {
       "label": "Cədvəl",
       "now": "İndi",
-      "scheduled": "Sonraya planlaşdır"
+      "scheduled": "Sonraya planlaşdır",
+      "recurring": "Təkrarla"
     },
     "inputFieldId": {
       "label": "Giriş üçün fərdi sahə"
@@ -2463,7 +2570,8 @@
       "media": "Media",
       "ads": "Reklamlar",
       "settings": "Parametrlər",
-      "miniApps": "Mini Apps"
+      "miniApps": "Mini Apps",
+      "leaderboards": "Liderlər lövhələri"
     },
     "adReferral": {
       "label": "Reklamlar",
@@ -2495,6 +2603,31 @@
       "hint": "Data Manager tövsiyə olunur. Köhnə yükləmə API-si yalnız Google-un hələ də icazə verdiyi Google Cloud layihələri ilə işləyir və Data Manager icazəsindən istifadə etmir. Dəyişiklik yalnız yeni bağlantılara şamil olunur: mövcud iş sahələrini yenidən qoşun.",
       "dataManager": "Data Manager API (tövsiyə olunur)",
       "legacy": "Köhnə yükləmə API-si"
+    },
+    "referralName": {
+      "label": "Dəvət edənin adı"
+    },
+    "capiConfigId": {
+      "label": "Conversions API Config ID",
+      "description": "Conversions API qoşularkən whatsapp_business_manage_events icazəsini tələb etmək üçün istifadə olunan Embedded Signup konfiqurasiya ID-si."
+    },
+    "outboundAutomatedResponse": {
+      "label": "Səhifə açar sözü"
+    },
+    "fbComment": {
+      "label": "Facebook şərh avtomatlaşdırması"
+    },
+    "igComment": {
+      "label": "Instagram şərh avtomatlaşdırması"
+    },
+    "igStory": {
+      "label": "Instagram hekayə avtomatlaşdırması"
+    },
+    "images": {
+      "label": "Şəkillər"
+    },
+    "miniApp": {
+      "label": "Mini Tətbiq"
     }
   },
   "metaConversions": {
@@ -2511,17 +2644,15 @@
     "status": {
       "title": "Meta Conversions API",
       "ready": "Hazırdır",
-      "missingPermission": "İcazə tələb olunur",
-      "unverified": "Doğrulanmayıb",
       "unsupported": "Dəstəklənmir",
-      "notConnected": "Qoşulmayıb"
+      "notConnected": "Qoşulmayıb",
+      "reconnect": "Yenidən qoşulmaq lazımdır"
     },
     "statusDescriptions": {
-      "ready": "Bu inteqrasiyanın Conversions API hadisələri üçün tələb olunan Meta icazəsi var.",
-      "missingPermission": "Bu inteqrasiyanı yenidən qoşun və tələb olunan Meta icazəsini verin.",
-      "unverified": "Platforma tətbiqinin parametrləri əlçatan olmadığı üçün CAPI icazəsini doğrulamaq mümkün deyil.",
+      "ready": "Bu inteqrasiyadan gələn Conversions API hadisələri Meta-ya göndərilir.",
       "unsupported": "Instagram üçün Meta Conversions API Facebook Login for Business vasitəsilə qoşulmuş hesab tələb edir.",
-      "notConnected": "Conversions API reklamların performansını artırmaq üçün Meta ilə məlumat paylaşmağa imkan verən Meta Business Tool alətidir."
+      "notConnected": "Conversions API reklamların performansını artırmaq üçün Meta ilə məlumat paylaşmağa imkan verən Meta Business Tool alətidir.",
+      "reconnect": "Conversions API icazəsinin müddəti bitib, buna görə hadisələr dayandırılıb. Dataset və test parametrləri saxlanılır; göndərməni davam etdirmək üçün yenidən qoşulun."
     },
     "errors": {
       "reconnect": "Meta CAPI-yə yenidən qoşulmanı başlatmaq mümkün olmadı.",
@@ -2531,12 +2662,14 @@
       "saveFailed": "Yadda saxlamaq mümkün olmadı. Yenidən cəhd edin.",
       "datasetRequired": "Giriş tokeni əlavə etməzdən əvvəl məlumat dəstinin ID-sini yadda saxlayın.",
       "invalidToken": "Bu token məlumat dəstinə daxil ola bilmədi.",
-      "invalidDatasetId": "Etibarlı məlumat dəsti ID-si daxil edin (yalnız rəqəmlər).",
       "whatsappNotFound": "WhatsApp inteqrasiyası tapılmadı.",
       "testEventCodeRequired": "Sınaq hadisəsi göndərməzdən əvvəl sınaq hadisəsi kodunu yadda saxlayın.",
       "invalidTestEventCode": "Sınaq hadisəsi kodunda yalnız hərflər, rəqəmlər, defislər və ya alt xətlər ola bilər (ən çox 64 simvol).",
       "invalidMessagingId": "Mesajlaşma ID-si yalnız hərflər, rəqəmlər, defislər və ya alt xətlərdən ibarət ola bilər (ən çox 512 simvol).",
-      "capiDisconnected": "Bu kanal üçün Meta CAPI ilə əlaqə kəsilib. Sınaq hadisəsi göndərməzdən əvvəl yenidən qoşulun."
+      "capiDisconnected": "Bu kanal üçün Meta CAPI ilə əlaqə kəsilib. Sınaq hadisəsi göndərməzdən əvvəl yenidən qoşulun.",
+      "appNotConfigured": "Bu kanal üçün Meta tətbiqi hələ konfiqurasiya edilməyib.",
+      "capiNotConfigured": "Conversions API əlaqəsi konfiqurasiya edilməyib. Administratordan Conversions API Config ID təyin etməsini xahiş edin.",
+      "wabaMismatch": "İcazə verilən WhatsApp Business hesabı bu nömrənin aid olduğu hesab deyil. Zəhmət olmasa eyni hesabla qoşulun."
     },
     "fields": {
       "eventType": {
@@ -2621,32 +2754,13 @@
     "disconnect": "Ayır",
     "openEventManager": "Event Manager-i aç",
     "methods": {
-      "oauth": {
-        "title": "Facebook vasitəsilə qoş",
-        "description": "Səhifənizin mövcud əlaqəsindən istifadə edin, sonra məlumat dəstinin ID-sini seçin.",
-        "connect": "Məlumat dəsti yarat",
-        "connectedLabel": "Facebook vasitəsilə"
-      },
       "custom": {
         "title": "Fərdi əlaqə",
         "description": "Meta Events Manager-dən alınan məlumat dəstinin ID-sindən və giriş tokenindən istifadə edin.",
         "start": "Fərdi əlaqə qur",
         "connect": "Qoş",
         "connectedLabel": "Fərdi"
-      },
-      "whatsapp": {
-        "title": "WhatsApp vasitəsilə qoş",
-        "description": "WhatsApp əlaqənizdən istifadə edin, sonra məlumat dəstinin ID-sini seçin.",
-        "connect": "Məlumat dəsti yarat",
-        "connectedLabel": "WhatsApp vasitəsilə"
       }
-    },
-    "finalize": {
-      "title": "Məlumat dəstinin ID-sini seç",
-      "description": "Mövcud məlumat dəstinin ID-sini daxil edin və ya avtomatik yaratmaq üçün boş saxlayın.",
-      "save": "Yadda saxla",
-      "createDataset": "Məlumat dəsti yarat",
-      "caveat": "Bu səhifəyə və ya Instagram hesabına bağlı olmayan məlumat dəsti ID-si hadisələri düzgün əlaqələndirməyə bilər. Əlaqəli məlumat dəstini avtomatik yaratmaq üçün bu sahəni boş saxlayın."
     },
     "whatsapp": {
       "connect": "Qoş"
@@ -2695,6 +2809,24 @@
       "messagingIdHint": "Yalnız hərflər, rəqəmlər, defislər və alt xətlər (ən çox 512 simvol).",
       "cancel": "Ləğv et",
       "confirmSend": "Göndər"
+    },
+    "connect": {
+      "button": "Conversions API-ni qoş",
+      "success": "Conversions API qoşuldu.",
+      "title": "Meta ilə qoşul",
+      "description": "Meta hesabına daxil olun və konversiya hadisələri üçün icazə verin. Bu, Conversions API üçün ayrıca əlaqə yaradır və bu kanalın giriş qaydasını dəyişmir.",
+      "reconnect": "Yenidən qoş"
+    },
+    "connectResult": {
+      "errors": {
+        "cancelled": "Qoşulma ləğv edildi. Heç nə dəyişdirilmədi.",
+        "notFound": "Bu kanal tapılmadı.",
+        "pageNotFound": "İstifadə etdiyiniz Facebook hesabı bu Səhifəni idarə etmir. Onu idarə edən hesabla daxil olun.",
+        "accountNotFound": "İstifadə etdiyiniz Facebook hesabı bu Instagram hesabını idarə etmir. Onu idarə edən hesabla daxil olun.",
+        "datasetFailed": "Meta bu qoşulma ilə dataset yaratmağa icazə vermədi. Tələb olunan bütün icazələri verdiyinizdən əmin olun və yenidən cəhd edin.",
+        "sessionExpired": "Qoşulma çox uzun çəkdi və ya başqa sekmədə başladıldı. Zəhmət olmasa yenidən cəhd edin.",
+        "failed": "Conversions API qoşula bilmədi. Zəhmət olmasa yenidən cəhd edin."
+      }
     }
   },
   "googleAds": {
@@ -3269,6 +3401,7 @@
       "noFlowsAvailable": "Axın yoxdur",
       "setCustomField": "Fərdi sahəni təyin et",
       "startAnotherNode": "Başqa düyünü başlat",
+      "openMiniApp": "Mini Tətbiqi aç",
       "startExternalFlow": "Xarici axını başlat",
       "startExternalNode": "Xarici düyünü başlat",
       "startFlow": "Axını başlat",
@@ -3303,9 +3436,13 @@
       "importStarted": "Axın idxal olunur. Nəticələr üçün idxal tarixçəsinə baxın.",
       "importJsonOnly": "Yalnız JSON faylları",
       "whatsappCallButton": "WhatsApp-da zəng et",
+      "whatsappLocation": "Məkan",
       "metaConversions": "Meta Conversions API",
       "threadControl": "Thread Control",
-      "sendGoogleAdsConversion": "Google Ads konversiyası göndər"
+      "sendGoogleAdsConversion": "Google Ads konversiyası göndər",
+      "changeGamificationScore": "Oyun xallarını dəyiş",
+      "sendViewCatalog": "Kataloqa bax",
+      "sendProducts": "Məhsul göndər"
     },
     "splitTraffic": {
       "balanceHint": "Ümumi cəm 100% olmalıdır.",
@@ -3425,12 +3562,75 @@
     "whatsappCallButton": {
       "editButtonTitle": "Düyməni redaktə et",
       "buttonLabel": "Düymə etiketi"
+    },
+    "changeGamificationScore": {
+      "leaderboard": "Liderlər lövhəsi",
+      "operation": "Əməliyyat",
+      "add": "Xal əlavə et (+)",
+      "subtract": "Xal çıx (−)",
+      "points": "Xal",
+      "targetUser": "İstifadəçi xalları",
+      "targetReferrer": "Dəvət edənin xalları",
+      "targetReferrerHint": "Bu kontaktı dəvət edənin xalını da dəyiş.",
+      "summary": "{leaderboard} üzrə {points} xal"
+    },
+    "whatsappLocation": {
+      "title": "Məkan",
+      "name": "Ad",
+      "address": "Ünvan",
+      "latitude": "Enlik",
+      "longitude": "Uzunluq",
+      "setLocation": "Məkanı təyin et",
+      "errors": {
+        "tooLong": "1000 simvoldan çox olmamalıdır.",
+        "invalidLatitude": "-90 ilə 90 arasında enlik daxil edin.",
+        "invalidLongitude": "-180 ilə 180 arasında uzunluq daxil edin.",
+        "locationRequired": "Məkanın koordinatlarını daxil edin."
+      }
+    },
+    "sendViewCatalog": {
+      "footerLabel": "Alt məlumat",
+      "thumbnailLabel": "Miniatür məhsul"
+    },
+    "sendProducts": {
+      "description": "Göndəriləcək məhsulları və onların necə göstəriləcəyini seçin.",
+      "display": "Görünüş",
+      "displays": {
+        "products": "Məhsullar",
+        "carousel": "Karusel"
+      },
+      "products": "Məhsullar",
+      "selectProducts": "Məhsul seçin",
+      "searchProducts": "Məhsul axtarın",
+      "noProducts": "Məhsul tapılmadı.",
+      "loading": "Yüklənir...",
+      "loadError": "Məhsullar yüklənmədi.",
+      "retry": "Yenidən cəhd edin",
+      "catalogNotConnected": "Məhsul göndərmək üçün Meta Kataloqunu qoşun və sinxronlaşdırın.",
+      "openProducts": "Məhsulları aç",
+      "channelUnsupported": "Bu kanal məhsul göndərə bilməz.",
+      "unavailableProduct": "Məhsul əlçatan deyil",
+      "removeProduct": "Məhsulu sil",
+      "removeSection": "Bölməni sil",
+      "moreOptions": "Daha çox seçim",
+      "fewerOptions": "Daha az seçim",
+      "header": "Başlıq",
+      "body": "Mətn",
+      "footer": "Alt məlumat",
+      "sectionTitle": "Bölmə başlığı",
+      "addSection": "Bölmə əlavə et",
+      "productCount": "{count} / {max} məhsul",
+      "productsSelected": "{count, plural, one {# məhsul} other {# məhsul}}",
+      "noneSelected": "Hələ məhsul yoxdur",
+      "sendFailed": "Məhsullar göndərilə bilmədi."
     }
   },
   "folders": {
-    "heading": {
-      "title": "Qovluqlar"
-    }
+    "rootOption": "-- Kök --",
+    "showMore": "+{count}",
+    "showLess": "Daha az göstər",
+    "root": "Kök",
+    "viewingFolder": "Qovluğa baxılır: {name}"
   },
   "gemini": {
     "autoReply": {
@@ -4134,6 +4334,8 @@
     "failed": "Uğursuz",
     "copiedToClipboard": "Mübadilə buferinə kopyalandı",
     "messengerAdsJsonDescription": "Yalnız başlanğıc addımında dəyişiklik etdikdə yeni JSON kodu yaratmalısınız. Digər addımlardakı dəyişikliklər bu JSON koduna təsir etməyəcək.",
+    "welcomeMessageFlowIdsTitle": "Xoş gəlmisiniz mesaj axını ID-ləri",
+    "welcomeMessageFlowIdsDescription": "Dərc etdiyiniz zaman hər Facebook Səhifəsi ilə sinxronlaşdırılır. Reklam Menecerində Tərəfdaş tətbiqi altında seçin.",
     "messengerAdsNotPublished": "Bu axının məzmununu dərc edin və yenidən cəhd edin.",
     "messengerAdsNoStartNode": "Bu axının etibarlı başlanğıc addımı yoxdur. Axını açın, başlanğıc üçün «Mesaj göndər» addımı təyin edin, sonra dərc edin və yenidən cəhd edin.",
     "messengerAdsError": "JSON yaradılarkən xəta baş verdi. Yenidən cəhd edin.",
@@ -4246,6 +4448,7 @@
     "whatsappFlowIncomplete": "Düyməni açın və WhatsApp Flow ilə onun başlanğıc ekranını seçin.",
     "whatsappCarouselButtonsMismatch": "WhatsApp-da karuselin bütün kartlarında eyni düymələr olmalıdır: hər kartda ya tək keçid düyməsi, ya da eyni sayda cavab düyməsi olmalıdır",
     "whatsappCarouselLinkButtonNotAlone": "WhatsApp-da keçid düyməsi olan karusel kartında başqa düymə ola bilməz. Həmin kartdakı digər düymələri çıxarın və ya keçid düyməsini başqa əməliyyata dəyişin.",
+    "templateButtonOpenMiniAppUnsupported": "Şablon düymələri Mini Tətbiqi aça bilməz. Bu düymə üçün başqa əməliyyat seçin.",
     "duplicateNodeError": "Blokun surətini yaratmaq mümkün olmadı. Yenidən cəhd edin.",
     "deleteNodeError": "Bloku silmək mümkün olmadı. Yenidən cəhd edin.",
     "redoHistoryCleared": "Yenidən icra tarixçəsi təmizləndi",
@@ -4284,7 +4487,33 @@
       "labelsUnavailable": "Flow-un sualları yüklənə bilmədi, ona görə sahə adları göstərilir.",
       "yes": "Bəli",
       "no": "Xeyr"
-    }
+    },
+    "sendViewCatalogBodyTooLong": "Mesaj mətni kataloq mesajı üçün çox uzundur. Onu qısaldın.",
+    "sendViewCatalogFooterTooLong": "Alt məlumat kataloq mesajı üçün çox uzundur. Onu qısaldın.",
+    "viewCatalog": "Kataloqa bax",
+    "sendProductsDisplayUnsupported": "Bu kanal bu növ məhsul mesajını göndərə bilməz.",
+    "sendProductsFieldRequired": "Bu sahə məcburidir.",
+    "sendProductsFieldNotAllowed": "Bu sahə burada istifadə oluna bilməz.",
+    "sendProductsFieldTooLong": "Bu mətn çox uzundur.",
+    "sendProductsProductCountOutOfRange": "Məhsulların düzgün sayını seçin.",
+    "sendProductsSectionCountOutOfRange": "Bölmələr çoxdur.",
+    "sendProductsDuplicateProduct": "Məhsul yalnız bir dəfə görünə bilər.",
+    "inboundOrder": {
+      "title": "Alış-veriş səbəti",
+      "preview": "Alış-veriş səbəti ({count, plural, one {# element} other {# element}})",
+      "note": "Qeyd",
+      "unresolvedProduct": "Kataloqunuzda tapılmadı"
+    },
+    "referredProduct": {
+      "askedAbout": "Bu məhsul haqqında soruşdu"
+    },
+    "savedReplyTextOrImageRequired": "Mətn və ya ən azı bir şəkil əlavə edin",
+    "imagesNotSupportedOnChannel": "{channel} bu söhbətdə şəkil göndərə bilmir",
+    "tooManyImagesOnChannel": "{channel} bu söhbətdə ən çox {max} şəkil göndərə bilər",
+    "savedReplyImagesRemoved": "Burada göndərilə bilməyən şəkillər silindi",
+    "onlyImagesAllowed": "Yalnız şəkil əlavə etmək olar",
+    "tooManySavedReplyImages": "Saxlanmış cavabda ən çox {max} şəkil ola bilər",
+    "savedReplyImagesNotSentHere": "Şəkillər burada göndərilməyəcək"
   },
   "instagram": {
     "description": "Bu inteqrasiya Instagram botları yaratmağa imkan verir.",
@@ -4443,6 +4672,85 @@
     },
     "title": "DeepSeek"
   },
+  "decision": {
+    "addConnection": "Add AI Router connection",
+    "advanced": "Advanced",
+    "context": "Context",
+    "discardTypeChangeDescription": "Changing the AI Router type will discard its criteria and threshold.",
+    "discardTypeChangeTitle": "Change AI Router type?",
+    "output": "Output",
+    "outputNoul": "probabilityTrue (0–1)",
+    "statement": "Statement",
+    "thresholdChoice": "Require minimum confidence",
+    "thresholdNoul": "Require minimum TRUE probability",
+    "thresholdScore": "Require score threshold",
+    "thresholds": "Confidence & thresholds",
+    "addProfile": "Add AI Router profile",
+    "globalRouter": "Global Router",
+    "globalRouterRoutesDiscarded": "Global Router marşrutları və metadata xəritələmələri də silinəcək.",
+    "globalRouterDescription": "This profile becomes the workspace Global Router and replaces any previously selected Global Router.",
+    "globalRouterChooseDestination": "Choose destination",
+    "globalRouterDefaultDestination": "Default destination",
+    "globalRouterDestinationRequired": "Choose where unmatched messages should go.",
+    "globalRouterRouteDestinationRequired": "Choose a destination for this result.",
+    "globalRouterRoutes": "Route recognized results",
+    "globalRouterUsesFallback": "Uses default destination",
+    "globalRouterDestinationTypes": {
+      "flow": "Flow",
+      "aiAgent": "AI Agent",
+      "assignConversation": "Assign Conversation to an Admin"
+    },
+    "globalRouterFallbackDescription": "A default destination is required. It applies only when the Global Router is usable but evaluation has no valid result or route; unavailable connections or models use the workspace Default AI/Flow.",
+    "globalRouterFalseMaximum": "FALSE maximum probability",
+    "globalRouterMetadataMappings": "Optional result metadata mappings",
+    "globalRouterNoulDescription": "Values between the FALSE maximum and TRUE minimum use the fallback. The profile threshold does not affect Global Router Noul routing.",
+    "globalRouterRuntimeUnsupported": "This model has not been certified for AI Router runtime. You can save the configuration, but the Global Router remains inactive until certification.",
+    "globalRouterTrueMinimum": "TRUE minimum probability",
+    "flowStepDescription": "Select an active profile and map its typed results to contact custom fields.",
+    "profile": "AI Router profile",
+    "question": "Question",
+    "result": "Result",
+    "resultValues": {
+      "choice": "Choice",
+      "confidence": "Confidence",
+      "noul": "Noul",
+      "probability": "Probability",
+      "score": "Score"
+    },
+    "connection": "AI Router connection",
+    "connectionUnavailable": "AI Router connection unavailable",
+    "charactersRemaining": "{count} characters remaining",
+    "modelUnavailable": "Selected model is no longer available. Choose another model.",
+    "editProfile": "AI Router profilini redaktə et",
+    "evaluateDecision": "AI Router",
+    "model": "Model",
+    "profileDescription": "A profile combines an AI Router connection, model and typed question contract.",
+    "profiles": "AI Router profiles",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "label": "Status"
+    },
+    "connectionDescription": "Configure a provider credential and the AI Router models it may use.",
+    "connections": "AI Router connections",
+    "connectionsDescription": "Connections are available to AI Router profiles in this workspace.",
+    "credentialKeepExisting": "Leave blank to keep the existing credential.",
+    "credentialRequired": "A provider credential is required.",
+    "defaultModel": "Default model",
+    "editConnection": "Edit AI Router connection",
+    "empty": "No AI Router connections yet.",
+    "endpoint": "Compatible endpoint",
+    "endpointDescription": "Use the provider's System One-compatible API endpoint.",
+    "modelCatalog": "Available models",
+    "modelCatalogDescription": "Enter one model ID per line, or separate model IDs with commas.",
+    "provider": "Provider",
+    "testFailed": "AI Router connection test failed.",
+    "testPassed": "AI Router connection test passed.",
+    "toolDescription": "Create reusable profiles for the AI Router flow step.",
+    "title": "AI Router",
+    "contactContext": "Kontakt konteksti",
+    "contextProviderWarning": "Seçilmiş əlaqə sahəsi dəyərləri AI Router provayderinə göndərilir."
+  },
   "openrouter": {
     "autoReply": {
       "description": "OpenRouter əsasında AI avtomatik cavabını aktivləşdirin.",
@@ -4562,7 +4870,17 @@
     "maxItemsReached": "Hər iş sahəsi üçün ən çox {max} {feature} icazəlidir",
     "maxCharacters": "Ən çox {max} simvol.",
     "invalidApiKey": "Etibarsız API açarı",
-    "maxMustBeGreaterThanMin": "{maxField} ən azı {minField} qədər olmalıdır"
+    "maxMustBeGreaterThanMin": "{maxField} ən azı {minField} qədər olmalıdır",
+    "inboundWebhook": {
+      "inboxRequired": "Gələnlər qutusu seçin.",
+      "inboxNotFound": "Seçilmiş gələnlər qutusu tapılmadı.",
+      "inboxDisconnected": "Seçilmiş gələnlər qutusu qoşulu deyil.",
+      "unsupportedInboxIdentifier": "Bu kanal həmin dəyərlə müəyyən edilə bilməz.",
+      "identifierRequired": "Ən azı bir kontakt identifikatoru əlavə edin.",
+      "unknownFieldTarget": "Uyğunlaşdırılmış kontakt sahəsi artıq mövcud deyil.",
+      "actionReferenceNotFound": "Əməliyyat artıq mövcud olmayan axına, etiketə və ya sahəyə istinad edir.",
+      "fieldMappingRequired": "Ən azı bir sahə uyğunlaşdırması əlavə edin."
+    }
   },
   "webchat": {
     "chatUnavailable": "Bu söhbət hazırda əlçatan deyil.",
@@ -5135,7 +5453,8 @@
       },
       "inboundLabel": "Daxil olan zəngləri qəbul et",
       "inboundHelper": "Müştərilərin zəng etməsinə icazə verin. Gələnlər qutusunda zəng çalmadan zəng etməyə davam etmək üçün bu seçimi söndürün."
-    }
+    },
+    "credentialSecretsRequired": "Tətbiq sirrini və sistem istifadəçisi tokenini daxil edin. Hələ saxlanmayıb."
   },
   "zalo": {
     "title": "Zalo OA",
@@ -5290,6 +5609,216 @@
     "title": "Sehrli keçidlər",
     "description": "Sorğu parametrləri ilə URL-inizə yönləndirən birbaşa keçidlər yaradın."
   },
+  "inboundWebhooks": {
+    "title": "Daxil olan Webhook-lar",
+    "feature": "Daxil olan webhook",
+    "description": "Xarici sistemlərin iş sahənizə məlumat göndərməsinə icazə verin: kontakt tapın və ya yaradın, dəyərləri sahələrinə yazın və əməliyyatları icra edin.",
+    "createDescription": "Yeni webhook qeyri-aktiv başlayır. Redaktorda konfiqurasiya edin, sonra aktiv edin.",
+    "deleteDescription": "Hələ də bu URL-ə göndərən sistemlər xəta alacaq. Bunu geri qaytarmaq olmaz.",
+    "editorDescription": "Bu webhook-u işə salmaq üçün aşağıdakı URL-ə JSON POST sorğusu göndərin.",
+    "configure": "Konfiqurasiya et",
+    "getLink": "Keçid al",
+    "activeToggle": "{name} aktiv et",
+    "columns": {
+      "active": "Aktiv",
+      "createdAt": "Yaradılıb",
+      "requests": "Sorğular"
+    },
+    "link": {
+      "title": "Webhook URL",
+      "description": "Bu URL-ə JSON POST edin. Gizli token ehtiva edir, ona görə parol kimi qoruyun."
+    },
+    "endpoint": {
+      "label": "Webhook URL",
+      "show": "URL-i göstər",
+      "hide": "URL-i gizlət"
+    },
+    "regenerate": {
+      "button": "Yenidən yarat",
+      "title": "Webhook URL yenidən yaradılsın?",
+      "description": "Cari URL dərhal işləməyi dayandırır. Ona göndərən bütün sistemləri yeniləyin.",
+      "cancel": "Ləğv et",
+      "confirm": "Yenidən yarat",
+      "success": "Webhook URL yenidən yaradıldı",
+      "failed": "URL yenidən yaradıla bilmədi"
+    },
+    "activation": {
+      "incomplete": "Bu webhook-u aktivləşdirməzdən əvvəl gələnlər qutusunu, ən azı bir kontakt sahəsini və ən azı bir uyğunlaşdırmanı doldurub yadda saxlayın."
+    },
+    "sample": {
+      "title": "Nümunə JSON",
+      "description": "Sahələrinə baxmaq və dəyərləri önbaxışda görmək üçün nümunə sorğu gövdəsi yapışdırın.",
+      "load": "Nümunə JSON yüklə",
+      "status": {
+        "loaded": "Nümunə yükləndi",
+        "invalid": "Bu etibarlı JSON deyil",
+        "tooLarge": "Nümunə {max} KB-dan böyükdür",
+        "unsupported": "Bu nümunədə dəstəklənməyən simvollar var və ya çox dərin iç-içədir"
+      },
+      "format": "JSON-u formatla"
+    },
+    "contact": {
+      "title": "Kontakt tap və ya yarat",
+      "description": "Kontaktın aid olduğu gələnlər qutusunu və onu necə tapacağınızı seçin. Heç kim uyğun gəlməsə, sorğuda bu kanalın tələb etdiyi məlumat olduqda yeni kontakt yaradılır."
+    },
+    "inbox": {
+      "modeLabel": "Gələnlər qutusu",
+      "mode": {
+        "inbox": "Konkret gələnlər qutusu",
+        "payload": "Payload-dan"
+      },
+      "modeDescription": {
+        "inbox": "Hər sorğu seçdiyiniz gələnlər qutusundan istifadə edir.",
+        "payload": "Hər sorğu öz gələnlər qutusunu göstərir, məsələn Messenger səhifə id-si və ya WhatsApp telefon nömrəsi id-si."
+      },
+      "inboxLabel": "Gələnlər qutusu",
+      "inboxPlaceholder": "Gələnlər qutusu seçin",
+      "noInboxes": "Qoşulmuş gələnlər qutusu tapılmadı.",
+      "savedInboxMissing": "Yadda saxlanmış gələnlər qutusu artıq qoşulu deyil. Başqasını seçin.",
+      "channelLabel": "Kanal",
+      "channelPlaceholder": "Kanal seçin",
+      "noPayloadChannels": "Əvvəlcə bunu dəstəkləyən kanal qoşun.",
+      "identifierKindLabel": "Gələnlər qutusu identifikatoru",
+      "identifierKindPlaceholder": "Payload-da göndərilən identifikatoru seçin",
+      "identifierPathHint": "Bu dəyərin sorğudakı JSON yolu."
+    },
+    "identity": {
+      "hint": "Ən azı birini doldurun. Kontakt sorğuda tapılan ilk dəyərə görə bu sıra ilə axtarılır.",
+      "phone": "Telefon",
+      "email": "E-poçt",
+      "channelUserId": "Kanal istifadəçi ID-si",
+      "fullName": "Tam ad",
+      "creationHint": "{identities} olmadan naməlum kontakt üçün sorğu keçilir. Yalnız mövcud kontaktlar yenilənir."
+    },
+    "inboxIdentifierKinds": {
+      "pageId": "Facebook səhifə id-si",
+      "igId": "Instagram hesab id-si",
+      "phoneNumberId": "WhatsApp telefon nömrəsi id-si",
+      "displayPhoneNumber": "WhatsApp telefon nömrəsi (daha az dəqiq)",
+      "botId": "Telegram bot id-si",
+      "oaId": "Zalo OA id-si",
+      "openId": "TikTok hesab open id",
+      "threadsUserId": "Threads istifadəçi id-si"
+    },
+    "channelUserIdKinds": {
+      "psid": "Messenger PSID",
+      "igsid": "Instagram IGSID",
+      "telegramChatId": "Telegram çat id-si",
+      "zaloUserId": "Zalo istifadəçi id-si",
+      "tiktokCustomerOpenId": "TikTok müştəri open id",
+      "threadsUsername": "Threads istifadəçi adı",
+      "apiSourceId": "Kontakt mənbəyi id-si",
+      "whatsappId": "WhatsApp ID-si (wa_id)"
+    },
+    "mappings": {
+      "title": "Daxil olan məlumatı yadda saxla",
+      "description": "Sorğudakı dəyərləri kontakt sahələrinə kopyalayın.",
+      "empty": "Hələ heç bir sahə uyğunlaşdırılmayıb.",
+      "add": "Sahə əlavə et",
+      "remove": "Sahəni sil",
+      "target": "Kontakt sahəsi",
+      "targetPlaceholder": "Sahə seçin",
+      "path": "JSON yolu",
+      "rowTitle": "Uyğunlaşdırma {number}"
+    },
+    "actions": {
+      "title": "Məlumat yadda saxlandıqdan sonra",
+      "description": "Məlumat yadda saxlandıqdan sonra kontakt üçün icra ediləcək əməliyyatlar."
+    },
+    "picker": {
+      "title": "JSON-a bax",
+      "description": "Dəyəri axtarıb klikləyin və ya aşağıda JSONPath daxil edin",
+      "browse": "Bax",
+      "noSample": "Sahələrinə baxmaq üçün əvvəlcə nümunə JSON yükləyin.",
+      "pathLabel": "JSON yolu",
+      "use": "Yolu istifadə et",
+      "cancel": "Ləğv et",
+      "result": "Nəticə:",
+      "noValue": "dəyər yoxdur",
+      "searchLabel": "JSON-da axtar",
+      "searchPlaceholder": "Açar, yol və ya dəyər axtarın",
+      "noMatches": "Uyğun açar və ya dəyər yoxdur.",
+      "moreResults": "İlk {count} uyğunluq göstərilir. Digərlərini görmək üçün axtarışı dəqiqləşdirin.",
+      "pathHint": "Xassə adlarını və massiv indekslərini dəstəkləyir, o cümlədən $[\"customer-data\"][\"email\"]",
+      "invalidPath": "Bu, dəstəklənən JSONPath deyil."
+    },
+    "requests": {
+      "title": "Sorğular",
+      "description": "Bu webhook-un aldığı son çatdırılmalar (30 gün saxlanılır).",
+      "refresh": "Yenilə",
+      "empty": "Hələ sorğu alınmayıb.",
+      "previous": "Əvvəlki səhifə",
+      "next": "Növbəti səhifə",
+      "pageOf": "Səhifə {page} / {pageCount}",
+      "contact": "Kontakt #{id}",
+      "showDetails": "Təfərrüatları göstər",
+      "hideDetails": "Təfərrüatları gizlət",
+      "loadingDetails": "Təfərrüatlar yüklənir…",
+      "detailsFailed": "Təfərrüatlar yüklənə bilmədi.",
+      "fieldErrors": "Yadda saxlanmayan sahələr",
+      "actionResults": "Əməliyyatlar",
+      "payload": "Payload",
+      "status": {
+        "received": "Qəbul edildi",
+        "processing": "İşlənir",
+        "processed": "İşləndi",
+        "completedWithErrors": "Xətalarla tamamlandı",
+        "skipped": "Keçildi",
+        "failed": "Uğursuz oldu"
+      },
+      "skipReason": {
+        "webhookInactive": "Webhook qeyri-aktiv idi.",
+        "missingInboxIdentifier": "Sorğuda gələnlər qutusu identifikatoru yox idi.",
+        "inboxNotFound": "Sorğudakı identifikatora uyğun gələnlər qutusu yoxdur.",
+        "inboxAmbiguous": "Sorğudakı identifikatora birdən çox gələnlər qutusu uyğun gəlir.",
+        "inboxDisconnected": "Gələnlər qutusunun bağlantısı kəsilib.",
+        "missingIdentifier": "Sorğuda heç bir kontakt identifikatoru yox idi.",
+        "workspaceBlocked": "İş sahəsinin sahibi bloklanıb.",
+        "contactNotFound": "Heç bir kontakt uyğun gəlmədi və sorğuda yeni kontakt yaratmaq üçün lazım olanlar yox idi.",
+        "contactAmbiguous": "Gələn qutusunda bu adda birdən çox kontakt var, ona görə sorğu keçildi."
+      },
+      "fieldErrorCode": {
+        "invalidValue": "Yanlış dəyər",
+        "invalidPhone": "Yanlış telefon nömrəsi",
+        "unknownField": "Sahə artıq mövcud deyil"
+      },
+      "actionStatus": {
+        "succeeded": "uğurlu",
+        "skipped": "keçildi",
+        "failed": "uğursuz"
+      },
+      "errorCode": {
+        "abandoned": "Ləğv edildi: 24 saat ərzində işlənmədi"
+      },
+      "actionSkipReason": {
+        "noConversation": "Kontaktın söhbəti yoxdur",
+        "noContactInbox": "Kontakt bu qutuya qoşulmayıb",
+        "flowInactive": "Axın dərc olunmayıb",
+        "unsupportedAction": "Bu əməliyyat burada dəstəklənmir",
+        "unsupportedChannel": "Kanal bu əməliyyatı dəstəkləmir",
+        "invalidAction": "Əməliyyat düzgün qurulmayıb",
+        "unknownAction": "Naməlum əməliyyat",
+        "unsupportedSource": "Bu mənbə üçün dəstəklənmir"
+      }
+    },
+    "save": {
+      "invalid": "Bəzi parametrlər yanlışdır. Vurğulanmış sahələri düzəldib yenidən yadda saxlayın."
+    },
+    "viewAnalytics": "Analitikaya bax",
+    "analytics": {
+      "title": "Analitika",
+      "back": "Webhook-a qayıt",
+      "totalRequests": "Qəbul edilən ümumi sorğular",
+      "totalRequestsHint": "Webhook yaradıldığı gündən qəbul edilən hər sorğu. Dublikatlar sayılmır. Aşağıdakı jurnal son 30 günü saxlayır."
+    },
+    "issues": {
+      "inboxRequired": "Gələnlər qutusu seçin.",
+      "identifierRequired": "Dörd kontakt sahəsindən ən azı birini doldurun.",
+      "fieldMappingRequired": "\"Daxil olan məlumatı yadda saxla\" bölməsində ən azı bir sahə əlavə edin.",
+      "required": "Bu sahə mütləqdir.",
+      "unsupportedPath": "Dəstəklənməyən JSON yolu."
+    }
+  },
   "QRCode": {
     "title": "QR kodu",
     "description": "İnsanların izləmə keçidinizi açması üçün bu kodu paylaşın."
@@ -5320,8 +5849,8 @@
       "ticketPriorityChanged": "Müraciətin prioriteti dəyişib",
       "subscribedToSequence": "Ardıcıllığa abunə olub",
       "unsubscribedFromSequence": "Ardıcıllıq abunəliyindən çıxıb",
-      "WhatsappShoppingCartSent": "Whatsapp alış-veriş səbəti göndərilib",
-      "userAskedAboutProduct": "İstifadəçi məhsul haqqında soruşub",
+      "shoppingCartSent": "Kontakt alış-veriş səbətini göndərdi",
+      "userAskedAboutProduct": "Kontakt məhsul haqqında soruşdu",
       "cartAbandoned": "Səbət tərk edilib",
       "newOrder": "Yeni sifariş",
       "orderAccepted": "Sifariş qəbul edilib",
@@ -5335,7 +5864,8 @@
       "contactReferredANewContact": "Kontakt yeni kontakt dəvət edib",
       "contactReferredExistingContact": "Kontakt mövcud kontaktı dəvət edib",
       "callRecorded": "Zəng qeydə alınıb",
-      "callTranscribed": "Zəng mətnə çevrilib"
+      "callTranscribed": "Zəng mətnə çevrilib",
+      "anyProduct": "İstənilən məhsul"
     },
     "actions": {
       "addTag": "Etiket əlavə et",
@@ -6159,12 +6689,18 @@
     }
   },
   "instagramStoryAutomation": {
-    "title": "Instagram hekayə cavablarının avtomatlaşdırılması",
-    "description": "Kontaktlarınız üçün Instagram hekayələrinə verilən cavabların cavablandırılmasını avtomatlaşdırın.",
+    "title": "Instagram hekayə avtomatlaşdırılması",
+    "description": "Kontaktlar Instagram hekayələrinizə cavab verdikdə və ya öz hekayələrində sizi qeyd etdikdə cavabları avtomatlaşdırın.",
     "create": "Avtomatlaşdırma yarat",
     "replies": "Cavablar",
     "activated": "Avtomatlaşdırma aktivləşdirildi",
     "deactivated": "Avtomatlaşdırma söndürüldü",
+    "trigger": "Tetikleyici",
+    "triggerDescription": "Bu avtomatlaşdırmanı nəyin başlatdığını seçin. Avtomatlaşdırma yaradıldıqdan sonra dəyişdirilə bilməz.",
+    "triggerType": {
+      "storyReply": "Hekayənizə cavab verir",
+      "storyMention": "Öz hekayəsində sizi qeyd edir"
+    },
     "trackStoryReplyOn": "Cavabları izləniləcək hekayələr",
     "trackStoryReplyOnDescription": "Bu avtomatlaşdırmanı bütün hekayələrinizə verilən cavablara və ya yalnız seçdiyiniz müəyyən hekayələrə verilən cavablara tətbiq edin.",
     "reply": "Cavabla",
@@ -6228,7 +6764,6 @@
     "allForms": "Bütün formalar",
     "allFormsNote": "Bu səhifədəki hər formadan potensial müştərilər toplanacaq. Standart sahələr (e-poçt, telefon, ad, cins) avtomatik olaraq uyğun kontakt sahələrində yadda saxlanılır.",
     "leadData": "Potensial müştəri məlumatları",
-    "whatFlow": "İşə salınacaq axın",
     "addNewPage": "Yenisini əlavə et",
     "noEligiblePages": "Uyğun səhifə yoxdur. Potensial müştərilərə giriş icazəsi vermək üçün “Yenisini əlavə et” düyməsindən istifadə edin.",
     "duplicateError": "Bu səhifə və forma üçün avtomatlaşdırma artıq mövcuddur.",
@@ -6499,7 +7034,24 @@
       "openAsSupport": "Dəstək əməkdaşı kimi aç",
       "supportEnabledUntil": "{time} vaxtınadək aktivdir",
       "supportOff": "Deaktiv",
-      "searchPlaceholder": "Ada, sahibin e-poçtuna və ya ID-yə görə axtarış"
+      "searchPlaceholder": "Ada, sahibin e-poçtuna və ya ID-yə görə axtarış",
+      "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
+      "supportAccessible": "Accessible"
+    },
+    "admins": {
+      "title": "Platform administrators",
+      "description": "Manage users who can access the platform administration console.",
+      "addTitle": "Add platform administrator",
+      "addDescription": "Grant platform administration access to a root-tenant user.",
+      "addButton": "Add administrator",
+      "role": "Role",
+      "bootstrap": "Environment bootstrap administrator",
+      "remove": "Remove administrator",
+      "empty": "No platform administrators are configured.",
+      "added": "Platform administrator added.",
+      "removed": "Platform administrator removed.",
+      "addError": "Could not add the platform administrator.",
+      "removeError": "Could not remove the platform administrator."
     }
   },
   "platformCredentials": {
@@ -7705,8 +8257,6 @@
       "screenTitle": "Başlıq",
       "screenId": "Ekran ID-si",
       "screenIdHint": "Yalnız hərflər və alt xətt. Naviqasiyada və Flow JSON-da istifadə olunur.",
-      "terminal": "Son ekran",
-      "terminalHint": "Axın burada bitə bilər. Axını tamamlayan Footer lazımdır.",
       "remove": "Ekranı sil"
     },
     "inspector": {
@@ -7761,7 +8311,20 @@
       "success": "WhatsApp-da dərc olundu",
       "draftOnly": "Meta xətalara görə Flow-u qaralama kimi saxladı",
       "failed": "WhatsApp-da dərc etmək alınmadı",
-      "contactVariables": "Bu Mini App mətnlərində xüsusi sahələr göstərir. Hələlik onlar yalnız veb linkdə işləyir — WhatsApp-da dərc etməzdən əvvəl onları silin."
+      "contactVariables": "Bu Mini App mətnlərində xüsusi sahələr göstərir. Hələlik onlar yalnız veb linkdə işləyir — WhatsApp-da dərc etməzdən əvvəl onları silin.",
+      "notOnNumber": "Mini App bu WhatsApp nömrəsində yoxdur.",
+      "onlyDraftDeletable": "Flow Meta-da canlıdır, ona görə silinə bilməz. Yalnız qaralama silinə bilər.",
+      "flowIsLive": "Mini App bu WhatsApp nömrəsində canlıdır. Qaralama saxlamaq onu dayandırar — yeniləmək üçün dərc edin.",
+      "saveDraft": "Qaralama kimi saxla",
+      "draftSaved": "WhatsApp-a qaralama kimi saxlandı",
+      "preview": "Önizləmə",
+      "previewUnavailable": "Meta önizləmə linki qaytarmadı",
+      "deleteDraft": "WhatsApp-da qaralamanı sil",
+      "draftDeleted": "Qaralama WhatsApp-dan silindi"
+    },
+    "status": {
+      "draft": "Qaralama",
+      "published": "Dərc edilib"
     },
     "runner": {
       "back": "Geri",
@@ -7916,7 +8479,9 @@
         "email": "E-poçt",
         "password": "Parol",
         "passcode": "Giriş kodu",
-        "phone": "Telefon"
+        "phone": "Telefon",
+        "date": "Tarix",
+        "datetime": "Tarix və vaxt"
       },
       "fontWeight": {
         "normal": "Normal",
@@ -7956,8 +8521,7 @@
       "screen_id_invalid": "Ekran ID-si yalnız hərflərdən və alt xətdən ibarət ola bilər.",
       "screen_id_reserved": "“SUCCESS” WhatsApp tərəfindən qorunur. Başqa ekran ID-si seçin.",
       "screen_id_duplicate": "Başqa ekran artıq bu ID-dən istifadə edir.",
-      "no_terminal_screen": "Ən azı bir ekranı son ekran kimi qeyd edin.",
-      "terminal_screen_without_complete": "Son ekranda axını tamamlayan Footer olmalıdır.",
+      "no_terminal_screen": "Son ekrana axını tamamlayan Footer əlavə edin.",
       "screen_without_exit": "Bu ekranda davam etmək üçün yol yoxdur. Başqa ekrana keçən Footer və ya link əlavə edin.",
       "screen_unreachable": "Heç bir ekran bu ekrana keçmir.",
       "too_many_components": "Bir ekranda ən çox {max} komponent ola bilər.",
@@ -7990,7 +8554,6 @@
       "reference_unknown": "{reference} heç bir sahəyə uyğun gəlmir.",
       "data_reference_unsupported": "{reference}: ekran məlumatları dəstəklənmir. Bunun əvəzinə forma sahələrindən istifadə edin.",
       "property_unknown": "WhatsApp bu komponentdə “{name}” xüsusiyyətini qəbul etmir.",
-      "complete_on_non_terminal": "“Axını tamamla” yalnız son ekranda istifadə oluna bilər.",
       "footer_captions_invalid": "Ya yalnız orta başlıq, ya da sol və sağ başlıqları birlikdə istifadə edin.",
       "options_with_images_limit": "Şəkillərlə açılan siyahıda ən çox {max} seçim ola bilər.",
       "navigation_badge_multiple": "Naviqasiya siyahısında yalnız bir elementin nişanı ola bilər.",
@@ -8009,5 +8572,485 @@
         "upload_failed": "Fayl yüklənmədi. Yenidən cəhd edin."
       }
     }
+  },
+  "leaderboards": {
+    "title": "Liderlər lövhələri",
+    "public": {
+      "points": "{points} xal",
+      "endsIn": "Bitməsinə {days}g {hours}s {minutes}d {seconds}s",
+      "finished": "Bitib",
+      "empty": "Hələ oyunçu yoxdur — ilk sən ol!",
+      "myRank": "Sənin yerin: #{rank}",
+      "unranked": "Hələ sıralanmayıb",
+      "shareToEarn": "Paylaş, xal qazan",
+      "linkCopied": "Link kopyalandı",
+      "unavailableTitle": "Bu liderlər cədvəli artıq mövcud deyil",
+      "unavailableDescription": "Ola bilsin ki, başa çatıb və ya silinib. Ən son linki izlədiyiniz səhifədən soruşun."
+    },
+    "description": "Müştərilərin yüksək yerlər və mükafatlar uğrunda yarışdığı xal əsaslı reytinq kampaniyaları keçirin.",
+    "feature": "Liderlər cədvəli",
+    "create": "Liderlər cədvəli yarat",
+    "kpi": {
+      "total": "Ümumi kampaniyalar",
+      "active": "İşləyir"
+    },
+    "tabs": {
+      "all": "Hamısı",
+      "active": "Aktiv",
+      "paused": "Fasilədə",
+      "finished": "Bitib"
+    },
+    "status": {
+      "draft": "Qaralama",
+      "active": "Aktiv",
+      "paused": "Fasilədə",
+      "finished": "Bitib"
+    },
+    "platforms": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "whatsapp": "WhatsApp",
+      "zalo": "Zalo OA",
+      "telegram": "Telegram",
+      "tiktok": "TikTok",
+      "threads": "Threads",
+      "email": "Email SMTP",
+      "gamification": "Gamification"
+    },
+    "list": {
+      "campaign": "Kampaniya",
+      "searchPlaceholder": "Liderlər cədvəllərini axtar...",
+      "platformFilter": "Platforma",
+      "participants": "İştirakçılar",
+      "totalPoints": "Ümumi xal",
+      "newToday": "bu gün +{count}",
+      "average": "orta {value} / oyunçu",
+      "daysLeft": "{days, plural, one {# gün qalıb} other {# gün qalıb}}",
+      "ended": "Bitib"
+    },
+    "scope": {
+      "allPosts": "Bütün paylaşımlar",
+      "specificPosts": "Seçilmiş paylaşımlar",
+      "specificPostsCount": "{count, plural, one {# paylaşım} other {# paylaşım}}",
+      "telegramChatsCount": "{count, plural, one {# qrup} other {# qrup}}"
+    },
+    "menu": {
+      "start": "Başlat",
+      "pause": "Fasilə ver",
+      "finish": "Bitir",
+      "resetPoints": "Xalları sıfırla",
+      "triggerRewards": "Mükafatları göndər",
+      "viewParticipants": "İştirakçılara bax",
+      "copyLink": "İctimai linki kopyala"
+    },
+    "confirm": {
+      "publishTitle": "Bu liderlər cədvəli dərc edilsin?",
+      "publishDescription": "Xal hesablanması dərhal başlayır və oyunçular ictimai səhifəni görə bilir.",
+      "pauseTitle": "Bu liderlər cədvəlinə fasilə verilsin?",
+      "pauseDescription": "Avtomatik və flow ilə xal hesablanması dayanır. Xalları yenə də əl ilə dəyişə bilərsiniz.",
+      "startTitle": "Bu liderlər cədvəli davam etdirilsin?",
+      "startDescription": "Xal hesablanması bütün qaydalar üçün yenidən başlayır.",
+      "finishTitle": "Bu liderlər cədvəli bitirilsin?",
+      "finishDescription": "Bütün xallar dondurulur və artıq dəyişdirilə bilməz. Avtomatik mükafatlar aktivdirsə, göndərilir.",
+      "resetPointsTitle": "Bütün xallar sıfırlansın?",
+      "resetPointsDescription": "\"{name}\" cədvəlinin bütün iştirakçıları 0 xala qayıdır. Bu, qeydə alınır və geri qaytarıla bilməz."
+    },
+    "toast": {
+      "published": "Liderlər cədvəli dərc edildi",
+      "paused": "Liderlər cədvəlinə fasilə verildi",
+      "started": "Liderlər cədvəli davam etdirildi",
+      "finished": "Liderlər cədvəli bitirildi",
+      "pointsReset": "Bütün xallar sıfırlandı"
+    },
+    "export": {
+      "title": "İştirakçıları ixrac et",
+      "description": "Bütün iştirakçıları yerləri və xalları ilə birlikdə CSV faylı kimi yükləyin.",
+      "preparing": "Faylınız hazırlanır...",
+      "ready": "Faylınız hazırdır ({count} sətir).",
+      "failed": "İxrac alınmadı. Yenidən cəhd edin."
+    },
+    "rewards": {
+      "title": "Mükafatları göndər",
+      "description": "Mükafat flow-unu ilk yerlərdəki oyunçulara göndərin. Mükafatlar yalnız bir dəfə göndərilə bilər.",
+      "flow": "Mükafat flow-u",
+      "topN": "Qalib sayı (top N)",
+      "noFlow": "Mükafat flow-u seçilməyib — liderlər cədvəlinin ayarlarında seçin.",
+      "alreadySent": "Bu liderlər cədvəli üçün mükafatlar artıq göndərilib.",
+      "confirm": "Mükafatları göndər",
+      "result": "{sent} qalibə göndərildi, {skipped} nəfər keçildi (bu kanalda söhbət yoxdur)."
+    },
+    "wizard": {
+      "steps": {
+        "info": "Məlumat",
+        "config": "Kanal və qaydalar",
+        "review": "Yoxla və dərc et"
+      },
+      "namePlaceholder": "məs. Oktyabrın ən yaxşı fanatları",
+      "coverImage": "Örtük şəkli",
+      "coverImageHint": "JPG və ya PNG, 5MB-a qədər. Tövsiyə olunan ölçü 1200×630.",
+      "coverImageRejected": "5MB-a qədər JPG və ya PNG şəkil seçin.",
+      "description": "Qaydalar və mükafatlar",
+      "descriptionPlaceholder": "Oyunçuların xalı necə qazandığını və ilk yerlərin nə qazandığını izah edin.",
+      "startsAt": "Başlama vaxtı",
+      "endsAt": "Bitmə vaxtı",
+      "startLocked": "Başlama vaxtı dərc edildikdən sonra dəyişdirilə bilməz.",
+      "channelTitle": "Platforma və kanal",
+      "platform": "Platforma",
+      "hostChannel": "Kanal",
+      "hostLocked": "Platforma və kanal dərc edildikdən sonra dəyişdirilə bilməz.",
+      "noChannel": "Qoşulmuş {platform} kanalı yoxdur. Əvvəlcə Ayarlar → Kanallar bölməsində qoşun.",
+      "openMinigameSettings": "Oyun ayarlarını aç",
+      "postScope": "Xal qazandıran paylaşımlar",
+      "choosePosts": "Paylaşımları seç",
+      "telegramChats": "Qruplar və kanallar",
+      "telegramChatsHint": "Botunuzu qrupa və ya kanala admin kimi əlavə edin ki, üzvləri və mesajları görə bilsin.",
+      "telegramChatsEmpty": "Qrup tapılmadı — əvvəlcə botu admin kimi əlavə edin",
+      "rulesTitle": "Xal qaydaları",
+      "rulesHint": "Xal qazandıran əməlləri aktiv edin və neçə xal veriləcəyini təyin edin.",
+      "allPlatforms": "Bütün platformalar",
+      "points": "Xal",
+      "maxPerDay": "Gündə maksimum",
+      "maxPerDayHint": "Limitsiz üçün boş buraxın.",
+      "minChars": "Minimum simvol sayı",
+      "bonusPoints": "Qızıl saat bonus xalı",
+      "bonusPointsHint": "Paylaşım dərc edildikdən dərhal sonra yazılan şərhlər üçün əlavə xal.",
+      "bonusMinutes": "Qızıl saatın uzunluğu (dəqiqə)",
+      "emailTopicNote": "Yalnız Email Topic ilə göndərilən e-poçtlar üçün açılma və kliklər izlənir.",
+      "generalTitle": "Ümumi ayarlar",
+      "followersOnly": "Yalnız izləyicilər",
+      "followersOnlyHint": "Yalnız hesabınızı izləyən insanlar xal qazanır.",
+      "tagFilter": "Teq filtri",
+      "tagFilterHint": "Yalnız bu teqlərdən ən azı birinə malik kontaktlar xal qazanır.",
+      "everyone": "Hamı",
+      "resetTime": "Gündəlik sıfırlama vaxtı (UTC)",
+      "resetTimeHint": "Gündəlik limitlər bu vaxtda yenilənir. = Vyetnam vaxtı ilə {time} (UTC+7).",
+      "cooldown": "Spamdan qorunma fasiləsi (saniyə)",
+      "cooldownHint": "Eyni şəxsə iki avtomatik xal verilməsi arasında minimum saniyə. 0 bunu söndürür.",
+      "referralFlow": "Tövsiyə üçün salamlama flow-u",
+      "referralFlowAuto": "Avtomatik yarat",
+      "referralFlowHint": "Tövsiyə linki ilə qoşulan dosta göndərilir. '{{referral_name}}' və ictimai liderlər cədvəli linkindən istifadə edə bilər. Flow Builder-də redaktə edə biləcəyiniz salamlama mesajının avtomatik yaradılması üçün boş buraxın.",
+      "publicLink": "İctimai link",
+      "publicLinkHint": "Hər oyunçunun öz yerini görməsi üçün bu linki flow-dan göndərin.",
+      "publicLinkAfterSave": "İctimai link yadda saxladıqdan sonra əlçatan olur.",
+      "rewardsTitle": "Mükafatlar",
+      "autoOnFinish": "Bitəndə avtomatik göndər",
+      "autoOnFinishHint": "Liderlər cədvəli bitən kimi top N üçün mükafat flow-unu işə salır.",
+      "backToStep2": "2-ci addıma qayıt",
+      "notEditable": "Bitmiş liderlər cədvəlləri redaktə edilə bilməz."
+    },
+    "review": {
+      "infoCard": "Məlumat",
+      "yes": "Bəli",
+      "no": "Xeyr",
+      "off": "Söndürülüb",
+      "seconds": "{seconds} saniyə",
+      "resetTimeValue": "{utc} UTC (= Vyetnam vaxtı ilə {local})",
+      "noRules": "Hələ heç bir qayda aktiv deyil.",
+      "rulePoints": "{points} xal",
+      "maxPerDay": "gündə maks. {count}",
+      "unlimited": "limitsiz"
+    },
+    "preview": {
+      "sampleName": "Oyunçu {rank}",
+      "placeholderName": "Liderlər cədvəlinin adı",
+      "pinnedBar": "#{rank} · {points} xal"
+    },
+    "validation": {
+      "nameRequired": "Ad daxil edin",
+      "dateRequired": "Tarix və vaxt seçin",
+      "endsAfterStart": "Bitmə vaxtı başlama vaxtından sonra olmalıdır",
+      "channelRequired": "Kanal seçin",
+      "minigameRequired": "Mini oyun seçin",
+      "pointsRequired": "Bu qaydanın verdiyi xalı daxil edin",
+      "bonusMinutesRequired": "Qızıl saatın neçə dəqiqə davam edəcəyini təyin edin",
+      "postsRequired": "Ən azı bir paylaşım seçin",
+      "telegramChatsRequired": "Ən azı bir qrup və ya kanal seçin",
+      "enableOneRule": "Dərc etməzdən əvvəl ən azı bir xal qaydasını aktiv edin",
+      "fixErrors": "Zəhmət olmasa işarələnmiş sahələri düzəldin"
+    },
+    "rules": {
+      "comments": {
+        "label": "Şərhlər",
+        "description": "Paylaşımlarınızdakı hər şərh üçün xal."
+      },
+      "liveComments": {
+        "label": "Canlı yayım şərhləri",
+        "description": "Canlı yayım zamanı hər şərh üçün xal."
+      },
+      "keywords": {
+        "label": "Keywords",
+        "description": "Mesaj bu kanalın Keywords alətindəki hər hansı açar sözə uyğun gələndə xal."
+      },
+      "storyMention": {
+        "label": "Story-də qeyd",
+        "description": "Kimsə hesabınızı öz story-sində etiketlədikdə xal."
+      },
+      "storyReaction": {
+        "label": "Story reaksiyası",
+        "description": "Kimsə story-nizə reaksiya verdikdə xal."
+      },
+      "ctwaReactions": {
+        "label": "CTWA kliki və reaksiyalar",
+        "description": "Click-to-WhatsApp reklamına klik etmək və ya mesaja reaksiya vermək üçün xal."
+      },
+      "survey": {
+        "label": "Sorğu və viktorina",
+        "description": "Questionnaire-i tamamlamaq və ya WhatsApp Flow formasını göndərmək üçün xal."
+      },
+      "follow": {
+        "label": "OA izləmə və QR",
+        "description": "Official Account-u izləmək və ya onun QR kodunu skan etmək üçün xal. İzləməni dayandırdıqda xallar geri alınır."
+      },
+      "message": {
+        "label": "Zalo mesajı",
+        "description": "Official Account-unuza göndərilən hər mesaj üçün xal."
+      },
+      "joinGroup": {
+        "label": "Kanala və qrupa qoşulma",
+        "description": "Qrupunuza və ya kanalınıza qoşulmaq üçün xal. Tərk etdikdə xallar geri alınır."
+      },
+      "groupDiscussion": {
+        "label": "Qrup müzakirəsi",
+        "description": "Qrupunuzdakı hər mesaj üçün xal."
+      },
+      "emailOpen": {
+        "label": "E-poçtun açılması",
+        "description": "E-poçt açıldıqda xal."
+      },
+      "emailClick": {
+        "label": "E-poçtda klik",
+        "description": "E-poçtdakı link klik ediləndə xal."
+      },
+      "minigameWin": {
+        "label": "Mini oyun qələbəsi",
+        "description": "Mini oyunda qazanılan hər mükafat üçün xal."
+      },
+      "inGameShare": {
+        "label": "Oyun daxilində paylaşım",
+        "description": "Daha çox cəhd qazanmaq üçün oyunu paylaşmaq üçün xal."
+      },
+      "referral": {
+        "label": "Tövsiyə",
+        "description": "Yeni dost dəvət edənin linki ilə qoşulduqda dəvət edənə xal."
+      }
+    },
+    "breakdown": {
+      "comments": "{count} şərh",
+      "liveComments": "{count} canlı şərh",
+      "keywords": "{count} açar söz",
+      "storyMention": "{count} story qeydi",
+      "storyReaction": "{count} story reaksiyası",
+      "ctwaReactions": "{count} CTWA",
+      "survey": "{count} sorğu",
+      "follow": "{count} izləmə",
+      "message": "{count} mesaj",
+      "joinGroup": "{count} qoşulma",
+      "groupDiscussion": "{count} qrup mesajı",
+      "emailOpen": "{count} açılma",
+      "emailClick": "{count} klik",
+      "minigameWin": "{count} qələbə",
+      "inGameShare": "{count} paylaşım",
+      "referral": "{count} tövsiyə",
+      "flow": "{count} flow",
+      "manual": "{count} əl ilə"
+    },
+    "participants": {
+      "title": "İştirakçılar",
+      "switcher": "Liderlər cədvəlini dəyiş",
+      "count": "{count, plural, one {# oyunçu} other {# oyunçu}}",
+      "searchPlaceholder": "Ad, istifadəçi ID-si və ya telefon axtar...",
+      "filters": {
+        "all": "Hamısı",
+        "top10": "Top 10",
+        "top50": "Top 50",
+        "banned": "Bloklanıb"
+      },
+      "columns": {
+        "rank": "Yer",
+        "participant": "İştirakçı",
+        "score": "Ümumi xal",
+        "breakdown": "Təfərrüatlar",
+        "lastActivity": "Son fəaliyyət"
+      },
+      "unknown": "Naməlum",
+      "contactId": "ID {id}",
+      "lockedFinished": "Bu liderlər cədvəli bitib — xallar kilidlənib.",
+      "lockedDraft": "Xalları redaktə etməzdən əvvəl liderlər cədvəlini dərc edin.",
+      "actions": {
+        "adjust": "Xalı tənzimlə",
+        "ban": "Blokla",
+        "unban": "Blokdan çıxar",
+        "reset": "0-a sıfırla",
+        "history": "Tarixçəyə bax"
+      },
+      "adjust": {
+        "title": "Xalı tənzimlə",
+        "description": "{name} üçün xal əlavə edin və ya çıxın. Dəyişiklik audit jurnalında saxlanılır.",
+        "delta": "Xal (+/-)",
+        "deltaPlaceholder": "məs. 50 və ya -20",
+        "reason": "Səbəb",
+        "reasonPlaceholder": "Bu xalı niyə dəyişirsiniz?",
+        "success": "Xal tənzimləndi"
+      },
+      "banConfirm": "{name} reytinqdən çıxarılır və artıq xal qazanmır.",
+      "unbanConfirm": "{name} cari xalı ilə yenidən reytinqə qayıdır.",
+      "resetConfirm": "{name} adlı iştirakçının xalı 0-a qayıdır. Bu, qeydə alınır.",
+      "banned": "İştirakçı bloklandı",
+      "unbanned": "İştirakçı blokdan çıxarıldı",
+      "resetDone": "Xal 0-a sıfırlandı",
+      "history": {
+        "title": "Xal tarixçəsi — {name}",
+        "empty": "Hələ xal dəyişikliyi yoxdur.",
+        "sources": {
+          "rule": "Qayda",
+          "flow": "Flow",
+          "referral": "Tövsiyə",
+          "manual": "Əl ilə tənzimləmə",
+          "reset": "Sıfırlama"
+        }
+      },
+      "conversationNotFound": "Bu kontakt üçün söhbət tapılmadı",
+      "popupBlocked": "Bu sayt üçün açılan pəncərələrə icazə verin, sonra yenidən cəhd edin."
+    },
+    "auditLog": {
+      "title": "Audit jurnalı",
+      "admin": "Admin",
+      "change": "Dəyişiklik",
+      "time": "Vaxt",
+      "reason": "Səbəb",
+      "api": "API",
+      "empty": "Hələ əl ilə dəyişiklik yoxdur.",
+      "actions": {
+        "adjust": "Tənzimləmə",
+        "resetOne": "Oyunçunu sıfırla",
+        "resetAll": "Hamısını sıfırla",
+        "ban": "Blokla",
+        "unban": "Blokdan çıxar"
+      }
+    }
+  },
+  "recurrence": {
+    "title": "Təkrarla",
+    "every": "Təkrarlama aralığı",
+    "unit": "{count, plural, one {{frequency, select, daily {gün} weekly {həftə} monthly {ay} other {}}} other {{frequency, select, daily {gün} weekly {həftə} monthly {ay} other {}}}}",
+    "weekdays": "Təkrar günləri",
+    "time": "Saat",
+    "timezone": "Saat qurşağı",
+    "noTimezone": "Saat qurşağı tapılmadı",
+    "searchTimezone": "Saat qurşağı axtar…",
+    "startsOn": "Başlama",
+    "end": {
+      "label": "Bitmə",
+      "never": "Heç vaxt",
+      "onDate": "Tarixdə",
+      "after": "Sonra",
+      "pickDate": "Tarix seç",
+      "occurrences": "{count, plural, one {dəfə} other {dəfə}}"
+    },
+    "monthDay": {
+      "label": "Ayın günü",
+      "day": "{day}-ci gün",
+      "last": "Son gün",
+      "hint": "Qısa aylarda göndərmə son gündə olur."
+    },
+    "summary": {
+      "sentence": "{interval, plural, one {Hər {frequency, select, daily {gün} weekly {həftə} monthly {ay} other {}}} other {Hər # {frequency, select, daily {gün} weekly {həftə} monthly {ay} other {}}}}{frequency, select, weekly { {weekdays} günləri} monthly { {monthDay, select, last {ayın son günü} other {ayın {monthDay}-i}}} other {}} saat {time} ({timezone}), {startsOn} tarixindən{endKind, select, onDate {, {endDate} tarixində bitir} afterOccurrences {, {endCount, plural, one {# dəfə} other {# dəfə}} sonra bitir} other {}}"
+    },
+    "firstRunLater": "Bugünkü vaxt keçdiyi üçün ilk göndərmə {when} olacaq.",
+    "nextRuns": "Növbəti göndərmələr",
+    "noUpcomingRuns": "Gələcək göndərmə yoxdur.",
+    "skipping": "{dates} keçilir{more, plural, =0 {} one { (+# daha)} other { (+# daha)}}",
+    "excludeDates": {
+      "label": "Tarixləri keç",
+      "hint": "Bu tarixlərdə göndərilməyəcək. Seriya davam edir.",
+      "add": "Tarix əlavə et",
+      "remove": "{date} tarixini sil",
+      "showAll": "Daha {count} göstər",
+      "showLess": "Az göstər",
+      "clearAll": "Hamısını təmizlə"
+    }
+  },
+  "workingHours": {
+    "title": "İş saatları",
+    "label": "İş saatları",
+    "description": "Cavab vaxtı yalnız bu saatlar daxilində hesablanır.",
+    "employees": "İşçilər",
+    "empty": "Hələ cədvəl yoxdur.",
+    "deleteDescription": "\"{name}\" silinsin? Əməkdaşlar real vaxta qayıdır.",
+    "create": {
+      "title": "İş saatları əlavə et",
+      "description": "Cədvələ ad verin. Günləri və saatları növbəti addımda təyin edəcəksiniz."
+    },
+    "employeesDialog": {
+      "title": "İş saatlarını işçilərə tətbiq et",
+      "description": "Bu cədvəli izləyən işçiləri seçin.",
+      "moveHelp": "Hər əməkdaşın bir cədvəli var; əlavə etmək onu bura keçirir.",
+      "placeholder": "İşçiləri seçin",
+      "search": "İşçiləri axtar...",
+      "searchAria": "İşçilər arasında axtar",
+      "empty": "İşçi tapılmadı.",
+      "close": "Bağla",
+      "selectAll": "(Hamısını seç)",
+      "clearAllAria": "{count, plural, one {Seçilmiş işçini təmizlə} other {Seçilmiş {count} işçinin hamısını təmizlə}}",
+      "removeAria": "{name} seçimdən çıxar"
+    },
+    "editor": {
+      "timezoneNote": "Vaxtlar iş sahəsinin saat qurşağını istifadə edir: {timezone}.",
+      "notWorking": "İşləmir",
+      "dayToggle": "{day} günü işləyir",
+      "startTime": "Başlama vaxtı",
+      "endTime": "Bitmə vaxtı",
+      "removeRange": "Vaxt aralığını sil",
+      "errorOverlap": "Bu vaxt aralıqları üst-üstə düşür. Saxlamaq üçün onları dəyişin.",
+      "errorOrder": "Bitmə vaxtı başlama vaxtından sonra olmalıdır.",
+      "routingNote": "Auto Assign, Global Router və Condition üçün də istifadə olunur."
+    },
+    "condition": {
+      "assignedAgent": "Təyin olunmuş əməkdaşın növbəsi"
+    },
+    "holidays": {
+      "label": "Bayramlar",
+      "title": "Bayramlar",
+      "description": "Həmin tarixdə bütün cədvəllərin həftəlik saatlarını əvəz edir.",
+      "add": "Bayram əlavə et",
+      "empty": "Hələ bayram yoxdur.",
+      "deleteDescription": "{date} tarixli bayram silinsin?"
+    },
+    "dateOverrides": {
+      "title": "Tarix istisnaları",
+      "description": "Həmin tarixdə bu cədvəlin saatlarını əvəz edir; bayramdan üstündür.",
+      "add": "İstisna əlavə et",
+      "empty": "İstisna yoxdur."
+    },
+    "dateDialog": {
+      "addTitle": "Tarix əlavə et",
+      "editTitle": "Tarixi redaktə et",
+      "date": "Tarix",
+      "name": "Ad (könüllü)",
+      "closedAllDay": "Bütün gün bağlı",
+      "duplicate": "Bu tarix artıq siyahıdadır.",
+      "hours": "Saatlar",
+      "closed": "Bağlı"
+    }
+  },
+  "responseSla": {
+    "label": "Cavab SLA",
+    "title": "Cavab SLA",
+    "description": "Müştəri mesajının insan cavabını gözləyə biləcəyi maksimal müddət.",
+    "firstTarget": "İlk cavab hədəfi (dəqiqə)",
+    "nextTarget": "Sonrakı cavab hədəfi (dəqiqə)",
+    "nextPlaceholder": "Sonrakı cavablara SLA yoxdur",
+    "threshold": "Pozulma həddi (hədəfdən qalan %)",
+    "thresholdHelp": "Hədəfin bu % qaldıqda pozulmaq üzrə kimi qeyd olunur.",
+    "workingTimeNote": "Təyin olunmuş əməkdaşın iş saatlarına görə; əks halda real vaxtla.",
+    "overdue": "Gecikib",
+    "due": "Son tarix {time}",
+    "breaching": "SLA pozulmaq üzrə",
+    "breached": "SLA pozulub",
+    "firstMetColumn": "İlk cavab SLA-ya uyğun",
+    "metColumn": "SLA-ya uyğun",
+    "metHelp": "SLA-sı olan cavablar arasında SLA-ya uyğun olanların payı.",
+    "eligibleCount": "{count} cavabın SLA-sı var",
+    "enable": "Cavab SLA-nı aktiv et"
   }
 }

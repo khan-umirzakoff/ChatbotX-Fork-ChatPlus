@@ -1,17 +1,40 @@
-import { conversationAnalyticsService } from "@chatbotx.io/analytics"
 import {
+  agentResponseAnalyticsService,
+  conversationAnalyticsService,
+} from "@chatbotx.io/analytics"
+import {
+  getAgentResponseSeriesResponseSchema,
   getConversationArchivedResponseSchema,
   getConversationAssignedByAdminResponseSchema,
   getConversationAssignedResponseSchema,
   getConversationFollowUpsResponseSchema,
   getConversationHandoffsResponseSchema,
   getUniqueConversationsByAdminResponseSchema,
-  timeRangeQuerySchema,
+  timeRangeQueryWithFilterSchema,
 } from "@chatbotx.io/analytics/schemas"
 import { os } from "@orpc/server"
 import { logger } from "../lib/log"
 
 export const analyticsConversationRoutes = os.router({
+  agentResponseSeriesAnalyticsAPI: os
+    .route({
+      method: "GET",
+      path: "/analytics/agent-response-series",
+      summary: "Get agent response time series",
+      tags: ["Analytics"],
+    })
+    .input(timeRangeQueryWithFilterSchema)
+    .output(getAgentResponseSeriesResponseSchema)
+    .handler(async ({ input }) => {
+      try {
+        const data =
+          await agentResponseAnalyticsService.getAgentResponseSeries(input)
+        return { data }
+      } catch (error) {
+        logger.error({ err: error }, "[analytics:agentResponseSeries] failed")
+        throw error
+      }
+    }),
   conversationHandoffsAnalyticsAPI: os
     .route({
       method: "GET",
@@ -19,7 +42,7 @@ export const analyticsConversationRoutes = os.router({
       summary: "Get conversation handoffs",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getConversationHandoffsResponseSchema)
     .handler(async ({ input }) => {
       try {
@@ -37,7 +60,7 @@ export const analyticsConversationRoutes = os.router({
       summary: "Get conversation follow-ups",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getConversationFollowUpsResponseSchema)
     .handler(async ({ input }) => {
       try {
@@ -55,7 +78,7 @@ export const analyticsConversationRoutes = os.router({
       summary: "Get archived conversations",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getConversationArchivedResponseSchema)
     .handler(async ({ input }) => {
       try {
@@ -73,7 +96,7 @@ export const analyticsConversationRoutes = os.router({
       summary: "Get assigned conversations",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getConversationAssignedResponseSchema)
     .handler(async ({ input }) => {
       try {
@@ -91,7 +114,7 @@ export const analyticsConversationRoutes = os.router({
       summary: "Get assigned conversations by admin",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getConversationAssignedByAdminResponseSchema)
     .handler(async ({ input }) => {
       try {
@@ -113,7 +136,7 @@ export const analyticsConversationRoutes = os.router({
       summary: "Get unique conversations by admin",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getUniqueConversationsByAdminResponseSchema)
     .handler(async ({ input }) => {
       try {
