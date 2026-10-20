@@ -1,5 +1,6 @@
 {
   "actions": {
+    "scrollToBottom": "Прокрутить вниз",
     "copy": "Копировать",
     "copyUrl": "Копировать URL",
     "chatWidget": "Виджет чата",
@@ -154,7 +155,9 @@
     "schedule": "Запланировать",
     "moveToDraft": "Перенести в черновики",
     "stop": "Остановить",
-    "resume": "Возобновить"
+    "resume": "Возобновить",
+    "viewRuns": "Посмотреть запуски",
+    "editSchedule": "Изменить расписание"
   },
   "errors": {
     "superAdminRequired": "Это действие доступно только супер-администратору рабочего пространства."
@@ -257,6 +260,13 @@
     "averageFirstResponseTimeByAdmin": "Среднее время первого ответа операторов (мин)",
     "averageFirstResponseTimeByAdminHelp": "Среднее время, за которое оператор даёт первый ответ на сообщение клиента.",
     "averageResponseTimeByAdmin": "Среднее время ответа операторов (мин)",
+    "withinWorkingHoursHelp": "Учитывается только время в рабочие часы оператора.",
+    "withinWorkingHoursLabel": "В рабочие часы",
+    "noResponseData": "За этот период нет ответов или не назначен график работы.",
+    "averageFirstResponseTimeWithinWorkingHoursByAdmin": "Среднее время первого ответа операторов в рабочие часы (минуты)",
+    "averageFirstResponseTimeWithinWorkingHoursByAdminHelp": "Среднее рабочее время до первого ответа оператора на сообщение клиента.",
+    "averageResponseTimeWithinWorkingHoursByAdmin": "Среднее время ответа операторов в рабочие часы (минуты)",
+    "averageResponseTimeWithinWorkingHoursByAdminHelp": "Среднее рабочее время до ответа оператора на сообщение клиента.",
     "averageDurationOfConversation": "Средняя длительность диалога (мин)",
     "averageDurationOfConversationHelp": "Среднее время, в течение которого диалог ведёт оператор, прежде чем он передаётся боту.",
     "success": "Успешно",
@@ -288,7 +298,7 @@
     "blockedConversationsHelp": "Диалоги, заблокированные вашим аккаунтом.",
     "blockedContacts": "Заблокированные контакты",
     "blockedContactsHelp": "Контакты, которые не хотят получать сообщения от вашего аккаунта",
-    "newContactsByCountry": "Новые контакты по странам",
+    "newContactsByLanguage": "Новые контакты по языкам",
     "date": "Дата",
     "total": "Всего",
     "messagesSent": "Отправлено сообщений",
@@ -319,7 +329,19 @@
     "message": "Сообщение",
     "searchByDate": "Поиск по дате...",
     "publicReply": "Публичный ответ",
-    "privateReply": "Личный ответ"
+    "privateReply": "Личный ответ",
+    "filters": {
+      "allChannels": "Все каналы",
+      "allInboxes": "Все ящики входящих",
+      "searchPlaceholder": "Поиск...",
+      "empty": "Ничего не найдено.",
+      "clear": "Очистить",
+      "close": "Закрыть",
+      "options": "Доступные варианты",
+      "remove": "Удалить",
+      "filterHint": "Фильтры учитывают только события, записанные после добавления фильтрации: у старых событий нет входящего канала, а у старых событий бота и диалога — ещё и типа канала. «Все» всегда учитывает все события.",
+      "tooManyInboxes": "Выберите не более {max} входящих каналов или отметьте «Все»."
+    }
   },
   "flowAnalytics": {
     "nodes": {
@@ -409,7 +431,10 @@
       "sending": "Выполняется",
       "cancelled": "Отменена",
       "draft": "Черновик",
-      "failed": "Ошибка"
+      "failed": "Ошибка",
+      "recurring": "Повторяется",
+      "paused": "Приостановлено",
+      "ended": "Завершено"
     },
     "stats": {
       "sent": "Отправлено",
@@ -493,7 +518,9 @@
       "audienceFilter": "Фильтр аудитории",
       "noAudienceFilter": "Без фильтра аудитории",
       "template": "Шаблон",
-      "integration": "Интеграция"
+      "integration": "Интеграция",
+      "schedule": "Расписание повторений",
+      "runOf": "Запуск <link>{name}</link>"
     },
     "filters": {
       "all": "Все"
@@ -542,15 +569,20 @@
     },
     "moveToDraftDialog": {
       "title": "Перенести в черновики",
-      "description": "Рассылка «{name}» будет снята с расписания и возвращена в черновики."
+      "description": "Рассылка «{name}» будет снята с расписания и возвращена в черновики.",
+      "templateTitle": "Изменить расписание",
+      "templateDescription": "«{name}» будет приостановлена и возвращена в черновики, чтобы вы могли изменить расписание."
     },
     "stopDialog": {
       "title": "Остановить рассылку",
-      "description": "Отправка оставшихся сообщений рассылки «{name}» остановится примерно в течение минуты. Часть сообщений, уже переданных в канал, всё равно может быть доставлена. Позже рассылку можно возобновить — её получат только те, кому она ещё не отправлена."
+      "description": "Отправка оставшихся сообщений рассылки «{name}» остановится примерно в течение минуты. Часть сообщений, уже переданных в канал, всё равно может быть доставлена. Позже рассылку можно возобновить — её получат только те, кому она ещё не отправлена.",
+      "templateTitle": "Приостановить повторяющуюся рассылку",
+      "templateDescription": "Для «{name}» перестанут создаваться новые запуски. Уже начавшаяся отправка продолжится. Позже рассылку можно возобновить; запуски во время паузы пропускаются."
     },
     "resumeDialog": {
       "title": "Возобновить рассылку",
-      "description": "Рассылка «{name}» продолжит отправку получателям, которые ещё её не получили."
+      "description": "Рассылка «{name}» продолжит отправку получателям, которые ещё её не получили.",
+      "templateDescription": "«{name}» снова будет повторяться со следующего запланированного времени. Запуски во время паузы были пропущены."
     },
     "planLimitDialog": {
       "title": "Повысьте тариф",
@@ -568,6 +600,63 @@
       "toLabel": "По",
       "allPlaceholder": "Все",
       "rangeEndBeforeStart": "Конечная позиция не может быть раньше начальной"
+    },
+    "recurring": {
+      "nextRun": "Следующий запуск: {when}",
+      "paused": "Приостановлено",
+      "ended": "Завершено {when} · {count, plural, one {# запуск} other {# запусков}}",
+      "runs": "{count, plural, one {# запуск} other {# запусков}}",
+      "noUpcomingSends": "Больше запусков нет — оставшиеся даты пропущены"
+    },
+    "runs": {
+      "back": "Повторяющиеся рассылки",
+      "pausedNotice": "Приостановлено с {when}. Запуски во время паузы пропускаются.",
+      "groupBy": "Группировать запуски",
+      "grouping": {
+        "day": "День",
+        "week": "Неделя",
+        "month": "Месяц"
+      },
+      "totals": "{runs, plural, one {# запуск} other {# запусков}} из {slots, plural, one {# слота} other {# слотов}}",
+      "error": "Не удалось загрузить запуски.",
+      "retry": "Повторить",
+      "empty": "Запусков пока нет. Первый начнётся в следующее запланированное время.",
+      "loadMore": "Загрузить ещё",
+      "weekOf": "Неделя с {date}",
+      "groupSummary": "{created, plural, one {# запуск} other {# запусков}}{missed, plural, =0 {} other { · # не выполнено}}{skipped, plural, =0 {} other { · # пропущено}}",
+      "deliveredRate": "Доставлено {rate}",
+      "notSent": "Не отправлено — {reason}",
+      "earlierSlots": "Не выполнено {count, plural, one {# предыдущее отправление} other {# предыдущих отправлений}}",
+      "stalled": "Зависло",
+      "lateByMinutes": "{count, plural, one {Задержка на # минуту} other {Задержка на # минут}}",
+      "lateByHours": "{count, plural, one {Задержка на # час} other {Задержка на # часов}}",
+      "recipients": "{count, plural, one {# получатель} other {# получателей}}",
+      "reasons": {
+        "catchUpSuperseded": "платформа была недоступна; вместо этого выполнен более поздний запуск",
+        "paused": "расписание было приостановлено",
+        "draft": "рассылка редактировалась",
+        "blockedOwner": "аккаунт заблокирован",
+        "planLimit": "достигнут лимит тарифа",
+        "noTargets": "нет страницы для отправки",
+        "undeliverable": "её сценарий или шаблон недоступен",
+        "excludedDate": "Пропущенная дата"
+      },
+      "outcomes": {
+        "created": "Отправлено",
+        "skipped": "Пропущено",
+        "missed": "Пропущенные"
+      },
+      "upcoming": {
+        "title": "Предстоящие запуски",
+        "empty": "Предстоящих запусков нет",
+        "skip": "Пропустить",
+        "restore": "Восстановить",
+        "skippedBadge": "Пропущено",
+        "skipped": "{date} пропущено",
+        "restored": "{date} восстановлено",
+        "undo": "Отменить",
+        "error": "Этот запуск больше нельзя изменить"
+      }
     }
   },
   "commentAutomation": {
@@ -623,6 +712,17 @@
     "liveBadge": "Эфир",
     "postTypeDialog": {
       "title": "Выберите тип публикации"
+    },
+    "account": {
+      "label": "Аккаунт",
+      "description": "Подключённый аккаунт, от имени которого отвечает автоматизация. Выберите «Все аккаунты», чтобы отвечать во всех подключённых аккаунтах этого канала.",
+      "all": "Все аккаунты",
+      "placeholder": "Выберите аккаунт",
+      "required": "Подключено несколько аккаунтов: выберите один или явно выберите «Все аккаунты».",
+      "targetsCleared": "Выбранные публикации сброшены, поскольку могут принадлежать другому аккаунту.",
+      "column": "Аккаунт",
+      "disconnected": "Отключённый аккаунт",
+      "disconnectedDescription": "Автоматизация привязана к отключённому аккаунту и не отвечает на комментарии. Подключите аккаунт заново или выберите другой."
     }
   },
   "condition": {
@@ -697,6 +797,7 @@
       "questionnaireInProgress": "Анкета в процессе",
       "questionnaireFinished": "Анкета завершена",
       "couponTopic": "Купон",
+      "leaderboardScore": "Игровые баллы",
       "votedOnPoll": "Проголосовал в опросе",
       "lastComment": "Последний комментарий",
       "commentedOnPost": "Прокомментировал публикацию",
@@ -749,7 +850,8 @@
         "video": "Видео",
         "audio": "Аудио",
         "gif": "GIF",
-        "file": "Файл"
+        "file": "Файл",
+        "storyMention": "Упоминание в истории"
       },
       "ctwaConversionTypes": {
         "lead": "Лид",
@@ -766,6 +868,7 @@
       "ecommerce": "Электронная коммерция",
       "systemFields": "Системные поля",
       "topicCoupon": "Купон по теме",
+      "leaderboard": "Игровые баллы",
       "customFields": "Пользовательские поля",
       "botFields": "Поля бота",
       "email": "Email",
@@ -806,7 +909,8 @@
       "api": "API",
       "webchat": "Веб-чат",
       "botLink": "Ссылка на бота",
-      "chatPlugin": "Плагин чата"
+      "chatPlugin": "Плагин чата",
+      "inboundWebhook": "Входящий вебхук"
     },
     "ctwaRetarget": {
       "segments": {
@@ -950,6 +1054,7 @@
       "permissionRequired": "Изменять доступ поддержки платформы может только суперадминистратор.",
       "enabledToast": "Доступ поддержки платформы включён.",
       "disabledToast": "Доступ поддержки платформы отключён.",
+      "consentDisabled": "Администраторы платформы могут получать доступ для поддержки без этой настройки.",
       "toggleError": "Что-то пошло не так. Попробуйте ещё раз."
     }
   },
@@ -1494,7 +1599,8 @@
       "video": "Видео",
       "audio": "Аудио",
       "gif": "GIF",
-      "file": "Файл"
+      "file": "Файл",
+      "storyMention": "Упоминание в истории"
     },
     "lastMonth": {
       "label": "Прошлый месяц"
@@ -1978,7 +2084,8 @@
     "schedule": {
       "label": "Расписание",
       "now": "Сейчас",
-      "scheduled": "Запланировать"
+      "scheduled": "Запланировать",
+      "recurring": "Повторять"
     },
     "inputFieldId": {
       "label": "Пользовательское поле для ввода"
@@ -2463,7 +2570,8 @@
       "media": "Медиа",
       "ads": "Реклама",
       "settings": "Настройки",
-      "miniApps": "Мини-приложения"
+      "miniApps": "Мини-приложения",
+      "leaderboards": "Рейтинги"
     },
     "adReferral": {
       "label": "Реклама",
@@ -2495,6 +2603,31 @@
       "hint": "Рекомендуется Data Manager. Устаревший API загрузки работает только для проектов Google Cloud, которые Google ещё допускает, и не использует разрешение Data Manager. Изменение применяется только к новым подключениям: переподключите существующие рабочие пространства.",
       "dataManager": "Data Manager API (рекомендуется)",
       "legacy": "Устаревший API загрузки"
+    },
+    "referralName": {
+      "label": "Имя пригласившего"
+    },
+    "capiConfigId": {
+      "label": "ID конфигурации Conversions API",
+      "description": "ID конфигурации Embedded Signup, используемый для запроса разрешения whatsapp_business_manage_events при подключении Conversions API."
+    },
+    "outboundAutomatedResponse": {
+      "label": "Ключевое слово страницы"
+    },
+    "fbComment": {
+      "label": "Автоматизация комментариев Facebook"
+    },
+    "igComment": {
+      "label": "Автоматизация комментариев Instagram"
+    },
+    "igStory": {
+      "label": "Автоматизация историй Instagram"
+    },
+    "images": {
+      "label": "Изображения"
+    },
+    "miniApp": {
+      "label": "Мини-приложение"
     }
   },
   "metaConversions": {
@@ -2511,17 +2644,15 @@
     "status": {
       "title": "Meta Conversions API",
       "ready": "Готово",
-      "missingPermission": "Нужно разрешение",
-      "unverified": "Не проверено",
       "unsupported": "Не поддерживается",
-      "notConnected": "Не подключено"
+      "notConnected": "Не подключено",
+      "reconnect": "Требуется переподключение"
     },
     "statusDescriptions": {
       "ready": "У этой интеграции есть необходимое разрешение Meta для событий Conversions API.",
-      "missingPermission": "Переподключите интеграцию и предоставьте запрошенное разрешение Meta.",
-      "unverified": "Настройки приложения платформы недоступны, поэтому разрешение CAPI нельзя проверить.",
       "unsupported": "Для Meta Conversions API в Instagram нужен аккаунт, подключённый через Facebook Login for Business.",
-      "notConnected": "Conversions API — это бизнес-инструмент Meta, который позволяет передавать данные в Meta для повышения эффективности рекламы."
+      "notConnected": "Conversions API — это бизнес-инструмент Meta, который позволяет передавать данные в Meta для повышения эффективности рекламы.",
+      "reconnect": "Разрешение Conversions API утратило силу, отправка событий приостановлена. Набор данных и тестовые настройки сохранены; переподключитесь для продолжения отправки."
     },
     "errors": {
       "reconnect": "Не удалось начать переподключение Meta CAPI.",
@@ -2531,12 +2662,14 @@
       "saveFailed": "Не удалось сохранить. Попробуйте ещё раз.",
       "datasetRequired": "Сохраните Dataset ID, прежде чем добавлять токен доступа.",
       "invalidToken": "Этот токен не имеет доступа к набору данных.",
-      "invalidDatasetId": "Введите корректный Dataset ID (только цифры).",
       "whatsappNotFound": "Интеграция WhatsApp не найдена.",
       "testEventCodeRequired": "Сохраните код тестового события, прежде чем отправлять тестовое событие.",
       "invalidTestEventCode": "Код тестового события может содержать только буквы, цифры, дефисы и подчёркивания (не более 64).",
       "invalidMessagingId": "Messaging ID может содержать только буквы, цифры, дефисы и подчёркивания (не более 512).",
-      "capiDisconnected": "Meta CAPI отключён для этого канала. Переподключите его, прежде чем отправлять тестовое событие."
+      "capiDisconnected": "Meta CAPI отключён для этого канала. Переподключите его, прежде чем отправлять тестовое событие.",
+      "appNotConfigured": "Приложение Meta для этого канала ещё не настроено.",
+      "capiNotConfigured": "Подключение Conversions API не настроено. Попросите администратора указать ID конфигурации Conversions API.",
+      "wabaMismatch": "Авторизованный аккаунт WhatsApp Business не соответствует аккаунту этого номера. Подключитесь с тем же аккаунтом."
     },
     "fields": {
       "eventType": {
@@ -2621,32 +2754,13 @@
     "disconnect": "Отключить",
     "openEventManager": "Открыть Events Manager",
     "methods": {
-      "oauth": {
-        "title": "Подключить через Facebook",
-        "description": "Используйте существующее подключение страницы, затем выберите Dataset ID.",
-        "connect": "Создать набор данных",
-        "connectedLabel": "через Facebook"
-      },
       "custom": {
         "title": "Собственное подключение",
         "description": "Используйте Dataset ID и токен доступа из Meta Events Manager.",
         "start": "Настроить собственное подключение",
         "connect": "Подключить",
         "connectedLabel": "Собственное"
-      },
-      "whatsapp": {
-        "title": "Подключить через WhatsApp",
-        "description": "Используйте подключение WhatsApp, затем выберите Dataset ID.",
-        "connect": "Создать набор данных",
-        "connectedLabel": "через WhatsApp"
       }
-    },
-    "finalize": {
-      "title": "Выберите Dataset ID",
-      "description": "Введите существующий Dataset ID или оставьте поле пустым, чтобы создать его автоматически.",
-      "save": "Сохранить",
-      "createDataset": "Создать набор данных",
-      "caveat": "Если Dataset ID не связан с этой страницей или аккаунтом Instagram, события могут атрибутироваться неправильно. Оставьте поле пустым, чтобы автоматически создать связанный набор данных."
     },
     "whatsapp": {
       "connect": "Подключить"
@@ -2695,6 +2809,24 @@
       "messagingIdHint": "Только буквы, цифры, дефисы и подчёркивания (не более 512).",
       "cancel": "Отмена",
       "confirmSend": "Отправить"
+    },
+    "connect": {
+      "button": "Подключить Conversions API",
+      "success": "Conversions API подключён.",
+      "title": "Подключиться через Meta",
+      "description": "Войдите в Meta и разрешите доступ к событиям конверсий. Для Conversions API создаётся отдельное подключение, не меняющее способ входа в этот канал.",
+      "reconnect": "Переподключить"
+    },
+    "connectResult": {
+      "errors": {
+        "cancelled": "Подключение отменено. Ничего не изменилось.",
+        "notFound": "Канал не найден.",
+        "pageNotFound": "Аккаунт Facebook, с которым вы вошли, не управляет этой Страницей. Войдите в аккаунт с нужным доступом.",
+        "accountNotFound": "Аккаунт Facebook, с которым вы вошли, не управляет этим аккаунтом Instagram. Войдите в аккаунт с нужным доступом.",
+        "datasetFailed": "Meta не разрешила создать набор данных через это подключение. Предоставьте все запрошенные разрешения и повторите попытку.",
+        "sessionExpired": "Подключение заняло слишком много времени или было начато в другой вкладке. Повторите попытку.",
+        "failed": "Не удалось подключить Conversions API. Повторите попытку."
+      }
     }
   },
   "googleAds": {
@@ -3269,6 +3401,7 @@
       "noFlowsAvailable": "Нет доступных сценариев",
       "setCustomField": "Задать пользовательское поле",
       "startAnotherNode": "Запустить другой блок",
+      "openMiniApp": "Открыть мини-приложение",
       "startExternalFlow": "Запустить внешний сценарий",
       "startExternalNode": "Запустить внешний блок",
       "startFlow": "Запустить сценарий",
@@ -3303,9 +3436,13 @@
       "importStarted": "Сценарий импортируется. Результаты смотрите в истории импорта.",
       "importJsonOnly": "Только файлы JSON",
       "whatsappCallButton": "Звонок в WhatsApp",
+      "whatsappLocation": "Местоположение",
       "metaConversions": "Meta Conversions API",
       "threadControl": "Управление диалогом",
-      "sendGoogleAdsConversion": "Отправить конверсию Google Ads"
+      "sendGoogleAdsConversion": "Отправить конверсию Google Ads",
+      "changeGamificationScore": "Изменить игровые баллы",
+      "sendViewCatalog": "Посмотреть каталог",
+      "sendProducts": "Отправить товары"
     },
     "splitTraffic": {
       "balanceHint": "Сумма должна быть равна 100%.",
@@ -3425,12 +3562,75 @@
     "whatsappCallButton": {
       "editButtonTitle": "Изменить кнопку",
       "buttonLabel": "Текст кнопки"
+    },
+    "changeGamificationScore": {
+      "leaderboard": "Рейтинг",
+      "operation": "Операция",
+      "add": "Добавить баллы (+)",
+      "subtract": "Вычесть баллы (−)",
+      "points": "Баллы",
+      "targetUser": "Баллы пользователя",
+      "targetReferrer": "Баллы пригласившего",
+      "targetReferrerHint": "Также изменить баллы того, кто пригласил этот контакт.",
+      "summary": "{points} б. в рейтинге {leaderboard}"
+    },
+    "whatsappLocation": {
+      "title": "Местоположение",
+      "name": "Название",
+      "address": "Адрес",
+      "latitude": "Широта",
+      "longitude": "Долгота",
+      "setLocation": "Указать местоположение",
+      "errors": {
+        "tooLong": "Не более 1000 символов.",
+        "invalidLatitude": "Введите широту от -90 до 90.",
+        "invalidLongitude": "Введите долготу от -180 до 180.",
+        "locationRequired": "Введите координаты местоположения."
+      }
+    },
+    "sendViewCatalog": {
+      "footerLabel": "Нижняя подпись",
+      "thumbnailLabel": "Миниатюра товара"
+    },
+    "sendProducts": {
+      "description": "Выберите товары для отправки и способ отображения.",
+      "display": "Отображение",
+      "displays": {
+        "products": "Товары",
+        "carousel": "Карусель"
+      },
+      "products": "Товары",
+      "selectProducts": "Выберите товары",
+      "searchProducts": "Поиск товаров",
+      "noProducts": "Товары не найдены.",
+      "loading": "Загрузка...",
+      "loadError": "Не удалось загрузить товары.",
+      "retry": "Повторить",
+      "catalogNotConnected": "Для отправки товаров подключите и синхронизируйте каталог Meta.",
+      "openProducts": "Открыть товары",
+      "channelUnsupported": "Этот канал не поддерживает отправку товаров.",
+      "unavailableProduct": "Недоступный товар",
+      "removeProduct": "Удалить товар",
+      "removeSection": "Удалить раздел",
+      "moreOptions": "Дополнительные параметры",
+      "fewerOptions": "Меньше параметров",
+      "header": "Заголовок",
+      "body": "Тело",
+      "footer": "Нижняя подпись",
+      "sectionTitle": "Заголовок раздела",
+      "addSection": "Добавить раздел",
+      "productCount": "{count} / {max} товаров",
+      "productsSelected": "{count, plural, one {# товар} other {# товаров}}",
+      "noneSelected": "Товаров пока нет",
+      "sendFailed": "Не удалось отправить товары."
     }
   },
   "folders": {
-    "heading": {
-      "title": "Папки"
-    }
+    "rootOption": "-- Корневая папка --",
+    "showMore": "+{count}",
+    "showLess": "Свернуть",
+    "root": "Корневая папка",
+    "viewingFolder": "Открыта папка: {name}"
   },
   "gemini": {
     "autoReply": {
@@ -4134,6 +4334,8 @@
     "failed": "Ошибка",
     "copiedToClipboard": "Скопировано в буфер обмена",
     "messengerAdsJsonDescription": "Новый JSON-код нужно сгенерировать, только если вы изменили стартовый шаг. Изменения в других шагах не влияют на этот JSON-код.",
+    "welcomeMessageFlowIdsTitle": "ID сценариев приветственного сообщения",
+    "welcomeMessageFlowIdsDescription": "Синхронизируются с каждой Страницей Facebook при публикации. Выберите в разделе Partner app в Ads Manager.",
     "messengerAdsNotPublished": "Опубликуйте содержимое этого сценария и повторите попытку.",
     "messengerAdsNoStartNode": "В этом сценарии нет корректного стартового шага. Откройте сценарий, сделайте стартовым шаг «Отправить сообщение», затем опубликуйте сценарий и повторите попытку.",
     "messengerAdsError": "Не удалось сгенерировать JSON. Попробуйте ещё раз.",
@@ -4246,6 +4448,7 @@
     "whatsappFlowIncomplete": "Откройте кнопку и выберите WhatsApp Flow и его стартовый экран.",
     "whatsappCarouselButtonsMismatch": "В WhatsApp у всех карточек карусели должны быть одинаковые кнопки: либо по одной кнопке-ссылке на каждой карточке, либо одинаковое число кнопок ответа на каждой карточке",
     "whatsappCarouselLinkButtonNotAlone": "В WhatsApp карточка карусели с кнопкой-ссылкой не может содержать других кнопок. Удалите остальные кнопки на этой карточке или назначьте кнопке-ссылке другое действие.",
+    "templateButtonOpenMiniAppUnsupported": "Кнопки шаблона не могут открывать мини-приложение. Выберите другое действие.",
     "duplicateNodeError": "Не удалось дублировать блок. Попробуйте ещё раз.",
     "deleteNodeError": "Не удалось удалить блок. Попробуйте ещё раз.",
     "redoHistoryCleared": "История повторных действий очищена",
@@ -4284,7 +4487,33 @@
       "labelsUnavailable": "Не удалось загрузить вопросы Flow, поэтому вместо них показаны названия полей.",
       "yes": "Да",
       "no": "Нет"
-    }
+    },
+    "sendViewCatalogBodyTooLong": "Текст слишком длинный для сообщения каталога. Сократите его.",
+    "sendViewCatalogFooterTooLong": "Нижняя подпись слишком длинная для сообщения каталога. Сократите её.",
+    "viewCatalog": "Посмотреть каталог",
+    "sendProductsDisplayUnsupported": "Этот канал не поддерживает такой вид сообщения с товарами.",
+    "sendProductsFieldRequired": "Это поле обязательно.",
+    "sendProductsFieldNotAllowed": "Это поле здесь использовать нельзя.",
+    "sendProductsFieldTooLong": "Этот текст слишком длинный.",
+    "sendProductsProductCountOutOfRange": "Выберите допустимое количество товаров.",
+    "sendProductsSectionCountOutOfRange": "Слишком много разделов.",
+    "sendProductsDuplicateProduct": "Товар может присутствовать только один раз.",
+    "inboundOrder": {
+      "title": "Корзина",
+      "preview": "Корзина ({count, plural, one {# товар} other {# товаров}})",
+      "note": "Примечание",
+      "unresolvedProduct": "Не найдено в вашем каталоге"
+    },
+    "referredProduct": {
+      "askedAbout": "Спросил об этом товаре"
+    },
+    "savedReplyTextOrImageRequired": "Добавьте текст или хотя бы одно изображение",
+    "imagesNotSupportedOnChannel": "{channel} не может отправлять изображения в этом диалоге",
+    "tooManyImagesOnChannel": "{channel} может отправить в этом диалоге не более {max} изображений",
+    "savedReplyImagesRemoved": "Изображения, которые нельзя отправить здесь, удалены",
+    "onlyImagesAllowed": "Можно добавлять только изображения",
+    "tooManySavedReplyImages": "В готовом ответе может быть не более {max} изображений",
+    "savedReplyImagesNotSentHere": "Изображения здесь не будут отправлены"
   },
   "instagram": {
     "description": "Эта интеграция позволяет создавать ботов для Instagram.",
@@ -4443,6 +4672,85 @@
     },
     "title": "DeepSeek"
   },
+  "decision": {
+    "addConnection": "Добавить подключение AI Router",
+    "advanced": "Дополнительно",
+    "context": "Контекст",
+    "discardTypeChangeDescription": "Изменение типа AI Router сбросит критерии и порог.",
+    "discardTypeChangeTitle": "Изменить тип AI Router?",
+    "output": "Результат",
+    "outputNoul": "probabilityTrue (0–1)",
+    "statement": "Утверждение",
+    "thresholdChoice": "Требовать минимальную уверенность",
+    "thresholdNoul": "Требовать минимальную вероятность TRUE",
+    "thresholdScore": "Требовать порог оценки",
+    "thresholds": "Уверенность и пороги",
+    "addProfile": "Добавить профиль AI Router",
+    "globalRouter": "Глобальный маршрутизатор",
+    "globalRouterRoutesDiscarded": "Маршруты глобального маршрутизатора и сопоставления метаданных также будут удалены.",
+    "globalRouterDescription": "Этот профиль станет глобальным маршрутизатором рабочего пространства и заменит ранее выбранный.",
+    "globalRouterChooseDestination": "Выберите назначение",
+    "globalRouterDefaultDestination": "Назначение по умолчанию",
+    "globalRouterDestinationRequired": "Выберите, куда направлять сообщения без совпадений.",
+    "globalRouterRouteDestinationRequired": "Выберите назначение для этого результата.",
+    "globalRouterRoutes": "Маршрутизировать распознанные результаты",
+    "globalRouterUsesFallback": "Использует назначение по умолчанию",
+    "globalRouterDestinationTypes": {
+      "flow": "Сценарий",
+      "aiAgent": "ИИ-агент",
+      "assignConversation": "Назначить диалог администратору"
+    },
+    "globalRouterFallbackDescription": "Назначение по умолчанию обязательно. Оно используется, когда глобальный маршрутизатор доступен, но оценка не дала допустимого результата или маршрута. При недоступности подключения или модели используется стандартный AI/сценарий рабочего пространства.",
+    "globalRouterFalseMaximum": "Максимальная вероятность FALSE",
+    "globalRouterMetadataMappings": "Необязательные сопоставления метаданных результата",
+    "globalRouterNoulDescription": "Значения между максимумом FALSE и минимумом TRUE направляются по резервному маршруту. Порог профиля не влияет на маршрутизацию Noul в глобальном маршрутизаторе.",
+    "globalRouterRuntimeUnsupported": "Эта модель не сертифицирована для работы AI Router. Конфигурацию можно сохранить, но глобальный маршрутизатор останется неактивным до сертификации.",
+    "globalRouterTrueMinimum": "Минимальная вероятность TRUE",
+    "flowStepDescription": "Выберите активный профиль и сопоставьте его типизированные результаты с пользовательскими полями контакта.",
+    "profile": "Профиль AI Router",
+    "question": "Вопрос",
+    "result": "Результат",
+    "resultValues": {
+      "choice": "Выбор",
+      "confidence": "Уверенность",
+      "noul": "Noul",
+      "probability": "Вероятность",
+      "score": "Оценка"
+    },
+    "connection": "Подключение AI Router",
+    "connectionUnavailable": "Подключение AI Router недоступно",
+    "charactersRemaining": "Осталось символов: {count}",
+    "modelUnavailable": "Выбранная модель больше недоступна. Выберите другую.",
+    "editProfile": "Изменить профиль AI Router",
+    "evaluateDecision": "AI Router",
+    "model": "Модель",
+    "profileDescription": "Профиль объединяет подключение AI Router, модель и типизированный контракт вопроса.",
+    "profiles": "Профили AI Router",
+    "status": {
+      "active": "Активен",
+      "inactive": "Неактивно",
+      "label": "Статус"
+    },
+    "connectionDescription": "Настройте учётные данные провайдера и модели, доступные AI Router.",
+    "connections": "Подключения AI Router",
+    "connectionsDescription": "Подключения доступны профилям AI Router в этом рабочем пространстве.",
+    "credentialKeepExisting": "Оставьте пустым, чтобы сохранить текущие учётные данные.",
+    "credentialRequired": "Требуются учётные данные провайдера.",
+    "defaultModel": "Модель по умолчанию",
+    "editConnection": "Изменить подключение AI Router",
+    "empty": "Подключений AI Router пока нет.",
+    "endpoint": "Совместимый адрес API",
+    "endpointDescription": "Используйте адрес API провайдера, совместимый с System One.",
+    "modelCatalog": "Доступные модели",
+    "modelCatalogDescription": "Введите ID моделей по одному в строке или через запятую.",
+    "provider": "Провайдер",
+    "testFailed": "Проверка подключения AI Router не пройдена.",
+    "testPassed": "Проверка подключения AI Router пройдена.",
+    "toolDescription": "Создавайте повторно используемые профили для шага сценария AI Router.",
+    "title": "AI Router",
+    "contactContext": "Контекст контакта",
+    "contextProviderWarning": "Значения выбранных полей контакта отправляются провайдеру AI Router."
+  },
   "openrouter": {
     "autoReply": {
       "description": "Включите ИИ-автоответ на базе OpenRouter.",
@@ -4562,7 +4870,17 @@
     "maxItemsReached": "Достигнут лимит ({feature}): не более {max} на рабочее пространство",
     "maxCharacters": "Не более {max} символов.",
     "invalidApiKey": "Недействительный API-ключ",
-    "maxMustBeGreaterThanMin": "Значение «{maxField}» должно быть не меньше значения «{minField}»"
+    "maxMustBeGreaterThanMin": "Значение «{maxField}» должно быть не меньше значения «{minField}»",
+    "inboundWebhook": {
+      "inboxRequired": "Выберите входящий канал.",
+      "inboxNotFound": "Выбранный входящий канал не найден.",
+      "inboxDisconnected": "Выбранный входящий канал не подключён.",
+      "unsupportedInboxIdentifier": "Этот канал нельзя определить по этому значению.",
+      "identifierRequired": "Добавьте хотя бы один идентификатор контакта.",
+      "unknownFieldTarget": "Сопоставленное поле контакта больше не существует.",
+      "actionReferenceNotFound": "Действие ссылается на сценарий, тег или поле, которых больше нет.",
+      "fieldMappingRequired": "Добавьте хотя бы одно сопоставление полей."
+    }
   },
   "webchat": {
     "chatUnavailable": "Чат сейчас недоступен.",
@@ -5135,7 +5453,8 @@
       },
       "inboundLabel": "Принимать входящие звонки",
       "inboundHelper": "Клиенты смогут звонить вам. Если выключить, исходящие звонки останутся доступны, а входящие не будут поступать во входящие."
-    }
+    },
+    "credentialSecretsRequired": "Введите секрет приложения и токен системного пользователя. Они ещё не сохранены."
   },
   "zalo": {
     "title": "Zalo OA",
@@ -5290,6 +5609,216 @@
     "title": "Магические ссылки",
     "description": "Создавайте диплинки, которые перенаправляют на ваш URL с параметрами запроса."
   },
+  "inboundWebhooks": {
+    "title": "Входящие вебхуки",
+    "feature": "Входящий вебхук",
+    "description": "Разрешите внешним системам отправлять данные в рабочее пространство: находить или создавать контакт, сохранять значения в его поля и выполнять действия.",
+    "createDescription": "Новый вебхук создаётся неактивным. Настройте его в редакторе, затем включите.",
+    "deleteDescription": "Системы, продолжающие отправлять запросы на этот URL, получат ошибку. Отменить действие нельзя.",
+    "editorDescription": "Чтобы запустить вебхук, отправьте JSON POST-запрос на URL ниже.",
+    "configure": "Настроить",
+    "getLink": "Получить ссылку",
+    "activeToggle": "Активировать {name}",
+    "columns": {
+      "active": "Активен",
+      "createdAt": "Создано",
+      "requests": "Запросы"
+    },
+    "link": {
+      "title": "Webhook URL",
+      "description": "Отправляйте JSON POST на этот URL. Он содержит секретный токен, поэтому храните его как пароль."
+    },
+    "endpoint": {
+      "label": "Webhook URL",
+      "show": "Показать URL",
+      "hide": "Скрыть URL"
+    },
+    "regenerate": {
+      "button": "Сгенерировать заново",
+      "title": "Создать новый URL вебхука?",
+      "description": "Текущий URL перестанет работать в течение 10 секунд. Обновите все системы, отправляющие на него запросы.",
+      "cancel": "Отмена",
+      "confirm": "Сгенерировать заново",
+      "success": "URL вебхука пересоздан",
+      "failed": "Не удалось пересоздать URL"
+    },
+    "activation": {
+      "incomplete": "Перед активацией выберите входящий канал, добавьте хотя бы одно поле контакта и хотя бы одно сопоставление, затем сохраните."
+    },
+    "sample": {
+      "title": "Пример JSON",
+      "description": "Вставьте пример тела запроса, чтобы просмотреть поля и значения.",
+      "load": "Загрузить пример JSON",
+      "status": {
+        "loaded": "Пример загружен",
+        "invalid": "Это некорректный JSON",
+        "tooLarge": "Размер примера превышает {max} КБ",
+        "unsupported": "Пример содержит неподдерживаемые символы или слишком большую глубину вложенности"
+      },
+      "format": "Форматировать JSON"
+    },
+    "contact": {
+      "title": "Найти или создать контакт",
+      "description": "Выберите входящий канал контакта и способ поиска. Если совпадений нет, контакт создаётся при наличии в запросе данных, необходимых каналу."
+    },
+    "inbox": {
+      "modeLabel": "Ящик входящих",
+      "mode": {
+        "inbox": "Конкретный входящий канал",
+        "payload": "Из данных запроса"
+      },
+      "modeDescription": {
+        "inbox": "Каждый запрос использует выбранный входящий канал.",
+        "payload": "Каждый запрос указывает свой входящий канал, например ID страницы Messenger или ID номера WhatsApp."
+      },
+      "inboxLabel": "Ящик входящих",
+      "inboxPlaceholder": "Выберите ящик входящих",
+      "noInboxes": "Подключённый входящий канал не найден.",
+      "savedInboxMissing": "Сохранённый входящий канал больше не подключён. Выберите другой.",
+      "channelLabel": "Канал",
+      "channelPlaceholder": "Выберите канал",
+      "noPayloadChannels": "Сначала подключите канал с поддержкой этой возможности.",
+      "identifierKindLabel": "Идентификатор входящего канала",
+      "identifierKindPlaceholder": "Выберите идентификатор, передаваемый в запросе",
+      "identifierPathHint": "JSON-путь к этому значению в запросе."
+    },
+    "identity": {
+      "hint": "Заполните хотя бы одно поле. Контакт ищется по первому найденному идентификатору в указанном порядке.",
+      "phone": "Телефон",
+      "email": "Email",
+      "channelUserId": "ID пользователя в канале",
+      "fullName": "Полное имя",
+      "creationHint": "Без {identities} запрос для неизвестного контакта пропускается. Обновляются только существующие контакты."
+    },
+    "inboxIdentifierKinds": {
+      "pageId": "ID Страницы Facebook",
+      "igId": "ID аккаунта Instagram",
+      "phoneNumberId": "ID номера телефона WhatsApp",
+      "displayPhoneNumber": "Номер телефона WhatsApp (менее точный вариант)",
+      "botId": "ID бота Telegram",
+      "oaId": "ID Zalo OA",
+      "openId": "Open ID аккаунта TikTok",
+      "threadsUserId": "ID пользователя Threads"
+    },
+    "channelUserIdKinds": {
+      "psid": "PSID в Messenger",
+      "igsid": "Instagram IGSID",
+      "telegramChatId": "ID чата Telegram",
+      "zaloUserId": "ID пользователя Zalo",
+      "tiktokCustomerOpenId": "Open ID клиента TikTok",
+      "threadsUsername": "Имя пользователя Threads",
+      "apiSourceId": "ID источника контакта",
+      "whatsappId": "WhatsApp ID (wa_id)"
+    },
+    "mappings": {
+      "title": "Сохранить входящие данные",
+      "description": "Копировать значения из запроса в поля контакта.",
+      "empty": "Поля ещё не сопоставлены.",
+      "add": "Добавить поле",
+      "remove": "Удалить поле",
+      "target": "Поле контакта",
+      "targetPlaceholder": "Выберите поле",
+      "path": "JSON-путь",
+      "rowTitle": "Сопоставление {number}"
+    },
+    "actions": {
+      "title": "После сохранения данных",
+      "description": "Действия для контакта после сохранения данных."
+    },
+    "picker": {
+      "title": "Просмотр JSON",
+      "description": "Найдите и выберите значение или введите JSONPath ниже",
+      "browse": "Просмотр",
+      "noSample": "Сначала загрузите пример JSON, чтобы просмотреть его поля.",
+      "pathLabel": "JSON-путь",
+      "use": "Использовать путь",
+      "cancel": "Отмена",
+      "result": "Результат:",
+      "noValue": "нет значения",
+      "searchLabel": "Поиск в JSON",
+      "searchPlaceholder": "Поиск ключей, путей или значений",
+      "noMatches": "Совпадающих ключей или значений нет.",
+      "moreResults": "Показаны первые {count} совпадений. Уточните поиск, чтобы увидеть остальные.",
+      "pathHint": "Поддерживает имена свойств и индексы массивов, включая $[\"customer-data\"][\"email\"]",
+      "invalidPath": "Этот JSONPath не поддерживается."
+    },
+    "requests": {
+      "title": "Запросы",
+      "description": "Последние запросы, полученные этим вебхуком (хранятся 30 дней).",
+      "refresh": "Обновить",
+      "empty": "Запросов пока не было.",
+      "previous": "Предыдущая страница",
+      "next": "Следующая страница",
+      "pageOf": "Страница {page} из {pageCount}",
+      "contact": "Контакт #{id}",
+      "showDetails": "Показать подробности",
+      "hideDetails": "Скрыть подробности",
+      "loadingDetails": "Загрузка подробностей…",
+      "detailsFailed": "Не удалось загрузить подробности.",
+      "fieldErrors": "Несохранённые поля",
+      "actionResults": "Действия",
+      "payload": "Данные запроса",
+      "status": {
+        "received": "Получено",
+        "processing": "Обработка",
+        "processed": "Обработано",
+        "completedWithErrors": "Завершено с ошибками",
+        "skipped": "Пропущено",
+        "failed": "Ошибка"
+      },
+      "skipReason": {
+        "webhookInactive": "Вебхук был неактивен.",
+        "missingInboxIdentifier": "В запросе не было идентификатора входящего канала.",
+        "inboxNotFound": "Входящий канал с таким идентификатором не найден.",
+        "inboxAmbiguous": "Идентификатору в запросе соответствует несколько входящих каналов.",
+        "inboxDisconnected": "Входящий канал отключён.",
+        "missingIdentifier": "В запросе не было идентификаторов контакта.",
+        "workspaceBlocked": "Владелец рабочего пространства заблокирован.",
+        "contactNotFound": "Контакт не найден, а в запросе нет данных, необходимых для его создания.",
+        "contactAmbiguous": "Во входящем канале несколько контактов с таким именем, поэтому запрос пропущен."
+      },
+      "fieldErrorCode": {
+        "invalidValue": "Некорректное значение",
+        "invalidPhone": "Некорректный номер телефона",
+        "unknownField": "Поле больше не существует"
+      },
+      "actionStatus": {
+        "succeeded": "выполнено",
+        "skipped": "пропущено",
+        "failed": "ошибка"
+      },
+      "errorCode": {
+        "abandoned": "Прекращено: не обработано в течение 24 часов"
+      },
+      "actionSkipReason": {
+        "noConversation": "У контакта нет диалога",
+        "noContactInbox": "Контакт не подключён к этому входящему каналу",
+        "flowInactive": "Сценарий не опубликован",
+        "unsupportedAction": "Это действие здесь не поддерживается",
+        "unsupportedChannel": "Канал не поддерживает это действие",
+        "invalidAction": "Действие настроено неправильно",
+        "unknownAction": "Неизвестное действие",
+        "unsupportedSource": "Не поддерживается для этого источника"
+      }
+    },
+    "save": {
+      "invalid": "Некоторые настройки некорректны. Исправьте выделенные поля и сохраните снова."
+    },
+    "viewAnalytics": "Посмотреть аналитику",
+    "analytics": {
+      "title": "Аналитика",
+      "back": "Вернуться к вебхуку",
+      "totalRequests": "Всего получено запросов",
+      "totalRequestsHint": "Все принятые запросы с момента создания вебхука. Дубликаты не учитываются. Журнал ниже хранит последние 30 дней."
+    },
+    "issues": {
+      "inboxRequired": "Выберите входящий канал.",
+      "identifierRequired": "Заполните хотя бы одно из четырёх полей контакта.",
+      "fieldMappingRequired": "Добавьте хотя бы одно поле в раздел «Сохранить входящие данные».",
+      "required": "Это поле обязательно.",
+      "unsupportedPath": "JSON-путь не поддерживается."
+    }
+  },
   "QRCode": {
     "title": "QR-код",
     "description": "Поделитесь этим кодом, чтобы люди открывали вашу ссылку отслеживания."
@@ -5320,7 +5849,7 @@
       "ticketPriorityChanged": "Изменён приоритет тикета",
       "subscribedToSequence": "Подписка на цепочку",
       "unsubscribedFromSequence": "Отписка от цепочки",
-      "WhatsappShoppingCartSent": "Отправлена корзина WhatsApp",
+      "shoppingCartSent": "Контакт отправил корзину",
       "userAskedAboutProduct": "Пользователь спросил о товаре",
       "cartAbandoned": "Брошенная корзина",
       "newOrder": "Новый заказ",
@@ -5335,7 +5864,8 @@
       "contactReferredANewContact": "Контакт пригласил новый контакт",
       "contactReferredExistingContact": "Контакт пригласил существующий контакт",
       "callRecorded": "Звонок записан",
-      "callTranscribed": "Звонок расшифрован"
+      "callTranscribed": "Звонок расшифрован",
+      "anyProduct": "Любой товар"
     },
     "actions": {
       "addTag": "Добавить тег",
@@ -6165,6 +6695,12 @@
     "replies": "Ответы",
     "activated": "Автоматизация включена",
     "deactivated": "Автоматизация выключена",
+    "trigger": "Триггер",
+    "triggerDescription": "Выберите событие запуска автоматизации. После создания его нельзя изменить.",
+    "triggerType": {
+      "storyReply": "Отвечает на вашу историю",
+      "storyMention": "Упоминает вас в своей истории"
+    },
     "trackStoryReplyOn": "Где отслеживать ответы на сторис",
     "trackStoryReplyOnDescription": "Применяйте автоматизацию к ответам на любые ваши сторис или только на выбранные сторис.",
     "reply": "Ответ",
@@ -6228,7 +6764,6 @@
     "allForms": "Все формы",
     "allFormsNote": "Будут собираться лиды из всех форм этой страницы. Стандартные поля (email, телефон, имя, пол) автоматически сохраняются в соответствующие поля контакта.",
     "leadData": "Данные лида",
-    "whatFlow": "Какой сценарий запускается",
     "addNewPage": "Добавить",
     "noEligiblePages": "Нет подходящих страниц. Нажмите «Добавить», чтобы предоставить доступ к лидам.",
     "duplicateError": "Автоматизация для этой страницы и формы уже существует.",
@@ -6499,7 +7034,24 @@
       "openAsSupport": "Открыть как поддержка",
       "supportEnabledUntil": "Включено до {time}",
       "supportOff": "Выключено",
-      "searchPlaceholder": "Поиск по названию, email владельца или ID"
+      "searchPlaceholder": "Поиск по названию, email владельца или ID",
+      "descriptionConsentDisabled": "Администраторы платформы могут открывать все рабочие пространства.",
+      "supportAccessible": "Доступно"
+    },
+    "admins": {
+      "title": "Администраторы платформы",
+      "description": "Управляйте пользователями, имеющими доступ к консоли администрирования платформы.",
+      "addTitle": "Добавить администратора платформы",
+      "addDescription": "Предоставьте пользователю корневого тенанта доступ к администрированию платформы.",
+      "addButton": "Добавить администратора",
+      "role": "Роль",
+      "bootstrap": "Начальный администратор из переменных окружения",
+      "remove": "Удалить администратора",
+      "empty": "Администраторы платформы не настроены.",
+      "added": "Администратор платформы добавлен.",
+      "removed": "Администратор платформы удалён.",
+      "addError": "Не удалось добавить администратора платформы.",
+      "removeError": "Не удалось удалить администратора платформы."
     }
   },
   "platformCredentials": {
@@ -7705,8 +8257,6 @@
       "screenTitle": "Заголовок",
       "screenId": "ID экрана",
       "screenIdHint": "Только буквы и подчёркивания. Используется в навигации и в Flow JSON.",
-      "terminal": "Последний экран",
-      "terminalHint": "Здесь форма может завершиться. Нужна кнопка внизу, которая завершает форму.",
       "remove": "Удалить экран"
     },
     "inspector": {
@@ -7761,7 +8311,20 @@
       "success": "Опубликовано в WhatsApp",
       "draftOnly": "Из-за ошибок Meta оставила Flow в виде черновика",
       "failed": "Не удалось опубликовать в WhatsApp",
-      "contactVariables": "В текстах этого мини-приложения используются пользовательские поля. Пока они работают только в веб-ссылке — удалите их перед публикацией в WhatsApp."
+      "contactVariables": "В текстах этого мини-приложения используются пользовательские поля. Пока они работают только в веб-ссылке — удалите их перед публикацией в WhatsApp.",
+      "notOnNumber": "Мини-приложение отсутствует на этом номере WhatsApp.",
+      "onlyDraftDeletable": "Flow опубликован в Meta, поэтому удалить его нельзя. Можно удалить только черновик.",
+      "flowIsLive": "Мини-приложение опубликовано на этом номере WhatsApp. Сохранение черновика отключит его — для обновления используйте публикацию.",
+      "saveDraft": "Сохранить как черновик",
+      "draftSaved": "Сохранено в WhatsApp как черновик",
+      "preview": "Предпросмотр",
+      "previewUnavailable": "Meta не вернула ссылку предпросмотра",
+      "deleteDraft": "Удалить черновик в WhatsApp",
+      "draftDeleted": "Черновик удалён из WhatsApp"
+    },
+    "status": {
+      "draft": "Черновик",
+      "published": "Опубликован"
     },
     "runner": {
       "back": "Назад",
@@ -7916,7 +8479,9 @@
         "email": "Email",
         "password": "Пароль",
         "passcode": "Код доступа",
-        "phone": "Телефон"
+        "phone": "Телефон",
+        "date": "Дата",
+        "datetime": "Дата и время"
       },
       "fontWeight": {
         "normal": "Обычный",
@@ -7957,7 +8522,6 @@
       "screen_id_reserved": "«SUCCESS» зарезервирован WhatsApp. Выберите другой ID экрана.",
       "screen_id_duplicate": "Этот ID уже используется другим экраном.",
       "no_terminal_screen": "Отметьте хотя бы один экран как последний.",
-      "terminal_screen_without_complete": "На последнем экране нужна кнопка внизу, которая завершает форму.",
       "screen_without_exit": "С этого экрана нельзя продолжить. Добавьте кнопку внизу или ссылку на другой экран.",
       "screen_unreachable": "Ни один экран не ведёт на этот экран.",
       "too_many_components": "Максимум компонентов на экране: {max}.",
@@ -7990,7 +8554,6 @@
       "reference_unknown": "{reference} не соответствует ни одному полю.",
       "data_reference_unsupported": "{reference}: данные экрана не поддерживаются. Используйте поля формы.",
       "property_unknown": "WhatsApp не принимает свойство «{name}» для этого компонента.",
-      "complete_on_non_terminal": "«Завершить форму» можно использовать только на последнем экране.",
       "footer_captions_invalid": "Используйте либо подпись по центру, либо подписи слева и справа вместе.",
       "options_with_images_limit": "Максимум вариантов в выпадающем списке с изображениями: {max}.",
       "navigation_badge_multiple": "Значок может быть только у одного элемента списка навигации.",
@@ -8009,5 +8572,485 @@
         "upload_failed": "Не удалось загрузить файл. Попробуйте ещё раз."
       }
     }
+  },
+  "leaderboards": {
+    "title": "Рейтинги",
+    "public": {
+      "points": "{points} б.",
+      "endsIn": "До конца: {days} д {hours} ч {minutes} мин {seconds} с",
+      "finished": "Завершено",
+      "empty": "Участников пока нет — станьте первым!",
+      "myRank": "Ваше место: #{rank}",
+      "unranked": "Пока нет в рейтинге",
+      "shareToEarn": "Делитесь и получайте баллы",
+      "linkCopied": "Ссылка скопирована",
+      "unavailableTitle": "Этот рейтинг больше недоступен",
+      "unavailableDescription": "Возможно, он завершён или удалён. Запросите актуальную ссылку у страницы, на которую подписаны."
+    },
+    "description": "Проводите рейтинговые кампании, в которых клиенты соревнуются за лучшие места и награды, набирая баллы.",
+    "feature": "Рейтинг",
+    "create": "Создать рейтинг",
+    "kpi": {
+      "total": "Всего кампаний",
+      "active": "Выполняется"
+    },
+    "tabs": {
+      "all": "Все",
+      "active": "Активен",
+      "paused": "Приостановлено",
+      "finished": "Завершено"
+    },
+    "status": {
+      "draft": "Черновик",
+      "active": "Активен",
+      "paused": "Приостановлено",
+      "finished": "Завершено"
+    },
+    "platforms": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "whatsapp": "WhatsApp",
+      "zalo": "Zalo OA",
+      "telegram": "Telegram",
+      "tiktok": "TikTok",
+      "threads": "Threads",
+      "email": "Email SMTP",
+      "gamification": "Геймификация"
+    },
+    "list": {
+      "campaign": "Кампания",
+      "searchPlaceholder": "Поиск рейтингов...",
+      "platformFilter": "Платформа",
+      "participants": "Участники",
+      "totalPoints": "Всего баллов",
+      "newToday": "+{count} сегодня",
+      "average": "в среднем {value} / участник",
+      "daysLeft": "{days, plural, one {Остался # день} other {Осталось # дней}}",
+      "ended": "Завершено"
+    },
+    "scope": {
+      "allPosts": "Все публикации",
+      "specificPosts": "Выбранные публикации",
+      "specificPostsCount": "{count, plural, one {# публикация} other {# публикаций}}",
+      "telegramChatsCount": "{count, plural, one {# группа} other {# групп}}"
+    },
+    "menu": {
+      "start": "Старт",
+      "pause": "Пауза",
+      "finish": "Завершить",
+      "resetPoints": "Сбросить баллы",
+      "triggerRewards": "Отправить награды",
+      "viewParticipants": "Посмотреть участников",
+      "copyLink": "Скопировать публичную ссылку"
+    },
+    "confirm": {
+      "publishTitle": "Опубликовать этот рейтинг?",
+      "publishDescription": "Начисление баллов начнётся сразу, а участники смогут видеть публичную страницу.",
+      "pauseTitle": "Приостановить этот рейтинг?",
+      "pauseDescription": "Автоматическое начисление баллов и начисление через сценарии остановятся. Баллы по-прежнему можно менять вручную.",
+      "startTitle": "Возобновить этот рейтинг?",
+      "startDescription": "Начисление баллов возобновится по всем правилам.",
+      "finishTitle": "Завершить этот рейтинг?",
+      "finishDescription": "Все баллы будут заморожены и больше не изменятся. Автоматические награды будут отправлены, если они включены.",
+      "resetPointsTitle": "Сбросить все баллы?",
+      "resetPointsDescription": "Баллы каждого участника «{name}» будут сброшены до 0. Действие записывается в журнал и не может быть отменено."
+    },
+    "toast": {
+      "published": "Рейтинг опубликован",
+      "paused": "Рейтинг приостановлен",
+      "started": "Рейтинг возобновлён",
+      "finished": "Рейтинг завершён",
+      "pointsReset": "Все баллы сброшены"
+    },
+    "export": {
+      "title": "Экспортировать участников",
+      "description": "Скачайте CSV-файл со всеми участниками, их местами и баллами.",
+      "preparing": "Подготовка файла...",
+      "ready": "Файл готов ({count} строк).",
+      "failed": "Не удалось выполнить экспорт. Повторите попытку."
+    },
+    "rewards": {
+      "title": "Отправить награды",
+      "description": "Отправьте сценарий награды лидирующим участникам. Награды можно отправить только один раз.",
+      "flow": "Сценарий награды",
+      "topN": "Количество победителей (топ N)",
+      "noFlow": "Сценарий награды не выбран — укажите его в настройках рейтинга.",
+      "alreadySent": "Награды для этого рейтинга уже отправлены.",
+      "confirm": "Отправить награды",
+      "result": "Отправлено {sent} победителям, пропущено {skipped} (нет диалога в этом канале)."
+    },
+    "wizard": {
+      "steps": {
+        "info": "Информация",
+        "config": "Канал и правила",
+        "review": "Проверка и публикация"
+      },
+      "namePlaceholder": "Например, лучшие подписчики октября",
+      "coverImage": "Обложка",
+      "coverImageHint": "JPG или PNG, до 5 МБ. Рекомендуемый размер — 1200×630.",
+      "coverImageRejected": "Выберите изображение JPG или PNG размером до 5 МБ.",
+      "description": "Правила и награды",
+      "descriptionPlaceholder": "Объясните, как участники набирают баллы и что получают лидеры.",
+      "startsAt": "Начало",
+      "endsAt": "Окончание",
+      "startLocked": "После публикации нельзя изменить время начала.",
+      "channelTitle": "Платформа и канал",
+      "platform": "Платформа",
+      "hostChannel": "Канал",
+      "hostLocked": "После публикации нельзя изменить платформу и канал.",
+      "noChannel": "Нет подключённого канала {platform}. Сначала подключите его в разделе Настройки → Каналы.",
+      "openMinigameSettings": "Открыть настройки игры",
+      "postScope": "Публикации с начислением баллов",
+      "choosePosts": "Выберите публикации",
+      "telegramChats": "Группы и каналы",
+      "telegramChatsHint": "Добавьте бота в группу или канал администратором, чтобы он мог видеть участников и сообщения.",
+      "telegramChatsEmpty": "Группы не найдены — сначала добавьте бота администратором",
+      "rulesTitle": "Правила начисления баллов",
+      "rulesHint": "Включите действия, за которые начисляются баллы, и укажите их количество.",
+      "allPlatforms": "Все платформы",
+      "points": "Баллы",
+      "maxPerDay": "Максимум в день",
+      "maxPerDayHint": "Оставьте пустым для отсутствия лимита.",
+      "minChars": "Минимум символов",
+      "bonusPoints": "Бонусные баллы золотого часа",
+      "bonusPointsHint": "Дополнительные баллы за комментарии вскоре после публикации.",
+      "bonusMinutes": "Продолжительность золотого часа (минуты)",
+      "emailTopicNote": "Открытия и переходы отслеживаются только у писем, отправленных с темой Email Topic.",
+      "generalTitle": "Общие настройки",
+      "followersOnly": "Только подписчики",
+      "followersOnlyHint": "Баллы получают только подписчики вашего аккаунта.",
+      "tagFilter": "Фильтр по тегам",
+      "tagFilterHint": "Баллы получают только контакты хотя бы с одним из этих тегов.",
+      "everyone": "Все",
+      "resetTime": "Время ежедневного сброса (UTC)",
+      "resetTimeHint": "Дневные лимиты обновляются в это время. = {time} по времени Вьетнама (UTC+7).",
+      "cooldown": "Антиспам-интервал (секунды)",
+      "cooldownHint": "Минимальный интервал в секундах между автоматическими начислениями одному участнику. 0 отключает ограничение.",
+      "referralFlow": "Приветственный сценарий для приглашённых",
+      "referralFlowAuto": "Создать автоматически",
+      "referralFlowHint": "Отправляется другу, пришедшему по реферальной ссылке. Можно использовать '{{referral_name}}' и публичную ссылку рейтинга. Оставьте пустым, чтобы автоматически создать приветствие, которое можно изменить в редакторе сценариев.",
+      "publicLink": "Публичная ссылка",
+      "publicLinkHint": "Отправьте ссылку из сценария, чтобы каждый участник видел своё место.",
+      "publicLinkAfterSave": "Публичная ссылка появится после сохранения.",
+      "rewardsTitle": "Награды",
+      "autoOnFinish": "Отправлять автоматически после завершения",
+      "autoOnFinishHint": "Запускает сценарий награды для топ N участников сразу после завершения рейтинга.",
+      "backToStep2": "Вернуться к шагу 2",
+      "notEditable": "Завершённые рейтинги нельзя редактировать."
+    },
+    "review": {
+      "infoCard": "Информация",
+      "yes": "Да",
+      "no": "Нет",
+      "off": "Выкл.",
+      "seconds": "{seconds} секунд",
+      "resetTimeValue": "{utc} UTC (= {local} Вьетнам)",
+      "noRules": "Ни одно правило ещё не включено.",
+      "rulePoints": "{points} б.",
+      "maxPerDay": "максимум {count}/день",
+      "unlimited": "без ограничений"
+    },
+    "preview": {
+      "sampleName": "Участник {rank}",
+      "placeholderName": "Название вашего рейтинга",
+      "pinnedBar": "#{rank} · {points} б."
+    },
+    "validation": {
+      "nameRequired": "Введите название",
+      "dateRequired": "Выберите дату и время",
+      "endsAfterStart": "Время окончания должно быть позже времени начала",
+      "channelRequired": "Выберите канал",
+      "minigameRequired": "Выберите мини-игру",
+      "pointsRequired": "Укажите количество баллов за это правило",
+      "bonusMinutesRequired": "Укажите длительность золотого часа в минутах",
+      "postsRequired": "Выберите хотя бы одну публикацию",
+      "telegramChatsRequired": "Выберите хотя бы одну группу или канал",
+      "enableOneRule": "Включите хотя бы одно правило начисления баллов перед публикацией",
+      "fixErrors": "Исправьте выделенные поля"
+    },
+    "rules": {
+      "comments": {
+        "label": "Комментарии",
+        "description": "Баллы за каждый комментарий к вашим публикациям."
+      },
+      "liveComments": {
+        "label": "Комментарии в прямом эфире",
+        "description": "Баллы за каждый комментарий во время прямого эфира."
+      },
+      "keywords": {
+        "label": "Ключевые слова",
+        "description": "Баллы, когда сообщение совпадает с любым ключевым словом в инструменте ключевых слов этого канала."
+      },
+      "storyMention": {
+        "label": "Упоминание в истории",
+        "description": "Баллы, когда кто-то отмечает ваш аккаунт в своей истории."
+      },
+      "storyReaction": {
+        "label": "Реакция на историю",
+        "description": "Баллы за реакцию на вашу историю."
+      },
+      "ctwaReactions": {
+        "label": "Клики CTWA и реакции",
+        "description": "Баллы за клик по рекламе Click-to-WhatsApp или реакцию на сообщение."
+      },
+      "survey": {
+        "label": "Опросы и тесты",
+        "description": "Баллы за завершение анкеты или отправку формы WhatsApp Flow."
+      },
+      "follow": {
+        "label": "Подписка на OA и QR",
+        "description": "Баллы за подписку на официальный аккаунт или сканирование его QR-кода. При отписке баллы снимаются."
+      },
+      "message": {
+        "label": "Сообщение Zalo",
+        "description": "Баллы за каждое сообщение вашему официальному аккаунту."
+      },
+      "joinGroup": {
+        "label": "Вступление в канал и группу",
+        "description": "Баллы за вступление в вашу группу или канал. При выходе баллы снимаются."
+      },
+      "groupDiscussion": {
+        "label": "Обсуждение в группе",
+        "description": "Баллы за каждое сообщение в вашей группе."
+      },
+      "emailOpen": {
+        "label": "Открытие письма",
+        "description": "Баллы за открытие письма."
+      },
+      "emailClick": {
+        "label": "Переход по ссылке в письме",
+        "description": "Баллы за переход по ссылке в письме."
+      },
+      "minigameWin": {
+        "label": "Победа в мини-игре",
+        "description": "Баллы за каждый выигранный приз в мини-игре."
+      },
+      "inGameShare": {
+        "label": "Поделиться из игры",
+        "description": "Баллы за распространение игры для получения дополнительных попыток."
+      },
+      "referral": {
+        "label": "Приглашение",
+        "description": "Баллы пригласившему, когда новый друг переходит по его ссылке."
+      }
+    },
+    "breakdown": {
+      "comments": "{count} комментариев",
+      "liveComments": "{count} комментариев в прямом эфире",
+      "keywords": "{count} ключевых слов",
+      "storyMention": "{count} упоминаний в истории",
+      "storyReaction": "{count} реакций на историю",
+      "ctwaReactions": "{count} CTWA",
+      "survey": "{count} опросов",
+      "follow": "{count} подписок",
+      "message": "{count} сообщений",
+      "joinGroup": "{count} вступлений",
+      "groupDiscussion": "{count} сообщений в группе",
+      "emailOpen": "{count} открытий",
+      "emailClick": "{count} переходов",
+      "minigameWin": "{count} побед",
+      "inGameShare": "{count} распространений",
+      "referral": "{count} приглашений",
+      "flow": "{count} сценариев",
+      "manual": "{count} вручную"
+    },
+    "participants": {
+      "title": "Участники",
+      "switcher": "Переключить рейтинг",
+      "count": "{count, plural, one {# участник} other {# участников}}",
+      "searchPlaceholder": "Поиск по имени, ID пользователя или телефону...",
+      "filters": {
+        "all": "Все",
+        "top10": "Топ-10",
+        "top50": "Топ-50",
+        "banned": "Заблокированные"
+      },
+      "columns": {
+        "rank": "Порядок",
+        "participant": "Участник",
+        "score": "Всего баллов",
+        "breakdown": "Подробности",
+        "lastActivity": "Последняя активность"
+      },
+      "unknown": "Неизвестно",
+      "contactId": "ID {id}",
+      "lockedFinished": "Рейтинг завершён — баллы заблокированы.",
+      "lockedDraft": "Опубликуйте рейтинг перед изменением баллов.",
+      "actions": {
+        "adjust": "Скорректировать баллы",
+        "ban": "Заблокировать",
+        "unban": "Разблокировать",
+        "reset": "Сбросить до 0",
+        "history": "Посмотреть историю"
+      },
+      "adjust": {
+        "title": "Скорректировать баллы",
+        "description": "Добавьте или вычтите баллы для {name}. Изменение сохраняется в журнале аудита.",
+        "delta": "Баллы (+/-)",
+        "deltaPlaceholder": "Например, 50 или -20",
+        "reason": "Причина",
+        "reasonPlaceholder": "Почему вы изменяете эти баллы?",
+        "success": "Баллы скорректированы"
+      },
+      "banConfirm": "{name} будет удалён из рейтинга и перестанет получать баллы.",
+      "unbanConfirm": "{name} вернётся в рейтинг с текущими баллами.",
+      "resetConfirm": "Баллы {name} будут сброшены до 0. Действие записывается в журнал.",
+      "banned": "Участник заблокирован",
+      "unbanned": "Участник разблокирован",
+      "resetDone": "Баллы сброшены до 0",
+      "history": {
+        "title": "История баллов — {name}",
+        "empty": "Изменений баллов пока нет.",
+        "sources": {
+          "rule": "Правило",
+          "flow": "Сценарий",
+          "referral": "Приглашение",
+          "manual": "Ручная корректировка",
+          "reset": "Сбросить"
+        }
+      },
+      "conversationNotFound": "Диалог с этим контактом не найден",
+      "popupBlocked": "Разрешите всплывающие окна для этого сайта и попробуйте ещё раз."
+    },
+    "auditLog": {
+      "title": "Журнал аудита",
+      "admin": "Админ",
+      "change": "Изменение",
+      "time": "Время",
+      "reason": "Причина",
+      "api": "API",
+      "empty": "Ручных изменений пока нет.",
+      "actions": {
+        "adjust": "Скорректировать",
+        "resetOne": "Сбросить баллы участника",
+        "resetAll": "Сбросить всё",
+        "ban": "Заблокировать",
+        "unban": "Разблокировать"
+      }
+    }
+  },
+  "recurrence": {
+    "title": "Повторять",
+    "every": "Повторять каждые",
+    "unit": "{count, plural, one {{frequency, select, daily {день} weekly {неделю} monthly {месяц} other {}}} other {{frequency, select, daily {дней} weekly {недель} monthly {месяцев} other {}}}}",
+    "weekdays": "Повторять по",
+    "time": "Время",
+    "timezone": "Часовой пояс",
+    "noTimezone": "Часовой пояс не найден",
+    "searchTimezone": "Поиск часового пояса…",
+    "startsOn": "Дата начала",
+    "end": {
+      "label": "Окончание",
+      "never": "Никогда",
+      "onDate": "Вкл.",
+      "after": "Через",
+      "pickDate": "Выберите дату",
+      "occurrences": "{count, plural, one {раза} other {раз}}"
+    },
+    "monthDay": {
+      "label": "День месяца",
+      "day": "День {day}",
+      "last": "Последний день",
+      "hint": "В коротких месяцах запускается в последний день месяца."
+    },
+    "summary": {
+      "sentence": "{interval, plural, one {Каждый {frequency, select, daily {день} weekly {неделю} monthly {месяц} other {}}} other {Каждые # {frequency, select, daily {дней} weekly {недель} monthly {месяцев} other {}}}}{frequency, select, weekly { по {weekdays}} monthly { в {monthDay, select, last {последний день} other {день {monthDay}}}} other {}} в {time} ({timezone}), начиная с {startsOn}{endKind, select, onDate {, до {endDate}} afterOccurrences {, до {endCount, plural, one {# запуска} other {# запусков}}} other {}}"
+    },
+    "firstRunLater": "Первый запуск состоится {when}, поскольку сегодняшнее время уже прошло.",
+    "nextRuns": "Следующие запуски",
+    "noUpcomingRuns": "Предстоящих запусков нет.",
+    "skipping": "Пропускаются {dates}{more, plural, =0 {} one { (+# ещё)} other { (+# ещё)}}",
+    "excludeDates": {
+      "label": "Пропустить даты",
+      "hint": "В эти даты отправки не будет. Серия продолжит выполняться.",
+      "add": "Добавить даты",
+      "remove": "Удалить {date}",
+      "showAll": "Показать ещё {count}",
+      "showLess": "Свернуть",
+      "clearAll": "Очистить всё"
+    }
+  },
+  "workingHours": {
+    "title": "Рабочее время",
+    "label": "Рабочее время",
+    "description": "Время ответа учитывается только в эти часы.",
+    "employees": "Сотрудники",
+    "empty": "Графиков пока нет.",
+    "deleteDescription": "Удалить «{name}»? Для сотрудников снова будет учитываться обычное время.",
+    "create": {
+      "title": "Добавить рабочее время",
+      "description": "Назовите график. Дни и часы можно будет указать далее."
+    },
+    "employeesDialog": {
+      "title": "Назначить сотрудникам рабочее время",
+      "description": "Выберите сотрудников, работающих по этому графику.",
+      "moveHelp": "У сотрудника может быть один график; добавление перенесёт его сюда.",
+      "placeholder": "Выберите сотрудников",
+      "search": "Поиск сотрудников...",
+      "searchAria": "Поиск среди сотрудников",
+      "empty": "Сотрудники не найдены.",
+      "close": "Закрыть",
+      "selectAll": "(Выбрать всех)",
+      "clearAllAria": "{count, plural, one {Очистить выбранного сотрудника} other {Очистить всех выбранных сотрудников ({count})}}",
+      "removeAria": "Убрать {name} из выбора"
+    },
+    "editor": {
+      "timezoneNote": "Используется часовой пояс рабочего пространства: {timezone}.",
+      "notWorking": "Не работает",
+      "dayToggle": "Работает в {day}",
+      "startTime": "Время начала",
+      "endTime": "Время окончания",
+      "removeRange": "Удалить интервал",
+      "errorOverlap": "Эти интервалы пересекаются. Исправьте их для сохранения.",
+      "errorOrder": "Время окончания должно быть позже времени начала.",
+      "routingNote": "Также используется в автоназначении, глобальном маршрутизаторе и условиях."
+    },
+    "condition": {
+      "assignedAgent": "Смена назначенного оператора"
+    },
+    "holidays": {
+      "label": "Праздники",
+      "title": "Праздники",
+      "description": "Заменяет недельные часы всех графиков на эту дату.",
+      "add": "Добавить праздник",
+      "empty": "Праздников пока нет.",
+      "deleteDescription": "Удалить праздник на {date}?"
+    },
+    "dateOverrides": {
+      "title": "Исключения для дат",
+      "description": "Заменяют часы этого графика на указанную дату; имеют приоритет над праздниками.",
+      "add": "Добавить исключение для даты",
+      "empty": "Исключений для дат нет."
+    },
+    "dateDialog": {
+      "addTitle": "Добавить дату",
+      "editTitle": "Изменить дату",
+      "date": "Дата",
+      "name": "Название (необязательно)",
+      "closedAllDay": "Закрыто весь день",
+      "duplicate": "Эта дата уже есть в списке.",
+      "hours": "Часы",
+      "closed": "Закрыто"
+    }
+  },
+  "responseSla": {
+    "label": "SLA ответа",
+    "title": "SLA ответа",
+    "description": "Максимальное время ожидания ответа оператора на сообщение клиента.",
+    "firstTarget": "Срок первого ответа (минуты)",
+    "nextTarget": "Срок следующего ответа (минуты)",
+    "nextPlaceholder": "Без SLA для последующих ответов",
+    "threshold": "Порог приближения к нарушению (% оставшегося времени)",
+    "thresholdHelp": "Отмечается приближение к нарушению, когда остаётся указанный процент целевого времени.",
+    "workingTimeNote": "Учитывается рабочее время назначенного оператора, иначе — обычное время.",
+    "overdue": "Просрочено",
+    "due": "Срок: {time}",
+    "breaching": "Приближение к нарушению SLA",
+    "breached": "SLA нарушено",
+    "firstMetColumn": "SLA первого ответа соблюдено",
+    "metColumn": "SLA соблюдено",
+    "metHelp": "Доля ответов с SLA, уложившихся в срок.",
+    "eligibleCount": "SLA задано для {count} ответов",
+    "enable": "Включить SLA ответа"
   }
 }

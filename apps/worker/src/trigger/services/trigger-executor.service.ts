@@ -16,7 +16,8 @@ export class TriggerExecutorService {
     input: TriggerExecutionInput,
   ): Promise<void> {
     const { id: triggerId, workspaceId, actions } = trigger
-    const { contactId, contactInboxId, occurrenceId } = input
+    const { contactId, contactInboxId, decisionFlowOrigin, occurrenceId } =
+      input
 
     try {
       setTriggerExecutionContext({ source: "worker" })
@@ -28,9 +29,10 @@ export class TriggerExecutorService {
           await this.actionExecutor.execute({
             action: action as Record<string, unknown>,
             contactId,
-            triggerId,
+            source: { kind: "trigger", triggerId },
             workspaceId,
             contactInboxId,
+            decisionFlowOrigin,
             occurrenceKey: occurrenceId
               ? `trigger:${occurrenceId}:${triggerId}:${index}`
               : undefined,

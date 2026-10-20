@@ -24,8 +24,10 @@ import {
   MegaphoneIcon,
   QrCodeIcon,
   TicketPercentIcon,
+  TrophyIcon,
   UserCheck2Icon,
   Wand2Icon,
+  WebhookIcon,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
@@ -167,6 +169,13 @@ export const TOOLS_CONFIG = [
     getLink: (id: string) => `/space/${id}/minigames`,
   },
   {
+    id: "leaderboards",
+    labelKey: "leaderboards.title",
+    descriptionKey: "leaderboards.description",
+    icon: TrophyIcon,
+    getLink: (id: string) => `/space/${id}/leaderboards`,
+  },
+  {
     id: "mini-apps",
     labelKey: "miniApps.title",
     descriptionKey: "miniApps.description",
@@ -186,6 +195,22 @@ export const TOOLS_CONFIG = [
     descriptionKey: "botSimulator.description",
     icon: BotIcon,
     getLink: (id: string) => `/space/${id}/bot-simulator`,
+  },
+  {
+    id: "decision-profiles",
+    labelKey: "decision.title",
+    descriptionKey: "decision.toolDescription",
+    icon: BotIcon,
+    permission: "superAdmin",
+    getLink: (id: string) => `/space/${id}/tools/decision-profiles`,
+  },
+  {
+    id: "inbound-webhooks",
+    labelKey: "inboundWebhooks.title",
+    descriptionKey: "inboundWebhooks.description",
+    icon: WebhookIcon,
+    permission: "superAdmin",
+    getLink: (id: string) => `/space/${id}/inbound-webhooks`,
   },
   {
     id: "places-near-me",

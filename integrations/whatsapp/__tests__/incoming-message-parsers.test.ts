@@ -242,14 +242,225 @@ describe("WhatsApp receiveMessage — location / contacts / order", () => {
     expect(result.message?.contentAttributes).toEqual({ contacts })
   })
 
-  test("order carries the order payload as contentAttributes", async () => {
-    const order = {
-      catalog_id: "catalog-1",
-      product_items: [{ product_retailer_id: "product-1" }],
-    }
-    const result = await receiveMessage(buildProps({ type: "order", order }))
+  describe("order", () => {
+    const item = (retailerId: string, quantity: number, price: number) => ({
+      product_retailer_id: retailerId,
+      quantity,
+      item_price: price,
+      currency: "VND",
+    })
 
-    expect(result.message?.contentAttributes).toEqual(order)
+    test("carries the order payload as contentAttributes", async () => {
+      const order = {
+        catalog_id: "catalog-1",
+        product_items: [item("product-1", 1, 350_000)],
+      }
+      const result = await receiveMessage(buildProps({ type: "order", order }))
+
+      expect(result.message?.contentAttributes).toEqual(order)
+    })
+
+    test("sets a readable text, one line per product, so the inbox and keywords see it", async () => {
+      const result = await receiveMessage(
+        buildProps({
+          type: "order",
+          order: {
+            catalog_id: "catalog-1",
+            product_items: [
+              item("abc123xyz", 1, 350_000),
+              item("def456uvw", 3, 450_000),
+            ],
+          },
+        }),
+      )
+
+      expect(result.message?.text).toBe(
+        "Received order\nabc123xyz × 1 (350000 VND)\ndef456uvw × 3 (450000 VND)",
+      )
+    })
+
+    test("appends the customer's note when there is one", async () => {
+      const result = await receiveMessage(
+        buildProps({
+          type: "order",
+          order: {
+            catalog_id: "catalog-1",
+            product_items: [item("abc123xyz", 1, 350_000)],
+            text: "Please deliver after 5pm",
+          },
+        }),
+      )
+
+      expect(result.message?.text).toBe(
+        "Received order\nabc123xyz × 1 (350000 VND)\nPlease deliver after 5pm",
+      )
+    })
+
+    test("does not throw when Meta omits the items array", async () => {
+      const result = await receiveMessage(
+        buildProps({
+          type: "order",
+          order: { catalog_id: "catalog-1" },
+        }),
+      )
+
+      expect(result.message?.text).toBe("Received order")
+    })
+
+    test("falls back to the bare label for an order without items", async () => {
+      const result = await receiveMessage(
+        buildProps({
+          type: "order",
+          order: { catalog_id: "catalog-1", product_items: [] },
+        }),
+      )
+
+      expect(result.message?.text).toBe("Received order")
+    })
+
+    test("reports the cart as a channel-neutral commerce event, quantities kept per item", async () => {
+      const result = await receiveMessage(
+        buildProps({
+          type: "order",
+          order: {
+            catalog_id: "catalog-1",
+            text: "Deliver after 5pm",
+            product_items: [
+              item("sku-1", 1, 350_000),
+              item("sku-1", 3, 350_000),
+            ],
+          },
+        }),
+      )
+
+      expect(result.commerce).toEqual({
+        kind: "cartSent",
+        catalogId: "catalog-1",
+        note: "Deliver after 5pm",
+        items: [
+          {
+            catalogId: "catalog-1",
+            retailerId: "sku-1",
+            quantity: 1,
+            itemPrice: 350_000,
+            currency: "VND",
+          },
+          {
+            catalogId: "catalog-1",
+            retailerId: "sku-1",
+            quantity: 3,
+            itemPrice: 350_000,
+            currency: "VND",
+          },
+        ],
+      })
+    })
+
+    test("keeps the usable items when one is malformed", async () => {
+      const result = await receiveMessage(
+        buildProps({
+          type: "order",
+          order: {
+            catalog_id: "catalog-1",
+            product_items: [
+              {
+                product_retailer_id: "",
+                quantity: 1,
+                item_price: 1,
+                currency: "VND",
+              },
+              {
+                product_retailer_id: "sku-2",
+                quantity: "two",
+                item_price: 1,
+                currency: "VND",
+              },
+              item("sku-3", 2, 10),
+            ],
+          },
+        }),
+      )
+
+      expect(result.commerce).toMatchObject({
+        kind: "cartSent",
+        items: [{ retailerId: "sku-3", quantity: 2 }],
+      })
+    })
+
+    test.each([
+      ["no items", { catalog_id: "catalog-1", product_items: [] }],
+      ["no items array", { catalog_id: "catalog-1" }],
+      ["no catalog", { product_items: [item("sku-1", 1, 1)] }],
+      [
+        "an empty catalog id",
+        { catalog_id: "", product_items: [item("sku-1", 1, 1)] },
+      ],
+    ])("reports no commerce event for an order with %s", async (_label, order) => {
+      const result = await receiveMessage(buildProps({ type: "order", order }))
+
+      expect(result.commerce).toBeUndefined()
+    })
+  })
+})
+
+describe("WhatsApp receiveMessage — referred product", () => {
+  const referredProduct = {
+    catalog_id: "catalog-1",
+    product_retailer_id: "sku-1",
+  }
+  const inquiry = {
+    kind: "productInquiry",
+    product: { catalogId: "catalog-1", retailerId: "sku-1" },
+  }
+
+  test("a text sent from a product page reports a product inquiry", async () => {
+    const result = await receiveMessage(
+      buildProps({
+        type: "text",
+        text: { body: "Is this in stock?" },
+        context: {
+          from: "84900000099",
+          id: "wamid.ctx",
+          referred_product: referredProduct,
+        },
+      }),
+    )
+
+    expect(result.commerce).toEqual(inquiry)
+    expect(result.message?.text).toBe("Is this in stock?")
+  })
+
+  test("only a text message is read: Meta documents the product on that message type alone", async () => {
+    const result = await receiveMessage(
+      buildProps({
+        type: "location",
+        location: { latitude: 1, longitude: 2 },
+        context: { referred_product: referredProduct },
+      }),
+    )
+
+    expect(result.commerce).toBeUndefined()
+  })
+
+  test.each([
+    ["no context", undefined],
+    ["a reply context without a product", { id: "wamid.ctx" }],
+    [
+      "a product missing its catalog",
+      { referred_product: { product_retailer_id: "sku-1" } },
+    ],
+    [
+      "a product with an empty retailer id",
+      {
+        referred_product: { catalog_id: "catalog-1", product_retailer_id: "" },
+      },
+    ],
+  ])("reports no commerce event for %s", async (_label, context) => {
+    const result = await receiveMessage(
+      buildProps({ type: "text", text: { body: "hi" }, context }),
+    )
+
+    expect(result.commerce).toBeUndefined()
   })
 })
 

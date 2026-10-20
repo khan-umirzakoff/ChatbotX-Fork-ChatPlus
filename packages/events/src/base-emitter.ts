@@ -3,7 +3,12 @@ import {
   type TriggerEventType,
   triggerEventTypes,
 } from "@chatbotx.io/database/partials"
+import type {
+  MessageInboundOrderEntity,
+  ResolvedInboundProductReference,
+} from "@chatbotx.io/sdk"
 import { withContactInboxMetadata } from "./contact-inbox-context"
+import type { DecisionFlowOrigin } from "./decision-flow-lineage"
 
 /** Channel-neutral voice-call event metadata carried to triggers/webhooks. */
 export type CallEventMetadata = { callId: string }
@@ -18,6 +23,25 @@ export type CallRecordedMetadata = CallEventMetadata & {
 }
 export type CallTranscribedMetadata = CallEventMetadata & {
   transcript?: string
+}
+
+/**
+ * Channel-neutral metadata of a contact's catalog interaction. There is
+ * deliberately no `sourceId`: a condition may pin a product, but a cart names
+ * many, so the product filter is applied by the condition evaluator.
+ */
+type InboundCommerceEventMetadata = {
+  channel: string
+  conversationId: string
+  messageId: string
+  catalogId: string
+}
+export type ShoppingCartSentMetadata = InboundCommerceEventMetadata & {
+  note: string | null
+  products: MessageInboundOrderEntity["items"]
+}
+export type UserAskedAboutProductMetadata = InboundCommerceEventMetadata & {
+  product: ResolvedInboundProductReference
 }
 
 /**
@@ -112,6 +136,7 @@ export abstract class BaseEventEmitter {
     oldValue: unknown,
     newValue: unknown,
     contactInboxId?: string,
+    decisionFlowOrigin?: DecisionFlowOrigin,
   ): Promise<void> {
     await this.emit(triggerEventTypes.enum.customFieldValueChanged, {
       workspaceId,
@@ -123,6 +148,7 @@ export abstract class BaseEventEmitter {
           customFieldName,
           oldValue,
           newValue,
+          ...(decisionFlowOrigin ? { decisionFlowOrigin } : {}),
         },
         contactInboxId,
       ),
@@ -365,6 +391,32 @@ export abstract class BaseEventEmitter {
       workspaceId,
       contactId,
       metadata,
+    })
+  }
+
+  async shoppingCartSent(
+    workspaceId: string,
+    contactId: string,
+    metadata: ShoppingCartSentMetadata,
+    contactInboxId?: string,
+  ): Promise<void> {
+    await this.emit(triggerEventTypes.enum.shoppingCartSent, {
+      workspaceId,
+      contactId,
+      metadata: withContactInboxMetadata(metadata, contactInboxId),
+    })
+  }
+
+  async userAskedAboutProduct(
+    workspaceId: string,
+    contactId: string,
+    metadata: UserAskedAboutProductMetadata,
+    contactInboxId?: string,
+  ): Promise<void> {
+    await this.emit(triggerEventTypes.enum.userAskedAboutProduct, {
+      workspaceId,
+      contactId,
+      metadata: withContactInboxMetadata(metadata, contactInboxId),
     })
   }
 

@@ -12,7 +12,11 @@ import type {
   FlowActionTargetType,
   MetadataPayload,
 } from "@chatbotx.io/flow-config"
-import type { CommentAnchor, OutgoingMessage } from "@chatbotx.io/sdk"
+import type {
+  ChannelAudienceEventJobData,
+  CommentAnchor,
+  OutgoingMessage,
+} from "@chatbotx.io/sdk"
 import { type JobsOptions, Queue } from "bullmq"
 import {
   defaultJobOptions,
@@ -86,6 +90,9 @@ export const IntegrationJobAction = {
   threadControlAction: "threadControlAction",
   aiHandoverTakeBack: "aiHandoverTakeBack",
   aiHandoverBulkToggle: "aiHandoverBulkToggle",
+  // Follow/unfollow, group join/leave, group messages and the bot's own group
+  // membership — audience events that are not 1:1 messages (leaderboard scoring).
+  channelAudienceEvent: "channelAudienceEvent",
 } as const
 
 type IntegrationJobActionValue =
@@ -217,6 +224,11 @@ export type IntegrationJobMessageReaction = {
   }
 }
 
+export type IntegrationJobChannelAudienceEvent = {
+  type: typeof IntegrationJobAction.channelAudienceEvent
+  data: ChannelAudienceEventJobData
+}
+
 export type IntegrationJobMessageStatus = {
   type: typeof IntegrationJobAction.messageStatus
   data: {
@@ -249,6 +261,9 @@ export type IntegrationJobRunFlowNode = {
     startFromStepId?: string
     /** Stable logical execution identity for asynchronous flow continuations. */
     flowExecutionKey?: string
+    /** Immutable inbound source identity, forwarded across every continuation. */
+    triggerMessageId?: string
+    triggerMessageCreatedAt?: Date
     /**
      * Set when this job resumes a button/quickReply's own multi-step chain
      * (one step per job) rather than a node's. Without it, resolving by
@@ -282,6 +297,15 @@ export type IntegrationJobRunFlowNode = {
     isBulkBroadcast?: boolean
     appointmentId?: string
     sendFrom?: "inbox"
+    /**
+     * Positive identification of a flow run that reacts to a contact's inbound
+     * message (keyword / default-reply / AI / router flows, button and quick
+     * reply taps, challenge answers). Lets the Disable Bot step reopen the
+     * waiting-for-human window. Absent means false: broadcast, sequence,
+     * trigger, wait/smart-delay resumes and every unknown origin never set it,
+     * and continuations that stay in the same message-driven run forward it.
+     */
+    startedByContactMessage?: boolean
     origin?: "channel"
     /** See {@link CommentAnchor}. */
     commentAnchor?: CommentAnchor
@@ -1162,6 +1186,7 @@ export type IntegrationJobData =
   | IntegrationJobThreadControlAction
   | IntegrationJobAiHandoverTakeBack
   | IntegrationJobAiHandoverBulkToggle
+  | IntegrationJobChannelAudienceEvent
 
 export const integrationQueue = isNoRedisEnv()
   ? fakeQueue

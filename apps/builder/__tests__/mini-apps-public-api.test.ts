@@ -24,18 +24,21 @@ vi.mock("@chatbotx.io/business", () => ({
 }))
 
 const miniAppService = {
+  validate: vi.fn(),
   list: vi.fn(),
   findOrFail: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
+  duplicate: vi.fn(),
   deleteMany: vi.fn(),
 }
 const miniAppSubmissionService = { list: vi.fn() }
 
 vi.mock("@chatbotx.io/business/mini-app", async () => {
-  const { fromFlowJson } = await vi.importActual<
+  const { fromFlowJson, validateMiniApp } = await vi.importActual<
     typeof import("@chatbotx.io/mini-app")
   >("@chatbotx.io/mini-app")
+  miniAppService.validate.mockImplementation(validateMiniApp)
   return {
     miniAppService,
     miniAppSubmissionService,
@@ -44,8 +47,14 @@ vi.mock("@chatbotx.io/business/mini-app", async () => {
 })
 
 const publishMiniAppToWhatsapp = vi.fn()
-vi.mock("@/features/mini-apps/lib/publish-to-whatsapp", () => ({
+const publishMiniAppWhatsappDraft = vi.fn()
+const getMiniAppWhatsappPreview = vi.fn()
+const deleteMiniAppWhatsappDraft = vi.fn()
+vi.mock("@/features/mini-apps/lib/whatsapp-publication", () => ({
   publishMiniAppToWhatsapp,
+  publishMiniAppWhatsappDraft,
+  getMiniAppWhatsappPreview,
+  deleteMiniAppWhatsappDraft,
 }))
 const createTranslatedStarterDefinition = vi.fn()
 vi.mock("@/features/mini-apps/lib/starter-definition", () => ({
@@ -123,8 +132,12 @@ const storedMiniApp = (definition: unknown) => ({
   publications: [],
 })
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks()
+  const { validateMiniApp } = await vi.importActual<
+    typeof import("@chatbotx.io/mini-app")
+  >("@chatbotx.io/mini-app")
+  miniAppService.validate.mockImplementation(validateMiniApp)
   isWorkspaceScheduledForDeletion.mockReturnValue(false)
   getAccessState.mockResolvedValue({ blocked: false })
   isAtLimit.mockResolvedValue(false)
@@ -157,22 +170,28 @@ describe("Mini Apps public API", () => {
     })
   })
 
-  test("create converts Flow JSON to a definition and returns validation", async () => {
+  test("create passes the Flow JSON to the service and returns validation", async () => {
     findWorkspaceByTokenHash.mockResolvedValue(authResult(null))
+    const { fromFlowJson } = await vi.importActual<
+      typeof import("@chatbotx.io/mini-app")
+    >("@chatbotx.io/mini-app")
     miniAppService.create.mockImplementation(
-      async (input: { definition: unknown }) => storedMiniApp(input.definition),
+      async (input: { flowJson: never }) =>
+        storedMiniApp(fromFlowJson(input.flowJson)),
     )
     const result = (await invoke(miniAppsPublicRouter.create, {
       name: "Survey",
       flowJson,
+      customFieldMappings: { full_name: "77" },
     })) as {
       validation: { valid: boolean }
     }
-    const [createInput] = miniAppService.create.mock.calls[0] as [
-      { workspaceId: string; definition: { screens: { id: string }[] } },
-    ]
-    expect(createInput.workspaceId).toBe("ws-1")
-    expect(createInput.definition.screens[0]?.id).toBe("WELCOME")
+    expect(miniAppService.create).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      name: "Survey",
+      flowJson,
+      customFieldMappings: { full_name: "77" },
+    })
     expect(result.validation.valid).toBe(true)
   })
 
@@ -235,29 +254,27 @@ describe("Mini Apps public API", () => {
     expect(publishMiniAppToWhatsapp).not.toHaveBeenCalled()
   })
 
-  test("a new Flow JSON keeps existing custom field mappings by input name", async () => {
+  test("update hands the Flow JSON and mappings to the service, then reloads", async () => {
     findWorkspaceByTokenHash.mockResolvedValue(authResult(null))
-    const { fromFlowJson, applyCustomFieldMappings } = await vi.importActual<
-      typeof import("@chatbotx.io/mini-app")
-    >("@chatbotx.io/mini-app")
-    const current = applyCustomFieldMappings(fromFlowJson(flowJson as never), {
-      full_name: "77",
-    })
-    miniAppService.findOrFail.mockResolvedValue(storedMiniApp(current))
     miniAppService.update.mockResolvedValue(undefined)
+    miniAppService.findOrFail.mockResolvedValue(storedMiniApp({ screens: [] }))
 
-    await invoke(miniAppsPublicRouter.update, { id: "10", flowJson })
-
-    const [, data] = miniAppService.update.mock.calls[0] as [
-      unknown,
-      { definition: Parameters<typeof applyCustomFieldMappings>[0] },
-    ]
-    const { collectCustomFieldMappings } = await vi.importActual<
-      typeof import("@chatbotx.io/mini-app")
-    >("@chatbotx.io/mini-app")
-    expect(collectCustomFieldMappings(data.definition)).toEqual({
-      full_name: "77",
+    await invoke(miniAppsPublicRouter.update, {
+      id: "10",
+      flowJson,
+      customFieldMappings: { full_name: null },
     })
+
+    expect(miniAppService.update).toHaveBeenCalledWith(
+      { workspaceId: "ws-1", id: "10" },
+      {
+        name: undefined,
+        enabled: undefined,
+        flowJson,
+        customFieldMappings: { full_name: null },
+      },
+    )
+    expect(miniAppService.findOrFail).toHaveBeenCalledTimes(1)
   })
 
   test("flow-json returns only the stored Flow JSON of the token's workspace", async () => {
@@ -343,5 +360,67 @@ describe("Mini Apps public API", () => {
       id: "99",
     })
     expect(miniAppSubmissionService.list).not.toHaveBeenCalled()
+  })
+
+  test("duplicate copies the Mini App within the token's workspace", async () => {
+    findWorkspaceByTokenHash.mockResolvedValue(authResult(null))
+    miniAppService.duplicate.mockResolvedValue({
+      ...storedMiniApp({ screens: [] }),
+      id: "11",
+      name: "Survey - Copy",
+    })
+    const result = await invoke(miniAppsPublicRouter.duplicate, { id: "10" })
+    expect(miniAppService.duplicate).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      id: "10",
+    })
+    expect(result).toMatchObject({ id: "11", name: "Survey - Copy" })
+  })
+
+  test("a WhatsApp draft is pushed without publishing, then published, previewed and deleted", async () => {
+    findWorkspaceByTokenHash.mockResolvedValue(authResult(null))
+    const draft = {
+      status: "DRAFT",
+      published: false,
+      whatsappFlowId: "wf-1",
+      validationErrors: [],
+    }
+    publishMiniAppToWhatsapp.mockResolvedValue(draft)
+    publishMiniAppWhatsappDraft.mockResolvedValue({
+      ...draft,
+      status: "PUBLISHED",
+      published: true,
+    })
+    getMiniAppWhatsappPreview.mockResolvedValue({
+      previewUrl: "https://business.facebook.com/wa/manage/flows/1/preview",
+      expiresAt: null,
+    })
+    deleteMiniAppWhatsappDraft.mockResolvedValue({ outcome: "deleted" })
+    const target = {
+      workspaceId: "ws-1",
+      miniAppId: "10",
+      integrationWhatsappId: "5",
+    }
+    const input = { id: "10", integrationWhatsappId: "5" }
+
+    await expect(
+      invoke(miniAppsPublicRouter.pushWhatsappDraft, input),
+    ).resolves.toMatchObject({ status: "DRAFT", published: false })
+    expect(publishMiniAppToWhatsapp).toHaveBeenCalledWith({
+      ...target,
+      publish: false,
+    })
+    await expect(
+      invoke(miniAppsPublicRouter.publishWhatsappDraft, input),
+    ).resolves.toMatchObject({ status: "PUBLISHED", published: true })
+    await expect(
+      invoke(miniAppsPublicRouter.getWhatsappPreview, input),
+    ).resolves.toMatchObject({ previewUrl: expect.any(String) })
+    await expect(
+      invoke(miniAppsPublicRouter.deleteWhatsappDraft, input),
+    ).resolves.toEqual({ outcome: "deleted" })
+    expect(publishMiniAppWhatsappDraft).toHaveBeenCalledWith(target)
+    expect(getMiniAppWhatsappPreview).toHaveBeenCalledWith(target)
+    expect(deleteMiniAppWhatsappDraft).toHaveBeenCalledWith(target)
   })
 })

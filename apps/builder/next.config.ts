@@ -9,7 +9,10 @@ const withNextIntl = createNextIntlPlugin({
 })
 
 const appUrl = env.NEXT_PUBLIC_BUILDER_URL.replace(/\/$/, "")
-const storageUrl = env.NEXT_PUBLIC_STORAGE_URL ?? `${appUrl}/storage`
+const storageUrl = (env.NEXT_PUBLIC_STORAGE_URL ?? `${appUrl}/storage`).replace(
+  /\/$/,
+  "",
+)
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
@@ -36,6 +39,11 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   experimental: {
+    // Isolate Webpack compilation and bound prerender concurrency to keep
+    // production builds within the deployment host's memory budget.
+    webpackBuildWorker: true,
+    webpackMemoryOptimizations: true,
+    cpus: 2,
     serverActions: {
       bodySizeLimit: "20mb",
     },

@@ -29,6 +29,7 @@ export type AIAgentActionOutcome = "executed" | "failed" | "skipped"
 
 export type AIAgentActionExecutionContext = {
   channel?: string
+  inboxId?: string
   contactId: string
   contactInboxId: string
   conversationId: string
@@ -201,8 +202,10 @@ export async function executeAIAgentAction(input: {
           conversationId: context.conversationId,
           contactId: context.contactId,
           reason: "ai_agent_rule",
+          reopenUnansweredHumanReplyWindow: true,
           source: "ai_system_tool",
           channel: context.channel,
+          inboxId: context.inboxId,
         })
         break
       case "add_tag":

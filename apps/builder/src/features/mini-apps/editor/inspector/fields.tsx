@@ -1,11 +1,8 @@
 "use client"
 
-import {
-  displayTextLength,
-  type MiniAppValidationIssue,
-} from "@chatbotx.io/mini-app"
+/** Editors for the simple prop types: text, number, boolean, enum, date and lists. */
+
 import { Input } from "@chatbotx.io/ui/components/ui/input"
-import { Label } from "@chatbotx.io/ui/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -17,112 +14,15 @@ import { Switch } from "@chatbotx.io/ui/components/ui/switch"
 import { Textarea } from "@chatbotx.io/ui/components/ui/textarea"
 import { cn } from "@chatbotx.io/ui/lib/utils"
 import { useTranslations } from "next-intl"
-import { createContext, type ReactNode, useContext, useId } from "react"
+import { type ReactNode, useId } from "react"
 import {
   type EnumPropertyKey,
   enumOptionLabelKey,
   type MiniAppPropertyKey,
-  propertyLabelKey,
 } from "../../lib/labels"
-import { useIssueMessage } from "../../lib/use-issue-message"
+import { readString } from "../../lib/props"
+import { DisplayTextCounter, FieldRow, useInspector } from "./field-row"
 import { VariableTextEditor } from "./variable-text-editor"
-
-/** Props + issues of the node being edited, shared by every field. */
-export type InspectorContextValue = {
-  props: Record<string, unknown>
-  /** Visitor-facing properties of the node: they get the custom field picker. */
-  displayKeys?: ReadonlySet<string>
-  issues: MiniAppValidationIssue[]
-  setProp: (key: string, value: unknown) => void
-}
-
-export const InspectorContext = createContext<InspectorContextValue>({
-  props: {},
-  issues: [],
-  setProp: () => undefined,
-})
-
-export const useInspector = () => useContext(InspectorContext)
-
-function PropertyIssues({ propKey }: { propKey: string }) {
-  const { issues } = useInspector()
-  const message = useIssueMessage()
-  const matching = issues.filter(
-    (issue) =>
-      issue.property === propKey || issue.property?.startsWith(`${propKey}.`),
-  )
-  if (matching.length === 0) {
-    return null
-  }
-  return (
-    <div className="flex flex-col">
-      {matching.map((issue, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: issues have no id
-        <span className="text-destructive text-xs" key={index}>
-          {message(issue)}
-        </span>
-      ))}
-    </div>
-  )
-}
-
-export function FieldRow({
-  propKey,
-  htmlFor,
-  hint,
-  children,
-  inline = false,
-}: {
-  propKey: MiniAppPropertyKey
-  htmlFor?: string
-  hint?: ReactNode
-  children: ReactNode
-  inline?: boolean
-}) {
-  const t = useTranslations()
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div
-        className={cn(
-          "flex gap-2",
-          inline ? "items-center justify-between" : "flex-col",
-        )}
-      >
-        <Label htmlFor={htmlFor}>{t(propertyLabelKey[propKey])}</Label>
-        {children}
-      </div>
-      {hint ? (
-        <span className="text-muted-foreground text-xs">{hint}</span>
-      ) : null}
-      <PropertyIssues propKey={propKey} />
-    </div>
-  )
-}
-
-const readString = (value: unknown) => (typeof value === "string" ? value : "")
-
-/** `length/max` under a text field; a `{{custom field}}` counts as one character. */
-export function DisplayTextCounter({
-  value,
-  maxLength,
-}: {
-  value: string
-  maxLength: number
-}) {
-  const length = displayTextLength(value)
-  return (
-    <div className="flex justify-end">
-      <span
-        className={cn(
-          "text-xs",
-          length > maxLength ? "text-destructive" : "text-muted-foreground",
-        )}
-      >
-        {length}/{maxLength}
-      </span>
-    </div>
-  )
-}
 
 export function TextProp({
   propKey,

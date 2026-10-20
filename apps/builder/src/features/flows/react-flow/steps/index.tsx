@@ -18,6 +18,7 @@ import { archiveConversationStep } from "./archive-conversation"
 import { assignConversationStep } from "./assign-conversation"
 import { autoAssignConversationStep } from "./auto-assign-conversation"
 import { blockContactStep } from "./block-contact"
+import { changeGamificationScoreStep } from "./change-gamification-score"
 import { chooseChannelStep } from "./choose-channel"
 import { clearCustomFieldStep } from "./clear-custom-field"
 import { conditionStep } from "./condition"
@@ -31,6 +32,7 @@ import { dripSubscribeSubscriberStep } from "./drip-subscribe-subscriber"
 import emailStep from "./email"
 import { enableBotStep } from "./enable-bot"
 import { enableMessengerComposerStep } from "./enable-messenger-composer"
+import { evaluateDecisionStep } from "./evaluate-decision"
 import { executeJavascriptStep } from "./execute-javascript"
 import { externalRequestStep } from "./external-request"
 import { facebookCustomAudienceStep } from "./facebook-custom-audience"
@@ -49,6 +51,7 @@ import { markConversationAsReadStep } from "./mark-conversation-as-read"
 import { markConversationAsUnreadStep } from "./mark-conversation-as-unread"
 import { markEmailVerifiedStep } from "./mark-email-verified"
 import { moosendCreateContactStep } from "./moosend-create-contact"
+import { openMiniAppStep } from "./open-mini-app"
 import { openWebsiteStep } from "./open-website"
 import { optInEmailStep } from "./opt-in-email"
 import { optOutEmailStep } from "./opt-out-email"
@@ -63,8 +66,10 @@ import sendImageStep from "./send-image"
 import sendMessengerTemplateMessageStep from "./send-messenger-template-message"
 import { sendMetaCapiEventStep } from "./send-meta-capi-event"
 import sendMultipleImagesStep from "./send-multiple-images"
+import sendProductsStep from "./send-products"
 import sendTextStep from "./send-text"
 import { sendVideoStep } from "./send-video"
+import sendViewCatalogStep from "./send-view-catalog"
 import sendWaTemplateMessageStep from "./send-wa-template-message"
 import { sendGridAddContactStep } from "./sendgrid-add-contact"
 import { setCustomFieldStep } from "./set-custom-field"
@@ -93,6 +98,7 @@ import { updateMessengerContactDataStep } from "./update-messenger-contact-data"
 import { waitStep } from "./wait"
 import whatsappCallButtonStep from "./whatsapp-call-button"
 import whatsappFlowStep from "./whatsapp-flow"
+import whatsappLocationStep from "./whatsapp-location"
 import whatsappOptionListStep from "./whatsapp-option-list"
 
 // biome-ignore lint/suspicious/noExplicitAny: wip
@@ -104,6 +110,7 @@ export const allSteps: Record<StepType, StepDefinition<any> | undefined> = {
   [stepTypes.enum.sendCarousel]: sendCarouselStep,
   [stepTypes.enum.getUserData]: getUserDataStep,
   [stepTypes.enum.sendVideo]: sendVideoStep,
+  [stepTypes.enum.sendViewCatalog]: sendViewCatalogStep,
   [stepTypes.enum.sendWaTemplateMessage]: sendWaTemplateMessageStep,
   [stepTypes.enum.sendGif]: sendGifStep,
   [stepTypes.enum.setDebounce]: undefined,
@@ -161,6 +168,7 @@ export const allSteps: Record<StepType, StepDefinition<any> | undefined> = {
   [stepTypes.enum.followUp]: followUpStep,
   [stepTypes.enum.performAction]: undefined,
   [stepTypes.enum.openWebsite]: openWebsiteStep,
+  [stepTypes.enum.openMiniApp]: openMiniAppStep,
   [stepTypes.enum.setCustomField]: setCustomFieldStep,
   [stepTypes.enum.clearCustomField]: clearCustomFieldStep,
   [stepTypes.enum.landingPage]: undefined,
@@ -173,6 +181,7 @@ export const allSteps: Record<StepType, StepDefinition<any> | undefined> = {
   [stepTypes.enum.questionnaires]: questionnairesStep,
   [stepTypes.enum.setUpCoupon]: setUpCouponStep,
   [stepTypes.enum.markCouponUsed]: markCouponUsedStep,
+  [stepTypes.enum.changeGamificationScore]: changeGamificationScoreStep,
   [stepTypes.enum.condition]: conditionStep,
   [stepTypes.enum.addNotes]: addNotesStep,
   [stepTypes.enum.waitUserReply]: undefined,
@@ -196,12 +205,15 @@ export const allSteps: Record<StepType, StepDefinition<any> | undefined> = {
   [stepTypes.enum.whatsappOptionList]: whatsappOptionListStep,
   [stepTypes.enum.whatsappCallButton]: whatsappCallButtonStep,
   [stepTypes.enum.whatsappFlow]: whatsappFlowStep,
+  [stepTypes.enum.sendProducts]: sendProductsStep,
+  [stepTypes.enum.whatsappLocation]: whatsappLocationStep,
   [stepTypes.enum.setMessengerUserPersistentMenu]:
     setMessengerUserPersistentMenuStep,
   [stepTypes.enum.enableMessengerComposer]: enableMessengerComposerStep,
   [stepTypes.enum.disableMessengerComposer]: disableMessengerComposerStep,
   [stepTypes.enum.setMessengerPersona]: setMessengerPersonaStep,
   [stepTypes.enum.updateMessengerContactData]: updateMessengerContactDataStep,
+  [stepTypes.enum.evaluateDecision]: evaluateDecisionStep,
 }
 
 export const DynamicStepEditor = memo(

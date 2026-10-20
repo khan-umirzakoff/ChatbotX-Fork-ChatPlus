@@ -16,6 +16,8 @@ export type ContactFilterConditionInput = {
   valueType?: string
   /** Present for dynamic coupon-topic conditions (`field === "couponTopic"`). */
   topicId?: string
+  /** Present for "Gamification scores" conditions (`field === "leaderboardScore"`). */
+  leaderboardId?: string
   /** Present for `field === "ctwaRetarget"` conditions. */
   segment?: string
   /** Present for `field === "ctwaRetarget"` conditions. */
@@ -50,6 +52,11 @@ export type ContactFilterCriteriaInput = {
    * absent or unrecognized. See {@link ./timezone.resolveFilterTimezone}.
    */
   timezone?: string
+  /**
+   * IANA zone `isWithinWorkingHours` is evaluated in (the workspace timezone,
+   * resolved by the caller). Defaults to UTC.
+   */
+  workingHoursTimezone?: string
 }
 
 export type ContactWhere = Record<string, unknown>

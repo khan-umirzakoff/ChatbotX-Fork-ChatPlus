@@ -19,6 +19,7 @@ const {
   mockCancelStale,
   mockClearStale,
   mockLoggerWarn,
+  mockEnqueueSync,
 } = vi.hoisted(() => {
   const mockTxInsertValues = vi.fn().mockResolvedValue(undefined)
   const mockTxInsert = vi.fn().mockReturnValue({ values: mockTxInsertValues })
@@ -39,6 +40,7 @@ const {
     mockCancelStale: vi.fn().mockResolvedValue(0),
     mockClearStale: vi.fn().mockResolvedValue(0),
     mockLoggerWarn: vi.fn(),
+    mockEnqueueSync: vi.fn().mockResolvedValue(undefined),
   }
 })
 
@@ -53,7 +55,8 @@ vi.mock("@chatbotx.io/database/client", () => ({
   desc: (...args: unknown[]) => ({ desc: args }),
 }))
 
-vi.mock("@chatbotx.io/database/schema", () => ({
+vi.mock("@chatbotx.io/database/schema", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@chatbotx.io/database/schema")>()),
   flowModel: { id: "flowModel.id" },
   flowVersionModel: {
     id: "flowVersionModel.id",
@@ -62,7 +65,8 @@ vi.mock("@chatbotx.io/database/schema", () => ({
   },
 }))
 
-vi.mock("@chatbotx.io/redis", () => ({
+vi.mock("@chatbotx.io/redis", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@chatbotx.io/redis")>()),
   withCache: (_key: string, fn: () => Promise<unknown>): Promise<unknown> =>
     fn(),
   invalidateCacheByTags: mockInvalidateCacheTags,
@@ -73,7 +77,8 @@ vi.mock("@chatbotx.io/utils", async (importOriginal) => ({
   createId: mockCreateId,
 }))
 
-vi.mock("../src/errors", () => ({
+vi.mock("../src/errors", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/errors")>()),
   notFoundException: (message: string) => new Error(message),
 }))
 
@@ -95,6 +100,10 @@ vi.mock("../src/logger", () => ({
 
 vi.mock("../src/audit/dispatcher", () => ({
   dispatchAuditRecord: mockDispatchAuditRecord,
+}))
+
+vi.mock("../src/messenger-welcome-message-flow/service", () => ({
+  messengerWelcomeMessageFlowService: { enqueueSync: mockEnqueueSync },
 }))
 
 const { flowVersionService } = await import("../src/flow-version/service")
@@ -179,6 +188,44 @@ describe("flowVersionService.publish", () => {
     })
   })
 
+  test("enqueues a welcome message flow sync after the transaction commits", async () => {
+    mockFlowFindFirst.mockResolvedValue({
+      id: "flow-1",
+      workspaceId: "ws-1",
+      flowVersions: [{ id: "draft-1", startNodeId: "node-1" }],
+    })
+    mockCreateId
+      .mockReturnValueOnce("1")
+      .mockReturnValueOnce("2")
+      .mockReturnValueOnce("3")
+      .mockReturnValueOnce("4")
+      .mockReturnValue("5")
+    mockDbTransaction.mockImplementation(
+      async (
+        fn: (tx: {
+          insert: typeof mockTxInsert
+          update: typeof mockTxUpdate
+        }) => Promise<unknown>,
+      ) => fn({ insert: mockTxInsert, update: mockTxUpdate }),
+    )
+
+    await flowVersionService.publish({
+      workspaceId: "ws-1",
+      flowId: "flow-1",
+      nodes: [sendMessageNodeDefaultFn({})],
+      edges: [],
+    })
+
+    expect(mockEnqueueSync).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      flowId: "flow-1",
+      reason: "publish",
+    })
+    expect(mockDbTransaction.mock.invocationCallOrder[0]).toBeLessThan(
+      mockEnqueueSync.mock.invocationCallOrder[0],
+    )
+  })
+
   test("rejects a channel-incompatible graph before reading or mutating the flow", async () => {
     mockCreateId.mockReturnValue("1")
     const node = sendMessageNodeDefaultFn({})
@@ -211,6 +258,39 @@ describe("flowVersionService.publish", () => {
     ).rejects.toMatchObject({ name: "FlowAuthoringException" })
 
     expect(mockDbTransaction).not.toHaveBeenCalled()
+  })
+
+  test("restore enqueues a welcome message flow sync for the restored version", async () => {
+    mockCreateId
+      .mockReturnValueOnce("1")
+      .mockReturnValueOnce("2")
+      .mockReturnValueOnce("3")
+      .mockReturnValueOnce("4")
+      .mockReturnValue("5")
+    mockDbTransaction.mockImplementation(
+      async (fn: (tx: unknown) => Promise<unknown>) =>
+        fn({ insert: mockTxInsert, update: mockTxUpdate }),
+    )
+
+    await flowVersionService.restore({
+      version: {
+        id: "9",
+        flowId: "flow-1",
+        workspaceId: "ws-1",
+        nodes: [sendMessageNodeDefaultFn({})],
+        edges: [],
+        startNodeId: "1",
+      } as never,
+    })
+
+    expect(mockEnqueueSync).toHaveBeenCalledWith({
+      workspaceId: "ws-1",
+      flowId: "flow-1",
+      reason: "publish",
+    })
+    expect(mockDbTransaction.mock.invocationCallOrder[0]).toBeLessThan(
+      mockEnqueueSync.mock.invocationCallOrder[0],
+    )
   })
 
   test("clears stale quick reply state for the new version without failing publish when cleanup rejects", async () => {

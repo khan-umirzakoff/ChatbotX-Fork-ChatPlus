@@ -1,7 +1,7 @@
 import {
+  agentResponseAnalyticsService,
   botMessageAnalyticsService,
   broadcastAnalyticsService,
-  type ContactsByDimension,
   commentAutomationAnalyticsService,
   contactAnalyticsService,
   conversationAnalyticsService,
@@ -12,7 +12,12 @@ import {
   refLinkAnalyticsService,
   sequenceAnalyticsService,
 } from "@chatbotx.io/analytics"
-import { flowService, smartDelayService } from "@chatbotx.io/business"
+import { analyticsTimeRangeCacheKey } from "@chatbotx.io/analytics/schemas"
+import {
+  flowService,
+  inboxService,
+  smartDelayService,
+} from "@chatbotx.io/business"
 import { notFoundException } from "@chatbotx.io/business/errors"
 import type { FlowNode } from "@chatbotx.io/flow-config"
 import { invalidateCacheByTags, withCache } from "@chatbotx.io/redis"
@@ -26,6 +31,7 @@ import {
 } from "@/lib/orpc/orpc-error-helper"
 import { workspaceTokenAuthAPIForScope } from "@/orpc"
 import {
+  agentResponseSeriesPublicResponse,
   botMessagesAIProvidersPublicResponse,
   botMessagesPublicResponse,
   broadcastStatsPublicRequest,
@@ -44,6 +50,7 @@ import {
   conversationAssignedPublicResponse,
   conversationFollowUpsPublicResponse,
   conversationHandoffsPublicResponse,
+  filterOptionsPublicResponse,
   flowSmartDelayStatsPublicResponse,
   flowStatsPublicRequest,
   flowStatsPublicResponse,
@@ -67,19 +74,6 @@ import { commentAutomationAnalyticsPublicRouter } from "./public-comment-automat
 
 const workspaceTokenAuthAPI = workspaceTokenAuthAPIForScope("analytics")
 
-// Mirrors the internal `timeRangeKey` helper in
-// `packages/analytics-nextjs/src/routes/contact.ts` (not exported from that
-// package) so the public and internal surfaces share the same cache entries
-// for identical inputs.
-const timeRangeKey = (
-  route: string,
-  workspaceId: string,
-  from: Date,
-  to: Date,
-  timezone: string,
-) =>
-  `analytics:${route}:${workspaceId}:${from.toISOString()}:${to.toISOString()}:${timezone}`
-
 const flowStatsCacheTag = (flowId: string) => `flow-stats:${flowId}`
 const flowStatsCacheKey = (workspaceId: string, flowId: string) =>
   `flow:stats:${workspaceId}:${flowId}`
@@ -98,6 +92,24 @@ const toLinkContact = (
 })
 
 export const analyticsPublicRouter = {
+  filterOptions: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/filter-options",
+      summary: "List analytics filter options",
+      description:
+        "Lists the workspace's connected inboxes with their channel. Use the returned `id` values as `inboxIds` and the `channel` values as `channels` on any `analytics.*` call to narrow it; omit both for all channels and inboxes. Disconnected inboxes are not listed; their events still count when `inboxIds` is omitted. Events recorded before inbox tracking existed carry no inbox, and older bot-message and conversation events carry no channel either, so those are only counted without the matching filter. Omitting both filters always counts everything.",
+      tags: ["Analytics"],
+    })
+    .output(filterOptionsPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context }) => {
+      const data = await inboxService.listAnalyticsFilterOptions(
+        context.workspace.id,
+      )
+      return { data }
+    }),
+
   contactCountsPerDay: workspaceTokenAuthAPI
     .route({
       method: "GET",
@@ -175,13 +187,10 @@ export const analyticsPublicRouter = {
     .handler(({ context, input }) => {
       const workspaceId = context.workspace.id
       return withCache(
-        timeRangeKey(
-          "blocked-contacts-count",
+        analyticsTimeRangeCacheKey("blocked-contacts-count", {
+          ...input,
           workspaceId,
-          input.from,
-          input.to,
-          input.timezone,
-        ),
+        }),
         async () => {
           const count = await contactAnalyticsService.getBlockedContactsCount({
             ...input,
@@ -208,13 +217,10 @@ export const analyticsPublicRouter = {
     .handler(({ context, input }) => {
       const workspaceId = context.workspace.id
       return withCache(
-        timeRangeKey(
-          "new-contacts-count",
+        analyticsTimeRangeCacheKey("new-contacts-count", {
+          ...input,
           workspaceId,
-          input.from,
-          input.to,
-          input.timezone,
-        ),
+        }),
         async () => {
           const count = await contactAnalyticsService.getNewContactsCount({
             ...input,
@@ -241,13 +247,7 @@ export const analyticsPublicRouter = {
     .handler(({ context, input }) => {
       const workspaceId = context.workspace.id
       return withCache(
-        timeRangeKey(
-          "contacts-count",
-          workspaceId,
-          input.from,
-          input.to,
-          input.timezone,
-        ),
+        analyticsTimeRangeCacheKey("contacts-count", { ...input, workspaceId }),
         async () => {
           const count = await contactAnalyticsService.getContactsCount({
             ...input,
@@ -274,13 +274,10 @@ export const analyticsPublicRouter = {
     .handler(({ context, input }) => {
       const workspaceId = context.workspace.id
       return withCache(
-        timeRangeKey(
-          "active-contacts-count",
+        analyticsTimeRangeCacheKey("active-contacts-count", {
+          ...input,
           workspaceId,
-          input.from,
-          input.to,
-          input.timezone,
-        ),
+        }),
         async () => {
           const count =
             await macAnalyticsService.getActiveContactsByWorkspaceForRange({
@@ -299,7 +296,7 @@ export const analyticsPublicRouter = {
       path: "/v1/analytics/contacts-by-dimension",
       summary: "Get contacts by dimension",
       description:
-        "Use this for a breakdown of contacts by channel, country, or source. Groups contact counts by country, channel, or source over a time range. Set `dimension` to choose the grouping.",
+        "Use this for a breakdown of contacts by channel, source, language, or country. Set `dimension` to choose the grouping. `language` groups by the contact language recorded when the contact was created (contacts without one are omitted). With `metric` `new` (default) it counts contacts created between `from` and `to`. With `metric` `total` it counts the contacts that exist as of `to` (`from` is ignored; only `channel` and `source`). Narrow every analytics call with `channels` and `inboxIds`; the ids come from `analytics.filterOptions`.",
       tags: ["Analytics"],
     })
     .input(contactsByDimensionPublicRequest)
@@ -307,21 +304,7 @@ export const analyticsPublicRouter = {
     .errors(possibleErrorsOnListingResource)
     .handler(async ({ context, input }) => {
       const request = { ...input, workspaceId: context.workspace.id }
-      let data: ContactsByDimension[] = []
-
-      switch (input.dimension) {
-        case "country":
-          data = await contactAnalyticsService.getContactsByCountry(request)
-          break
-        case "channel":
-          data = await contactAnalyticsService.getContactsByChannel(request)
-          break
-        case "source":
-          data = await contactAnalyticsService.getContactsBySource(request)
-          break
-        default:
-          data = []
-      }
+      const data = await contactAnalyticsService.getContactsByDimension(request)
 
       return { data }
     }),
@@ -352,7 +335,7 @@ export const analyticsPublicRouter = {
       path: "/v1/analytics/human-agent-stats",
       summary: "Get human agent statistics",
       description:
-        "Returns volume statistics per human agent over a requested time range: messages sent, unique contacts messaged and conversations assigned. It has no response-time metric.",
+        "Returns statistics per current workspace member (agents who left the workspace are omitted) over a requested time range: messages sent, unique contacts messaged, conversations assigned, and response times. Response-time fields are in SECONDS, rounded to whole seconds: `avgResponseSeconds` (every human reply to a customer message), `avgFirstResponseSeconds` (only the first human reply in a conversation, i.e. the first reply after the customer's message when no human had yet replied), and `avgWorkingResponseSeconds` / `avgWorkingFirstResponseSeconds`, which count only the time that falls within the replying agent's working-hours schedule (outside-hours waiting is excluded; null when the agent has no schedule). An average is `null` (not 0) when the agent has no matching replies in the range; `responseCount` and `firstResponseCount` give the number of replies behind the all-replies and first-response averages (0 when none). `responseSlaEligibleCount` / `responseSlaMetCount` / `responseSlaMetPercent` (and the `firstResponse…` trio) report the response SLA (`responseSla.get`): eligible = replies whose waiting window had an SLA, percent = met / eligible, `null` when none was eligible (replies without an SLA are never counted as misses). For per-day trends use `analytics.agentResponseSeries`.",
       tags: ["Analytics"],
     })
     .input(timeRangePublicRequest)
@@ -360,6 +343,26 @@ export const analyticsPublicRouter = {
     .errors(possibleErrorsOnListingResource)
     .handler(async ({ context, input }) => {
       const data = await messageAnalyticsService.getHumanAgentStats({
+        ...input,
+        workspaceId: context.workspace.id,
+      })
+      return { data }
+    }),
+
+  agentResponseSeries: workspaceTokenAuthAPI
+    .route({
+      method: "GET",
+      path: "/v1/analytics/agent-response-series",
+      summary: "Get agent response time series",
+      description:
+        "Returns human-agent response times per agent per day over a requested time range, for charting trends. One row per (agent, day) that has at least one reply; days are `YYYY-MM-DD` bucketed in the request `timezone` (IANA). `adminId` is the user id of a current workspace member: get ids, names and emails from the same agents listed by `analytics.humanAgentStats` (`adminId`); agents who left the workspace are omitted. Averages are in SECONDS, rounded to whole seconds: `avgResponseSeconds` (all replies), `avgFirstResponseSeconds` (first human reply in a conversation only), and `avgWorkingResponseSeconds` / `avgWorkingFirstResponseSeconds`, which count only time within the replying agent's working-hours schedule (null when the agent has no schedule). An average is `null` (not 0) when no matching replies exist for that agent and day; `responseCount` and `firstResponseCount` are the replies behind them. The response-SLA fields (`responseSlaMetPercent` etc., null when nothing was eligible) follow the same per-day bucketing.",
+      tags: ["Analytics"],
+    })
+    .input(timeRangePublicRequest)
+    .output(agentResponseSeriesPublicResponse)
+    .errors(possibleErrorsOnListingResource)
+    .handler(async ({ context, input }) => {
+      const data = await agentResponseAnalyticsService.getAgentResponseSeries({
         ...input,
         workspaceId: context.workspace.id,
       })

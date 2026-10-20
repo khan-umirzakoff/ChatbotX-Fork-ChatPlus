@@ -1,59 +1,37 @@
 "use server"
 
-import { ChatbotXException } from "@chatbotx.io/business/errors"
-import {
-  miniAppService,
-  miniAppSubmissionService,
-} from "@chatbotx.io/business/mini-app"
-import { verifyMiniAppToken } from "@chatbotx.io/encryption/mini-app-token"
-import { headers } from "next/headers"
-import { getTranslations } from "next-intl/server"
-import {
-  checkGuestRateLimit,
-  resolveGuestRateLimitKey,
-} from "@/lib/rate-limit/guest-rate-limit"
+import { miniAppSubmissionService } from "@chatbotx.io/business/mini-app"
 import { actionClient } from "@/lib/safe-action"
-import { loadServableWorkspace } from "@/lib/workspace/load-servable-workspace"
+import {
+  assertVisitorNotRateLimited,
+  requireServableMiniApp,
+} from "../lib/public-mini-app"
+import { resolveVisitorContactId } from "../lib/resolve-visitor-contact"
+import { resumeFlowAfterMiniAppSubmit } from "../lib/resume-flow"
 import { submitMiniAppRequest } from "../schema/action"
+
+const SUBMITS_PER_WINDOW = 10
 
 /**
  * Public (unauthenticated) submit from the Mini App runner. The contact is
  * taken only from the signed `{{mini_app_token}}`, never from the request.
+ * A Mini App opened from a flow's "Open Mini App" button also carries a signed
+ * `resume` token, which continues that flow once the submission is saved.
  */
 export const submitMiniAppAction = actionClient
   .inputSchema(submitMiniAppRequest)
   .action(async ({ parsedInput }) => {
-    const t = await getTranslations("miniApps.public")
-
-    const miniApp = await miniAppService.findUnscoped(parsedInput.miniAppId)
-    if (!miniApp?.enabled) {
-      throw new ChatbotXException(t("notFoundDescription"), "notFound", 404)
-    }
-    const { servable } = await loadServableWorkspace(miniApp.workspaceId)
-    if (!servable) {
-      throw new ChatbotXException(t("notFoundDescription"), "notFound", 404)
-    }
-
-    const payload = parsedInput.token
-      ? await verifyMiniAppToken(parsedInput.token).catch(() => null)
-      : null
-    // A token for another workspace is ignored rather than trusted.
-    const contactId =
-      payload && payload.workspaceId === miniApp.workspaceId
-        ? payload.contactId
-        : null
-
-    const rateLimit = await checkGuestRateLimit({
-      webchatId: `mini-app:${miniApp.id}`,
-      clientIp: resolveGuestRateLimitKey(
-        await headers(),
-        contactId ? `contact:${contactId}` : "anonymous",
-      ),
-      ipLimit: 10,
+    const miniApp = await requireServableMiniApp(parsedInput.miniAppId)
+    const contactId = await resolveVisitorContactId({
+      token: parsedInput.token,
+      workspaceId: miniApp.workspaceId,
     })
-    if (rateLimit.limited) {
-      throw new ChatbotXException(t("rateLimited"), "rateLimited", 429)
-    }
+    await assertVisitorNotRateLimited({
+      bucket: "mini-app",
+      miniAppId: miniApp.id,
+      contactId,
+      limit: SUBMITS_PER_WINDOW,
+    })
 
     await miniAppSubmissionService.create({
       miniApp,
@@ -61,5 +39,13 @@ export const submitMiniAppAction = actionClient
       answers: parsedInput.answers,
       sourceTimezone: parsedInput.timezone,
     })
+    if (parsedInput.resume) {
+      await resumeFlowAfterMiniAppSubmit({
+        resumeToken: parsedInput.resume,
+        miniAppId: miniApp.id,
+        workspaceId: miniApp.workspaceId,
+        contactId,
+      })
+    }
     return { success: true as const }
   })

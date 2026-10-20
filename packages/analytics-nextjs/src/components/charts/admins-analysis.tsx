@@ -7,17 +7,38 @@ import { DataTableColumnHeader } from "@chatbotx.io/ui/components/data-table/dat
 import { CardContent } from "@chatbotx.io/ui/components/ui/card"
 import { useDataTable } from "@chatbotx.io/ui/hooks/use-data-table"
 import type { ColumnDef } from "@chatbotx.io/ui/types/data-table"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { useMemo } from "react"
 import { useAnalysisStore } from "../../provider/analysis-store-context"
+import {
+  buildResponseSlaColumns,
+  buildResponseTimeColumns,
+} from "./admins-response-time-columns"
 
 type AdminsAnalysisData = HumanAgentStats
 
 export function AdminsAnalysis() {
   const t = useTranslations()
+  const locale = useLocale()
   const humanAgentStats = useAnalysisStore((state) => state.humanAgentStats)
 
   const data = useMemo(() => humanAgentStats, [humanAgentStats])
+
+  const responseTimeColumns = useMemo(
+    () => buildResponseTimeColumns(t, locale),
+    [t, locale],
+  )
+
+  // The SLA columns only appear once some reply in the range had an SLA, so a
+  // workspace without a policy keeps today's table.
+  const hasSlaData = useMemo(
+    () => data.some((row) => row.responseSlaEligibleCount > 0),
+    [data],
+  )
+  const responseSlaColumns = useMemo(
+    () => (hasSlaData ? buildResponseSlaColumns(t) : []),
+    [hasSlaData, t],
+  )
 
   const columns = useMemo<ColumnDef<AdminsAnalysisData>[]>(
     () => [
@@ -64,30 +85,8 @@ export function AdminsAnalysis() {
         enableSorting: true,
         enableHiding: false,
       },
-      // {
-      //   id: "responseTime",
-      //   accessorKey: "responseTime",
-      //   header: ({ column }) => (
-      //     <DataTableColumnHeader
-      //       column={column}
-      //       title="Avg. Response Time (mins)"
-      //     />
-      //   ),
-      //   enableSorting: true,
-      //   enableHiding: false,
-      // },
-      // {
-      //   id: "firstResponseTime",
-      //   accessorKey: "firstResponseTime",
-      //   header: ({ column }) => (
-      //     <DataTableColumnHeader
-      //       column={column}
-      //       title="Avg. First Response Time (mins)"
-      //     />
-      //   ),
-      //   enableSorting: true,
-      //   enableHiding: false,
-      // },
+      ...responseTimeColumns,
+      ...responseSlaColumns,
       {
         id: "assignedConversations",
         accessorKey: "assignedConversations",
@@ -101,13 +100,15 @@ export function AdminsAnalysis() {
         enableHiding: false,
       },
     ],
-    [t],
+    [t, responseTimeColumns, responseSlaColumns],
   )
 
   const { table } = useDataTable({
     data,
     columns,
     pageCount: 1,
+    // Rows are all in the store, so sort on the client (null sorts last).
+    manualSorting: false,
     initialState: {
       sorting: [{ id: "messagesSent", desc: true }],
       columnPinning: { right: ["actions"] },

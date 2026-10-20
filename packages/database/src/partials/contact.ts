@@ -10,6 +10,7 @@ export const contactSources = z.enum([
   "imported",
   "api",
   "direct",
+  "inboundWebhook",
 ])
 export type ContactSource = z.infer<typeof contactSources>
 
@@ -91,6 +92,8 @@ export const systemFieldTypes = z.enum([
   "user_hash",
   "minigame_play_token",
   "mini_app_token",
+  "leaderboard_view_token",
+  "referral_name",
   "user_tags",
   "user_external_id",
   "user_source",
@@ -241,6 +244,7 @@ export const contactFilterFields = z.enum([
   "questionnaireInProgress",
   "questionnaireFinished",
   "couponTopic",
+  "leaderboardScore",
   "votedOnPoll",
   "lastComment",
   "commentedOnPost",

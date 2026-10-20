@@ -29,9 +29,11 @@ import {
   type ContactFilterFieldDefinition,
   type ContactFilterOptionSource,
   type ContactFilterSchemaKind,
+  type ContactFilterSurface,
   type CtwaRetargetCondition,
   type CtwaRetargetSegment,
   convertCustomFieldTypeToConditionType,
+  isFieldOnSurface,
 } from "../schema"
 import type { ResolveFilterValueLabelsResponse } from "../schema/value-labels"
 
@@ -56,6 +58,8 @@ export type FieldConfig = {
   botFieldId?: string
   /** Set for dynamic coupon-topic configs; identifies the workspace coupon topic. */
   topicId?: string
+  /** Set for dynamic "Gamification scores" configs; identifies the leaderboard. */
+  leaderboardId?: string
   /** Display label override (custom field / coupon topic name); static fields fall back to i18n. */
   label?: string
   formField: FormFieldType
@@ -93,6 +97,7 @@ export type ContactFilterFieldGroup =
   | "ecommerce"
   | "systemFields"
   | "topicCoupon"
+  | "leaderboard"
   | "customFields"
   | "botFields"
   | "ctwaAds"
@@ -226,6 +231,7 @@ const resolveContactFilterOptions = (
     reflinkOptions: SelectOption[]
     assigneeOptions: SelectOption[]
     channelPostOptions: SelectOption[]
+    workingHourOptions: SelectOption[]
   },
 ): SelectOption[] | undefined => {
   switch (optionSource) {
@@ -272,6 +278,8 @@ const resolveContactFilterOptions = (
       return ctx.assigneeOptions
     case "channelPosts":
       return ctx.channelPostOptions
+    case "workingHours":
+      return ctx.workingHourOptions
     case "ctwaConversionTypes":
       return [
         {
@@ -305,7 +313,6 @@ const CONTACT_FILTER_GROUP_FIELDS = {
     "followerCountOnInstagram",
   ],
   analytics: [
-    "tags",
     "lastSent",
     "lastDelivered",
     "lastSeen",
@@ -315,6 +322,7 @@ const CONTACT_FILTER_GROUP_FIELDS = {
     "unreplied",
     "unread",
     "appliedJobs",
+    "tags",
     "completedWhatsAppFlows",
     "messengerList",
     "subscribedToDripCampaign",
@@ -378,6 +386,9 @@ const CONTACT_FILTER_GROUP_FIELDS = {
   // Populated dynamically — each coupon topic gets its own FieldConfig with
   // group "topicCoupon" set directly (see couponTopicConfigs below).
   topicCoupon: [],
+  // Populated dynamically — each leaderboard gets its own FieldConfig with
+  // group "leaderboard" set directly (see leaderboardConfigs below).
+  leaderboard: [],
   customFields: ["customFields"],
   // Populated dynamically (opt-in only — see `getFieldConfigs`'s
   // `includeBotFields`) — each workspace bot field gets its own FieldConfig
@@ -419,9 +430,12 @@ export const getFieldConfigs = ({
   reflinkOptions = [],
   assigneeOptions = [],
   channelPostOptions = [],
+  workingHourOptions = [],
   couponTopicOptions = [],
+  leaderboardOptions = [],
   botFields = [],
   includeBotFields = false,
+  surface = "contacts",
   filterValueLabels,
 }: {
   t: (key: string) => string
@@ -434,7 +448,11 @@ export const getFieldConfigs = ({
   reflinkOptions?: SelectOption[]
   assigneeOptions?: SelectOption[]
   channelPostOptions?: SelectOption[]
+  /** Schedules (+ the assigned-agent choice) for the flow-only working-hours field. */
+  workingHourOptions?: SelectOption[]
   couponTopicOptions?: SelectOption[]
+  /** Workspace leaderboards, each offered as a "Gamification scores" field. */
+  leaderboardOptions?: SelectOption[]
   /** Workspace bot (account) fields — only read when `includeBotFields` is true. */
   botFields?: CustomFieldFilterOption[]
   /**
@@ -446,6 +464,8 @@ export const getFieldConfigs = ({
    * fields alongside per-contact ones.
    */
   includeBotFields?: boolean
+  /** Which surface the configs are for; fields limited to another surface are left out. */
+  surface?: ContactFilterSurface
   /** Names for the ids the current filter references; `undefined` until loaded. */
   filterValueLabels?: ResolveFilterValueLabelsResponse
 }): FieldConfig[] => {
@@ -467,35 +487,36 @@ export const getFieldConfigs = ({
     }
   }
 
-  const staticConfigs: FieldConfig[] = CONTACT_FILTER_FIELD_DEFINITIONS.map(
-    (def: ContactFilterFieldDefinition) => {
-      const formField = schemaKindToFormField(def.schemaKind)
-      const options =
-        resolveContactFilterOptions(def.optionSource, {
-          t,
-          channelOptions,
-          inboxOptions,
-          tagOptions,
-          flowVersionOptions,
-          broadcastOptions,
-          sequenceOptions,
-          reflinkOptions,
-          assigneeOptions,
-          channelPostOptions,
-        }) ?? booleanOptionsFor(formField)
-      return {
-        name: def.field,
-        formField,
-        group: getContactFilterFieldGroup(def.field),
-        hidden: def.hidden,
-        optionSource: def.optionSource,
-        options,
-        valueLabels: filterValueLabels
-          ? buildFilterValueLabels(def.optionSource, filterValueLabels, options)
-          : undefined,
-      }
-    },
-  )
+  const staticConfigs: FieldConfig[] = CONTACT_FILTER_FIELD_DEFINITIONS.filter(
+    (def) => isFieldOnSurface(def, surface),
+  ).map((def: ContactFilterFieldDefinition) => {
+    const formField = schemaKindToFormField(def.schemaKind)
+    const options =
+      resolveContactFilterOptions(def.optionSource, {
+        t,
+        channelOptions,
+        inboxOptions,
+        tagOptions,
+        flowVersionOptions,
+        broadcastOptions,
+        sequenceOptions,
+        reflinkOptions,
+        assigneeOptions,
+        channelPostOptions,
+        workingHourOptions,
+      }) ?? booleanOptionsFor(formField)
+    return {
+      name: def.field,
+      formField,
+      group: getContactFilterFieldGroup(def.field),
+      hidden: def.hidden,
+      optionSource: def.optionSource,
+      options,
+      valueLabels: filterValueLabels
+        ? buildFilterValueLabels(def.optionSource, filterValueLabels, options)
+        : undefined,
+    }
+  })
 
   // Each workspace custom field becomes its own filter field, value-typed by the
   // custom field's type. Encoded as `customField:<id>` so the form/row can map
@@ -519,6 +540,19 @@ export const getFieldConfigs = ({
     group: "topicCoupon",
   }))
 
+  // Each leaderboard becomes its own "Gamification scores" field, encoded as
+  // `leaderboardScore:<id>` so the form/row can map back to a
+  // `{ field: "leaderboardScore", leaderboardId }` condition.
+  const leaderboardConfigs: FieldConfig[] = leaderboardOptions.map(
+    (leaderboard) => ({
+      name: `leaderboardScore:${leaderboard.value}`,
+      leaderboardId: leaderboard.value,
+      label: leaderboard.label,
+      formField: formFieldTypes.enum.number,
+      group: "leaderboard",
+    }),
+  )
+
   // Each workspace bot field becomes its own filter field, same shape as a
   // custom-field config (`customFieldType` carries the raw type either way —
   // see the `FieldConfig` doc comment) so the row/dialog UI can reuse the
@@ -537,6 +571,7 @@ export const getFieldConfigs = ({
     ...customFieldConfigs,
     ...botFieldConfigs,
     ...couponTopicConfigs,
+    ...leaderboardConfigs,
   ]
 }
 

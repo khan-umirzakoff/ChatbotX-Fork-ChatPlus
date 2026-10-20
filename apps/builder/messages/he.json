@@ -1,5 +1,6 @@
 {
   "actions": {
+    "scrollToBottom": "גלול למטה",
     "retry": "נסה שוב",
     "copy": "העתקה",
     "copyUrl": "העתקת כתובת URL",
@@ -154,7 +155,9 @@
     "schedule": "Schedule",
     "moveToDraft": "Move to draft",
     "stop": "Stop",
-    "resume": "Resume"
+    "resume": "Resume",
+    "viewRuns": "הצג הרצות",
+    "editSchedule": "ערוך לוח זמנים"
   },
   "errors": {
     "superAdminRequired": "עליכם להיות מנהל-על של סביבת העבודה כדי לבצע פעולה זו."
@@ -215,6 +218,13 @@
     "averageFirstResponseTimeByAdmin": "זמן תגובה ראשונה ממוצע לפי נציגים אנושיים (דקות)",
     "averageFirstResponseTimeByAdminHelp": "הזמן הממוצע שלוקח לנציג אנושי לספק את התגובה הראשונית להודעה של לקוח.",
     "averageResponseTimeByAdmin": "זמן תגובה ממוצע לפי נציגים אנושיים (דקות)",
+    "withinWorkingHoursHelp": "סופר רק זמן בשעות העבודה של הנציג.",
+    "withinWorkingHoursLabel": "בתוך שעות העבודה",
+    "noResponseData": "אין תגובות בתקופה זו, או שלא שויך לוח.",
+    "averageFirstResponseTimeWithinWorkingHoursByAdmin": "זמן תגובה ראשונה ממוצע בתוך שעות העבודה לפי נציגים אנושיים (דקות)",
+    "averageFirstResponseTimeWithinWorkingHoursByAdminHelp": "הזמן הממוצע בתוך שעות העבודה שלוקח לנציג אנושי לספק את התגובה הראשונה להודעת לקוח.",
+    "averageResponseTimeWithinWorkingHoursByAdmin": "זמן תגובה ממוצע בתוך שעות העבודה לפי נציגים אנושיים (דקות)",
+    "averageResponseTimeWithinWorkingHoursByAdminHelp": "הזמן הממוצע בתוך שעות העבודה שלוקח לנציג אנושי להשיב להודעת לקוח.",
     "averageDurationOfConversation": "משך שיחה ממוצע (דקות)",
     "averageDurationOfConversationHelp": "הזמן הממוצע שבו שיחה טופלה על ידי אדם לפני שהועברה לבוט.",
     "success": "הצלחה",
@@ -246,7 +256,7 @@
     "blockedConversationsHelp": "שיחות שהחשבון שלכם חסם.",
     "blockedContacts": "אנשי קשר חסומים",
     "blockedContactsHelp": "אנשי קשר שאינם מעוניינים לקבל הודעות מהחשבון שלכם",
-    "newContactsByCountry": "אנשי קשר חדשים לפי מדינה",
+    "newContactsByLanguage": "אנשי קשר חדשים לפי שפה",
     "date": "תאריך",
     "total": "סה\"כ",
     "messagesSent": "הודעות שנשלחו",
@@ -277,7 +287,19 @@
     "message": "הודעה",
     "searchByDate": "חיפוש לפי תאריך...",
     "publicReply": "תגובה פומבית",
-    "privateReply": "תגובה פרטית"
+    "privateReply": "תגובה פרטית",
+    "filters": {
+      "allChannels": "כל הערוצים",
+      "allInboxes": "כל תיבות הדואר הנכנס",
+      "searchPlaceholder": "חיפוש...",
+      "empty": "לא נמצאו תוצאות.",
+      "clear": "נקה",
+      "close": "סגור",
+      "options": "אפשרויות זמינות",
+      "remove": "הסר",
+      "filterHint": "מסננים סופרים רק אירועים שנרשמו אחרי הוספת הסינון: לאירועים ישנים אין תיבת דואר נכנס, ולאירועי בוט ושיחה ישנים גם אין ערוץ. הכול תמיד סופר הכול.",
+      "tooManyInboxes": "בחרו עד {max} תיבות דואר נכנס, או סמנו הכול."
+    }
   },
   "flowAnalytics": {
     "nodes": {
@@ -420,6 +442,7 @@
       "noFlowsAvailable": "אין תהליכים זמינים",
       "setCustomField": "הגדרת שדה מותאם אישית",
       "startAnotherNode": "הפעלת צומת אחר",
+      "openMiniApp": "פתיחת מיני אפליקציה",
       "startExternalFlow": "הפעלת תהליך חיצוני",
       "startExternalNode": "הפעלת צומת חיצוני",
       "startFlow": "הפעלת תהליך",
@@ -457,9 +480,13 @@
       "importStarted": "הזרימה בתהליך ייבוא. בדקו את היסטוריית הייבוא לתוצאות.",
       "importJsonOnly": "קבצי JSON בלבד",
       "whatsappCallButton": "התקשרות בוואטסאפ",
+      "whatsappLocation": "מיקום",
       "metaConversions": "Meta Conversions API",
       "threadControl": "שליטה בשרשור",
-      "sendGoogleAdsConversion": "שליחת המרה של Google Ads"
+      "sendGoogleAdsConversion": "שליחת המרה של Google Ads",
+      "changeGamificationScore": "שינוי נקודות משחוק",
+      "sendViewCatalog": "הצגת קטלוג",
+      "sendProducts": "שליחת מוצרים"
     },
     "splitTraffic": {
       "balanceHint": "הסכום הכולל חייב להיות 100%.",
@@ -579,12 +606,75 @@
     "whatsappCallButton": {
       "editButtonTitle": "עריכת כפתור",
       "buttonLabel": "תווית כפתור"
+    },
+    "changeGamificationScore": {
+      "leaderboard": "טבלת מובילים",
+      "operation": "פעולה",
+      "add": "הוספת נקודות (+)",
+      "subtract": "הפחתת נקודות (−)",
+      "points": "נקודות",
+      "targetUser": "נקודות המשתמש",
+      "targetReferrer": "נקודות הממליץ",
+      "targetReferrerHint": "שנה גם את הנקודות של מי שהפנה את איש הקשר הזה.",
+      "summary": "{points} נק׳ ב־{leaderboard}"
+    },
+    "whatsappLocation": {
+      "title": "מיקום",
+      "name": "שם",
+      "address": "כתובת",
+      "latitude": "קו רוחב",
+      "longitude": "קו אורך",
+      "setLocation": "הגדרת מיקום",
+      "errors": {
+        "tooLong": "עד 1000 תווים.",
+        "invalidLatitude": "הזינו קו רוחב בין ‎-90 ל-90.",
+        "invalidLongitude": "הזינו קו אורך בין ‎-180 ל-180.",
+        "locationRequired": "הזינו את קואורדינטות המיקום."
+      }
+    },
+    "sendViewCatalog": {
+      "footerLabel": "כותרת תחתונה",
+      "thumbnailLabel": "מוצר לתמונה ממוזערת"
+    },
+    "sendProducts": {
+      "description": "בחרו את המוצרים לשליחה ואת אופן התצוגה שלהם.",
+      "display": "תצוגה",
+      "displays": {
+        "products": "מוצרים",
+        "carousel": "קרוסלה"
+      },
+      "products": "מוצרים",
+      "selectProducts": "בחירת מוצרים",
+      "searchProducts": "חיפוש מוצרים",
+      "noProducts": "לא נמצאו מוצרים.",
+      "loading": "טוען...",
+      "loadError": "לא ניתן לטעון את המוצרים.",
+      "retry": "נסו שוב",
+      "catalogNotConnected": "חברו וסנכרנו קטלוג Meta כדי לשלוח מוצרים.",
+      "openProducts": "פתיחת מוצרים",
+      "channelUnsupported": "ערוץ זה אינו יכול לשלוח מוצרים.",
+      "unavailableProduct": "מוצר לא זמין",
+      "removeProduct": "הסרת מוצר",
+      "removeSection": "הסרת מקטע",
+      "moreOptions": "אפשרויות נוספות",
+      "fewerOptions": "פחות אפשרויות",
+      "header": "כותרת",
+      "body": "גוף ההודעה",
+      "footer": "כותרת תחתונה",
+      "sectionTitle": "כותרת המקטע",
+      "addSection": "הוספת מקטע",
+      "productCount": "{count} / {max} מוצרים",
+      "productsSelected": "{count, plural, one {מוצר #} other {# מוצרים}}",
+      "noneSelected": "עדיין אין מוצרים",
+      "sendFailed": "לא ניתן היה לשלוח את המוצרים."
     }
   },
   "folders": {
-    "heading": {
-      "title": "תיקיות"
-    }
+    "rootOption": "-- ראשי --",
+    "showMore": "+{count}",
+    "showLess": "הצג פחות",
+    "root": "ראשי",
+    "viewingFolder": "מוצגת תיקייה: {name}"
   },
   "gemini": {
     "autoReply": {
@@ -1400,6 +1490,7 @@
       "permissionRequired": "עליך להיות מנהל-על כדי לשנות את גישת התמיכה של הפלטפורמה.",
       "enabledToast": "גישת תמיכה של הפלטפורמה הופעלה.",
       "disabledToast": "גישת תמיכה של הפלטפורמה כובתה.",
+      "consentDisabled": "Platform support access is available to platform administrators without this setting.",
       "toggleError": "משהו השתבש. נסה שוב."
     }
   },
@@ -1434,6 +1525,8 @@
     "failed": "נכשל",
     "copiedToClipboard": "הועתק ללוח",
     "messengerAdsJsonDescription": "תצטרכו ליצור קוד JSON חדש רק אם תבצעו שינויים בשלב ההתחלה. שינויים בשלבים אחרים לא ישפיעו על קוד JSON זה.",
+    "welcomeMessageFlowIdsTitle": "מזהי תהליכי הודעת פתיחה",
+    "welcomeMessageFlowIdsDescription": "מסונכרן לכל דף פייסבוק בעת פרסום. בחרו אותו תחת אפליקציית שותף במנהל המודעות.",
     "messengerAdsNotPublished": "פרסמו את תוכן התהליך ונסו שוב.",
     "messengerAdsNoStartNode": "לתהליך זה אין שלב התחלה תקין. פתחו את התהליך, הגדירו שלב שליחת הודעה כשלב התחלה, לאחר מכן פרסמו ונסו שוב.",
     "messengerAdsError": "אירעה שגיאה בעת יצירת ה-JSON. נסו שוב.",
@@ -1546,6 +1639,7 @@
     "whatsappFlowIncomplete": "פתחו את הכפתור ובחרו WhatsApp Flow ואת מסך הפתיחה שלו.",
     "whatsappCarouselButtonsMismatch": "בוואטסאפ, קרוסלה חייבת לכלול את אותם כפתורים בכל כרטיס: או כפתור קישור יחיד בכל כרטיס, או אותו מספר כפתורי תשובה בכל כרטיס",
     "whatsappCarouselLinkButtonNotAlone": "בוואטסאפ, כרטיס קרוסלה עם כפתור קישור לא יכול לכלול כפתורים נוספים. הסר את הכפתורים הנוספים בכרטיס הזה, או שנה את כפתור הקישור לפעולה אחרת.",
+    "templateButtonOpenMiniAppUnsupported": "כפתורי תבנית אינם יכולים לפתוח מיני אפליקציה. בחרו פעולה אחרת לכפתור זה.",
     "duplicateNodeError": "לא ניתן היה לשכפל את הבלוק. נסו שוב.",
     "deleteNodeError": "לא ניתן היה למחוק את הבלוק. נסו שוב.",
     "redoHistoryCleared": "היסטוריית הביצוע מחדש נוקתה",
@@ -1584,7 +1678,33 @@
       "labelsUnavailable": "לא ניתן לטעון את שאלות ה-Flow, לכן מוצגים שמות השדות.",
       "yes": "כן",
       "no": "לא"
-    }
+    },
+    "sendViewCatalogBodyTooLong": "טקסט ההודעה ארוך מדי להודעת קטלוג. קצרו אותו.",
+    "sendViewCatalogFooterTooLong": "הכותרת התחתונה ארוכה מדי להודעת קטלוג. קצרו אותה.",
+    "viewCatalog": "צפייה בקטלוג",
+    "sendProductsDisplayUnsupported": "ערוץ זה אינו יכול לשלוח סוג זה של הודעת מוצר.",
+    "sendProductsFieldRequired": "שדה זה הוא חובה.",
+    "sendProductsFieldNotAllowed": "לא ניתן להשתמש בשדה זה כאן.",
+    "sendProductsFieldTooLong": "הטקסט ארוך מדי.",
+    "sendProductsProductCountOutOfRange": "בחרו מספר מוצרים תקין.",
+    "sendProductsSectionCountOutOfRange": "יש יותר מדי מקטעים.",
+    "sendProductsDuplicateProduct": "מוצר יכול להופיע רק פעם אחת.",
+    "inboundOrder": {
+      "title": "עגלת קניות",
+      "preview": "עגלת קניות ({count, plural, one {# פריט} other {# פריטים}})",
+      "note": "הערה",
+      "unresolvedProduct": "לא נמצא בקטלוג שלך"
+    },
+    "referredProduct": {
+      "askedAbout": "שאל על מוצר זה"
+    },
+    "savedReplyTextOrImageRequired": "הוסיפו טקסט או לפחות תמונה אחת",
+    "imagesNotSupportedOnChannel": "{channel} לא יכול לשלוח תמונות בשיחה הזו",
+    "tooManyImagesOnChannel": "{channel} יכול לשלוח עד {max} תמונות בשיחה הזו",
+    "savedReplyImagesRemoved": "תמונות שלא ניתן לשלוח כאן הוסרו",
+    "onlyImagesAllowed": "ניתן להוסיף תמונות בלבד",
+    "tooManySavedReplyImages": "תשובה שמורה יכולה לכלול עד {max} תמונות",
+    "savedReplyImagesNotSentHere": "התמונות לא יישלחו כאן"
   },
   "instagram": {
     "description": "שילוב זה מאפשר ליצור בוטים ל-Instagram.",
@@ -1743,6 +1863,85 @@
     },
     "title": "DeepSeek"
   },
+  "decision": {
+    "addConnection": "Add AI Router connection",
+    "advanced": "Advanced",
+    "context": "Context",
+    "discardTypeChangeDescription": "Changing the AI Router type will discard its criteria and threshold.",
+    "discardTypeChangeTitle": "Change AI Router type?",
+    "output": "Output",
+    "outputNoul": "probabilityTrue (0–1)",
+    "statement": "Statement",
+    "thresholdChoice": "Require minimum confidence",
+    "thresholdNoul": "Require minimum TRUE probability",
+    "thresholdScore": "Require score threshold",
+    "thresholds": "Confidence & thresholds",
+    "addProfile": "Add AI Router profile",
+    "globalRouter": "Global Router",
+    "globalRouterRoutesDiscarded": "גם נתיבי ה-Global Router ומיפויי המטא-נתונים יימחקו.",
+    "globalRouterDescription": "This profile becomes the workspace Global Router and replaces any previously selected Global Router.",
+    "globalRouterChooseDestination": "Choose destination",
+    "globalRouterDefaultDestination": "Default destination",
+    "globalRouterDestinationRequired": "Choose where unmatched messages should go.",
+    "globalRouterRouteDestinationRequired": "Choose a destination for this result.",
+    "globalRouterRoutes": "Route recognized results",
+    "globalRouterUsesFallback": "Uses default destination",
+    "globalRouterDestinationTypes": {
+      "flow": "Flow",
+      "aiAgent": "AI Agent",
+      "assignConversation": "Assign Conversation to an Admin"
+    },
+    "globalRouterFallbackDescription": "A default destination is required. It applies only when the Global Router is usable but evaluation has no valid result or route; unavailable connections or models use the workspace Default AI/Flow.",
+    "globalRouterFalseMaximum": "FALSE maximum probability",
+    "globalRouterMetadataMappings": "Optional result metadata mappings",
+    "globalRouterNoulDescription": "Values between the FALSE maximum and TRUE minimum use the fallback. The profile threshold does not affect Global Router Noul routing.",
+    "globalRouterRuntimeUnsupported": "This model has not been certified for AI Router runtime. You can save the configuration, but the Global Router remains inactive until certification.",
+    "globalRouterTrueMinimum": "TRUE minimum probability",
+    "flowStepDescription": "Select an active profile and map its typed results to contact custom fields.",
+    "profile": "AI Router profile",
+    "question": "Question",
+    "result": "Result",
+    "resultValues": {
+      "choice": "Choice",
+      "confidence": "Confidence",
+      "noul": "Noul",
+      "probability": "Probability",
+      "score": "Score"
+    },
+    "connection": "AI Router connection",
+    "connectionUnavailable": "AI Router connection unavailable",
+    "charactersRemaining": "{count} characters remaining",
+    "modelUnavailable": "Selected model is no longer available. Choose another model.",
+    "editProfile": "עריכת פרופיל AI Router",
+    "evaluateDecision": "AI Router",
+    "model": "Model",
+    "profileDescription": "A profile combines an AI Router connection, model and typed question contract.",
+    "profiles": "AI Router profiles",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "label": "Status"
+    },
+    "connectionDescription": "Configure a provider credential and the AI Router models it may use.",
+    "connections": "AI Router connections",
+    "connectionsDescription": "Connections are available to AI Router profiles in this workspace.",
+    "credentialKeepExisting": "Leave blank to keep the existing credential.",
+    "credentialRequired": "A provider credential is required.",
+    "defaultModel": "Default model",
+    "editConnection": "Edit AI Router connection",
+    "empty": "No AI Router connections yet.",
+    "endpoint": "Compatible endpoint",
+    "endpointDescription": "Use the provider's System One-compatible API endpoint.",
+    "modelCatalog": "Available models",
+    "modelCatalogDescription": "Enter one model ID per line, or separate model IDs with commas.",
+    "provider": "Provider",
+    "testFailed": "AI Router connection test failed.",
+    "testPassed": "AI Router connection test passed.",
+    "toolDescription": "Create reusable profiles for the AI Router flow step.",
+    "title": "AI Router",
+    "contactContext": "הקשר איש הקשר",
+    "contextProviderWarning": "ערכי שדות איש קשר שנבחרו נשלחים לספק AI Router."
+  },
   "openrouter": {
     "autoReply": {
       "description": "הפעילו מענה אוטומטי מבוסס AI באמצעות OpenRouter.",
@@ -1862,7 +2061,17 @@
     "maxItemsReached": "מותר לכל היותר {max} {feature} בכל סביבת עבודה",
     "maxCharacters": "מקסימום {max} תווים.",
     "invalidApiKey": "מפתח API לא תקין",
-    "maxMustBeGreaterThanMin": "{maxField} חייב להיות גדול או שווה ל-{minField}"
+    "maxMustBeGreaterThanMin": "{maxField} חייב להיות גדול או שווה ל-{minField}",
+    "inboundWebhook": {
+      "inboxRequired": "בחרו תיבת דואר נכנס.",
+      "inboxNotFound": "תיבת הדואר הנכנס שנבחרה לא נמצאה.",
+      "inboxDisconnected": "תיבת הדואר הנכנס שנבחרה אינה מחוברת.",
+      "unsupportedInboxIdentifier": "לא ניתן לזהות את הערוץ הזה לפי הערך הזה.",
+      "identifierRequired": "הוסיפו לפחות זהות אחת של איש קשר.",
+      "unknownFieldTarget": "שדה איש קשר ממופה כבר אינו קיים.",
+      "actionReferenceNotFound": "פעולה מפנה לתהליך, תגית או שדה שכבר אינם קיימים.",
+      "fieldMappingRequired": "הוסיפו לפחות מיפוי שדה אחד."
+    }
   },
   "webchat": {
     "chatUnavailable": "צ'אט זה אינו זמין כרגע.",
@@ -2435,7 +2644,8 @@
         "loadMoreError": "טעינת שיחות נוספות נכשלה. נסו שוב.",
         "callInformation": "פרטי השיחה"
       }
-    }
+    },
+    "credentialSecretsRequired": "הזינו את סוד האפליקציה ואת אסימון משתמש המערכת. הם עדיין לא נשמרו."
   },
   "zalo": {
     "title": "Zalo OA",
@@ -2590,6 +2800,216 @@
     "title": "קישורי קסם",
     "description": "צרו קישורים עמוקים המפנים לכתובת ה-URL שלכם עם פרמטרים של שאילתה."
   },
+  "inboundWebhooks": {
+    "title": "Webhooks נכנסים",
+    "feature": "Webhook נכנס",
+    "description": "אפשרו למערכות חיצוניות לשלוח נתונים לסביבת העבודה שלכם: מצאו או צרו איש קשר, שמרו ערכים בשדות שלו והריצו פעולות.",
+    "createDescription": "Webhook חדש מתחיל במצב לא פעיל. הגדירו אותו בעורך ואז הפעילו אותו.",
+    "deleteDescription": "מערכות שעדיין שולחות ל-URL הזה יקבלו שגיאה. לא ניתן לבטל פעולה זו.",
+    "editorDescription": "שלחו בקשת POST עם JSON ל-URL שלמטה כדי להפעיל את ה-Webhook הזה.",
+    "configure": "הגדרה",
+    "getLink": "קבלת קישור",
+    "activeToggle": "הפעלת {name}",
+    "columns": {
+      "active": "פעיל",
+      "createdAt": "נוצר",
+      "requests": "בקשות"
+    },
+    "link": {
+      "title": "כתובת URL של Webhook",
+      "description": "שלחו JSON ב-POST לכתובת URL זו. היא מכילה אסימון סודי, לכן התייחסו אליה כאל סיסמה."
+    },
+    "endpoint": {
+      "label": "כתובת URL של Webhook",
+      "show": "הצג כתובת URL",
+      "hide": "הסתר כתובת URL"
+    },
+    "regenerate": {
+      "button": "יצירה מחדש",
+      "title": "ליצור מחדש את כתובת ה-URL של ה-Webhook?",
+      "description": "כתובת ה-URL הנוכחית תפסיק לעבוד מיד. עדכנו כל מערכת ששולחת אליה.",
+      "cancel": "ביטול",
+      "confirm": "יצירה מחדש",
+      "success": "כתובת ה-URL של ה-Webhook נוצרה מחדש",
+      "failed": "לא ניתן היה ליצור מחדש את כתובת ה-URL"
+    },
+    "activation": {
+      "incomplete": "מלאו את תיבת הדואר הנכנס, לפחות שדה איש קשר אחד ולפחות מיפוי אחד, ושמרו, לפני הפעלת ה-Webhook הזה."
+    },
+    "sample": {
+      "title": "JSON לדוגמה",
+      "description": "הדביקו גוף בקשה לדוגמה כדי לעיין בשדות שלו ולהציג תצוגה מקדימה של הערכים.",
+      "load": "טעינת JSON לדוגמה",
+      "status": {
+        "loaded": "הדוגמה נטענה",
+        "invalid": "זה אינו JSON תקין",
+        "tooLarge": "הדוגמה גדולה מ-{max} KB",
+        "unsupported": "הדוגמה מכילה תווים שאינם נתמכים או שהיא מקוננת עמוק מדי"
+      },
+      "format": "עיצוב JSON"
+    },
+    "contact": {
+      "title": "מציאה או יצירה של איש קשר",
+      "description": "בחרו את תיבת הדואר הנכנס שאליה שייך איש הקשר ואיך לאתר אותו. אם אין התאמה, נוצר איש קשר חדש כשהבקשה מכילה את מה שהערוץ הזה צריך."
+    },
+    "inbox": {
+      "modeLabel": "תיבת דואר נכנס",
+      "mode": {
+        "inbox": "תיבת דואר נכנס ספציפית",
+        "payload": "מתוך ה-payload"
+      },
+      "modeDescription": {
+        "inbox": "כל בקשה משתמשת בתיבת הדואר הנכנס שבחרתם.",
+        "payload": "כל בקשה מציינת את תיבת הדואר הנכנס שלה, למשל מזהה עמוד Messenger או מזהה מספר טלפון ב-WhatsApp."
+      },
+      "inboxLabel": "תיבת דואר נכנס",
+      "inboxPlaceholder": "בחירת תיבת דואר נכנס",
+      "noInboxes": "לא נמצאה תיבת דואר נכנס מחוברת.",
+      "savedInboxMissing": "תיבת הדואר הנכנס שנשמרה אינה מחוברת עוד. בחרו אחרת.",
+      "channelLabel": "ערוץ",
+      "channelPlaceholder": "בחירת ערוץ",
+      "noPayloadChannels": "חברו תחילה ערוץ שתומך בכך.",
+      "identifierKindLabel": "מזהה תיבת דואר נכנס",
+      "identifierKindPlaceholder": "בחרו את המזהה שנשלח ב-payload",
+      "identifierPathHint": "נתיב ה-JSON של ערך זה בבקשה."
+    },
+    "identity": {
+      "hint": "מלאו לפחות אחד. איש הקשר מאותר לפי הראשון שנמצא בבקשה, בסדר הזה.",
+      "phone": "טלפון",
+      "email": "אימייל",
+      "channelUserId": "מזהה משתמש בערוץ",
+      "fullName": "שם מלא",
+      "creationHint": "ללא {identities} בקשה עבור איש קשר לא מוכר מדולגת. רק אנשי קשר קיימים מתעדכנים."
+    },
+    "inboxIdentifierKinds": {
+      "pageId": "מזהה עמוד Facebook",
+      "igId": "מזהה חשבון Instagram",
+      "phoneNumberId": "מזהה מספר טלפון ב-WhatsApp",
+      "displayPhoneNumber": "מספר טלפון ב-WhatsApp (פחות מדויק)",
+      "botId": "מזהה בוט Telegram",
+      "oaId": "מזהה Zalo OA",
+      "openId": "open id של חשבון TikTok",
+      "threadsUserId": "מזהה משתמש Threads"
+    },
+    "channelUserIdKinds": {
+      "psid": "Messenger PSID",
+      "igsid": "Instagram IGSID",
+      "telegramChatId": "מזהה צ'אט Telegram",
+      "zaloUserId": "מזהה משתמש Zalo",
+      "tiktokCustomerOpenId": "open id של לקוח TikTok",
+      "threadsUsername": "שם משתמש Threads",
+      "apiSourceId": "מזהה מקור איש הקשר",
+      "whatsappId": "מזהה WhatsApp (wa_id)"
+    },
+    "mappings": {
+      "title": "שמירת נתונים נכנסים",
+      "description": "העתיקו ערכים מהבקשה לשדות של איש הקשר.",
+      "empty": "עדיין לא מופו שדות.",
+      "add": "הוספת שדה",
+      "remove": "הסרת שדה",
+      "target": "שדה איש קשר",
+      "targetPlaceholder": "בחירת שדה",
+      "path": "נתיב JSON",
+      "rowTitle": "מיפוי {number}"
+    },
+    "actions": {
+      "title": "לאחר שמירת הנתונים",
+      "description": "פעולות להרצה עבור איש הקשר לאחר שמירת הנתונים."
+    },
+    "picker": {
+      "title": "עיון ב-JSON",
+      "description": "חפשו וליחצו על ערך, או הזינו JSONPath למטה",
+      "browse": "עיון",
+      "noSample": "טענו תחילה JSON לדוגמה כדי לעיין בשדות שלו.",
+      "pathLabel": "נתיב JSON",
+      "use": "שימוש בנתיב",
+      "cancel": "ביטול",
+      "result": "תוצאה:",
+      "noValue": "אין ערך",
+      "searchLabel": "חיפוש ב-JSON",
+      "searchPlaceholder": "חיפוש מפתחות, נתיבים או ערכים",
+      "noMatches": "אין מפתחות או ערכים תואמים.",
+      "moreResults": "מוצגות {count} ההתאמות הראשונות. צמצמו את החיפוש כדי לראות אחרות.",
+      "pathHint": "תומך בשמות מאפיינים ובאינדקסים של מערכים, כולל $[\"customer-data\"][\"email\"]",
+      "invalidPath": "זהו אינו JSONPath נתמך."
+    },
+    "requests": {
+      "title": "בקשות",
+      "description": "המשלוחים האחרונים שה-Webhook הזה קיבל (נשמרים למשך 30 יום).",
+      "refresh": "רענון",
+      "empty": "עדיין לא התקבלו בקשות.",
+      "previous": "העמוד הקודם",
+      "next": "העמוד הבא",
+      "pageOf": "עמוד {page} מתוך {pageCount}",
+      "contact": "איש קשר #{id}",
+      "showDetails": "הצגת פרטים",
+      "hideDetails": "הסתרת פרטים",
+      "loadingDetails": "טוען פרטים…",
+      "detailsFailed": "לא ניתן היה לטעון את הפרטים.",
+      "fieldErrors": "שדות שלא נשמרו",
+      "actionResults": "פעולות",
+      "payload": "Payload",
+      "status": {
+        "received": "התקבלה",
+        "processing": "בעיבוד",
+        "processed": "עובדה",
+        "completedWithErrors": "הסתיימה עם שגיאות",
+        "skipped": "דולגה",
+        "failed": "נכשלה"
+      },
+      "skipReason": {
+        "webhookInactive": "ה-Webhook היה לא פעיל.",
+        "missingInboxIdentifier": "הבקשה לא הכילה את מזהה תיבת הדואר הנכנס.",
+        "inboxNotFound": "אף תיבת דואר נכנס אינה תואמת למזהה בבקשה.",
+        "inboxAmbiguous": "יותר מתיבת דואר נכנס אחת תואמת למזהה בבקשה.",
+        "inboxDisconnected": "תיבת הדואר הנכנס מנותקת.",
+        "missingIdentifier": "הבקשה לא הכילה זהות של איש קשר.",
+        "workspaceBlocked": "בעל סביבת העבודה חסום.",
+        "contactNotFound": "לא נמצא איש קשר תואם, והבקשה לא הכילה את הנדרש ליצירת אחד.",
+        "contactAmbiguous": "יותר מאיש קשר אחד נושא את השם הזה בתיבה, ולכן הבקשה דולגה."
+      },
+      "fieldErrorCode": {
+        "invalidValue": "ערך לא תקין",
+        "invalidPhone": "מספר טלפון לא תקין",
+        "unknownField": "השדה כבר לא קיים"
+      },
+      "actionStatus": {
+        "succeeded": "הצליח",
+        "skipped": "דולג",
+        "failed": "נכשל"
+      },
+      "errorCode": {
+        "abandoned": "ננטש: לא עובד תוך 24 שעות"
+      },
+      "actionSkipReason": {
+        "noConversation": "לאיש הקשר אין שיחה",
+        "noContactInbox": "איש הקשר לא מחובר לתיבה זו",
+        "flowInactive": "התהליך לא פורסם",
+        "unsupportedAction": "פעולה זו אינה נתמכת כאן",
+        "unsupportedChannel": "הערוץ אינו תומך בפעולה זו",
+        "invalidAction": "הפעולה לא הוגדרה כראוי",
+        "unknownAction": "פעולה לא מוכרת",
+        "unsupportedSource": "לא נתמך עבור מקור זה"
+      }
+    },
+    "save": {
+      "invalid": "חלק מההגדרות אינן תקינות. תקן את השדות המסומנים ושמור שוב."
+    },
+    "viewAnalytics": "הצגת ניתוחים",
+    "analytics": {
+      "title": "ניתוחים",
+      "back": "חזרה ל-Webhook",
+      "totalRequests": "סך הבקשות שהתקבלו",
+      "totalRequestsHint": "כל בקשה שהתקבלה מאז יצירת ה-Webhook. כפילויות אינן נספרות. היומן שלהלן שומר את 30 הימים האחרונים."
+    },
+    "issues": {
+      "inboxRequired": "בחרו תיבת דואר נכנס.",
+      "identifierRequired": "מלאו לפחות אחד מארבעת שדות איש הקשר.",
+      "fieldMappingRequired": "הוסיפו לפחות שדה אחד תחת \"שמירת נתונים נכנסים\".",
+      "required": "שדה זה הוא חובה.",
+      "unsupportedPath": "נתיב JSON לא נתמך."
+    }
+  },
   "QRCode": {
     "title": "קוד QR",
     "description": "שתפו קוד זה כדי שאנשים יפתחו את קישור המעקב שלכם."
@@ -2620,8 +3040,8 @@
       "ticketPriorityChanged": "עדיפות הכרטיס השתנתה",
       "subscribedToSequence": "נרשם לרצף",
       "unsubscribedFromSequence": "ביטל הרשמה לרצף",
-      "WhatsappShoppingCartSent": "עגלת קניות של WhatsApp נשלחה",
-      "userAskedAboutProduct": "המשתמש שאל על מוצר",
+      "shoppingCartSent": "איש הקשר שלח עגלת קניות",
+      "userAskedAboutProduct": "איש הקשר שאל על מוצר",
       "cartAbandoned": "העגלה ננטשה",
       "newOrder": "הזמנה חדשה",
       "orderAccepted": "ההזמנה התקבלה",
@@ -2635,7 +3055,8 @@
       "contactReferredANewContact": "איש קשר הפנה איש קשר חדש",
       "contactReferredExistingContact": "איש קשר הפנה איש קשר קיים",
       "callRecorded": "השיחה הוקלטה",
-      "callTranscribed": "השיחה תומללה"
+      "callTranscribed": "השיחה תומללה",
+      "anyProduct": "כל מוצר"
     },
     "actions": {
       "addTag": "הוספת תגית",
@@ -3416,12 +3837,18 @@
     }
   },
   "instagramStoryAutomation": {
-    "title": "אוטומציה למענה לסטורי באינסטגרם",
-    "description": "הפוך את המענה לתגובות על הסטורי שלך באינסטגרם לאוטומטי עבור אנשי הקשר שלך.",
+    "title": "אוטומציה לסטורי באינסטגרם",
+    "description": "הפוך לאוטומטי את המענה כשאנשי קשר מגיבים לסטורי שלך באינסטגרם או מזכירים אותך בסטורי שלהם.",
     "create": "צור אוטומציה",
     "replies": "תגובות",
     "activated": "האוטומציה הופעלה",
     "deactivated": "האוטומציה הושבתה",
+    "trigger": "טריגר",
+    "triggerDescription": "בחר מה מפעיל את האוטומציה. לא ניתן לשנות זאת לאחר יצירת האוטומציה.",
+    "triggerType": {
+      "storyReply": "מגיב לסטורי שלך",
+      "storyMention": "מזכיר אותך בסטורי שלו"
+    },
     "trackStoryReplyOn": "עקוב אחר תגובות לסטורי ב",
     "trackStoryReplyOnDescription": "החל אוטומציה זו על תגובות לכל הסטוריז שלך, או הגבל אותה לסטוריז מסוימים שתבחר.",
     "reply": "תגובה",
@@ -3485,7 +3912,6 @@
     "allForms": "כל הטפסים",
     "allFormsNote": "לידים מכל טופס בדף זה יילכדו. שדות רגילים (דוא\"ל, טלפון, שם, מגדר) נשמרים אוטומטית בשדות המתאימים של איש הקשר.",
     "leadData": "נתוני ליד",
-    "whatFlow": "איזה תהליך מופעל",
     "addNewPage": "הוספת חדש",
     "noEligiblePages": "אין דפים זכאים. השתמשו ב\"הוספת חדש\" כדי להעניק גישה ללידים.",
     "duplicateError": "כבר קיימת אוטומציה עבור דף וטופס אלה.",
@@ -3612,7 +4038,24 @@
       "openAsSupport": "פתח כתמיכה",
       "supportEnabledUntil": "מופעל עד {time}",
       "supportOff": "כבוי",
-      "searchPlaceholder": "חפש לפי שם, אימייל של הבעלים או מזהה"
+      "searchPlaceholder": "חפש לפי שם, אימייל של הבעלים או מזהה",
+      "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
+      "supportAccessible": "Accessible"
+    },
+    "admins": {
+      "title": "Platform administrators",
+      "description": "Manage users who can access the platform administration console.",
+      "addTitle": "Add platform administrator",
+      "addDescription": "Grant platform administration access to a root-tenant user.",
+      "addButton": "Add administrator",
+      "role": "Role",
+      "bootstrap": "Environment bootstrap administrator",
+      "remove": "Remove administrator",
+      "empty": "No platform administrators are configured.",
+      "added": "Platform administrator added.",
+      "removed": "Platform administrator removed.",
+      "addError": "Could not add the platform administrator.",
+      "removeError": "Could not remove the platform administrator."
     }
   },
   "platformCredentials": {
@@ -4713,7 +5156,8 @@
       "video": "וידאו",
       "audio": "שמע",
       "gif": "GIF",
-      "file": "קובץ"
+      "file": "קובץ",
+      "storyMention": "אזכור בסטורי"
     },
     "lastMonth": {
       "label": "החודש שעבר"
@@ -5197,7 +5641,8 @@
     "schedule": {
       "label": "תזמון",
       "now": "עכשיו",
-      "scheduled": "תזמון למועד מאוחר יותר"
+      "scheduled": "תזמון למועד מאוחר יותר",
+      "recurring": "חזרה"
     },
     "inputFieldId": {
       "label": "שדה קלט מותאם אישית"
@@ -5691,7 +6136,8 @@
       "media": "מדיה",
       "ads": "מודעות",
       "settings": "הגדרות",
-      "miniApps": "Mini Apps"
+      "miniApps": "Mini Apps",
+      "leaderboards": "טבלאות מובילים"
     },
     "adReferral": {
       "label": "Ads",
@@ -5723,6 +6169,31 @@
       "hint": "מומלץ להשתמש ב-Data Manager. ממשק ההעלאה הישן פועל רק עבור פרויקטים של Google Cloud ש-Google עדיין מתירה, ואינו משתמש בהרשאת Data Manager. שינוי חל על חיבורים חדשים בלבד: חברו מחדש סביבות עבודה קיימות.",
       "dataManager": "Data Manager API (מומלץ)",
       "legacy": "ממשק העלאה ישן"
+    },
+    "referralName": {
+      "label": "שם הממליץ"
+    },
+    "capiConfigId": {
+      "label": "Conversions API Config ID",
+      "description": "מזהה תצורת Embedded Signup המשמש לבקשת ההרשאה whatsapp_business_manage_events בעת חיבור Conversions API."
+    },
+    "outboundAutomatedResponse": {
+      "label": "מילת מפתח לעמוד"
+    },
+    "fbComment": {
+      "label": "אוטומציית תגובות פייסבוק"
+    },
+    "igComment": {
+      "label": "אוטומציית תגובות אינסטגרם"
+    },
+    "igStory": {
+      "label": "אוטומציית סטוריז באינסטגרם"
+    },
+    "images": {
+      "label": "תמונות"
+    },
+    "miniApp": {
+      "label": "מיני אפליקציה"
     }
   },
   "billing": {
@@ -5782,7 +6253,10 @@
       "sending": "נשלח כעת",
       "cancelled": "בוטל",
       "draft": "Draft",
-      "failed": "Failed"
+      "failed": "Failed",
+      "recurring": "חוזר",
+      "paused": "מושהה",
+      "ended": "הסתיים"
     },
     "stats": {
       "sent": "נשלח",
@@ -5866,7 +6340,9 @@
       "audienceFilter": "מסנן קהל",
       "noAudienceFilter": "ללא מסנן קהל",
       "template": "תבנית",
-      "integration": "שילוב"
+      "integration": "שילוב",
+      "schedule": "לוח זמנים לחזרה",
+      "runOf": "הרצה של <link>{name}</link>"
     },
     "filters": {
       "all": "All"
@@ -5915,15 +6391,20 @@
     },
     "moveToDraftDialog": {
       "title": "Move to draft",
-      "description": "\"{name}\" will be unscheduled and moved back to drafts."
+      "description": "\"{name}\" will be unscheduled and moved back to drafts.",
+      "templateTitle": "ערוך לוח זמנים",
+      "templateDescription": "\"{name}\" יושהה ויועבר חזרה לטיוטות כדי שתוכל לשנות את לוח הזמנים."
     },
     "stopDialog": {
       "title": "Stop broadcast",
-      "description": "Remaining messages for \"{name}\" stop within about a minute. A few already handed to the channel may still deliver. You can resume later — only unsent recipients will receive."
+      "description": "Remaining messages for \"{name}\" stop within about a minute. A few already handed to the channel may still deliver. You can resume later — only unsent recipients will receive.",
+      "templateTitle": "השהיית שידור חוזר",
+      "templateDescription": "\"{name}\" מפסיק ליצור הרצות חדשות. הרצה שכבר נשלחת תמשיך. אפשר לחדש מאוחר יותר; הרצות בזמן ההשהיה ידולגו."
     },
     "resumeDialog": {
       "title": "Resume broadcast",
-      "description": "\"{name}\" will continue sending to recipients who have not received it yet."
+      "description": "\"{name}\" will continue sending to recipients who have not received it yet.",
+      "templateDescription": "\"{name}\" יחזור על עצמו שוב מהמועד המתוזמן הבא. הרצות בזמן ההשהיה דולגו."
     },
     "planLimitDialog": {
       "title": "שדרוג התוכנית",
@@ -5941,6 +6422,63 @@
       "toLabel": "עד",
       "allPlaceholder": "הכול",
       "rangeEndBeforeStart": "מיקום הסיום לא יכול להיות לפני מיקום ההתחלה"
+    },
+    "recurring": {
+      "nextRun": "ההרצה הבאה {when}",
+      "paused": "מושהה",
+      "ended": "הסתיים ב-{when} · {count, plural, one {הרצה #} other {# הרצות}}",
+      "runs": "{count, plural, one {הרצה #} other {# הרצות}}",
+      "noUpcomingSends": "אין עוד שליחות — שאר התאריכים מדולגים"
+    },
+    "runs": {
+      "back": "שידורים חוזרים",
+      "pausedNotice": "מושהה מאז {when}. הרצות בזמן ההשהיה ידולגו.",
+      "groupBy": "קבץ הרצות לפי",
+      "grouping": {
+        "day": "יום",
+        "week": "שבוע",
+        "month": "חודש"
+      },
+      "totals": "{runs, plural, one {הרצה #} other {# הרצות}} מתוך {slots, plural, one {מועד #} other {# מועדים}}",
+      "error": "לא ניתן לטעון את ההרצות.",
+      "retry": "נסה שוב",
+      "empty": "אין עדיין הרצות. הראשונה תתחיל במועד המתוזמן הבא.",
+      "loadMore": "טען עוד",
+      "weekOf": "שבוע של {date}",
+      "groupSummary": "{created, plural, one {הרצה #} other {# הרצות}}{missed, plural, =0 {} other { · # הוחמצו}}{skipped, plural, =0 {} other { · # דולגו}}",
+      "deliveredRate": "{rate} נמסרו",
+      "notSent": "לא נשלח — {reason}",
+      "earlierSlots": "{count, plural, one {מועד קודם # הוחמץ} other {# מועדים קודמים הוחמצו}}",
+      "stalled": "תקוע",
+      "lateByMinutes": "{count, plural, one {איחור של # דקה} other {איחור של # דקות}}",
+      "lateByHours": "{count, plural, one {איחור של # שעה} other {איחור של # שעות}}",
+      "recipients": "{count, plural, one {# נמען} other {# נמענים}}",
+      "reasons": {
+        "catchUpSuperseded": "הפלטפורמה לא הייתה זמינה; במקומו נשלחה הרצה מאוחרת יותר",
+        "paused": "לוח הזמנים היה מושהה",
+        "draft": "השידור היה בעריכה",
+        "blockedOwner": "החשבון חסום",
+        "planLimit": "הגעת למגבלת החבילה",
+        "noTargets": "אין עמוד לשליחה",
+        "undeliverable": "הזרימה או התבנית אינן זמינות",
+        "excludedDate": "תאריך שדולג"
+      },
+      "outcomes": {
+        "created": "נשלח",
+        "skipped": "דולג",
+        "missed": "הוחמץ"
+      },
+      "upcoming": {
+        "title": "שליחות קרובות",
+        "empty": "אין שליחות קרובות",
+        "skip": "דלג",
+        "restore": "שחזר",
+        "skippedBadge": "דולג",
+        "skipped": "{date} דולג",
+        "restored": "{date} שוחזר",
+        "undo": "ביטול",
+        "error": "לא ניתן לשנות את השליחה הזו יותר"
+      }
     }
   },
   "commentAutomation": {
@@ -5996,6 +6534,17 @@
     "liveBadge": "שידור חי",
     "postTypeDialog": {
       "title": "בחירת סוג פוסט"
+    },
+    "account": {
+      "label": "חשבון",
+      "description": "החשבון המחובר שבו האוטומציה הזו עונה. בחרו “כל החשבונות” כדי לענות בכל החשבונות המחוברים של ערוץ זה.",
+      "all": "כל החשבונות",
+      "placeholder": "בחרו חשבון",
+      "required": "מחוברים כמה חשבונות: בחרו אחד, או בחרו במכוון “כל החשבונות”.",
+      "targetsCleared": "הפוסטים שנבחרו נוקו כי ייתכן שהם שייכים לחשבון אחר.",
+      "column": "חשבון",
+      "disconnected": "חשבון מנותק",
+      "disconnectedDescription": "האוטומציה הזו מקושרת לחשבון שכבר אינו מחובר, ולכן היא לא עונה לאף תגובה. חברו מחדש את החשבון או בחרו חשבון אחר."
     }
   },
   "condition": {
@@ -6070,6 +6619,7 @@
       "questionnaireInProgress": "השאלון בתהליך",
       "questionnaireFinished": "השאלון הסתיים",
       "couponTopic": "קופון",
+      "leaderboardScore": "נקודות משחוק",
       "votedOnPoll": "הצביע בסקר",
       "lastComment": "תגובה אחרונה",
       "commentedOnPost": "הגיב לפוסט",
@@ -6122,7 +6672,8 @@
         "video": "וידאו",
         "audio": "שמע",
         "gif": "GIF",
-        "file": "קובץ"
+        "file": "קובץ",
+        "storyMention": "אזכור בסטורי"
       },
       "ctwaConversionTypes": {
         "lead": "ליד",
@@ -6139,6 +6690,7 @@
       "ecommerce": "מסחר אלקטרוני",
       "systemFields": "שדות מערכת",
       "topicCoupon": "נושא קופון",
+      "leaderboard": "נקודות משחוק",
       "customFields": "שדות מותאמים אישית",
       "botFields": "שדות בוט",
       "email": "דוא\"ל",
@@ -6179,7 +6731,8 @@
       "api": "API",
       "webchat": "צ'אט אינטרנט",
       "botLink": "קישור לבוט",
-      "chatPlugin": "תוסף צ'אט C."
+      "chatPlugin": "תוסף צ'אט C.",
+      "inboundWebhook": "Webhook נכנס"
     },
     "ctwaRetarget": {
       "segments": {
@@ -6492,17 +7045,15 @@
     "status": {
       "title": "Meta Conversions API",
       "ready": "מוכן",
-      "missingPermission": "נדרשת הרשאה",
-      "unverified": "לא מאומת",
       "unsupported": "לא נתמך",
-      "notConnected": "לא מחובר"
+      "notConnected": "לא מחובר",
+      "reconnect": "נדרש חיבור מחדש"
     },
     "statusDescriptions": {
-      "ready": "לשילוב זה יש את הרשאת Meta הנדרשת לאירועי Conversions API.",
-      "missingPermission": "חברו מחדש את השילוב הזה והעניקו את הרשאת Meta המבוקשת.",
-      "unverified": "הגדרות אפליקציית הפלטפורמה אינן זמינות, ולכן לא ניתן לאמת את הרשאת ה-CAPI.",
+      "ready": "אירועי Conversions API מהאינטגרציה הזו נשלחים ל-Meta.",
       "unsupported": "Meta Conversions API עבור Instagram דורש חשבון המחובר דרך Facebook Login for Business.",
-      "notConnected": "ה-Conversions API הוא כלי עסקי של Meta שמאפשר לכם לשתף נתונים עם Meta כדי לשפר את ביצועי המודעות."
+      "notConnected": "ה-Conversions API הוא כלי עסקי של Meta שמאפשר לכם לשתף נתונים עם Meta כדי לשפר את ביצועי המודעות.",
+      "reconnect": "ההרשאה של Conversions API פגה ולכן שליחת האירועים מושהית. מערך הנתונים והגדרות הבדיקה נשמרים; התחברו מחדש כדי להמשיך לשלוח."
     },
     "errors": {
       "reconnect": "החיבור מחדש ל-Meta CAPI נכשל.",
@@ -6512,12 +7063,14 @@
       "saveFailed": "לא ניתן היה לשמור. נסו שוב.",
       "datasetRequired": "שמרו מזהה Dataset לפני הוספת אסימון גישה.",
       "invalidToken": "האסימון הזה לא הצליח לגשת למאגר הנתונים.",
-      "invalidDatasetId": "הזן Dataset ID תקין (ספרות בלבד).",
       "whatsappNotFound": "שילוב WhatsApp לא נמצא.",
       "testEventCodeRequired": "שמור קוד אירוע בדיקה לפני שליחת אירוע בדיקה.",
       "invalidTestEventCode": "קוד אירוע הבדיקה יכול להכיל רק אותיות, ספרות, מקפים או קווים תחתונים (עד 64 תווים).",
       "invalidMessagingId": "מזהה ההודעות יכול להכיל רק אותיות, ספרות, מקפים או קווים תחתונים (עד 512).",
-      "capiDisconnected": "Meta CAPI מנותק עבור ערוץ זה. חבר אותו מחדש לפני שליחת אירוע בדיקה."
+      "capiDisconnected": "Meta CAPI מנותק עבור ערוץ זה. חבר אותו מחדש לפני שליחת אירוע בדיקה.",
+      "appNotConfigured": "אפליקציית Meta של הערוץ הזה עדיין לא הוגדרה.",
+      "capiNotConfigured": "חיבור Conversions API לא הוגדר. בקשו מהמנהל להגדיר את Conversions API Config ID.",
+      "wabaMismatch": "חשבון WhatsApp Business שאושר אינו החשבון שאליו שייך המספר הזה. יש להתחבר עם אותו חשבון."
     },
     "fields": {
       "eventType": {
@@ -6602,32 +7155,13 @@
     "disconnect": "ניתוק",
     "openEventManager": "פתיחת Event Manager",
     "methods": {
-      "oauth": {
-        "title": "חיבור דרך Facebook",
-        "description": "השתמשו בחיבור הקיים של הדף שלכם, ולאחר מכן בחרו מזהה Dataset.",
-        "connect": "יצירת מערך נתונים",
-        "connectedLabel": "דרך Facebook"
-      },
       "custom": {
         "title": "חיבור מותאם אישית",
         "description": "השתמשו במזהה Dataset ובאסימון גישה מ-Meta Events Manager.",
         "start": "הגדרת חיבור מותאם אישית",
         "connect": "חיבור",
         "connectedLabel": "מותאם אישית"
-      },
-      "whatsapp": {
-        "title": "חיבור דרך WhatsApp",
-        "description": "השתמשו בחיבור ה-WhatsApp שלכם, ולאחר מכן בחרו מזהה Dataset.",
-        "connect": "יצירת מערך נתונים",
-        "connectedLabel": "דרך WhatsApp"
       }
-    },
-    "finalize": {
-      "title": "בחרו מזהה Dataset",
-      "description": "הזינו מזהה Dataset קיים, או השאירו ריק כדי ליצור אחד באופן אוטומטי.",
-      "save": "שמור",
-      "createDataset": "יצירת מערך נתונים",
-      "caveat": "מזהה Dataset שאינו מקושר לעמוד או לחשבון Instagram הזה עלול לא לייחס אירועים כראוי. השאירו שדה זה ריק כדי ליצור מאגר נתונים מקושר באופן אוטומטי."
     },
     "whatsapp": {
       "connect": "חיבור"
@@ -6676,6 +7210,24 @@
       "messagingIdHint": "אותיות, ספרות, מקפים וקווים תחתונים בלבד (עד 512).",
       "cancel": "ביטול",
       "confirmSend": "שליחה"
+    },
+    "connect": {
+      "button": "חיבור Conversions API",
+      "success": "Conversions API חובר.",
+      "title": "התחברות עם Meta",
+      "description": "היכנסו ל-Meta ואשרו גישה לאירועי המרה. פעולה זו יוצרת חיבור נפרד עבור Conversions API ואינה משנה את אופן ההתחברות של הערוץ הזה.",
+      "reconnect": "התחברות מחדש"
+    },
+    "connectResult": {
+      "errors": {
+        "cancelled": "החיבור בוטל. לא בוצע שינוי.",
+        "notFound": "הערוץ הזה לא נמצא.",
+        "pageNotFound": "חשבון Facebook שבו השתמשתם אינו מנהל את הדף הזה. היכנסו עם חשבון שמנהל אותו.",
+        "accountNotFound": "חשבון Facebook שבו השתמשתם אינו מנהל את חשבון Instagram הזה. היכנסו עם חשבון שמנהל אותו.",
+        "datasetFailed": "Meta לא אפשרה יצירת מערך נתונים עם החיבור הזה. ודאו שאישרתם את כל ההרשאות המבוקשות ונסו שוב.",
+        "sessionExpired": "החיבור ארך זמן רב מדי או התחיל בלשונית אחרת. נסו שוב.",
+        "failed": "לא ניתן היה לחבר את Conversions API. נסו שוב."
+      }
     }
   },
   "googleAds": {
@@ -7705,8 +8257,6 @@
       "screenTitle": "כותרת",
       "screenId": "מזהה מסך",
       "screenIdHint": "אותיות וקווים תחתונים בלבד. משמש לניווט וב-Flow JSON.",
-      "terminal": "מסך אחרון",
-      "terminalHint": "ה-Flow יכול להסתיים כאן. נדרש Footer שמסיים את ה-Flow.",
       "remove": "מחיקת מסך"
     },
     "inspector": {
@@ -7761,7 +8311,20 @@
       "success": "פורסם ב-WhatsApp",
       "draftOnly": "Meta השאירה את ה-Flow כטיוטה בגלל שגיאות",
       "failed": "לא ניתן היה לפרסם ב-WhatsApp",
-      "contactVariables": "המיני־אפליקציה הזו מציגה שדות מותאמים אישית בטקסטים שלה. כרגע הם פועלים רק בקישור האינטרנט — הסירו אותם לפני הפרסום ב־WhatsApp."
+      "contactVariables": "המיני־אפליקציה הזו מציגה שדות מותאמים אישית בטקסטים שלה. כרגע הם פועלים רק בקישור האינטרנט — הסירו אותם לפני הפרסום ב־WhatsApp.",
+      "notOnNumber": "המיני־אפליקציה לא נמצאת במספר ה־WhatsApp הזה.",
+      "onlyDraftDeletable": "ה־Flow פעיל ב־Meta ולכן לא ניתן למחוק אותו. ניתן למחוק רק טיוטה.",
+      "flowIsLive": "המיני־אפליקציה פעילה במספר ה־WhatsApp הזה. שמירת טיוטה תשבית אותה — פרסמו במקום זאת כדי לעדכן.",
+      "saveDraft": "שמירה כטיוטה",
+      "draftSaved": "נשמר ב-WhatsApp כטיוטה",
+      "preview": "תצוגה מקדימה",
+      "previewUnavailable": "Meta לא החזירה קישור לתצוגה מקדימה",
+      "deleteDraft": "מחיקת הטיוטה ב-WhatsApp",
+      "draftDeleted": "הטיוטה נמחקה מ-WhatsApp"
+    },
+    "status": {
+      "draft": "טיוטה",
+      "published": "פורסם"
     },
     "runner": {
       "back": "חזרה",
@@ -7916,7 +8479,9 @@
         "email": "אימייל",
         "password": "סיסמה",
         "passcode": "קוד גישה",
-        "phone": "טלפון"
+        "phone": "טלפון",
+        "date": "תאריך",
+        "datetime": "תאריך ושעה"
       },
       "fontWeight": {
         "normal": "רגיל",
@@ -7956,8 +8521,7 @@
       "screen_id_invalid": "מזהה המסך יכול להכיל אותיות וקווים תחתונים בלבד.",
       "screen_id_reserved": "“SUCCESS” שמור על ידי WhatsApp. בחרו מזהה מסך אחר.",
       "screen_id_duplicate": "מסך אחר כבר משתמש במזהה הזה.",
-      "no_terminal_screen": "סמנו לפחות מסך אחד כמסך האחרון.",
-      "terminal_screen_without_complete": "המסך האחרון צריך Footer שמסיים את ה-Flow.",
+      "no_terminal_screen": "הוסיפו למסך האחרון Footer שמסיים את הזרימה.",
       "screen_without_exit": "אין למסך הזה דרך להמשיך. הוסיפו Footer או קישור שמוביל למסך אחר.",
       "screen_unreachable": "אף מסך לא מנווט אל המסך הזה.",
       "too_many_components": "מסך יכול להכיל לכל היותר {max} רכיבים.",
@@ -7990,7 +8554,6 @@
       "reference_unknown": "{reference} לא תואם לאף שדה.",
       "data_reference_unsupported": "{reference}: נתוני מסך אינם נתמכים. השתמשו בשדות טופס במקום.",
       "property_unknown": "WhatsApp לא מקבל את המאפיין “{name}” ברכיב זה.",
-      "complete_on_non_terminal": "“השלמת התהליך” זמינה רק במסך האחרון.",
       "footer_captions_invalid": "השתמשו בכיתוב מרכזי בלבד, או בכיתוב שמאלי וימני יחד.",
       "options_with_images_limit": "עם תמונות, לרשימה נפתחת יכולות להיות עד {max} אפשרויות.",
       "navigation_badge_multiple": "רק פריט אחד ברשימת ניווט יכול לשאת תג.",
@@ -8009,5 +8572,485 @@
         "upload_failed": "לא ניתן היה להעלות את הקובץ. נסו שוב."
       }
     }
+  },
+  "leaderboards": {
+    "title": "טבלאות מובילים",
+    "public": {
+      "points": "{points} נק׳",
+      "endsIn": "מסתיים בעוד {days} ימ׳ {hours} שע׳ {minutes} דק׳ {seconds} שנ׳",
+      "finished": "הסתיים",
+      "empty": "עדיין אין משתתפים — היו הראשונים!",
+      "myRank": "הדירוג שלך: #{rank}",
+      "unranked": "עדיין ללא דירוג",
+      "shareToEarn": "שתפו וצברו נקודות",
+      "linkCopied": "הקישור הועתק",
+      "unavailableTitle": "טבלת המובילים הזו כבר לא זמינה",
+      "unavailableDescription": "ייתכן שהיא הסתיימה או הוסרה. בקשו את הקישור העדכני מהעמוד שאתם עוקבים אחריו."
+    },
+    "description": "הפעילו קמפיינים של דירוג מבוסס נקודות, שבהם לקוחות מתחרים על המקומות הראשונים ועל פרסים.",
+    "feature": "לוח מובילים",
+    "create": "יצירת לוח מובילים",
+    "kpi": {
+      "total": "סה״כ קמפיינים",
+      "active": "פעילים כעת"
+    },
+    "tabs": {
+      "all": "הכול",
+      "active": "פעילים",
+      "paused": "מושהים",
+      "finished": "הסתיימו"
+    },
+    "status": {
+      "draft": "טיוטה",
+      "active": "פעיל",
+      "paused": "מושהה",
+      "finished": "הסתיים"
+    },
+    "platforms": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "whatsapp": "WhatsApp",
+      "zalo": "Zalo OA",
+      "telegram": "Telegram",
+      "tiktok": "TikTok",
+      "threads": "Threads",
+      "email": "Email SMTP",
+      "gamification": "Gamification"
+    },
+    "list": {
+      "campaign": "קמפיין",
+      "searchPlaceholder": "חיפוש לוחות מובילים...",
+      "platformFilter": "פלטפורמה",
+      "participants": "משתתפים",
+      "totalPoints": "סה״כ נקודות",
+      "newToday": "+{count} היום",
+      "average": "ממוצע {value} / שחקן",
+      "daysLeft": "{days, plural, one {נותר # יום} other {נותרו # ימים}}",
+      "ended": "הסתיים"
+    },
+    "scope": {
+      "allPosts": "כל הפוסטים",
+      "specificPosts": "פוסטים ספציפיים",
+      "specificPostsCount": "{count, plural, one {# פוסט} other {# פוסטים}}",
+      "telegramChatsCount": "{count, plural, one {# קבוצה} other {# קבוצות}}"
+    },
+    "menu": {
+      "start": "התחלה",
+      "pause": "השהיה",
+      "finish": "סיום",
+      "resetPoints": "איפוס נקודות",
+      "triggerRewards": "שליחת פרסים",
+      "viewParticipants": "הצגת משתתפים",
+      "copyLink": "העתקת קישור ציבורי"
+    },
+    "confirm": {
+      "publishTitle": "לפרסם את לוח המובילים?",
+      "publishDescription": "צבירת הנקודות מתחילה מיד והשחקנים יכולים לראות את הדף הציבורי.",
+      "pauseTitle": "להשהות את לוח המובילים?",
+      "pauseDescription": "הניקוד האוטומטי וניקוד הפלואים נעצרים. עדיין אפשר לשנות נקודות ידנית.",
+      "startTitle": "לחדש את לוח המובילים?",
+      "startDescription": "הניקוד מתחיל שוב בכל החוקים.",
+      "finishTitle": "לסיים את לוח המובילים?",
+      "finishDescription": "כל הניקוד נקבע ולא ניתן עוד לשנות אותו. פרסים אוטומטיים יישלחו אם הם מופעלים.",
+      "resetPointsTitle": "לאפס את כל הנקודות?",
+      "resetPointsDescription": "כל המשתתפים ב-\"{name}\" חוזרים ל-0 נקודות. הפעולה נרשמת ולא ניתן לבטל אותה."
+    },
+    "toast": {
+      "published": "לוח המובילים פורסם",
+      "paused": "לוח המובילים הושהה",
+      "started": "לוח המובילים חודש",
+      "finished": "לוח המובילים הסתיים",
+      "pointsReset": "כל הנקודות אופסו"
+    },
+    "export": {
+      "title": "ייצוא משתתפים",
+      "description": "הורידו את כל המשתתפים עם הדירוג והניקוד שלהם כקובץ CSV.",
+      "preparing": "מכין את הקובץ...",
+      "ready": "הקובץ מוכן ({count} שורות).",
+      "failed": "הייצוא נכשל. נסו שוב."
+    },
+    "rewards": {
+      "title": "שליחת פרסים",
+      "description": "שלחו את פלואו הפרסים לשחקנים המובילים. אפשר לשלוח פרסים פעם אחת בלבד.",
+      "flow": "פלואו פרסים",
+      "topN": "מספר הזוכים (top N)",
+      "noFlow": "לא נבחר פלואו פרסים — הגדירו אחד בהגדרות לוח המובילים.",
+      "alreadySent": "הפרסים כבר נשלחו עבור לוח מובילים זה.",
+      "confirm": "שליחת פרסים",
+      "result": "נשלח ל-{sent} זוכים, {skipped} דולגו (אין שיחה בערוץ זה)."
+    },
+    "wizard": {
+      "steps": {
+        "info": "פרטים",
+        "config": "ערוץ וחוקים",
+        "review": "בדיקה ופרסום"
+      },
+      "namePlaceholder": "לדוגמה: מעריצי אוקטובר המובילים",
+      "coverImage": "תמונת כיסוי",
+      "coverImageHint": "JPG או PNG, עד 5MB. הגודל המומלץ 1200×630.",
+      "coverImageRejected": "בחרו תמונת JPG או PNG בגודל של עד 5MB.",
+      "description": "חוקים ופרסים",
+      "descriptionPlaceholder": "הסבירו איך שחקנים צוברים נקודות ומה זוכים השחקנים המובילים.",
+      "startsAt": "מתחיל ב",
+      "endsAt": "מסתיים ב",
+      "startLocked": "לא ניתן לשנות את שעת ההתחלה לאחר הפרסום.",
+      "channelTitle": "פלטפורמה וערוץ",
+      "platform": "פלטפורמה",
+      "hostChannel": "ערוץ",
+      "hostLocked": "לא ניתן לשנות את הפלטפורמה והערוץ לאחר הפרסום.",
+      "noChannel": "אין ערוץ {platform} מחובר. חברו ערוץ קודם בהגדרות ← ערוצים.",
+      "openMinigameSettings": "פתיחת הגדרות המשחק",
+      "postScope": "פוסטים שצוברים נקודות",
+      "choosePosts": "בחירת פוסטים",
+      "telegramChats": "קבוצות וערוצים",
+      "telegramChatsHint": "הוסיפו את הבוט לקבוצה או לערוץ כמנהל כדי שיוכל לראות חברים והודעות.",
+      "telegramChatsEmpty": "לא נמצאו קבוצות — הוסיפו קודם את הבוט כמנהל",
+      "rulesTitle": "חוקי ניקוד",
+      "rulesHint": "הפעילו את הפעולות שמזכות בנקודות וקבעו כמה.",
+      "allPlatforms": "כל הפלטפורמות",
+      "points": "נקודות",
+      "maxPerDay": "מקסימום ליום",
+      "maxPerDayHint": "השאירו ריק ללא הגבלה.",
+      "minChars": "מינימום תווים",
+      "bonusPoints": "נקודות בונוס לשעת הזהב",
+      "bonusPointsHint": "נקודות נוספות לתגובות זמן קצר לאחר פרסום הפוסט.",
+      "bonusMinutes": "משך שעת הזהב (דקות)",
+      "emailTopicNote": "רק אימיילים שנשלחו עם Email Topic נמדדים לפתיחות וללחיצות.",
+      "generalTitle": "הגדרות כלליות",
+      "followersOnly": "עוקבים בלבד",
+      "followersOnlyHint": "רק אנשים שעוקבים אחרי החשבון שלכם צוברים נקודות.",
+      "tagFilter": "סינון לפי תגיות",
+      "tagFilterHint": "רק אנשי קשר עם לפחות אחת מהתגיות האלה צוברים נקודות.",
+      "everyone": "כולם",
+      "resetTime": "שעת איפוס יומית (UTC)",
+      "resetTimeHint": "המגבלות היומיות מתאפסות בשעה זו. = {time} שעון וייטנאם (UTC+7).",
+      "cooldown": "השהיית אנטי-ספאם (שניות)",
+      "cooldownHint": "מספר השניות המינימלי בין שתי הענקות אוטומטיות לאותו אדם. 0 מכבה את האפשרות.",
+      "referralFlow": "פלואו קבלת פנים להפניה",
+      "referralFlowAuto": "יצירה אוטומטית",
+      "referralFlowHint": "נשלח לחבר שמצטרף דרך קישור הפניה. אפשר להשתמש ב-'{{referral_name}}' ובקישור הציבורי של לוח המובילים. השאירו ריק כדי ליצור אוטומטית הודעת קבלת פנים שאפשר לערוך ב-Flow Builder.",
+      "publicLink": "קישור ציבורי",
+      "publicLinkHint": "שלחו את הקישור הזה מתוך פלואו כדי שכל שחקן יראה את הדירוג שלו.",
+      "publicLinkAfterSave": "הקישור הציבורי יהיה זמין לאחר השמירה.",
+      "rewardsTitle": "פרסים",
+      "autoOnFinish": "שליחה אוטומטית בסיום",
+      "autoOnFinishHint": "מריץ את פלואו הפרסים עבור ה-top N מיד עם סיום לוח המובילים.",
+      "backToStep2": "חזרה לשלב 2",
+      "notEditable": "לא ניתן לערוך לוחות מובילים שהסתיימו."
+    },
+    "review": {
+      "infoCard": "פרטים",
+      "yes": "כן",
+      "no": "לא",
+      "off": "כבוי",
+      "seconds": "{seconds} שניות",
+      "resetTimeValue": "{utc} UTC (= {local} וייטנאם)",
+      "noRules": "עדיין לא הופעל אף חוק.",
+      "rulePoints": "{points} נק׳",
+      "maxPerDay": "מקס׳ {count} ביום",
+      "unlimited": "ללא הגבלה"
+    },
+    "preview": {
+      "sampleName": "שחקן {rank}",
+      "placeholderName": "שם לוח המובילים שלכם",
+      "pinnedBar": "#{rank} · {points} נק׳"
+    },
+    "validation": {
+      "nameRequired": "הזינו שם",
+      "dateRequired": "בחרו תאריך ושעה",
+      "endsAfterStart": "שעת הסיום חייבת להיות אחרי שעת ההתחלה",
+      "channelRequired": "בחרו ערוץ",
+      "minigameRequired": "בחרו מיני-משחק",
+      "pointsRequired": "הזינו את הנקודות שהחוק הזה מעניק",
+      "bonusMinutesRequired": "קבעו כמה דקות נמשכת שעת הזהב",
+      "postsRequired": "בחרו לפחות פוסט אחד",
+      "telegramChatsRequired": "בחרו לפחות קבוצה או ערוץ אחד",
+      "enableOneRule": "הפעילו לפחות חוק ניקוד אחד לפני הפרסום",
+      "fixErrors": "תקנו את השדות המסומנים"
+    },
+    "rules": {
+      "comments": {
+        "label": "תגובות",
+        "description": "נקודות על כל תגובה בפוסטים שלכם."
+      },
+      "liveComments": {
+        "label": "תגובות בלייב",
+        "description": "נקודות על כל תגובה במהלך שידור חי."
+      },
+      "keywords": {
+        "label": "Keywords",
+        "description": "נקודות כאשר הודעה תואמת מילת מפתח כלשהי בכלי Keywords של הערוץ הזה."
+      },
+      "storyMention": {
+        "label": "תיוג בסטורי",
+        "description": "נקודות כאשר מישהו מתייג את החשבון שלכם בסטורי שלו."
+      },
+      "storyReaction": {
+        "label": "תגובה לסטורי",
+        "description": "נקודות כאשר מישהו מגיב לסטורי שלכם."
+      },
+      "ctwaReactions": {
+        "label": "קליק CTWA ותגובות",
+        "description": "נקודות על לחיצה על מודעת Click-to-WhatsApp או על תגובה להודעה."
+      },
+      "survey": {
+        "label": "סקר וחידון",
+        "description": "נקודות על מילוי Questionnaire או שליחת טופס WhatsApp Flow."
+      },
+      "follow": {
+        "label": "מעקב אחרי OA ו-QR",
+        "description": "נקודות על מעקב אחרי ה-Official Account שלכם או סריקת קוד ה-QR שלו. ביטול מעקב מבטל את הנקודות."
+      },
+      "message": {
+        "label": "הודעת Zalo",
+        "description": "נקודות על כל הודעה שנשלחת ל-Official Account שלכם."
+      },
+      "joinGroup": {
+        "label": "הצטרפות לערוץ ולקבוצה",
+        "description": "נקודות על הצטרפות לקבוצה או לערוץ שלכם. עזיבה מבטלת את הנקודות."
+      },
+      "groupDiscussion": {
+        "label": "שיחה בקבוצה",
+        "description": "נקודות על כל הודעה בקבוצה שלכם."
+      },
+      "emailOpen": {
+        "label": "פתיחת אימייל",
+        "description": "נקודות כאשר אימייל נפתח."
+      },
+      "emailClick": {
+        "label": "לחיצה באימייל",
+        "description": "נקודות כאשר לוחצים על קישור באימייל."
+      },
+      "minigameWin": {
+        "label": "זכייה במיני-משחק",
+        "description": "נקודות על כל פרס שנזכה במיני-משחק."
+      },
+      "inGameShare": {
+        "label": "שיתוף מתוך המשחק",
+        "description": "נקודות על שיתוף המשחק כדי לקבל עוד סיבובים."
+      },
+      "referral": {
+        "label": "הפניה",
+        "description": "נקודות למזמין כאשר חבר חדש מצטרף דרך הקישור שלו."
+      }
+    },
+    "breakdown": {
+      "comments": "{count} תגובות",
+      "liveComments": "{count} תגובות בלייב",
+      "keywords": "{count} keywords",
+      "storyMention": "{count} תיוגים בסטורי",
+      "storyReaction": "{count} תגובות לסטורי",
+      "ctwaReactions": "{count} CTWA",
+      "survey": "{count} סקרים",
+      "follow": "{count} מעקבים",
+      "message": "{count} הודעות",
+      "joinGroup": "{count} הצטרפויות",
+      "groupDiscussion": "{count} הודעות בקבוצה",
+      "emailOpen": "{count} פתיחות",
+      "emailClick": "{count} לחיצות",
+      "minigameWin": "{count} זכיות",
+      "inGameShare": "{count} שיתופים",
+      "referral": "{count} הפניות",
+      "flow": "{count} פלואו",
+      "manual": "{count} ידני"
+    },
+    "participants": {
+      "title": "משתתפים",
+      "switcher": "החלפת לוח מובילים",
+      "count": "{count, plural, one {# שחקן} other {# שחקנים}}",
+      "searchPlaceholder": "חיפוש לפי שם, מזהה משתמש או טלפון...",
+      "filters": {
+        "all": "הכול",
+        "top10": "Top 10",
+        "top50": "Top 50",
+        "banned": "חסומים"
+      },
+      "columns": {
+        "rank": "דירוג",
+        "participant": "משתתף",
+        "score": "ניקוד כולל",
+        "breakdown": "פירוט",
+        "lastActivity": "פעילות אחרונה"
+      },
+      "unknown": "לא ידוע",
+      "contactId": "מזהה {id}",
+      "lockedFinished": "לוח המובילים הזה הסתיים — הניקוד נעול.",
+      "lockedDraft": "פרסמו את לוח המובילים לפני עריכת הניקוד.",
+      "actions": {
+        "adjust": "התאמת נקודות",
+        "ban": "חסימה",
+        "unban": "ביטול חסימה",
+        "reset": "איפוס ל-0",
+        "history": "הצגת היסטוריה"
+      },
+      "adjust": {
+        "title": "התאמת נקודות",
+        "description": "הוסיפו או הפחיתו נקודות עבור {name}. השינוי נשמר ביומן הביקורת.",
+        "delta": "נקודות (+/-)",
+        "deltaPlaceholder": "לדוגמה: 50 או -20",
+        "reason": "סיבה",
+        "reasonPlaceholder": "למה אתם משנים את הניקוד הזה?",
+        "success": "הנקודות הותאמו"
+      },
+      "banConfirm": "{name} יוסר מהדירוג ויפסיק לצבור נקודות.",
+      "unbanConfirm": "{name} יחזור לדירוג עם הניקוד הנוכחי שלו.",
+      "resetConfirm": "הניקוד של {name} חוזר ל-0. הפעולה נרשמת.",
+      "banned": "המשתתף נחסם",
+      "unbanned": "חסימת המשתתף בוטלה",
+      "resetDone": "הניקוד אופס ל-0",
+      "history": {
+        "title": "היסטוריית ניקוד — {name}",
+        "empty": "עדיין אין שינויים בניקוד.",
+        "sources": {
+          "rule": "חוק",
+          "flow": "פלואו",
+          "referral": "הפניה",
+          "manual": "התאמה ידנית",
+          "reset": "איפוס"
+        }
+      },
+      "conversationNotFound": "לא נמצאה שיחה עבור איש קשר זה",
+      "popupBlocked": "אפשרו חלונות קופצים באתר זה ונסו שוב."
+    },
+    "auditLog": {
+      "title": "יומן ביקורת",
+      "admin": "מנהל",
+      "change": "שינוי",
+      "time": "זמן",
+      "reason": "סיבה",
+      "api": "API",
+      "empty": "עדיין אין שינויים ידניים.",
+      "actions": {
+        "adjust": "התאמה",
+        "resetOne": "איפוס שחקן",
+        "resetAll": "איפוס הכול",
+        "ban": "חסימה",
+        "unban": "ביטול חסימה"
+      }
+    }
+  },
+  "recurrence": {
+    "title": "חזרה",
+    "every": "חזור כל",
+    "unit": "{count, plural, one {{frequency, select, daily {יום} weekly {שבוע} monthly {חודש} other {}}} other {{frequency, select, daily {ימים} weekly {שבועות} monthly {חודשים} other {}}}}",
+    "weekdays": "חזור ב",
+    "time": "שעה",
+    "timezone": "אזור זמן",
+    "noTimezone": "לא נמצא אזור זמן",
+    "searchTimezone": "חפש אזור זמן…",
+    "startsOn": "מתחיל ב",
+    "end": {
+      "label": "מסתיים",
+      "never": "לעולם לא",
+      "onDate": "ב",
+      "after": "לאחר",
+      "pickDate": "בחר תאריך",
+      "occurrences": "{count, plural, one {הרצה} other {הרצות}}"
+    },
+    "monthDay": {
+      "label": "יום בחודש",
+      "day": "יום {day}",
+      "last": "היום האחרון",
+      "hint": "בחודשים קצרים יותר השליחה תתבצע ביום האחרון."
+    },
+    "summary": {
+      "sentence": "{interval, plural, one {כל {frequency, select, daily {יום} weekly {שבוע} monthly {חודש} other {}}} other {כל # {frequency, select, daily {ימים} weekly {שבועות} monthly {חודשים} other {}}}}{frequency, select, weekly { ב{weekdays}} monthly { ב{monthDay, select, last {היום האחרון} other {יום {monthDay}}}} other {}} בשעה {time} ({timezone}), החל מ-{startsOn}{endKind, select, onDate {, מסתיים ב-{endDate}} afterOccurrences {, מסתיים לאחר {endCount, plural, one {הרצה #} other {# הרצות}}} other {}}"
+    },
+    "firstRunLater": "השליחה הראשונה היא {when} מכיוון שהשעה של היום כבר חלפה.",
+    "nextRuns": "שליחות הבאות",
+    "noUpcomingRuns": "אין שליחות קרובות.",
+    "skipping": "מדלג על {dates}{more, plural, =0 {} one { (+# נוסף)} other { (+# נוספים)}}",
+    "excludeDates": {
+      "label": "דילוג על תאריכים",
+      "hint": "לא תתבצע שליחה בתאריכים אלה. הסדרה ממשיכה לרוץ.",
+      "add": "הוספת תאריכים",
+      "remove": "הסרת {date}",
+      "showAll": "הצג עוד {count}",
+      "showLess": "הצג פחות",
+      "clearAll": "נקה הכול"
+    }
+  },
+  "workingHours": {
+    "title": "שעות עבודה",
+    "label": "שעות עבודה",
+    "description": "זמני התגובה נספרים רק בשעות אלה.",
+    "employees": "עובדים",
+    "empty": "אין לוחות עדיין.",
+    "deleteDescription": "למחוק את \"{name}\"? העובדים יחזרו לזמן שעון.",
+    "create": {
+      "title": "הוספת שעות עבודה",
+      "description": "תנו שם ללוח הזמנים. את הימים והשעות תגדירו בשלב הבא."
+    },
+    "employeesDialog": {
+      "title": "החלת שעות עבודה על עובדים",
+      "description": "בחרו את העובדים שעובדים לפי לוח זמנים זה.",
+      "moveHelp": "לכל עובד לוח אחד; הוספה מעבירה אותו לכאן.",
+      "placeholder": "בחירת עובדים",
+      "search": "חיפוש עובדים...",
+      "searchAria": "חיפוש בין העובדים",
+      "empty": "לא נמצאו עובדים.",
+      "close": "סגירה",
+      "selectAll": "(בחירת הכול)",
+      "clearAllAria": "{count, plural, one {ניקוי העובד שנבחר} other {ניקוי כל {count} העובדים שנבחרו}}",
+      "removeAria": "הסרת {name} מהבחירה"
+    },
+    "editor": {
+      "timezoneNote": "השעות נקבעות לפי אזור הזמן של סביבת העבודה: {timezone}.",
+      "notWorking": "לא עובד",
+      "dayToggle": "עובד ביום {day}",
+      "startTime": "שעת התחלה",
+      "endTime": "שעת סיום",
+      "removeRange": "הסרת טווח שעות",
+      "errorOverlap": "טווחי השעות חופפים. תקנו אותם כדי לשמור.",
+      "errorOrder": "שעת הסיום חייבת להיות אחרי שעת ההתחלה.",
+      "routingNote": "משמש גם את Auto Assign, Global Router והתנאי."
+    },
+    "condition": {
+      "assignedAgent": "משמרת הנציג המשויך"
+    },
+    "holidays": {
+      "label": "חגים",
+      "title": "חגים",
+      "description": "מחליף את השעות השבועיות של כל הלוחות בתאריך זה.",
+      "add": "הוספת חג",
+      "empty": "אין חגים עדיין.",
+      "deleteDescription": "למחוק את החג בתאריך {date}?"
+    },
+    "dateOverrides": {
+      "title": "חריגי תאריך",
+      "description": "מחליף את שעות הלוח בתאריך זה; גובר על חגים.",
+      "add": "הוספת חריג",
+      "empty": "אין חריגים."
+    },
+    "dateDialog": {
+      "addTitle": "הוספת תאריך",
+      "editTitle": "עריכת תאריך",
+      "date": "תאריך",
+      "name": "שם (אופציונלי)",
+      "closedAllDay": "סגור כל היום",
+      "duplicate": "התאריך הזה כבר ברשימה.",
+      "hours": "שעות",
+      "closed": "סגור"
+    }
+  },
+  "responseSla": {
+    "label": "SLA תגובה",
+    "title": "SLA תגובה",
+    "description": "הזמן המרבי שהודעת לקוח יכולה להמתין לתגובה אנושית.",
+    "firstTarget": "יעד לתגובה הראשונה (דקות)",
+    "nextTarget": "יעד לתגובות הבאות (דקות)",
+    "nextPlaceholder": "אין SLA לתגובות הבאות",
+    "threshold": "סף סיכון (% מהיעד שנותר)",
+    "thresholdHelp": "מסומן כבסיכון כשנותר % זה מהיעד.",
+    "workingTimeNote": "נספר בשעות העבודה של הנציג המשויך; אחרת בזמן שעון.",
+    "overdue": "באיחור",
+    "due": "יעד {time}",
+    "breaching": "SLA בסיכון",
+    "breached": "SLA הופר",
+    "firstMetColumn": "תגובה ראשונה עמדה ב-SLA",
+    "metColumn": "עמידה ב-SLA",
+    "metHelp": "שיעור התגובות עם SLA שעמדו בו.",
+    "eligibleCount": "ל-{count} תגובות היה SLA",
+    "enable": "הפעלת SLA תגובה"
   }
 }

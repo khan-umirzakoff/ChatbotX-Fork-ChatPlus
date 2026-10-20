@@ -233,8 +233,9 @@ then nested workspace data and integration identifiers, with payload fallbacks
 such as `conversationId` and `importId`.
 
 The guard excludes system/quota/tenancy work: `sendAuditLog`, the
-`error-log:recorded` event-bus listener, and schedule cron jobs, except the two
-broadcast handlers that operate on workspace-owned broadcast work. Observability jobs stay unguarded so blocked
+`error-log:recorded` event-bus listener, and schedule cron jobs, except the
+broadcast handlers that operate on workspace-owned broadcast work (`prepareBroadcast`, `processBroadcastContacts` and
+`materializeRecurringBroadcasts`, which advances the series with a `skipped/blockedOwner` ledger row instead of a bare `return`). Observability jobs stay unguarded so blocked
 jobs can still report failures.
 
 ## Sequence scheduling

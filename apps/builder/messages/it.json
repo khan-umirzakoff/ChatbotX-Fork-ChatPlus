@@ -520,7 +520,8 @@
       "video": "Video",
       "audio": "Audio",
       "gif": "GIF",
-      "file": "File"
+      "file": "File",
+      "storyMention": "Menzione nella storia"
     },
     "lastMonth": {
       "label": "Mese scorso"
@@ -1004,7 +1005,8 @@
     "schedule": {
       "label": "Programmazione",
       "now": "Adesso",
-      "scheduled": "Programma per dopo"
+      "scheduled": "Programma per dopo",
+      "recurring": "Ripeti"
     },
     "inputFieldId": {
       "label": "Campo personalizzato di input"
@@ -1498,7 +1500,8 @@
       "media": "Media",
       "ads": "Annunci",
       "settings": "Impostazioni",
-      "miniApps": "Mini Apps"
+      "miniApps": "Mini Apps",
+      "leaderboards": "Classifiche"
     },
     "adReferral": {
       "label": "Ads",
@@ -1530,9 +1533,35 @@
       "hint": "Si consiglia Data Manager. La vecchia API di caricamento funziona solo per i progetti Google Cloud che Google consente ancora e non usa l'autorizzazione Data Manager. La modifica vale solo per le nuove connessioni: ricollega gli spazi di lavoro esistenti.",
       "dataManager": "API Data Manager (consigliata)",
       "legacy": "Vecchia API di caricamento"
+    },
+    "referralName": {
+      "label": "Nome del referente"
+    },
+    "capiConfigId": {
+      "label": "Config ID di Conversions API",
+      "description": "ID di configurazione di Embedded Signup usato per richiedere l'autorizzazione whatsapp_business_manage_events quando si collega Conversions API."
+    },
+    "outboundAutomatedResponse": {
+      "label": "Parola chiave pagina"
+    },
+    "fbComment": {
+      "label": "Automazione commenti Facebook"
+    },
+    "igComment": {
+      "label": "Automazione commenti Instagram"
+    },
+    "igStory": {
+      "label": "Automazione storie Instagram"
+    },
+    "images": {
+      "label": "Immagini"
+    },
+    "miniApp": {
+      "label": "Mini App"
     }
   },
   "actions": {
+    "scrollToBottom": "Scorri in fondo",
     "retry": "Riprova",
     "copy": "Copia",
     "copyUrl": "Copia URL",
@@ -1687,7 +1716,9 @@
     "schedule": "Schedule",
     "moveToDraft": "Move to draft",
     "stop": "Stop",
-    "resume": "Resume"
+    "resume": "Resume",
+    "viewRuns": "Vedi esecuzioni",
+    "editSchedule": "Modifica pianificazione"
   },
   "errors": {
     "superAdminRequired": "Devi essere super admin dello spazio di lavoro per farlo."
@@ -1748,6 +1779,13 @@
     "averageFirstResponseTimeByAdmin": "Tempo medio della prima risposta degli agenti umani (minuti)",
     "averageFirstResponseTimeByAdminHelp": "Il tempo medio impiegato da un agente umano per fornire la prima risposta al messaggio di un cliente.",
     "averageResponseTimeByAdmin": "Tempo medio di risposta degli agenti umani (minuti)",
+    "withinWorkingHoursHelp": "Conta solo il tempo nell'orario di lavoro dell'agente.",
+    "withinWorkingHoursLabel": "Entro l'orario di lavoro",
+    "noResponseData": "Nessuna risposta nel periodo o nessun turno assegnato.",
+    "averageFirstResponseTimeWithinWorkingHoursByAdmin": "Tempo medio di prima risposta entro l'orario di lavoro per agenti umani (minuti)",
+    "averageFirstResponseTimeWithinWorkingHoursByAdminHelp": "Il tempo medio, entro l'orario di lavoro, che un agente umano impiega per dare la prima risposta al messaggio di un cliente.",
+    "averageResponseTimeWithinWorkingHoursByAdmin": "Tempo medio di risposta entro l'orario di lavoro per agenti umani (minuti)",
+    "averageResponseTimeWithinWorkingHoursByAdminHelp": "Il tempo medio, entro l'orario di lavoro, che un agente umano impiega per rispondere al messaggio di un cliente.",
     "averageDurationOfConversation": "Durata media di una conversazione (minuti)",
     "averageDurationOfConversationHelp": "Il tempo medio durante il quale una conversazione viene gestita da un operatore prima di essere trasferita al bot.",
     "success": "Successo",
@@ -1779,7 +1817,7 @@
     "blockedConversationsHelp": "Conversazioni bloccate dal tuo account.",
     "blockedContacts": "Contatti bloccati",
     "blockedContactsHelp": "Contatti che non desiderano ricevere messaggi dal tuo account",
-    "newContactsByCountry": "Nuovi contatti per Paese",
+    "newContactsByLanguage": "Nuovi contatti per lingua",
     "date": "Data",
     "total": "Totale",
     "messagesSent": "Messaggi inviati",
@@ -1810,7 +1848,19 @@
     "message": "Messaggio",
     "searchByDate": "Cerca per data...",
     "publicReply": "Risposta pubblica",
-    "privateReply": "Risposta privata"
+    "privateReply": "Risposta privata",
+    "filters": {
+      "allChannels": "Tutti i canali",
+      "allInboxes": "Tutte le caselle di posta",
+      "searchPlaceholder": "Cerca...",
+      "empty": "Nessun risultato trovato.",
+      "clear": "Cancella",
+      "close": "Chiudi",
+      "options": "Opzioni disponibili",
+      "remove": "Rimuovi",
+      "filterHint": "I filtri contano solo gli eventi registrati dopo l'aggiunta del filtraggio: gli eventi precedenti non hanno casella di posta, e quelli di bot e conversazioni precedenti non hanno nemmeno il canale. Tutti conta sempre tutto.",
+      "tooManyInboxes": "Scegli al massimo {max} caselle di posta oppure seleziona Tutte."
+    }
   },
   "flowAnalytics": {
     "nodes": {
@@ -1900,7 +1950,10 @@
       "sending": "Invio in corso",
       "cancelled": "Annullato",
       "draft": "Draft",
-      "failed": "Failed"
+      "failed": "Failed",
+      "recurring": "Ricorrente",
+      "paused": "In pausa",
+      "ended": "Terminata"
     },
     "stats": {
       "sent": "Inviato",
@@ -1984,7 +2037,9 @@
       "audienceFilter": "Filtro del pubblico",
       "noAudienceFilter": "Nessun filtro del pubblico",
       "template": "Modello",
-      "integration": "Integrazione"
+      "integration": "Integrazione",
+      "schedule": "Pianificazione di ripetizione",
+      "runOf": "Esecuzione di <link>{name}</link>"
     },
     "filters": {
       "all": "All"
@@ -2033,15 +2088,20 @@
     },
     "moveToDraftDialog": {
       "title": "Move to draft",
-      "description": "\"{name}\" will be unscheduled and moved back to drafts."
+      "description": "\"{name}\" will be unscheduled and moved back to drafts.",
+      "templateTitle": "Modifica pianificazione",
+      "templateDescription": "«{name}» viene messa in pausa e riportata nelle bozze per modificarne la pianificazione."
     },
     "stopDialog": {
       "title": "Stop broadcast",
-      "description": "Remaining messages for \"{name}\" stop within about a minute. A few already handed to the channel may still deliver. You can resume later — only unsent recipients will receive."
+      "description": "Remaining messages for \"{name}\" stop within about a minute. A few already handed to the channel may still deliver. You can resume later — only unsent recipients will receive.",
+      "templateTitle": "Metti in pausa la trasmissione ricorrente",
+      "templateDescription": "«{name}» non crea più nuove esecuzioni. Un’esecuzione già in invio continua. Puoi riprendere più tardi; le esecuzioni durante la pausa vengono saltate."
     },
     "resumeDialog": {
       "title": "Resume broadcast",
-      "description": "\"{name}\" will continue sending to recipients who have not received it yet."
+      "description": "\"{name}\" will continue sending to recipients who have not received it yet.",
+      "templateDescription": "«{name}» riprende a ripetersi dal prossimo orario pianificato. Le esecuzioni durante la pausa sono state saltate."
     },
     "planLimitDialog": {
       "title": "Aggiorna il tuo piano",
@@ -2059,6 +2119,63 @@
       "toLabel": "A",
       "allPlaceholder": "Tutti",
       "rangeEndBeforeStart": "La posizione finale non può essere precedente alla posizione iniziale"
+    },
+    "recurring": {
+      "nextRun": "Prossimo invio {when}",
+      "paused": "In pausa",
+      "ended": "Terminata {when} · {count, plural, one {# esecuzione} other {# esecuzioni}}",
+      "runs": "{count, plural, one {# esecuzione} other {# esecuzioni}}",
+      "noUpcomingSends": "Nessun altro invio: le date rimanenti vengono saltate"
+    },
+    "runs": {
+      "back": "Trasmissioni ricorrenti",
+      "pausedNotice": "In pausa dal {when}. Le esecuzioni durante la pausa vengono saltate.",
+      "groupBy": "Raggruppa esecuzioni per",
+      "grouping": {
+        "day": "Giorno",
+        "week": "Settimana",
+        "month": "Mese"
+      },
+      "totals": "{runs, plural, one {# esecuzione} other {# esecuzioni}} su {slots, plural, one {# slot} other {# slot}}",
+      "error": "Impossibile caricare le esecuzioni.",
+      "retry": "Riprova",
+      "empty": "Nessuna esecuzione per ora. La prima parte al prossimo orario pianificato.",
+      "loadMore": "Carica altro",
+      "weekOf": "Settimana del {date}",
+      "groupSummary": "{created, plural, one {# esecuzione} other {# esecuzioni}}{missed, plural, =0 {} other { · # persa/e}}{skipped, plural, =0 {} other { · # saltata/e}}",
+      "deliveredRate": "{rate} consegnati",
+      "notSent": "Non inviata — {reason}",
+      "earlierSlots": "{count, plural, one {# slot precedente} other {# slot precedenti}} perso/i",
+      "stalled": "Bloccata",
+      "lateByMinutes": "{count, plural, one {# minuto di ritardo} other {# minuti di ritardo}}",
+      "lateByHours": "{count, plural, one {# ora di ritardo} other {# ore di ritardo}}",
+      "recipients": "{count, plural, one {# destinatario} other {# destinatari}}",
+      "reasons": {
+        "catchUpSuperseded": "la piattaforma non era disponibile; è stata inviata un’esecuzione successiva",
+        "paused": "la pianificazione era in pausa",
+        "draft": "la trasmissione era in modifica",
+        "blockedOwner": "l’account è bloccato",
+        "planLimit": "limite del piano raggiunto",
+        "noTargets": "nessuna pagina da cui inviare",
+        "undeliverable": "flow o modello non disponibile",
+        "excludedDate": "Data saltata"
+      },
+      "outcomes": {
+        "created": "Inviata",
+        "skipped": "Saltata",
+        "missed": "Persa"
+      },
+      "upcoming": {
+        "title": "Prossimi invii",
+        "empty": "Nessun invio in programma",
+        "skip": "Salta",
+        "restore": "Ripristina",
+        "skippedBadge": "Saltato",
+        "skipped": "{date} saltato",
+        "restored": "{date} ripristinato",
+        "undo": "Annulla",
+        "error": "Questo invio non può più essere modificato"
+      }
     }
   },
   "commentAutomation": {
@@ -2114,6 +2231,17 @@
     "liveBadge": "Live",
     "postTypeDialog": {
       "title": "Seleziona il tipo di post"
+    },
+    "account": {
+      "label": "Account",
+      "description": "L'account collegato su cui risponde questa automazione. Scegli “Tutti gli account” per rispondere su tutti gli account collegati di questo canale.",
+      "all": "Tutti gli account",
+      "placeholder": "Seleziona un account",
+      "required": "Sono collegati più account: scegline uno oppure scegli di proposito “Tutti gli account”.",
+      "targetsCleared": "I post selezionati sono stati rimossi perché potrebbero appartenere a un altro account.",
+      "column": "Account",
+      "disconnected": "Account disconnesso",
+      "disconnectedDescription": "Questa automazione è legata a un account non più collegato, quindi non risponde a nessun commento. Ricollega l'account o scegline un altro."
     }
   },
   "condition": {
@@ -2188,6 +2316,7 @@
       "questionnaireInProgress": "Questionario in corso",
       "questionnaireFinished": "Questionario completato",
       "couponTopic": "Coupon",
+      "leaderboardScore": "Punti di gamification",
       "votedOnPoll": "Ha votato nel sondaggio",
       "lastComment": "Ultimo commento",
       "commentedOnPost": "Ha commentato il post",
@@ -2240,7 +2369,8 @@
         "video": "Video",
         "audio": "Audio",
         "gif": "GIF",
-        "file": "File"
+        "file": "File",
+        "storyMention": "Menzione nella storia"
       },
       "ctwaConversionTypes": {
         "lead": "Lead",
@@ -2257,6 +2387,7 @@
       "ecommerce": "E-commerce",
       "systemFields": "Campi di sistema",
       "topicCoupon": "Argomento coupon",
+      "leaderboard": "Punti di gamification",
       "customFields": "Campi personalizzati",
       "botFields": "Campi del bot",
       "email": "E-mail",
@@ -2297,7 +2428,8 @@
       "api": "API",
       "webchat": "Webchat",
       "botLink": "Link del bot",
-      "chatPlugin": "Plugin chat C."
+      "chatPlugin": "Plugin chat C.",
+      "inboundWebhook": "Webhook in entrata"
     },
     "ctwaRetarget": {
       "segments": {
@@ -2437,6 +2569,7 @@
       "noFlowsAvailable": "Nessun flusso disponibile",
       "setCustomField": "Imposta campo personalizzato",
       "startAnotherNode": "Avvia un altro nodo",
+      "openMiniApp": "Apri Mini App",
       "startExternalFlow": "Avvia flusso esterno",
       "startExternalNode": "Avvia nodo esterno",
       "startFlow": "Avvia flusso",
@@ -2474,9 +2607,13 @@
       "importStarted": "Il flusso è in fase di importazione. Controlla la cronologia delle importazioni per i risultati.",
       "importJsonOnly": "Solo file JSON",
       "whatsappCallButton": "Chiama su WhatsApp",
+      "whatsappLocation": "Posizione",
       "metaConversions": "Meta Conversions API",
       "threadControl": "Controllo del thread",
-      "sendGoogleAdsConversion": "Invia conversione Google Ads"
+      "sendGoogleAdsConversion": "Invia conversione Google Ads",
+      "changeGamificationScore": "Modifica i punti di gamification",
+      "sendViewCatalog": "Vedi catalogo",
+      "sendProducts": "Invia prodotti"
     },
     "splitTraffic": {
       "balanceHint": "La somma totale deve essere pari al 100%.",
@@ -2596,12 +2733,75 @@
     "whatsappCallButton": {
       "editButtonTitle": "Modifica pulsante",
       "buttonLabel": "Etichetta del pulsante"
+    },
+    "changeGamificationScore": {
+      "leaderboard": "Classifica",
+      "operation": "Operazione",
+      "add": "Aggiungi punti (+)",
+      "subtract": "Sottrai punti (−)",
+      "points": "Punti",
+      "targetUser": "Punti dell’utente",
+      "targetReferrer": "Punti del referente",
+      "targetReferrerHint": "Modifica anche i punti di chi ha invitato questo contatto.",
+      "summary": "{points} punti su {leaderboard}"
+    },
+    "whatsappLocation": {
+      "title": "Posizione",
+      "name": "Nome",
+      "address": "Indirizzo",
+      "latitude": "Latitudine",
+      "longitude": "Longitudine",
+      "setLocation": "Imposta posizione",
+      "errors": {
+        "tooLong": "Massimo 1000 caratteri.",
+        "invalidLatitude": "Inserisci una latitudine tra -90 e 90.",
+        "invalidLongitude": "Inserisci una longitudine tra -180 e 180.",
+        "locationRequired": "Inserisci le coordinate della posizione."
+      }
+    },
+    "sendViewCatalog": {
+      "footerLabel": "Piè di pagina",
+      "thumbnailLabel": "Prodotto per l'anteprima"
+    },
+    "sendProducts": {
+      "description": "Scegli i prodotti da inviare e come mostrarli.",
+      "display": "Visualizzazione",
+      "displays": {
+        "products": "Prodotti",
+        "carousel": "Carosello"
+      },
+      "products": "Prodotti",
+      "selectProducts": "Seleziona prodotti",
+      "searchProducts": "Cerca prodotti",
+      "noProducts": "Nessun prodotto trovato.",
+      "loading": "Caricamento...",
+      "loadError": "Impossibile caricare i prodotti.",
+      "retry": "Riprova",
+      "catalogNotConnected": "Collega e sincronizza un catalogo Meta per inviare prodotti.",
+      "openProducts": "Apri Prodotti",
+      "channelUnsupported": "Questo canale non può inviare prodotti.",
+      "unavailableProduct": "Prodotto non disponibile",
+      "removeProduct": "Rimuovi prodotto",
+      "removeSection": "Rimuovi sezione",
+      "moreOptions": "Altre opzioni",
+      "fewerOptions": "Meno opzioni",
+      "header": "Titolo",
+      "body": "Corpo",
+      "footer": "Piè di pagina",
+      "sectionTitle": "Titolo della sezione",
+      "addSection": "Aggiungi sezione",
+      "productCount": "{count} / {max} prodotti",
+      "productsSelected": "{count, plural, one {# prodotto} other {# prodotti}}",
+      "noneSelected": "Ancora nessun prodotto",
+      "sendFailed": "Impossibile inviare i prodotti."
     }
   },
   "folders": {
-    "heading": {
-      "title": "Cartelle"
-    }
+    "rootOption": "-- Radice --",
+    "showMore": "+{count}",
+    "showLess": "Mostra meno",
+    "root": "Radice",
+    "viewingFolder": "Cartella visualizzata: {name}"
   },
   "gemini": {
     "autoReply": {
@@ -3417,6 +3617,7 @@
       "permissionRequired": "Devi essere un super amministratore per modificare l'accesso al supporto della piattaforma.",
       "enabledToast": "Accesso al supporto della piattaforma abilitato.",
       "disabledToast": "Accesso al supporto della piattaforma disabilitato.",
+      "consentDisabled": "Platform support access is available to platform administrators without this setting.",
       "toggleError": "Qualcosa è andato storto. Riprova."
     }
   },
@@ -3451,6 +3652,8 @@
     "failed": "Operazione non riuscita",
     "copiedToClipboard": "Copiato negli appunti",
     "messengerAdsJsonDescription": "Dovrai generare un nuovo codice JSON solo se modifichi il passaggio iniziale. Le modifiche agli altri passaggi non influiranno su questo codice JSON.",
+    "welcomeMessageFlowIdsTitle": "ID dei flussi di messaggi di benvenuto",
+    "welcomeMessageFlowIdsDescription": "Sincronizzato con ogni Pagina Facebook quando pubblichi. Selezionalo in App partner in Gestione inserzioni.",
     "messengerAdsNotPublished": "Pubblica il contenuto di questo flusso e riprova.",
     "messengerAdsNoStartNode": "Questo flusso non ha un passaggio iniziale valido. Apri il flusso, imposta come iniziale un passaggio Invia messaggio, quindi pubblica e riprova.",
     "messengerAdsError": "Si è verificato un errore durante la generazione del JSON. Riprova.",
@@ -3563,6 +3766,7 @@
     "whatsappFlowIncomplete": "Apri il pulsante e scegli un WhatsApp Flow e la sua schermata iniziale.",
     "whatsappCarouselButtonsMismatch": "Su WhatsApp, un carosello richiede gli stessi pulsanti su ogni scheda: un unico pulsante di collegamento su ogni scheda, oppure lo stesso numero di pulsanti di risposta su ogni scheda",
     "whatsappCarouselLinkButtonNotAlone": "Su WhatsApp, una scheda del carosello con un pulsante di collegamento non può avere altri pulsanti. Rimuovi gli altri pulsanti su quella scheda, oppure cambia il pulsante di collegamento in un'altra azione.",
+    "templateButtonOpenMiniAppUnsupported": "I pulsanti del modello non possono aprire una Mini App. Scegli un'altra azione per questo pulsante.",
     "duplicateNodeError": "Impossibile duplicare il blocco. Riprova.",
     "deleteNodeError": "Impossibile eliminare il blocco. Riprova.",
     "redoHistoryCleared": "Cronologia delle operazioni ripetibili cancellata",
@@ -3601,7 +3805,33 @@
       "labelsUnavailable": "Impossibile caricare le domande del Flow, quindi vengono mostrati i nomi dei campi.",
       "yes": "Sì",
       "no": "No"
-    }
+    },
+    "sendViewCatalogBodyTooLong": "Il testo del messaggio è troppo lungo per un messaggio catalogo. Accorcialo.",
+    "sendViewCatalogFooterTooLong": "Il piè di pagina è troppo lungo per un messaggio catalogo. Accorcialo.",
+    "viewCatalog": "Vedi catalogo",
+    "sendProductsDisplayUnsupported": "Questo canale non può inviare questo tipo di messaggio prodotto.",
+    "sendProductsFieldRequired": "Questo campo è obbligatorio.",
+    "sendProductsFieldNotAllowed": "Questo campo non può essere usato qui.",
+    "sendProductsFieldTooLong": "Questo testo è troppo lungo.",
+    "sendProductsProductCountOutOfRange": "Scegli un numero valido di prodotti.",
+    "sendProductsSectionCountOutOfRange": "Ci sono troppe sezioni.",
+    "sendProductsDuplicateProduct": "Un prodotto può comparire una sola volta.",
+    "inboundOrder": {
+      "title": "Carrello",
+      "preview": "Carrello ({count, plural, one {# articolo} other {# articoli}})",
+      "note": "Nota",
+      "unresolvedProduct": "Non trovato nel tuo catalogo"
+    },
+    "referredProduct": {
+      "askedAbout": "Ha chiesto informazioni su questo prodotto"
+    },
+    "savedReplyTextOrImageRequired": "Aggiungi del testo o almeno un'immagine",
+    "imagesNotSupportedOnChannel": "{channel} non può inviare immagini in questa conversazione",
+    "tooManyImagesOnChannel": "{channel} può inviare al massimo {max} immagine/i in questa conversazione",
+    "savedReplyImagesRemoved": "Le immagini che non possono essere inviate qui sono state rimosse",
+    "onlyImagesAllowed": "È possibile aggiungere solo immagini",
+    "tooManySavedReplyImages": "Una risposta salvata può avere al massimo {max} immagini",
+    "savedReplyImagesNotSentHere": "Le immagini non verranno inviate qui"
   },
   "instagram": {
     "description": "Questa integrazione ti consente di creare bot Instagram.",
@@ -3760,6 +3990,85 @@
     },
     "title": "DeepSeek"
   },
+  "decision": {
+    "addConnection": "Add AI Router connection",
+    "advanced": "Advanced",
+    "context": "Context",
+    "discardTypeChangeDescription": "Changing the AI Router type will discard its criteria and threshold.",
+    "discardTypeChangeTitle": "Change AI Router type?",
+    "output": "Output",
+    "outputNoul": "probabilityTrue (0–1)",
+    "statement": "Statement",
+    "thresholdChoice": "Require minimum confidence",
+    "thresholdNoul": "Require minimum TRUE probability",
+    "thresholdScore": "Require score threshold",
+    "thresholds": "Confidence & thresholds",
+    "addProfile": "Add AI Router profile",
+    "globalRouter": "Global Router",
+    "globalRouterRoutesDiscarded": "Anche i percorsi e le mappature dei metadati del Global Router verranno rimossi.",
+    "globalRouterDescription": "This profile becomes the workspace Global Router and replaces any previously selected Global Router.",
+    "globalRouterChooseDestination": "Choose destination",
+    "globalRouterDefaultDestination": "Default destination",
+    "globalRouterDestinationRequired": "Choose where unmatched messages should go.",
+    "globalRouterRouteDestinationRequired": "Choose a destination for this result.",
+    "globalRouterRoutes": "Route recognized results",
+    "globalRouterUsesFallback": "Uses default destination",
+    "globalRouterDestinationTypes": {
+      "flow": "Flow",
+      "aiAgent": "AI Agent",
+      "assignConversation": "Assign Conversation to an Admin"
+    },
+    "globalRouterFallbackDescription": "A default destination is required. It applies only when the Global Router is usable but evaluation has no valid result or route; unavailable connections or models use the workspace Default AI/Flow.",
+    "globalRouterFalseMaximum": "FALSE maximum probability",
+    "globalRouterMetadataMappings": "Optional result metadata mappings",
+    "globalRouterNoulDescription": "Values between the FALSE maximum and TRUE minimum use the fallback. The profile threshold does not affect Global Router Noul routing.",
+    "globalRouterRuntimeUnsupported": "This model has not been certified for AI Router runtime. You can save the configuration, but the Global Router remains inactive until certification.",
+    "globalRouterTrueMinimum": "TRUE minimum probability",
+    "flowStepDescription": "Select an active profile and map its typed results to contact custom fields.",
+    "profile": "AI Router profile",
+    "question": "Question",
+    "result": "Result",
+    "resultValues": {
+      "choice": "Choice",
+      "confidence": "Confidence",
+      "noul": "Noul",
+      "probability": "Probability",
+      "score": "Score"
+    },
+    "connection": "AI Router connection",
+    "connectionUnavailable": "AI Router connection unavailable",
+    "charactersRemaining": "{count} characters remaining",
+    "modelUnavailable": "Selected model is no longer available. Choose another model.",
+    "editProfile": "Modifica profilo AI Router",
+    "evaluateDecision": "AI Router",
+    "model": "Model",
+    "profileDescription": "A profile combines an AI Router connection, model and typed question contract.",
+    "profiles": "AI Router profiles",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "label": "Status"
+    },
+    "connectionDescription": "Configure a provider credential and the AI Router models it may use.",
+    "connections": "AI Router connections",
+    "connectionsDescription": "Connections are available to AI Router profiles in this workspace.",
+    "credentialKeepExisting": "Leave blank to keep the existing credential.",
+    "credentialRequired": "A provider credential is required.",
+    "defaultModel": "Default model",
+    "editConnection": "Edit AI Router connection",
+    "empty": "No AI Router connections yet.",
+    "endpoint": "Compatible endpoint",
+    "endpointDescription": "Use the provider's System One-compatible API endpoint.",
+    "modelCatalog": "Available models",
+    "modelCatalogDescription": "Enter one model ID per line, or separate model IDs with commas.",
+    "provider": "Provider",
+    "testFailed": "AI Router connection test failed.",
+    "testPassed": "AI Router connection test passed.",
+    "toolDescription": "Create reusable profiles for the AI Router flow step.",
+    "title": "AI Router",
+    "contactContext": "Contesto del contatto",
+    "contextProviderWarning": "I valori dei campi contatto selezionati vengono inviati al provider AI Router."
+  },
   "openrouter": {
     "autoReply": {
       "description": "Attiva la risposta automatica IA fornita da OpenRouter.",
@@ -3879,7 +4188,17 @@
     "maxItemsReached": "Sono consentiti al massimo {max} {feature} per area di lavoro",
     "maxCharacters": "Massimo {max} caratteri.",
     "invalidApiKey": "Chiave API non valida",
-    "maxMustBeGreaterThanMin": "{maxField} deve essere maggiore o uguale a {minField}"
+    "maxMustBeGreaterThanMin": "{maxField} deve essere maggiore o uguale a {minField}",
+    "inboundWebhook": {
+      "inboxRequired": "Scegli una casella di posta.",
+      "inboxNotFound": "La casella di posta selezionata non è stata trovata.",
+      "inboxDisconnected": "La casella di posta selezionata non è connessa.",
+      "unsupportedInboxIdentifier": "Questo canale non può essere identificato da quel valore.",
+      "identifierRequired": "Aggiungi almeno un'identità di contatto.",
+      "unknownFieldTarget": "Un campo del contatto mappato non esiste più.",
+      "actionReferenceNotFound": "Un'azione fa riferimento a un flusso, un tag o un campo che non esiste più.",
+      "fieldMappingRequired": "Aggiungi almeno una mappatura di campo."
+    }
   },
   "webchat": {
     "chatUnavailable": "Questa chat non è al momento disponibile.",
@@ -4452,7 +4771,8 @@
         "loadMoreError": "Impossibile caricare altre chiamate. Riprova.",
         "callInformation": "Informazioni sulla chiamata"
       }
-    }
+    },
+    "credentialSecretsRequired": "Inserisci il segreto dell'app e il token utente di sistema. Non sono ancora salvati."
   },
   "zalo": {
     "title": "Zalo OA",
@@ -4607,6 +4927,216 @@
     "title": "Link magici",
     "description": "Crea link diretti che reindirizzano al tuo URL con parametri di query."
   },
+  "inboundWebhooks": {
+    "title": "Webhook in entrata",
+    "feature": "Webhook in entrata",
+    "description": "Consenti a sistemi esterni di inviare dati al tuo workspace: trova o crea un contatto, salva valori nei suoi campi ed esegui azioni.",
+    "createDescription": "Un nuovo webhook parte inattivo. Configuralo nell'editor, poi attivalo.",
+    "deleteDescription": "I sistemi che inviano ancora a questo URL riceveranno un errore. Questa azione non può essere annullata.",
+    "editorDescription": "Invia una richiesta POST JSON all'URL qui sotto per eseguire questo webhook.",
+    "configure": "Configura",
+    "getLink": "Ottieni link",
+    "activeToggle": "Attiva {name}",
+    "columns": {
+      "active": "Attivo",
+      "createdAt": "Creato",
+      "requests": "Richieste"
+    },
+    "link": {
+      "title": "URL del webhook",
+      "description": "Invia JSON in POST a questo URL. Contiene un token segreto, quindi trattalo come una password."
+    },
+    "endpoint": {
+      "label": "URL del webhook",
+      "show": "Mostra URL",
+      "hide": "Nascondi URL"
+    },
+    "regenerate": {
+      "button": "Rigenera",
+      "title": "Rigenerare l'URL del webhook?",
+      "description": "L'URL attuale smette di funzionare subito. Aggiorna ogni sistema che invia a questo URL.",
+      "cancel": "Annulla",
+      "confirm": "Rigenera",
+      "success": "URL del webhook rigenerato",
+      "failed": "Impossibile rigenerare l'URL"
+    },
+    "activation": {
+      "incomplete": "Compila la casella di posta, almeno un campo del contatto e almeno una mappatura, e salva, prima di attivare questo webhook."
+    },
+    "sample": {
+      "title": "JSON di esempio",
+      "description": "Incolla un corpo di richiesta di esempio per esplorarne i campi e visualizzare un'anteprima dei valori.",
+      "load": "Carica JSON di esempio",
+      "status": {
+        "loaded": "Esempio caricato",
+        "invalid": "Questo JSON non è valido",
+        "tooLarge": "L'esempio supera {max} KB",
+        "unsupported": "L'esempio contiene caratteri non supportati o è annidato troppo in profondità"
+      },
+      "format": "Formatta JSON"
+    },
+    "contact": {
+      "title": "Trova o crea contatto",
+      "description": "Scegli la casella di posta a cui appartiene il contatto e come trovarlo. Se nessuno corrisponde, viene creato un nuovo contatto quando la richiesta contiene ciò che serve a questo canale."
+    },
+    "inbox": {
+      "modeLabel": "Casella di posta",
+      "mode": {
+        "inbox": "Casella di posta specifica",
+        "payload": "Dal payload"
+      },
+      "modeDescription": {
+        "inbox": "Ogni richiesta usa la casella di posta che scegli.",
+        "payload": "Ogni richiesta indica la propria casella di posta, ad esempio l'id di una pagina Messenger o l'id di un numero WhatsApp."
+      },
+      "inboxLabel": "Casella di posta",
+      "inboxPlaceholder": "Seleziona una casella di posta",
+      "noInboxes": "Nessuna casella di posta connessa trovata.",
+      "savedInboxMissing": "La casella di posta salvata non è più connessa. Scegline un'altra.",
+      "channelLabel": "Canale",
+      "channelPlaceholder": "Seleziona un canale",
+      "noPayloadChannels": "Collega prima un canale che lo supporti.",
+      "identifierKindLabel": "Identificatore della casella di posta",
+      "identifierKindPlaceholder": "Seleziona l'identificatore inviato nel payload",
+      "identifierPathHint": "Percorso JSON di questo valore nella richiesta."
+    },
+    "identity": {
+      "hint": "Compilane almeno uno. Il contatto viene cercato con il primo trovato nella richiesta, in quest'ordine.",
+      "phone": "Telefono",
+      "email": "Email",
+      "channelUserId": "ID utente del canale",
+      "fullName": "Nome completo",
+      "creationHint": "Senza {identities}, una richiesta per un contatto sconosciuto viene ignorata. Vengono aggiornati solo i contatti esistenti."
+    },
+    "inboxIdentifierKinds": {
+      "pageId": "ID pagina Facebook",
+      "igId": "ID account Instagram",
+      "phoneNumberId": "ID numero di telefono WhatsApp",
+      "displayPhoneNumber": "Numero di telefono WhatsApp (meno preciso)",
+      "botId": "ID bot Telegram",
+      "oaId": "ID Zalo OA",
+      "openId": "Open ID account TikTok",
+      "threadsUserId": "ID utente Threads"
+    },
+    "channelUserIdKinds": {
+      "psid": "PSID Messenger",
+      "igsid": "IGSID Instagram",
+      "telegramChatId": "ID chat Telegram",
+      "zaloUserId": "ID utente Zalo",
+      "tiktokCustomerOpenId": "Open ID cliente TikTok",
+      "threadsUsername": "Nome utente Threads",
+      "apiSourceId": "ID origine contatto",
+      "whatsappId": "ID WhatsApp (wa_id)"
+    },
+    "mappings": {
+      "title": "Salva i dati in entrata",
+      "description": "Copia i valori della richiesta nei campi del contatto.",
+      "empty": "Nessun campo ancora mappato.",
+      "add": "Aggiungi campo",
+      "remove": "Rimuovi campo",
+      "target": "Campo del contatto",
+      "targetPlaceholder": "Seleziona un campo",
+      "path": "Percorso JSON",
+      "rowTitle": "Mappatura {number}"
+    },
+    "actions": {
+      "title": "Dopo il salvataggio dei dati",
+      "description": "Azioni da eseguire per il contatto dopo il salvataggio dei dati."
+    },
+    "picker": {
+      "title": "Esplora JSON",
+      "description": "Cerca e fai clic su un valore, oppure inserisci un JSONPath qui sotto",
+      "browse": "Esplora",
+      "noSample": "Carica prima un JSON di esempio per esplorarne i campi.",
+      "pathLabel": "Percorso JSON",
+      "use": "Usa percorso",
+      "cancel": "Annulla",
+      "result": "Risultato:",
+      "noValue": "nessun valore",
+      "searchLabel": "Cerca nel JSON",
+      "searchPlaceholder": "Cerca chiavi, percorsi o valori",
+      "noMatches": "Nessuna chiave o valore corrispondente.",
+      "moreResults": "Vengono mostrate le prime {count} corrispondenze. Affina la ricerca per vedere le altre.",
+      "pathHint": "Supporta nomi di proprietà e indici di array, incluso $[\"customer-data\"][\"email\"]",
+      "invalidPath": "Questo non è un JSONPath supportato."
+    },
+    "requests": {
+      "title": "Richieste",
+      "description": "Le ultime consegne ricevute da questo webhook (conservate per 30 giorni).",
+      "refresh": "Aggiorna",
+      "empty": "Nessuna richiesta ricevuta finora.",
+      "previous": "Pagina precedente",
+      "next": "Pagina successiva",
+      "pageOf": "Pagina {page} di {pageCount}",
+      "contact": "Contatto n. {id}",
+      "showDetails": "Mostra dettagli",
+      "hideDetails": "Nascondi dettagli",
+      "loadingDetails": "Caricamento dei dettagli…",
+      "detailsFailed": "Impossibile caricare i dettagli.",
+      "fieldErrors": "Campi non salvati",
+      "actionResults": "Azioni",
+      "payload": "Payload",
+      "status": {
+        "received": "Ricevuta",
+        "processing": "In elaborazione",
+        "processed": "Elaborata",
+        "completedWithErrors": "Completata con errori",
+        "skipped": "Ignorata",
+        "failed": "Non riuscita"
+      },
+      "skipReason": {
+        "webhookInactive": "Il webhook era inattivo.",
+        "missingInboxIdentifier": "La richiesta non conteneva l'identificatore della casella di posta.",
+        "inboxNotFound": "Nessuna casella di posta corrisponde all'identificatore della richiesta.",
+        "inboxAmbiguous": "Più di una casella di posta corrisponde all'identificatore della richiesta.",
+        "inboxDisconnected": "La casella di posta è disconnessa.",
+        "missingIdentifier": "La richiesta non conteneva alcuna identità di contatto.",
+        "workspaceBlocked": "Il proprietario dello spazio di lavoro è bloccato.",
+        "contactNotFound": "Nessun contatto corrisponde e la richiesta non conteneva quanto serve per crearne uno.",
+        "contactAmbiguous": "Più di un contatto ha questo nome nella casella, quindi la richiesta è stata ignorata."
+      },
+      "fieldErrorCode": {
+        "invalidValue": "Valore non valido",
+        "invalidPhone": "Numero di telefono non valido",
+        "unknownField": "Il campo non esiste più"
+      },
+      "actionStatus": {
+        "succeeded": "riuscito",
+        "skipped": "saltato",
+        "failed": "non riuscito"
+      },
+      "errorCode": {
+        "abandoned": "Abbandonata: non elaborata entro 24 ore"
+      },
+      "actionSkipReason": {
+        "noConversation": "Il contatto non ha una conversazione",
+        "noContactInbox": "Il contatto non è collegato a questa casella",
+        "flowInactive": "Il flusso non è pubblicato",
+        "unsupportedAction": "Questa azione non è supportata qui",
+        "unsupportedChannel": "Il canale non supporta questa azione",
+        "invalidAction": "L'azione non è configurata correttamente",
+        "unknownAction": "Azione sconosciuta",
+        "unsupportedSource": "Non supportato per questa origine"
+      }
+    },
+    "save": {
+      "invalid": "Alcune impostazioni non sono valide. Correggi i campi evidenziati e salva di nuovo."
+    },
+    "viewAnalytics": "Visualizza statistiche",
+    "analytics": {
+      "title": "Statistiche",
+      "back": "Torna al webhook",
+      "totalRequests": "Totale richieste ricevute",
+      "totalRequestsHint": "Ogni richiesta accettata dalla creazione del webhook. I duplicati non vengono conteggiati. Il registro sotto conserva gli ultimi 30 giorni."
+    },
+    "issues": {
+      "inboxRequired": "Scegli una casella di posta.",
+      "identifierRequired": "Compila almeno uno dei quattro campi del contatto.",
+      "fieldMappingRequired": "Aggiungi almeno un campo in «Salva i dati in entrata».",
+      "required": "Questo campo è obbligatorio.",
+      "unsupportedPath": "Percorso JSON non supportato."
+    }
+  },
   "QRCode": {
     "title": "Codice QR",
     "description": "Condividi questo codice affinché le persone aprano il tuo link di tracciamento."
@@ -4637,8 +5167,8 @@
       "ticketPriorityChanged": "Priorità del ticket modificata",
       "subscribedToSequence": "Iscritto alla sequenza",
       "unsubscribedFromSequence": "Disiscritto dalla sequenza",
-      "WhatsappShoppingCartSent": "Carrello WhatsApp inviato",
-      "userAskedAboutProduct": "L'utente ha chiesto informazioni sul prodotto",
+      "shoppingCartSent": "Il contatto ha inviato un carrello",
+      "userAskedAboutProduct": "Il contatto ha chiesto informazioni su un prodotto",
       "cartAbandoned": "Carrello abbandonato",
       "newOrder": "Nuovo ordine",
       "orderAccepted": "Ordine accettato",
@@ -4652,7 +5182,8 @@
       "contactReferredANewContact": "Il contatto ha segnalato un nuovo contatto",
       "contactReferredExistingContact": "Il contatto ha segnalato un contatto esistente",
       "callRecorded": "Chiamata registrata",
-      "callTranscribed": "Chiamata trascritta"
+      "callTranscribed": "Chiamata trascritta",
+      "anyProduct": "Qualsiasi prodotto"
     },
     "actions": {
       "addTag": "Aggiungi tag",
@@ -5433,12 +5964,18 @@
     }
   },
   "instagramStoryAutomation": {
-    "title": "Automazione risposte alle Storie di Instagram",
-    "description": "Automatizza le risposte alle risposte alle Storie di Instagram per i tuoi contatti.",
+    "title": "Automazione Storie di Instagram",
+    "description": "Automatizza le risposte quando i contatti rispondono alle tue Storie di Instagram o ti menzionano nelle loro.",
     "create": "Crea automazione",
     "replies": "Risposte",
     "activated": "Automazione attivata",
     "deactivated": "Automazione disattivata",
+    "trigger": "Attivatore",
+    "triggerDescription": "Scegli cosa avvia questa automazione. Non può essere modificato dopo la creazione.",
+    "triggerType": {
+      "storyReply": "Risponde alla tua storia",
+      "storyMention": "Ti menziona nella sua storia"
+    },
     "trackStoryReplyOn": "Monitora le risposte alle Storie su",
     "trackStoryReplyOnDescription": "Applica questa automazione alle risposte su tutte le tue Storie, oppure limitala a Storie specifiche che selezioni.",
     "reply": "Risposta",
@@ -5502,7 +6039,6 @@
     "allForms": "Tutti i moduli",
     "allFormsNote": "Verranno acquisiti i contatti provenienti da ogni modulo di questa pagina. I campi standard (e-mail, telefono, nome, genere) vengono salvati automaticamente nei campi corrispondenti del contatto.",
     "leadData": "Dati del contatto acquisito",
-    "whatFlow": "Quale flusso viene attivato",
     "addNewPage": "Aggiungi",
     "noEligiblePages": "Nessuna pagina idonea. Usa \"Aggiungi\" per concedere l'accesso ai contatti acquisiti.",
     "duplicateError": "Esiste già un'automazione per questa pagina e questo modulo.",
@@ -5629,7 +6165,24 @@
       "openAsSupport": "Apri come supporto",
       "supportEnabledUntil": "Abilitato fino al {time}",
       "supportOff": "Disattivato",
-      "searchPlaceholder": "Cerca per nome, email del proprietario o ID"
+      "searchPlaceholder": "Cerca per nome, email del proprietario o ID",
+      "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
+      "supportAccessible": "Accessible"
+    },
+    "admins": {
+      "title": "Platform administrators",
+      "description": "Manage users who can access the platform administration console.",
+      "addTitle": "Add platform administrator",
+      "addDescription": "Grant platform administration access to a root-tenant user.",
+      "addButton": "Add administrator",
+      "role": "Role",
+      "bootstrap": "Environment bootstrap administrator",
+      "remove": "Remove administrator",
+      "empty": "No platform administrators are configured.",
+      "added": "Platform administrator added.",
+      "removed": "Platform administrator removed.",
+      "addError": "Could not add the platform administrator.",
+      "removeError": "Could not remove the platform administrator."
     }
   },
   "platformCredentials": {
@@ -6492,17 +7045,15 @@
     "status": {
       "title": "Meta Conversions API",
       "ready": "Pronto",
-      "missingPermission": "Autorizzazione necessaria",
-      "unverified": "Non verificato",
       "unsupported": "Non supportato",
-      "notConnected": "Non connesso"
+      "notConnected": "Non connesso",
+      "reconnect": "Riconnessione necessaria"
     },
     "statusDescriptions": {
-      "ready": "Questa integrazione dispone dell'autorizzazione Meta richiesta per gli eventi di Conversions API.",
-      "missingPermission": "Riconnetti questa integrazione e concedi l'autorizzazione Meta richiesta.",
-      "unverified": "Le impostazioni dell'app della piattaforma non sono disponibili, quindi l'autorizzazione CAPI non può essere verificata.",
+      "ready": "Gli eventi di Conversions API di questa integrazione vengono inviati a Meta.",
       "unsupported": "Meta Conversions API per Instagram richiede un account connesso tramite Facebook Login for Business.",
-      "notConnected": "Conversions API è uno strumento aziendale di Meta che consente di condividere dati con Meta per migliorare le prestazioni degli annunci."
+      "notConnected": "Conversions API è uno strumento aziendale di Meta che consente di condividere dati con Meta per migliorare le prestazioni degli annunci.",
+      "reconnect": "L'autorizzazione della Conversions API è scaduta, quindi gli eventi sono in pausa. Dataset e impostazioni di test vengono mantenuti; riconnetti per riprendere l'invio."
     },
     "errors": {
       "reconnect": "Impossibile avviare la riconnessione a Meta CAPI.",
@@ -6512,12 +7063,14 @@
       "saveFailed": "Impossibile salvare. Riprova.",
       "datasetRequired": "Salva un ID dataset prima di aggiungere un token di accesso.",
       "invalidToken": "Questo token non è riuscito ad accedere al dataset.",
-      "invalidDatasetId": "Inserisci un Dataset ID valido (solo numeri).",
       "whatsappNotFound": "Integrazione WhatsApp non trovata.",
       "testEventCodeRequired": "Salva un codice evento di test prima di inviare un evento di test.",
       "invalidTestEventCode": "Il codice evento di test può contenere solo lettere, numeri, trattini o trattini bassi (max 64).",
       "invalidMessagingId": "L'ID di messaggistica può contenere solo lettere, cifre, trattini o trattini bassi (max 512).",
-      "capiDisconnected": "Meta CAPI è disconnesso per questo canale. Ricollegalo prima di inviare un evento di test."
+      "capiDisconnected": "Meta CAPI è disconnesso per questo canale. Ricollegalo prima di inviare un evento di test.",
+      "appNotConfigured": "L'app Meta per questo canale non è ancora configurata.",
+      "capiNotConfigured": "La connessione a Conversions API non è configurata. Chiedi all'amministratore di impostare il Config ID di Conversions API.",
+      "wabaMismatch": "L'account WhatsApp Business autorizzato non è quello a cui appartiene questo numero. Collegati con lo stesso account."
     },
     "fields": {
       "eventType": {
@@ -6602,32 +7155,13 @@
     "disconnect": "Disconnetti",
     "openEventManager": "Apri Gestione eventi",
     "methods": {
-      "oauth": {
-        "title": "Connetti tramite Facebook",
-        "description": "Usa la connessione esistente della tua pagina, quindi scegli un ID dataset.",
-        "connect": "Crea dataset",
-        "connectedLabel": "tramite Facebook"
-      },
       "custom": {
         "title": "Connessione personalizzata",
         "description": "Usa un ID dataset e un token di accesso da Meta Gestione eventi.",
         "start": "Configura connessione personalizzata",
         "connect": "Connetti",
         "connectedLabel": "Personalizzata"
-      },
-      "whatsapp": {
-        "title": "Connetti tramite WhatsApp",
-        "description": "Usa la tua connessione WhatsApp, quindi scegli un ID dataset.",
-        "connect": "Crea dataset",
-        "connectedLabel": "tramite WhatsApp"
       }
-    },
-    "finalize": {
-      "title": "Scegli un ID dataset",
-      "description": "Inserisci un ID dataset esistente oppure lascialo vuoto per crearne uno automaticamente.",
-      "save": "Salva",
-      "createDataset": "Crea dataset",
-      "caveat": "Un ID dataset non collegato a questa Pagina o account Instagram potrebbe non attribuire correttamente gli eventi. Lascia questo campo vuoto per creare automaticamente un dataset collegato."
     },
     "whatsapp": {
       "connect": "Connetti"
@@ -6676,6 +7210,24 @@
       "messagingIdHint": "Solo lettere, cifre, trattini e trattini bassi (max 512).",
       "cancel": "Annulla",
       "confirmSend": "Invia"
+    },
+    "connect": {
+      "button": "Collega Conversions API",
+      "success": "Conversions API collegata.",
+      "title": "Collega con Meta",
+      "description": "Accedi a Meta e concedi l'accesso per gli eventi di conversione. Viene creata una connessione separata per Conversions API, senza modificare l'accesso di questo canale.",
+      "reconnect": "Riconnetti"
+    },
+    "connectResult": {
+      "errors": {
+        "cancelled": "Collegamento annullato. Non è stato modificato nulla.",
+        "notFound": "Questo canale non è stato trovato.",
+        "pageNotFound": "L'account Facebook usato non gestisce questa Pagina. Accedi con un account che la gestisce.",
+        "accountNotFound": "L'account Facebook usato non gestisce questo account Instagram. Accedi con un account che lo gestisce.",
+        "datasetFailed": "Meta non ha consentito di creare un dataset con questa connessione. Concedi tutte le autorizzazioni richieste e riprova.",
+        "sessionExpired": "Il collegamento ha richiesto troppo tempo o è stato avviato in un'altra scheda. Riprova.",
+        "failed": "Impossibile collegare Conversions API. Riprova."
+      }
     }
   },
   "googleAds": {
@@ -7705,8 +8257,6 @@
       "screenTitle": "Titolo",
       "screenId": "ID schermata",
       "screenIdHint": "Solo lettere e trattini bassi. Usato dalla navigazione e nel Flow JSON.",
-      "terminal": "Ultima schermata",
-      "terminalHint": "Il flow può terminare qui. Serve un Footer che completi il flow.",
       "remove": "Elimina schermata"
     },
     "inspector": {
@@ -7761,7 +8311,20 @@
       "success": "Pubblicato su WhatsApp",
       "draftOnly": "Meta ha mantenuto il Flow come bozza a causa di errori",
       "failed": "Impossibile pubblicare su WhatsApp",
-      "contactVariables": "Questa Mini App mostra campi personalizzati nei suoi testi. Per ora funzionano solo sul link web: rimuovili prima di pubblicare su WhatsApp."
+      "contactVariables": "Questa Mini App mostra campi personalizzati nei suoi testi. Per ora funzionano solo sul link web: rimuovili prima di pubblicare su WhatsApp.",
+      "notOnNumber": "La Mini App non è su questo numero WhatsApp.",
+      "onlyDraftDeletable": "Il Flow è pubblicato su Meta, quindi non può essere eliminato. Si può eliminare solo una bozza.",
+      "flowIsLive": "La Mini App è attiva su questo numero WhatsApp. Salvare una bozza la disattiverebbe: pubblicala per aggiornarla.",
+      "saveDraft": "Salva come bozza",
+      "draftSaved": "Salvato su WhatsApp come bozza",
+      "preview": "Anteprima",
+      "previewUnavailable": "Meta non ha restituito un link di anteprima",
+      "deleteDraft": "Elimina bozza su WhatsApp",
+      "draftDeleted": "Bozza eliminata da WhatsApp"
+    },
+    "status": {
+      "draft": "Bozza",
+      "published": "Pubblicato"
     },
     "runner": {
       "back": "Indietro",
@@ -7916,7 +8479,9 @@
         "email": "Email",
         "password": "Password",
         "passcode": "Codice",
-        "phone": "Telefono"
+        "phone": "Telefono",
+        "date": "Data",
+        "datetime": "Data e ora"
       },
       "fontWeight": {
         "normal": "Normale",
@@ -7956,8 +8521,7 @@
       "screen_id_invalid": "L'ID schermata può contenere solo lettere e trattini bassi.",
       "screen_id_reserved": "“SUCCESS” è riservato da WhatsApp. Scegli un altro ID schermata.",
       "screen_id_duplicate": "Un'altra schermata usa già questo ID.",
-      "no_terminal_screen": "Contrassegna almeno una schermata come ultima schermata.",
-      "terminal_screen_without_complete": "L'ultima schermata richiede un Footer che completi il flow.",
+      "no_terminal_screen": "Aggiungi all'ultima schermata un Footer che completa il flusso.",
       "screen_without_exit": "Questa schermata non ha modo di proseguire. Aggiungi un Footer o un link che porti a un'altra schermata.",
       "screen_unreachable": "Nessuna schermata porta a questa.",
       "too_many_components": "Una schermata può contenere al massimo {max} componenti.",
@@ -7990,7 +8554,6 @@
       "reference_unknown": "{reference} non corrisponde a nessun campo.",
       "data_reference_unsupported": "{reference}: i dati della schermata non sono supportati. Usa i campi del modulo.",
       "property_unknown": "WhatsApp non accetta la proprietà “{name}” su questo componente.",
-      "complete_on_non_terminal": "“Completa il flow” si può usare solo nell’ultima schermata.",
       "footer_captions_invalid": "Usa una didascalia centrale, oppure una sinistra e una destra insieme.",
       "options_with_images_limit": "Con immagini, un menu a tendina può avere al massimo {max} opzioni.",
       "navigation_badge_multiple": "Solo un elemento di un elenco di navigazione può avere un badge.",
@@ -8009,5 +8572,485 @@
         "upload_failed": "Impossibile caricare il file. Riprova."
       }
     }
+  },
+  "leaderboards": {
+    "title": "Classifiche",
+    "public": {
+      "points": "{points} punti",
+      "endsIn": "Termina tra {days}g {hours}h {minutes}m {seconds}s",
+      "finished": "Terminata",
+      "empty": "Ancora nessun giocatore — sii il primo!",
+      "myRank": "La tua posizione: #{rank}",
+      "unranked": "Non ancora in classifica",
+      "shareToEarn": "Condividi e guadagna punti",
+      "linkCopied": "Link copiato",
+      "unavailableTitle": "Questa classifica non è più disponibile",
+      "unavailableDescription": "Potrebbe essere terminata o rimossa. Chiedi il link più recente alla pagina che segui."
+    },
+    "description": "Crea campagne di classifica a punti in cui i clienti si sfidano per i primi posti e per i premi.",
+    "feature": "Classifica",
+    "create": "Crea classifica",
+    "kpi": {
+      "total": "Campagne totali",
+      "active": "In corso"
+    },
+    "tabs": {
+      "all": "Tutte",
+      "active": "Attive",
+      "paused": "In pausa",
+      "finished": "Terminate"
+    },
+    "status": {
+      "draft": "Bozza",
+      "active": "Attiva",
+      "paused": "In pausa",
+      "finished": "Terminata"
+    },
+    "platforms": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "whatsapp": "WhatsApp",
+      "zalo": "Zalo OA",
+      "telegram": "Telegram",
+      "tiktok": "TikTok",
+      "threads": "Threads",
+      "email": "Email SMTP",
+      "gamification": "Gamification"
+    },
+    "list": {
+      "campaign": "Campagna",
+      "searchPlaceholder": "Cerca classifiche...",
+      "platformFilter": "Piattaforma",
+      "participants": "Partecipanti",
+      "totalPoints": "Punti totali",
+      "newToday": "+{count} oggi",
+      "average": "media {value} / giocatore",
+      "daysLeft": "{days, plural, one {# giorno rimanente} other {# giorni rimanenti}}",
+      "ended": "Terminata"
+    },
+    "scope": {
+      "allPosts": "Tutti i post",
+      "specificPosts": "Post specifici",
+      "specificPostsCount": "{count, plural, one {# post} other {# post}}",
+      "telegramChatsCount": "{count, plural, one {# gruppo} other {# gruppi}}"
+    },
+    "menu": {
+      "start": "Avvia",
+      "pause": "Metti in pausa",
+      "finish": "Termina",
+      "resetPoints": "Azzera i punti",
+      "triggerRewards": "Invia i premi",
+      "viewParticipants": "Visualizza partecipanti",
+      "copyLink": "Copia link pubblico"
+    },
+    "confirm": {
+      "publishTitle": "Pubblicare questa classifica?",
+      "publishDescription": "L’assegnazione dei punti inizia subito e i giocatori possono vedere la pagina pubblica.",
+      "pauseTitle": "Mettere in pausa questa classifica?",
+      "pauseDescription": "L’assegnazione automatica e tramite flow si interrompe. Puoi comunque modificare i punti a mano.",
+      "startTitle": "Riprendere questa classifica?",
+      "startDescription": "L’assegnazione dei punti riparte per ogni regola.",
+      "finishTitle": "Terminare questa classifica?",
+      "finishDescription": "Tutti i punteggi vengono bloccati e non possono più cambiare. I premi automatici vengono inviati se attivati.",
+      "resetPointsTitle": "Azzerare tutti i punti?",
+      "resetPointsDescription": "Tutti i partecipanti di \"{name}\" tornano a 0 punti. L’azione viene registrata e non può essere annullata."
+    },
+    "toast": {
+      "published": "Classifica pubblicata",
+      "paused": "Classifica messa in pausa",
+      "started": "Classifica ripresa",
+      "finished": "Classifica terminata",
+      "pointsReset": "Tutti i punti sono stati azzerati"
+    },
+    "export": {
+      "title": "Esporta partecipanti",
+      "description": "Scarica tutti i partecipanti con posizione e punteggio in un file CSV.",
+      "preparing": "Preparazione del file in corso...",
+      "ready": "Il tuo file è pronto ({count} righe).",
+      "failed": "Esportazione non riuscita. Riprova."
+    },
+    "rewards": {
+      "title": "Invia i premi",
+      "description": "Invia il flow dei premi ai migliori giocatori. I premi possono essere inviati una sola volta.",
+      "flow": "Flow dei premi",
+      "topN": "Numero di vincitori (top N)",
+      "noFlow": "Nessun flow dei premi selezionato — impostane uno nelle impostazioni della classifica.",
+      "alreadySent": "I premi sono già stati inviati per questa classifica.",
+      "confirm": "Invia i premi",
+      "result": "Inviato a {sent} vincitori, {skipped} saltati (nessuna conversazione su questo canale)."
+    },
+    "wizard": {
+      "steps": {
+        "info": "Informazioni",
+        "config": "Canale e regole",
+        "review": "Revisione e pubblicazione"
+      },
+      "namePlaceholder": "es. Migliori fan di ottobre",
+      "coverImage": "Immagine di copertina",
+      "coverImageHint": "JPG o PNG, fino a 5 MB. Dimensione consigliata 1200×630.",
+      "coverImageRejected": "Scegli un’immagine JPG o PNG fino a 5 MB.",
+      "description": "Regole e premi",
+      "descriptionPlaceholder": "Spiega come i giocatori guadagnano punti e cosa vincono i migliori.",
+      "startsAt": "Inizio",
+      "endsAt": "Fine",
+      "startLocked": "L’orario di inizio non può essere modificato dopo la pubblicazione.",
+      "channelTitle": "Piattaforma e canale",
+      "platform": "Piattaforma",
+      "hostChannel": "Canale",
+      "hostLocked": "Piattaforma e canale non possono essere modificati dopo la pubblicazione.",
+      "noChannel": "Nessun canale {platform} connesso. Connettine uno prima in Impostazioni → Canali.",
+      "openMinigameSettings": "Apri impostazioni del gioco",
+      "postScope": "Post che assegnano punti",
+      "choosePosts": "Scegli i post",
+      "telegramChats": "Gruppi e canali",
+      "telegramChatsHint": "Aggiungi il tuo bot al gruppo o al canale come amministratore, così potrà vedere membri e messaggi.",
+      "telegramChatsEmpty": "Nessun gruppo trovato — aggiungi prima il bot come amministratore",
+      "rulesTitle": "Regole di punteggio",
+      "rulesHint": "Attiva le azioni che fanno guadagnare punti e imposta quanti.",
+      "allPlatforms": "Tutte le piattaforme",
+      "points": "Punti",
+      "maxPerDay": "Massimo al giorno",
+      "maxPerDayHint": "Lascia vuoto per nessun limite.",
+      "minChars": "Caratteri minimi",
+      "bonusPoints": "Punti bonus golden hour",
+      "bonusPointsHint": "Punti extra per i commenti scritti subito dopo la pubblicazione del post.",
+      "bonusMinutes": "Durata della golden hour (minuti)",
+      "emailTopicNote": "Aperture e clic vengono tracciati solo per le email inviate con un Email Topic.",
+      "generalTitle": "Impostazioni generali",
+      "followersOnly": "Solo follower",
+      "followersOnlyHint": "Solo chi segue il tuo account guadagna punti.",
+      "tagFilter": "Filtro per tag",
+      "tagFilterHint": "Solo i contatti con almeno uno di questi tag guadagnano punti.",
+      "everyone": "Tutti",
+      "resetTime": "Orario di reset giornaliero (UTC)",
+      "resetTimeHint": "I limiti giornalieri ripartono a quest’ora. = {time} ora del Vietnam (UTC+7).",
+      "cooldown": "Cooldown antispam (secondi)",
+      "cooldownHint": "Secondi minimi tra due assegnazioni automatiche alla stessa persona. 0 lo disattiva.",
+      "referralFlow": "Flow di benvenuto per i referral",
+      "referralFlowAuto": "Crea automaticamente",
+      "referralFlowHint": "Inviato a un amico che si unisce tramite un link di invito. Può usare '{{referral_name}}' e il link pubblico della classifica. Lascia vuoto per creare automaticamente un messaggio di benvenuto che puoi modificare in Flow Builder.",
+      "publicLink": "Link pubblico",
+      "publicLinkHint": "Invia questo link da un flow così ogni giocatore vede la propria posizione.",
+      "publicLinkAfterSave": "Il link pubblico sarà disponibile dopo il salvataggio.",
+      "rewardsTitle": "Premi",
+      "autoOnFinish": "Invia automaticamente al termine",
+      "autoOnFinishHint": "Esegue il flow dei premi per i primi N non appena la classifica termina.",
+      "backToStep2": "Torna al passaggio 2",
+      "notEditable": "Le classifiche terminate non possono essere modificate."
+    },
+    "review": {
+      "infoCard": "Informazioni",
+      "yes": "Sì",
+      "no": "No",
+      "off": "Disattivato",
+      "seconds": "{seconds} secondi",
+      "resetTimeValue": "{utc} UTC (= {local} Vietnam)",
+      "noRules": "Nessuna regola è ancora attiva.",
+      "rulePoints": "{points} pt",
+      "maxPerDay": "max {count}/giorno",
+      "unlimited": "illimitato"
+    },
+    "preview": {
+      "sampleName": "Giocatore {rank}",
+      "placeholderName": "Nome della tua classifica",
+      "pinnedBar": "#{rank} · {points} pt"
+    },
+    "validation": {
+      "nameRequired": "Inserisci un nome",
+      "dateRequired": "Scegli data e ora",
+      "endsAfterStart": "L’orario di fine deve essere successivo a quello di inizio",
+      "channelRequired": "Scegli un canale",
+      "minigameRequired": "Scegli un minigioco",
+      "pointsRequired": "Inserisci i punti assegnati da questa regola",
+      "bonusMinutesRequired": "Imposta quanti minuti dura la golden hour",
+      "postsRequired": "Scegli almeno un post",
+      "telegramChatsRequired": "Scegli almeno un gruppo o canale",
+      "enableOneRule": "Attiva almeno una regola di punteggio prima di pubblicare",
+      "fixErrors": "Correggi i campi evidenziati"
+    },
+    "rules": {
+      "comments": {
+        "label": "Commenti",
+        "description": "Punti per ogni commento ai tuoi post."
+      },
+      "liveComments": {
+        "label": "Commenti live",
+        "description": "Punti per ogni commento durante una diretta."
+      },
+      "keywords": {
+        "label": "Keywords",
+        "description": "Punti quando un messaggio corrisponde a una qualsiasi parola chiave dello strumento Keywords di questo canale."
+      },
+      "storyMention": {
+        "label": "Menzione nella storia",
+        "description": "Punti quando qualcuno tagga il tuo account nella propria storia."
+      },
+      "storyReaction": {
+        "label": "Reazione alla storia",
+        "description": "Punti quando qualcuno reagisce alla tua storia."
+      },
+      "ctwaReactions": {
+        "label": "Clic CTWA e reazioni",
+        "description": "Punti per il clic su un annuncio Click-to-WhatsApp o per una reazione a un messaggio."
+      },
+      "survey": {
+        "label": "Sondaggio e quiz",
+        "description": "Punti per aver completato un Questionnaire o inviato un modulo WhatsApp Flow."
+      },
+      "follow": {
+        "label": "Follow OA e QR",
+        "description": "Punti per aver seguito il tuo Official Account o scansionato il suo codice QR. Se smette di seguirlo, i punti vengono tolti."
+      },
+      "message": {
+        "label": "Messaggio Zalo",
+        "description": "Punti per ogni messaggio inviato al tuo Official Account."
+      },
+      "joinGroup": {
+        "label": "Ingresso in canale e gruppo",
+        "description": "Punti per l’ingresso nel tuo gruppo o canale. Se esce, i punti vengono tolti."
+      },
+      "groupDiscussion": {
+        "label": "Discussione nel gruppo",
+        "description": "Punti per ogni messaggio nel tuo gruppo."
+      },
+      "emailOpen": {
+        "label": "Apertura email",
+        "description": "Punti quando un’email viene aperta."
+      },
+      "emailClick": {
+        "label": "Clic nell’email",
+        "description": "Punti quando si fa clic su un link in un’email."
+      },
+      "minigameWin": {
+        "label": "Vittoria nel minigioco",
+        "description": "Punti per ogni premio vinto nel minigioco."
+      },
+      "inGameShare": {
+        "label": "Condivisione nel gioco",
+        "description": "Punti per la condivisione del gioco per ottenere più turni."
+      },
+      "referral": {
+        "label": "Referral",
+        "description": "Punti per chi invita quando un nuovo amico si unisce tramite il suo link."
+      }
+    },
+    "breakdown": {
+      "comments": "{count} commenti",
+      "liveComments": "{count} commenti live",
+      "keywords": "{count} keyword",
+      "storyMention": "{count} menzioni nella storia",
+      "storyReaction": "{count} reazioni alla storia",
+      "ctwaReactions": "{count} CTWA",
+      "survey": "{count} sondaggi",
+      "follow": "{count} follow",
+      "message": "{count} messaggi",
+      "joinGroup": "{count} ingressi",
+      "groupDiscussion": "{count} messaggi di gruppo",
+      "emailOpen": "{count} aperture",
+      "emailClick": "{count} clic",
+      "minigameWin": "{count} vittorie",
+      "inGameShare": "{count} condivisioni",
+      "referral": "{count} referral",
+      "flow": "{count} flow",
+      "manual": "{count} manuali"
+    },
+    "participants": {
+      "title": "Partecipanti",
+      "switcher": "Cambia classifica",
+      "count": "{count, plural, one {# giocatore} other {# giocatori}}",
+      "searchPlaceholder": "Cerca nome, ID utente o telefono...",
+      "filters": {
+        "all": "Tutti",
+        "top10": "Top 10",
+        "top50": "Top 50",
+        "banned": "Bannati"
+      },
+      "columns": {
+        "rank": "Posizione",
+        "participant": "Partecipante",
+        "score": "Punteggio totale",
+        "breakdown": "Dettagli",
+        "lastActivity": "Ultima attività"
+      },
+      "unknown": "Sconosciuto",
+      "contactId": "ID {id}",
+      "lockedFinished": "Questa classifica è terminata — i punteggi sono bloccati.",
+      "lockedDraft": "Pubblica la classifica prima di modificare i punteggi.",
+      "actions": {
+        "adjust": "Modifica i punti",
+        "ban": "Banna",
+        "unban": "Rimuovi il ban",
+        "reset": "Azzera",
+        "history": "Visualizza cronologia"
+      },
+      "adjust": {
+        "title": "Modifica i punti",
+        "description": "Aggiungi o sottrai punti per {name}. La modifica viene conservata nel registro di controllo.",
+        "delta": "Punti (+/-)",
+        "deltaPlaceholder": "es. 50 o -20",
+        "reason": "Motivo",
+        "reasonPlaceholder": "Perché stai modificando questo punteggio?",
+        "success": "Punti modificati"
+      },
+      "banConfirm": "{name} viene rimosso dalla classifica e smette di guadagnare punti.",
+      "unbanConfirm": "{name} torna in classifica con il suo punteggio attuale.",
+      "resetConfirm": "Il punteggio di {name} torna a 0. L’azione viene registrata.",
+      "banned": "Partecipante bannato",
+      "unbanned": "Ban del partecipante rimosso",
+      "resetDone": "Punteggio azzerato",
+      "history": {
+        "title": "Cronologia punteggio — {name}",
+        "empty": "Nessuna variazione di punteggio finora.",
+        "sources": {
+          "rule": "Regola",
+          "flow": "Flow",
+          "referral": "Referral",
+          "manual": "Modifica manuale",
+          "reset": "Azzeramento"
+        }
+      },
+      "conversationNotFound": "Nessuna conversazione trovata per questo contatto",
+      "popupBlocked": "Consenti i popup per questo sito, quindi riprova."
+    },
+    "auditLog": {
+      "title": "Registro di controllo",
+      "admin": "Admin",
+      "change": "Modifica",
+      "time": "Ora",
+      "reason": "Motivo",
+      "api": "API",
+      "empty": "Nessuna modifica manuale finora.",
+      "actions": {
+        "adjust": "Modifica",
+        "resetOne": "Azzera giocatore",
+        "resetAll": "Azzera tutto",
+        "ban": "Ban",
+        "unban": "Rimozione ban"
+      }
+    }
+  },
+  "recurrence": {
+    "title": "Ripeti",
+    "every": "Ripeti ogni",
+    "unit": "{count, plural, one {{frequency, select, daily {giorno} weekly {settimana} monthly {mese} other {}}} other {{frequency, select, daily {giorni} weekly {settimane} monthly {mesi} other {}}}}",
+    "weekdays": "Ripeti il",
+    "time": "Ora",
+    "timezone": "Fuso orario",
+    "noTimezone": "Nessun fuso orario trovato",
+    "searchTimezone": "Cerca fuso orario…",
+    "startsOn": "Inizia il",
+    "end": {
+      "label": "Fine",
+      "never": "Mai",
+      "onDate": "Il",
+      "after": "Dopo",
+      "pickDate": "Scegli una data",
+      "occurrences": "{count, plural, one {esecuzione} other {esecuzioni}}"
+    },
+    "monthDay": {
+      "label": "Giorno del mese",
+      "day": "Giorno {day}",
+      "last": "Ultimo giorno",
+      "hint": "Nei mesi più corti l’invio avviene l’ultimo giorno."
+    },
+    "summary": {
+      "sentence": "{interval, plural, one {Ogni {frequency, select, daily {giorno} weekly {settimana} monthly {mese} other {}}} other {Ogni # {frequency, select, daily {giorni} weekly {settimane} monthly {mesi} other {}}}}{frequency, select, weekly { il {weekdays}} monthly { il {monthDay, select, last {ultimo giorno} other {giorno {monthDay}}}} other {}} alle {time} ({timezone}), a partire dal {startsOn}{endKind, select, onDate {, termina il {endDate}} afterOccurrences {, termina dopo {endCount, plural, one {# esecuzione} other {# esecuzioni}}} other {}}"
+    },
+    "firstRunLater": "Il primo invio sarà {when}, perché l’orario di oggi è già passato.",
+    "nextRuns": "Prossimi invii",
+    "noUpcomingRuns": "Nessun invio in programma.",
+    "skipping": "Salta {dates}{more, plural, =0 {} one { (+# altra)} other { (+# altre)}}",
+    "excludeDates": {
+      "label": "Salta date",
+      "hint": "In queste date non verrà inviato nulla. La serie continua.",
+      "add": "Aggiungi date",
+      "remove": "Rimuovi {date}",
+      "showAll": "Mostra altre {count}",
+      "showLess": "Mostra meno",
+      "clearAll": "Cancella tutto"
+    }
+  },
+  "workingHours": {
+    "title": "Orari di lavoro",
+    "label": "Orari di lavoro",
+    "description": "I tempi di risposta contano solo in queste ore.",
+    "employees": "Dipendenti",
+    "empty": "Ancora nessun turno.",
+    "deleteDescription": "Eliminare \"{name}\"? I dipendenti tornano al tempo reale.",
+    "create": {
+      "title": "Aggiungi orari di lavoro",
+      "description": "Dai un nome al programma. Imposterai giorni e orari nel passaggio successivo."
+    },
+    "employeesDialog": {
+      "title": "Applica gli orari di lavoro ai dipendenti",
+      "description": "Scegli i dipendenti che seguono questo programma.",
+      "moveHelp": "Ogni dipendente ha un turno; aggiungerlo lo sposta qui.",
+      "placeholder": "Seleziona dipendenti",
+      "search": "Cerca dipendenti...",
+      "searchAria": "Cerca tra i dipendenti",
+      "empty": "Nessun dipendente trovato.",
+      "close": "Chiudi",
+      "selectAll": "(Seleziona tutto)",
+      "clearAllAria": "{count, plural, one {Rimuovi il dipendente selezionato} other {Rimuovi tutti i {count} dipendenti selezionati}}",
+      "removeAria": "Rimuovi {name} dalla selezione"
+    },
+    "editor": {
+      "timezoneNote": "Gli orari usano il fuso orario dello spazio di lavoro: {timezone}.",
+      "notWorking": "Non lavora",
+      "dayToggle": "Lavora il giorno {day}",
+      "startTime": "Ora di inizio",
+      "endTime": "Ora di fine",
+      "removeRange": "Rimuovi intervallo",
+      "errorOverlap": "Questi intervalli si sovrappongono. Modificali per salvare.",
+      "errorOrder": "L'ora di fine deve essere successiva all'ora di inizio.",
+      "routingNote": "Usato anche da Auto Assign, Global Router e Condizione."
+    },
+    "condition": {
+      "assignedAgent": "Turno dell'agente assegnato"
+    },
+    "holidays": {
+      "label": "Festività",
+      "title": "Festività",
+      "description": "Sostituisce gli orari settimanali di tutti i turni in quella data.",
+      "add": "Aggiungi festività",
+      "empty": "Nessuna festività per ora.",
+      "deleteDescription": "Eliminare la festività del {date}?"
+    },
+    "dateOverrides": {
+      "title": "Eccezioni per data",
+      "description": "Sostituisce gli orari di questo turno in quella data; prevale sulle festività.",
+      "add": "Aggiungi eccezione",
+      "empty": "Nessuna eccezione."
+    },
+    "dateDialog": {
+      "addTitle": "Aggiungi data",
+      "editTitle": "Modifica data",
+      "date": "Data",
+      "name": "Nome (facoltativo)",
+      "closedAllDay": "Chiuso tutto il giorno",
+      "duplicate": "Questa data è già nell'elenco.",
+      "hours": "Orari",
+      "closed": "Chiuso"
+    }
+  },
+  "responseSla": {
+    "label": "SLA di risposta",
+    "title": "SLA di risposta",
+    "description": "Tempo massimo che un messaggio del cliente può attendere una risposta umana.",
+    "firstTarget": "Obiettivo prima risposta (minuti)",
+    "nextTarget": "Obiettivo risposte successive (minuti)",
+    "nextPlaceholder": "Nessun SLA sulle risposte successive",
+    "threshold": "Soglia di rischio (% dell'obiettivo rimasto)",
+    "thresholdHelp": "Segnata a rischio quando resta questo % dell'obiettivo.",
+    "workingTimeNote": "Conteggiato nell'orario dell'agente assegnato; altrimenti in tempo reale.",
+    "overdue": "In ritardo",
+    "due": "Scadenza {time}",
+    "breaching": "SLA a rischio",
+    "breached": "SLA violato",
+    "firstMetColumn": "SLA prima risposta rispettato",
+    "metColumn": "SLA rispettato",
+    "metHelp": "Quota di risposte con SLA che lo hanno rispettato.",
+    "eligibleCount": "{count} risposte avevano uno SLA",
+    "enable": "Attiva SLA di risposta"
   }
 }

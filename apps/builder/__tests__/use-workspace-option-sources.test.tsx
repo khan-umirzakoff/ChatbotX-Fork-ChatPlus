@@ -52,6 +52,14 @@ vi.mock("@/lib/orpc/orpc", () => ({
   },
 }))
 
+vi.mock("@/features/leaderboards/lib/use-leaderboard-options", () => ({
+  useLeaderboardOptions: () => ({
+    leaderboards: [],
+    options: [],
+    isLoading: false,
+  }),
+}))
+
 vi.mock("@/features/coupons/provider/use-coupon-topic-options", () => {
   const options: never[] = []
   return {
@@ -78,6 +86,13 @@ vi.mock("@/features/inboxes/provider/inbox-hook", () => {
   const options: never[] = []
   return {
     useInboxOptionsByChannel: () => options,
+  }
+})
+
+vi.mock("@/features/working-hours/provider/working-hours-hook", () => {
+  const options: never[] = []
+  return {
+    useWorkingHoursOptions: () => options,
   }
 })
 

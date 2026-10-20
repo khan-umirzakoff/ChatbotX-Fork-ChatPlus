@@ -1,6 +1,7 @@
 import { igStoryAutomationService } from "@chatbotx.io/business"
 import { zodBigintAsString } from "@chatbotx.io/utils"
 import z from "zod"
+import { postAccountInboxIdSchema } from "@/features/shared/comment-automation/schema/account"
 import { withWorkspaceIdSchema } from "@/features/workspaces/schema/resource"
 import { workspaceAuthorizedMidddleware } from "@/middlewares/auth"
 import { authorizedAPI } from "@/orpc"
@@ -41,8 +42,13 @@ export const igStoriesPrivateAPI = {
     .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
     .output(igStoryResource)
     .handler(async ({ input }) => {
-      const { workspaceId, type, ...data } = input
-      return await igStoryAutomationService.create({ workspaceId, type, data })
+      const { workspaceId, type, trigger, ...data } = input
+      return await igStoryAutomationService.create({
+        workspaceId,
+        type,
+        trigger,
+        data,
+      })
     }),
 
   updateIgStoryAPI: authorizedAPI
@@ -100,6 +106,7 @@ export const igStoriesPrivateAPI = {
             created_time: z.string(),
             permalink_url: z.string().optional(),
             accountId: z.string(),
+            inboxId: postAccountInboxIdSchema,
           }),
         ),
         pages: z.array(z.object({ id: z.string(), name: z.string() })),

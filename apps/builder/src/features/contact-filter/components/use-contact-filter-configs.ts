@@ -10,11 +10,14 @@ import {
 } from "@/features/custom-fields/provider/custom-field-hook"
 import { useFlowSelectOptions } from "@/features/flows/provider/flow-hook"
 import { useInboxOptionsByChannel } from "@/features/inboxes/provider/inbox-hook"
+import { useLeaderboardOptions } from "@/features/leaderboards/lib/use-leaderboard-options"
 import { useSequenceOptions } from "@/features/sequences/provider/sequence-hook"
 import { useTagSelectOptions } from "@/features/tags/provider/tag-hook"
 import { useContactAssigneeOptions } from "@/features/users/provider/user-hook"
+import { useWorkingHoursOptions } from "@/features/working-hours/provider/working-hours-hook"
 import { useWorkspaceId } from "@/hooks/routing"
 import type { FilterValueCondition } from "../lib/filter-value-labels"
+import type { ContactFilterSurface } from "../schema"
 import {
   type ConditionOption,
   type FieldConfig,
@@ -65,6 +68,8 @@ export const useContactFilterConfigs = (
   includeBotFields = false,
   /** The filter being shown, so id-backed values can be labelled by lookup. */
   conditions: readonly FilterValueCondition[] = [],
+  /** Fields limited to another surface are left out of the picker. */
+  surface: ContactFilterSurface = "contacts",
 ): UseContactFilterConfigsResult => {
   const t = useTranslations()
 
@@ -103,7 +108,11 @@ export const useContactFilterConfigs = (
   const assigneeOptions = useContactAssigneeOptions({
     includeUnassigned: true,
   })
+  const workingHourOptions = useWorkingHoursOptions({
+    enabled: surface === "flowCondition",
+  })
   const { options: couponTopicOptions } = useCouponTopicOptions()
+  const { options: leaderboardOptions } = useLeaderboardOptions()
   const filterValueLabels = useFilterValueLabels(conditions)
 
   const configs = useMemo(
@@ -120,8 +129,11 @@ export const useContactFilterConfigs = (
         channelPostOptions,
         assigneeOptions,
         couponTopicOptions,
+        leaderboardOptions,
         botFields,
         includeBotFields,
+        surface,
+        workingHourOptions,
         filterValueLabels,
       }),
     [
@@ -136,8 +148,11 @@ export const useContactFilterConfigs = (
       channelPostOptions,
       assigneeOptions,
       couponTopicOptions,
+      leaderboardOptions,
       botFields,
       includeBotFields,
+      surface,
+      workingHourOptions,
       filterValueLabels,
     ],
   )

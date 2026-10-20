@@ -77,12 +77,14 @@ export async function runChallenge(data: IntegrationJobRunChallenge["data"]) {
       details: targetNode.data.details,
       targetType: "node",
       targetId: targetNode.id,
+      targetNodeId: targetNode.id,
       startFromStepId: challenge.data.stepId,
       ctx: {
         variables,
       },
       triggerMessageId: messageId,
       triggerMessageCreatedAt: messageCreatedAt,
+      startedByContactMessage: true,
       appointmentId: challenge.data.appointmentId,
     })
 
@@ -91,6 +93,8 @@ export async function runChallenge(data: IntegrationJobRunChallenge["data"]) {
         eventType: "message:bot_received",
         workspaceId: conversation.workspaceId,
         conversationId: conversation.id,
+        channel: contactInbox.channel,
+        inboxId: contactInbox.inboxId,
         messageId,
         occurredAt: new Date(),
         hasResponse: true,
@@ -115,6 +119,8 @@ export async function runChallenge(data: IntegrationJobRunChallenge["data"]) {
         eventType: "message:bot_received",
         workspaceId: conversation.workspaceId,
         conversationId: conversation.id,
+        channel: contactInbox.channel,
+        inboxId: contactInbox.inboxId,
         messageId,
         occurredAt: new Date(),
         hasResponse: false,

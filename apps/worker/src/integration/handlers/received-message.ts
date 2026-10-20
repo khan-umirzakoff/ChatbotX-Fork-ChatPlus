@@ -127,7 +127,7 @@ import {
   isInstagramViaFacebook,
   resolveIntegrationContextFromContactInbox,
 } from "../../services/integrations"
-import { processCommentAutomation } from "./comment-automation"
+import { isCommentReply, processCommentAutomation } from "./comment-automation"
 import { resolveLiveComment } from "./comment-automation/live-comment"
 import { runAsMissedCommentReplay } from "./comment-automation/replay-priority"
 import {
@@ -140,6 +140,15 @@ import {
   refreshExistingContactProfile,
 } from "./contact-profile-refresh"
 import { resolvePostbackButtonLabel, sanitizeFlowAction } from "./flow-action"
+import {
+  emitStoredCommerceEvent,
+  enrichInboundCommerce,
+} from "./inbound-commerce"
+import {
+  awardCommentLeaderboard,
+  awardInboundMessageLeaderboard,
+  awardReactionLeaderboard,
+} from "./leaderboard-sources"
 import {
   syncAdLabelsIfAdReferred,
   tagAdReferralOnlyContact,
@@ -158,6 +167,14 @@ type ReceivedMessageSystemFieldUpdates = {
   contactInboxTracking: ContactInboxTracking
   contactLocation: ContactLocation | null
 }
+
+/** Channels whose comments feed leaderboard "comments" / "liveComments". */
+const LEADERBOARD_COMMENT_CHANNELS = new Set<string>([
+  "messenger",
+  "instagram",
+  "tiktok",
+  "threads",
+])
 
 const correctStoryReplyDirectionForNewContact = (
   message: IncomingMessage | null,
@@ -266,6 +283,10 @@ export const receiveMessage = async (
   quickReplyAction: string | null
   ref?: string | null
   channelType: "instagram" | "instagramFacebook"
+  /** The inbox the message arrived on, for analytics attribution. */
+  inboxId: string
+  /** That inbox's real channel (`channelType` above is an Instagram-flavored legacy value). */
+  inboxChannel: string
   /** True for a standby (listen-only) delivery: the caller must run no automation. */
   suppressAutomation: boolean
   /**
@@ -428,12 +449,20 @@ export const receiveMessage = async (
     rawIncomingMessage,
     isNewContact,
   )
-  const incomingMessage = markStandbyDelivery(
-    postbackButtonLabel && directedIncomingMessage
-      ? { ...directedIncomingMessage, text: postbackButtonLabel }
-      : directedIncomingMessage,
-    suppressAutomation,
-  )
+  // A cart or product question is named before the message is saved, so the
+  // stored message already carries it. Never blocks the save: see
+  // `enrichInboundCommerce`.
+  const incomingMessage = await enrichInboundCommerce({
+    commerce: parsedMessage.commerce,
+    message: markStandbyDelivery(
+      postbackButtonLabel && directedIncomingMessage
+        ? { ...directedIncomingMessage, text: postbackButtonLabel }
+        : directedIncomingMessage,
+      suppressAutomation,
+    ),
+    workspaceId: inbox.workspaceId,
+    channel: inbox.channel,
+  })
   const systemFieldUpdates = getReceivedMessageSystemFieldUpdates({
     buttonTitle: parsedMessage.buttonTitle || postbackButtonLabel,
     message: incomingMessage,
@@ -518,8 +547,18 @@ export const receiveMessage = async (
         // A Business-AI (Meta AI) reply on standby keeps the conversation
         // unread so a human agent monitors the AI (Integration Guide §5.3).
         keepUnread: threadControl?.ownerRole === "ai_agent",
+        echoOrigin: parsedMessage.echoOrigin,
         ...systemFieldUpdates,
       })
+
+    if (isNewMessage) {
+      await awardInboundMessageLeaderboard({
+        inbox,
+        contactId: contactInbox.contactId,
+        message: newMessage,
+        referral: parsedMessage.referral,
+      })
+    }
 
     // Best-effort backfill of a nameless existing contact's profile. No
     // isNewMessage/isNewContact gate; awaited before the flow-action enqueue
@@ -696,6 +735,26 @@ export const receiveMessage = async (
         }
       }
 
+      // Announced once per message, like the flow actions above: a redelivery
+      // is not new, and a standby copy fires on its owner delivery. Only when
+      // this delivery's channel reported a catalog interaction (never because a
+      // stored `contentAttributes` happens to look like one: some channels store
+      // caller-supplied attributes). The event is then read back from the saved
+      // message, so a promoted standby copy announces the snapshot it was
+      // stored with.
+      if (canAutomate && parsedMessage.commerce) {
+        await emitStoredCommerceEvent(
+          parsedMessage.commerce.kind,
+          createdMessage.contentAttributes,
+          {
+            inbox,
+            contactInbox,
+            conversationId: conversation.id,
+            messageId: createdMessage.id,
+          },
+        )
+      }
+
       // Message echoes (agent replying from the channel's own native UI,
       // e.g. Meta Business Suite, rather than the ChatbotX inbox) never go
       // through `create-message.action.ts`, so "Page" keyword automation
@@ -807,6 +866,8 @@ export const receiveMessage = async (
     quickReplyAction,
     ref,
     channelType,
+    inboxId: inbox.id,
+    inboxChannel: inbox.channel,
     suppressAutomation,
     standbyCopy,
   }
@@ -1043,6 +1104,8 @@ type SaveAndBroadcastMessageProps = {
    * mark-read below.
    */
   keepUnread?: boolean
+  /** Channel-parser classification of an outgoing echo (who sent it). */
+  echoOrigin?: EchoOrigin | null
 }
 
 type MessageInput = CreateMessageInput & {
@@ -1307,6 +1370,20 @@ const saveAndBroadcastMessage = async (
   }
 }
 
+/**
+ * Only a first-party/unclassified native-app echo is a human reply that closes
+ * the waiting window. Third-party app echoes and Business-AI (Meta AI) standby
+ * echoes (`keepUnread`) are not the page owner's human agent answering.
+ */
+const isHumanNativeAppEcho = (props: {
+  incomingMessage: IncomingMessage
+  keepUnread?: boolean
+  echoOrigin?: EchoOrigin | null
+}): boolean =>
+  props.incomingMessage.messageType === "outgoing" &&
+  !props.keepUnread &&
+  props.echoOrigin !== echoOrigins.enum.thirdParty
+
 const persistNewMessageSideEffects = async (props: {
   inbox: InboxModel
   contactInbox: ContactInboxModel
@@ -1316,6 +1393,8 @@ const persistNewMessageSideEffects = async (props: {
   storageUrl: string
   contactInboxTracking?: ContactInboxTracking
   contactLocation?: ContactLocation | null
+  keepUnread?: boolean
+  echoOrigin?: EchoOrigin | null
 }): Promise<void> => {
   const {
     inbox,
@@ -1342,7 +1421,7 @@ const persistNewMessageSideEffects = async (props: {
     // Contact-authored (DM or comment) — drives the inbox unread rule.
     // Outgoing echoes (agent replies from the native app) must not count.
     ...(incomingMessage.messageType === "outgoing"
-      ? {}
+      ? { isExternalHumanEcho: isHumanNativeAppEcho(props) }
       : { contactRepliedAt: message.createdAt }),
   })
 
@@ -1375,6 +1454,7 @@ const getMessageActivityTracking = (props: {
         contentType: incomingMessage.contentType,
         text: incomingMessage.text,
         attachments: incomingMessage.attachments,
+        contentAttributes: message.contentAttributes,
         storageUrl,
       }),
     )
@@ -1572,6 +1652,7 @@ export const receiveComment = async (
   }
   const { contactInbox, contact, conversation } = detected
 
+  let channelPostId: string | null = null
   if (supportsPostTracking(inbox.channel)) {
     // Post metadata fetch is best-effort (handled in channelPostService) and a
     // workspace deleted mid-flight is a no-op (resolveForComment returns null).
@@ -1602,6 +1683,7 @@ export const receiveComment = async (
         )
       },
     })
+    channelPostId = postId
     if (postId) {
       await contactInboxPostService.recordComment({
         workspaceId: inbox.workspaceId,
@@ -1739,18 +1821,41 @@ export const receiveComment = async (
     workspaceId: inbox.workspaceId,
   })
 
-  const { isNew: isNewComment } = await saveAndBroadcastMessage({
-    inbox,
-    contactInbox,
-    conversation,
-    incomingMessage,
-    // A replayed comment may be days old and already stored by its webhook.
-    // Dating the row at the comment itself puts it where it belongs in the
-    // thread, and moves the source-id dedup lookback (24h before `createdAt`
-    // up to now) back far enough to find that original row.
-    createdAt: replay ? new Date(commentData.createdTime * 1000) : undefined,
-    storageUrl,
-  })
+  const { isNew: isNewComment, message: savedComment } =
+    await saveAndBroadcastMessage({
+      inbox,
+      contactInbox,
+      conversation,
+      incomingMessage,
+      // A replayed comment may be days old and already stored by its webhook.
+      // Dating the row at the comment itself puts it where it belongs in the
+      // thread, and moves the source-id dedup lookback (24h before `createdAt`
+      // up to now) back far enough to find that original row.
+      createdAt: replay ? new Date(commentData.createdTime * 1000) : undefined,
+      storageUrl,
+    })
+
+  // Leaderboard comments/live comments, only for a newly stored comment.
+  // `isCommentReply` holds on every listed channel: TikTok normalizes its
+  // "no parent" sentinel at the webhook, and a top-level Threads reply's
+  // parent is the post itself.
+  if (isNewComment && LEADERBOARD_COMMENT_CHANNELS.has(inbox.channel)) {
+    await awardCommentLeaderboard({
+      inbox,
+      contactId: contactInbox.contactId,
+      commentId: commentData.commentId,
+      externalPostId: commentData.postId,
+      channelPostId,
+      text: commentData.message,
+      isLive: isLiveComment,
+      isReply: isCommentReply(
+        commentData.parentId,
+        commentData.postId,
+        commentData.commentId,
+      ),
+      eventAt: savedComment.createdAt,
+    })
+  }
 
   // Deliberately NOT an early return: this job can be retried after the save
   // already committed (a failure in anything below), and a retry always sees
@@ -2035,6 +2140,13 @@ export const processMessageReaction = async (
     publishToWorkspaceParty(inbox.workspaceId, {
       eventType: RealtimeEventType.messageCreated,
       data: reactionRow,
+    })
+    await awardReactionLeaderboard({
+      inbox,
+      contactId: existingContactInbox.contactId,
+      reactionSourceId,
+      action,
+      eventAt: reactionRow.createdAt,
     })
     return
   }
@@ -2459,6 +2571,8 @@ const createNewContactAndContactInbox = async (props: {
       source: contactInbox.source,
       sourceId: contactInbox.sourceId,
       channel: contactInbox.channel,
+      inboxId: contactInbox.inboxId,
+      language: normalizeLanguage(contactInbox.language) ?? null,
       metadata: {
         triggerContext: {
           triggerSource: "worker",

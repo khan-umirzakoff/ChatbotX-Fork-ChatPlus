@@ -1,7 +1,10 @@
+import { zodBigintAsString } from "@chatbotx.io/utils"
 import { channelTypes } from "@chatbotx.io/utils/channel"
 import { z } from "zod"
 import { countMessageCharacters } from "../channel-rules/characters"
 import { BUTTON_LABEL_MAX } from "../steps/button"
+import { sendProductsDisplays } from "../steps/send-products"
+import { sendViewCatalogStepSchema } from "../steps/send-view-catalog"
 import { waitStepDelayUnits } from "../steps/wait"
 import { flowValidationCodes } from "../validation-codes"
 
@@ -31,6 +34,22 @@ export type FlowStepSpec =
       buttons?: Array<{ text: string; then?: FlowStepSpec[] }>
     }
   | { type: "sendTemplate"; id?: string; templateName: string }
+  | {
+      type: "sendProducts"
+      id?: string
+      display: z.infer<typeof sendProductsDisplays>
+      header?: string
+      body?: string
+      footer?: string
+      sections?: Array<{ title?: string; productIds: string[] }>
+    }
+  | {
+      type: "sendViewCatalog"
+      id?: string
+      text: string
+      footer?: string
+      thumbnailProductId?: string
+    }
   | {
       type: "wait"
       id?: string
@@ -178,6 +197,50 @@ const sendTemplateStepSpecSchema = z
       ),
   })
   .describe("Sends an existing WhatsApp message template.")
+
+const sendProductsStepSpecSchema = z
+  .object({
+    type: stepTypeLiteral("sendProducts"),
+    id: stepIdField,
+    display: sendProductsDisplays.describe(
+      'How the products are shown. "products": one product, or several grouped in `sections`. "carousel": 2+ products as scrollable cards (one section, `body` only). Which displays and text limits a channel supports is in `capabilities.get`.',
+    ),
+    header: z.string().trim().optional().describe("Header text."),
+    body: z.string().trim().optional().describe("Message text."),
+    footer: z.string().trim().optional().describe("Footer text."),
+    sections: z
+      .array(
+        z.object({
+          title: z.string().trim().optional().describe("Section title."),
+          productIds: z
+            .array(zodBigintAsString())
+            .describe(
+              "Product ids, from `products.listSendable`. A product may appear only once in the whole message.",
+            ),
+        }),
+      )
+      .optional()
+      .describe(
+        'Product sections. Needed for "products" and "carousel" (exactly one section).',
+      ),
+  })
+  .describe(
+    "Sends products from the workspace catalog (single product, product list or carousel; use sendViewCatalog to open the whole catalog). Only on channels that support product messages.",
+  )
+
+const sendViewCatalogStepSpecSchema = z
+  .object({
+    type: stepTypeLiteral("sendViewCatalog"),
+    id: stepIdField,
+    // Reused from the step itself so the DSL and the compiled step can never
+    // disagree on limits or wording.
+    text: sendViewCatalogStepSchema.shape.text,
+    footer: sendViewCatalogStepSchema.shape.footer,
+    thumbnailProductId: sendViewCatalogStepSchema.shape.thumbnailProductId,
+  })
+  .describe(
+    "Shares the product catalog: a message with a button that opens it. Publish rejects it on channels that cannot deliver it (see `capabilities.get`'s `unsupportedSteps`); in an omnichannel flow (`channel` omitted) it is accepted but only sent to WhatsApp contacts, so set `channel` to check it at publish.",
+  )
 
 const waitStepSpecSchema = z
   .object({
@@ -388,6 +451,8 @@ const gotoStepSpecSchema = z
 const flowStepSpecOptions = [
   sendStepSpecSchema,
   sendTemplateStepSpecSchema,
+  sendProductsStepSpecSchema,
+  sendViewCatalogStepSpecSchema,
   waitStepSpecSchema,
   branchStepSpecSchema,
   actionStepSpecSchema,
@@ -399,7 +464,7 @@ const flowStepSpecOptions = [
 const flowStepSpecSchema: z.ZodType<FlowStepSpec> = z
   .discriminatedUnion("type", flowStepSpecOptions)
   .describe(
-    "One flow step. The `type` field selects the step kind: send, sendTemplate, wait, branch, action, startFlow, addNote or goto.",
+    "One flow step. The `type` field selects the step kind: send, sendTemplate, sendProducts, sendViewCatalog, wait, branch, action, startFlow, addNote or goto.",
   )
 
 export type FlowSpecStepType = { type: string; description: string }

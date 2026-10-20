@@ -111,7 +111,7 @@ const POST_VERB_OVERRIDES: Record<string, string> = {
 // Sub-paths that are actions themselves (not nouns), collapse to group:action (2-level)
 const ACTION_SUBPATHS = new Set(["block", "unblock", "reset"])
 // Singleton resources — GET on the collection returns a single object, use "get" not "list"
-const SINGLETON_RESOURCES = new Set(["workspaces"])
+const SINGLETON_RESOURCES = new Set(["workspaces", "response-sla"])
 // Two-segment singleton resources that have a read AND a write route on the
 // same path (`GET`/`PATCH /v1/workspace/settings`): the method picks the verb,
 // otherwise both would derive the same command name and one would be dropped.
@@ -194,12 +194,18 @@ const COMMAND_NAME_OVERRIDES: Readonly<Record<string, string>> = {
   "PATCH /v1/inboxes/{inboxId}/ai-handover/settings": "inboxes:settings:edit",
   "PATCH /v1/bot-fields/{idOrName}": "bot-fields:edit",
   "DELETE /v1/analytics/flows/{flowId}/stats": "analytics:reset-flow-stats",
+  "POST /v1/decision-connections/{id}/test": "decision-connections:test",
   "POST /v1/ads/campaigns": "ads:create-campaign",
   "POST /v1/ads/conversion-rules": "ads:create-conversion-rule",
   "PATCH /v1/ads/conversion-rules/{id}": "ads:update-conversion-rule",
   "DELETE /v1/ads/conversion-rules/{id}": "ads:delete-conversion-rule",
   "POST /v1/mini-apps/{id}/publish-whatsapp": "mini-apps:publish-whatsapp",
   "GET /v1/mini-apps/{id}/flow-json": "mini-apps:flow-json",
+  "POST /v1/mini-apps/{id}/duplicate": "mini-apps:duplicate",
+  "POST /v1/mini-apps/{id}/whatsapp-draft": "mini-apps:whatsapp-draft:push",
+  "POST /v1/mini-apps/{id}/whatsapp-draft/publish":
+    "mini-apps:whatsapp-draft:publish",
+  "GET /v1/mini-apps/{id}/whatsapp-preview": "mini-apps:whatsapp-preview",
   "GET /v1/conversations/{conversationId}/messages/{messageId}/flow-response":
     "conversations:flow-response:get",
 }

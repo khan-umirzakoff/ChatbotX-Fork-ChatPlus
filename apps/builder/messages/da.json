@@ -1,5 +1,6 @@
 {
   "actions": {
+    "scrollToBottom": "Rul til bunden",
     "retry": "Prøv igen",
     "copy": "Kopiér",
     "copyUrl": "Kopiér URL",
@@ -154,7 +155,9 @@
     "schedule": "Schedule",
     "moveToDraft": "Move to draft",
     "stop": "Stop",
-    "resume": "Resume"
+    "resume": "Resume",
+    "viewRuns": "Se kørsler",
+    "editSchedule": "Rediger tidsplan"
   },
   "errors": {
     "superAdminRequired": "Du skal være super admin for arbejdsområdet for at gøre dette."
@@ -215,6 +218,13 @@
     "averageFirstResponseTimeByAdmin": "Menneskelige agenters gennemsnitlige tid til første svar (minutter)",
     "averageFirstResponseTimeByAdminHelp": "Den gennemsnitlige tid, det tager en menneskelig agent at give det første svar på en kundes besked.",
     "averageResponseTimeByAdmin": "Menneskelige agenters gennemsnitlige svartid (minutter)",
+    "withinWorkingHoursHelp": "Tæller kun tid inden for medarbejderens arbejdstid.",
+    "withinWorkingHoursLabel": "Inden for arbejdstid",
+    "noResponseData": "Ingen svar i perioden, eller intet skema tildelt.",
+    "averageFirstResponseTimeWithinWorkingHoursByAdmin": "Gennemsnitlig første svartid inden for arbejdstid pr. menneskelig medarbejder (minutter)",
+    "averageFirstResponseTimeWithinWorkingHoursByAdminHelp": "Den gennemsnitlige tid inden for arbejdstid, som en menneskelig medarbejder bruger på at give det første svar på en kundes besked.",
+    "averageResponseTimeWithinWorkingHoursByAdmin": "Gennemsnitlig svartid inden for arbejdstid pr. menneskelig medarbejder (minutter)",
+    "averageResponseTimeWithinWorkingHoursByAdminHelp": "Den gennemsnitlige tid inden for arbejdstid, som en menneskelig medarbejder bruger på at svare på en kundes besked.",
     "averageDurationOfConversation": "Gennemsnitlig samtalevarighed (minutter)",
     "averageDurationOfConversationHelp": "Den gennemsnitlige tid, en samtale er blevet håndteret af et menneske, før den flyttes til botten.",
     "success": "Succes",
@@ -246,7 +256,7 @@
     "blockedConversationsHelp": "Samtaler, som din konto har blokeret.",
     "blockedContacts": "Blokerede kontakter",
     "blockedContactsHelp": "Kontakter, der ikke ønsker at modtage beskeder fra din konto",
-    "newContactsByCountry": "Nye kontakter efter land",
+    "newContactsByLanguage": "Nye kontakter efter sprog",
     "date": "Dato",
     "total": "I alt",
     "messagesSent": "Sendte beskeder",
@@ -277,7 +287,19 @@
     "message": "Besked",
     "searchByDate": "Søg efter dato...",
     "publicReply": "Offentligt svar",
-    "privateReply": "Privat svar"
+    "privateReply": "Privat svar",
+    "filters": {
+      "allChannels": "Alle kanaler",
+      "allInboxes": "Alle indbakker",
+      "searchPlaceholder": "Søg...",
+      "empty": "Ingen resultater fundet.",
+      "clear": "Ryd",
+      "close": "Luk",
+      "options": "Tilgængelige valg",
+      "remove": "Fjern",
+      "filterHint": "Filtre tæller kun hændelser registreret efter filtrering blev tilføjet: ældre hændelser har ingen indbakke, og ældre bot- og samtalehændelser har heller ingen kanal. Alle tæller altid alt.",
+      "tooManyInboxes": "Vælg højst {max} indbakker, eller markér Alle."
+    }
   },
   "flowAnalytics": {
     "nodes": {
@@ -367,7 +389,10 @@
       "sending": "Sender",
       "cancelled": "Annulleret",
       "draft": "Draft",
-      "failed": "Failed"
+      "failed": "Failed",
+      "recurring": "Gentagende",
+      "paused": "På pause",
+      "ended": "Afsluttet"
     },
     "stats": {
       "sent": "Sendt",
@@ -451,7 +476,9 @@
       "audienceFilter": "Målgruppefilter",
       "noAudienceFilter": "Intet målgruppefilter",
       "template": "Skabelon",
-      "integration": "Integration"
+      "integration": "Integration",
+      "schedule": "Gentagelsesplan",
+      "runOf": "Kørsel af <link>{name}</link>"
     },
     "filters": {
       "all": "All"
@@ -500,15 +527,20 @@
     },
     "moveToDraftDialog": {
       "title": "Move to draft",
-      "description": "\"{name}\" will be unscheduled and moved back to drafts."
+      "description": "\"{name}\" will be unscheduled and moved back to drafts.",
+      "templateTitle": "Rediger tidsplan",
+      "templateDescription": "\"{name}\" sættes på pause og flyttes tilbage til kladder, så du kan ændre tidsplanen."
     },
     "stopDialog": {
       "title": "Stop broadcast",
-      "description": "Remaining messages for \"{name}\" stop within about a minute. A few already handed to the channel may still deliver. You can resume later — only unsent recipients will receive."
+      "description": "Remaining messages for \"{name}\" stop within about a minute. A few already handed to the channel may still deliver. You can resume later — only unsent recipients will receive.",
+      "templateTitle": "Sæt gentagende broadcast på pause",
+      "templateDescription": "\"{name}\" opretter ikke flere kørsler. En kørsel, der allerede sender, fortsætter. Du kan genoptage senere; kørsler under pausen springes over."
     },
     "resumeDialog": {
       "title": "Resume broadcast",
-      "description": "\"{name}\" will continue sending to recipients who have not received it yet."
+      "description": "\"{name}\" will continue sending to recipients who have not received it yet.",
+      "templateDescription": "\"{name}\" gentages igen fra næste planlagte tidspunkt. Kørsler under pausen blev sprunget over."
     },
     "planLimitDialog": {
       "title": "Opgrader dit abonnement",
@@ -526,6 +558,63 @@
       "toLabel": "Til",
       "allPlaceholder": "Alle",
       "rangeEndBeforeStart": "Slutpositionen må ikke være før startpositionen"
+    },
+    "recurring": {
+      "nextRun": "Næste kørsel {when}",
+      "paused": "På pause",
+      "ended": "Afsluttet {when} · {count, plural, one {# kørsel} other {# kørsler}}",
+      "runs": "{count, plural, one {# kørsel} other {# kørsler}}",
+      "noUpcomingSends": "Ikke flere udsendelser — de resterende datoer springes over"
+    },
+    "runs": {
+      "back": "Gentagende broadcasts",
+      "pausedNotice": "På pause siden {when}. Kørsler under pausen springes over.",
+      "groupBy": "Gruppér kørsler efter",
+      "grouping": {
+        "day": "Dag",
+        "week": "Uge",
+        "month": "Måned"
+      },
+      "totals": "{runs, plural, one {# kørsel} other {# kørsler}} fra {slots, plural, one {# tidspunkt} other {# tidspunkter}}",
+      "error": "Kørslerne kunne ikke indlæses.",
+      "retry": "Prøv igen",
+      "empty": "Ingen kørsler endnu. Den første starter på det næste planlagte tidspunkt.",
+      "loadMore": "Indlæs flere",
+      "weekOf": "Ugen for {date}",
+      "groupSummary": "{created, plural, one {# kørsel} other {# kørsler}}{missed, plural, =0 {} other { · # overset}}{skipped, plural, =0 {} other { · # sprunget over}}",
+      "deliveredRate": "{rate} leveret",
+      "notSent": "Ikke sendt — {reason}",
+      "earlierSlots": "{count, plural, one {# tidligere tidspunkt} other {# tidligere tidspunkter}} overset",
+      "stalled": "Sidder fast",
+      "lateByMinutes": "{count, plural, one {# minut forsinket} other {# minutter forsinket}}",
+      "lateByHours": "{count, plural, one {# time forsinket} other {# timer forsinket}}",
+      "recipients": "{count, plural, one {# modtager} other {# modtagere}}",
+      "reasons": {
+        "catchUpSuperseded": "platformen var nede; en senere kørsel blev sendt i stedet",
+        "paused": "tidsplanen var på pause",
+        "draft": "broadcasten blev redigeret",
+        "blockedOwner": "kontoen er blokeret",
+        "planLimit": "planens grænse er nået",
+        "noTargets": "ingen side at sende fra",
+        "undeliverable": "flow eller skabelon er ikke tilgængelig",
+        "excludedDate": "Sprunget over dato"
+      },
+      "outcomes": {
+        "created": "Sendt",
+        "skipped": "Sprunget over",
+        "missed": "Overset"
+      },
+      "upcoming": {
+        "title": "Kommende udsendelser",
+        "empty": "Ingen kommende udsendelser",
+        "skip": "Spring over",
+        "restore": "Gendan",
+        "skippedBadge": "Sprunget over",
+        "skipped": "{date} sprunget over",
+        "restored": "{date} gendannet",
+        "undo": "Fortryd",
+        "error": "Denne udsendelse kan ikke længere ændres"
+      }
     }
   },
   "commentAutomation": {
@@ -581,6 +670,17 @@
     "liveBadge": "Live",
     "postTypeDialog": {
       "title": "Vælg opslagstype"
+    },
+    "account": {
+      "label": "Konto",
+      "description": "Den tilsluttede konto, som denne automatisering svarer på. Vælg “Alle konti” for at svare på alle tilsluttede konti for denne kanal.",
+      "all": "Alle konti",
+      "placeholder": "Vælg en konto",
+      "required": "Flere konti er tilsluttet: vælg én, eller vælg bevidst “Alle konti”.",
+      "targetsCleared": "De valgte opslag blev ryddet, fordi de kan tilhøre en anden konto.",
+      "column": "Konto",
+      "disconnected": "Afbrudt konto",
+      "disconnectedDescription": "Denne automatisering er knyttet til en konto, der ikke længere er tilsluttet, så den svarer ikke på kommentarer. Tilslut kontoen igen, eller vælg en anden."
     }
   },
   "condition": {
@@ -655,6 +755,7 @@
       "questionnaireInProgress": "Spørgeskema i gang",
       "questionnaireFinished": "Spørgeskema afsluttet",
       "couponTopic": "Kupon",
+      "leaderboardScore": "Gamification-point",
       "votedOnPoll": "Stemte i afstemningen",
       "lastComment": "Seneste kommentar",
       "commentedOnPost": "Kommenterede opslag",
@@ -707,7 +808,8 @@
         "video": "Video",
         "audio": "Lyd",
         "gif": "GIF",
-        "file": "Fil"
+        "file": "Fil",
+        "storyMention": "Story-omtale"
       },
       "ctwaConversionTypes": {
         "lead": "Lead",
@@ -724,6 +826,7 @@
       "ecommerce": "E-handel",
       "systemFields": "Systemfelter",
       "topicCoupon": "Emnekupon",
+      "leaderboard": "Gamification-point",
       "customFields": "Brugerdefinerede felter",
       "botFields": "Bot Felter",
       "email": "E-mail",
@@ -764,7 +867,8 @@
       "api": "API",
       "webchat": "Webchat",
       "botLink": "Botlink",
-      "chatPlugin": "C. chatplugin"
+      "chatPlugin": "C. chatplugin",
+      "inboundWebhook": "Indgående webhook"
     },
     "ctwaRetarget": {
       "segments": {
@@ -1297,7 +1401,8 @@
       "video": "Video",
       "audio": "Lyd",
       "gif": "GIF",
-      "file": "Fil"
+      "file": "Fil",
+      "storyMention": "Story-omtale"
     },
     "lastMonth": {
       "label": "Seneste måned"
@@ -1781,7 +1886,8 @@
     "schedule": {
       "label": "Schedule",
       "now": "Now",
-      "scheduled": "Schedule for later"
+      "scheduled": "Schedule for later",
+      "recurring": "Gentag"
     },
     "inputFieldId": {
       "label": "Input Brugerdefineret Felt"
@@ -2275,7 +2381,8 @@
       "media": "Medier",
       "ads": "Annoncer",
       "settings": "Indstillinger",
-      "miniApps": "Mini Apps"
+      "miniApps": "Mini Apps",
+      "leaderboards": "Ranglister"
     },
     "adReferral": {
       "label": "Ads",
@@ -2307,6 +2414,31 @@
       "hint": "Data Manager anbefales. Det gamle upload-API fungerer kun for Google Cloud-projekter, som Google stadig tillader, og bruger ikke Data Manager-tilladelsen. En ændring gælder kun nye forbindelser: genopret forbindelsen for eksisterende arbejdsområder.",
       "dataManager": "Data Manager API (anbefalet)",
       "legacy": "Gammelt upload-API"
+    },
+    "referralName": {
+      "label": "Henviserens navn"
+    },
+    "capiConfigId": {
+      "label": "Conversions API Config ID",
+      "description": "Embedded Signup-konfigurations-ID, der bruges til at anmode om tilladelsen whatsapp_business_manage_events, når Conversions API tilsluttes."
+    },
+    "outboundAutomatedResponse": {
+      "label": "Side-nøgleord"
+    },
+    "fbComment": {
+      "label": "Facebook-kommentarautomatisering"
+    },
+    "igComment": {
+      "label": "Instagram-kommentarautomatisering"
+    },
+    "igStory": {
+      "label": "Instagram-historieautomatisering"
+    },
+    "images": {
+      "label": "Billeder"
+    },
+    "miniApp": {
+      "label": "Mini App"
     }
   },
   "flows": {
@@ -2437,6 +2569,7 @@
       "noFlowsAvailable": "Nej flows tilgængelig",
       "setCustomField": "Angiv brugerdefineret felt",
       "startAnotherNode": "Start Another Node",
+      "openMiniApp": "Åbn Mini App",
       "startExternalFlow": "Start External Flow",
       "startExternalNode": "Start External Node",
       "startFlow": "Start Flow",
@@ -2474,9 +2607,13 @@
       "importStarted": "Flowet importeres. Tjek importhistorikken for resultater.",
       "importJsonOnly": "Kun JSON-filer",
       "whatsappCallButton": "Ring på WhatsApp",
+      "whatsappLocation": "Placering",
       "metaConversions": "Meta Conversions API",
       "threadControl": "Trådkontrol",
-      "sendGoogleAdsConversion": "Send Google Ads-konvertering"
+      "sendGoogleAdsConversion": "Send Google Ads-konvertering",
+      "changeGamificationScore": "Skift gamification-point",
+      "sendViewCatalog": "Se katalog",
+      "sendProducts": "Send produkter"
     },
     "splitTraffic": {
       "balanceHint": "Den i alt sum must equal 100%.",
@@ -2596,12 +2733,75 @@
     "whatsappCallButton": {
       "editButtonTitle": "Rediger Knap",
       "buttonLabel": "Knap Etiket"
+    },
+    "changeGamificationScore": {
+      "leaderboard": "Rangliste",
+      "operation": "Handling",
+      "add": "Tilføj point (+)",
+      "subtract": "Træk point fra (−)",
+      "points": "Point",
+      "targetUser": "Brugerens point",
+      "targetReferrer": "Henviserens point",
+      "targetReferrerHint": "Skift også pointene for den, der henviste denne kontakt.",
+      "summary": "{points} point på {leaderboard}"
+    },
+    "whatsappLocation": {
+      "title": "Placering",
+      "name": "Navn",
+      "address": "Adresse",
+      "latitude": "Breddegrad",
+      "longitude": "Længdegrad",
+      "setLocation": "Angiv placering",
+      "errors": {
+        "tooLong": "Maks. 1000 tegn.",
+        "invalidLatitude": "Angiv en breddegrad mellem -90 og 90.",
+        "invalidLongitude": "Angiv en længdegrad mellem -180 og 180.",
+        "locationRequired": "Angiv placeringens koordinater."
+      }
+    },
+    "sendViewCatalog": {
+      "footerLabel": "Sidefod",
+      "thumbnailLabel": "Miniaturebillede-produkt"
+    },
+    "sendProducts": {
+      "description": "Vælg de produkter, der skal sendes, og hvordan de vises.",
+      "display": "Visning",
+      "displays": {
+        "products": "Produkter",
+        "carousel": "Karrusel"
+      },
+      "products": "Produkter",
+      "selectProducts": "Vælg produkter",
+      "searchProducts": "Søg efter produkter",
+      "noProducts": "Ingen produkter fundet.",
+      "loading": "Indlæser...",
+      "loadError": "Produkterne kunne ikke indlæses.",
+      "retry": "Prøv igen",
+      "catalogNotConnected": "Forbind og synkroniser et Meta-katalog for at sende produkter.",
+      "openProducts": "Åbn Produkter",
+      "channelUnsupported": "Denne kanal kan ikke sende produkter.",
+      "unavailableProduct": "Produkt ikke tilgængeligt",
+      "removeProduct": "Fjern produkt",
+      "removeSection": "Fjern sektion",
+      "moreOptions": "Flere indstillinger",
+      "fewerOptions": "Færre indstillinger",
+      "header": "Overskrift",
+      "body": "Brødtekst",
+      "footer": "Sidefod",
+      "sectionTitle": "Sektionstitel",
+      "addSection": "Tilføj sektion",
+      "productCount": "{count} / {max} produkter",
+      "productsSelected": "{count, plural, one {# produkt} other {# produkter}}",
+      "noneSelected": "Ingen produkter endnu",
+      "sendFailed": "Produkterne kunne ikke sendes."
     }
   },
   "folders": {
-    "heading": {
-      "title": "Mapper"
-    }
+    "rootOption": "-- Rod --",
+    "showMore": "+{count}",
+    "showLess": "Vis mindre",
+    "root": "Rod",
+    "viewingFolder": "Viser mappe: {name}"
   },
   "gemini": {
     "autoReply": {
@@ -3417,6 +3617,7 @@
       "permissionRequired": "Du skal være superadministrator for at ændre platformssupportadgang.",
       "enabledToast": "Platformssupportadgang aktiveret.",
       "disabledToast": "Platformssupportadgang deaktiveret.",
+      "consentDisabled": "Platform support access is available to platform administrators without this setting.",
       "toggleError": "Der opstod en fejl. Prøv venligst igen."
     }
   },
@@ -3451,6 +3652,8 @@
     "failed": "Mislykkedes",
     "copiedToClipboard": "Copied til clipboard",
     "messengerAdsJsonDescription": "Du vil kun need til generér a ny JSON kode hvis du make changes til den starting Step. Changes i anden steps won't affect denne JSON kode.",
+    "welcomeMessageFlowIdsTitle": "Id'er for velkomstbeskedflow",
+    "welcomeMessageFlowIdsDescription": "Synkroniseres til hver Facebook-side, når du udgiver. Vælg det under Partnerapp i Ads Manager.",
     "messengerAdsNotPublished": "Udgiv den content af denne flow og try igen.",
     "messengerAdsNoStartNode": "Denne flow har ingen valid starting step. Åbn den flow, set a starting Send Besked step, then udgiv og try igen.",
     "messengerAdsError": "Noget gik galt while generating den JSON. Prøv igen.",
@@ -3563,6 +3766,7 @@
     "whatsappFlowIncomplete": "Åbn knappen, og vælg et WhatsApp Flow og dets startskærm.",
     "whatsappCarouselButtonsMismatch": "På WhatsApp skal en karrusel have de samme knapper på hvert kort: enten en enkelt linkknap på hvert kort eller det samme antal svarknapper på hvert kort",
     "whatsappCarouselLinkButtonNotAlone": "På WhatsApp kan et karruselkort med en linkknap ikke have andre knapper. Fjern de andre knapper på kortet, eller skift linkknappen til en anden handling.",
+    "templateButtonOpenMiniAppUnsupported": "Skabelonknapper kan ikke åbne en Mini App. Vælg en anden handling for denne knap.",
     "duplicateNodeError": "Could ikke dupliker den blokér. Prøv igen.",
     "deleteNodeError": "Could ikke slet den blokér. Prøv igen.",
     "redoHistoryCleared": "Gentag historik cleared",
@@ -3601,7 +3805,33 @@
       "labelsUnavailable": "Flowets spørgsmål kunne ikke indlæses, så feltnavne vises i stedet.",
       "yes": "Ja",
       "no": "Nej"
-    }
+    },
+    "sendViewCatalogBodyTooLong": "Beskedteksten er for lang til en katalogbesked. Gør den kortere.",
+    "sendViewCatalogFooterTooLong": "Sidefoden er for lang til en katalogbesked. Gør den kortere.",
+    "viewCatalog": "Se katalog",
+    "sendProductsDisplayUnsupported": "Denne kanal kan ikke sende denne type produktbesked.",
+    "sendProductsFieldRequired": "Dette felt er påkrævet.",
+    "sendProductsFieldNotAllowed": "Dette felt kan ikke bruges her.",
+    "sendProductsFieldTooLong": "Denne tekst er for lang.",
+    "sendProductsProductCountOutOfRange": "Vælg et gyldigt antal produkter.",
+    "sendProductsSectionCountOutOfRange": "Der er for mange sektioner.",
+    "sendProductsDuplicateProduct": "Et produkt kan kun forekomme én gang.",
+    "inboundOrder": {
+      "title": "Indkøbskurv",
+      "preview": "Indkøbskurv ({count, plural, one {# vare} other {# varer}})",
+      "note": "Note",
+      "unresolvedProduct": "Ikke fundet i dit katalog"
+    },
+    "referredProduct": {
+      "askedAbout": "Spurgte om dette produkt"
+    },
+    "savedReplyTextOrImageRequired": "Tilføj tekst eller mindst ét billede",
+    "imagesNotSupportedOnChannel": "{channel} kan ikke sende billeder i denne samtale",
+    "tooManyImagesOnChannel": "{channel} kan højst sende {max} billede(r) i denne samtale",
+    "savedReplyImagesRemoved": "Billeder, der ikke kan sendes her, blev fjernet",
+    "onlyImagesAllowed": "Kun billeder kan tilføjes",
+    "tooManySavedReplyImages": "Et gemt svar kan højst have {max} billeder",
+    "savedReplyImagesNotSentHere": "Billeder bliver ikke sendt her"
   },
   "instagram": {
     "description": "Denne integration lets du opret Instagram bots.",
@@ -3760,6 +3990,85 @@
     },
     "title": "DeepSeek"
   },
+  "decision": {
+    "addConnection": "Add AI Router connection",
+    "advanced": "Advanced",
+    "context": "Context",
+    "discardTypeChangeDescription": "Changing the AI Router type will discard its criteria and threshold.",
+    "discardTypeChangeTitle": "Change AI Router type?",
+    "output": "Output",
+    "outputNoul": "probabilityTrue (0–1)",
+    "statement": "Statement",
+    "thresholdChoice": "Require minimum confidence",
+    "thresholdNoul": "Require minimum TRUE probability",
+    "thresholdScore": "Require score threshold",
+    "thresholds": "Confidence & thresholds",
+    "addProfile": "Add AI Router profile",
+    "globalRouter": "Global Router",
+    "globalRouterRoutesDiscarded": "Global Router-ruter og metadata-mappinger fjernes også.",
+    "globalRouterDescription": "This profile becomes the workspace Global Router and replaces any previously selected Global Router.",
+    "globalRouterChooseDestination": "Choose destination",
+    "globalRouterDefaultDestination": "Default destination",
+    "globalRouterDestinationRequired": "Choose where unmatched messages should go.",
+    "globalRouterRouteDestinationRequired": "Choose a destination for this result.",
+    "globalRouterRoutes": "Route recognized results",
+    "globalRouterUsesFallback": "Uses default destination",
+    "globalRouterDestinationTypes": {
+      "flow": "Flow",
+      "aiAgent": "AI Agent",
+      "assignConversation": "Assign Conversation to an Admin"
+    },
+    "globalRouterFallbackDescription": "A default destination is required. It applies only when the Global Router is usable but evaluation has no valid result or route; unavailable connections or models use the workspace Default AI/Flow.",
+    "globalRouterFalseMaximum": "FALSE maximum probability",
+    "globalRouterMetadataMappings": "Optional result metadata mappings",
+    "globalRouterNoulDescription": "Values between the FALSE maximum and TRUE minimum use the fallback. The profile threshold does not affect Global Router Noul routing.",
+    "globalRouterRuntimeUnsupported": "This model has not been certified for AI Router runtime. You can save the configuration, but the Global Router remains inactive until certification.",
+    "globalRouterTrueMinimum": "TRUE minimum probability",
+    "flowStepDescription": "Select an active profile and map its typed results to contact custom fields.",
+    "profile": "AI Router profile",
+    "question": "Question",
+    "result": "Result",
+    "resultValues": {
+      "choice": "Choice",
+      "confidence": "Confidence",
+      "noul": "Noul",
+      "probability": "Probability",
+      "score": "Score"
+    },
+    "connection": "AI Router connection",
+    "connectionUnavailable": "AI Router connection unavailable",
+    "charactersRemaining": "{count} characters remaining",
+    "modelUnavailable": "Selected model is no longer available. Choose another model.",
+    "editProfile": "Rediger AI Router-profil",
+    "evaluateDecision": "AI Router",
+    "model": "Model",
+    "profileDescription": "A profile combines an AI Router connection, model and typed question contract.",
+    "profiles": "AI Router profiles",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "label": "Status"
+    },
+    "connectionDescription": "Configure a provider credential and the AI Router models it may use.",
+    "connections": "AI Router connections",
+    "connectionsDescription": "Connections are available to AI Router profiles in this workspace.",
+    "credentialKeepExisting": "Leave blank to keep the existing credential.",
+    "credentialRequired": "A provider credential is required.",
+    "defaultModel": "Default model",
+    "editConnection": "Edit AI Router connection",
+    "empty": "No AI Router connections yet.",
+    "endpoint": "Compatible endpoint",
+    "endpointDescription": "Use the provider's System One-compatible API endpoint.",
+    "modelCatalog": "Available models",
+    "modelCatalogDescription": "Enter one model ID per line, or separate model IDs with commas.",
+    "provider": "Provider",
+    "testFailed": "AI Router connection test failed.",
+    "testPassed": "AI Router connection test passed.",
+    "toolDescription": "Create reusable profiles for the AI Router flow step.",
+    "title": "AI Router",
+    "contactContext": "Kontaktkontekst",
+    "contextProviderWarning": "Valgte kontaktfeltværdier sendes til AI Router-udbyderen."
+  },
   "openrouter": {
     "autoReply": {
       "description": "Aktivér AI auto svar powered af OpenRouter.",
@@ -3879,7 +4188,17 @@
     "maxItemsReached": "Maksimum {max} {feature} allowed per arbejdsområde",
     "maxCharacters": "Maksimalt {max} tegn.",
     "invalidApiKey": "Ugyldig API-nøgle",
-    "maxMustBeGreaterThanMin": "{maxField} must være greater than eller equal til {minField}"
+    "maxMustBeGreaterThanMin": "{maxField} must være greater than eller equal til {minField}",
+    "inboundWebhook": {
+      "inboxRequired": "Vælg en inbox.",
+      "inboxNotFound": "Den valgte inbox blev ikke fundet.",
+      "inboxDisconnected": "Den valgte inbox er ikke forbundet.",
+      "unsupportedInboxIdentifier": "Denne kanal kan ikke identificeres ud fra den værdi.",
+      "identifierRequired": "Tilføj mindst en kontaktidentitet.",
+      "unknownFieldTarget": "Et tilknyttet kontaktfelt findes ikke længere.",
+      "actionReferenceNotFound": "En handling henviser til et flow, tag eller felt, der ikke længere findes.",
+      "fieldMappingRequired": "Tilføj mindst en feltmapping."
+    }
   },
   "webchat": {
     "chatUnavailable": "Denne chat er currently unavailable.",
@@ -4452,7 +4771,8 @@
         "loadMoreError": "Kunne ikke indlæse flere opkald. Prøv igen.",
         "callInformation": "Opkaldsoplysninger"
       }
-    }
+    },
+    "credentialSecretsRequired": "Indtast app-hemmeligheden og systembruger-tokenet. De er ikke gemt endnu."
   },
   "zalo": {
     "title": "Zalo OA",
@@ -4607,6 +4927,216 @@
     "title": "Magic Links",
     "description": "Opret deep links at redirect til din URL med query parameters."
   },
+  "inboundWebhooks": {
+    "title": "Indgående webhooks",
+    "feature": "Indgående webhook",
+    "description": "Lad eksterne systemer sende data til dit workspace: find eller opret en kontakt, gem værdier i dens felter og kør handlinger.",
+    "createDescription": "En ny webhook starter inaktiv. Konfigurer den i editoren, og slå den derefter til.",
+    "deleteDescription": "Systemer, der stadig poster til denne URL, får en fejl. Dette kan ikke fortrydes.",
+    "editorDescription": "Send en JSON POST-anmodning til URL'en nedenfor for at køre denne webhook.",
+    "configure": "Konfigurer",
+    "getLink": "Hent link",
+    "activeToggle": "Aktivér {name}",
+    "columns": {
+      "active": "Aktiv",
+      "createdAt": "Oprettet",
+      "requests": "Anmodninger"
+    },
+    "link": {
+      "title": "Webhook-URL",
+      "description": "Post JSON til denne URL. Den indeholder et hemmeligt token, så behandl den som en adgangskode."
+    },
+    "endpoint": {
+      "label": "Webhook-URL",
+      "show": "Vis URL",
+      "hide": "Skjul URL"
+    },
+    "regenerate": {
+      "button": "Generér igen",
+      "title": "Generér webhook-URL'en igen?",
+      "description": "Den nuværende URL holder straks op med at virke. Opdater alle systemer, der poster til den.",
+      "cancel": "Annuller",
+      "confirm": "Generér igen",
+      "success": "Webhook-URL genereret igen",
+      "failed": "URL'en kunne ikke genereres igen"
+    },
+    "activation": {
+      "incomplete": "Udfyld inbox, mindst et kontaktfelt og mindst en mapping, og gem, før du aktiverer denne webhook."
+    },
+    "sample": {
+      "title": "Eksempel-JSON",
+      "description": "Indsæt et eksempel på en anmodningsbody for at gennemse felterne og få vist værdier.",
+      "load": "Indlæs eksempel-JSON",
+      "status": {
+        "loaded": "Eksempel indlæst",
+        "invalid": "Dette er ikke gyldig JSON",
+        "tooLarge": "Eksemplet er større end {max} KB",
+        "unsupported": "Eksemplet indeholder tegn, der ikke understøttes, eller er indlejret for dybt"
+      },
+      "format": "Formatér JSON"
+    },
+    "contact": {
+      "title": "Find eller opret kontakt",
+      "description": "Vælg den inbox, kontakten tilhører, og hvordan kontakten findes. Hvis ingen matcher, oprettes en ny kontakt, når anmodningen indeholder det, denne kanal skal bruge."
+    },
+    "inbox": {
+      "modeLabel": "Inbox",
+      "mode": {
+        "inbox": "Bestemt inbox",
+        "payload": "Fra payload"
+      },
+      "modeDescription": {
+        "inbox": "Hver anmodning bruger den inbox, du vælger.",
+        "payload": "Hver anmodning angiver sin inbox, f.eks. et Messenger-side-id eller et WhatsApp-telefonnummer-id."
+      },
+      "inboxLabel": "Inbox",
+      "inboxPlaceholder": "Vælg en inbox",
+      "noInboxes": "Ingen forbundet inbox fundet.",
+      "savedInboxMissing": "Den gemte inbox er ikke længere forbundet. Vælg en anden.",
+      "channelLabel": "Kanal",
+      "channelPlaceholder": "Vælg en kanal",
+      "noPayloadChannels": "Forbind først en kanal, der understøtter dette.",
+      "identifierKindLabel": "Inbox-identifikator",
+      "identifierKindPlaceholder": "Vælg den identifikator, der sendes i payload",
+      "identifierPathHint": "JSON-sti til denne værdi i anmodningen."
+    },
+    "identity": {
+      "hint": "Udfyld mindst et. Kontakten slås op med det første, der findes i anmodningen, i denne rækkefølge.",
+      "phone": "Telefon",
+      "email": "E-mail",
+      "channelUserId": "Kanalbruger-ID",
+      "fullName": "Fulde navn",
+      "creationHint": "Uden {identities} springes en anmodning om en ukendt kontakt over. Kun eksisterende kontakter opdateres."
+    },
+    "inboxIdentifierKinds": {
+      "pageId": "Facebook-side-id",
+      "igId": "Instagram-konto-id",
+      "phoneNumberId": "WhatsApp-telefonnummer-id",
+      "displayPhoneNumber": "WhatsApp-telefonnummer (mindre præcist)",
+      "botId": "Telegram-bot-id",
+      "oaId": "Zalo OA-id",
+      "openId": "TikTok-konto-open-id",
+      "threadsUserId": "Threads-bruger-id"
+    },
+    "channelUserIdKinds": {
+      "psid": "Messenger PSID",
+      "igsid": "Instagram IGSID",
+      "telegramChatId": "Telegram-chat-id",
+      "zaloUserId": "Zalo-bruger-id",
+      "tiktokCustomerOpenId": "TikTok-kunde-open-id",
+      "threadsUsername": "Threads-brugernavn",
+      "apiSourceId": "Kontaktkilde-id",
+      "whatsappId": "WhatsApp-ID (wa_id)"
+    },
+    "mappings": {
+      "title": "Gem indgående data",
+      "description": "Kopiér værdier fra anmodningen til kontaktfelter.",
+      "empty": "Ingen felter tilknyttet endnu.",
+      "add": "Tilføj felt",
+      "remove": "Fjern felt",
+      "target": "Kontaktfelt",
+      "targetPlaceholder": "Vælg et felt",
+      "path": "JSON-sti",
+      "rowTitle": "Mapping {number}"
+    },
+    "actions": {
+      "title": "Efter data er gemt",
+      "description": "Handlinger, der køres for kontakten, når dataene er gemt."
+    },
+    "picker": {
+      "title": "Gennemse JSON",
+      "description": "Søg og klik på en værdi, eller indtast en JSONPath nedenfor",
+      "browse": "Gennemse",
+      "noSample": "Indlæs først en eksempel-JSON for at gennemse dens felter.",
+      "pathLabel": "JSON-sti",
+      "use": "Brug sti",
+      "cancel": "Annuller",
+      "result": "Resultat:",
+      "noValue": "ingen værdi",
+      "searchLabel": "Søg i JSON",
+      "searchPlaceholder": "Søg efter nøgler, stier eller værdier",
+      "noMatches": "Ingen matchende nøgler eller værdier.",
+      "moreResults": "Viser de første {count} resultater. Indsnævr din søgning for at se andre.",
+      "pathHint": "Understøtter egenskabsnavne og array-indekser, herunder $[\"customer-data\"][\"email\"]",
+      "invalidPath": "Dette er ikke en understøttet JSONPath."
+    },
+    "requests": {
+      "title": "Anmodninger",
+      "description": "De seneste leverancer modtaget af denne webhook (gemmes i 30 dage).",
+      "refresh": "Opdater",
+      "empty": "Ingen anmodninger modtaget endnu.",
+      "previous": "Forrige side",
+      "next": "Næste side",
+      "pageOf": "Side {page} af {pageCount}",
+      "contact": "Kontakt #{id}",
+      "showDetails": "Vis detaljer",
+      "hideDetails": "Skjul detaljer",
+      "loadingDetails": "Indlæser detaljer…",
+      "detailsFailed": "Detaljerne kunne ikke indlæses.",
+      "fieldErrors": "Felter, der ikke blev gemt",
+      "actionResults": "Handlinger",
+      "payload": "Payload",
+      "status": {
+        "received": "Modtaget",
+        "processing": "Behandles",
+        "processed": "Behandlet",
+        "completedWithErrors": "Fuldført med fejl",
+        "skipped": "Sprunget over",
+        "failed": "Mislykkedes"
+      },
+      "skipReason": {
+        "webhookInactive": "Webhooken var inaktiv.",
+        "missingInboxIdentifier": "Anmodningen indeholdt ikke inbox-identifikatoren.",
+        "inboxNotFound": "Ingen inbox matcher identifikatoren i anmodningen.",
+        "inboxAmbiguous": "Mere end én inbox matcher identifikatoren i anmodningen.",
+        "inboxDisconnected": "Inboxen er afbrudt.",
+        "missingIdentifier": "Anmodningen indeholdt ingen kontaktidentitet.",
+        "workspaceBlocked": "Arbejdsområdets ejer er blokeret.",
+        "contactNotFound": "Ingen kontakt matchede, og anmodningen indeholdt ikke det, der skal til for at oprette en.",
+        "contactAmbiguous": "Mere end én kontakt har dette navn i indbakken, så anmodningen blev sprunget over."
+      },
+      "fieldErrorCode": {
+        "invalidValue": "Ugyldig værdi",
+        "invalidPhone": "Ugyldigt telefonnummer",
+        "unknownField": "Feltet findes ikke længere"
+      },
+      "actionStatus": {
+        "succeeded": "lykkedes",
+        "skipped": "sprunget over",
+        "failed": "mislykkedes"
+      },
+      "errorCode": {
+        "abandoned": "Opgivet: ikke behandlet inden for 24 timer"
+      },
+      "actionSkipReason": {
+        "noConversation": "Kontakten har ingen samtale",
+        "noContactInbox": "Kontakten er ikke forbundet til denne indbakke",
+        "flowInactive": "Flowet er ikke udgivet",
+        "unsupportedAction": "Handlingen understøttes ikke her",
+        "unsupportedChannel": "Kanalen understøtter ikke handlingen",
+        "invalidAction": "Handlingen er ikke konfigureret korrekt",
+        "unknownAction": "Ukendt handling",
+        "unsupportedSource": "Understøttes ikke for denne kilde"
+      }
+    },
+    "save": {
+      "invalid": "Nogle indstillinger er ugyldige. Ret de markerede felter, og gem igen."
+    },
+    "viewAnalytics": "Se analyser",
+    "analytics": {
+      "title": "Analyser",
+      "back": "Tilbage til webhook",
+      "totalRequests": "Samlede modtagne anmodninger",
+      "totalRequestsHint": "Alle accepterede anmodninger, siden webhooken blev oprettet. Dubletter tælles ikke med. Loggen nedenfor gemmer de seneste 30 dage."
+    },
+    "issues": {
+      "inboxRequired": "Vælg en inbox.",
+      "identifierRequired": "Udfyld mindst et af de fire kontaktfelter.",
+      "fieldMappingRequired": "Tilføj mindst et felt under \"Gem indgående data\".",
+      "required": "Dette felt er påkrævet.",
+      "unsupportedPath": "JSON-stien understøttes ikke."
+    }
+  },
   "QRCode": {
     "title": "QR Kode",
     "description": "Share denne kode so people åbn din tracking link."
@@ -4637,8 +5167,8 @@
       "ticketPriorityChanged": "Ticket Priority Changed",
       "subscribedToSequence": "Subscribed Til Sekvens",
       "unsubscribedFromSequence": "Unsubscribed Fra Sekvens",
-      "WhatsappShoppingCartSent": "Whatsapp Shopping Cart Sendt",
-      "userAskedAboutProduct": "Bruger Asked About Product",
+      "shoppingCartSent": "Kontakt sendte indkøbskurv",
+      "userAskedAboutProduct": "Kontakt spurgte om produkt",
       "cartAbandoned": "Cart Abandoned",
       "newOrder": "Ny Ordre",
       "orderAccepted": "Order Accepted",
@@ -4652,7 +5182,8 @@
       "contactReferredANewContact": "Kontakt Referred A Ny Kontakt",
       "contactReferredExistingContact": "Kontakt Referred Existing Kontakt",
       "callRecorded": "Opkald optaget",
-      "callTranscribed": "Opkald transskriberet"
+      "callTranscribed": "Opkald transskriberet",
+      "anyProduct": "Alle produkter"
     },
     "actions": {
       "addTag": "Tilføj tag",
@@ -5433,12 +5964,18 @@
     }
   },
   "instagramStoryAutomation": {
-    "title": "Automatisering af Instagram Story-svar",
-    "description": "Automatiser svar på Instagram Story-svar for dine kontakter.",
+    "title": "Automatisering af Instagram Stories",
+    "description": "Automatiser svar, når kontakter svarer på dine Instagram Stories eller nævner dig i deres egne.",
     "create": "Opret automatisering",
     "replies": "Svar",
     "activated": "Automatisering aktiveret",
     "deactivated": "Automatisering deaktiveret",
+    "trigger": "Udløser",
+    "triggerDescription": "Vælg, hvad der starter denne automatisering. Det kan ikke ændres, efter automatiseringen er oprettet.",
+    "triggerType": {
+      "storyReply": "Svarer på din story",
+      "storyMention": "Nævner dig i sin story"
+    },
     "trackStoryReplyOn": "Spor Story-svar på",
     "trackStoryReplyOnDescription": "Anvend denne automatisering på svar på alle dine Stories, eller begræns den til bestemte Stories, du vælger.",
     "reply": "Svar",
@@ -5502,7 +6039,6 @@
     "allForms": "Alle forms",
     "allFormsNote": "Leads fra every form på denne side vil være captured. Standard felter (e-mail, telefon, navn, køn) er saved til matching kontakt felter automatically.",
     "leadData": "Lead Data",
-    "whatFlow": "What flow er triggered",
     "addNewPage": "Tilføj Ny",
     "noEligiblePages": "Ingen eligible sider. Use \"Tilføj Ny\" til grant lead access.",
     "duplicateError": "An automatisering already exists for denne side og form.",
@@ -5629,7 +6165,24 @@
       "openAsSupport": "Åbn som support",
       "supportEnabledUntil": "Aktiveret indtil {time}",
       "supportOff": "Fra",
-      "searchPlaceholder": "Søg efter navn, ejerens e-mail eller id"
+      "searchPlaceholder": "Søg efter navn, ejerens e-mail eller id",
+      "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
+      "supportAccessible": "Accessible"
+    },
+    "admins": {
+      "title": "Platform administrators",
+      "description": "Manage users who can access the platform administration console.",
+      "addTitle": "Add platform administrator",
+      "addDescription": "Grant platform administration access to a root-tenant user.",
+      "addButton": "Add administrator",
+      "role": "Role",
+      "bootstrap": "Environment bootstrap administrator",
+      "remove": "Remove administrator",
+      "empty": "No platform administrators are configured.",
+      "added": "Platform administrator added.",
+      "removed": "Platform administrator removed.",
+      "addError": "Could not add the platform administrator.",
+      "removeError": "Could not remove the platform administrator."
     }
   },
   "platformCredentials": {
@@ -6492,17 +7045,15 @@
     "status": {
       "title": "Meta Conversions API",
       "ready": "Klar",
-      "missingPermission": "Tilladelse påkrævet",
-      "unverified": "Ikke bekræftet",
       "unsupported": "Ikke understøttet",
-      "notConnected": "Ikke forbundet"
+      "notConnected": "Ikke forbundet",
+      "reconnect": "Genopret forbindelsen"
     },
     "statusDescriptions": {
-      "ready": "Denne integration har den nødvendige Meta-tilladelse til Conversions API-hændelser.",
-      "missingPermission": "Genopret forbindelsen til denne integration, og giv den ønskede Meta-tilladelse.",
-      "unverified": "Platformens appindstillinger er ikke tilgængelige, så CAPI-tilladelsen kan ikke bekræftes.",
+      "ready": "Conversions API-hændelser fra denne integration sendes til Meta.",
       "unsupported": "Meta Conversions API til Instagram kræver en konto forbundet via Facebook Login for Business.",
-      "notConnected": "Conversions API er et Meta Business Tool, der gør det muligt at dele data med Meta for at forbedre annoncernes performance."
+      "notConnected": "Conversions API er et Meta Business Tool, der gør det muligt at dele data med Meta for at forbedre annoncernes performance.",
+      "reconnect": "Tilladelsen til Conversions API er udløbet, så begivenheder er sat på pause. Dit datasæt og dine testindstillinger er bevaret; genopret forbindelsen for at fortsætte."
     },
     "errors": {
       "reconnect": "Kunne ikke starte Meta CAPI-genoprettelse.",
@@ -6512,12 +7063,14 @@
       "saveFailed": "Kunne ikke gemme. Prøv venligst igen.",
       "datasetRequired": "Gem et Dataset-ID, før du tilføjer en adgangstoken.",
       "invalidToken": "Denne token kunne ikke tilgå datasættet.",
-      "invalidDatasetId": "Indtast et gyldigt Dataset ID (kun tal).",
       "whatsappNotFound": "WhatsApp-integration ikke fundet.",
       "testEventCodeRequired": "Gem en testhændelseskode, før du sender en testhændelse.",
       "invalidTestEventCode": "Testhændelseskoden må kun indeholde bogstaver, tal, bindestreger eller understregninger (maks. 64).",
       "invalidMessagingId": "Messaging-id må kun indeholde bogstaver, tal, bindestreger eller understregninger (maks. 512).",
-      "capiDisconnected": "Meta CAPI er afbrudt for denne kanal. Tilslut igen, før du sender en testhændelse."
+      "capiDisconnected": "Meta CAPI er afbrudt for denne kanal. Tilslut igen, før du sender en testhændelse.",
+      "appNotConfigured": "Meta-appen til denne kanal er endnu ikke konfigureret.",
+      "capiNotConfigured": "Forbindelsen til Conversions API er ikke konfigureret. Bed din administrator om at angive Conversions API Config ID.",
+      "wabaMismatch": "Den godkendte WhatsApp Business-konto er ikke den, dette nummer hører til. Tilslut med den samme konto."
     },
     "fields": {
       "eventType": {
@@ -6602,32 +7155,13 @@
     "disconnect": "Afbryd",
     "openEventManager": "Åbn Event Manager",
     "methods": {
-      "oauth": {
-        "title": "Forbind via Facebook",
-        "description": "Brug din sides eksisterende forbindelse, og vælg derefter et Dataset-ID.",
-        "connect": "Opret datasæt",
-        "connectedLabel": "via Facebook"
-      },
       "custom": {
         "title": "Brugerdefineret forbindelse",
         "description": "Brug et Dataset-ID og en adgangstoken fra Meta Events Manager.",
         "start": "Opsæt brugerdefineret forbindelse",
         "connect": "Forbind",
         "connectedLabel": "Brugerdefineret"
-      },
-      "whatsapp": {
-        "title": "Forbind via WhatsApp",
-        "description": "Brug din WhatsApp-forbindelse, og vælg derefter et Dataset-ID.",
-        "connect": "Opret datasæt",
-        "connectedLabel": "via WhatsApp"
       }
-    },
-    "finalize": {
-      "title": "Vælg et Dataset-ID",
-      "description": "Indtast et eksisterende Dataset-ID, eller lad det stå tomt for automatisk at oprette et.",
-      "save": "Gem",
-      "createDataset": "Opret datasæt",
-      "caveat": "Et Dataset-ID, der ikke er knyttet til denne side eller Instagram-konto, tilskriver muligvis ikke hændelser korrekt. Lad dette felt stå tomt for automatisk at oprette et tilknyttet datasæt."
     },
     "whatsapp": {
       "connect": "Forbind"
@@ -6676,6 +7210,24 @@
       "messagingIdHint": "Kun bogstaver, tal, bindestreger og understregninger (maks. 512).",
       "cancel": "Annuller",
       "confirmSend": "Send"
+    },
+    "connect": {
+      "button": "Tilslut Conversions API",
+      "success": "Conversions API er tilsluttet.",
+      "title": "Tilslut med Meta",
+      "description": "Log ind på Meta og giv adgang til konverteringshændelser. Det opretter en separat forbindelse til Conversions API og ændrer ikke, hvordan denne kanal logger ind.",
+      "reconnect": "Genopret forbindelse"
+    },
+    "connectResult": {
+      "errors": {
+        "cancelled": "Forbindelsen blev annulleret. Intet er ændret.",
+        "notFound": "Denne kanal blev ikke fundet.",
+        "pageNotFound": "Den Facebook-konto, du brugte, administrerer ikke denne side. Log ind med en konto, der gør.",
+        "accountNotFound": "Den Facebook-konto, du brugte, administrerer ikke denne Instagram-konto. Log ind med en konto, der gør.",
+        "datasetFailed": "Meta tillod ikke oprettelse af et datasæt med denne forbindelse. Sørg for at give alle de ønskede tilladelser, og prøv igen.",
+        "sessionExpired": "Forbindelsen tog for lang tid eller blev startet i en anden fane. Prøv igen.",
+        "failed": "Conversions API kunne ikke tilsluttes. Prøv igen."
+      }
     }
   },
   "googleAds": {
@@ -7705,8 +8257,6 @@
       "screenTitle": "Titel",
       "screenId": "Skærm-ID",
       "screenIdHint": "Kun bogstaver og understregninger. Bruges til navigation og i Flow JSON.",
-      "terminal": "Sidste skærm",
-      "terminalHint": "Flowet kan slutte her. Det kræver en Footer, der afslutter flowet.",
       "remove": "Slet skærm"
     },
     "inspector": {
@@ -7761,7 +8311,20 @@
       "success": "Udgivet på WhatsApp",
       "draftOnly": "Meta beholdt Flowet som kladde på grund af fejl",
       "failed": "Kunne ikke udgive på WhatsApp",
-      "contactVariables": "Denne Mini App viser brugerdefinerede felter i sine tekster. De virker indtil videre kun på weblinket — fjern dem, før du udgiver til WhatsApp."
+      "contactVariables": "Denne Mini App viser brugerdefinerede felter i sine tekster. De virker indtil videre kun på weblinket — fjern dem, før du udgiver til WhatsApp.",
+      "notOnNumber": "Mini App'en er ikke på dette WhatsApp-nummer.",
+      "onlyDraftDeletable": "Flowet er live på Meta og kan derfor ikke slettes. Kun en kladde kan slettes.",
+      "flowIsLive": "Mini App'en er live på dette WhatsApp-nummer. At gemme en kladde ville tage den offline — udgiv i stedet for at opdatere den.",
+      "saveDraft": "Gem som kladde",
+      "draftSaved": "Gemt på WhatsApp som kladde",
+      "preview": "Forhåndsvisning",
+      "previewUnavailable": "Meta returnerede ikke et link til forhåndsvisning",
+      "deleteDraft": "Slet kladde på WhatsApp",
+      "draftDeleted": "Kladde slettet fra WhatsApp"
+    },
+    "status": {
+      "draft": "Kladde",
+      "published": "Udgivet"
     },
     "runner": {
       "back": "Tilbage",
@@ -7916,7 +8479,9 @@
         "email": "E-mail",
         "password": "Adgangskode",
         "passcode": "Pinkode",
-        "phone": "Telefon"
+        "phone": "Telefon",
+        "date": "Dato",
+        "datetime": "Dato og klokkeslæt"
       },
       "fontWeight": {
         "normal": "Normal",
@@ -7956,8 +8521,7 @@
       "screen_id_invalid": "Skærm-ID'et må kun indeholde bogstaver og understregninger.",
       "screen_id_reserved": "“SUCCESS” er reserveret af WhatsApp. Vælg et andet skærm-ID.",
       "screen_id_duplicate": "En anden skærm bruger allerede dette ID.",
-      "no_terminal_screen": "Markér mindst én skærm som sidste skærm.",
-      "terminal_screen_without_complete": "Den sidste skærm kræver en Footer, der afslutter flowet.",
+      "no_terminal_screen": "Tilføj en Footer, der afslutter flowet, til den sidste skærm.",
       "screen_without_exit": "Denne skærm har ingen måde at fortsætte på. Tilføj en Footer eller et link, der fører til en anden skærm.",
       "screen_unreachable": "Ingen skærm navigerer hertil.",
       "too_many_components": "En skærm kan højst indeholde {max} komponenter.",
@@ -7990,7 +8554,6 @@
       "reference_unknown": "{reference} matcher ikke noget felt.",
       "data_reference_unsupported": "{reference}: skærmdata understøttes ikke. Brug formularfelter i stedet.",
       "property_unknown": "WhatsApp accepterer ikke egenskaben “{name}” på denne komponent.",
-      "complete_on_non_terminal": "“Fuldfør flowet” kan kun bruges på den sidste skærm.",
       "footer_captions_invalid": "Brug enten en midtertekst eller både venstre og højre tekst.",
       "options_with_images_limit": "Med billeder kan en rullemenu højst have {max} valgmuligheder.",
       "navigation_badge_multiple": "Kun ét element i en navigationsliste kan have et badge.",
@@ -8009,5 +8572,485 @@
         "upload_failed": "Filen kunne ikke uploades. Prøv igen."
       }
     }
+  },
+  "leaderboards": {
+    "title": "Ranglister",
+    "public": {
+      "points": "{points} point",
+      "endsIn": "Slutter om {days}d {hours}t {minutes}m {seconds}s",
+      "finished": "Afsluttet",
+      "empty": "Ingen spillere endnu — bliv den første!",
+      "myRank": "Din placering: #{rank}",
+      "unranked": "Endnu ikke placeret",
+      "shareToEarn": "Del og optjen point",
+      "linkCopied": "Link kopieret",
+      "unavailableTitle": "Denne rangliste er ikke længere tilgængelig",
+      "unavailableDescription": "Den kan være afsluttet eller fjernet. Spørg siden, du følger, om det seneste link."
+    },
+    "description": "Kør pointbaserede rangeringskampagner, hvor kunder konkurrerer om topplaceringerne og belønninger.",
+    "feature": "Rangliste",
+    "create": "Opret rangliste",
+    "kpi": {
+      "total": "Kampagner i alt",
+      "active": "Kørende"
+    },
+    "tabs": {
+      "all": "Alle",
+      "active": "Aktive",
+      "paused": "På pause",
+      "finished": "Afsluttede"
+    },
+    "status": {
+      "draft": "Kladde",
+      "active": "Aktiv",
+      "paused": "På pause",
+      "finished": "Afsluttet"
+    },
+    "platforms": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "whatsapp": "WhatsApp",
+      "zalo": "Zalo OA",
+      "telegram": "Telegram",
+      "tiktok": "TikTok",
+      "threads": "Threads",
+      "email": "Email SMTP",
+      "gamification": "Gamification"
+    },
+    "list": {
+      "campaign": "Kampagne",
+      "searchPlaceholder": "Søg i ranglister...",
+      "platformFilter": "Platform",
+      "participants": "Deltagere",
+      "totalPoints": "Point i alt",
+      "newToday": "+{count} i dag",
+      "average": "gns. {value} / spiller",
+      "daysLeft": "{days, plural, one {# dag tilbage} other {# dage tilbage}}",
+      "ended": "Afsluttet"
+    },
+    "scope": {
+      "allPosts": "Alle opslag",
+      "specificPosts": "Bestemte opslag",
+      "specificPostsCount": "{count, plural, one {# opslag} other {# opslag}}",
+      "telegramChatsCount": "{count, plural, one {# gruppe} other {# grupper}}"
+    },
+    "menu": {
+      "start": "Start",
+      "pause": "Sæt på pause",
+      "finish": "Afslut",
+      "resetPoints": "Nulstil point",
+      "triggerRewards": "Udløs belønninger",
+      "viewParticipants": "Se deltagere",
+      "copyLink": "Kopiér offentligt link"
+    },
+    "confirm": {
+      "publishTitle": "Udgiv denne rangliste?",
+      "publishDescription": "Pointtildelingen starter med det samme, og spillerne kan se den offentlige side.",
+      "pauseTitle": "Sæt denne rangliste på pause?",
+      "pauseDescription": "Automatisk pointtildeling og pointtildeling via flow stopper. Du kan stadig justere point manuelt.",
+      "startTitle": "Genoptag denne rangliste?",
+      "startDescription": "Pointtildelingen starter igen for alle regler.",
+      "finishTitle": "Afslut denne rangliste?",
+      "finishDescription": "Alle pointtal fryses og kan ikke længere ændres. Automatiske belønninger sendes, hvis de er slået til.",
+      "resetPointsTitle": "Nulstil alle point?",
+      "resetPointsDescription": "Alle deltagere i \"{name}\" går tilbage til 0 point. Det bliver logget og kan ikke fortrydes."
+    },
+    "toast": {
+      "published": "Ranglisten er udgivet",
+      "paused": "Ranglisten er sat på pause",
+      "started": "Ranglisten er genoptaget",
+      "finished": "Ranglisten er afsluttet",
+      "pointsReset": "Alle point er nulstillet"
+    },
+    "export": {
+      "title": "Eksportér deltagere",
+      "description": "Download alle deltagere med placering og pointtal som en CSV-fil.",
+      "preparing": "Forbereder din fil...",
+      "ready": "Din fil er klar ({count} rækker).",
+      "failed": "Eksporten mislykkedes. Prøv igen."
+    },
+    "rewards": {
+      "title": "Udløs belønninger",
+      "description": "Send belønningsflowet til topspillerne. Belønninger kan kun sendes én gang.",
+      "flow": "Belønningsflow",
+      "topN": "Antal vindere (top N)",
+      "noFlow": "Intet belønningsflow valgt — vælg et i ranglistens indstillinger.",
+      "alreadySent": "Belønninger er allerede sendt for denne rangliste.",
+      "confirm": "Send belønninger",
+      "result": "Sendt til {sent} vindere, {skipped} sprunget over (ingen samtale på denne kanal)."
+    },
+    "wizard": {
+      "steps": {
+        "info": "Oplysninger",
+        "config": "Kanal og regler",
+        "review": "Gennemse og udgiv"
+      },
+      "namePlaceholder": "fx Oktobers topfans",
+      "coverImage": "Coverbillede",
+      "coverImageHint": "JPG eller PNG, op til 5 MB. Anbefalet størrelse 1200×630.",
+      "coverImageRejected": "Vælg et JPG- eller PNG-billede på op til 5 MB.",
+      "description": "Regler og belønninger",
+      "descriptionPlaceholder": "Forklar, hvordan spillere optjener point, og hvad topspillerne vinder.",
+      "startsAt": "Starter",
+      "endsAt": "Slutter",
+      "startLocked": "Starttidspunktet kan ikke ændres efter udgivelsen.",
+      "channelTitle": "Platform og kanal",
+      "platform": "Platform",
+      "hostChannel": "Kanal",
+      "hostLocked": "Platform og kanal kan ikke ændres efter udgivelsen.",
+      "noChannel": "Ingen tilsluttet {platform}-kanal. Tilslut en under Indstillinger → Kanaler først.",
+      "openMinigameSettings": "Åbn spilindstillinger",
+      "postScope": "Opslag, der giver point",
+      "choosePosts": "Vælg opslag",
+      "telegramChats": "Grupper og kanaler",
+      "telegramChatsHint": "Tilføj din bot til gruppen eller kanalen som admin, så den kan se medlemmer og beskeder.",
+      "telegramChatsEmpty": "Ingen grupper fundet — tilføj botten som admin først",
+      "rulesTitle": "Pointregler",
+      "rulesHint": "Slå de handlinger til, der giver point, og angiv hvor mange.",
+      "allPlatforms": "Alle platforme",
+      "points": "Point",
+      "maxPerDay": "Maks. pr. dag",
+      "maxPerDayHint": "Lad feltet stå tomt for ubegrænset.",
+      "minChars": "Minimum antal tegn",
+      "bonusPoints": "Bonuspoint i gyldne time",
+      "bonusPointsHint": "Ekstra point til kommentarer kort efter, at opslaget er udgivet.",
+      "bonusMinutes": "Længde på gyldne time (minutter)",
+      "emailTopicNote": "Kun e-mails sendt med et Email Topic spores for åbninger og klik.",
+      "generalTitle": "Generelle indstillinger",
+      "followersOnly": "Kun følgere",
+      "followersOnlyHint": "Kun personer, der følger din konto, optjener point.",
+      "tagFilter": "Tagfilter",
+      "tagFilterHint": "Kun kontakter med mindst ét af disse tags optjener point.",
+      "everyone": "Alle",
+      "resetTime": "Daglig nulstillingstid (UTC)",
+      "resetTimeHint": "Daglige grænser starter forfra på dette tidspunkt. = kl. {time} vietnamesisk tid (UTC+7).",
+      "cooldown": "Antispam-pause (sekunder)",
+      "cooldownHint": "Mindste antal sekunder mellem to automatiske pointtildelinger til samme person. 0 slår den fra.",
+      "referralFlow": "Velkomstflow for henvisninger",
+      "referralFlowAuto": "Opret automatisk",
+      "referralFlowHint": "Sendes til en ven, der tilmelder sig via et henvisningslink. Det kan bruge '{{referral_name}}' og det offentlige ranglistelink. Lad feltet stå tomt for automatisk at oprette en velkomstbesked, som du kan redigere i Flow Builder.",
+      "publicLink": "Offentligt link",
+      "publicLinkHint": "Send dette link fra et flow, så hver spiller kan se sin egen placering.",
+      "publicLinkAfterSave": "Det offentlige link er tilgængeligt efter lagring.",
+      "rewardsTitle": "Belønninger",
+      "autoOnFinish": "Send automatisk, når ranglisten er afsluttet",
+      "autoOnFinishHint": "Kører belønningsflowet for top N, så snart ranglisten afsluttes.",
+      "backToStep2": "Tilbage til trin 2",
+      "notEditable": "Afsluttede ranglister kan ikke redigeres."
+    },
+    "review": {
+      "infoCard": "Oplysninger",
+      "yes": "Ja",
+      "no": "Nej",
+      "off": "Slået fra",
+      "seconds": "{seconds} sekunder",
+      "resetTimeValue": "{utc} UTC (= {local} vietnamesisk tid)",
+      "noRules": "Ingen regel er slået til endnu.",
+      "rulePoints": "{points} point",
+      "maxPerDay": "maks. {count}/dag",
+      "unlimited": "ubegrænset"
+    },
+    "preview": {
+      "sampleName": "Spiller {rank}",
+      "placeholderName": "Din ranglistes navn",
+      "pinnedBar": "#{rank} · {points} point"
+    },
+    "validation": {
+      "nameRequired": "Angiv et navn",
+      "dateRequired": "Vælg en dato og et tidspunkt",
+      "endsAfterStart": "Sluttidspunktet skal ligge efter starttidspunktet",
+      "channelRequired": "Vælg en kanal",
+      "minigameRequired": "Vælg et minispil",
+      "pointsRequired": "Angiv, hvor mange point reglen giver",
+      "bonusMinutesRequired": "Angiv, hvor mange minutter den gyldne time varer",
+      "postsRequired": "Vælg mindst ét opslag",
+      "telegramChatsRequired": "Vælg mindst én gruppe eller kanal",
+      "enableOneRule": "Slå mindst én pointregel til, før du udgiver",
+      "fixErrors": "Ret de markerede felter"
+    },
+    "rules": {
+      "comments": {
+        "label": "Kommentarer",
+        "description": "Point for hver kommentar på dine opslag."
+      },
+      "liveComments": {
+        "label": "Livekommentarer",
+        "description": "Point for hver kommentar under en livestream."
+      },
+      "keywords": {
+        "label": "Keywords",
+        "description": "Point, når en besked matcher et nøgleord i denne kanals Keywords-værktøj."
+      },
+      "storyMention": {
+        "label": "Omtale i story",
+        "description": "Point, når nogen tagger din konto i deres story."
+      },
+      "storyReaction": {
+        "label": "Reaktion på story",
+        "description": "Point, når nogen reagerer på din story."
+      },
+      "ctwaReactions": {
+        "label": "CTWA-klik og reaktioner",
+        "description": "Point for at klikke på en Click-to-WhatsApp-annonce eller reagere på en besked."
+      },
+      "survey": {
+        "label": "Spørgeskema og quiz",
+        "description": "Point for at gennemføre et Questionnaire eller indsende en WhatsApp Flow-formular."
+      },
+      "follow": {
+        "label": "Følg OA og QR",
+        "description": "Point for at følge din Official Account eller scanne dens QR-kode. Hvis man stopper med at følge, trækkes pointene tilbage."
+      },
+      "message": {
+        "label": "Zalo-besked",
+        "description": "Point for hver besked sendt til din Official Account."
+      },
+      "joinGroup": {
+        "label": "Tilmeld kanal og gruppe",
+        "description": "Point for at tilmelde sig din gruppe eller kanal. Hvis man forlader den, trækkes pointene tilbage."
+      },
+      "groupDiscussion": {
+        "label": "Gruppediskussion",
+        "description": "Point for hver besked i din gruppe."
+      },
+      "emailOpen": {
+        "label": "E-mail åbnet",
+        "description": "Point, når en e-mail åbnes."
+      },
+      "emailClick": {
+        "label": "E-mail-klik",
+        "description": "Point, når der klikkes på et link i en e-mail."
+      },
+      "minigameWin": {
+        "label": "Minispilsgevinst",
+        "description": "Point for hver præmie, der vindes i minispillet."
+      },
+      "inGameShare": {
+        "label": "Deling i spillet",
+        "description": "Point for at dele spillet for at få flere forsøg."
+      },
+      "referral": {
+        "label": "Henvisning",
+        "description": "Point til den, der inviterer, når en ny ven tilmelder sig via vedkommendes link."
+      }
+    },
+    "breakdown": {
+      "comments": "{count} kommentarer",
+      "liveComments": "{count} livekommentarer",
+      "keywords": "{count} keywords",
+      "storyMention": "{count} omtaler i story",
+      "storyReaction": "{count} reaktioner på story",
+      "ctwaReactions": "{count} CTWA",
+      "survey": "{count} spørgeskemaer",
+      "follow": "{count} følgere",
+      "message": "{count} beskeder",
+      "joinGroup": "{count} tilmeldinger",
+      "groupDiscussion": "{count} gruppebeskeder",
+      "emailOpen": "{count} åbninger",
+      "emailClick": "{count} klik",
+      "minigameWin": "{count} gevinster",
+      "inGameShare": "{count} delinger",
+      "referral": "{count} henvisninger",
+      "flow": "{count} flow",
+      "manual": "{count} manuelt"
+    },
+    "participants": {
+      "title": "Deltagere",
+      "switcher": "Skift rangliste",
+      "count": "{count, plural, one {# spiller} other {# spillere}}",
+      "searchPlaceholder": "Søg efter navn, bruger-ID eller telefon...",
+      "filters": {
+        "all": "Alle",
+        "top10": "Top 10",
+        "top50": "Top 50",
+        "banned": "Udelukkede"
+      },
+      "columns": {
+        "rank": "Placering",
+        "participant": "Deltager",
+        "score": "Samlet pointtal",
+        "breakdown": "Detaljer",
+        "lastActivity": "Seneste aktivitet"
+      },
+      "unknown": "Ukendt",
+      "contactId": "ID {id}",
+      "lockedFinished": "Denne rangliste er afsluttet — pointtallene er låst.",
+      "lockedDraft": "Udgiv ranglisten, før du redigerer pointtal.",
+      "actions": {
+        "adjust": "Juster point",
+        "ban": "Udeluk",
+        "unban": "Ophæv udelukkelse",
+        "reset": "Nulstil til 0",
+        "history": "Se historik"
+      },
+      "adjust": {
+        "title": "Juster point",
+        "description": "Læg point til eller træk dem fra for {name}. Ændringen gemmes i revisionsloggen.",
+        "delta": "Point (+/-)",
+        "deltaPlaceholder": "fx 50 eller -20",
+        "reason": "Årsag",
+        "reasonPlaceholder": "Hvorfor ændrer du dette pointtal?",
+        "success": "Point justeret"
+      },
+      "banConfirm": "{name} fjernes fra ranglisten og optjener ikke længere point.",
+      "unbanConfirm": "{name} kommer tilbage på ranglisten med det nuværende pointtal.",
+      "resetConfirm": "Pointtallet for {name} nulstilles til 0. Det bliver logget.",
+      "banned": "Deltager udelukket",
+      "unbanned": "Udelukkelsen af deltager er ophævet",
+      "resetDone": "Pointtal nulstillet til 0",
+      "history": {
+        "title": "Pointhistorik — {name}",
+        "empty": "Ingen pointændringer endnu.",
+        "sources": {
+          "rule": "Regel",
+          "flow": "Flow",
+          "referral": "Henvisning",
+          "manual": "Manuel justering",
+          "reset": "Nulstilling"
+        }
+      },
+      "conversationNotFound": "Ingen samtale fundet for denne kontakt",
+      "popupBlocked": "Venligst tillad pop-ups for denne site, then try igen."
+    },
+    "auditLog": {
+      "title": "Revisionslog",
+      "admin": "Admin",
+      "change": "Ændring",
+      "time": "Tidspunkt",
+      "reason": "Årsag",
+      "api": "API",
+      "empty": "Ingen manuelle ændringer endnu.",
+      "actions": {
+        "adjust": "Juster",
+        "resetOne": "Nulstil spiller",
+        "resetAll": "Nulstil alle",
+        "ban": "Udeluk",
+        "unban": "Ophæv udelukkelse"
+      }
+    }
+  },
+  "recurrence": {
+    "title": "Gentag",
+    "every": "Gentag hver",
+    "unit": "{count, plural, one {{frequency, select, daily {dag} weekly {uge} monthly {måned} other {}}} other {{frequency, select, daily {dage} weekly {uger} monthly {måneder} other {}}}}",
+    "weekdays": "Gentag på",
+    "time": "Tidspunkt",
+    "timezone": "Tidszone",
+    "noTimezone": "Ingen tidszone fundet",
+    "searchTimezone": "Søg tidszone…",
+    "startsOn": "Starter",
+    "end": {
+      "label": "Slutter",
+      "never": "Aldrig",
+      "onDate": "Den",
+      "after": "Efter",
+      "pickDate": "Vælg en dato",
+      "occurrences": "{count, plural, one {gang} other {gange}}"
+    },
+    "monthDay": {
+      "label": "Dag i måneden",
+      "day": "Dag {day}",
+      "last": "Sidste dag",
+      "hint": "I kortere måneder sendes der på den sidste dag."
+    },
+    "summary": {
+      "sentence": "{interval, plural, one {Hver {frequency, select, daily {dag} weekly {uge} monthly {måned} other {}}} other {Hver # {frequency, select, daily {dage} weekly {uger} monthly {måneder} other {}}}}{frequency, select, weekly { på {weekdays}} monthly { på {monthDay, select, last {sidste dag} other {dag {monthDay}}}} other {}} kl. {time} ({timezone}), fra {startsOn}{endKind, select, onDate {, slutter {endDate}} afterOccurrences {, slutter efter {endCount, plural, one {# gang} other {# gange}}} other {}}"
+    },
+    "firstRunLater": "Første udsendelse er {when}, fordi dagens tidspunkt allerede er passeret.",
+    "nextRuns": "Næste udsendelser",
+    "noUpcomingRuns": "Ingen kommende udsendelser.",
+    "skipping": "Springer {dates} over{more, plural, =0 {} one { (+# mere)} other { (+# mere)}}",
+    "excludeDates": {
+      "label": "Spring datoer over",
+      "hint": "Der sendes ikke på disse datoer. Serien kører videre.",
+      "add": "Tilføj datoer",
+      "remove": "Fjern {date}",
+      "showAll": "Vis {count} flere",
+      "showLess": "Vis færre",
+      "clearAll": "Ryd alle"
+    }
+  },
+  "workingHours": {
+    "title": "Arbejdstider",
+    "label": "Arbejdstider",
+    "description": "Svartider tælles kun inden for disse timer.",
+    "employees": "Medarbejdere",
+    "empty": "Ingen skemaer endnu.",
+    "deleteDescription": "Slet \"{name}\"? Medarbejderne går tilbage til almindelig tid.",
+    "create": {
+      "title": "Tilføj arbejdstider",
+      "description": "Giv planen et navn. Du angiver dage og tidspunkter næste gang."
+    },
+    "employeesDialog": {
+      "title": "Anvend arbejdstider på medarbejdere",
+      "description": "Vælg de medarbejdere, der følger denne plan.",
+      "moveHelp": "Hver medarbejder har ét skema; tilføjelse flytter dem hertil.",
+      "placeholder": "Vælg medarbejdere",
+      "search": "Søg medarbejdere...",
+      "searchAria": "Søg blandt medarbejdere",
+      "empty": "Ingen medarbejdere fundet.",
+      "close": "Luk",
+      "selectAll": "(Vælg alle)",
+      "clearAllAria": "{count, plural, one {Ryd den valgte medarbejder} other {Ryd alle {count} valgte medarbejdere}}",
+      "removeAria": "Fjern {name} fra valget"
+    },
+    "editor": {
+      "timezoneNote": "Tidspunkter bruger arbejdsområdets tidszone: {timezone}.",
+      "notWorking": "Arbejder ikke",
+      "dayToggle": "Arbejder {day}",
+      "startTime": "Starttidspunkt",
+      "endTime": "Sluttidspunkt",
+      "removeRange": "Fjern tidsrum",
+      "errorOverlap": "Disse tidsrum overlapper. Juster dem for at gemme.",
+      "errorOrder": "Sluttidspunktet skal være efter starttidspunktet.",
+      "routingNote": "Bruges også af Auto Assign, Global Router og betingelser."
+    },
+    "condition": {
+      "assignedAgent": "Tildelt medarbejders vagt"
+    },
+    "holidays": {
+      "label": "Helligdage",
+      "title": "Helligdage",
+      "description": "Erstatter alle skemaers ugentlige timer den dato.",
+      "add": "Tilføj helligdag",
+      "empty": "Ingen helligdage endnu.",
+      "deleteDescription": "Slet helligdagen {date}?"
+    },
+    "dateOverrides": {
+      "title": "Datoundtagelser",
+      "description": "Erstatter dette skemas timer den dato; vejer tungere end helligdage.",
+      "add": "Tilføj datoundtagelse",
+      "empty": "Ingen datoundtagelser."
+    },
+    "dateDialog": {
+      "addTitle": "Tilføj dato",
+      "editTitle": "Rediger dato",
+      "date": "Dato",
+      "name": "Navn (valgfrit)",
+      "closedAllDay": "Lukket hele dagen",
+      "duplicate": "Datoen findes allerede på listen.",
+      "hours": "Timer",
+      "closed": "Lukket"
+    }
+  },
+  "responseSla": {
+    "label": "Svar-SLA",
+    "title": "Svar-SLA",
+    "description": "Maks. tid en kundebesked må vente på et menneskeligt svar.",
+    "firstTarget": "Mål for første svar (minutter)",
+    "nextTarget": "Mål for senere svar (minutter)",
+    "nextPlaceholder": "Ingen SLA på senere svar",
+    "threshold": "Tærskel for tæt på brud (% af målet tilbage)",
+    "thresholdHelp": "Markeres som tæt på brud, når denne % af målet er tilbage.",
+    "workingTimeNote": "Tælles i den tildelte medarbejders arbejdstid; ellers almindelig tid.",
+    "overdue": "Forfalden",
+    "due": "Frist {time}",
+    "breaching": "SLA tæt på brud",
+    "breached": "SLA brudt",
+    "firstMetColumn": "Første svar overholdt SLA",
+    "metColumn": "SLA overholdt",
+    "metHelp": "Andel af svar med SLA der overholdt den.",
+    "eligibleCount": "{count} svar havde en SLA",
+    "enable": "Aktivér svar-SLA"
   }
 }

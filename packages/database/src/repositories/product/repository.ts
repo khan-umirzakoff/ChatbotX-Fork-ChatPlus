@@ -23,6 +23,8 @@ export type ProductListInput = {
   workspaceId: string
   name?: string | null
   categoryId?: string | null
+  /** Only these products — how a picker names the ones already chosen. */
+  ids?: string[] | null
   page?: number
   perPage?: number
   sort?: { id: string; desc: boolean }[] | null
@@ -66,11 +68,18 @@ export type ProductUpdateValues = Partial<
 const inCategory = (categoryId?: string | null) =>
   categoryId ? { OR: [{ categoryId }, { subcategoryId: categoryId }] } : {}
 
+/**
+ * What a `Product.id` can look like: digits only, short enough for a bigint
+ * (18 digits is always in range). Our ids are about 17 digits long.
+ */
+const PRODUCT_ID_PATTERN = /^\d{1,18}$/
+
 export const productRepository = {
   async list(input: ProductListInput, tx: DatabaseClient = db) {
     const where = {
       workspaceId: input.workspaceId,
       name: input.name ? { ilike: likeContains(input.name) } : undefined,
+      id: input.ids?.length ? { in: input.ids } : undefined,
       ...inCategory(input.categoryId),
     }
     const pagination = parsePagination(input)
@@ -308,6 +317,12 @@ export const productRepository = {
     if (input.retailerIds.length === 0) {
       return []
     }
+    // A retailer ID is free text but `Product.id` is a bigint: Postgres rejects
+    // the whole query for a value it cannot cast, so only ids that can be ours
+    // are compared to it. Everything is still matched against the SKU.
+    const productIds = input.retailerIds.filter((retailerId) =>
+      PRODUCT_ID_PATTERN.test(retailerId),
+    )
     return await tx
       .select()
       .from(productModel)
@@ -315,7 +330,9 @@ export const productRepository = {
         and(
           eq(productModel.workspaceId, input.workspaceId),
           or(
-            inArray(productModel.id, input.retailerIds),
+            productIds.length > 0
+              ? inArray(productModel.id, productIds)
+              : undefined,
             inArray(sql<string>`btrim(${productModel.sku})`, input.retailerIds),
           ),
         ),

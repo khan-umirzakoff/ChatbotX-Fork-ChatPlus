@@ -10,31 +10,28 @@ import {
 import { Separator } from "@chatbotx.io/ui/components/ui/separator"
 import { useTranslations } from "next-intl"
 import { type ReactNode, useMemo } from "react"
+import { componentIcon } from "../../lib/component-icons"
 import { componentLabelKey } from "../../lib/labels"
-import { useIssueMessage } from "../../lib/use-issue-message"
 import { useMiniAppEditor } from "../editor-context"
-import { componentIcon } from "../palette"
+import { ActionProp } from "./action-picker"
 import { AnswerReferenceField } from "./answer-reference-field"
-import {
-  ActionProp,
-  CarouselImagesProp,
-  ExpressionProp,
-  ImageProp,
-  NavigationItemsProp,
-  OptionsProp,
-  SwitchCasesProp,
-} from "./complex-fields"
+import { CarouselImagesProp } from "./carousel-images-prop"
 import { CustomFieldMapping } from "./custom-field-mapping"
+import { ExpressionProp } from "./expression-prop"
+import { InspectorContext, IssueList } from "./field-row"
 import {
   BooleanProp,
   DateProp,
   EnumProp,
-  InspectorContext,
   ListProp,
   MultiEnumProp,
   NumberProp,
   TextProp,
 } from "./fields"
+import { ImageProp } from "./image-picker"
+import { NavigationItemsProp } from "./navigation-items-prop"
+import { OptionsProp } from "./options-prop"
+import { SwitchCasesProp } from "./switch-cases-prop"
 
 const VARIABLE_HINT_PARAMS = { open: "{{", button: "</>" }
 
@@ -273,21 +270,7 @@ function NodeFields({
 }
 
 function GeneralIssues({ issues }: { issues: MiniAppValidationIssue[] }) {
-  const message = useIssueMessage()
-  const general = issues.filter((issue) => !issue.property)
-  if (general.length === 0) {
-    return null
-  }
-  return (
-    <div className="flex flex-col gap-1 rounded-md border border-destructive/40 bg-destructive/5 p-2">
-      {general.map((issue, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: issues have no id
-        <span className="text-destructive text-xs" key={index}>
-          {message(issue)}
-        </span>
-      ))}
-    </div>
-  )
+  return <IssueList issues={issues.filter((issue) => !issue.property)} />
 }
 
 export function NodeInspector({

@@ -143,6 +143,7 @@ describe("getRedisConnection queue-group routing", () => {
       whatsappVoipSignaling: "hot",
       low: "hot",
       profileSnapshot: "bulk",
+      leaderboard: "bulk",
     })
   })
 })

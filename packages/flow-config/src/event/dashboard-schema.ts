@@ -22,17 +22,22 @@ export const analyticsDashboardEventTypeSchema = z.enum([
   "conversation:archived",
   "conversation:unarchived",
   "message:bot_received",
+  "agent:replied",
 ])
 export type AnalyticsDashboardEventType = z.infer<
   typeof analyticsDashboardEventTypeSchema
 >
 
 const baseContactEventPayloadSchema = z.object({
+  /** Logical id for a source that can re-run (a re-sent job); beats the stream id. */
+  eventId: z.string().optional(),
   workspaceId: z.string(),
   contactId: z.string(),
   occurredAt: z.union([z.date(), z.string(), z.number()]),
   adminId: z.string().optional(),
   channel: z.string().nullish(),
+  inboxId: z.string().nullish(),
+  language: z.string().nullish(),
   country: z.string().nullish(),
   metadata: z.record(z.string(), z.unknown()).optional(),
   senderType: contactSenderTypeSchema.optional(),
@@ -84,6 +89,7 @@ const baseConversationEventPayloadSchema = z.object({
   fromAssignee: z.string().optional(),
   toAssignee: z.string().optional(),
   channel: z.string().optional(),
+  inboxId: z.string().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
@@ -144,12 +150,42 @@ export const messageBotReceivedEventSchema = z.object({
   result: botMessageResultSchema.optional(),
   aiProvider: z.string().optional(),
   channel: z.string().optional(),
+  inboxId: z.string().optional(),
   source: z.string().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
 })
 export type MessageBotReceivedEventPayload = z.infer<
   typeof messageBotReceivedEventSchema
 >
+
+/**
+ * A human agent's reply closed a conversation's waiting window. Computed at
+ * the source (working-hours schedule in force at reply time); the consumer is
+ * a plain insert.
+ */
+export const agentRepliedEventSchema = z.object({
+  eventType: z.literal("agent:replied"),
+  /** `reply:<messageId>` or `reply:flow:<id>`; dedupes redelivery. */
+  eventId: z.string(),
+  workspaceId: z.string(),
+  conversationId: z.string(),
+  contactId: z.string(),
+  adminId: z.string(),
+  occurredAt: z.union([z.date(), z.string(), z.number()]),
+  awaitingSince: z.union([z.date(), z.string(), z.number()]),
+  measuredFrom: z.union([z.date(), z.string(), z.number()]),
+  responseSeconds: z.number().int().nonnegative(),
+  workingResponseSeconds: z.number().int().nonnegative().nullable(),
+  workingHoursId: z.string().nullable(),
+  /** Target of the window's SLA snapshot; null/absent when no SLA applied. */
+  slaTargetSeconds: z.number().int().positive().nullish(),
+  /** Reply was at or before the SLA deadline; null/absent when no SLA applied. */
+  slaMet: z.boolean().nullish(),
+  isFirstResponse: z.boolean(),
+  channel: z.string().nullish(),
+  inboxId: z.string().nullish(),
+})
+export type AgentRepliedEventPayload = z.infer<typeof agentRepliedEventSchema>
 
 export const analyticsDashboardEventSchema = z.discriminatedUnion("eventType", [
   contactCreatedEventSchema,
@@ -167,6 +203,7 @@ export const analyticsDashboardEventSchema = z.discriminatedUnion("eventType", [
   conversationArchivedEventSchema,
   conversationUnarchivedEventSchema,
   messageBotReceivedEventSchema,
+  agentRepliedEventSchema,
 ])
 export type AnalyticsDashboardEvent = z.infer<
   typeof analyticsDashboardEventSchema

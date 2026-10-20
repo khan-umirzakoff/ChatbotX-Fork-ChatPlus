@@ -9,15 +9,17 @@ import {
   broadcastToGuestParty,
   contactInboxService,
   conversationService,
+  type PreparedProductMessage,
+  productMessageService,
   publishToWorkspaceParty,
   resolveMediaUrl,
   resolveTenantSettings,
 } from "@chatbotx.io/business"
+import { logProviderErrorForChannel } from "@chatbotx.io/business/error-log"
 import { wrapOpenLinkUrl } from "@chatbotx.io/business/open-link"
 import { getPublicFileUrl } from "@chatbotx.io/business/utils"
 import {
   channelTypes,
-  contentTypes,
   messageTypes,
   senderTypes,
 } from "@chatbotx.io/database/partials"
@@ -26,7 +28,12 @@ import {
   type MessageWithAttachments,
 } from "@chatbotx.io/database/repositories"
 import type { messageModel } from "@chatbotx.io/database/schema"
-import type { AttachmentModel, MessageModel } from "@chatbotx.io/database/types"
+import type {
+  AttachmentModel,
+  ContactInboxModel,
+  ConversationModel,
+  MessageModel,
+} from "@chatbotx.io/database/types"
 import { signAppointmentWebviewToken } from "@chatbotx.io/encryption"
 import { emit } from "@chatbotx.io/event-bus"
 import { uploadFileFromUrl } from "@chatbotx.io/filesystem"
@@ -40,6 +47,7 @@ import {
   extractMetadata,
   getChannelFlowPolicy,
   isBulkOutboundMetadata,
+  isProactiveOutboundMetadata,
   messageEventTypeSchema,
   type SendCardStepSchema,
   stepSupport,
@@ -62,11 +70,15 @@ import type {
   ChatJobSendFlowStep,
 } from "@chatbotx.io/worker-config"
 import { normalizeError } from "universal-error-normalizer"
+import { isBulkSendOrigin } from "../../lib/bulk-send-origin"
 import {
   settleCommentAutomationDelivered,
   settleCommentAutomationFailure,
 } from "../../lib/comment-automation-anchor"
 import { logger } from "../../lib/logger"
+import { resolveMiniAppLinks } from "../utils/mini-app-buttons"
+import { mapStepButtons } from "../utils/step-buttons"
+import { resolveStoredStepContent } from "../utils/stored-step-content"
 import {
   isDeliveredDirectMessage,
   markConversationReadAfterDelivery,
@@ -115,7 +127,8 @@ const resolveMessageAttachmentUrls = async (
 const isBlankTextCarrierStep = (step: SendFlowStepData) => {
   if (
     step.stepType === stepTypes.enum.sendText ||
-    step.stepType === stepTypes.enum.whatsappCallButton
+    step.stepType === stepTypes.enum.whatsappCallButton ||
+    step.stepType === stepTypes.enum.sendViewCatalog
   ) {
     return !step.text.trim()
   }
@@ -296,34 +309,16 @@ const signBookingLinksInStep = async (props: {
   executedFlowVersionId?: string
   appUrl: string
   step: SendFlowStepData
-}): Promise<SendFlowStepData> => {
-  let step = props.step
-  if ("buttons" in step && step.buttons.length > 0) {
-    const buttons = await signBookingButtonsIfNeeded({
-      ...props,
-      stepId: step.id,
-      buttons: step.buttons,
-    })
-    step = { ...step, buttons: buttons ?? [] } as SendFlowStepData
-  }
-  if (!("cards" in step) || step.cards.length === 0) {
-    return step
-  }
-  const cards = await Promise.all(
-    step.cards.map(async (card) => {
-      if (!("buttons" in card) || card.buttons.length === 0) {
-        return card
-      }
-      const buttons = await signBookingButtonsIfNeeded({
+}): Promise<SendFlowStepData> =>
+  await mapStepButtons(
+    props.step,
+    async (buttons) =>
+      (await signBookingButtonsIfNeeded({
         ...props,
-        stepId: step.id,
-        buttons: card.buttons,
-      })
-      return { ...card, buttons: buttons ?? [] } as SendCardStepSchema
-    }),
+        stepId: props.step.id,
+        buttons,
+      })) ?? [],
   )
-  return { ...step, cards } as SendFlowStepData
-}
 
 /**
  * Route an `openWebsite` button's destination through the `/go` interstitial.
@@ -379,35 +374,16 @@ const wrapOpenLinkButtonsIfNeeded = (props: {
   )
 }
 
-const wrapOpenLinksInStep = (props: {
+const wrapOpenLinksInStep = async (props: {
   workspaceId: string
   appUrl: string
   channel: string
   step: SendFlowStepData
-}): SendFlowStepData => {
-  let step = props.step
-  if ("buttons" in step && step.buttons.length > 0) {
-    const buttons = wrapOpenLinkButtonsIfNeeded({
-      ...props,
-      buttons: step.buttons,
-    })
-    step = { ...step, buttons: buttons ?? [] } as SendFlowStepData
-  }
-  if (!("cards" in step) || step.cards.length === 0) {
-    return step
-  }
-  const cards = step.cards.map((card) => {
-    if (!("buttons" in card) || card.buttons.length === 0) {
-      return card
-    }
-    const buttons = wrapOpenLinkButtonsIfNeeded({
-      ...props,
-      buttons: card.buttons,
-    })
-    return { ...card, buttons: buttons ?? [] } as SendCardStepSchema
-  })
-  return { ...step, cards } as SendFlowStepData
-}
+}): Promise<SendFlowStepData> =>
+  await mapStepButtons(
+    props.step,
+    (buttons) => wrapOpenLinkButtonsIfNeeded({ ...props, buttons }) ?? [],
+  )
 
 const convertCardsToTemplate = (props: {
   flowId: string
@@ -434,6 +410,53 @@ const convertCardsToTemplate = (props: {
           })
         : undefined,
   }))
+}
+
+/**
+ * A `sendProducts` step stores product ids; the products to show are resolved
+ * here, before any Message row exists, so a step that cannot be sent leaves no
+ * phantom message behind. Throws `ProductMessageUnresolvableError` or a `validation`
+ * exception, which the
+ * caller's terminal catch records once.
+ */
+async function resolveProductMessageForStep(props: {
+  step: SendFlowStepData
+  conversation: Pick<ConversationModel, "workspaceId" | "contactId" | "id">
+  contactInbox: Pick<ContactInboxModel, "channel" | "sourceId">
+  flowId: string
+  metadata?: MetadataPayload
+}): Promise<PreparedProductMessage | undefined> {
+  const { step, conversation, contactInbox, flowId, metadata } = props
+  if (step.stepType !== stepTypes.enum.sendProducts) {
+    return
+  }
+
+  const prepared = await productMessageService.prepareOutgoing({
+    workspaceId: conversation.workspaceId,
+    channel: contactInbox.channel,
+    content: step,
+    onMissing: "drop",
+  })
+  if (prepared.missing.length > 0) {
+    const productIds = prepared.missing.map(({ productId }) => productId)
+    logger.warn(
+      { conversationId: conversation.id, flowId, stepId: step.id, productIds },
+      "Product message sent without products that are no longer sendable",
+    )
+    // A broadcast or sequence repeats this for every recipient; its per-run
+    // analytics already count it, so it never gets an ErrorLog row of its own.
+    if (!isBulkSendOrigin(metadata)) {
+      await logProviderErrorForChannel(contactInbox.channel, {
+        workspaceId: conversation.workspaceId,
+        contactId: conversation.contactId,
+        sourceId: contactInbox.sourceId,
+        error: new Error(
+          `Product message sent without ${productIds.length} product(s) that are no longer in the catalog: ${productIds.join(", ")}`,
+        ),
+      })
+    }
+  }
+  return prepared
 }
 
 export async function sendFlowStep({
@@ -646,20 +669,43 @@ export async function sendFlowStep({
     return
   }
 
-  const messageText =
-    resolvedStep.stepType === stepTypes.enum.sendText ||
-    resolvedStep.stepType === stepTypes.enum.whatsappCallButton
-      ? resolvedStep.text
-      : null
+  const storedContent = resolveStoredStepContent(
+    resolvedStep as SendFlowStepData,
+  )
 
   let message: MessageModel | MessageWithAttachments | undefined
 
   try {
+    const preparedProductMessage = await resolveProductMessageForStep({
+      step: resolvedStep as SendFlowStepData,
+      conversation,
+      contactInbox: targetContactInbox,
+      flowId,
+      metadata,
+    })
     const [repository, tenantSettings] = await Promise.all([
       createMessageRepository(),
       resolveTenantSettings({ workspaceId: conversation.workspaceId }),
     ])
     const { appUrl, storageUrl } = tenantSettings
+    // Open Mini App buttons become link buttons first, so everything below
+    // (booking signing, the `/go` wrap, every channel encoder) only ever sees
+    // `openWebsite`. The Mini App URL is same-origin, so `/go` leaves it alone.
+    const {
+      step: stepWithMiniAppLinks,
+      quickReplies: quickRepliesWithMiniAppLinks,
+    } = await resolveMiniAppLinks({
+      workspaceId: conversation.workspaceId,
+      contactId: conversation.contactId,
+      conversationId: conversation.id,
+      contactInboxId: targetContactInbox.id,
+      flowId,
+      flowVersionId,
+      metadata,
+      appUrl,
+      step: resolvedStep as SendFlowStepData,
+      quickReplies,
+    })
     const stepWithSignedBookingLinks = await signBookingLinksInStep({
       workspaceId: conversation.workspaceId,
       contactId: conversation.contactId,
@@ -670,7 +716,7 @@ export async function sendFlowStep({
       flowVersionId,
       executedFlowVersionId,
       appUrl,
-      step: resolvedStep as SendFlowStepData,
+      step: stepWithMiniAppLinks,
     })
     const quickRepliesWithSignedBookingLinks = await signBookingButtonsIfNeeded(
       {
@@ -684,7 +730,7 @@ export async function sendFlowStep({
         executedFlowVersionId,
         stepId: stepWithSignedBookingLinks.id,
         appUrl,
-        buttons: quickReplies,
+        buttons: quickRepliesWithMiniAppLinks,
       },
     )
 
@@ -696,7 +742,7 @@ export async function sendFlowStep({
       appUrl,
       channel: targetContactInbox.channel,
     }
-    const stepForSend = wrapOpenLinksInStep({
+    const stepForSend = await wrapOpenLinksInStep({
       ...openLinkProps,
       step: stepWithSignedBookingLinks,
     })
@@ -707,6 +753,7 @@ export async function sendFlowStep({
 
     let contentAttributes: (typeof messageModel.$inferInsert)["contentAttributes"] =
       {
+        ...storedContent.contentAttributes,
         metadata,
         richResponse,
         stepId: resolvedStep.id,
@@ -741,6 +788,13 @@ export async function sendFlowStep({
       ...canonicalStepButtons,
       ...(canonicalQuickReplies ?? []),
     ]
+
+    if (preparedProductMessage) {
+      contentAttributes = {
+        ...preparedProductMessage.contentAttributes,
+        ...contentAttributes,
+      }
+    }
 
     if (displayButtons.length > 0) {
       contentAttributes = {
@@ -806,10 +860,10 @@ export async function sendFlowStep({
       conversationId: conversation.id,
       contactInboxId: targetContactInbox.id,
       messageType: messageTypes.enum.outgoing,
-      contentType: contentTypes.enum.text,
+      contentType: storedContent.contentType,
       senderType: senderTypes.enum.bot,
       sourceId: null,
-      text: messageText,
+      text: storedContent.text ?? preparedProductMessage?.text ?? null,
       contentAttributes,
       createdAt: new Date(),
       ...(isPublicCommentReply ? { type: "comment" as const } : {}),
@@ -862,6 +916,12 @@ export async function sendFlowStep({
         contactId: targetContactInbox.contactId,
         at: createdMessage.createdAt,
         bumpActivity: !isBulkOutbound,
+        // An inbox-originated flow send is an agent reply: createOutgoing's
+        // producer claim owns the close and the measurement, so the worker
+        // must not consume the window first.
+        closeHumanReplyWindow: !(
+          sendFrom === "inbox" || isProactiveOutboundMetadata(metadata)
+        ),
         lastStep: conversation.currentStep,
         currentStep: resolvedStep.id,
       })
@@ -898,6 +958,7 @@ export async function sendFlowStep({
           flowId,
           flowVersionId,
           step: stepForSend,
+          productMessage: preparedProductMessage?.message,
           metadata,
           richResponse,
           quickReplies: canonicalQuickReplies,
@@ -989,6 +1050,8 @@ export async function sendFlowStep({
         eventType: "message:bot_received",
         workspaceId: trackingContext.workspaceId,
         conversationId: trackingContext.conversationId,
+        channel: targetContactInbox.channel,
+        inboxId: targetContactInbox.inboxId,
         messageId: trackingContext.messageId,
         occurredAt: new Date(),
         hasResponse: true,
@@ -1053,6 +1116,8 @@ export async function sendFlowStep({
         eventType: "message:bot_received",
         workspaceId: trackingContext.workspaceId,
         conversationId: trackingContext.conversationId,
+        channel: targetContactInbox.channel,
+        inboxId: targetContactInbox.inboxId,
         messageId: trackingContext.messageId,
         occurredAt: new Date(),
         hasResponse: false,
@@ -1188,6 +1253,7 @@ export const sendChatMessage = async (
         contactId: contactInbox.contactId,
         at: message.createdAt,
         bumpActivity: !isBulkOutbound,
+        closeHumanReplyWindow: !isProactiveOutboundMetadata(metadata),
       })
     if (trackingInvalidation) {
       await contactInboxService.invalidateTracking(trackingInvalidation)
@@ -1220,6 +1286,8 @@ export const sendChatMessage = async (
         eventType: "message:bot_received",
         workspaceId: trackingContext.workspaceId,
         conversationId: trackingContext.conversationId,
+        channel: contactInbox.channel,
+        inboxId: contactInbox.inboxId,
         messageId: trackingContext.messageId,
         occurredAt: new Date(),
         hasResponse: true,
@@ -1252,6 +1320,8 @@ export const sendChatMessage = async (
         eventType: "message:bot_received",
         workspaceId: trackingContext.workspaceId,
         conversationId: trackingContext.conversationId,
+        channel: contactInbox.channel,
+        inboxId: contactInbox.inboxId,
         messageId: trackingContext.messageId,
         occurredAt: new Date(),
         hasResponse: false,

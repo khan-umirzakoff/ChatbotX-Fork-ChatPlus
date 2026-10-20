@@ -1,6 +1,7 @@
 import {
-  type ContactsByDimension,
+  analyticsTimeRangeCacheKey,
   contactAnalyticsService,
+  contactsByDimensionQuerySchema,
   getContactCountsResponseSchema,
   getContactsByDimensionStatsResponseSchema,
   getContactsCountResponseSchema,
@@ -8,21 +9,11 @@ import {
   getMessagesByAdminStatsResponseSchema,
   macAnalyticsService,
   messageAnalyticsService,
-  timeRangeQuerySchema,
+  timeRangeQueryWithFilterSchema,
 } from "@chatbotx.io/analytics"
 import { withCache } from "@chatbotx.io/redis"
 import { os } from "@orpc/server"
-import z from "zod"
 import { logger } from "../lib/log"
-
-const timeRangeKey = (
-  route: string,
-  workspaceId: string,
-  from: Date,
-  to: Date,
-  timezone: string,
-) =>
-  `analytics:${route}:${workspaceId}:${from.toISOString()}:${to.toISOString()}:${timezone}`
 
 export const analyticsContactRoutes = os.router({
   contactCountsPerDayAnalyticsAPI: os
@@ -32,7 +23,7 @@ export const analyticsContactRoutes = os.router({
       summary: "Get contact counts per day",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getContactCountsResponseSchema)
     .handler(async ({ input }) => {
       try {
@@ -50,7 +41,7 @@ export const analyticsContactRoutes = os.router({
       summary: "Get new contact counts per day",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getContactCountsResponseSchema)
     .handler(async ({ input }) => {
       try {
@@ -71,7 +62,7 @@ export const analyticsContactRoutes = os.router({
       summary: "Get blocked contacts per day",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getContactCountsResponseSchema)
     .handler(async ({ input }) => {
       try {
@@ -90,17 +81,11 @@ export const analyticsContactRoutes = os.router({
       summary: "Get blocked contacts count",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getContactsCountResponseSchema)
     .handler(async ({ input }) =>
       withCache(
-        timeRangeKey(
-          "blocked-contacts-count",
-          input.workspaceId,
-          input.from,
-          input.to,
-          input.timezone,
-        ),
+        analyticsTimeRangeCacheKey("blocked-contacts-count", input),
         async () => {
           try {
             const count =
@@ -124,17 +109,11 @@ export const analyticsContactRoutes = os.router({
       summary: "Get new contact counts",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getContactsCountResponseSchema)
     .handler(async ({ input }) =>
       withCache(
-        timeRangeKey(
-          "new-contacts-count",
-          input.workspaceId,
-          input.from,
-          input.to,
-          input.timezone,
-        ),
+        analyticsTimeRangeCacheKey("new-contacts-count", input),
         async () => {
           try {
             const count =
@@ -155,17 +134,11 @@ export const analyticsContactRoutes = os.router({
       summary: "Get contacts count",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getContactsCountResponseSchema)
     .handler(async ({ input }) =>
       withCache(
-        timeRangeKey(
-          "contacts-count",
-          input.workspaceId,
-          input.from,
-          input.to,
-          input.timezone,
-        ),
+        analyticsTimeRangeCacheKey("contacts-count", input),
         async () => {
           try {
             const count = await contactAnalyticsService.getContactsCount(input)
@@ -185,17 +158,11 @@ export const analyticsContactRoutes = os.router({
       summary: "Get active contacts count",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getContactsCountResponseSchema)
     .handler(async ({ input }) =>
       withCache(
-        timeRangeKey(
-          "active-contacts-count",
-          input.workspaceId,
-          input.from,
-          input.to,
-          input.timezone,
-        ),
+        analyticsTimeRangeCacheKey("active-contacts-count", input),
         async () => {
           try {
             const count =
@@ -221,30 +188,11 @@ export const analyticsContactRoutes = os.router({
       summary: "Get contacts by dimension",
       tags: ["Analytics"],
     })
-    .input(
-      timeRangeQuerySchema.extend({
-        dimension: z.enum(["country", "channel", "source"]),
-      }),
-    )
+    .input(contactsByDimensionQuerySchema)
     .output(getContactsByDimensionStatsResponseSchema)
     .handler(async ({ input }) => {
       try {
-        let data: ContactsByDimension[] = []
-
-        switch (input.dimension) {
-          case "country":
-            data = await contactAnalyticsService.getContactsByCountry(input)
-            break
-          case "channel":
-            data = await contactAnalyticsService.getContactsByChannel(input)
-            break
-          case "source":
-            data = await contactAnalyticsService.getContactsBySource(input)
-            break
-          default:
-            data = []
-        }
-
+        const data = await contactAnalyticsService.getContactsByDimension(input)
         return { data }
       } catch (error) {
         logger.error({ err: error }, "[analytics:contactsByDimension] failed")
@@ -258,7 +206,7 @@ export const analyticsContactRoutes = os.router({
       summary: "Get messages sent by admin",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getMessagesByAdminStatsResponseSchema)
     .handler(async ({ input }) => {
       try {
@@ -276,7 +224,7 @@ export const analyticsContactRoutes = os.router({
       summary: "Get human agent statistics",
       tags: ["Analytics"],
     })
-    .input(timeRangeQuerySchema)
+    .input(timeRangeQueryWithFilterSchema)
     .output(getHumanAgentStatsResponseSchema)
     .handler(async ({ input }) => {
       try {

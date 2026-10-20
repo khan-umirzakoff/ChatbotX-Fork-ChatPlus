@@ -127,6 +127,7 @@
       "noFlowsAvailable": "Nu există fluxuri disponibile",
       "setCustomField": "Setează câmpul personalizat",
       "startAnotherNode": "Pornește alt nod",
+      "openMiniApp": "Deschide Mini App",
       "startExternalFlow": "Pornește un flux extern",
       "startExternalNode": "Pornește un nod extern",
       "startFlow": "Pornește fluxul",
@@ -164,9 +165,13 @@
       "importStarted": "Fluxul se importă. Verifică istoricul importurilor pentru rezultate.",
       "importJsonOnly": "Doar fișiere JSON",
       "whatsappCallButton": "Sună pe WhatsApp",
+      "whatsappLocation": "Locație",
       "metaConversions": "Meta Conversions API",
       "threadControl": "Controlul conversației",
-      "sendGoogleAdsConversion": "Trimite conversie Google Ads"
+      "sendGoogleAdsConversion": "Trimite conversie Google Ads",
+      "changeGamificationScore": "Modifică punctele de gamificare",
+      "sendViewCatalog": "Vezi catalogul",
+      "sendProducts": "Trimite produse"
     },
     "splitTraffic": {
       "balanceHint": "Suma totală trebuie să fie egală cu 100%.",
@@ -286,12 +291,75 @@
     "whatsappCallButton": {
       "editButtonTitle": "Editează butonul",
       "buttonLabel": "Eticheta butonului"
+    },
+    "changeGamificationScore": {
+      "leaderboard": "Clasament",
+      "operation": "Operațiune",
+      "add": "Adaugă puncte (+)",
+      "subtract": "Scade puncte (−)",
+      "points": "Puncte",
+      "targetUser": "Punctele utilizatorului",
+      "targetReferrer": "Punctele celui care a recomandat",
+      "targetReferrerHint": "Modifică și punctele persoanei care a recomandat acest contact.",
+      "summary": "{points} puncte în {leaderboard}"
+    },
+    "whatsappLocation": {
+      "title": "Locație",
+      "name": "Nume",
+      "address": "Adresă",
+      "latitude": "Latitudine",
+      "longitude": "Longitudine",
+      "setLocation": "Setează locația",
+      "errors": {
+        "tooLong": "Maximum 1000 de caractere.",
+        "invalidLatitude": "Introdu o latitudine între -90 și 90.",
+        "invalidLongitude": "Introdu o longitudine între -180 și 180.",
+        "locationRequired": "Introdu coordonatele locației."
+      }
+    },
+    "sendViewCatalog": {
+      "footerLabel": "Subsol",
+      "thumbnailLabel": "Produs pentru miniatură"
+    },
+    "sendProducts": {
+      "description": "Alege produsele de trimis și modul în care sunt afișate.",
+      "display": "Afișare",
+      "displays": {
+        "products": "Produse",
+        "carousel": "Carusel"
+      },
+      "products": "Produse",
+      "selectProducts": "Selectează produse",
+      "searchProducts": "Caută produse",
+      "noProducts": "Nu s-a găsit niciun produs.",
+      "loading": "Se încarcă...",
+      "loadError": "Produsele nu au putut fi încărcate.",
+      "retry": "Încearcă din nou",
+      "catalogNotConnected": "Conectează și sincronizează un catalog Meta pentru a trimite produse.",
+      "openProducts": "Deschide Produse",
+      "channelUnsupported": "Acest canal nu poate trimite produse.",
+      "unavailableProduct": "Produs indisponibil",
+      "removeProduct": "Elimină produsul",
+      "removeSection": "Elimină secțiunea",
+      "moreOptions": "Mai multe opțiuni",
+      "fewerOptions": "Mai puține opțiuni",
+      "header": "Titlu",
+      "body": "Corp",
+      "footer": "Subsol",
+      "sectionTitle": "Titlul secțiunii",
+      "addSection": "Adaugă secțiune",
+      "productCount": "{count} / {max} produse",
+      "productsSelected": "{count, plural, one {# produs} other {# produse}}",
+      "noneSelected": "Încă nu există produse",
+      "sendFailed": "Produsele nu au putut fi trimise."
     }
   },
   "folders": {
-    "heading": {
-      "title": "Dosare"
-    }
+    "rootOption": "-- Rădăcină --",
+    "showMore": "+{count}",
+    "showLess": "Arată mai puțin",
+    "root": "Rădăcină",
+    "viewingFolder": "Se afișează dosarul: {name}"
   },
   "gemini": {
     "autoReply": {
@@ -976,6 +1044,7 @@
     "title": "Editează profilul"
   },
   "actions": {
+    "scrollToBottom": "Derulează în jos",
     "retry": "Reîncearcă",
     "copy": "Copiază",
     "copyUrl": "Copiază adresa URL",
@@ -1130,7 +1199,9 @@
     "schedule": "Schedule",
     "moveToDraft": "Move to draft",
     "stop": "Stop",
-    "resume": "Resume"
+    "resume": "Resume",
+    "viewRuns": "Vezi rulările",
+    "editSchedule": "Editează programarea"
   },
   "errors": {
     "superAdminRequired": "Trebuie să fii superadministrator al spațiului de lucru pentru a face acest lucru."
@@ -1191,6 +1262,13 @@
     "averageFirstResponseTimeByAdmin": "Timp mediu al primului răspuns al agenților umani (minute)",
     "averageFirstResponseTimeByAdminHelp": "Timpul mediu necesar unui agent uman pentru a oferi răspunsul inițial la mesajul unui client.",
     "averageResponseTimeByAdmin": "Timp mediu de răspuns al agenților umani (minute)",
+    "withinWorkingHoursHelp": "Numără doar timpul din programul agentului.",
+    "withinWorkingHoursLabel": "În timpul programului",
+    "noResponseData": "Niciun răspuns în această perioadă sau niciun program alocat.",
+    "averageFirstResponseTimeWithinWorkingHoursByAdmin": "Timpul mediu de primă răspuns în timpul programului, pe agenți umani (minute)",
+    "averageFirstResponseTimeWithinWorkingHoursByAdminHelp": "Timpul mediu, în timpul programului de lucru, necesar unui agent uman pentru a oferi primul răspuns la mesajul unui client.",
+    "averageResponseTimeWithinWorkingHoursByAdmin": "Timpul mediu de răspuns în timpul programului, pe agenți umani (minute)",
+    "averageResponseTimeWithinWorkingHoursByAdminHelp": "Timpul mediu, în timpul programului de lucru, necesar unui agent uman pentru a răspunde la mesajul unui client.",
     "averageDurationOfConversation": "Durata medie a unei conversații (minute)",
     "averageDurationOfConversationHelp": "Timpul mediu în care o conversație a fost gestionată de un om înainte de a fi mutată la bot.",
     "success": "Succes",
@@ -1222,7 +1300,7 @@
     "blockedConversationsHelp": "Conversații blocate de contul tău.",
     "blockedContacts": "Contacte blocate",
     "blockedContactsHelp": "Contacte care nu doresc să primească mesaje de la contul tău",
-    "newContactsByCountry": "Contacte noi după țară",
+    "newContactsByLanguage": "Contacte noi după limbă",
     "date": "Dată",
     "total": "Total",
     "messagesSent": "Mesaje trimise",
@@ -1253,7 +1331,19 @@
     "message": "Mesaj",
     "searchByDate": "Caută după dată...",
     "publicReply": "Răspuns public",
-    "privateReply": "Răspuns privat"
+    "privateReply": "Răspuns privat",
+    "filters": {
+      "allChannels": "Toate canalele",
+      "allInboxes": "Toate Inbox-urile",
+      "searchPlaceholder": "Caută...",
+      "empty": "Nu s-au găsit rezultate.",
+      "clear": "Șterge",
+      "close": "Închide",
+      "options": "Opțiuni disponibile",
+      "remove": "Elimină",
+      "filterHint": "Filtrele numără doar evenimentele înregistrate după adăugarea filtrării: evenimentele mai vechi nu au Inbox, iar evenimentele mai vechi de bot și conversație nu au nici canal. Toate numără mereu tot.",
+      "tooManyInboxes": "Alege cel mult {max} Inbox-uri sau bifează Toate."
+    }
   },
   "flowAnalytics": {
     "nodes": {
@@ -1343,7 +1433,10 @@
       "sending": "Se trimite",
       "cancelled": "Anulată",
       "draft": "Draft",
-      "failed": "Failed"
+      "failed": "Failed",
+      "recurring": "Recurentă",
+      "paused": "Întrerupt",
+      "ended": "Încheiat"
     },
     "stats": {
       "sent": "Trimis",
@@ -1427,7 +1520,9 @@
       "audienceFilter": "Filtru de public",
       "noAudienceFilter": "Niciun filtru de public",
       "template": "Șablon",
-      "integration": "Integrare"
+      "integration": "Integrare",
+      "schedule": "Programare repetare",
+      "runOf": "Rulare a <link>{name}</link>"
     },
     "filters": {
       "all": "All"
@@ -1476,15 +1571,20 @@
     },
     "moveToDraftDialog": {
       "title": "Move to draft",
-      "description": "\"{name}\" will be unscheduled and moved back to drafts."
+      "description": "\"{name}\" will be unscheduled and moved back to drafts.",
+      "templateTitle": "Editează programarea",
+      "templateDescription": "„{name}” este întrerupt și mutat înapoi în ciorne pentru a-i putea schimba programarea."
     },
     "stopDialog": {
       "title": "Stop broadcast",
-      "description": "Remaining messages for \"{name}\" stop within about a minute. A few already handed to the channel may still deliver. You can resume later — only unsent recipients will receive."
+      "description": "Remaining messages for \"{name}\" stop within about a minute. A few already handed to the channel may still deliver. You can resume later — only unsent recipients will receive.",
+      "templateTitle": "Întrerupe difuzarea repetitivă",
+      "templateDescription": "„{name}” nu mai creează rulări noi. O rulare care deja trimite continuă. Puteți relua mai târziu; rulările din timpul pauzei sunt omise."
     },
     "resumeDialog": {
       "title": "Resume broadcast",
-      "description": "\"{name}\" will continue sending to recipients who have not received it yet."
+      "description": "\"{name}\" will continue sending to recipients who have not received it yet.",
+      "templateDescription": "„{name}” se repetă din nou de la următoarea oră programată. Rulările din timpul pauzei au fost omise."
     },
     "planLimitDialog": {
       "title": "Actualizează planul",
@@ -1502,6 +1602,63 @@
       "toLabel": "Până la",
       "allPlaceholder": "Toate",
       "rangeEndBeforeStart": "Poziția de final nu poate fi înainte de poziția de start"
+    },
+    "recurring": {
+      "nextRun": "Următoarea rulare {when}",
+      "paused": "Întrerupt",
+      "ended": "Încheiat {when} · {count, plural, one {# rulare} other {# rulări}}",
+      "runs": "{count, plural, one {# rulare} other {# rulări}}",
+      "noUpcomingSends": "Nu mai există trimiteri — datele rămase sunt omise"
+    },
+    "runs": {
+      "back": "Difuzări repetitive",
+      "pausedNotice": "Întrerupt din {when}. Rulările din timpul pauzei sunt omise.",
+      "groupBy": "Grupează rulările pe",
+      "grouping": {
+        "day": "Zi",
+        "week": "Săptămână",
+        "month": "Lună"
+      },
+      "totals": "{runs, plural, one {# rulare} other {# rulări}} din {slots, plural, one {# interval} other {# intervale}}",
+      "error": "Nu s-au putut încărca rulările.",
+      "retry": "Încearcă din nou",
+      "empty": "Încă nu există rulări. Prima începe la următoarea oră programată.",
+      "loadMore": "Încarcă mai multe",
+      "weekOf": "Săptămâna din {date}",
+      "groupSummary": "{created, plural, one {# rulare} other {# rulări}}{missed, plural, =0 {} other { · # ratat(e)}}{skipped, plural, =0 {} other { · # omis(e)}}",
+      "deliveredRate": "{rate} livrate",
+      "notSent": "Netrimis — {reason}",
+      "earlierSlots": "{count, plural, one {# interval anterior} other {# intervale anterioare}} ratat(e)",
+      "stalled": "Blocat",
+      "lateByMinutes": "{count, plural, one {# minut întârziere} other {# minute întârziere}}",
+      "lateByHours": "{count, plural, one {# oră întârziere} other {# ore întârziere}}",
+      "recipients": "{count, plural, one {# destinatar} other {# destinatari}}",
+      "reasons": {
+        "catchUpSuperseded": "platforma nu a funcționat; a fost trimisă în schimb o rulare ulterioară",
+        "paused": "programarea era întreruptă",
+        "draft": "difuzarea era în editare",
+        "blockedOwner": "contul este blocat",
+        "planLimit": "limita planului a fost atinsă",
+        "noTargets": "nicio pagină din care să se trimită",
+        "undeliverable": "fluxul sau șablonul nu este disponibil",
+        "excludedDate": "Dată omisă"
+      },
+      "outcomes": {
+        "created": "Trimis",
+        "skipped": "Omis",
+        "missed": "Ratat"
+      },
+      "upcoming": {
+        "title": "Trimiteri viitoare",
+        "empty": "Nicio trimitere viitoare",
+        "skip": "Omite",
+        "restore": "Restabilește",
+        "skippedBadge": "Omis",
+        "skipped": "{date} omis",
+        "restored": "{date} restabilit",
+        "undo": "Anulează",
+        "error": "Această trimitere nu mai poate fi modificată"
+      }
     }
   },
   "commentAutomation": {
@@ -1557,6 +1714,17 @@
     "liveBadge": "Live",
     "postTypeDialog": {
       "title": "Selectează tipul postării"
+    },
+    "account": {
+      "label": "Cont",
+      "description": "Contul conectat pe care răspunde această automatizare. Alege „Toate conturile” pentru a răspunde pe toate conturile conectate ale acestui canal.",
+      "all": "Toate conturile",
+      "placeholder": "Selectează un cont",
+      "required": "Sunt conectate mai multe conturi: alege unul sau alege intenționat „Toate conturile”.",
+      "targetsCleared": "Postările selectate au fost eliminate deoarece pot aparține altui cont.",
+      "column": "Cont",
+      "disconnected": "Cont deconectat",
+      "disconnectedDescription": "Această automatizare este legată de un cont care nu mai este conectat, deci nu răspunde la niciun comentariu. Reconectează contul sau alege altul."
     }
   },
   "condition": {
@@ -1631,6 +1799,7 @@
       "questionnaireInProgress": "Chestionar în desfășurare",
       "questionnaireFinished": "Chestionar finalizat",
       "couponTopic": "Cupon",
+      "leaderboardScore": "Puncte de gamificare",
       "votedOnPoll": "A votat în sondaj",
       "lastComment": "Ultimul comentariu",
       "commentedOnPost": "A comentat la postare",
@@ -1683,7 +1852,8 @@
         "video": "Videoclip",
         "audio": "Audio",
         "gif": "GIF",
-        "file": "Fișier"
+        "file": "Fișier",
+        "storyMention": "Mențiune în Story"
       },
       "ctwaConversionTypes": {
         "lead": "Lead",
@@ -1700,6 +1870,7 @@
       "ecommerce": "Comerț electronic",
       "systemFields": "Câmpuri de sistem",
       "topicCoupon": "Subiect cupon",
+      "leaderboard": "Puncte de gamificare",
       "customFields": "Câmpuri personalizate",
       "botFields": "Câmpurile botului",
       "email": "E-mail",
@@ -1740,7 +1911,8 @@
       "api": "API",
       "webchat": "Webchat",
       "botLink": "Link bot",
-      "chatPlugin": "Plugin C. chat"
+      "chatPlugin": "Plugin C. chat",
+      "inboundWebhook": "Webhook de intrare"
     },
     "ctwaRetarget": {
       "segments": {
@@ -2273,7 +2445,8 @@
       "video": "Videoclip",
       "audio": "Audio",
       "gif": "GIF",
-      "file": "Fișier"
+      "file": "Fișier",
+      "storyMention": "Mențiune în Story"
     },
     "lastMonth": {
       "label": "Luna trecută"
@@ -2757,7 +2930,8 @@
     "schedule": {
       "label": "Programare",
       "now": "Acum",
-      "scheduled": "Programați pentru mai târziu"
+      "scheduled": "Programați pentru mai târziu",
+      "recurring": "Repetă"
     },
     "inputFieldId": {
       "label": "Câmp personalizat de intrare"
@@ -3251,7 +3425,8 @@
       "media": "Media",
       "ads": "Reclame",
       "settings": "Setări",
-      "miniApps": "Mini Apps"
+      "miniApps": "Mini Apps",
+      "leaderboards": "Clasamente"
     },
     "adReferral": {
       "label": "Ads",
@@ -3283,6 +3458,31 @@
       "hint": "Se recomandă Data Manager. API-ul de încărcare vechi funcționează doar pentru proiectele Google Cloud pe care Google le permite încă și nu folosește permisiunea Data Manager. Modificarea se aplică doar conexiunilor noi: reconectează spațiile de lucru existente.",
       "dataManager": "API Data Manager (recomandat)",
       "legacy": "API de încărcare vechi"
+    },
+    "referralName": {
+      "label": "Numele celui care a recomandat"
+    },
+    "capiConfigId": {
+      "label": "Conversions API Config ID",
+      "description": "ID-ul configurației Embedded Signup folosit pentru a cere permisiunea whatsapp_business_manage_events la conectarea Conversions API."
+    },
+    "outboundAutomatedResponse": {
+      "label": "Cuvânt cheie pagină"
+    },
+    "fbComment": {
+      "label": "Automatizare comentarii Facebook"
+    },
+    "igComment": {
+      "label": "Automatizare comentarii Instagram"
+    },
+    "igStory": {
+      "label": "Automatizare stories Instagram"
+    },
+    "images": {
+      "label": "Imagini"
+    },
+    "miniApp": {
+      "label": "Mini App"
     }
   },
   "channels": {
@@ -3417,6 +3617,7 @@
       "permissionRequired": "Trebuie să fii super administrator pentru a modifica accesul de suport al platformei.",
       "enabledToast": "Accesul de suport al platformei a fost activat.",
       "disabledToast": "Accesul de suport al platformei a fost dezactivat.",
+      "consentDisabled": "Platform support access is available to platform administrators without this setting.",
       "toggleError": "Ceva nu a mers bine. Vă rugăm să încercați din nou."
     }
   },
@@ -3451,6 +3652,8 @@
     "failed": "Eșuat",
     "copiedToClipboard": "Copiat în clipboard",
     "messengerAdsJsonDescription": "Va trebui să generezi un cod JSON nou doar dacă faci modificări la pasul de start. Modificările din alți pași nu vor afecta acest cod JSON.",
+    "welcomeMessageFlowIdsTitle": "ID-uri ale fluxurilor de mesaje de bun venit",
+    "welcomeMessageFlowIdsDescription": "Se sincronizează cu fiecare Pagină de Facebook când publici. Alege-l la Aplicație partener în Ads Manager.",
     "messengerAdsNotPublished": "Publică conținutul acestui flux și încearcă din nou.",
     "messengerAdsNoStartNode": "Acest flux nu are un pas de start valid. Deschide fluxul, setează un pas de Trimite mesaj ca start, apoi publică și încearcă din nou.",
     "messengerAdsError": "Ceva nu a mers bine la generarea JSON-ului. Te rugăm să încerci din nou.",
@@ -3563,6 +3766,7 @@
     "whatsappFlowIncomplete": "Deschide butonul și alege un WhatsApp Flow și ecranul său de start.",
     "whatsappCarouselButtonsMismatch": "Pe WhatsApp, un carusel are nevoie de aceleași butoane pe fiecare card: fie un singur buton de link pe fiecare card, fie același număr de butoane de răspuns pe fiecare card",
     "whatsappCarouselLinkButtonNotAlone": "Pe WhatsApp, un card de carusel cu un buton de link nu poate avea alte butoane. Elimină celelalte butoane de pe acel card sau schimbă butonul de link cu o altă acțiune.",
+    "templateButtonOpenMiniAppUnsupported": "Butoanele de șablon nu pot deschide o Mini App. Alege altă acțiune pentru acest buton.",
     "duplicateNodeError": "Blocul nu a putut fi duplicat. Te rugăm să încerci din nou.",
     "deleteNodeError": "Blocul nu a putut fi șters. Te rugăm să încerci din nou.",
     "redoHistoryCleared": "Istoricul de refacere a fost șters",
@@ -3601,7 +3805,33 @@
       "labelsUnavailable": "Întrebările Flow-ului nu au putut fi încărcate, așa că sunt afișate numele câmpurilor.",
       "yes": "Da",
       "no": "Nu"
-    }
+    },
+    "sendViewCatalogBodyTooLong": "Textul mesajului este prea lung pentru un mesaj de catalog. Scurtează-l.",
+    "sendViewCatalogFooterTooLong": "Subsolul este prea lung pentru un mesaj de catalog. Scurtează-l.",
+    "viewCatalog": "Vezi catalogul",
+    "sendProductsDisplayUnsupported": "Acest canal nu poate trimite acest tip de mesaj cu produse.",
+    "sendProductsFieldRequired": "Acest câmp este obligatoriu.",
+    "sendProductsFieldNotAllowed": "Acest câmp nu poate fi folosit aici.",
+    "sendProductsFieldTooLong": "Acest text este prea lung.",
+    "sendProductsProductCountOutOfRange": "Alege un număr valid de produse.",
+    "sendProductsSectionCountOutOfRange": "Sunt prea multe secțiuni.",
+    "sendProductsDuplicateProduct": "Un produs poate apărea o singură dată.",
+    "inboundOrder": {
+      "title": "Coș de cumpărături",
+      "preview": "Coș de cumpărături ({count, plural, one {# articol} other {# articole}})",
+      "note": "Notă",
+      "unresolvedProduct": "Nu a fost găsit în catalogul tău"
+    },
+    "referredProduct": {
+      "askedAbout": "A întrebat despre acest produs"
+    },
+    "savedReplyTextOrImageRequired": "Adaugă text sau cel puțin o imagine",
+    "imagesNotSupportedOnChannel": "{channel} nu poate trimite imagini în această conversație",
+    "tooManyImagesOnChannel": "{channel} poate trimite cel mult {max} imagine/imagini în această conversație",
+    "savedReplyImagesRemoved": "Imaginile care nu pot fi trimise aici au fost eliminate",
+    "onlyImagesAllowed": "Se pot adăuga doar imagini",
+    "tooManySavedReplyImages": "Un răspuns salvat poate avea cel mult {max} imagini",
+    "savedReplyImagesNotSentHere": "Imaginile nu vor fi trimise aici"
   },
   "instagram": {
     "description": "Această integrare îți permite să creezi boți Instagram.",
@@ -3760,6 +3990,85 @@
     },
     "title": "DeepSeek"
   },
+  "decision": {
+    "addConnection": "Add AI Router connection",
+    "advanced": "Advanced",
+    "context": "Context",
+    "discardTypeChangeDescription": "Changing the AI Router type will discard its criteria and threshold.",
+    "discardTypeChangeTitle": "Change AI Router type?",
+    "output": "Output",
+    "outputNoul": "probabilityTrue (0–1)",
+    "statement": "Statement",
+    "thresholdChoice": "Require minimum confidence",
+    "thresholdNoul": "Require minimum TRUE probability",
+    "thresholdScore": "Require score threshold",
+    "thresholds": "Confidence & thresholds",
+    "addProfile": "Add AI Router profile",
+    "globalRouter": "Global Router",
+    "globalRouterRoutesDiscarded": "Rutele și mapările de metadate ale Global Router vor fi, de asemenea, eliminate.",
+    "globalRouterDescription": "This profile becomes the workspace Global Router and replaces any previously selected Global Router.",
+    "globalRouterChooseDestination": "Choose destination",
+    "globalRouterDefaultDestination": "Default destination",
+    "globalRouterDestinationRequired": "Choose where unmatched messages should go.",
+    "globalRouterRouteDestinationRequired": "Choose a destination for this result.",
+    "globalRouterRoutes": "Route recognized results",
+    "globalRouterUsesFallback": "Uses default destination",
+    "globalRouterDestinationTypes": {
+      "flow": "Flow",
+      "aiAgent": "AI Agent",
+      "assignConversation": "Assign Conversation to an Admin"
+    },
+    "globalRouterFallbackDescription": "A default destination is required. It applies only when the Global Router is usable but evaluation has no valid result or route; unavailable connections or models use the workspace Default AI/Flow.",
+    "globalRouterFalseMaximum": "FALSE maximum probability",
+    "globalRouterMetadataMappings": "Optional result metadata mappings",
+    "globalRouterNoulDescription": "Values between the FALSE maximum and TRUE minimum use the fallback. The profile threshold does not affect Global Router Noul routing.",
+    "globalRouterRuntimeUnsupported": "This model has not been certified for AI Router runtime. You can save the configuration, but the Global Router remains inactive until certification.",
+    "globalRouterTrueMinimum": "TRUE minimum probability",
+    "flowStepDescription": "Select an active profile and map its typed results to contact custom fields.",
+    "profile": "AI Router profile",
+    "question": "Question",
+    "result": "Result",
+    "resultValues": {
+      "choice": "Choice",
+      "confidence": "Confidence",
+      "noul": "Noul",
+      "probability": "Probability",
+      "score": "Score"
+    },
+    "connection": "AI Router connection",
+    "connectionUnavailable": "AI Router connection unavailable",
+    "charactersRemaining": "{count} characters remaining",
+    "modelUnavailable": "Selected model is no longer available. Choose another model.",
+    "editProfile": "Editează profilul AI Router",
+    "evaluateDecision": "AI Router",
+    "model": "Model",
+    "profileDescription": "A profile combines an AI Router connection, model and typed question contract.",
+    "profiles": "AI Router profiles",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "label": "Status"
+    },
+    "connectionDescription": "Configure a provider credential and the AI Router models it may use.",
+    "connections": "AI Router connections",
+    "connectionsDescription": "Connections are available to AI Router profiles in this workspace.",
+    "credentialKeepExisting": "Leave blank to keep the existing credential.",
+    "credentialRequired": "A provider credential is required.",
+    "defaultModel": "Default model",
+    "editConnection": "Edit AI Router connection",
+    "empty": "No AI Router connections yet.",
+    "endpoint": "Compatible endpoint",
+    "endpointDescription": "Use the provider's System One-compatible API endpoint.",
+    "modelCatalog": "Available models",
+    "modelCatalogDescription": "Enter one model ID per line, or separate model IDs with commas.",
+    "provider": "Provider",
+    "testFailed": "AI Router connection test failed.",
+    "testPassed": "AI Router connection test passed.",
+    "toolDescription": "Create reusable profiles for the AI Router flow step.",
+    "title": "AI Router",
+    "contactContext": "Contextul contactului",
+    "contextProviderWarning": "Valorile selectate ale câmpurilor de contact sunt trimise furnizorului AI Router."
+  },
   "openrouter": {
     "autoReply": {
       "description": "Activează răspunsul automat cu IA alimentat de OpenRouter.",
@@ -3879,7 +4188,17 @@
     "maxItemsReached": "Sunt permise maximum {max} {feature} per spațiu de lucru",
     "maxCharacters": "Maximum {max} caractere.",
     "invalidApiKey": "Cheie API invalidă",
-    "maxMustBeGreaterThanMin": "{maxField} trebuie să fie mai mare sau egal cu {minField}"
+    "maxMustBeGreaterThanMin": "{maxField} trebuie să fie mai mare sau egal cu {minField}",
+    "inboundWebhook": {
+      "inboxRequired": "Alege o căsuță de mesaje.",
+      "inboxNotFound": "Căsuța de mesaje selectată nu a fost găsită.",
+      "inboxDisconnected": "Căsuța de mesaje selectată nu este conectată.",
+      "unsupportedInboxIdentifier": "Acest canal nu poate fi identificat prin acea valoare.",
+      "identifierRequired": "Adaugă cel puțin o identitate de contact.",
+      "unknownFieldTarget": "Un câmp de contact mapat nu mai există.",
+      "actionReferenceNotFound": "O acțiune face referire la un flux, o etichetă sau un câmp care nu mai există.",
+      "fieldMappingRequired": "Adaugă cel puțin o mapare de câmp."
+    }
   },
   "webchat": {
     "chatUnavailable": "Acest chat este momentan indisponibil.",
@@ -4452,7 +4771,8 @@
         "loadMoreError": "Nu s-au putut încărca mai multe apeluri. Încercați din nou.",
         "callInformation": "Informații despre apel"
       }
-    }
+    },
+    "credentialSecretsRequired": "Introdu secretul aplicației și tokenul utilizatorului de sistem. Nu sunt încă salvate."
   },
   "zalo": {
     "title": "Zalo OA",
@@ -4607,6 +4927,216 @@
     "title": "Linkuri magice",
     "description": "Creează linkuri directe care redirecționează către URL-ul tău cu parametri de interogare."
   },
+  "inboundWebhooks": {
+    "title": "Webhook-uri de intrare",
+    "feature": "Webhook de intrare",
+    "description": "Permite sistemelor externe să trimită date către spațiul tău de lucru: găsește sau creează un contact, salvează valori în câmpurile lui și rulează acțiuni.",
+    "createDescription": "Un webhook nou începe inactiv. Configurează-l în editor, apoi activează-l.",
+    "deleteDescription": "Sistemele care încă trimit către acest URL vor primi o eroare. Acțiunea nu poate fi anulată.",
+    "editorDescription": "Trimite o cerere POST cu JSON către URL-ul de mai jos pentru a rula acest webhook.",
+    "configure": "Configurează",
+    "getLink": "Obține linkul",
+    "activeToggle": "Activează {name}",
+    "columns": {
+      "active": "Activ",
+      "createdAt": "Creat",
+      "requests": "Cereri"
+    },
+    "link": {
+      "title": "URL webhook",
+      "description": "Trimite JSON prin POST către acest URL. Conține un token secret, deci tratează-l ca pe o parolă."
+    },
+    "endpoint": {
+      "label": "URL webhook",
+      "show": "Afișează URL-ul",
+      "hide": "Ascunde URL-ul"
+    },
+    "regenerate": {
+      "button": "Regenerează",
+      "title": "Regenerezi URL-ul webhook-ului?",
+      "description": "URL-ul actual nu va mai funcționa imediat. Actualizează toate sistemele care trimit către el.",
+      "cancel": "Anulează",
+      "confirm": "Regenerează",
+      "success": "URL-ul webhook-ului a fost regenerat",
+      "failed": "Nu s-a putut regenera URL-ul"
+    },
+    "activation": {
+      "incomplete": "Completează căsuța de mesaje, cel puțin un câmp de contact și cel puțin o mapare, apoi salvează, înainte de a activa acest webhook."
+    },
+    "sample": {
+      "title": "JSON exemplu",
+      "description": "Lipește un exemplu de corp al cererii pentru a parcurge câmpurile și a previzualiza valorile.",
+      "load": "Încarcă JSON exemplu",
+      "status": {
+        "loaded": "Exemplu încărcat",
+        "invalid": "Acesta nu este un JSON valid",
+        "tooLarge": "Exemplul este mai mare de {max} KB",
+        "unsupported": "Exemplul conține caractere neacceptate sau este imbricat prea adânc"
+      },
+      "format": "Formatează JSON"
+    },
+    "contact": {
+      "title": "Găsește sau creează contact",
+      "description": "Alege căsuța de mesaje căreia îi aparține contactul și cum este găsit. Dacă nimeni nu se potrivește, se creează un contact nou când cererea conține ce are nevoie acest canal."
+    },
+    "inbox": {
+      "modeLabel": "Căsuță de mesaje",
+      "mode": {
+        "inbox": "Căsuță de mesaje anume",
+        "payload": "Din payload"
+      },
+      "modeDescription": {
+        "inbox": "Fiecare cerere folosește căsuța de mesaje pe care o alegi.",
+        "payload": "Fiecare cerere indică propria căsuță de mesaje, de exemplu un id de pagină Messenger sau un id de număr WhatsApp."
+      },
+      "inboxLabel": "Căsuță de mesaje",
+      "inboxPlaceholder": "Selectează o căsuță de mesaje",
+      "noInboxes": "Nu a fost găsită nicio căsuță de mesaje conectată.",
+      "savedInboxMissing": "Căsuța de mesaje salvată nu mai este conectată. Alege alta.",
+      "channelLabel": "Canal",
+      "channelPlaceholder": "Selectează un canal",
+      "noPayloadChannels": "Conectează mai întâi un canal care acceptă acest lucru.",
+      "identifierKindLabel": "Identificator al căsuței de mesaje",
+      "identifierKindPlaceholder": "Selectează identificatorul trimis în payload",
+      "identifierPathHint": "Calea JSON a acestei valori în cerere."
+    },
+    "identity": {
+      "hint": "Completează cel puțin unul. Contactul este căutat după primul găsit în cerere, în această ordine.",
+      "phone": "Telefon",
+      "email": "E-mail",
+      "channelUserId": "ID utilizator canal",
+      "fullName": "Nume complet",
+      "creationHint": "Fără {identities}, o cerere pentru un contact necunoscut este ignorată. Sunt actualizate doar contactele existente."
+    },
+    "inboxIdentifierKinds": {
+      "pageId": "ID pagină Facebook",
+      "igId": "ID cont Instagram",
+      "phoneNumberId": "ID număr de telefon WhatsApp",
+      "displayPhoneNumber": "Număr de telefon WhatsApp (mai puțin precis)",
+      "botId": "ID bot Telegram",
+      "oaId": "ID Zalo OA",
+      "openId": "Open ID cont TikTok",
+      "threadsUserId": "ID utilizator Threads"
+    },
+    "channelUserIdKinds": {
+      "psid": "PSID Messenger",
+      "igsid": "IGSID Instagram",
+      "telegramChatId": "ID chat Telegram",
+      "zaloUserId": "ID utilizator Zalo",
+      "tiktokCustomerOpenId": "Open ID client TikTok",
+      "threadsUsername": "Nume utilizator Threads",
+      "apiSourceId": "ID sursă contact",
+      "whatsappId": "ID WhatsApp (wa_id)"
+    },
+    "mappings": {
+      "title": "Salvează datele primite",
+      "description": "Copiază valori din cerere în câmpurile contactului.",
+      "empty": "Niciun câmp mapat încă.",
+      "add": "Adaugă câmp",
+      "remove": "Elimină câmpul",
+      "target": "Câmp de contact",
+      "targetPlaceholder": "Selectează un câmp",
+      "path": "Cale JSON",
+      "rowTitle": "Mapare {number}"
+    },
+    "actions": {
+      "title": "După salvarea datelor",
+      "description": "Acțiuni de rulat pentru contact după salvarea datelor."
+    },
+    "picker": {
+      "title": "Parcurge JSON",
+      "description": "Caută și apasă pe o valoare sau introdu mai jos un JSONPath",
+      "browse": "Parcurge",
+      "noSample": "Încarcă mai întâi un JSON exemplu pentru a-i parcurge câmpurile.",
+      "pathLabel": "Cale JSON",
+      "use": "Folosește calea",
+      "cancel": "Anulează",
+      "result": "Rezultat:",
+      "noValue": "fără valoare",
+      "searchLabel": "Caută în JSON",
+      "searchPlaceholder": "Caută chei, căi sau valori",
+      "noMatches": "Nicio cheie sau valoare potrivită.",
+      "moreResults": "Se afișează primele {count} rezultate. Restrânge căutarea pentru a le vedea pe celelalte.",
+      "pathHint": "Acceptă nume de proprietăți și indecși de tablou, inclusiv $[\"customer-data\"][\"email\"]",
+      "invalidPath": "Acesta nu este un JSONPath acceptat."
+    },
+    "requests": {
+      "title": "Cereri",
+      "description": "Ultimele livrări primite de acest webhook (păstrate 30 de zile).",
+      "refresh": "Reîmprospătează",
+      "empty": "Nu a fost primită nicio cerere încă.",
+      "previous": "Pagina anterioară",
+      "next": "Pagina următoare",
+      "pageOf": "Pagina {page} din {pageCount}",
+      "contact": "Contact #{id}",
+      "showDetails": "Afișează detaliile",
+      "hideDetails": "Ascunde detaliile",
+      "loadingDetails": "Se încarcă detaliile…",
+      "detailsFailed": "Nu s-au putut încărca detaliile.",
+      "fieldErrors": "Câmpuri nesalvate",
+      "actionResults": "Acțiuni",
+      "payload": "Payload",
+      "status": {
+        "received": "Primită",
+        "processing": "În procesare",
+        "processed": "Procesată",
+        "completedWithErrors": "Finalizată cu erori",
+        "skipped": "Omisă",
+        "failed": "Eșuată"
+      },
+      "skipReason": {
+        "webhookInactive": "Webhook-ul era inactiv.",
+        "missingInboxIdentifier": "Cererea nu conținea identificatorul căsuței de mesaje.",
+        "inboxNotFound": "Nicio căsuță de mesaje nu se potrivește cu identificatorul din cerere.",
+        "inboxAmbiguous": "Mai multe căsuțe de mesaje se potrivesc cu identificatorul din cerere.",
+        "inboxDisconnected": "Căsuța de mesaje este deconectată.",
+        "missingIdentifier": "Cererea nu conținea nicio identitate de contact.",
+        "workspaceBlocked": "Proprietarul spațiului de lucru este blocat.",
+        "contactNotFound": "Niciun contact nu s-a potrivit, iar cererea nu conținea ce este necesar pentru a crea unul.",
+        "contactAmbiguous": "Mai multe contacte au acest nume în inbox, așa că cererea a fost ignorată."
+      },
+      "fieldErrorCode": {
+        "invalidValue": "Valoare nevalidă",
+        "invalidPhone": "Număr de telefon nevalid",
+        "unknownField": "Câmpul nu mai există"
+      },
+      "actionStatus": {
+        "succeeded": "reușit",
+        "skipped": "omis",
+        "failed": "eșuat"
+      },
+      "errorCode": {
+        "abandoned": "Abandonată: neprocesată în 24 de ore"
+      },
+      "actionSkipReason": {
+        "noConversation": "Contactul nu are o conversație",
+        "noContactInbox": "Contactul nu este conectat la această căsuță",
+        "flowInactive": "Fluxul nu este publicat",
+        "unsupportedAction": "Această acțiune nu este acceptată aici",
+        "unsupportedChannel": "Canalul nu acceptă această acțiune",
+        "invalidAction": "Acțiunea nu este configurată corect",
+        "unknownAction": "Acțiune necunoscută",
+        "unsupportedSource": "Neacceptat pentru această sursă"
+      }
+    },
+    "save": {
+      "invalid": "Unele setări sunt nevalide. Corectează câmpurile evidențiate și salvează din nou."
+    },
+    "viewAnalytics": "Vezi statisticile",
+    "analytics": {
+      "title": "Statistici",
+      "back": "Înapoi la webhook",
+      "totalRequests": "Total cereri primite",
+      "totalRequestsHint": "Fiecare cerere acceptată de la crearea webhook-ului. Duplicatele nu sunt numărate. Jurnalul de mai jos păstrează ultimele 30 de zile."
+    },
+    "issues": {
+      "inboxRequired": "Alege o căsuță de mesaje.",
+      "identifierRequired": "Completează cel puțin unul dintre cele patru câmpuri de contact.",
+      "fieldMappingRequired": "Adaugă cel puțin un câmp la „Salvează datele primite”.",
+      "required": "Acest câmp este obligatoriu.",
+      "unsupportedPath": "Cale JSON neacceptată."
+    }
+  },
   "QRCode": {
     "title": "Cod QR",
     "description": "Distribuie acest cod pentru ca oamenii să deschidă linkul tău de urmărire."
@@ -4637,8 +5167,8 @@
       "ticketPriorityChanged": "Prioritate tichet schimbată",
       "subscribedToSequence": "Abonat la secvență",
       "unsubscribedFromSequence": "Dezabonat de la secvență",
-      "WhatsappShoppingCartSent": "Coș de cumpărături WhatsApp trimis",
-      "userAskedAboutProduct": "Utilizatorul a întrebat despre produs",
+      "shoppingCartSent": "Contactul a trimis coșul de cumpărături",
+      "userAskedAboutProduct": "Contactul a întrebat despre un produs",
       "cartAbandoned": "Coș abandonat",
       "newOrder": "Comandă nouă",
       "orderAccepted": "Comandă acceptată",
@@ -4652,7 +5182,8 @@
       "contactReferredANewContact": "Contactul a recomandat un contact nou",
       "contactReferredExistingContact": "Contactul a recomandat un contact existent",
       "callRecorded": "Apel înregistrat",
-      "callTranscribed": "Apel transcris"
+      "callTranscribed": "Apel transcris",
+      "anyProduct": "Orice produs"
     },
     "actions": {
       "addTag": "Adaugă etichetă",
@@ -5241,8 +5772,7 @@
     "leads": "Lead-uri",
     "noEligiblePages": "Nicio pagină eligibilă. Folosește „Adaugă nouă” pentru a acorda acces la lead-uri.",
     "subscribeError": "Nu s-a putut abona această pagină la notificările Facebook pentru lead-uri, astfel automatizarea nu a fost creată. Reconectează pagina cu „Adaugă nouă” și încearcă din nou.",
-    "title": "Automatizare reclame pentru lead-uri Facebook",
-    "whatFlow": "Ce flux este declanșat"
+    "title": "Automatizare reclame pentru lead-uri Facebook"
   },
   "clickToMessageAds": {
     "title": "Reclame Click-to-Message",
@@ -5599,12 +6129,18 @@
     }
   },
   "instagramStoryAutomation": {
-    "title": "Automatizare răspunsuri la Story-uri Instagram",
-    "description": "Automatizează răspunsurile la răspunsurile la Story-urile Instagram pentru contactele tale.",
+    "title": "Automatizare Story-uri Instagram",
+    "description": "Automatizează răspunsurile când contactele răspund la Story-urile tale Instagram sau te menționează în ale lor.",
     "create": "Creează automatizare",
     "replies": "Răspunsuri",
     "activated": "Automatizare activată",
     "deactivated": "Automatizare dezactivată",
+    "trigger": "Declanșator",
+    "triggerDescription": "Alege ce pornește această automatizare. Nu poate fi schimbat după crearea automatizării.",
+    "triggerType": {
+      "storyReply": "Răspunde la Story-ul tău",
+      "storyMention": "Te menționează în Story-ul său"
+    },
     "trackStoryReplyOn": "Urmărește răspunsurile la Story pe",
     "trackStoryReplyOnDescription": "Aplică această automatizare răspunsurilor la toate Story-urile tale, sau restrânge-o la Story-uri specifice pe care le selectezi.",
     "reply": "Răspuns",
@@ -5815,7 +6351,24 @@
       "openAsSupport": "Deschide ca suport",
       "supportEnabledUntil": "Activat până la {time}",
       "supportOff": "Dezactivat",
-      "searchPlaceholder": "Căutați după nume, e-mailul proprietarului sau ID"
+      "searchPlaceholder": "Căutați după nume, e-mailul proprietarului sau ID",
+      "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
+      "supportAccessible": "Accessible"
+    },
+    "admins": {
+      "title": "Platform administrators",
+      "description": "Manage users who can access the platform administration console.",
+      "addTitle": "Add platform administrator",
+      "addDescription": "Grant platform administration access to a root-tenant user.",
+      "addButton": "Add administrator",
+      "role": "Role",
+      "bootstrap": "Environment bootstrap administrator",
+      "remove": "Remove administrator",
+      "empty": "No platform administrators are configured.",
+      "added": "Platform administrator added.",
+      "removed": "Platform administrator removed.",
+      "addError": "Could not add the platform administrator.",
+      "removeError": "Could not remove the platform administrator."
     }
   },
   "platformBranding": {
@@ -6492,17 +7045,15 @@
     "status": {
       "title": "Meta Conversions API",
       "ready": "Pregătit",
-      "missingPermission": "Permisiune necesară",
-      "unverified": "Neverificat",
       "unsupported": "Neacceptat",
-      "notConnected": "Neconectat"
+      "notConnected": "Neconectat",
+      "reconnect": "Este necesară reconectarea"
     },
     "statusDescriptions": {
-      "ready": "Această integrare are permisiunea Meta necesară pentru evenimentele Conversions API.",
-      "missingPermission": "Reconectează această integrare și acordă permisiunea Meta solicitată.",
-      "unverified": "Setările aplicației platformei nu sunt disponibile, deci permisiunea CAPI nu poate fi verificată.",
+      "ready": "Evenimentele Conversions API ale acestei integrări sunt trimise către Meta.",
       "unsupported": "Meta Conversions API pentru Instagram necesită un cont conectat prin Facebook Login for Business.",
-      "notConnected": "Conversions API este un instrument Meta Business care îți permite să partajezi date cu Meta pentru a îmbunătăți performanța anunțurilor."
+      "notConnected": "Conversions API este un instrument Meta Business care îți permite să partajezi date cu Meta pentru a îmbunătăți performanța anunțurilor.",
+      "reconnect": "Permisiunea Conversions API a expirat, deci evenimentele sunt în pauză. Datasetul și setările de test sunt păstrate; reconectează-te pentru a relua trimiterea."
     },
     "errors": {
       "reconnect": "Reconectarea Meta CAPI nu a putut fi pornită.",
@@ -6512,12 +7063,14 @@
       "saveFailed": "Nu s-a putut salva. Te rugăm să încerci din nou.",
       "datasetRequired": "Salvează un ID set de date înainte de a adăuga un token de acces.",
       "invalidToken": "Acest token nu a putut accesa setul de date.",
-      "invalidDatasetId": "Introdu un Dataset ID valid (doar cifre).",
       "whatsappNotFound": "Integrarea WhatsApp nu a fost găsită.",
       "testEventCodeRequired": "Salvează un cod de eveniment de test înainte de a trimite un eveniment de test.",
       "invalidTestEventCode": "Codul evenimentului de test poate conține doar litere, cifre, cratime sau underscore-uri (max. 64).",
       "invalidMessagingId": "ID-ul de mesagerie poate conține doar litere, cifre, cratime sau liniuțe de subliniere (max. 512).",
-      "capiDisconnected": "Meta CAPI este deconectat pentru acest canal. Reconectează-l înainte de a trimite un eveniment de test."
+      "capiDisconnected": "Meta CAPI este deconectat pentru acest canal. Reconectează-l înainte de a trimite un eveniment de test.",
+      "appNotConfigured": "Aplicația Meta pentru acest canal nu este încă configurată.",
+      "capiNotConfigured": "Conexiunea Conversions API nu este configurată. Cere administratorului să seteze Conversions API Config ID.",
+      "wabaMismatch": "Contul WhatsApp Business autorizat nu este cel căruia îi aparține acest număr. Conectează-te cu același cont."
     },
     "fields": {
       "eventType": {
@@ -6602,32 +7155,13 @@
     "disconnect": "Deconectează",
     "openEventManager": "Deschide Event Manager",
     "methods": {
-      "oauth": {
-        "title": "Conectează prin Facebook",
-        "description": "Folosește conexiunea existentă a paginii tale, apoi alege un ID set de date.",
-        "connect": "Creează set de date",
-        "connectedLabel": "prin Facebook"
-      },
       "custom": {
         "title": "Conexiune personalizată",
         "description": "Folosește un ID set de date și un token de acces din Meta Events Manager.",
         "start": "Configurează o conexiune personalizată",
         "connect": "Conectează",
         "connectedLabel": "Personalizat"
-      },
-      "whatsapp": {
-        "title": "Conectează prin WhatsApp",
-        "description": "Folosește conexiunea ta WhatsApp, apoi alege un ID set de date.",
-        "connect": "Creează set de date",
-        "connectedLabel": "prin WhatsApp"
       }
-    },
-    "finalize": {
-      "title": "Alege un ID set de date",
-      "description": "Introdu un ID set de date existent, sau lasă gol pentru a crea unul automat.",
-      "save": "Salvează",
-      "createDataset": "Creează set de date",
-      "caveat": "Un ID set de date care nu este asociat acestei Pagini sau cont Instagram poate să nu atribuie corect evenimentele. Lasă acest câmp gol pentru a crea automat un set de date asociat."
     },
     "whatsapp": {
       "connect": "Conectează"
@@ -6676,6 +7210,24 @@
       "messagingIdHint": "Doar litere, cifre, cratime și liniuțe de subliniere (max. 512).",
       "cancel": "Anulează",
       "confirmSend": "Trimite"
+    },
+    "connect": {
+      "button": "Conectează Conversions API",
+      "success": "Conversions API a fost conectată.",
+      "title": "Conectează-te cu Meta",
+      "description": "Conectează-te la Meta și acordă acces pentru evenimentele de conversie. Se creează o conexiune separată pentru Conversions API și nu se schimbă modul în care se autentifică acest canal.",
+      "reconnect": "Reconectează"
+    },
+    "connectResult": {
+      "errors": {
+        "cancelled": "Conectare anulată. Nu s-a modificat nimic.",
+        "notFound": "Acest canal nu a fost găsit.",
+        "pageNotFound": "Contul de Facebook folosit nu administrează această Pagină. Autentifică-te cu un cont care o administrează.",
+        "accountNotFound": "Contul de Facebook folosit nu administrează acest cont Instagram. Autentifică-te cu un cont care îl administrează.",
+        "datasetFailed": "Meta nu a permis crearea unui set de date cu această conexiune. Acordă toate permisiunile solicitate și încearcă din nou.",
+        "sessionExpired": "Conectarea a durat prea mult sau a fost pornită într-o altă filă. Încearcă din nou.",
+        "failed": "Nu s-a putut conecta Conversions API. Încearcă din nou."
+      }
     }
   },
   "googleAds": {
@@ -7705,8 +8257,6 @@
       "screenTitle": "Titlu",
       "screenId": "ID ecran",
       "screenIdHint": "Doar litere și caractere de subliniere. Folosit la navigare și în Flow JSON.",
-      "terminal": "Ultimul ecran",
-      "terminalHint": "Flow-ul se poate încheia aici. Are nevoie de un Footer care finalizează flow-ul.",
       "remove": "Șterge ecranul"
     },
     "inspector": {
@@ -7761,7 +8311,20 @@
       "success": "Publicat în WhatsApp",
       "draftOnly": "Meta a păstrat Flow-ul ca ciornă din cauza erorilor",
       "failed": "Nu s-a putut publica în WhatsApp",
-      "contactVariables": "Această Mini App afișează câmpuri personalizate în texte. Deocamdată funcționează doar pe linkul web — elimină-le înainte de a publica pe WhatsApp."
+      "contactVariables": "Această Mini App afișează câmpuri personalizate în texte. Deocamdată funcționează doar pe linkul web — elimină-le înainte de a publica pe WhatsApp.",
+      "notOnNumber": "Mini App nu este pe acest număr WhatsApp.",
+      "onlyDraftDeletable": "Flow-ul este publicat pe Meta, deci nu poate fi șters. Doar o ciornă poate fi ștearsă.",
+      "flowIsLive": "Mini App este activă pe acest număr WhatsApp. Salvarea unei ciorne ar dezactiva-o — publică pentru a o actualiza.",
+      "saveDraft": "Salvează ca ciornă",
+      "draftSaved": "Salvat în WhatsApp ca ciornă",
+      "preview": "Previzualizare",
+      "previewUnavailable": "Meta nu a returnat un link de previzualizare",
+      "deleteDraft": "Șterge ciorna din WhatsApp",
+      "draftDeleted": "Ciorna a fost ștearsă din WhatsApp"
+    },
+    "status": {
+      "draft": "Ciornă",
+      "published": "Publicat"
     },
     "runner": {
       "back": "Înapoi",
@@ -7916,7 +8479,9 @@
         "email": "E-mail",
         "password": "Parolă",
         "passcode": "Cod",
-        "phone": "Telefon"
+        "phone": "Telefon",
+        "date": "Dată",
+        "datetime": "Dată și oră"
       },
       "fontWeight": {
         "normal": "Normal",
@@ -7956,8 +8521,7 @@
       "screen_id_invalid": "ID-ul ecranului poate conține doar litere și caractere de subliniere.",
       "screen_id_reserved": "„SUCCESS” este rezervat de WhatsApp. Alege alt ID de ecran.",
       "screen_id_duplicate": "Alt ecran folosește deja acest ID.",
-      "no_terminal_screen": "Marchează cel puțin un ecran ca ultim ecran.",
-      "terminal_screen_without_complete": "Ultimul ecran are nevoie de un Footer care finalizează flow-ul.",
+      "no_terminal_screen": "Adaugă pe ultimul ecran un Footer care finalizează fluxul.",
       "screen_without_exit": "Acest ecran nu are cum să continue. Adaugă un Footer sau un link către alt ecran.",
       "screen_unreachable": "Niciun ecran nu navighează către acesta.",
       "too_many_components": "Un ecran poate conține cel mult {max} componente.",
@@ -7990,7 +8554,6 @@
       "reference_unknown": "{reference} nu corespunde niciunui câmp.",
       "data_reference_unsupported": "{reference}: datele ecranului nu sunt acceptate. Folosește câmpurile formularului.",
       "property_unknown": "WhatsApp nu acceptă proprietatea „{name}” pentru această componentă.",
-      "complete_on_non_terminal": "„Finalizează fluxul” se poate folosi doar pe ultimul ecran.",
       "footer_captions_invalid": "Folosește fie o legendă centrală, fie o legendă stânga și una dreapta împreună.",
       "options_with_images_limit": "Cu imagini, o listă derulantă poate avea cel mult {max} opțiuni.",
       "navigation_badge_multiple": "Doar un element dintr-o listă de navigare poate avea insignă.",
@@ -8009,5 +8572,485 @@
         "upload_failed": "Fișierul nu a putut fi încărcat. Încearcă din nou."
       }
     }
+  },
+  "leaderboards": {
+    "title": "Clasamente",
+    "public": {
+      "points": "{points} puncte",
+      "endsIn": "Se încheie în {days}z {hours}h {minutes}m {seconds}s",
+      "finished": "Încheiat",
+      "empty": "Încă nu sunt jucători — fii primul!",
+      "myRank": "Locul tău: #{rank}",
+      "unranked": "Încă neclasat",
+      "shareToEarn": "Distribuie și câștigă puncte",
+      "linkCopied": "Link copiat",
+      "unavailableTitle": "Acest clasament nu mai este disponibil",
+      "unavailableDescription": "Este posibil să se fi încheiat sau să fi fost eliminat. Cere cel mai recent link paginii pe care o urmărești."
+    },
+    "description": "Rulează campanii de clasament bazate pe puncte, în care clienții concurează pentru primele locuri și recompense.",
+    "feature": "Clasament",
+    "create": "Creează clasament",
+    "kpi": {
+      "total": "Total campanii",
+      "active": "În desfășurare"
+    },
+    "tabs": {
+      "all": "Toate",
+      "active": "Active",
+      "paused": "În pauză",
+      "finished": "Încheiate"
+    },
+    "status": {
+      "draft": "Ciornă",
+      "active": "Activ",
+      "paused": "În pauză",
+      "finished": "Încheiat"
+    },
+    "platforms": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "whatsapp": "WhatsApp",
+      "zalo": "Zalo OA",
+      "telegram": "Telegram",
+      "tiktok": "TikTok",
+      "threads": "Threads",
+      "email": "Email SMTP",
+      "gamification": "Gamification"
+    },
+    "list": {
+      "campaign": "Campanie",
+      "searchPlaceholder": "Caută clasamente...",
+      "platformFilter": "Platformă",
+      "participants": "Participanți",
+      "totalPoints": "Total puncte",
+      "newToday": "+{count} azi",
+      "average": "medie {value} / jucător",
+      "daysLeft": "{days, plural, one {# zi rămasă} other {# de zile rămase}}",
+      "ended": "Încheiat"
+    },
+    "scope": {
+      "allPosts": "Toate postările",
+      "specificPosts": "Postări specifice",
+      "specificPostsCount": "{count, plural, one {# postare} other {# de postări}}",
+      "telegramChatsCount": "{count, plural, one {# grup} other {# de grupuri}}"
+    },
+    "menu": {
+      "start": "Pornește",
+      "pause": "Pune pe pauză",
+      "finish": "Încheie",
+      "resetPoints": "Resetează punctele",
+      "triggerRewards": "Trimite recompensele",
+      "viewParticipants": "Vezi participanții",
+      "copyLink": "Copiază linkul public"
+    },
+    "confirm": {
+      "publishTitle": "Publici acest clasament?",
+      "publishDescription": "Punctarea începe imediat, iar jucătorii pot vedea pagina publică.",
+      "pauseTitle": "Pui acest clasament pe pauză?",
+      "pauseDescription": "Punctarea automată și cea din fluxuri se oprește. Puteți ajusta în continuare punctele manual.",
+      "startTitle": "Reiei acest clasament?",
+      "startDescription": "Punctarea pornește din nou pentru fiecare regulă.",
+      "finishTitle": "Încheii acest clasament?",
+      "finishDescription": "Toate scorurile sunt înghețate și nu mai pot fi modificate. Recompensele automate sunt trimise dacă sunt activate.",
+      "resetPointsTitle": "Resetezi toate punctele?",
+      "resetPointsDescription": "Toți participanții din \"{name}\" revin la 0 puncte. Acțiunea este înregistrată și nu poate fi anulată."
+    },
+    "toast": {
+      "published": "Clasament publicat",
+      "paused": "Clasament pus pe pauză",
+      "started": "Clasament reluat",
+      "finished": "Clasament încheiat",
+      "pointsReset": "Toate punctele au fost resetate"
+    },
+    "export": {
+      "title": "Exportă participanții",
+      "description": "Descarcă toți participanții cu rangul și scorul lor ca fișier CSV.",
+      "preparing": "Se pregătește fișierul...",
+      "ready": "Fișierul tău este gata ({count} rânduri).",
+      "failed": "Exportul a eșuat. Încearcă din nou."
+    },
+    "rewards": {
+      "title": "Trimite recompensele",
+      "description": "Trimite fluxul de recompensă celor mai buni jucători. Recompensele pot fi trimise o singură dată.",
+      "flow": "Flux de recompensă",
+      "topN": "Număr de câștigători (top N)",
+      "noFlow": "Nu a fost ales niciun flux de recompensă — setează unul în setările clasamentului.",
+      "alreadySent": "Recompensele au fost deja trimise pentru acest clasament.",
+      "confirm": "Trimite recompensele",
+      "result": "Trimis la {sent} câștigători, {skipped} omiși (fără conversație pe acest canal)."
+    },
+    "wizard": {
+      "steps": {
+        "info": "Informații",
+        "config": "Canal și reguli",
+        "review": "Verificare și publicare"
+      },
+      "namePlaceholder": "ex. Top fani octombrie",
+      "coverImage": "Imagine de copertă",
+      "coverImageHint": "JPG sau PNG, până la 5MB. Dimensiune recomandată 1200×630.",
+      "coverImageRejected": "Alege o imagine JPG sau PNG de până la 5MB.",
+      "description": "Reguli și recompense",
+      "descriptionPlaceholder": "Explică cum câștigă jucătorii puncte și ce câștigă cei mai buni.",
+      "startsAt": "Începe la",
+      "endsAt": "Se termină la",
+      "startLocked": "Ora de început nu mai poate fi schimbată după publicare.",
+      "channelTitle": "Platformă și canal",
+      "platform": "Platformă",
+      "hostChannel": "Canal",
+      "hostLocked": "Platforma și canalul nu mai pot fi schimbate după publicare.",
+      "noChannel": "Niciun canal {platform} conectat. Conectează unul mai întâi în Setări → Canale.",
+      "openMinigameSettings": "Deschide setările jocului",
+      "postScope": "Postări care acordă puncte",
+      "choosePosts": "Alege postări",
+      "telegramChats": "Grupuri și canale",
+      "telegramChatsHint": "Adaugă botul în grup sau canal ca administrator pentru a vedea membrii și mesajele.",
+      "telegramChatsEmpty": "Nu s-a găsit niciun grup — adaugă mai întâi botul ca administrator",
+      "rulesTitle": "Reguli de punctare",
+      "rulesHint": "Activează acțiunile care aduc puncte și stabilește câte.",
+      "allPlatforms": "Toate platformele",
+      "points": "Puncte",
+      "maxPerDay": "Maximum pe zi",
+      "maxPerDayHint": "Lasă gol pentru nelimitat.",
+      "minChars": "Număr minim de caractere",
+      "bonusPoints": "Puncte bonus pentru ora de aur",
+      "bonusPointsHint": "Puncte suplimentare pentru comentariile postate la scurt timp după publicarea postării.",
+      "bonusMinutes": "Durata orei de aur (minute)",
+      "emailTopicNote": "Doar emailurile trimise cu un Email Topic sunt urmărite pentru deschideri și clicuri.",
+      "generalTitle": "Setări generale",
+      "followersOnly": "Doar urmăritori",
+      "followersOnlyHint": "Doar persoanele care urmăresc contul tău câștigă puncte.",
+      "tagFilter": "Filtru de etichete",
+      "tagFilterHint": "Doar contactele cu cel puțin una dintre aceste etichete câștigă puncte.",
+      "everyone": "Toți",
+      "resetTime": "Ora de resetare zilnică (UTC)",
+      "resetTimeHint": "Limitele zilnice se resetează la această oră. = {time} ora Vietnamului (UTC+7).",
+      "cooldown": "Pauză anti-spam (secunde)",
+      "cooldownHint": "Numărul minim de secunde între două acordări automate pentru aceeași persoană. 0 dezactivează.",
+      "referralFlow": "Flux de bun venit pentru recomandări",
+      "referralFlowAuto": "Creează automat",
+      "referralFlowHint": "Trimis unui prieten care se alătură printr-un link de recomandare. Poate folosi '{{referral_name}}' și linkul public al clasamentului. Lasă gol pentru a crea automat un mesaj de bun venit pe care îl poți edita în Flow Builder.",
+      "publicLink": "Link public",
+      "publicLinkHint": "Trimite acest link dintr-un flux pentru ca fiecare jucător să își vadă propriul rang.",
+      "publicLinkAfterSave": "Linkul public este disponibil după salvare.",
+      "rewardsTitle": "Recompense",
+      "autoOnFinish": "Trimite automat la final",
+      "autoOnFinishHint": "Rulează fluxul de recompensă pentru top N imediat ce clasamentul se încheie.",
+      "backToStep2": "Înapoi la pasul 2",
+      "notEditable": "Clasamentele încheiate nu pot fi editate."
+    },
+    "review": {
+      "infoCard": "Informații",
+      "yes": "Da",
+      "no": "Nu",
+      "off": "Dezactivat",
+      "seconds": "{seconds} secunde",
+      "resetTimeValue": "{utc} UTC (= {local} ora Vietnamului)",
+      "noRules": "Nicio regulă nu este activată încă.",
+      "rulePoints": "{points} pct.",
+      "maxPerDay": "max. {count}/zi",
+      "unlimited": "nelimitat"
+    },
+    "preview": {
+      "sampleName": "Jucător {rank}",
+      "placeholderName": "Numele clasamentului tău",
+      "pinnedBar": "#{rank} · {points} pct."
+    },
+    "validation": {
+      "nameRequired": "Introdu un nume",
+      "dateRequired": "Alege o dată și o oră",
+      "endsAfterStart": "Ora de sfârșit trebuie să fie după ora de început",
+      "channelRequired": "Alege un canal",
+      "minigameRequired": "Alege un minijoc",
+      "pointsRequired": "Introdu punctele acordate de această regulă",
+      "bonusMinutesRequired": "Stabilește câte minute durează ora de aur",
+      "postsRequired": "Alege cel puțin o postare",
+      "telegramChatsRequired": "Alege cel puțin un grup sau canal",
+      "enableOneRule": "Activează cel puțin o regulă de punctare înainte de publicare",
+      "fixErrors": "Corectează câmpurile evidențiate"
+    },
+    "rules": {
+      "comments": {
+        "label": "Comentarii",
+        "description": "Puncte pentru fiecare comentariu la postările tale."
+      },
+      "liveComments": {
+        "label": "Comentarii live",
+        "description": "Puncte pentru fiecare comentariu în timpul unui livestream."
+      },
+      "keywords": {
+        "label": "Keywords",
+        "description": "Puncte când un mesaj se potrivește cu orice cuvânt cheie din instrumentul Keywords al acestui canal."
+      },
+      "storyMention": {
+        "label": "Mențiune în story",
+        "description": "Puncte când cineva îți etichetează contul în story-ul său."
+      },
+      "storyReaction": {
+        "label": "Reacție la story",
+        "description": "Puncte când cineva reacționează la story-ul tău."
+      },
+      "ctwaReactions": {
+        "label": "Clic CTWA și reacții",
+        "description": "Puncte pentru clicul pe o reclamă Click-to-WhatsApp sau pentru reacția la un mesaj."
+      },
+      "survey": {
+        "label": "Sondaj și test",
+        "description": "Puncte pentru completarea unui Questionnaire sau trimiterea unui formular WhatsApp Flow."
+      },
+      "follow": {
+        "label": "Urmărire OA și QR",
+        "description": "Puncte pentru urmărirea Official Account sau scanarea codului QR. Dezabonarea retrage punctele."
+      },
+      "message": {
+        "label": "Mesaj Zalo",
+        "description": "Puncte pentru fiecare mesaj trimis către Official Account."
+      },
+      "joinGroup": {
+        "label": "Alăturare la canal și grup",
+        "description": "Puncte pentru alăturarea la grupul sau canalul tău. Părăsirea retrage punctele."
+      },
+      "groupDiscussion": {
+        "label": "Discuție în grup",
+        "description": "Puncte pentru fiecare mesaj din grupul tău."
+      },
+      "emailOpen": {
+        "label": "Deschidere email",
+        "description": "Puncte când un email este deschis."
+      },
+      "emailClick": {
+        "label": "Clic în email",
+        "description": "Puncte când se dă clic pe un link dintr-un email."
+      },
+      "minigameWin": {
+        "label": "Câștig la minijoc",
+        "description": "Puncte pentru fiecare premiu câștigat la minijoc."
+      },
+      "inGameShare": {
+        "label": "Distribuire în joc",
+        "description": "Puncte pentru distribuirea jocului pentru a primi mai multe încercări."
+      },
+      "referral": {
+        "label": "Recomandare",
+        "description": "Puncte pentru cel care invită, când un prieten nou se alătură prin linkul său."
+      }
+    },
+    "breakdown": {
+      "comments": "{count} comentarii",
+      "liveComments": "{count} comentarii live",
+      "keywords": "{count} cuvinte cheie",
+      "storyMention": "{count} mențiuni în story",
+      "storyReaction": "{count} reacții la story",
+      "ctwaReactions": "{count} CTWA",
+      "survey": "{count} sondaje",
+      "follow": "{count} urmăriri",
+      "message": "{count} mesaje",
+      "joinGroup": "{count} alăturări",
+      "groupDiscussion": "{count} mesaje în grup",
+      "emailOpen": "{count} deschideri",
+      "emailClick": "{count} clicuri",
+      "minigameWin": "{count} câștiguri",
+      "inGameShare": "{count} distribuiri",
+      "referral": "{count} recomandări",
+      "flow": "{count} flux",
+      "manual": "{count} manual"
+    },
+    "participants": {
+      "title": "Participanți",
+      "switcher": "Schimbă clasamentul",
+      "count": "{count, plural, one {# jucător} other {# de jucători}}",
+      "searchPlaceholder": "Caută nume, ID utilizator sau telefon...",
+      "filters": {
+        "all": "Toți",
+        "top10": "Top 10",
+        "top50": "Top 50",
+        "banned": "Blocați"
+      },
+      "columns": {
+        "rank": "Rang",
+        "participant": "Participant",
+        "score": "Scor total",
+        "breakdown": "Detalii",
+        "lastActivity": "Ultima activitate"
+      },
+      "unknown": "Necunoscut",
+      "contactId": "ID {id}",
+      "lockedFinished": "Acest clasament s-a încheiat — scorurile sunt blocate.",
+      "lockedDraft": "Publică clasamentul înainte de a edita scorurile.",
+      "actions": {
+        "adjust": "Ajustează punctele",
+        "ban": "Blochează",
+        "unban": "Deblochează",
+        "reset": "Resetează la 0",
+        "history": "Vezi istoricul"
+      },
+      "adjust": {
+        "title": "Ajustează punctele",
+        "description": "Adaugă sau scade puncte pentru {name}. Modificarea este păstrată în jurnalul de audit.",
+        "delta": "Puncte (+/-)",
+        "deltaPlaceholder": "ex. 50 sau -20",
+        "reason": "Motiv",
+        "reasonPlaceholder": "De ce modifici acest scor?",
+        "success": "Puncte ajustate"
+      },
+      "banConfirm": "{name} este eliminat din clasament și nu mai câștigă puncte.",
+      "unbanConfirm": "{name} revine în clasament cu scorul curent.",
+      "resetConfirm": "Scorul lui {name} revine la 0. Acțiunea este înregistrată.",
+      "banned": "Participant blocat",
+      "unbanned": "Participant deblocat",
+      "resetDone": "Scor resetat la 0",
+      "history": {
+        "title": "Istoricul scorului — {name}",
+        "empty": "Nicio modificare de scor încă.",
+        "sources": {
+          "rule": "Regulă",
+          "flow": "Flux",
+          "referral": "Recomandare",
+          "manual": "Ajustare manuală",
+          "reset": "Resetare"
+        }
+      },
+      "conversationNotFound": "Nu s-a găsit nicio conversație pentru acest contact",
+      "popupBlocked": "Te rugăm să permiți ferestrele pop-up pentru acest site, apoi încearcă din nou."
+    },
+    "auditLog": {
+      "title": "Jurnal de audit",
+      "admin": "Administrator",
+      "change": "Modificare",
+      "time": "Ora",
+      "reason": "Motiv",
+      "api": "API",
+      "empty": "Nicio modificare manuală încă.",
+      "actions": {
+        "adjust": "Ajustare",
+        "resetOne": "Resetare jucător",
+        "resetAll": "Resetare totală",
+        "ban": "Blocare",
+        "unban": "Deblocare"
+      }
+    }
+  },
+  "recurrence": {
+    "title": "Repetă",
+    "every": "Repetă la fiecare",
+    "unit": "{count, plural, one {{frequency, select, daily {zi} weekly {săptămână} monthly {lună} other {}}} other {{frequency, select, daily {zile} weekly {săptămâni} monthly {luni} other {}}}}",
+    "weekdays": "Repetă în",
+    "time": "Ora",
+    "timezone": "Fus orar",
+    "noTimezone": "Niciun fus orar găsit",
+    "searchTimezone": "Caută fus orar…",
+    "startsOn": "Începe pe",
+    "end": {
+      "label": "Se încheie",
+      "never": "Niciodată",
+      "onDate": "Pe",
+      "after": "După",
+      "pickDate": "Alege o dată",
+      "occurrences": "{count, plural, one {execuție} other {execuții}}"
+    },
+    "monthDay": {
+      "label": "Ziua din lună",
+      "day": "Ziua {day}",
+      "last": "Ultima zi",
+      "hint": "În lunile mai scurte, trimiterea are loc în ultima zi."
+    },
+    "summary": {
+      "sentence": "{interval, plural, one {În fiecare {frequency, select, daily {zi} weekly {săptămână} monthly {lună} other {}}} other {La fiecare # {frequency, select, daily {zile} weekly {săptămâni} monthly {luni} other {}}}}{frequency, select, weekly { în {weekdays}} monthly { în {monthDay, select, last {ultima zi} other {ziua {monthDay}}}} other {}} la {time} ({timezone}), începând cu {startsOn}{endKind, select, onDate {, se încheie pe {endDate}} afterOccurrences {, se încheie după {endCount, plural, one {# execuție} other {# execuții}}} other {}}"
+    },
+    "firstRunLater": "Prima trimitere este {when}, deoarece ora de azi a trecut deja.",
+    "nextRuns": "Următoarele trimiteri",
+    "noUpcomingRuns": "Nicio trimitere programată.",
+    "skipping": "Se omit {dates}{more, plural, =0 {} one { (+# în plus)} other { (+# în plus)}}",
+    "excludeDates": {
+      "label": "Omite date",
+      "hint": "La aceste date nu se trimite nimic. Seria continuă.",
+      "add": "Adaugă date",
+      "remove": "Elimină {date}",
+      "showAll": "Arată încă {count}",
+      "showLess": "Arată mai puține",
+      "clearAll": "Șterge tot"
+    }
+  },
+  "workingHours": {
+    "title": "Program de lucru",
+    "label": "Program de lucru",
+    "description": "Timpii de răspuns se numără doar în aceste ore.",
+    "employees": "Angajați",
+    "empty": "Niciun program încă.",
+    "deleteDescription": "Ștergi \"{name}\"? Angajații revin la timp real.",
+    "create": {
+      "title": "Adaugă program de lucru",
+      "description": "Dă un nume programului. Vei seta zilele și orele în pasul următor."
+    },
+    "employeesDialog": {
+      "title": "Aplică programul de lucru angajaților",
+      "description": "Alege angajații care urmează acest program.",
+      "moveHelp": "Fiecare angajat are un program; adăugarea îl mută aici.",
+      "placeholder": "Selectează angajați",
+      "search": "Caută angajați...",
+      "searchAria": "Caută printre angajați",
+      "empty": "Nu s-a găsit niciun angajat.",
+      "close": "Închide",
+      "selectAll": "(Selectează tot)",
+      "clearAllAria": "{count, plural, one {Șterge angajatul selectat} other {Șterge toți cei {count} angajați selectați}}",
+      "removeAria": "Elimină {name} din selecție"
+    },
+    "editor": {
+      "timezoneNote": "Orele folosesc fusul orar al spațiului de lucru: {timezone}.",
+      "notWorking": "Nu lucrează",
+      "dayToggle": "Lucrează {day}",
+      "startTime": "Ora de început",
+      "endTime": "Ora de sfârșit",
+      "removeRange": "Elimină intervalul orar",
+      "errorOverlap": "Aceste intervale orare se suprapun. Ajustează-le pentru a salva.",
+      "errorOrder": "Ora de sfârșit trebuie să fie după ora de început.",
+      "routingNote": "Folosit și de Auto Assign, Global Router și Condiție."
+    },
+    "condition": {
+      "assignedAgent": "Tura agentului alocat"
+    },
+    "holidays": {
+      "label": "Sărbători",
+      "title": "Sărbători",
+      "description": "Înlocuiește programul săptămânal al tuturor programelor în acea zi.",
+      "add": "Adaugă sărbătoare",
+      "empty": "Nicio sărbătoare încă.",
+      "deleteDescription": "Ștergi sărbătoarea din {date}?"
+    },
+    "dateOverrides": {
+      "title": "Excepții pe dată",
+      "description": "Înlocuiește orele acestui program în acea zi; are prioritate față de sărbători.",
+      "add": "Adaugă excepție",
+      "empty": "Nicio excepție."
+    },
+    "dateDialog": {
+      "addTitle": "Adaugă dată",
+      "editTitle": "Editează data",
+      "date": "Data",
+      "name": "Nume (opțional)",
+      "closedAllDay": "Închis toată ziua",
+      "duplicate": "Această dată este deja în listă.",
+      "hours": "Ore",
+      "closed": "Închis"
+    }
+  },
+  "responseSla": {
+    "label": "SLA de răspuns",
+    "title": "SLA de răspuns",
+    "description": "Timpul maxim în care un mesaj al clientului poate aștepta un răspuns uman.",
+    "firstTarget": "Țintă primul răspuns (minute)",
+    "nextTarget": "Țintă răspunsuri următoare (minute)",
+    "nextPlaceholder": "Fără SLA pe răspunsurile următoare",
+    "threshold": "Prag de risc (% din țintă rămas)",
+    "thresholdHelp": "Marcat la risc când rămâne acest % din țintă.",
+    "workingTimeNote": "Calculat în programul agentului alocat; altfel timp real.",
+    "overdue": "Întârziat",
+    "due": "Termen {time}",
+    "breaching": "SLA la risc",
+    "breached": "SLA depășit",
+    "firstMetColumn": "SLA primul răspuns respectat",
+    "metColumn": "SLA respectat",
+    "metHelp": "Ponderea răspunsurilor cu SLA care l-au respectat.",
+    "eligibleCount": "{count} răspunsuri aveau SLA",
+    "enable": "Activează SLA de răspuns"
   }
 }

@@ -64,6 +64,20 @@ export const registerSchedules = async () => {
   )
 
   await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.enqueueRecurringBroadcasts,
+    {
+      pattern: "* * * * *",
+    },
+    {
+      name: ScheduleJobData.enqueueRecurringBroadcasts,
+      data: {
+        type: ScheduleJobData.enqueueRecurringBroadcasts,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
     ScheduleJobData.finalizeBroadcasts,
     {
       pattern: "* * * * *",
@@ -213,6 +227,49 @@ export const registerSchedules = async () => {
   )
 
   await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.maintainLeaderboardPartitions,
+    {
+      pattern: "20 1 * * *",
+    },
+    {
+      name: ScheduleJobData.maintainLeaderboardPartitions,
+      data: {
+        type: ScheduleJobData.maintainLeaderboardPartitions,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.finishOverdueLeaderboards,
+    {
+      pattern: "* * * * *",
+    },
+    {
+      name: ScheduleJobData.finishOverdueLeaderboards,
+      data: {
+        type: ScheduleJobData.finishOverdueLeaderboards,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.maintainLeaderboardRankings,
+    {
+      // Minute 1 so a 22:00 reset rebuilds right after the day rolls over.
+      pattern: "1 * * * *",
+    },
+    {
+      name: ScheduleJobData.maintainLeaderboardRankings,
+      data: {
+        type: ScheduleJobData.maintainLeaderboardRankings,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
     ScheduleJobData.scanCoexistRuns,
     {
       pattern: "* * * * *",
@@ -293,6 +350,35 @@ export const registerSchedules = async () => {
       name: ScheduleJobData.purgeErrorLogs,
       data: {
         type: ScheduleJobData.purgeErrorLogs,
+        data: {},
+      },
+    },
+  )
+
+  // The inbound-webhook outbox sweep and its retention apply to every edition.
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.redispatchInboundWebhookRequests,
+    {
+      pattern: "*/5 * * * *",
+    },
+    {
+      name: ScheduleJobData.redispatchInboundWebhookRequests,
+      data: {
+        type: ScheduleJobData.redispatchInboundWebhookRequests,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.purgeInboundWebhookRequests,
+    {
+      pattern: "30 3 * * *",
+    },
+    {
+      name: ScheduleJobData.purgeInboundWebhookRequests,
+      data: {
+        type: ScheduleJobData.purgeInboundWebhookRequests,
         data: {},
       },
     },

@@ -5,6 +5,8 @@ import {
 import { zodBigintAsString } from "@chatbotx.io/utils"
 import type { z } from "zod"
 
+export { webchatConnectConfigSchema } from "./connect-config"
+
 export const integrationWebchatResource = createSelectSchema(
   integrationWebchatModel,
   {

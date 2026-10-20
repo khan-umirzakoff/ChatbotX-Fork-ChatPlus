@@ -1,6 +1,10 @@
 import type {
   BroadcastPlanLimitData,
   BroadcastPlanLimitReason,
+  IMAGES_NOT_SUPPORTED_ON_CHANNEL_CODE,
+  ImagesNotSupportedOnChannelReason,
+  PRODUCT_MESSAGE_UNRESOLVABLE_CODE,
+  ProductMessageUnresolvableReason,
   RestrictedBroadcastPlanPolicy,
 } from "@chatbotx.io/database/partials"
 import { SdkException } from "@chatbotx.io/sdk"
@@ -205,6 +209,34 @@ export const workspaceDeletionStartedException = () =>
     "workspaceDeletionStarted",
     409,
   )
+
+/** The request field a broadcast validation failure points at. */
+export type BroadcastValidationField =
+  | "channel"
+  | "subaction"
+  | "flowId"
+  | "templateId"
+  | "targets"
+  | "integrationWhatsappId"
+  | "integrationMessengerId"
+  | "audienceRangeEnd"
+  | "recurrence"
+
+/**
+ * A rejected create/edit payload. Carries the offending field so the app
+ * layer can surface it as a field-level form error instead of a toast.
+ * `code` must stay `"validation"` — `isValidationException`
+ * (`apps/builder/src/lib/errors/validation-exception.ts`) narrows on that
+ * exact code before trusting `.field`.
+ */
+export class BroadcastValidationException extends ChatbotXException {
+  declare readonly field: BroadcastValidationField
+
+  constructor(message: string, field: BroadcastValidationField) {
+    super(message, "validation", 422)
+    this.field = field
+  }
+}
 
 export const notFoundException = (message: string) =>
   new ChatbotXException(message, "notFound", 404)
@@ -477,3 +509,70 @@ export const channelHiddenException = (channel: string) =>
     "channelHidden",
     403,
   )
+
+/**
+ * Pinned to the constant the API error declaration uses (a type-only import, so
+ * this module keeps no runtime dependency on the database partials).
+ */
+const productMessageUnresolvableCode: typeof PRODUCT_MESSAGE_UNRESOLVABLE_CODE =
+  "productMessageUnresolvable"
+
+/**
+ * The message cannot be built right now. Permanent for this send — the author
+ * has to change the message or the catalog — so it is not worth retrying.
+ */
+export class ProductMessageUnresolvableError extends ChatbotXException {
+  readonly reason: ProductMessageUnresolvableReason
+
+  constructor(
+    reason: ProductMessageUnresolvableReason,
+    productIds?: readonly string[],
+  ) {
+    // The reason rides in the message too: the inbox composer only receives the
+    // message (not `data`), and the agent there needs to know what to fix.
+    super(
+      `Product message cannot be sent: ${reason}${
+        productIds ? ` (${productIds.join(", ")})` : ""
+      }`,
+      productMessageUnresolvableCode,
+      422,
+    )
+    this.reason = reason
+    this.data = {
+      reason,
+      ...(productIds ? { productIds: productIds.join(",") } : {}),
+    }
+  }
+}
+
+const imagesNotSupportedOnChannelCode: typeof IMAGES_NOT_SUPPORTED_ON_CHANNEL_CODE =
+  "imagesNotSupportedOnChannel"
+
+/**
+ * The channel can't deliver the images on this send (Threads, Instagram or
+ * TikTok comment replies) or more images than it carries. Refused before any
+ * row exists instead of letting the channel handler drop them silently.
+ */
+export class ImagesNotSupportedOnChannelError extends ChatbotXException {
+  readonly reason: ImagesNotSupportedOnChannelReason
+
+  constructor(props: {
+    reason: ImagesNotSupportedOnChannelReason
+    channel: string
+    max: number
+  }) {
+    super(
+      props.reason === "imagesNotSupported"
+        ? `The ${props.channel} channel can't send images here`
+        : `The ${props.channel} channel can send at most ${props.max} image(s) here`,
+      imagesNotSupportedOnChannelCode,
+      422,
+    )
+    this.reason = props.reason
+    this.data = {
+      reason: props.reason,
+      channel: props.channel,
+      max: props.max,
+    }
+  }
+}
