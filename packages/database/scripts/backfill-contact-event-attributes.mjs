@@ -54,6 +54,7 @@ export const SUPPORTED_LANGUAGES = [
   "ru",
   "ar",
   "hi",
+  "uz",
 ]
 
 /**
