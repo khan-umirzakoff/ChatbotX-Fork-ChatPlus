@@ -1,0 +1,23 @@
+{
+  "connect": {
+    "title": "{client}ni ChatPLUS’ga ulash",
+    "description": "{client}dagi “{team}” workspace ChatPLUS workspace’ga ruxsat so‘rayapti.",
+    "workspaceLabel": "Ulanadigan ChatPLUS workspace",
+    "noWorkspaces": "Ulash uchun ChatPLUS workspace administratori bo‘lishingiz kerak.",
+    "permissionsTitle": "{client} quyidagilarni qila oladi:",
+    "permissionInbox": "lidlarining suhbatlarini o‘qish, ularga javob yozish va suhbatni biriktirish",
+    "permissionContacts": "kontaktlarni o‘qish, ularning maydonlari va teglarini yangilash",
+    "permissionIntegrations": "botlaringizdagi lidlarni {client}ga yuborish",
+    "replaceNote": "Bitta workspace faqat bitta {client} workspace’ga ulanadi. Qayta ulasangiz, oldingi ulanish almashtiriladi.",
+    "revokeNote": "Istalgan vaqtda {client}da yoki ChatPLUS sozlamalarida (API kalitlar) uzishingiz mumkin.",
+    "approve": "Ruxsat berish",
+    "deny": "Bekor qilish",
+    "invalidTitle": "Bu ulash havolasi yaroqsiz",
+    "invalidDescription": "Ulashni {client}dan qaytadan boshlang yoki yordamga yozing.",
+    "unknownClient": "ilova",
+    "errorNotAdmin": "Faqat workspace administratori ulay oladi.",
+    "errorSupportSession": "Yordam sessiyasida workspace’ni ulab bo‘lmaydi.",
+    "errorInvalidRequest": "Ulash so‘rovi yaroqsiz. Boshqa ilovadan qaytadan boshlang.",
+    "errorGeneric": "Ulab bo‘lmadi. Qaytadan urinib ko‘ring."
+  }
+}

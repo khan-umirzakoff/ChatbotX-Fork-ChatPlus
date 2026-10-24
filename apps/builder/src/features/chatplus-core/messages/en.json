@@ -1,0 +1,23 @@
+{
+  "connect": {
+    "title": "Connect {client} to ChatPLUS",
+    "description": "{client} workspace “{team}” asks for access to a ChatPLUS workspace.",
+    "workspaceLabel": "ChatPLUS workspace to link",
+    "noWorkspaces": "You need to be an administrator of a ChatPLUS workspace to connect it.",
+    "permissionsTitle": "{client} will be able to:",
+    "permissionInbox": "read the conversations of its leads and reply to them, and assign conversations",
+    "permissionContacts": "read contacts and update their fields and tags",
+    "permissionIntegrations": "send leads from your bots to {client}",
+    "replaceNote": "A workspace can be linked to one {client} workspace. Linking again replaces the previous link.",
+    "revokeNote": "You can disconnect at any time in {client} or in ChatPLUS settings (API tokens).",
+    "approve": "Allow",
+    "deny": "Cancel",
+    "invalidTitle": "This connect link is not valid",
+    "invalidDescription": "Start the connection again from {client}, or contact support.",
+    "unknownClient": "the application",
+    "errorNotAdmin": "Only a workspace administrator can connect it.",
+    "errorSupportSession": "A support session cannot connect a workspace.",
+    "errorInvalidRequest": "The connect request is not valid. Start again from the other application.",
+    "errorGeneric": "Could not connect. Try again."
+  }
+}
