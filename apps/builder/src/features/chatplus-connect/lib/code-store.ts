@@ -10,6 +10,7 @@ const VERIFIER_PATTERN = /^[A-Za-z0-9._~-]{43,128}$/
 /** Everything a code is bound to; checked again when it is exchanged. */
 export type ConnectCodeRecord = {
   issuer: string
+  tenantId: string
   clientId: string
   redirectUri: string
   codeChallenge: string

@@ -1,4 +1,4 @@
-import { getPublicOriginFromRequest } from "@chatbotx.io/utils"
+import { issuerFromHeaders } from "@/features/chatplus-connect/lib/issuer"
 import { readForm, toResponse } from "@/features/chatplus-connect/lib/respond"
 import { exchangeConnectCode } from "@/features/chatplus-connect/lib/token-endpoint"
 
@@ -11,9 +11,9 @@ export async function POST(request: Request) {
   }
   return toResponse(
     await exchangeConnectCode({
-      authorization: request.headers.get("authorization"),
+      headers: request.headers,
       form,
-      issuer: getPublicOriginFromRequest(request),
+      issuer: issuerFromHeaders(request.headers),
     }),
   )
 }

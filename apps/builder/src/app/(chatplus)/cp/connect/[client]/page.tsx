@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@chatbotx.io/ui/components/ui/card"
+import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 import { ConsentForm } from "@/features/chatplus-connect/components/consent-form"
 import {
@@ -17,11 +18,11 @@ import {
   findConnectClient,
   isAllowedRedirectUri,
 } from "@/features/chatplus-connect/lib/clients"
+import { issuerFromHeaders } from "@/features/chatplus-connect/lib/issuer"
 import { getChatplusTranslations } from "@/features/chatplus-core/i18n"
 import { hasWorkspacePermission } from "@/lib/auth/permission-routes"
 import { enforcePasswordCurrent } from "@/lib/auth/require-password-current"
 import { getCurrentUserAndAllLinkedWorkspaces } from "@/lib/auth/utils"
-import { getOriginFromHeader } from "@/lib/domain"
 
 type ConnectPageProps = {
   params: Promise<{ client: string }>
@@ -46,7 +47,7 @@ export default async function ConnectPage(props: ConnectPageProps) {
     singleValuedParams(searchParams),
   )
   const client = findConnectClient(clientId)
-  const issuer = await getOriginFromHeader()
+  const issuer = issuerFromHeaders(await headers())
   // An unknown client or redirect URI never gets a redirect: it could be an open-redirect probe.
   if (
     !(

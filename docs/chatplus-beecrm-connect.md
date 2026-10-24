@@ -30,20 +30,40 @@ workspace: {id, name}, api_base, beecrm_team_id, beecrm_user_id}`, sent with `Ca
 - PKCE S256 only. A code is 32 random bytes, kept only as a SHA-256 hash in Redis for 5 minutes,
   and consumed atomically (`GETDEL`) before any other check, so it is single-use even when the
   exchange fails.
-- A code is bound to the issuer (the ChatPLUS origin, i.e. the tenant host), the client, the
-  redirect URI, the PKCE challenge, the ChatPLUS workspace and user, and the BeeCRM team and user.
-  The BeeCRM ids are echoed in the token response for BeeCRM to compare with its `state`.
+- A code is bound to the issuer, the tenant, the client, the redirect URI, the PKCE challenge, the
+  ChatPLUS workspace and user, and the BeeCRM team and user. The BeeCRM ids are echoed in the
+  token response for BeeCRM to compare with its `state`.
+- Issuer = origin of the `x-url` header that `proxy.ts` sets on every request, read the same way
+  on the consent step and on the exchange. The tenant comes from that host
+  (`resolveTenantByDomain`). The approving workspace, the code and the redeeming host must all
+  have that tenant. Trusting `Host`/`X-Forwarded-*` is a deployment property shared with the rest
+  of the app: the ingress must overwrite them.
 - Support sessions and non-admins cannot approve. Workspaces scheduled for deletion are not
   offered and get no token.
-- Token: permission `full`, scopes `inbox`, `contacts`, `integrations`, named
-  `<client name> · <BeeCRM team>`, audit-logged by `workspaceApiTokenService`. No refresh tokens.
-  The per-workspace token cap applies (the exchange answers `invalid_request`).
-- One link per ChatPLUS workspace: a successful exchange deletes the client's earlier tokens in
-  that workspace and its `beecrm` lead hooks, so a previously linked BeeCRM workspace stops
-  receiving leads (BeeCRM re-registers its hook with the new token).
-- Revoke deletes only tokens whose name starts with the client's prefix, and removes the
-  workspace's `beecrm` external webhooks. It answers 200 for unknown tokens (RFC 7009).
-- 60 requests a minute per client on the token and revoke endpoints.
+- Token: permission `full`, scopes `inbox`, `contacts`, `integrations` (workspace-wide; the consent
+  page says so), named `<client name> · <BeeCRM team> #<clientId>`. Minting and deletion run inside
+  the audit context of the approving user (exchange) or the system actor (revoke). No refresh
+  tokens.
+- One link per ChatPLUS workspace, serialized by a per-workspace Redis lock: an exchange first
+  deletes the client's earlier tokens (those ending in ` #<clientId>`) and the workspace's
+  `beecrm` lead hooks, then mints the new token. Deleting first frees a slot under the
+  per-workspace token cap; if minting still fails, the exchange answers `invalid_request` and the
+  owner connects again. BeeCRM re-registers its lead hook with the new token.
+- Revoke ends the link the presented token belongs to (same cleanup, same lock) when that token
+  ends in ` #<clientId>`. It answers 200 for unknown or foreign tokens (RFC 7009).
+- Limits: 60 requests a minute per IP before client authentication, 60 a minute per client after
+  it; the body is a form, at most 16 KiB, counted while streaming.
+
+## Known limits
+
+- **Deleting the key in ChatPLUS settings does not remove the lead hook.** The upstream settings
+  screen deletes only the token, and the `make` step keeps posting leads to the BeeCRM hook. The
+  consent page says so. Until simple mode has its own "BeeCRM'dan uzish" button (it will call the
+  same cleanup), BeeCRM bounds the window: it checks the token at least every 5 minutes and, on
+  401, disables its receiver secret so further posts are refused. Proper fix upstream: link
+  external webhooks to the token that registered them (contract §3 upstream PR list).
+- Ownership is read from the token name (` #<clientId>`), since the fork adds no tables. A
+  workspace admin who names a token the same way would have it replaced on reconnect.
 
 ## Configuration
 

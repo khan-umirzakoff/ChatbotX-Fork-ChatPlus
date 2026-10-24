@@ -39,7 +39,18 @@ const mocks = vi.hoisted(() => {
 
 vi.mock("server-only", () => ({}))
 vi.mock("@chatbotx.io/redis", () => ({
-  cacheConnections: { useExisting: async () => mocks.redis },
+  cacheConnections: { useExisting: () => Promise.resolve(mocks.redis) },
+  distributedLock: {
+    runExclusive: ({ fn }: { fn: () => Promise<unknown> }) => fn(),
+  },
+}))
+vi.mock("@chatbotx.io/auth/tenant", () => ({
+  resolveTenantByDomain: (domain: string) =>
+    Promise.resolve(domain === "reseller.test" ? "77" : "1"),
+}))
+vi.mock("@/lib/rate-limit/guest-rate-limit", () => ({
+  getGuestClientIp: (headers: Headers) =>
+    headers.get("x-forwarded-for") ?? "unknown",
 }))
 vi.mock("@chatbotx.io/business", () => ({
   workspaceApiTokenService: {
@@ -69,6 +80,12 @@ const { exchangeConnectCode, revokeConnectToken, CONNECT_TOKEN_SCOPES } =
   await import("../src/features/chatplus-connect/lib/token-endpoint")
 const { authorizeRequestSchema, buildClientRedirect, singleValuedParams } =
   await import("../src/features/chatplus-connect/lib/authorize-request")
+const { issuerFromHeaders } = await import(
+  "../src/features/chatplus-connect/lib/issuer"
+)
+const { readForm } = await import(
+  "../src/features/chatplus-connect/lib/respond"
+)
 
 const ISSUER = "https://app.chatplus.test"
 const REDIRECT =
@@ -84,6 +101,7 @@ const basic = (id: string, secret: string) =>
 
 const record = {
   issuer: ISSUER,
+  tenantId: "1",
   clientId: "beecrm",
   redirectUri: REDIRECT,
   codeChallenge: CHALLENGE,
@@ -99,9 +117,10 @@ const exchange = (
   overrides: Record<string, string> = {},
   auth = basic("beecrm", SECRET),
   issuer = ISSUER,
+  ip = "10.0.0.1",
 ) =>
   exchangeConnectCode({
-    authorization: auth,
+    headers: new Headers({ authorization: auth, "x-forwarded-for": ip }),
     issuer,
     form: new URLSearchParams({
       grant_type: "authorization_code",
@@ -126,12 +145,14 @@ beforeEach(() => {
       },
     ]),
   )
-  mocks.findById.mockResolvedValue({ id: "ws-1", name: "Gulnoza Kids" })
+  mocks.findById.mockResolvedValue({
+    id: "ws-1",
+    name: "Gulnoza Kids",
+    tenantId: "1",
+  })
   mocks.createToken.mockResolvedValue({ id: "tok-1" })
   mocks.listHooks.mockResolvedValue([{ id: "hook-1" }])
-  mocks.listTokens.mockResolvedValue([
-    { id: "tok-1", name: "BeeCRM · DiziPro" },
-  ])
+  mocks.listTokens.mockResolvedValue([])
 })
 
 describe("connect clients", () => {
@@ -221,7 +242,7 @@ describe("token endpoint", () => {
     expect(mocks.createToken).toHaveBeenCalledWith(
       expect.objectContaining({
         workspaceId: "ws-1",
-        name: "BeeCRM · DiziPro",
+        name: "BeeCRM · DiziPro #beecrm",
         permission: "full",
         scopes: CONNECT_TOKEN_SCOPES,
       }),
@@ -240,9 +261,9 @@ describe("token endpoint", () => {
 
   test("a new link replaces the earlier BeeCRM link and its lead hook", async () => {
     mocks.listTokens.mockResolvedValue([
-      { id: "tok-1", name: "BeeCRM · DiziPro" },
-      { id: "tok-old", name: "BeeCRM · Old team" },
+      { id: "tok-old", name: "BeeCRM · Old team #beecrm" },
       { id: "tok-own", name: "My own key" },
+      { id: "tok-look-alike", name: "BeeCRM · not minted" },
     ])
     const code = await issueConnectCode(record)
     expect((await exchange(code)).status).toBe(200)
@@ -297,6 +318,43 @@ describe("token endpoint", () => {
     expect(mocks.createToken).not.toHaveBeenCalled()
   })
 
+  test("a code issued on another tenant's host is refused", async () => {
+    const code = await issueConnectCode({ ...record, tenantId: "77" })
+    expect((await exchange(code)).body.error).toBe("invalid_grant")
+  })
+
+  test("a workspace of another tenant is refused", async () => {
+    mocks.findById.mockResolvedValueOnce({
+      id: "ws-1",
+      name: "x",
+      tenantId: "77",
+    })
+    const code = await issueConnectCode(record)
+    expect((await exchange(code)).body.error).toBe("invalid_grant")
+    expect(mocks.createToken).not.toHaveBeenCalled()
+  })
+
+  test("unauthenticated attempts are limited per IP before the secret is checked", async () => {
+    for (let i = 0; i < 60; i++) {
+      await exchange(
+        "x".repeat(43),
+        {},
+        basic("beecrm", "wrong"),
+        ISSUER,
+        "6.6.6.6",
+      )
+    }
+    const limited = await exchange(
+      "x".repeat(43),
+      {},
+      basic("beecrm", SECRET),
+      ISSUER,
+      "6.6.6.6",
+    )
+    expect(limited.status).toBe(429)
+    expect((await exchange("x".repeat(43))).status).toBe(400)
+  })
+
   test("the token cap becomes invalid_request", async () => {
     mocks.createToken.mockRejectedValueOnce(new Error("limit"))
     const code = await issueConnectCode(record)
@@ -305,9 +363,9 @@ describe("token endpoint", () => {
     expect(result.body.error).toBe("invalid_request")
   })
 
-  test("more than 60 calls a minute are throttled", async () => {
+  test("more than 60 calls a minute per client are throttled", async () => {
     for (let i = 0; i < 60; i++) {
-      await exchange("x".repeat(43))
+      await exchange("x".repeat(43), {}, undefined, ISSUER, `10.1.0.${i}`)
     }
     const result = await exchange("x".repeat(43))
     expect(result.status).toBe(429)
@@ -317,15 +375,18 @@ describe("token endpoint", () => {
 describe("revoke endpoint", () => {
   const revoke = (token: string, auth = basic("beecrm", SECRET)) =>
     revokeConnectToken({
-      authorization: auth,
+      headers: new Headers({ authorization: auth }),
       form: new URLSearchParams({ token }),
     })
 
   test("revokes a handshake token and removes the BeeCRM hooks", async () => {
     mocks.findWorkspaceByTokenHash.mockResolvedValue({
       workspace: { id: "ws-1" },
-      apiToken: { id: "tok-1", name: "BeeCRM · DiziPro" },
+      apiToken: { id: "tok-1", name: "BeeCRM · DiziPro #beecrm" },
     })
+    mocks.listTokens.mockResolvedValue([
+      { id: "tok-1", name: "BeeCRM · DiziPro #beecrm" },
+    ])
     const result = await revoke("cbx_ws_abc")
     expect(result.status).toBe(200)
     expect(mocks.deleteToken).toHaveBeenCalledWith({
@@ -345,7 +406,7 @@ describe("revoke endpoint", () => {
   test("leaves tokens the client did not mint alone", async () => {
     mocks.findWorkspaceByTokenHash.mockResolvedValue({
       workspace: { id: "ws-1" },
-      apiToken: { id: "tok-2", name: "My own key" },
+      apiToken: { id: "tok-2", name: "BeeCRM · look-alike" },
     })
     expect((await revoke("cbx_ws_abc")).status).toBe(200)
     expect(mocks.deleteToken).not.toHaveBeenCalled()
@@ -361,5 +422,41 @@ describe("revoke endpoint", () => {
     expect((await revoke("cbx_ws_abc", basic("beecrm", "nope"))).status).toBe(
       401,
     )
+  })
+})
+
+describe("request plumbing", () => {
+  test("the issuer is the origin of the proxy-set x-url header", () => {
+    expect(
+      issuerFromHeaders(
+        new Headers({
+          "x-url": "https://app.chatplus.test/cp/connect/beecrm?x=1",
+        }),
+      ),
+    ).toBe("https://app.chatplus.test")
+    expect(issuerFromHeaders(new Headers())).toBe("")
+    expect(issuerFromHeaders(new Headers({ "x-url": "not a url" }))).toBe("")
+  })
+
+  const formRequest = (body: string, headers: Record<string, string> = {}) =>
+    new Request("https://app.chatplus.test/api/chatplus/connect/token", {
+      method: "POST",
+      body,
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        ...headers,
+      },
+    })
+
+  test("reads a small form body", async () => {
+    const form = await readForm(formRequest("grant_type=authorization_code"))
+    expect(form?.get("grant_type")).toBe("authorization_code")
+  })
+
+  test("rejects a body over 16 KiB and a JSON body", async () => {
+    expect(await readForm(formRequest(`a=${"x".repeat(17 * 1024)}`))).toBeNull()
+    expect(
+      await readForm(formRequest("{}", { "content-type": "application/json" })),
+    ).toBeNull()
   })
 })

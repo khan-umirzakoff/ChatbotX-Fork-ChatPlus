@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   }
   return toResponse(
     await revokeConnectToken({
-      authorization: request.headers.get("authorization"),
+      headers: request.headers,
       form,
     }),
   )

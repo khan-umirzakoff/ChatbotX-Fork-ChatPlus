@@ -1,10 +1,10 @@
 "use server"
 
 import { ChatbotXException } from "@chatbotx.io/business/errors"
+import { headers } from "next/headers"
 import { getChatplusTranslations } from "@/features/chatplus-core/i18n"
 import { workspaceIdrequestParams } from "@/features/common/schema"
 import { hasWorkspacePermission } from "@/lib/auth/permission-routes"
-import { getOriginFromHeader } from "@/lib/domain"
 import { workspaceActionClient } from "@/lib/safe-action"
 import {
   authorizeRequestSchema,
@@ -12,6 +12,7 @@ import {
 } from "../lib/authorize-request"
 import { findConnectClient, isAllowedRedirectUri } from "../lib/clients"
 import { issueConnectCode } from "../lib/code-store"
+import { issuerFromHeaders, tenantForIssuer } from "../lib/issuer"
 
 /**
  * The owner approves the connect request for one workspace. Returns the client
@@ -33,7 +34,7 @@ export const approveConnectAction = workspaceActionClient
     }
 
     const client = findConnectClient(parsedInput.client_id)
-    const issuer = await getOriginFromHeader()
+    const issuer = issuerFromHeaders(await headers())
     if (
       !(
         client &&
@@ -44,8 +45,15 @@ export const approveConnectAction = workspaceActionClient
       throw new ChatbotXException(t("errorInvalidRequest"), "badRequest", 400)
     }
 
+    // The workspace must belong to the tenant of the host the owner is on.
+    const tenantId = await tenantForIssuer(issuer)
+    if (ctx.workspace.tenantId !== tenantId) {
+      throw new ChatbotXException(t("errorInvalidRequest"), "badRequest", 400)
+    }
+
     const code = await issueConnectCode({
       issuer,
+      tenantId,
       clientId: client.clientId,
       redirectUri: parsedInput.redirect_uri,
       codeChallenge: parsedInput.code_challenge,
