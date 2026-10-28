@@ -1,5 +1,6 @@
 import "server-only"
 import {
+  CONNECT_LEAD_HOOK_CONFLICT,
   chatplusConnectLinkService,
   isWorkspaceScheduledForDeletion,
   workspaceService,
@@ -178,6 +179,13 @@ export async function exchangeConnectCode(props: {
       }),
     )
   } catch (err) {
+    if ((err as { code?: unknown })?.code === CONNECT_LEAD_HOOK_CONFLICT) {
+      return oauthError(
+        400,
+        "invalid_request",
+        "lead_hook_url is already registered in this ChatPLUS workspace by another integration; remove that webhook in ChatPLUS and connect again",
+      )
+    }
     logger.warn(
       {
         err: errorShape(err),

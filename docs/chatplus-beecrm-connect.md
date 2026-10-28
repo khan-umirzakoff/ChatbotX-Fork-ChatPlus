@@ -33,7 +33,10 @@ public external-webhooks API accepts `make`/`n8n` only, and the senders ignore `
 identifies the link's hook whatever its URL and whatever the config says later. Ending a link
 removes exactly the `beecrm` hooks with that marker; hooks on the same event registered any other
 way stay. A hook BeeCRM registered through the public API before A8 is not part of a link: remove
-it once, by hand, when switching. The token has no `integrations` scope, so BeeCRM cannot add or re-create hooks through the
+it once, by hand, when switching. If such a hook (or any hook) already uses the same event and URL,
+the exchange answers `invalid_request` ("lead_hook_url is already registered … by another
+integration") and takes nothing over; the owner removes that webhook and connects again. (The
+ChatPLUS half was never deployed before this, so no earlier Connect version left `make` hooks.) The token has no `integrations` scope, so BeeCRM cannot add or re-create hooks through the
 public API, and no stale request can bring a hook back after a disconnect. A refused
 `lead_hook_url` answers `invalid_request` before the code is consumed.
 

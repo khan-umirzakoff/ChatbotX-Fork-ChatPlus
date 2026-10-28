@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   createToken: vi.fn(),
   deleteHooks: vi.fn(),
   insertHook: vi.fn(),
+  takenHook: vi.fn(),
   findByHash: vi.fn(),
   assertPublicUrl: vi.fn(),
   invalidate: vi.fn(),
@@ -65,6 +66,9 @@ const tx = {
     where: () => ({ returning: () => mocks.deleteHooks() }),
   }),
   insert: () => ({ values: (row: unknown) => mocks.insertHook(row) }),
+  select: () => ({
+    from: () => ({ where: () => ({ limit: () => mocks.takenHook() }) }),
+  }),
 }
 const token = {
   name: "BeeCRM · DiziPro #beecrm",
@@ -83,6 +87,7 @@ beforeEach(() => {
     { id: "own", name: "My key" },
   ])
   mocks.deleteHooks.mockResolvedValue([{ id: "hook-1" }])
+  mocks.takenHook.mockResolvedValue([])
   mocks.eq.mockImplementation((column: unknown, value: unknown) => ({
     column,
     value,
@@ -207,6 +212,20 @@ describe("lead hook", () => {
       }),
     )
     expect(result.leadHookRegistered).toBe(true)
+  })
+
+  test("refuses a URL another integration already registered", async () => {
+    mocks.takenHook.mockResolvedValueOnce([{ id: "foreign" }])
+    await expect(
+      chatplusConnectLinkService.replaceLink({
+        workspaceId: "ws-1",
+        client,
+        token,
+        leadHook: { url: "https://api.beecrm.test/hook/x/", event: "beecrm" },
+      }),
+    ).rejects.toMatchObject({ code: "connectLeadHookConflict" })
+    expect(mocks.insertHook).not.toHaveBeenCalled()
+    expect(mocks.audit).not.toHaveBeenCalled()
   })
 
   test("refuses an event that is not the client's", async () => {

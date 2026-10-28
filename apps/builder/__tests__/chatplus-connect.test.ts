@@ -48,6 +48,7 @@ vi.mock("@/lib/rate-limit/guest-rate-limit", () => ({
     headers.get("x-forwarded-for") ?? "unknown",
 }))
 vi.mock("@chatbotx.io/business", () => ({
+  CONNECT_LEAD_HOOK_CONFLICT: "connectLeadHookConflict",
   chatplusConnectLinkService: {
     replaceLink: mocks.replaceLink,
     endLink: mocks.endLink,
@@ -320,6 +321,20 @@ describe("token endpoint", () => {
     const refused = await exchange(code, { lead_hook_url: url })
     expect(refused.body.error).toBe("invalid_request")
     expect((await exchange(code)).status).toBe(200)
+  })
+
+  test("a lead hook URL taken by another integration gets an actionable error", async () => {
+    mocks.replaceLink.mockRejectedValueOnce(
+      Object.assign(new Error("taken"), { code: "connectLeadHookConflict" }),
+    )
+    const code = await issueConnectCode(record)
+    const result = await exchange(code, {
+      lead_hook_url: `${HOOK_PREFIX}s3cret/`,
+    })
+    expect(result.body.error).toBe("invalid_request")
+    expect(String(result.body.error_description)).toContain(
+      "already registered",
+    )
   })
 
   test("a code works once", async () => {

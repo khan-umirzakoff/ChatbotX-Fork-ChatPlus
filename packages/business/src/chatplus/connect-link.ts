@@ -46,6 +46,9 @@ export type ConnectLinkClient = {
 
 type AuditEntry = { action: "create" | "delete"; detail: string }
 
+/** Error code when the lead hook URL already belongs to a hook this link does not own. */
+export const CONNECT_LEAD_HOOK_CONFLICT = "connectLeadHookConflict"
+
 const errorName = (err: unknown) => ({
   name: err instanceof Error ? err.name : typeof err,
 })
@@ -173,6 +176,25 @@ class ChatplusConnectLinkService extends BaseService {
         tx,
       })
       if (leadHook) {
+        // A hook on the same URL registered another way is not ours to take over.
+        const [taken] = await tx
+          .select({ id: externalWebhookModel.id })
+          .from(externalWebhookModel)
+          .where(
+            and(
+              eq(externalWebhookModel.workspaceId, workspaceId),
+              eq(externalWebhookModel.event, leadHook.event),
+              eq(externalWebhookModel.url, leadHook.url),
+            ),
+          )
+          .limit(1)
+        if (taken) {
+          throw new ChatbotXException(
+            "The lead hook URL is already registered in this workspace by another integration",
+            CONNECT_LEAD_HOOK_CONFLICT,
+            409,
+          )
+        }
         await tx.insert(externalWebhookModel).values({
           id: createId(),
           workspaceId,
