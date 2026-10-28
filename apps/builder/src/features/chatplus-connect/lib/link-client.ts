@@ -5,8 +5,12 @@ import {
 } from "@chatbotx.io/business"
 import { logger } from "@/lib/log"
 
-/** External-webhook events each client registers for its lead hook (CHATPLUS-BEECRM-001: `beecrm`). */
+/** External-webhook events of each client's lead hook (CHATPLUS-BEECRM-001: `beecrm`). */
 const CLIENT_HOOK_EVENTS: Record<string, string[]> = { beecrm: ["beecrm"] }
+
+/** The event the lead hook registered at connect time listens to. */
+export const leadHookEvent = (clientId: string) =>
+  CLIENT_HOOK_EVENTS[clientId]?.[0]
 
 /**
  * Tokens minted for a client end with ` #<clientId>`: the immutable id, not the
@@ -27,25 +31,27 @@ export function linkClient(clientId: string): ConnectLinkClient {
 }
 
 /**
- * Registration point for the upstream "delete API token" settings action:
- * deleting a client's link token there also removes the client's lead hooks,
- * so leads stop flowing together with the key. Fails closed: if the hooks
- * cannot be removed, the error stops the deletion and the owner retries.
+ * Registration point for the upstream "delete API token" settings action: a
+ * client's link token is deleted together with its lead hook in one locked
+ * transaction. Returns true when it did so; for any other token it returns
+ * false and the upstream deletion runs as before.
  */
-export async function removeConnectHooksBeforeTokenDelete(props: {
+export async function endConnectLinkForToken(props: {
   workspaceId: string
   tokenId: string
-}) {
+}): Promise<boolean> {
   for (const clientId of Object.keys(CLIENT_HOOK_EVENTS)) {
-    const removedHooks = await chatplusConnectLinkService.removeHooksForToken({
+    const ended = await chatplusConnectLinkService.endLink({
       ...props,
       client: linkClient(clientId),
     })
-    if (removedHooks > 0) {
+    if (ended) {
       logger.info(
-        { ...props, clientId, removedHooks },
-        "ChatPLUS connect: lead hooks removed with deleted token",
+        { ...props, clientId, removedHooks: ended.removedHooks },
+        "ChatPLUS connect: link ended from settings",
       )
+      return true
     }
   }
+  return false
 }

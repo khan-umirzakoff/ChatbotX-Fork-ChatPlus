@@ -8,6 +8,9 @@ const mocks = vi.hoisted(() => ({
   deleteToken: vi.fn(),
   createToken: vi.fn(),
   deleteHooks: vi.fn(),
+  insertHook: vi.fn(),
+  findByHash: vi.fn(),
+  assertPublicUrl: vi.fn(),
   invalidate: vi.fn(),
   audit: vi.fn(),
 }))
@@ -30,6 +33,7 @@ vi.mock("@chatbotx.io/database/repositories", () => ({
     lockWorkspaceTokens: mocks.lock,
     listByWorkspaceId: mocks.list,
     deleteByIdForWorkspace: mocks.deleteToken,
+    findByTokenHash: mocks.findByHash,
   },
 }))
 vi.mock("@chatbotx.io/redis", () => ({
@@ -39,6 +43,9 @@ vi.mock("../src/audit/dispatcher", () => ({
   dispatchAuditRecord: mocks.audit,
 }))
 vi.mock("../src/logger", () => ({ logger: { warn: vi.fn() } }))
+vi.mock("../src/net/ssrf-guard", () => ({
+  assertPublicUrl: mocks.assertPublicUrl,
+}))
 vi.mock("../src/workspace-api-token/service", () => ({
   workspaceApiTokenCacheTag: (id: string) => `tokens:${id}`,
   workspaceApiTokenService: { createToken: mocks.createToken },
@@ -54,6 +61,7 @@ const tx = {
   delete: () => ({
     where: () => ({ returning: () => mocks.deleteHooks() }),
   }),
+  insert: () => ({ values: (row: unknown) => mocks.insertHook(row) }),
 }
 const token = {
   name: "BeeCRM · DiziPro #beecrm",
@@ -96,6 +104,7 @@ describe("replaceLink", () => {
       tokenId: "new",
       replacedTokens: 1,
       removedHooks: 1,
+      leadHookRegistered: false,
     })
     expect(mocks.invalidate).toHaveBeenCalledWith(["tokens:ws-1"])
     expect(mocks.audit).toHaveBeenCalledTimes(2)
@@ -151,23 +160,87 @@ describe("endLink", () => {
   })
 })
 
-describe("removeHooksForToken", () => {
-  test("removes the hooks only for a client token", async () => {
-    expect(
-      await chatplusConnectLinkService.removeHooksForToken({
+describe("lead hook", () => {
+  test("is registered in the same transaction as the token", async () => {
+    const result = await chatplusConnectLinkService.replaceLink({
+      workspaceId: "ws-1",
+      client,
+      token,
+      leadHook: {
+        url: "https://api.beecrm.test/api/integrations/v1/chatplus/s3cret/",
+        event: "beecrm",
+        provider: "make",
+      },
+    })
+    expect(mocks.assertPublicUrl).toHaveBeenCalled()
+    expect(mocks.insertHook).toHaveBeenCalledWith(
+      expect.objectContaining({
         workspaceId: "ws-1",
-        tokenId: "old",
+        event: "beecrm",
+        provider: "make",
+      }),
+    )
+    expect(result.leadHookRegistered).toBe(true)
+  })
+
+  test("refuses an event that is not the client's", async () => {
+    await expect(
+      chatplusConnectLinkService.replaceLink({
+        workspaceId: "ws-1",
+        client,
+        token,
+        leadHook: { url: "https://x.test/", event: "other", provider: "make" },
+      }),
+    ).rejects.toThrow()
+    expect(mocks.transaction).not.toHaveBeenCalled()
+  })
+})
+
+describe("endLinkByTokenHash", () => {
+  test("ends the link of a live client token", async () => {
+    mocks.findByHash.mockResolvedValue({
+      id: "old",
+      workspaceId: "ws-1",
+      name: "BeeCRM · Old #beecrm",
+    })
+    const result = await chatplusConnectLinkService.endLinkByTokenHash({
+      tokenHash: "h" as never,
+      client,
+    })
+    expect(result).toEqual({
+      workspaceId: "ws-1",
+      tokenId: "old",
+      removedHooks: 1,
+    })
+  })
+
+  test("ignores a token the client did not mint", async () => {
+    mocks.findByHash.mockResolvedValue({
+      id: "own",
+      workspaceId: "ws-1",
+      name: "My key",
+    })
+    expect(
+      await chatplusConnectLinkService.endLinkByTokenHash({
+        tokenHash: "h" as never,
         client,
       }),
-    ).toBe(1)
+    ).toBeNull()
+    expect(mocks.transaction).not.toHaveBeenCalled()
+  })
+
+  test("is a no-op when a reconnect replaced the token before the lock", async () => {
+    mocks.findByHash.mockResolvedValue({
+      id: "replaced",
+      workspaceId: "ws-1",
+      name: "BeeCRM · Old #beecrm",
+    })
     expect(
-      await chatplusConnectLinkService.removeHooksForToken({
-        workspaceId: "ws-1",
-        tokenId: "own",
+      await chatplusConnectLinkService.endLinkByTokenHash({
+        tokenHash: "h" as never,
         client,
       }),
-    ).toBe(0)
-    expect(mocks.deleteHooks).toHaveBeenCalledTimes(1)
+    ).toBeNull()
     expect(mocks.deleteToken).not.toHaveBeenCalled()
   })
 })

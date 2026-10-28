@@ -2,7 +2,7 @@
 
 import { workspaceApiTokenService } from "@chatbotx.io/business"
 import { returnValidationErrors } from "next-safe-action"
-import { removeConnectHooksBeforeTokenDelete } from "@/features/chatplus-connect/lib/link-client"
+import { endConnectLinkForToken } from "@/features/chatplus-connect/lib/link-client"
 import {
   type WorkspaceIdRequestParams,
   workspaceIdrequestParams,
@@ -27,17 +27,18 @@ export const deleteWorkspaceTokenAction = workspaceActionClient
     }) => {
       await requireWorkspaceTokenSuperAdmin(workspaceId)
 
-      // ChatPLUS: a deleted connect token takes its lead hooks with it (CONNECT-001).
-      await removeConnectHooksBeforeTokenDelete({
+      // ChatPLUS: a connect token is deleted together with its lead hook (CONNECT-001).
+      const endedConnectLink = await endConnectLinkForToken({
         workspaceId,
         tokenId: parsedInput.id,
       })
       // end ChatPLUS
-
-      const deleted = await workspaceApiTokenService.deleteToken({
-        workspaceId,
-        id: parsedInput.id,
-      })
+      const deleted =
+        endedConnectLink ||
+        (await workspaceApiTokenService.deleteToken({
+          workspaceId,
+          id: parsedInput.id,
+        }))
 
       if (!deleted) {
         return returnValidationErrors(deleteWorkspaceTokenRequest, {

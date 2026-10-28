@@ -7,7 +7,7 @@
     "permissionsTitle": "{client} will be able to:",
     "permissionInbox": "read and reply to every conversation in this ChatPLUS workspace, and assign or archive conversations",
     "permissionContacts": "read every contact in this workspace and update their fields and tags",
-    "permissionIntegrations": "manage webhooks in this workspace, to send leads from your bots to {client}",
+    "permissionIntegrations": "send leads from your bots to {client} (ChatPLUS adds one webhook for this)",
     "replaceNote": "A workspace can be linked to one {client} workspace. Linking again replaces the previous link.",
     "revokeNote": "To disconnect, use “Disconnect” in {client}. Deleting the {client} API key in ChatPLUS settings blocks its access, but lead sending stops only after {client} notices the deleted key or you disconnect there.",
     "approve": "Allow",

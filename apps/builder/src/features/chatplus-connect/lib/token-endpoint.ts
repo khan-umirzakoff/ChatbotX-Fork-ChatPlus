@@ -2,7 +2,6 @@ import "server-only"
 import {
   chatplusConnectLinkService,
   isWorkspaceScheduledForDeletion,
-  workspaceApiTokenService,
   workspaceService,
 } from "@chatbotx.io/business"
 import { SYSTEM_ACTOR, withAuditContext } from "@chatbotx.io/business/audit"
@@ -13,16 +12,23 @@ import {
 import type { WorkspaceApiTokenScope } from "@chatbotx.io/database/partials"
 import { logger } from "@/lib/log"
 import { getGuestClientIp } from "@/lib/rate-limit/guest-rate-limit"
-import { authenticateClient, type ConnectClient } from "./clients"
+import {
+  authenticateClient,
+  type ConnectClient,
+  isAllowedLeadHookUrl,
+} from "./clients"
 import { consumeConnectCode, getCacheRedis, verifyPkce } from "./code-store"
 import { tenantForIssuer } from "./issuer"
-import { linkClient, ownershipSuffix } from "./link-client"
+import { leadHookEvent, linkClient, ownershipSuffix } from "./link-client"
 
-/** What BeeCRM may do (contract §2): read/send/assign chats, read and update contacts, register its lead hook. */
+/**
+ * What BeeCRM may do (contract §2): read/send/assign chats, read and update
+ * contacts. No `integrations` scope: the lead hook is registered by the
+ * exchange itself, so the client cannot add or re-create hooks on its own.
+ */
 export const CONNECT_TOKEN_SCOPES: WorkspaceApiTokenScope[] = [
   "inbox",
   "contacts",
-  "integrations",
 ]
 const REQUESTS_PER_MINUTE_PER_IP = 60
 const REQUESTS_PER_MINUTE_PER_CLIENT = 60
@@ -57,7 +63,7 @@ const tokenName = (client: ConnectClient, label: string) => {
 }
 
 /** Logs a failure without the error message, stack or SQL parameters, which can carry token hashes. */
-const errorShape = (err: unknown) => ({
+export const errorShape = (err: unknown) => ({
   name: err instanceof Error ? err.name : typeof err,
   code: (err as { code?: unknown })?.code,
 })
@@ -105,6 +111,15 @@ export async function exchangeConnectCode(props: {
   const bodyClientId = form.get("client_id")
   if (bodyClientId && bodyClientId !== client.clientId) {
     return oauthError(400, "invalid_request", "client_id mismatch")
+  }
+  // Checked before the code is consumed, so a wrong hook URL does not burn the code.
+  const leadHookUrl = form.get("lead_hook_url")
+  const hookEvent = leadHookEvent(client.clientId)
+  if (
+    leadHookUrl &&
+    !(hookEvent && isAllowedLeadHookUrl(client, leadHookUrl))
+  ) {
+    return oauthError(400, "invalid_request", "lead_hook_url not allowed")
   }
 
   // Consumed before any other check: a code is single-use even when the exchange fails.
@@ -156,6 +171,10 @@ export async function exchangeConnectCode(props: {
           tokenPrefix,
           scopes: CONNECT_TOKEN_SCOPES,
         },
+        leadHook:
+          leadHookUrl && hookEvent
+            ? { url: leadHookUrl, event: hookEvent, provider: "make" }
+            : undefined,
       }),
     )
   } catch (err) {
@@ -195,6 +214,7 @@ export async function exchangeConnectCode(props: {
       scopes: CONNECT_TOKEN_SCOPES,
       workspace: { id: workspace.id, name: workspace.name },
       api_base: `${issuer}/api`,
+      lead_hook_registered: result.leadHookRegistered,
       beecrm_team_id: record.beecrmTeamId,
       beecrm_user_id: record.beecrmUserId,
     },
@@ -229,24 +249,14 @@ export async function revokeConnectToken(props: {
     return oauthError(400, "invalid_request")
   }
 
-  const found = await workspaceApiTokenService.findWorkspaceByTokenHash({
-    tokenHash: await hashToken(token),
-  })
-  // Only a token this client minted ends the link; anything else is a silent no-op.
-  if (!found) {
-    return { status: 200, body: {} }
-  }
-  const workspaceId = found.workspace.id
+  const tokenHash = await hashToken(token)
+  // Uncached lookup and a re-check inside the lock (the service): only this
+  // client's live token ends a link; a replaced or foreign token is a no-op.
   const removed = await withAuditContext(
-    {
-      userId: SYSTEM_ACTOR,
-      workspaceId,
-      source: `chatplus-connect:${client.clientId}`,
-    },
+    { userId: SYSTEM_ACTOR, source: `chatplus-connect:${client.clientId}` },
     () =>
-      chatplusConnectLinkService.endLink({
-        workspaceId,
-        tokenId: found.apiToken.id,
+      chatplusConnectLinkService.endLinkByTokenHash({
+        tokenHash,
         client: linkClient(client.clientId),
       }),
   )
@@ -256,9 +266,9 @@ export async function revokeConnectToken(props: {
 
   logger.info(
     {
-      workspaceId,
+      workspaceId: removed.workspaceId,
       clientId: client.clientId,
-      tokenId: found.apiToken.id,
+      tokenId: removed.tokenId,
       removedHooks: removed.removedHooks,
     },
     "ChatPLUS connect: link revoked",

@@ -23,6 +23,20 @@ const connectClientSchema = z.object({
     .array(z.url().refine((uri) => uri.startsWith("https://")))
     .min(1)
     .max(5),
+  /** The lead hook URL sent at the exchange must start with one of these (https, path included). */
+  leadHookUrlPrefixes: z
+    .array(
+      z
+        .url()
+        .refine(
+          (uri) =>
+            uri.startsWith("https://") &&
+            new URL(uri).pathname.endsWith("/") &&
+            uri.endsWith("/"),
+        ),
+    )
+    .max(5)
+    .default([]),
 })
 
 export type ConnectClient = z.infer<typeof connectClientSchema>
@@ -36,14 +50,40 @@ export function listConnectClients(): ConnectClient[] {
     return z.array(connectClientSchema).parse(JSON.parse(raw))
   } catch (err) {
     // Fail closed: a malformed config disables the handshake instead of
-    // accepting a half-parsed client list.
-    logger.error({ err }, "Invalid CHATPLUS_CONNECT_CLIENTS; connect disabled")
+    // accepting a half-parsed client list. Only the error type is logged: the
+    // parser message can quote part of the config, including secret hashes.
+    logger.error(
+      { err: { name: err instanceof Error ? err.name : typeof err } },
+      "Invalid CHATPLUS_CONNECT_CLIENTS; connect disabled",
+    )
     return []
   }
 }
 
 export function findConnectClient(clientId: string): ConnectClient | undefined {
   return listConnectClients().find((client) => client.clientId === clientId)
+}
+
+export function isAllowedLeadHookUrl(
+  client: ConnectClient,
+  url: string,
+): boolean {
+  if (url.length > 1000) {
+    return false
+  }
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    return false
+  }
+  // Prefixes end in "/" after a path, so the host cannot be extended; userinfo is never allowed.
+  return (
+    parsed.protocol === "https:" &&
+    !parsed.username &&
+    !parsed.password &&
+    client.leadHookUrlPrefixes.some((prefix) => url.startsWith(prefix))
+  )
 }
 
 export function isAllowedRedirectUri(

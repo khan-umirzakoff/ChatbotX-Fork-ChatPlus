@@ -1,5 +1,6 @@
 import "server-only"
 import { NextResponse } from "next/server"
+import { logger } from "@/lib/log"
 import type { EndpointResult } from "./token-endpoint"
 
 const MAX_BODY_BYTES = 16 * 1024
@@ -45,6 +46,31 @@ export async function readForm(
     return null
   }
   return new URLSearchParams(Buffer.concat(chunks).toString("utf8"))
+}
+
+/**
+ * Runs an endpoint and turns any unexpected error into a bare `server_error`.
+ * Only the error type is logged: database errors can carry SQL parameters
+ * such as token hashes.
+ */
+export async function runEndpoint(
+  name: string,
+  fn: () => Promise<EndpointResult>,
+): Promise<EndpointResult> {
+  try {
+    return await fn()
+  } catch (err) {
+    logger.error(
+      {
+        err: {
+          name: err instanceof Error ? err.name : typeof err,
+          code: (err as { code?: unknown })?.code,
+        },
+      },
+      `ChatPLUS connect: ${name} failed`,
+    )
+    return { status: 500, body: { error: "server_error" } }
+  }
 }
 
 /** Token responses must never be cached (RFC 6749 §5.1). */

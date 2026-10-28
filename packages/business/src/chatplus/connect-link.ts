@@ -11,8 +11,12 @@ import type {
 } from "@chatbotx.io/database/partials"
 import { workspaceApiTokenRepository } from "@chatbotx.io/database/repositories"
 import { externalWebhookModel } from "@chatbotx.io/database/schema"
+import { createId } from "@chatbotx.io/utils"
+import { getAuditActor, withAuditContext } from "../audit/context"
 import { BaseService } from "../base.service"
+import { ChatbotXException } from "../errors"
 import { logger } from "../logger"
+import { assertPublicUrl } from "../net/ssrf-guard"
 import {
   workspaceApiTokenCacheTag,
   workspaceApiTokenService,
@@ -20,17 +24,25 @@ import {
 
 /**
  * A ChatPLUS connect link (CONNECT-001): one client token in a workspace plus
- * the client's lead hooks. Every change runs in one transaction behind the
+ * the client's lead hook. Every change runs in one transaction behind the
  * same per-workspace advisory lock as `createToken`, so replacing, ending and
- * token deletion cannot interleave, and a failed mint leaves the old link
- * intact.
+ * settings deletion cannot interleave, and a failed step leaves the previous
+ * state intact. The lead hook is registered here, inside that transaction,
+ * never through the public external-webhooks API, so no stale request can
+ * re-create a hook after the link ended.
  */
 export type ConnectLinkClient = {
   /** Token names this client minted end with this marker. */
   isClientToken: (tokenName: string) => boolean
-  /** External-webhook events the client registers (its lead hooks). */
+  /** External-webhook events of the client's lead hook. */
   hookEvents: string[]
 }
+
+type AuditEntry = { action: "create" | "delete"; detail: string }
+
+const errorName = (err: unknown) => ({
+  name: err instanceof Error ? err.name : typeof err,
+})
 
 class ChatplusConnectLinkService extends BaseService {
   private async removeHooks(
@@ -54,15 +66,19 @@ class ChatplusConnectLinkService extends BaseService {
   }
 
   /** Cache invalidation and audit run only after commit, so a rollback never leaves either behind. */
-  private async afterCommit(
-    workspaceId: string,
-    entries: { action: "create" | "delete"; detail: string }[],
-  ) {
+  private afterCommit(workspaceId: string, entries: AuditEntry[]) {
+    // Audit records need the workspace; callers such as the client revoke only know it here.
+    return withAuditContext({ ...(getAuditActor() ?? {}), workspaceId }, () =>
+      this.recordAfterCommit(workspaceId, entries),
+    )
+  }
+
+  private async recordAfterCommit(workspaceId: string, entries: AuditEntry[]) {
     try {
       await this.invalidateCacheTags(workspaceApiTokenCacheTag(workspaceId))
     } catch (err) {
       logger.warn(
-        { err, workspaceId },
+        { err: errorName(err), workspaceId },
         "connect link: cache invalidation failed",
       )
     }
@@ -70,12 +86,40 @@ class ChatplusConnectLinkService extends BaseService {
       try {
         await this.audit(entry.action, entry.detail)
       } catch (err) {
-        logger.warn({ err, workspaceId }, "connect link: audit record failed")
+        logger.warn(
+          { err: errorName(err), workspaceId },
+          "connect link: audit record failed",
+        )
       }
     }
   }
 
-  /** Ends any earlier link of the client in the workspace and mints the new token, atomically. */
+  /** Deletes the token and the client's hooks if the token still exists and is the client's. Caller holds the lock. */
+  private async endInTx(
+    workspaceId: string,
+    tokenId: string,
+    client: ConnectLinkClient,
+    tx: DatabaseClient,
+  ) {
+    const current = (
+      await workspaceApiTokenRepository.listByWorkspaceId(workspaceId, tx)
+    ).find((apiToken) => apiToken.id === tokenId)
+    if (!(current && client.isClientToken(current.name))) {
+      return null
+    }
+    await workspaceApiTokenRepository.deleteByIdForWorkspace(
+      { id: tokenId, workspaceId },
+      tx,
+    )
+    return {
+      removedHooks: await this.removeHooks(workspaceId, client.hookEvents, tx),
+    }
+  }
+
+  /**
+   * Ends any earlier link of the client in the workspace, mints the new token
+   * and, when given, registers the lead hook: all in one transaction.
+   */
   async replaceLink(props: {
     workspaceId: string
     client: ConnectLinkClient
@@ -85,8 +129,20 @@ class ChatplusConnectLinkService extends BaseService {
       tokenPrefix: string
       scopes: WorkspaceApiTokenScope[]
     }
+    leadHook?: { url: string; event: string; provider: string }
   }) {
-    const { workspaceId, client, token } = props
+    const { workspaceId, client, token, leadHook } = props
+    if (leadHook) {
+      if (!client.hookEvents.includes(leadHook.event)) {
+        throw new ChatbotXException(
+          "Unknown lead hook event",
+          "invalidRequestData",
+          422,
+        )
+      }
+      await assertPublicUrl(leadHook.url, "Lead hook URL")
+    }
+
     const result = await db.transaction(async (tx) => {
       await workspaceApiTokenRepository.lockWorkspaceTokens(workspaceId, tx)
       const previous = (
@@ -113,6 +169,15 @@ class ChatplusConnectLinkService extends BaseService {
         scopes: token.scopes,
         tx,
       })
+      if (leadHook) {
+        await tx.insert(externalWebhookModel).values({
+          id: createId(),
+          workspaceId,
+          provider: leadHook.provider,
+          event: leadHook.event,
+          url: leadHook.url,
+        })
+      }
       return { created, previous, removedHooks }
     })
 
@@ -123,7 +188,7 @@ class ChatplusConnectLinkService extends BaseService {
       })),
       {
         action: "create",
-        detail: `created workspace API token "${token.name}" (full, scopes: ${token.scopes.join(",")})`,
+        detail: `created workspace API token "${token.name}" (full, scopes: ${token.scopes.join(",")})${leadHook ? ` with its ${leadHook.event} lead hook` : ""}`,
       },
     ])
 
@@ -131,14 +196,11 @@ class ChatplusConnectLinkService extends BaseService {
       tokenId: result.created.id,
       replacedTokens: result.previous.length,
       removedHooks: result.removedHooks,
+      leadHookRegistered: Boolean(leadHook),
     }
   }
 
-  /**
-   * Ends the link the given token belongs to. Re-reads the token inside the
-   * lock: if a reconnect already replaced it, this is a no-op and the new link
-   * survives.
-   */
+  /** Ends the link of a token by id (settings deletion). Null when it is not the client's live token. */
   async endLink(props: {
     workspaceId: string
     tokenId: string
@@ -147,22 +209,37 @@ class ChatplusConnectLinkService extends BaseService {
     const { workspaceId, tokenId, client } = props
     const result = await db.transaction(async (tx) => {
       await workspaceApiTokenRepository.lockWorkspaceTokens(workspaceId, tx)
-      const current = (
-        await workspaceApiTokenRepository.listByWorkspaceId(workspaceId, tx)
-      ).find((apiToken) => apiToken.id === tokenId)
-      if (!(current && client.isClientToken(current.name))) {
-        return null
-      }
-      await workspaceApiTokenRepository.deleteByIdForWorkspace(
-        { id: tokenId, workspaceId },
-        tx,
-      )
-      const removedHooks = await this.removeHooks(
-        workspaceId,
-        client.hookEvents,
-        tx,
-      )
-      return { removedHooks }
+      return await this.endInTx(workspaceId, tokenId, client, tx)
+    })
+    if (result) {
+      await this.afterCommit(workspaceId, [
+        {
+          action: "delete",
+          detail: `connect link ended: deleted workspace API token "${tokenId}"`,
+        },
+      ])
+    }
+    return result
+  }
+
+  /**
+   * Ends the link of a presented token (client revoke). Reads the token
+   * uncached and re-checks it inside the lock: a token a reconnect already
+   * replaced is a no-op, so the new link survives.
+   */
+  async endLinkByTokenHash(props: {
+    tokenHash: TokenHash
+    client: ConnectLinkClient
+  }) {
+    const { tokenHash, client } = props
+    const found = await workspaceApiTokenRepository.findByTokenHash(tokenHash)
+    if (!(found && client.isClientToken(found.name))) {
+      return null
+    }
+    const { workspaceId } = found
+    const result = await db.transaction(async (tx) => {
+      await workspaceApiTokenRepository.lockWorkspaceTokens(workspaceId, tx)
+      return await this.endInTx(workspaceId, found.id, client, tx)
     })
     if (!result) {
       return null
@@ -170,33 +247,10 @@ class ChatplusConnectLinkService extends BaseService {
     await this.afterCommit(workspaceId, [
       {
         action: "delete",
-        detail: `connect link ended: deleted workspace API token "${tokenId}"`,
+        detail: `connect link revoked: deleted workspace API token "${found.id}"`,
       },
     ])
-    return result
-  }
-
-  /**
-   * Called before the upstream settings screen deletes a token: when it is the
-   * client's link token, its lead hooks go too, so leads stop with the key.
-   * The token itself is left for the caller to delete.
-   */
-  async removeHooksForToken(props: {
-    workspaceId: string
-    tokenId: string
-    client: ConnectLinkClient
-  }): Promise<number> {
-    const { workspaceId, tokenId, client } = props
-    return await db.transaction(async (tx) => {
-      await workspaceApiTokenRepository.lockWorkspaceTokens(workspaceId, tx)
-      const current = (
-        await workspaceApiTokenRepository.listByWorkspaceId(workspaceId, tx)
-      ).find((apiToken) => apiToken.id === tokenId)
-      if (!(current && client.isClientToken(current.name))) {
-        return 0
-      }
-      return await this.removeHooks(workspaceId, client.hookEvents, tx)
-    })
+    return { workspaceId, tokenId: found.id, ...result }
   }
 }
 

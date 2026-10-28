@@ -28,8 +28,7 @@ const mocks = vi.hoisted(() => {
     },
     replaceLink: vi.fn(),
     endLink: vi.fn(),
-    removeHooksForToken: vi.fn(),
-    findWorkspaceByTokenHash: vi.fn(),
+    endLinkByTokenHash: vi.fn(),
     findById: vi.fn(),
     isScheduled: vi.fn(() => false),
     logWarn: vi.fn(),
@@ -52,10 +51,7 @@ vi.mock("@chatbotx.io/business", () => ({
   chatplusConnectLinkService: {
     replaceLink: mocks.replaceLink,
     endLink: mocks.endLink,
-    removeHooksForToken: mocks.removeHooksForToken,
-  },
-  workspaceApiTokenService: {
-    findWorkspaceByTokenHash: mocks.findWorkspaceByTokenHash,
+    endLinkByTokenHash: mocks.endLinkByTokenHash,
   },
   workspaceService: { findById: mocks.findById },
   isWorkspaceScheduledForDeletion: mocks.isScheduled,
@@ -80,7 +76,7 @@ const { issuerFromHeaders } = await import(
 const { readForm } = await import(
   "../src/features/chatplus-connect/lib/respond"
 )
-const { linkClient, removeConnectHooksBeforeTokenDelete } = await import(
+const { linkClient, endConnectLinkForToken } = await import(
   "../src/features/chatplus-connect/lib/link-client"
 )
 
@@ -88,6 +84,7 @@ const ISSUER = "https://app.chatplus.test"
 const REDIRECT =
   "https://api.beecrm.test/api/integrations/chatplus/connect/callback/"
 const SECRET = "s3cret-value"
+const HOOK_PREFIX = "https://api.beecrm.test/api/integrations/v1/chatplus/"
 const sha256 = (value: string) =>
   createHash("sha256").update(value).digest("hex")
 const VERIFIER = "v".repeat(64)
@@ -139,6 +136,7 @@ beforeEach(() => {
         name: "BeeCRM",
         secretSha256: [sha256(SECRET)],
         redirectUris: [REDIRECT],
+        leadHookUrlPrefixes: [HOOK_PREFIX],
       },
     ]),
   )
@@ -151,9 +149,14 @@ beforeEach(() => {
     tokenId: "tok-1",
     replacedTokens: 0,
     removedHooks: 0,
+    leadHookRegistered: false,
   })
-  mocks.endLink.mockResolvedValue({ removedHooks: 1 })
-  mocks.removeHooksForToken.mockResolvedValue(0)
+  mocks.endLink.mockResolvedValue(null)
+  mocks.endLinkByTokenHash.mockResolvedValue({
+    workspaceId: "ws-1",
+    tokenId: "tok-1",
+    removedHooks: 1,
+  })
 })
 
 describe("connect clients", () => {
@@ -252,7 +255,8 @@ describe("token endpoint", () => {
     expect(result.body).toMatchObject({
       token_type: "Bearer",
       token_id: "tok-1",
-      scopes: ["inbox", "contacts", "integrations"],
+      scopes: ["inbox", "contacts"],
+      lead_hook_registered: false,
       workspace: { id: "ws-1", name: "Gulnoza Kids" },
       api_base: `${ISSUER}/api`,
       beecrm_team_id: "team-7",
@@ -267,6 +271,47 @@ describe("token endpoint", () => {
     expect(client.isClientToken("BeeCRM · not minted")).toBe(false)
     expect(client.isClientToken("My own key")).toBe(false)
     expect(client.hookEvents).toEqual(["beecrm"])
+  })
+
+  test("registers an allowed lead hook inside the exchange", async () => {
+    mocks.replaceLink.mockResolvedValueOnce({
+      tokenId: "tok-1",
+      replacedTokens: 0,
+      removedHooks: 0,
+      leadHookRegistered: true,
+    })
+    const code = await issueConnectCode(record)
+    const result = await exchange(code, {
+      lead_hook_url: `${HOOK_PREFIX}s3cret/`,
+    })
+    expect(result.status).toBe(200)
+    expect(result.body.lead_hook_registered).toBe(true)
+    expect(mocks.replaceLink).toHaveBeenCalledWith(
+      expect.objectContaining({
+        leadHook: {
+          url: `${HOOK_PREFIX}s3cret/`,
+          event: "beecrm",
+          provider: "make",
+        },
+      }),
+    )
+  })
+
+  test.each([
+    ["another host", "https://evil.test/api/integrations/v1/chatplus/x/"],
+    [
+      "a host extension",
+      "https://api.beecrm.test.evil.test/api/integrations/v1/chatplus/x",
+    ],
+    [
+      "userinfo",
+      "https://user:pw@api.beecrm.test/api/integrations/v1/chatplus/x",
+    ],
+  ])("refuses a lead hook URL with %s and keeps the code", async (_, url) => {
+    const code = await issueConnectCode(record)
+    const refused = await exchange(code, { lead_hook_url: url })
+    expect(refused.body.error).toBe("invalid_request")
+    expect((await exchange(code)).status).toBe(200)
   })
 
   test("a code works once", async () => {
@@ -376,30 +421,16 @@ describe("revoke endpoint", () => {
     })
 
   test("ends the link of the presented token", async () => {
-    mocks.findWorkspaceByTokenHash.mockResolvedValue({
-      workspace: { id: "ws-1" },
-      apiToken: { id: "tok-1", name: "BeeCRM · DiziPro #beecrm" },
-    })
     const result = await revoke("cbx_ws_abc")
     expect(result.status).toBe(200)
-    expect(mocks.endLink).toHaveBeenCalledWith(
-      expect.objectContaining({ workspaceId: "ws-1", tokenId: "tok-1" }),
+    expect(mocks.endLinkByTokenHash).toHaveBeenCalledWith(
+      expect.objectContaining({ tokenHash: sha256("cbx_ws_abc") }),
     )
   })
 
-  test("a token already replaced or not minted by the client is a silent no-op", async () => {
-    mocks.findWorkspaceByTokenHash.mockResolvedValue({
-      workspace: { id: "ws-1" },
-      apiToken: { id: "tok-2", name: "BeeCRM · look-alike" },
-    })
-    mocks.endLink.mockResolvedValueOnce(null)
-    expect((await revoke("cbx_ws_abc")).status).toBe(200)
-  })
-
-  test("an unknown token still answers 200", async () => {
-    mocks.findWorkspaceByTokenHash.mockResolvedValue(undefined)
+  test("a replaced, foreign or unknown token is a silent no-op", async () => {
+    mocks.endLinkByTokenHash.mockResolvedValueOnce(null)
     expect((await revoke("cbx_ws_unknown")).status).toBe(200)
-    expect(mocks.endLink).not.toHaveBeenCalled()
   })
 
   test("needs client authentication", async () => {
@@ -446,24 +477,19 @@ describe("request plumbing", () => {
 })
 
 describe("settings token deletion", () => {
-  test("removes the client's lead hooks before the token goes", async () => {
-    mocks.removeHooksForToken.mockResolvedValueOnce(2)
-    await removeConnectHooksBeforeTokenDelete({
-      workspaceId: "ws-1",
-      tokenId: "tok-1",
-    })
-    expect(mocks.removeHooksForToken).toHaveBeenCalledWith(
+  test("a client link token is deleted together with its hook", async () => {
+    mocks.endLink.mockResolvedValueOnce({ removedHooks: 1 })
+    expect(
+      await endConnectLinkForToken({ workspaceId: "ws-1", tokenId: "tok-1" }),
+    ).toBe(true)
+    expect(mocks.endLink).toHaveBeenCalledWith(
       expect.objectContaining({ workspaceId: "ws-1", tokenId: "tok-1" }),
     )
   })
 
-  test("fails closed when the hooks cannot be removed", async () => {
-    mocks.removeHooksForToken.mockRejectedValueOnce(new Error("db down"))
-    await expect(
-      removeConnectHooksBeforeTokenDelete({
-        workspaceId: "ws-1",
-        tokenId: "t",
-      }),
-    ).rejects.toThrow("db down")
+  test("any other token is left to the normal deletion", async () => {
+    expect(
+      await endConnectLinkForToken({ workspaceId: "ws-1", tokenId: "own" }),
+    ).toBe(false)
   })
 })
