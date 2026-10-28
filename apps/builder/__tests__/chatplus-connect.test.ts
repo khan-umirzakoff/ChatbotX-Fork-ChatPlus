@@ -271,6 +271,7 @@ describe("token endpoint", () => {
     expect(client.isClientToken("BeeCRM · not minted")).toBe(false)
     expect(client.isClientToken("My own key")).toBe(false)
     expect(client.hookEvents).toEqual(["beecrm"])
+    expect(client.hookProvider).toBe("connect:beecrm")
   })
 
   test("registers an allowed lead hook inside the exchange", async () => {
@@ -291,7 +292,6 @@ describe("token endpoint", () => {
         leadHook: {
           url: `${HOOK_PREFIX}s3cret/`,
           event: "beecrm",
-          provider: "make",
         },
       }),
     )

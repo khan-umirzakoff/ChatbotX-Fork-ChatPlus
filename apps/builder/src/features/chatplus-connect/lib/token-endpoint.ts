@@ -173,7 +173,7 @@ export async function exchangeConnectCode(props: {
         },
         leadHook:
           leadHookUrl && hookEvent
-            ? { url: leadHookUrl, event: hookEvent, provider: "make" }
+            ? { url: leadHookUrl, event: hookEvent }
             : undefined,
       }),
     )

@@ -28,8 +28,12 @@ ChatPLUS registers it as the workspace's `beecrm` external webhook (provider `ma
 same transaction that mints the token, after the upstream SSRF guard and an allowlist check: the
 URL must already be canonical (the URL parser changes nothing, so no dot segments or case tricks),
 carry no `%2F`, `%5C`, backslash, userinfo, query or fragment, and start with a configured prefix.
-Ending a link removes only the `beecrm` hooks whose URL starts with the client's prefixes; hooks on
-the same event registered elsewhere stay. The token has no `integrations` scope, so BeeCRM cannot add or re-create hooks through the
+The hook is stored with `provider = "connect:beecrm"`. Only this flow writes that value (the
+public external-webhooks API accepts `make`/`n8n` only, and the senders ignore `provider`), so it
+identifies the link's hook whatever its URL and whatever the config says later. Ending a link
+removes exactly the `beecrm` hooks with that marker; hooks on the same event registered any other
+way stay. A hook BeeCRM registered through the public API before A8 is not part of a link: remove
+it once, by hand, when switching. The token has no `integrations` scope, so BeeCRM cannot add or re-create hooks through the
 public API, and no stale request can bring a hook back after a disconnect. A refused
 `lead_hook_url` answers `invalid_request` before the code is consumed.
 
@@ -82,9 +86,11 @@ public API, and no stale request can bring a hook back after a disconnect. A ref
 
 ## Known limits
 
-- Ownership is read from the token name (` #<clientId>`), since the fork adds no tables. A
-  workspace admin who deliberately names a token that way would have it replaced on reconnect.
-  Proper fix: an owner/issuer column on `WorkspaceApiToken` (upstream PR, needs a migration).
+- Token ownership is read from the token name (` #<clientId>`), since the fork adds no tables and
+  token names are free text. A workspace admin who deliberately names a token that way would have it
+  replaced on reconnect. Accepted for v1; proper fix proposed upstream in
+  `docs/upstream-proposals/workspace-api-token-owner.md`. (Hook ownership does not have this
+  problem: the `provider` marker cannot be set through the API.)
 - If a workspace token is deleted by any path other than the settings action, the revoke endpoint
   or a reconnect (for example directly in the database), the lead hook stays. BeeCRM's 5-minute
   liveness check (contract §2) still disables its receiver on 401.

@@ -37,11 +37,11 @@ export type ConnectLinkClient = {
   /** External-webhook events of the client's lead hook. */
   hookEvents: string[]
   /**
-   * The client's hooks are those whose URL starts with one of these; hooks on
-   * the same event registered elsewhere are left alone. Empty means every hook
-   * on the events (only when the client config has no prefixes).
+   * `ExternalWebhook.provider` of the link's hook, e.g. `connect:beecrm`. Only
+   * this service writes it (the public API accepts `make`/`n8n` only), so it
+   * identifies the link's hook regardless of URL or later config changes.
    */
-  hookUrlPrefixes: string[]
+  hookProvider: string
 }
 
 type AuditEntry = { action: "create" | "delete"; detail: string }
@@ -59,33 +59,17 @@ class ChatplusConnectLinkService extends BaseService {
     if (client.hookEvents.length === 0) {
       return 0
     }
-    const hooks = await tx
-      .select({ id: externalWebhookModel.id, url: externalWebhookModel.url })
-      .from(externalWebhookModel)
+    const rows = await tx
+      .delete(externalWebhookModel)
       .where(
         and(
           eq(externalWebhookModel.workspaceId, workspaceId),
+          eq(externalWebhookModel.provider, client.hookProvider),
           inArray(externalWebhookModel.event, client.hookEvents),
         ),
       )
-    const owned = hooks.filter(
-      (hook) =>
-        client.hookUrlPrefixes.length === 0 ||
-        client.hookUrlPrefixes.some((prefix) => hook.url.startsWith(prefix)),
-    )
-    if (owned.length === 0) {
-      return 0
-    }
-    await tx.delete(externalWebhookModel).where(
-      and(
-        eq(externalWebhookModel.workspaceId, workspaceId),
-        inArray(
-          externalWebhookModel.id,
-          owned.map((hook) => hook.id),
-        ),
-      ),
-    )
-    return owned.length
+      .returning({ id: externalWebhookModel.id })
+    return rows.length
   }
 
   /** Cache invalidation and audit run only after commit, so a rollback never leaves either behind. */
@@ -152,7 +136,7 @@ class ChatplusConnectLinkService extends BaseService {
       tokenPrefix: string
       scopes: WorkspaceApiTokenScope[]
     }
-    leadHook?: { url: string; event: string; provider: string }
+    leadHook?: { url: string; event: string }
   }) {
     const { workspaceId, client, token, leadHook } = props
     if (leadHook) {
@@ -192,7 +176,7 @@ class ChatplusConnectLinkService extends BaseService {
         await tx.insert(externalWebhookModel).values({
           id: createId(),
           workspaceId,
-          provider: leadHook.provider,
+          provider: client.hookProvider,
           event: leadHook.event,
           url: leadHook.url,
         })

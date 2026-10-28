@@ -3,12 +3,12 @@ import { beforeEach, describe, expect, test, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
   transaction: vi.fn(),
+  eq: vi.fn(),
   lock: vi.fn(),
   list: vi.fn(),
   deleteToken: vi.fn(),
   createToken: vi.fn(),
   deleteHooks: vi.fn(),
-  selectHooks: vi.fn(),
   insertHook: vi.fn(),
   findByHash: vi.fn(),
   assertPublicUrl: vi.fn(),
@@ -19,7 +19,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@chatbotx.io/database/client", () => ({
   db: { transaction: mocks.transaction },
   and: vi.fn(),
-  eq: vi.fn(),
+  eq: mocks.eq,
   inArray: vi.fn(),
 }))
 vi.mock("@chatbotx.io/database/schema", () => ({
@@ -27,6 +27,7 @@ vi.mock("@chatbotx.io/database/schema", () => ({
     id: "id",
     workspaceId: "workspaceId",
     event: "event",
+    provider: "provider",
   },
 }))
 vi.mock("@chatbotx.io/database/repositories", () => ({
@@ -57,11 +58,12 @@ const { chatplusConnectLinkService } = await import("../src/chatplus")
 const client = {
   isClientToken: (name: string) => name.endsWith(" #beecrm"),
   hookEvents: ["beecrm"],
-  hookUrlPrefixes: ["https://api.beecrm.test/hook/"],
+  hookProvider: "connect:beecrm",
 }
 const tx = {
-  select: () => ({ from: () => ({ where: () => mocks.selectHooks() }) }),
-  delete: () => ({ where: (cond: unknown) => mocks.deleteHooks(cond) }),
+  delete: () => ({
+    where: () => ({ returning: () => mocks.deleteHooks() }),
+  }),
   insert: () => ({ values: (row: unknown) => mocks.insertHook(row) }),
 }
 const token = {
@@ -80,11 +82,11 @@ beforeEach(() => {
     { id: "old", name: "BeeCRM · Old #beecrm" },
     { id: "own", name: "My key" },
   ])
-  mocks.selectHooks.mockResolvedValue([
-    { id: "hook-1", url: "https://api.beecrm.test/hook/s3cret/" },
-    { id: "hook-other", url: "https://make.example/other" },
-  ])
-  mocks.deleteHooks.mockResolvedValue(undefined)
+  mocks.deleteHooks.mockResolvedValue([{ id: "hook-1" }])
+  mocks.eq.mockImplementation((column: unknown, value: unknown) => ({
+    column,
+    value,
+  }))
   mocks.createToken.mockResolvedValue({ id: "new" })
 })
 
@@ -175,27 +177,13 @@ describe("endLink", () => {
 })
 
 describe("hook ownership", () => {
-  test("a link removes only the hooks under its URL prefixes", async () => {
-    const result = await chatplusConnectLinkService.replaceLink({
+  test("a link deletes only hooks carrying its provider marker", async () => {
+    await chatplusConnectLinkService.replaceLink({
       workspaceId: "ws-1",
       client,
       token,
     })
-    expect(result.removedHooks).toBe(1)
-    expect(mocks.deleteHooks).toHaveBeenCalledTimes(1)
-  })
-
-  test("nothing is deleted when no hook is owned", async () => {
-    mocks.selectHooks.mockResolvedValueOnce([
-      { id: "hook-other", url: "https://make.example/other" },
-    ])
-    const result = await chatplusConnectLinkService.replaceLink({
-      workspaceId: "ws-1",
-      client,
-      token,
-    })
-    expect(result.removedHooks).toBe(0)
-    expect(mocks.deleteHooks).not.toHaveBeenCalled()
+    expect(mocks.eq).toHaveBeenCalledWith("provider", "connect:beecrm")
   })
 })
 
@@ -208,7 +196,6 @@ describe("lead hook", () => {
       leadHook: {
         url: "https://api.beecrm.test/api/integrations/v1/chatplus/s3cret/",
         event: "beecrm",
-        provider: "make",
       },
     })
     expect(mocks.assertPublicUrl).toHaveBeenCalled()
@@ -216,7 +203,7 @@ describe("lead hook", () => {
       expect.objectContaining({
         workspaceId: "ws-1",
         event: "beecrm",
-        provider: "make",
+        provider: "connect:beecrm",
       }),
     )
     expect(result.leadHookRegistered).toBe(true)
@@ -228,7 +215,7 @@ describe("lead hook", () => {
         workspaceId: "ws-1",
         client,
         token,
-        leadHook: { url: "https://x.test/", event: "other", provider: "make" },
+        leadHook: { url: "https://x.test/", event: "other" },
       }),
     ).rejects.toThrow()
     expect(mocks.transaction).not.toHaveBeenCalled()
