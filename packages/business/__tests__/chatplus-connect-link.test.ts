@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   deleteToken: vi.fn(),
   createToken: vi.fn(),
   deleteHooks: vi.fn(),
+  selectHooks: vi.fn(),
   insertHook: vi.fn(),
   findByHash: vi.fn(),
   assertPublicUrl: vi.fn(),
@@ -56,11 +57,11 @@ const { chatplusConnectLinkService } = await import("../src/chatplus")
 const client = {
   isClientToken: (name: string) => name.endsWith(" #beecrm"),
   hookEvents: ["beecrm"],
+  hookUrlPrefixes: ["https://api.beecrm.test/hook/"],
 }
 const tx = {
-  delete: () => ({
-    where: () => ({ returning: () => mocks.deleteHooks() }),
-  }),
+  select: () => ({ from: () => ({ where: () => mocks.selectHooks() }) }),
+  delete: () => ({ where: (cond: unknown) => mocks.deleteHooks(cond) }),
   insert: () => ({ values: (row: unknown) => mocks.insertHook(row) }),
 }
 const token = {
@@ -79,7 +80,11 @@ beforeEach(() => {
     { id: "old", name: "BeeCRM · Old #beecrm" },
     { id: "own", name: "My key" },
   ])
-  mocks.deleteHooks.mockResolvedValue([{ id: "hook-1" }])
+  mocks.selectHooks.mockResolvedValue([
+    { id: "hook-1", url: "https://api.beecrm.test/hook/s3cret/" },
+    { id: "hook-other", url: "https://make.example/other" },
+  ])
+  mocks.deleteHooks.mockResolvedValue(undefined)
   mocks.createToken.mockResolvedValue({ id: "new" })
 })
 
@@ -125,6 +130,15 @@ describe("replaceLink", () => {
 })
 
 describe("endLink", () => {
+  test("an unrelated token never opens the locked transaction", async () => {
+    await chatplusConnectLinkService.endLink({
+      workspaceId: "ws-1",
+      tokenId: "own",
+      client,
+    })
+    expect(mocks.transaction).not.toHaveBeenCalled()
+  })
+
   test("is a no-op when the token was already replaced", async () => {
     const result = await chatplusConnectLinkService.endLink({
       workspaceId: "ws-1",
@@ -157,6 +171,31 @@ describe("endLink", () => {
       { id: "old", workspaceId: "ws-1" },
       tx,
     )
+  })
+})
+
+describe("hook ownership", () => {
+  test("a link removes only the hooks under its URL prefixes", async () => {
+    const result = await chatplusConnectLinkService.replaceLink({
+      workspaceId: "ws-1",
+      client,
+      token,
+    })
+    expect(result.removedHooks).toBe(1)
+    expect(mocks.deleteHooks).toHaveBeenCalledTimes(1)
+  })
+
+  test("nothing is deleted when no hook is owned", async () => {
+    mocks.selectHooks.mockResolvedValueOnce([
+      { id: "hook-other", url: "https://make.example/other" },
+    ])
+    const result = await chatplusConnectLinkService.replaceLink({
+      workspaceId: "ws-1",
+      client,
+      token,
+    })
+    expect(result.removedHooks).toBe(0)
+    expect(mocks.deleteHooks).not.toHaveBeenCalled()
   })
 })
 

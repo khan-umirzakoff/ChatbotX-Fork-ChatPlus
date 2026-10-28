@@ -307,6 +307,14 @@ describe("token endpoint", () => {
       "userinfo",
       "https://user:pw@api.beecrm.test/api/integrations/v1/chatplus/x",
     ],
+    ["a dot-segment escape", `${HOOK_PREFIX}%2e%2e/other`],
+    ["an encoded slash", `${HOOK_PREFIX}a%2Fb`],
+    ["a backslash", `${HOOK_PREFIX}a\\b`],
+    [
+      "an upper-case host",
+      "https://API.beecrm.test/api/integrations/v1/chatplus/x",
+    ],
+    ["a query", `${HOOK_PREFIX}x?y=1`],
   ])("refuses a lead hook URL with %s and keeps the code", async (_, url) => {
     const code = await issueConnectCode(record)
     const refused = await exchange(code, { lead_hook_url: url })

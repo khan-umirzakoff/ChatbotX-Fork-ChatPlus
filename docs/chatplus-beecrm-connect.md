@@ -25,8 +25,11 @@ api_base, lead_hook_registered, beecrm_team_id, beecrm_user_id}`, sent with `Cac
 
 **Lead hook.** BeeCRM sends its CHATPLUS-BEECRM-001 receiver URL as `lead_hook_url` in the exchange.
 ChatPLUS registers it as the workspace's `beecrm` external webhook (provider `make`) inside the
-same transaction that mints the token, after an allowlist prefix check and the upstream SSRF
-guard. The token has no `integrations` scope, so BeeCRM cannot add or re-create hooks through the
+same transaction that mints the token, after the upstream SSRF guard and an allowlist check: the
+URL must already be canonical (the URL parser changes nothing, so no dot segments or case tricks),
+carry no `%2F`, `%5C`, backslash, userinfo, query or fragment, and start with a configured prefix.
+Ending a link removes only the `beecrm` hooks whose URL starts with the client's prefixes; hooks on
+the same event registered elsewhere stay. The token has no `integrations` scope, so BeeCRM cannot add or re-create hooks through the
 public API, and no stale request can bring a hook back after a disconnect. A refused
 `lead_hook_url` answers `invalid_request` before the code is consumed.
 
@@ -59,8 +62,9 @@ public API, and no stale request can bring a hook back after a disconnect. A ref
   - `endLinkByTokenHash` (revoke): reads the presented token uncached, then re-checks it inside the
     lock. A token that a reconnect already replaced, a foreign token or an unknown token is a
     no-op that answers 200 (RFC 7009). Otherwise the token and the hooks go together.
-  - `endLink` (settings): when the owner deletes the client's token in Settings → API tokens, the
-    token and its hook go together in one transaction, through one marked registration block in
+  - `endLink` (settings): an unlocked pre-check lets every unrelated token through to the
+    upstream deletion untouched. When the owner deletes the client's token in Settings → API
+    tokens, the token and its hook go together in one transaction, through one marked registration block in
     the upstream `features/workspaces/actions/delete-workspace-token-action.ts`. Any other token is
     deleted by the upstream code as before.
 - Limits: 60 requests a minute per IP before client authentication, 60 a minute per client after

@@ -64,11 +64,19 @@ export function findConnectClient(clientId: string): ConnectClient | undefined {
   return listConnectClients().find((client) => client.clientId === clientId)
 }
 
+const ENCODED_SEPARATOR = /%2f|%5c|\\/i
+
+/**
+ * The lead hook URL must already be canonical (the URL parser changes nothing:
+ * no dot segments, no case or port tricks), carry no encoded separators,
+ * userinfo, query or fragment, and start with an allowlisted prefix. Prefixes
+ * end in "/" after a path, so neither the host nor the path can be escaped.
+ */
 export function isAllowedLeadHookUrl(
   client: ConnectClient,
   url: string,
 ): boolean {
-  if (url.length > 1000) {
+  if (url.length > 1000 || ENCODED_SEPARATOR.test(url)) {
     return false
   }
   let parsed: URL
@@ -77,11 +85,10 @@ export function isAllowedLeadHookUrl(
   } catch {
     return false
   }
-  // Prefixes end in "/" after a path, so the host cannot be extended; userinfo is never allowed.
   return (
+    parsed.href === url &&
     parsed.protocol === "https:" &&
-    !parsed.username &&
-    !parsed.password &&
+    !(parsed.username || parsed.password || parsed.search || parsed.hash) &&
     client.leadHookUrlPrefixes.some((prefix) => url.startsWith(prefix))
   )
 }

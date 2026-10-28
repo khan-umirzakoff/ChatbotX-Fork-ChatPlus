@@ -36,6 +36,12 @@ export type ConnectLinkClient = {
   isClientToken: (tokenName: string) => boolean
   /** External-webhook events of the client's lead hook. */
   hookEvents: string[]
+  /**
+   * The client's hooks are those whose URL starts with one of these; hooks on
+   * the same event registered elsewhere are left alone. Empty means every hook
+   * on the events (only when the client config has no prefixes).
+   */
+  hookUrlPrefixes: string[]
 }
 
 type AuditEntry = { action: "create" | "delete"; detail: string }
@@ -47,22 +53,39 @@ const errorName = (err: unknown) => ({
 class ChatplusConnectLinkService extends BaseService {
   private async removeHooks(
     workspaceId: string,
-    hookEvents: string[],
+    client: ConnectLinkClient,
     tx: DatabaseClient,
   ): Promise<number> {
-    if (hookEvents.length === 0) {
+    if (client.hookEvents.length === 0) {
       return 0
     }
-    const rows = await tx
-      .delete(externalWebhookModel)
+    const hooks = await tx
+      .select({ id: externalWebhookModel.id, url: externalWebhookModel.url })
+      .from(externalWebhookModel)
       .where(
         and(
           eq(externalWebhookModel.workspaceId, workspaceId),
-          inArray(externalWebhookModel.event, hookEvents),
+          inArray(externalWebhookModel.event, client.hookEvents),
         ),
       )
-      .returning({ id: externalWebhookModel.id })
-    return rows.length
+    const owned = hooks.filter(
+      (hook) =>
+        client.hookUrlPrefixes.length === 0 ||
+        client.hookUrlPrefixes.some((prefix) => hook.url.startsWith(prefix)),
+    )
+    if (owned.length === 0) {
+      return 0
+    }
+    await tx.delete(externalWebhookModel).where(
+      and(
+        eq(externalWebhookModel.workspaceId, workspaceId),
+        inArray(
+          externalWebhookModel.id,
+          owned.map((hook) => hook.id),
+        ),
+      ),
+    )
+    return owned.length
   }
 
   /** Cache invalidation and audit run only after commit, so a rollback never leaves either behind. */
@@ -112,7 +135,7 @@ class ChatplusConnectLinkService extends BaseService {
       tx,
     )
     return {
-      removedHooks: await this.removeHooks(workspaceId, client.hookEvents, tx),
+      removedHooks: await this.removeHooks(workspaceId, client, tx),
     }
   }
 
@@ -154,11 +177,7 @@ class ChatplusConnectLinkService extends BaseService {
           tx,
         )
       }
-      const removedHooks = await this.removeHooks(
-        workspaceId,
-        client.hookEvents,
-        tx,
-      )
+      const removedHooks = await this.removeHooks(workspaceId, client, tx)
       // Same tx: the cap count already sees the deleted rows.
       const created = await workspaceApiTokenService.createToken({
         workspaceId,
@@ -207,6 +226,13 @@ class ChatplusConnectLinkService extends BaseService {
     client: ConnectLinkClient
   }) {
     const { workspaceId, tokenId, client } = props
+    // Unlocked pre-check, so deleting an unrelated token never waits on or fails in this transaction.
+    const candidate = (
+      await workspaceApiTokenRepository.listByWorkspaceId(workspaceId)
+    ).find((apiToken) => apiToken.id === tokenId)
+    if (!(candidate && client.isClientToken(candidate.name))) {
+      return null
+    }
     const result = await db.transaction(async (tx) => {
       await workspaceApiTokenRepository.lockWorkspaceTokens(workspaceId, tx)
       return await this.endInTx(workspaceId, tokenId, client, tx)

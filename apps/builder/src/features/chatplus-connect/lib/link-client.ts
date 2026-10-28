@@ -4,6 +4,7 @@ import {
   chatplusConnectLinkService,
 } from "@chatbotx.io/business"
 import { logger } from "@/lib/log"
+import { findConnectClient } from "./clients"
 
 /** External-webhook events of each client's lead hook (CHATPLUS-BEECRM-001: `beecrm`). */
 const CLIENT_HOOK_EVENTS: Record<string, string[]> = { beecrm: ["beecrm"] }
@@ -27,6 +28,7 @@ export function linkClient(clientId: string): ConnectLinkClient {
   return {
     isClientToken: (tokenName) => tokenName.endsWith(suffix),
     hookEvents: CLIENT_HOOK_EVENTS[clientId] ?? [],
+    hookUrlPrefixes: findConnectClient(clientId)?.leadHookUrlPrefixes ?? [],
   }
 }
 
