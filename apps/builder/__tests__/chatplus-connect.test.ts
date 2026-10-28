@@ -26,23 +26,19 @@ const mocks = vi.hoisted(() => {
       }),
       expire: vi.fn(async () => 1),
     },
-    createToken: vi.fn(),
-    deleteToken: vi.fn(),
+    replaceLink: vi.fn(),
+    endLink: vi.fn(),
+    removeHooksForToken: vi.fn(),
     findWorkspaceByTokenHash: vi.fn(),
-    listTokens: vi.fn(),
     findById: vi.fn(),
     isScheduled: vi.fn(() => false),
-    listHooks: vi.fn(),
-    unregisterHook: vi.fn(),
+    logWarn: vi.fn(),
   }
 })
 
 vi.mock("server-only", () => ({}))
 vi.mock("@chatbotx.io/redis", () => ({
   cacheConnections: { useExisting: () => Promise.resolve(mocks.redis) },
-  distributedLock: {
-    runExclusive: ({ fn }: { fn: () => Promise<unknown> }) => fn(),
-  },
 }))
 vi.mock("@chatbotx.io/auth/tenant", () => ({
   resolveTenantByDomain: (domain: string) =>
@@ -53,21 +49,19 @@ vi.mock("@/lib/rate-limit/guest-rate-limit", () => ({
     headers.get("x-forwarded-for") ?? "unknown",
 }))
 vi.mock("@chatbotx.io/business", () => ({
+  chatplusConnectLinkService: {
+    replaceLink: mocks.replaceLink,
+    endLink: mocks.endLink,
+    removeHooksForToken: mocks.removeHooksForToken,
+  },
   workspaceApiTokenService: {
-    createToken: mocks.createToken,
-    deleteToken: mocks.deleteToken,
     findWorkspaceByTokenHash: mocks.findWorkspaceByTokenHash,
-    listTokens: mocks.listTokens,
   },
   workspaceService: { findById: mocks.findById },
   isWorkspaceScheduledForDeletion: mocks.isScheduled,
-  externalWebhookService: {
-    listByWorkspaceAndEvents: mocks.listHooks,
-    unregister: mocks.unregisterHook,
-  },
 }))
 vi.mock("@/lib/log", () => ({
-  logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
+  logger: { info: vi.fn(), warn: mocks.logWarn, error: vi.fn() },
 }))
 
 const { authenticateClient, listConnectClients } = await import(
@@ -85,6 +79,9 @@ const { issuerFromHeaders } = await import(
 )
 const { readForm } = await import(
   "../src/features/chatplus-connect/lib/respond"
+)
+const { linkClient, removeConnectHooksBeforeTokenDelete } = await import(
+  "../src/features/chatplus-connect/lib/link-client"
 )
 
 const ISSUER = "https://app.chatplus.test"
@@ -150,9 +147,13 @@ beforeEach(() => {
     name: "Gulnoza Kids",
     tenantId: "1",
   })
-  mocks.createToken.mockResolvedValue({ id: "tok-1" })
-  mocks.listHooks.mockResolvedValue([{ id: "hook-1" }])
-  mocks.listTokens.mockResolvedValue([])
+  mocks.replaceLink.mockResolvedValue({
+    tokenId: "tok-1",
+    replacedTokens: 0,
+    removedHooks: 0,
+  })
+  mocks.endLink.mockResolvedValue({ removedHooks: 1 })
+  mocks.removeHooksForToken.mockResolvedValue(0)
 })
 
 describe("connect clients", () => {
@@ -239,12 +240,13 @@ describe("token endpoint", () => {
     const result = await exchange(code)
 
     expect(result.status).toBe(200)
-    expect(mocks.createToken).toHaveBeenCalledWith(
+    expect(mocks.replaceLink).toHaveBeenCalledWith(
       expect.objectContaining({
         workspaceId: "ws-1",
-        name: "BeeCRM · DiziPro #beecrm",
-        permission: "full",
-        scopes: CONNECT_TOKEN_SCOPES,
+        token: expect.objectContaining({
+          name: "BeeCRM · DiziPro #beecrm",
+          scopes: CONNECT_TOKEN_SCOPES,
+        }),
       }),
     )
     expect(result.body).toMatchObject({
@@ -259,30 +261,19 @@ describe("token endpoint", () => {
     expect(String(result.body.access_token)).toMatch(WORKSPACE_TOKEN_PATTERN)
   })
 
-  test("a new link replaces the earlier BeeCRM link and its lead hook", async () => {
-    mocks.listTokens.mockResolvedValue([
-      { id: "tok-old", name: "BeeCRM · Old team #beecrm" },
-      { id: "tok-own", name: "My own key" },
-      { id: "tok-look-alike", name: "BeeCRM · not minted" },
-    ])
-    const code = await issueConnectCode(record)
-    expect((await exchange(code)).status).toBe(200)
-    expect(mocks.deleteToken).toHaveBeenCalledTimes(1)
-    expect(mocks.deleteToken).toHaveBeenCalledWith({
-      workspaceId: "ws-1",
-      id: "tok-old",
-    })
-    expect(mocks.unregisterHook).toHaveBeenCalledWith({
-      workspaceId: "ws-1",
-      id: "hook-1",
-    })
+  test("the link client recognises only tokens minted with its id", () => {
+    const client = linkClient("beecrm")
+    expect(client.isClientToken("BeeCRM · Old team #beecrm")).toBe(true)
+    expect(client.isClientToken("BeeCRM · not minted")).toBe(false)
+    expect(client.isClientToken("My own key")).toBe(false)
+    expect(client.hookEvents).toEqual(["beecrm"])
   })
 
   test("a code works once", async () => {
     const code = await issueConnectCode(record)
     expect((await exchange(code)).status).toBe(200)
     expect((await exchange(code)).body.error).toBe("invalid_grant")
-    expect(mocks.createToken).toHaveBeenCalledTimes(1)
+    expect(mocks.replaceLink).toHaveBeenCalledTimes(1)
   })
 
   test.each([
@@ -294,7 +285,7 @@ describe("token endpoint", () => {
     const failed = await exchange(code, overrides, undefined, issuer)
     expect(failed.body.error).toBe("invalid_grant")
     expect((await exchange(code)).body.error).toBe("invalid_grant")
-    expect(mocks.createToken).not.toHaveBeenCalled()
+    expect(mocks.replaceLink).not.toHaveBeenCalled()
   })
 
   test("a bad client secret is 401 and does not consume the code", async () => {
@@ -315,7 +306,7 @@ describe("token endpoint", () => {
     mocks.isScheduled.mockReturnValueOnce(true)
     const code = await issueConnectCode(record)
     expect((await exchange(code)).body.error).toBe("invalid_grant")
-    expect(mocks.createToken).not.toHaveBeenCalled()
+    expect(mocks.replaceLink).not.toHaveBeenCalled()
   })
 
   test("a code issued on another tenant's host is refused", async () => {
@@ -331,7 +322,7 @@ describe("token endpoint", () => {
     })
     const code = await issueConnectCode(record)
     expect((await exchange(code)).body.error).toBe("invalid_grant")
-    expect(mocks.createToken).not.toHaveBeenCalled()
+    expect(mocks.replaceLink).not.toHaveBeenCalled()
   })
 
   test("unauthenticated attempts are limited per IP before the secret is checked", async () => {
@@ -355,12 +346,17 @@ describe("token endpoint", () => {
     expect((await exchange("x".repeat(43))).status).toBe(400)
   })
 
-  test("the token cap becomes invalid_request", async () => {
-    mocks.createToken.mockRejectedValueOnce(new Error("limit"))
+  test("a failed mint becomes invalid_request and logs no error text", async () => {
+    mocks.replaceLink.mockRejectedValueOnce(
+      Object.assign(new Error("insert failed, params: $1=abc123hash"), {
+        code: "23505",
+      }),
+    )
     const code = await issueConnectCode(record)
     const result = await exchange(code)
     expect(result.status).toBe(400)
     expect(result.body.error).toBe("invalid_request")
+    expect(JSON.stringify(mocks.logWarn.mock.calls)).not.toContain("abc123hash")
   })
 
   test("more than 60 calls a minute per client are throttled", async () => {
@@ -379,43 +375,31 @@ describe("revoke endpoint", () => {
       form: new URLSearchParams({ token }),
     })
 
-  test("revokes a handshake token and removes the BeeCRM hooks", async () => {
+  test("ends the link of the presented token", async () => {
     mocks.findWorkspaceByTokenHash.mockResolvedValue({
       workspace: { id: "ws-1" },
       apiToken: { id: "tok-1", name: "BeeCRM · DiziPro #beecrm" },
     })
-    mocks.listTokens.mockResolvedValue([
-      { id: "tok-1", name: "BeeCRM · DiziPro #beecrm" },
-    ])
     const result = await revoke("cbx_ws_abc")
     expect(result.status).toBe(200)
-    expect(mocks.deleteToken).toHaveBeenCalledWith({
-      workspaceId: "ws-1",
-      id: "tok-1",
-    })
-    expect(mocks.listHooks).toHaveBeenCalledWith({
-      workspaceId: "ws-1",
-      events: ["beecrm"],
-    })
-    expect(mocks.unregisterHook).toHaveBeenCalledWith({
-      workspaceId: "ws-1",
-      id: "hook-1",
-    })
+    expect(mocks.endLink).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId: "ws-1", tokenId: "tok-1" }),
+    )
   })
 
-  test("leaves tokens the client did not mint alone", async () => {
+  test("a token already replaced or not minted by the client is a silent no-op", async () => {
     mocks.findWorkspaceByTokenHash.mockResolvedValue({
       workspace: { id: "ws-1" },
       apiToken: { id: "tok-2", name: "BeeCRM · look-alike" },
     })
+    mocks.endLink.mockResolvedValueOnce(null)
     expect((await revoke("cbx_ws_abc")).status).toBe(200)
-    expect(mocks.deleteToken).not.toHaveBeenCalled()
   })
 
   test("an unknown token still answers 200", async () => {
     mocks.findWorkspaceByTokenHash.mockResolvedValue(undefined)
     expect((await revoke("cbx_ws_unknown")).status).toBe(200)
-    expect(mocks.deleteToken).not.toHaveBeenCalled()
+    expect(mocks.endLink).not.toHaveBeenCalled()
   })
 
   test("needs client authentication", async () => {
@@ -458,5 +442,28 @@ describe("request plumbing", () => {
     expect(
       await readForm(formRequest("{}", { "content-type": "application/json" })),
     ).toBeNull()
+  })
+})
+
+describe("settings token deletion", () => {
+  test("removes the client's lead hooks before the token goes", async () => {
+    mocks.removeHooksForToken.mockResolvedValueOnce(2)
+    await removeConnectHooksBeforeTokenDelete({
+      workspaceId: "ws-1",
+      tokenId: "tok-1",
+    })
+    expect(mocks.removeHooksForToken).toHaveBeenCalledWith(
+      expect.objectContaining({ workspaceId: "ws-1", tokenId: "tok-1" }),
+    )
+  })
+
+  test("fails closed when the hooks cannot be removed", async () => {
+    mocks.removeHooksForToken.mockRejectedValueOnce(new Error("db down"))
+    await expect(
+      removeConnectHooksBeforeTokenDelete({
+        workspaceId: "ws-1",
+        tokenId: "t",
+      }),
+    ).rejects.toThrow("db down")
   })
 })

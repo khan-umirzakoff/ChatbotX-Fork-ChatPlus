@@ -44,26 +44,41 @@ workspace: {id, name}, api_base, beecrm_team_id, beecrm_user_id}`, sent with `Ca
   page says so), named `<client name> · <BeeCRM team> #<clientId>`. Minting and deletion run inside
   the audit context of the approving user (exchange) or the system actor (revoke). No refresh
   tokens.
-- One link per ChatPLUS workspace, serialized by a per-workspace Redis lock: an exchange first
-  deletes the client's earlier tokens (those ending in ` #<clientId>`) and the workspace's
-  `beecrm` lead hooks, then mints the new token. Deleting first frees a slot under the
-  per-workspace token cap; if minting still fails, the exchange answers `invalid_request` and the
-  owner connects again. BeeCRM re-registers its lead hook with the new token.
-- Revoke ends the link the presented token belongs to (same cleanup, same lock) when that token
-  ends in ` #<clientId>`. It answers 200 for unknown or foreign tokens (RFC 7009).
+- One link per ChatPLUS workspace. `chatplusConnectLinkService` (`packages/business/src/chatplus/`)
+  runs every link change in one database transaction behind the same per-workspace advisory lock
+  as `createToken`:
+  - `replaceLink` (exchange): deletes the client's earlier tokens (names ending in ` #<clientId>`)
+    and the workspace's `beecrm` lead hooks, then mints the new token. All of it commits or none of
+    it does, so a failed mint keeps the old link. Deleting first frees a slot under the token cap.
+  - `endLink` (revoke): re-reads the presented token inside the lock. If a reconnect already
+    replaced it, nothing happens and the new link survives; otherwise the token and the hooks go.
+  - `removeHooksForToken` (settings): see below.
+  Cache invalidation and audit records run after commit.
+- Deleting the client's token in ChatPLUS Settings → API tokens also removes the client's lead
+  hooks, through one marked registration line in the upstream
+  `features/workspaces/actions/delete-workspace-token-action.ts`. It fails closed: if the hooks
+  cannot be removed, the deletion stops and the owner retries.
+- Revoke answers 200 for unknown, foreign or already-replaced tokens (RFC 7009).
 - Limits: 60 requests a minute per IP before client authentication, 60 a minute per client after
   it; the body is a form, at most 16 KiB, counted while streaming.
+- Failures are logged with the error name and code only, never the message or SQL parameters
+  (which could carry a token hash).
+
+## Upstream files touched
+
+| File | Change |
+| --- | --- |
+| `packages/business/src/index.ts` | `export * from "./chatplus"` in a `// ChatPLUS` block |
+| `apps/builder/src/features/workspaces/actions/delete-workspace-token-action.ts` | one call to `removeConnectHooksBeforeTokenDelete` in a `// ChatPLUS` block (1 upstream change in the last three months) |
 
 ## Known limits
 
-- **Deleting the key in ChatPLUS settings does not remove the lead hook.** The upstream settings
-  screen deletes only the token, and the `make` step keeps posting leads to the BeeCRM hook. The
-  consent page says so. Until simple mode has its own "BeeCRM'dan uzish" button (it will call the
-  same cleanup), BeeCRM bounds the window: it checks the token at least every 5 minutes and, on
-  401, disables its receiver secret so further posts are refused. Proper fix upstream: link
-  external webhooks to the token that registered them (contract §3 upstream PR list).
 - Ownership is read from the token name (` #<clientId>`), since the fork adds no tables. A
-  workspace admin who names a token the same way would have it replaced on reconnect.
+  workspace admin who deliberately names a token that way would have it replaced on reconnect.
+  Proper fix: an owner/issuer column on `WorkspaceApiToken` (upstream PR, needs a migration).
+- If a workspace token is deleted by any path other than the settings action, the revoke endpoint
+  or a reconnect (for example directly in the database), the lead hooks stay. BeeCRM's 5-minute
+  liveness check (contract §2) still disables its receiver on 401.
 
 ## Configuration
 

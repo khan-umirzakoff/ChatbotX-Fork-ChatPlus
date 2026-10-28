@@ -17,6 +17,9 @@ export * from "./bot-field"
 export * from "./broadcast"
 export * from "./channel-integration"
 export * from "./channel-post"
+// ChatPLUS: fork-owned services (docs/SIMPLE-MODE-UX-INVENTORY.md §4.5)
+export * from "./chatplus"
+// end ChatPLUS
 export * from "./coexist"
 export * from "./coexist-import"
 export * from "./comment-automation/account-scope"

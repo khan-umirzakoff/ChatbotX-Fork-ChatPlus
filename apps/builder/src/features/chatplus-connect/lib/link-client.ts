@@ -1,0 +1,51 @@
+import "server-only"
+import {
+  type ConnectLinkClient,
+  chatplusConnectLinkService,
+} from "@chatbotx.io/business"
+import { logger } from "@/lib/log"
+
+/** External-webhook events each client registers for its lead hook (CHATPLUS-BEECRM-001: `beecrm`). */
+const CLIENT_HOOK_EVENTS: Record<string, string[]> = { beecrm: ["beecrm"] }
+
+/**
+ * Tokens minted for a client end with ` #<clientId>`: the immutable id, not the
+ * display name, so renaming the client in config never orphans its tokens.
+ * shortcut: ownership is read from the token name because the fork adds no
+ * tables; a workspace admin who names a token the same way would have it
+ * replaced on reconnect. Upgrade to an owner column on the token (upstream PR)
+ * when one exists.
+ */
+export const ownershipSuffix = (clientId: string) => ` #${clientId}`
+
+export function linkClient(clientId: string): ConnectLinkClient {
+  const suffix = ownershipSuffix(clientId)
+  return {
+    isClientToken: (tokenName) => tokenName.endsWith(suffix),
+    hookEvents: CLIENT_HOOK_EVENTS[clientId] ?? [],
+  }
+}
+
+/**
+ * Registration point for the upstream "delete API token" settings action:
+ * deleting a client's link token there also removes the client's lead hooks,
+ * so leads stop flowing together with the key. Fails closed: if the hooks
+ * cannot be removed, the error stops the deletion and the owner retries.
+ */
+export async function removeConnectHooksBeforeTokenDelete(props: {
+  workspaceId: string
+  tokenId: string
+}) {
+  for (const clientId of Object.keys(CLIENT_HOOK_EVENTS)) {
+    const removedHooks = await chatplusConnectLinkService.removeHooksForToken({
+      ...props,
+      client: linkClient(clientId),
+    })
+    if (removedHooks > 0) {
+      logger.info(
+        { ...props, clientId, removedHooks },
+        "ChatPLUS connect: lead hooks removed with deleted token",
+      )
+    }
+  }
+}

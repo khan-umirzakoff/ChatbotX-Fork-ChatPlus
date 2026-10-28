@@ -1,6 +1,6 @@
 import "server-only"
 import {
-  externalWebhookService,
+  chatplusConnectLinkService,
   isWorkspaceScheduledForDeletion,
   workspaceApiTokenService,
   workspaceService,
@@ -11,12 +11,12 @@ import {
   hashToken,
 } from "@chatbotx.io/business/workspace-api-token/credentials"
 import type { WorkspaceApiTokenScope } from "@chatbotx.io/database/partials"
-import { distributedLock } from "@chatbotx.io/redis"
 import { logger } from "@/lib/log"
 import { getGuestClientIp } from "@/lib/rate-limit/guest-rate-limit"
 import { authenticateClient, type ConnectClient } from "./clients"
 import { consumeConnectCode, getCacheRedis, verifyPkce } from "./code-store"
 import { tenantForIssuer } from "./issuer"
+import { linkClient, ownershipSuffix } from "./link-client"
 
 /** What BeeCRM may do (contract §2): read/send/assign chats, read and update contacts, register its lead hook. */
 export const CONNECT_TOKEN_SCOPES: WorkspaceApiTokenScope[] = [
@@ -24,11 +24,8 @@ export const CONNECT_TOKEN_SCOPES: WorkspaceApiTokenScope[] = [
   "contacts",
   "integrations",
 ]
-/** External-webhook event BeeCRM registers for CHATPLUS-BEECRM-001; removed when a link ends. */
-const CLIENT_HOOK_EVENTS: Record<string, string[]> = { beecrm: ["beecrm"] }
 const REQUESTS_PER_MINUTE_PER_IP = 60
 const REQUESTS_PER_MINUTE_PER_CLIENT = 60
-const LINK_LOCK_SECONDS = 15
 const TOKEN_NAME_MAX = 100
 
 export type EndpointResult = {
@@ -54,23 +51,16 @@ const slowDown = (): EndpointResult => ({
   headers: { "Retry-After": "60" },
 })
 
-/**
- * Tokens minted for a client end with ` #<clientId>`: the immutable id, not the
- * display name, so renaming the client in config never orphans its tokens.
- * shortcut: ownership is read from the token name because there is no link
- * table (no fork migrations); a workspace admin could name a token the same
- * way and have it replaced by a reconnect. Upgrade to a link table if the
- * fork ever gets its own migrations.
- */
-const ownershipSuffix = (client: ConnectClient) => ` #${client.clientId}`
-
 const tokenName = (client: ConnectClient, label: string) => {
-  const suffix = ownershipSuffix(client)
+  const suffix = ownershipSuffix(client.clientId)
   return `${`${client.name} · ${label}`.slice(0, TOKEN_NAME_MAX - suffix.length)}${suffix}`
 }
 
-const isClientToken = (client: ConnectClient, name: string) =>
-  name.endsWith(ownershipSuffix(client))
+/** Logs a failure without the error message, stack or SQL parameters, which can carry token hashes. */
+const errorShape = (err: unknown) => ({
+  name: err instanceof Error ? err.name : typeof err,
+  code: (err as { code?: unknown })?.code,
+})
 
 async function isOverLimit(key: string, limit: number): Promise<boolean> {
   const redis = await getCacheRedis()
@@ -85,32 +75,6 @@ async function isOverLimit(key: string, limit: number): Promise<boolean> {
 /** Unauthenticated requests are limited per IP before the client secret is checked (RFC 6749 §2.3.1). */
 const isIpLimited = (headers: Headers) =>
   isOverLimit(`ip:${getGuestClientIp(headers)}`, REQUESTS_PER_MINUTE_PER_IP)
-
-/** Serializes every link change of one workspace, so two exchanges cannot delete each other's tokens. */
-const withLinkLock = <T>(workspaceId: string, fn: () => Promise<T>) =>
-  distributedLock.runExclusive({
-    key: `chatplus:connect:link:${workspaceId}`,
-    timeoutInSeconds: LINK_LOCK_SECONDS,
-    fn,
-  })
-
-/** Deletes the client's tokens in the workspace and its lead hooks. */
-async function removeClientLink(client: ConnectClient, workspaceId: string) {
-  const tokens = (
-    await workspaceApiTokenService.listTokens({ workspaceId })
-  ).filter((apiToken) => isClientToken(client, apiToken.name))
-  for (const apiToken of tokens) {
-    await workspaceApiTokenService.deleteToken({ workspaceId, id: apiToken.id })
-  }
-  const hooks = await externalWebhookService.listByWorkspaceAndEvents({
-    workspaceId,
-    events: CLIENT_HOOK_EVENTS[client.clientId] ?? [],
-  })
-  for (const hook of hooks) {
-    await externalWebhookService.unregister({ workspaceId, id: hook.id })
-  }
-  return { removedTokens: tokens.length, removedHooks: hooks.length }
-}
 
 /** `POST /api/chatplus/connect/token` (RFC 6749 §4.1.3 with PKCE and RFC 9207 issuer binding). */
 export async function exchangeConnectCode(props: {
@@ -180,27 +144,27 @@ export async function exchangeConnectCode(props: {
     workspaceId: workspace.id,
     source: `chatplus-connect:${client.clientId}`,
   }
-  let result: { tokenId: string; removedTokens: number; removedHooks: number }
+  let result: Awaited<ReturnType<typeof chatplusConnectLinkService.replaceLink>>
   try {
     result = await withAuditContext(audit, () =>
-      withLinkLock(workspace.id, async () => {
-        // One link per workspace (contract A1): the earlier link and its lead hook go
-        // first, which also frees a slot under the per-workspace token cap.
-        const removed = await removeClientLink(client, workspace.id)
-        const created = await workspaceApiTokenService.createToken({
-          workspaceId: workspace.id,
+      chatplusConnectLinkService.replaceLink({
+        workspaceId: workspace.id,
+        client: linkClient(client.clientId),
+        token: {
           name: tokenName(client, record.beecrmTeamName ?? record.beecrmTeamId),
-          permission: "full",
           tokenHash,
           tokenPrefix,
           scopes: CONNECT_TOKEN_SCOPES,
-        })
-        return { tokenId: created.id, ...removed }
+        },
       }),
     )
   } catch (err) {
     logger.warn(
-      { err, workspaceId: workspace.id, clientId: client.clientId },
+      {
+        err: errorShape(err),
+        workspaceId: workspace.id,
+        clientId: client.clientId,
+      },
       "ChatPLUS connect: could not mint workspace token",
     )
     return oauthError(
@@ -216,7 +180,7 @@ export async function exchangeConnectCode(props: {
       clientId: client.clientId,
       tokenId: result.tokenId,
       beecrmTeamId: record.beecrmTeamId,
-      replacedTokens: result.removedTokens,
+      replacedTokens: result.replacedTokens,
       removedHooks: result.removedHooks,
     },
     "ChatPLUS connect: token issued",
@@ -269,10 +233,9 @@ export async function revokeConnectToken(props: {
     tokenHash: await hashToken(token),
   })
   // Only a token this client minted ends the link; anything else is a silent no-op.
-  if (!(found && isClientToken(client, found.apiToken.name))) {
+  if (!found) {
     return { status: 200, body: {} }
   }
-
   const workspaceId = found.workspace.id
   const removed = await withAuditContext(
     {
@@ -281,11 +244,23 @@ export async function revokeConnectToken(props: {
       source: `chatplus-connect:${client.clientId}`,
     },
     () =>
-      withLinkLock(workspaceId, () => removeClientLink(client, workspaceId)),
+      chatplusConnectLinkService.endLink({
+        workspaceId,
+        tokenId: found.apiToken.id,
+        client: linkClient(client.clientId),
+      }),
   )
+  if (!removed) {
+    return { status: 200, body: {} }
+  }
 
   logger.info(
-    { workspaceId, clientId: client.clientId, ...removed },
+    {
+      workspaceId,
+      clientId: client.clientId,
+      tokenId: found.apiToken.id,
+      removedHooks: removed.removedHooks,
+    },
     "ChatPLUS connect: link revoked",
   )
   return { status: 200, body: {} }
