@@ -1,5 +1,6 @@
 {
   "operations": {
+    "chatplus-connect/approve-connect.action:approveConnectAction": "private:browser approval step of the ChatPlus OAuth connect; it mints a workspace API token, which a workspace token must never do (invariant 23 exempt)",
     "ads/conversion-rule:createAdsConversionRuleAction": "covered:ads",
     "ads/conversion-rule:updateAdsConversionRuleAction": "covered:ads",
     "ads/conversion-rule:toggleAdsConversionRuleAction": "covered:ads",
