@@ -47,13 +47,15 @@ vi.mock("@/lib/rate-limit/guest-rate-limit", () => ({
   getGuestClientIp: (headers: Headers) =>
     headers.get("x-forwarded-for") ?? "unknown",
 }))
-vi.mock("@chatbotx.io/business", () => ({
+vi.mock("@chatbotx.io/business/chatplus", () => ({
   CONNECT_LEAD_HOOK_CONFLICT: "connectLeadHookConflict",
   chatplusConnectLinkService: {
     replaceLink: mocks.replaceLink,
     endLink: mocks.endLink,
     endLinkByTokenHash: mocks.endLinkByTokenHash,
   },
+}))
+vi.mock("@chatbotx.io/business", () => ({
   workspaceService: { findById: mocks.findById },
   isWorkspaceScheduledForDeletion: mocks.isScheduled,
 }))

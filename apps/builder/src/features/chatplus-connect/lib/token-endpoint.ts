@@ -1,11 +1,13 @@
 import "server-only"
 import {
-  CONNECT_LEAD_HOOK_CONFLICT,
-  chatplusConnectLinkService,
   isWorkspaceScheduledForDeletion,
   workspaceService,
 } from "@chatbotx.io/business"
 import { SYSTEM_ACTOR, withAuditContext } from "@chatbotx.io/business/audit"
+import {
+  CONNECT_LEAD_HOOK_CONFLICT,
+  chatplusConnectLinkService,
+} from "@chatbotx.io/business/chatplus"
 import {
   generateWorkspaceToken,
   hashToken,

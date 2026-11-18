@@ -2,7 +2,7 @@ import "server-only"
 import {
   type ConnectLinkClient,
   chatplusConnectLinkService,
-} from "@chatbotx.io/business"
+} from "@chatbotx.io/business/chatplus"
 import { logger } from "@/lib/log"
 
 /** External-webhook events of each client's lead hook (CHATPLUS-BEECRM-001: `beecrm`). */
