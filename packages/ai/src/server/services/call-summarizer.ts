@@ -1,4 +1,4 @@
-import { generateObject } from "ai"
+import { generateText, Output } from "ai"
 import { z } from "zod"
 import { aiTimeouts } from "../../constants"
 import { logger } from "../../logger"
@@ -24,6 +24,7 @@ const PROVIDER_LABELS: Record<AIProvider, string> = {
   claude: "Claude",
   deepseek: "DeepSeek",
   openrouter: "OpenRouter",
+  muse: "Muse",
 }
 
 /** Mirrors `defaultAIModels` (`packages/flow-config/src/steps/ai-generate-text.ts`) — kept as an independent copy since this feature has no flow-step context to read a model choice from. */
@@ -33,6 +34,7 @@ const DEFAULT_SUMMARY_MODELS: Record<AIProvider, string> = {
   claude: "claude-sonnet-4-6",
   deepseek: "deepseek-flash",
   openrouter: "openai/gpt-5.4-mini",
+  muse: "muse-spark-1.3",
 }
 
 export async function listConnectedCallSummaryProviders(
@@ -100,9 +102,9 @@ export async function generateCallSummary(props: {
   const timeoutId = setTimeout(() => controller.abort(), aiTimeouts.aiStep)
 
   try {
-    const { object } = await generateObject({
+    const { output: summary } = await generateText({
       model: aiModel,
-      schema: callSummarySchema,
+      output: Output.object({ schema: callSummarySchema }),
       prompt: [
         "Summarize the following phone call transcript for a customer support agent.",
         "Provide a concise summary, a short list of key discussion points, and any concrete action items.",
@@ -113,9 +115,9 @@ export async function generateCallSummary(props: {
       abortSignal: controller.signal,
     })
     return {
-      summary: object.summary,
-      ...(object.keyPoints ? { keyPoints: object.keyPoints } : {}),
-      ...(object.actionItems ? { actionItems: object.actionItems } : {}),
+      summary: summary.summary,
+      ...(summary.keyPoints ? { keyPoints: summary.keyPoints } : {}),
+      ...(summary.actionItems ? { actionItems: summary.actionItems } : {}),
     }
   } catch (error) {
     logger.error(

@@ -8,6 +8,7 @@ import { createSourceTimezoneResolver } from "@chatbotx.io/business/contact-cust
 import { javascriptExecutionService } from "@chatbotx.io/business/javascript-execution"
 import {
   type CustomFieldType,
+  onDemandSystemFieldTypes,
   type SystemFieldType,
   systemFieldTypes,
 } from "@chatbotx.io/database/partials"
@@ -42,6 +43,7 @@ import { formatInTimeZone } from "date-fns-tz"
 import { getProperty } from "dot-prop"
 import { logger } from "../../lib/logger"
 import type { ExecuteStepProps } from "./flow"
+import { logStepProviderError } from "./flow-utils"
 import type { ExecuteStepResult } from "./step"
 
 // ---------------------------------------------------------------------------
@@ -418,6 +420,7 @@ async function resolveJsonBodyVariables(
   contactInbox: ExecuteStepProps<ExternalRequestStepSchema>["contactInbox"],
   conversation: ExecuteStepProps<ExternalRequestStepSchema>["conversation"],
   jsonBody: string,
+  sentByUserId: string | undefined,
 ): Promise<string> {
   const variableNames = extractVariables(jsonBody)
   if (variableNames.length === 0) {
@@ -428,6 +431,7 @@ async function resolveJsonBodyVariables(
     contactId,
     contactInbox,
     conversation,
+    sentByUserId,
   })
   const { customFieldsMap } = variables
 
@@ -438,7 +442,9 @@ async function resolveJsonBodyVariables(
         variables,
         variable as SystemFieldType,
       )
-      if (systemValue) {
+      // A blank value (e.g. `{{empty}}`) must still replace its placeholder;
+      // only a null value leaves the token as written.
+      if (systemValue !== null) {
         mapping[variable] = JSON.stringify(systemValue).slice(1, -1)
       }
     } else if (customFieldsMap.has(variable)) {
@@ -454,6 +460,7 @@ export async function externalRequest({
   contactInbox,
   conversation,
   step,
+  sentByUserId,
 }: ExecuteStepProps<ExternalRequestStepSchema>): Promise<ExecuteStepResult> {
   // Resolve everything except body.jsonBody through the generic deep-replace
   // (raw substitution); jsonBody needs JSON-escaped substitution instead so
@@ -462,7 +469,7 @@ export async function externalRequest({
   const resolvedStepWithoutBody = await resolveContactVariablesDeep(
     conversation.contactId,
     stepWithoutBody,
-    { contactInbox, conversation },
+    { contactInbox, conversation, sentByUserId },
   )
   const resolvedBody =
     body?.bodyType === "json"
@@ -473,12 +480,22 @@ export async function externalRequest({
             contactInbox,
             conversation,
             body.jsonBody,
+            sentByUserId,
           ),
         }
       : await resolveContactVariablesDeep(conversation.contactId, body, {
           contactInbox,
           conversation,
+          sentByUserId,
         })
+
+  const logFailure = (error: unknown, httpCode: string | null) =>
+    logStepProviderError(
+      "external-request",
+      { conversation, contactInbox },
+      error,
+      httpCode,
+    )
 
   try {
     const result = await externalRequestService.executeAndMap({
@@ -494,15 +511,22 @@ export async function externalRequest({
     })
 
     if (result.statusCode >= 400) {
+      const errorMessage = `Request failed with status ${result.statusCode}`
+      await logFailure(errorMessage, String(result.statusCode))
       return {
         status: "error",
-        errorMessage: `Request failed with status ${result.statusCode}`,
+        errorMessage,
         result: null,
       }
     }
 
     return { status: "success", result: null }
   } catch (error) {
+    logger.error(
+      { err: error, workspaceId: conversation.workspaceId },
+      "[externalRequest] failed",
+    )
+    await logFailure(error, null)
     return {
       status: "error",
       errorMessage:
@@ -516,12 +540,14 @@ export async function handleExecuteJavascript({
   contactInbox,
   conversation,
   step,
+  sentByUserId,
 }: ExecuteStepProps<ExecuteJavascriptStepSchema>): Promise<ExecuteStepResult> {
   try {
     const variables = await contactVariableService.getAll({
       contactId: conversation.contactId,
       contactInbox,
       conversation,
+      sentByUserId,
     })
     // Coerced the same way resolveJavascriptInput coerces `{{name}}`
     // lookups below, so a custom field is typed consistently in `input`
@@ -534,8 +560,13 @@ export async function handleExecuteJavascript({
       ]),
     )
 
+    // On-demand fields are left out: a `{{key}}` placeholder still resolves
+    // them below, without a lookup on every run.
+    const eagerSystemFields = systemFieldTypes.options.filter(
+      (systemField) => !onDemandSystemFieldTypes.includes(systemField),
+    )
     const systemFieldEntries = await Promise.all(
-      systemFieldTypes.options.map(
+      eagerSystemFields.map(
         async (systemField) =>
           [
             systemField,

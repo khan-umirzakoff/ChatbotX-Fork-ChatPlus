@@ -1,8 +1,9 @@
 import type { ChannelType } from "@chatbotx.io/utils/channel"
+import type { ButtonType } from "../../steps/button"
 import { type StepType, stepTypes } from "../../steps/step-action"
 import type { ProductMessageCapability } from "../product-message-rules"
 
-export const CHANNEL_POLICY_VERSION = 2
+export const CHANNEL_POLICY_VERSION = 3
 
 export const stepSupport = {
   full: "full",
@@ -66,6 +67,7 @@ const stepExecutionKinds = {
   aiAnalyzeImage: "worker",
   aiGenerateImage: "worker",
   aiEditImage: "worker",
+  aiSegmentImage: "worker",
   aiSpeechToText: "worker",
   aiTextToSpeech: "worker",
   aiExtractData: "worker",
@@ -76,6 +78,7 @@ const stepExecutionKinds = {
   getDataFromJson: "worker",
   formatDate: "worker",
   generateCode: "worker",
+  findPlacesNearMe: "worker",
   countCharacters: "worker",
   performAction: "worker",
   callApi: "worker",
@@ -88,6 +91,8 @@ const stepExecutionKinds = {
   startExternalNode: "worker",
   openWebsite: "worker",
   openMiniApp: "worker",
+  callPhoneNumber: "worker",
+  copyText: "worker",
   addNotes: "worker",
   subscribeBroadcast: "worker",
   unsubscribeBroadcast: "worker",
@@ -106,6 +111,7 @@ const stepExecutionKinds = {
   klaviyoSyncProfile: "worker",
   subscribeSequence: "worker",
   changeGamificationScore: "worker",
+  pipeline: "worker",
   unsubscribeSequence: "worker",
   email: "worker",
   sendViewCatalog: "channel",
@@ -114,6 +120,7 @@ const stepExecutionKinds = {
   whatsappCallButton: "channel",
   whatsappFlow: "channel",
   sendProducts: "channel",
+  sendCollection: "channel",
   whatsappLocation: "channel",
   sendMessengerTemplateMessage: "channel",
   facebookCustomAudience: "worker",
@@ -130,6 +137,7 @@ export const channelDeliverableStepTypes = [
   stepTypes.enum.sendAudio,
   stepTypes.enum.sendCard,
   stepTypes.enum.sendCarousel,
+  stepTypes.enum.sendCollection,
   stepTypes.enum.sendFile,
   stepTypes.enum.sendGif,
   stepTypes.enum.sendImage,
@@ -157,6 +165,7 @@ export type ChannelDeliverableStepType =
  */
 const channelOptInStepTypes: readonly ChannelDeliverableStepType[] = [
   stepTypes.enum.sendProducts,
+  stepTypes.enum.sendCollection,
 ]
 
 export const omnichannelDeliverableStepTypes: readonly ChannelDeliverableStepType[] =
@@ -174,6 +183,13 @@ export type ChannelFlowPolicy = {
     viewCatalog?: { footer: number; text: number }
   }
   quickRepliesShareButtonSlots: boolean
+  /**
+   * Button types the channel renders as a native control on step and card
+   * buttons: `callPhoneNumber` (dials on tap) and `copyText` (copies on tap). A
+   * channel that does not list one sends that button as a reply, and a tap
+   * answers with the number or text. Informational: it never gates publish.
+   */
+  nativeButtonTypes: readonly ButtonType[]
   steps: Record<StepType, StepSupport>
   /** Present only on channels that can render `sendProducts`. */
   productMessages?: ProductMessageCapability
@@ -182,6 +198,7 @@ export type ChannelFlowPolicy = {
 type ChannelFlowPolicyDefinition = {
   limits: ChannelFlowPolicy["limits"]
   quickRepliesShareButtonSlots?: boolean
+  nativeButtonTypes?: readonly ButtonType[]
   productMessages?: ProductMessageCapability
   supported?: readonly ChannelDeliverableStepType[]
   noButtons?: readonly ChannelDeliverableStepType[]
@@ -214,6 +231,7 @@ export const defineChannelFlowPolicy = (
     limits: definition.limits,
     quickRepliesShareButtonSlots:
       definition.quickRepliesShareButtonSlots ?? false,
+    nativeButtonTypes: definition.nativeButtonTypes ?? [],
     steps,
     ...(definition.productMessages
       ? { productMessages: definition.productMessages }

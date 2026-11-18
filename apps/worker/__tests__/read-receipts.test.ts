@@ -72,6 +72,7 @@ vi.mock("@chatbotx.io/sdk", () => ({
 }))
 
 vi.mock("@chatbotx.io/flow-config", () => ({
+  BUTTON_LABEL_MAX: 20,
   messageEventTypeSchema: {
     enum: {
       "message:delivered": "message:delivered",
@@ -348,6 +349,42 @@ describe("read receipt timestamp handling", () => {
       "message:delivered",
       expect.objectContaining({ occurredAt: expect.any(Date) }),
     )
+  })
+
+  test("messageStatus delivered carries the provider's delivery time without changing occurredAt", async () => {
+    await handleMessageStatus({
+      integrationType: "whatsapp",
+      integrationIdentifier: "phone-number-1",
+      payload: {
+        messageId: "provider-message-1",
+        status: "delivered",
+        timestamp: "1700000000",
+      },
+    })
+
+    const [, payload] = mockEmit.mock.calls.find(
+      ([eventType]) => eventType === "message:delivered",
+    ) as [string, { occurredAt: Date; providerOccurredAt?: Date }]
+    expect(payload.providerOccurredAt).toEqual(new Date(1_700_000_000_000))
+    // Existing delivered listeners keep reading processing time.
+    expect(payload.occurredAt.getTime()).not.toBe(1_700_000_000_000)
+  })
+
+  test("messageStatus delivered leaves providerOccurredAt unset when the receipt has no usable timestamp", async () => {
+    await handleMessageStatus({
+      integrationType: "whatsapp",
+      integrationIdentifier: "phone-number-1",
+      payload: {
+        messageId: "provider-message-1",
+        status: "delivered",
+        timestamp: "not-a-time",
+      },
+    })
+
+    const [, payload] = mockEmit.mock.calls.find(
+      ([eventType]) => eventType === "message:delivered",
+    ) as [string, { providerOccurredAt?: Date }]
+    expect(payload.providerOccurredAt).toBeUndefined()
   })
 
   test("messageStatus failed emits without updating contactLastReadAt", async () => {

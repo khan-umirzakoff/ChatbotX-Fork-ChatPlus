@@ -185,9 +185,141 @@
     "name": "Agentes"
   },
   "aiFiles": {
+    "detail": {
+      "title": "Knowledge details",
+      "details": "Details",
+      "noChunkingInfo": "No processing information is available yet."
+    },
+    "chunking": {
+      "title": "Chunking",
+      "strategyLabel": "Strategy",
+      "version": "Chunker version",
+      "chunkSize": "Chunk size",
+      "overlapSize": "Overlap size",
+      "chunkCount": "Chunks",
+      "processedAt": "Processed at",
+      "outdated": "Reindex recommended",
+      "strategy": {
+        "prose": "Prose",
+        "tabular": "Tabular",
+        "markdown": "Markdown"
+      },
+      "configDefault": "Chunking parameters: defaults ({chunkSize} characters, overlap {overlapSize}).",
+      "configCustom": "Chunking parameters: {chunkSize} characters, overlap {overlapSize}."
+    },
+    "processingRun": {
+      "title": "Processing run",
+      "noRun": "No processing run has been tracked for this file yet.",
+      "queuedAt": "Queued at",
+      "startedAt": "Started at",
+      "heartbeatAt": "Last heartbeat",
+      "finishedAt": "Finished at",
+      "stale": "Processing appears stalled",
+      "failedBadge": "Processing failed",
+      "successNote": "Chunking and embedding enqueueing completed. The file is searchable when embedding status is also complete.",
+      "status": {
+        "queued": "Queued",
+        "processing": "Processing",
+        "success": "Prepared",
+        "error": "Failed"
+      },
+      "error": {
+        "fileTooLarge": "The file is too large to process.",
+        "tooManyChunks": "The file produced too many chunks.",
+        "fileUnreadable": "The file could not be read. For CSV files, save as CSV UTF-8 and try again.",
+        "noExtractableContent": "No content could be extracted. Check the spreadsheet header row, or the file may be a scan or empty.",
+        "noEmbeddingProvider": "No embedding provider is configured.",
+        "enqueueFailed": "The file was saved but processing could not be queued. Reindex it to try again.",
+        "unknown": "Processing failed unexpectedly."
+      }
+    },
+    "reindex": {
+      "action": "Reindex",
+      "confirmTitle": "Reindex this file?",
+      "confirmDescription": "The file will be processed with the current chunker.",
+      "downtimeWarning": "Search may be temporarily unavailable while this file is reindexed.",
+      "queued": "Reindex queued",
+      "alreadyRunning": "Processing is already running for this file.",
+      "rateLimited": "Too many requests. Try again shortly.",
+      "parameters": "Chunking parameters",
+      "strategyLabel": "How to split",
+      "strategy": {
+        "auto": "Automatic (by file type)",
+        "prose": "Plain text"
+      },
+      "chunkSize": "Chunk size (characters)",
+      "overlapSize": "Overlap (characters)",
+      "overlapDisabledTabular": "Spreadsheets keep each row whole, so overlap is not used.",
+      "tabularHeaderRow": "Header row (spreadsheets)",
+      "presets": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "custom": "Custom chunk size"
+      },
+      "resetDefaults": "Restore defaults",
+      "estimate": "Estimate: about {estimate} chunks (currently {current})",
+      "reembedWarning": "Changing parameters re-embeds the whole file (about {count} chunks) with your workspace key, and the file cannot be searched until it finishes.",
+      "largeChunkWarning": "Larger chunks make every agent answer read more text and cost more tokens.",
+      "noChangeNote": "Parameters are unchanged: chunks that are already embedded are kept and not embedded again.",
+      "conflict": "This file is being processed, so the new parameters were not applied. Try again when processing finishes."
+    },
+    "chunks": {
+      "indexOutdated": "Some chunks have no position yet. Reindex the file to number them."
+    },
     "description": "Dê aos seus agentes acesso a PDFs, documentos e muito mais",
     "title": "Conhecimento",
-    "noEmbeddingProvider": "Nenhum provedor de embeddings configurado. Os embeddings de arquivos de IA exigem integração com OpenAI ou Gemini. DeepSeek e Claude não oferecem suporte a modelos de embedding."
+    "noEmbeddingProvider": "Nenhum provedor de embeddings configurado. Os embeddings de arquivos de IA exigem integração com OpenAI ou Gemini. DeepSeek e Claude não oferecem suporte a modelos de embedding.",
+    "testQuery": {
+      "title": "Test query",
+      "description": "Pick files, ask a question and see which chunk answers it. Only the retrieval step is simulated; no AI answer is generated.",
+      "open": "Test query",
+      "backToKnowledge": "Back to Knowledge",
+      "run": "Run test",
+      "files": "Files",
+      "filterFiles": "Filter files by name",
+      "selectAllReady": "Select all ready files",
+      "selectedCount": "{count}/{max} selected",
+      "fileNotReady": "This file has no chunks ready for search yet.",
+      "question": "Question",
+      "expected": "Expected answer (optional)",
+      "expectedHelp": "Type the answer exactly as it appears in the document, accents included. It is matched against every chunk of the selected files.",
+      "limit": "Result limit",
+      "simulationNote": "This simulates retrieval only; an agent may phrase a question differently. Each run uses one embedding from your workspace key.",
+      "rateLimited": "Too many test requests. Try again shortly.",
+      "byFile": "By file",
+      "matches": "{count} matching chunks",
+      "bestRank": "best rank {rank}",
+      "needsReindex": "Needs reindex",
+      "openDetail": "Open details",
+      "rank": "#{rank}",
+      "chunkNumber": "chunk #{index}",
+      "chunkUnnumbered": "chunk not numbered",
+      "aiWillSee": "AI will see",
+      "belowThreshold": "Below threshold",
+      "containsExpected": "Contains the answer",
+      "thresholdLine": "Threshold {threshold}",
+      "appliedConfig": "Applied configuration",
+      "agentDefaultThreshold": "Agent default threshold",
+      "timings": "Search time",
+      "scoreNotComparable": "Similarity scores are not directly comparable across embedding models.",
+      "answerLocation": "Answer is in {file} · {chunk} · rank {rank}",
+      "splitHint": "The answer may be split between two chunks. Try a larger chunk size or overlap, or check the file was read correctly.",
+      "previousRun": "Previous run ({time}): answer rank {from} → now {to}",
+      "previousRunTop": "Previous run ({time}): {changed} of {total} top chunks changed",
+      "verdict": {
+        "inTopResults": "The AI will see the expected answer.",
+        "foundButLowRank": "The answer is in the documents but ranks too low for the AI to see it. Try a closer question, or reindex with smaller chunks.",
+        "notInAnyChunk": "No chunk of the selected files contains the answer. The document may be read or split wrongly: view the chunks or reindex with other settings."
+      },
+      "diagnosis": {
+        "ok": "Matching chunks found.",
+        "noReadyChunks": "No chunks are ready for search yet. Open the file to check its processing status.",
+        "allBelowThreshold": "Chunks were found but all are below the threshold. Try a lower trial threshold.",
+        "noMatches": "No matching chunks were found.",
+        "agentHasNoFiles": "This agent has no knowledge files."
+      }
+    }
   },
   "aiFunctions": {
     "description": "Configure funções de LLM para tornar seu agente de IA mais inteligente",
@@ -435,6 +567,8 @@
       "description": "Envie um fluxo para todos os contatos."
     },
     "receiversCount": "Destinatários: {count}",
+    "receiversCountCapped": "Destinatários: {count}+",
+    "receiversCountUnknown": "Destinatários: ?",
     "receiversLoading": "Destinatários: carregando...",
     "whatsappTemplateMessage": {
       "title": "Mensagem de modelo",
@@ -625,6 +759,7 @@
       "clicked": "Clicado",
       "failed": "Falhou",
       "missed": "Perdidos",
+      "moderated": "Moderados",
       "noContacts": "Nenhum contato encontrado",
       "noComment": "(sem texto)",
       "pageInfo": "Página {page} de {pageCount}",
@@ -644,7 +779,9 @@
       "contactNotNew": "O contato não é novo",
       "alreadyRepliedOnPost": "Já respondido nesta publicação",
       "engagedOnOtherPost": "Já interagiu em outra publicação",
-      "mentionCountNotMatched": "O número de menções não correspondeu"
+      "mentionCountNotMatched": "O número de menções não correspondeu",
+      "noImageAttachment": "Nenhuma foto anexada",
+      "moderated": "Ocultado ou excluído pela moderação"
     },
     "replyTo": {
       "mentions": "Comentários com menções suficientes",
@@ -664,6 +801,10 @@
       "label": "Rastrear se um usuário marca outros usuários",
       "descriptionText": "Conta as contas marcadas em cada comentário e soma aos totais do contato em todos os comentários. Use '{{total_tagged}}' para todas as contas marcadas e '{{total_new_tagged}}' para contas que nunca enviaram mensagem à sua página nem foram contatos."
     },
+    "onlyCommentsWithImage": {
+      "label": "Responder apenas a comentários com foto",
+      "descriptionText": "Responder automaticamente apenas quando o comentário incluir uma foto. GIFs e figurinhas não contam. Comentários sem foto são ignorados e a próxima automação é tentada."
+    },
     "card": {
       "reply": "Resposta"
     },
@@ -681,10 +822,92 @@
       "column": "Conta",
       "disconnected": "Conta desconectada",
       "disconnectedDescription": "Esta automação está vinculada a uma conta que não está mais conectada, por isso não responde a nenhum comentário. Reconecte a conta ou escolha outra."
+    },
+    "aiModeration": {
+      "enabled": "Moderação por IA",
+      "description": "Um agente de IA lê cada comentário antes de o bot responder e oculta ou exclui os das categorias abaixo. Um comentário moderado nunca recebe resposta.",
+      "aiAgentDescription": "Somente o modelo de IA do agente é usado, não o prompt dele.",
+      "categoriesLabel": "Bloquear comentários que sejam",
+      "categories": {
+        "hate": "Discurso de ódio",
+        "offensive": "Ofensivos",
+        "harassment": "Assédio",
+        "negative": "Hostis à marca",
+        "spam": "Spam ou golpe"
+      },
+      "categoryDescriptions": {
+        "hate": "Ataca um grupo por raça, religião, gênero, nacionalidade e similares",
+        "offensive": "Insultos, palavrões, linguagem vulgar",
+        "harassment": "Ameaças, bullying, ataques a uma pessoa",
+        "negative": "Feito para prejudicar a marca. Reclamações educadas não são bloqueadas",
+        "spam": "Golpes, phishing, promoção sem relação"
+      },
+      "instruction": "Orientações extras para a IA",
+      "instructionDescription": "Opcional. Diga à IA o que permitir ou bloquear.",
+      "instructionPlaceholder": "ex.: Não bloquear clientes reclamando do preço",
+      "action": "Quando um comentário é bloqueado",
+      "actions": {
+        "hide": "Ocultá-lo",
+        "delete": "Excluí-lo"
+      },
+      "deleteWarning": "Comentários excluídos são perdidos para sempre e não podem ser restaurados. Ocultar é mais seguro se a IA errar."
+    },
+    "moderationLog": {
+      "title": "Comentários moderados",
+      "description": "Comentários que esta automação ocultou ou excluiu, e o motivo.",
+      "allActions": "Todas as ações",
+      "allSources": "Regras e IA",
+      "actions": {
+        "hide": "Oculto",
+        "delete": "Excluído"
+      },
+      "sources": {
+        "rule": "Por uma regra de ocultar",
+        "ai": "Pela IA"
+      },
+      "statuses": {
+        "pending": "Em andamento",
+        "done": "Concluído",
+        "failed": "Falhou"
+      },
+      "rules": {
+        "all": "Ocultar todos os comentários",
+        "phoneNumber": "Contém número de telefone",
+        "link": "Contém link",
+        "keyword": "Contém palavra-chave",
+        "image": "Contém imagem",
+        "video": "Contém vídeo",
+        "gif": "Contém GIF",
+        "emoji": "Contém emoji"
+      },
+      "summary": {
+        "total": "{count} moderados",
+        "hidden": "{count} ocultos",
+        "deleted": "{count} excluídos",
+        "byAI": "{count} pela IA",
+        "byRule": "{count} por regras",
+        "failed": "{count} com falha"
+      },
+      "columns": {
+        "time": "Hora",
+        "contact": "Contato",
+        "comment": "Comentário",
+        "action": "Ação",
+        "reason": "Motivo",
+        "status": "Status"
+      },
+      "loading": "Carregando…",
+      "empty": "Nenhum comentário foi ocultado ou excluído ainda.",
+      "unknownContact": "Desconhecido",
+      "noText": "(sem texto)",
+      "previous": "Anterior",
+      "next": "Próxima",
+      "page": "Página {page} de {pageCount}"
     }
   },
   "condition": {
     "unknownValue": "Desconhecido",
+    "deletedValue": "Excluído (#{id})",
     "yes": "Sim",
     "no": "Não",
     "valuePlaceholder": "...",
@@ -799,6 +1022,7 @@
       "contactCreatedAt": "Contato criado em",
       "fromCtwaAd": "De anúncio",
       "fromGoogleAd": "Do Google Ads",
+      "clickedAd": "Clicou no anúncio",
       "ctwaConversion": "Conversão de anúncio",
       "lastUserInputTypes": {
         "text": "Texto",
@@ -814,7 +1038,8 @@
       "ctwaConversionTypes": {
         "lead": "Lead",
         "purchase": "Compra"
-      }
+      },
+      "pipelineItem": "Item do funil"
     },
     "fieldGroups": {
       "opportunity": "Oportunidade",
@@ -831,7 +1056,8 @@
       "botFields": "Campos do bot",
       "email": "E-mail",
       "sms": "SMS",
-      "ctwaAds": "Anúncios"
+      "ctwaAds": "Anúncios",
+      "pipeline": "Funis"
     },
     "languages": {
       "ar": "Árabe",
@@ -860,6 +1086,7 @@
     "sources": {
       "direct": "Direto",
       "comments": "Comentários",
+      "liveComments": "Comentários em live",
       "ads": "Anúncios",
       "fbLeadAd": "Anúncio de cadastro do Facebook",
       "inboundMessage": "Mensagem recebida",
@@ -878,6 +1105,22 @@
       },
       "adPrefix": "anúncio",
       "allAds": "todos os anúncios"
+    },
+    "noTopic": "Sem tópico",
+    "trackingSince": "Registrado desde {date}. A atividade anterior não está incluída.",
+    "pipelineItem": {
+      "anyPipeline": "Qualquer funil",
+      "anyStatus": "Qualquer status",
+      "attributes": {
+        "exists": "Itens",
+        "status": "Status do item",
+        "stage": "Etapa do item",
+        "priority": "Prioridade do item"
+      },
+      "operators": {
+        "has": "Tem",
+        "hasNo": "Não tem"
+      }
     }
   },
   "fields": {
@@ -1077,6 +1320,13 @@
     "bot": {
       "label": "Bot"
     },
+    "botCategory": {
+      "options": {
+        "all": "Todas",
+        "human": "Pessoa",
+        "bot": "Bot"
+      }
+    },
     "botResponse": {
       "label": "Resposta do bot"
     },
@@ -1095,7 +1345,8 @@
     },
     "button": {
       "label": "Botão",
-      "whenPressed": "Quando este botão for pressionado"
+      "whenPressed": "Quando este botão for pressionado",
+      "callToThisNumber": "Ligar para este número"
     },
     "buttonLabel": {
       "label": "Texto do botão"
@@ -1162,6 +1413,15 @@
       "label": "Campo personalizado",
       "savePayloadTo": "Salvar resposta no campo personalizado",
       "set_value": "Definir valor",
+      "clear": "Clear value",
+      "formula": "Use custom formula",
+      "set_now": "Set to now",
+      "date_expression": "Free-form date (with math)",
+      "add_minutes": "Add minutes",
+      "add_hours": "Add hours",
+      "add_days": "Add days",
+      "formulaHint": "Math where value is the current number, e.g. round(value * 1.1). Functions: abs, ceil, floor, round, min, max, pow, sqrt, log, sin, cos.",
+      "dateExpressionHint": "e.g. now + 2 days - 3 hours. Units: min, h, d, w, mo, y.",
       "append": "Adicionar ao final",
       "prepend": "Adicionar ao início",
       "increase": "Aumentar em",
@@ -1281,7 +1541,8 @@
       "label": "Fluxos",
       "placeholder": "Selecione o fluxo",
       "aiGenerateTextAgent": "{aiName}: agente de geração de texto",
-      "aiDeleteMessageHistory": "{aiName}: excluir histórico de mensagens"
+      "aiDeleteMessageHistory": "{aiName}: excluir histórico de mensagens",
+      "aiSegmentImage": "{aiName}: Segmentar imagem"
     },
     "steps": {
       "label": "Nó",
@@ -1660,10 +1921,11 @@
       "processing": "Processando",
       "installing": "Installing",
       "completed": "Concluído",
-      "partial": "Partial",
+      "partial": "Parcial",
       "failed": "Falhou",
       "success": "Sucesso",
-      "error": "Erro"
+      "error": "Erro",
+      "uninstalled": "Uninstalled"
     },
     "subtitle": {
       "placeholder": "Digite o subtítulo"
@@ -1693,6 +1955,7 @@
       "label": "Clicados (%)"
     },
     "targetCountry": {
+      "currencyHint": "Também define a moeda padrão dos funis que não têm uma própria.",
       "description": "O país onde vive a maioria dos seus contatos.",
       "label": "País de destino"
     },
@@ -2092,6 +2355,10 @@
       "label": "Endereço do remetente",
       "placeholder": "naoresponda@exemplo.com"
     },
+    "fromName": {
+      "label": "Nome do remetente",
+      "placeholder": "ChatbotX"
+    },
     "messageTemplate": {
       "label": "Modelo de mensagem"
     },
@@ -2198,7 +2465,13 @@
       "commentToMessage": "Comment-to-Message",
       "commentToMessageDescription": "Lets this account answer high-intent comments with a direct message. Required for TikTok comment automations that use a private reply.",
       "commentToMessageEligibility": "Only available to Business Accounts registered in Vietnam, Indonesia or Thailand, owned by someone over 18, that are registered businesses or have run Messaging Ads, with messaging permissions set to \"Requests\".",
-      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting."
+      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting.",
+      "features": "Recursos",
+      "featureMessaging": "Mensagens",
+      "featureMessagingDescription": "Receba e envie mensagens diretas. O TikTok não oferece mensagens para contas registradas no EEE, na Suíça ou no Reino Unido — desative para essas contas.",
+      "featureComments": "Comentários",
+      "featureCommentsDescription": "Receba comentários para a automação de comentários: resposta pública, curtir e ocultar.",
+      "featuresReconnectHint": "As alterações valem para as contas conectadas a partir de agora. Reconecte as contas existentes para atualizar as permissões."
     },
     "drip": {
       "label": "Gotejamento"
@@ -2236,6 +2509,12 @@
     },
     "lastAd": {
       "label": "Último anúncio"
+    },
+    "adIds": {
+      "label": "Todos os IDs de anúncio"
+    },
+    "adId": {
+      "label": "ID do primeiro anúncio"
     },
     "lastAdSourcePlatform": {
       "label": "Plataforma de origem do último anúncio"
@@ -2382,7 +2661,11 @@
       "ads": "Anúncios",
       "settings": "Configurações",
       "miniApps": "Mini Apps",
-      "leaderboards": "Rankings"
+      "leaderboards": "Rankings",
+      "pipelines": "Funis",
+      "places": "Locais",
+      "templates": "Modelos",
+      "polls": "Polls"
     },
     "adReferral": {
       "label": "Ads",
@@ -2391,7 +2674,8 @@
       "ctid": "CTID",
       "googleAds": "Google Ads",
       "googleAdsWhatsapp": "GA CCWA",
-      "googleAdsMessenger": "GA CCTM"
+      "googleAdsMessenger": "GA CCTM",
+      "googleAdsZalo": "GA Zalo"
     },
     "adSource": {
       "label": "Ad source"
@@ -2439,11 +2723,87 @@
     },
     "miniApp": {
       "label": "Mini App"
+    },
+    "lastOpportunityId": {
+      "label": "ID da última oportunidade"
+    },
+    "adminName": {
+      "label": "Nome do admin remetente"
+    },
+    "adminTeamName": {
+      "label": "Equipes do admin remetente"
+    },
+    "bookingId": {
+      "label": "ID da reserva"
+    },
+    "lastPoints": {
+      "label": "Últimos pontos do questionário"
+    },
+    "lastAdHeadline": {
+      "label": "Último título do anúncio"
+    },
+    "lastAdBody": {
+      "label": "Último texto do anúncio"
+    },
+    "lastStoryId": {
+      "label": "Último ID do story"
+    },
+    "lastLeadId": {
+      "label": "Último ID do lead"
+    },
+    "lastFormId": {
+      "label": "Último ID do formulário"
+    },
+    "lastFormName": {
+      "label": "Último nome do formulário"
+    },
+    "lastAdgroupId": {
+      "label": "Último ID do grupo de anúncios"
+    },
+    "lastTextInput": {
+      "label": "Última entrada de texto"
+    },
+    "empty": {
+      "label": "Vazio"
+    },
+    "aiSegmentImage": {
+      "description": "Encontra um objeto em uma imagem com SAM 3.1 e salva um recorte dele.",
+      "inputFieldId": {
+        "label": "Imagem de origem"
+      },
+      "target": {
+        "label": "Objeto a encontrar",
+        "description": "Uma frase nominal curta como \"carro vermelho\" ou \"caixa do produto\". Não é uma pergunta nem um comando.",
+        "placeholder": "caixa do produto"
+      },
+      "matchSelection": {
+        "label": "Correspondências",
+        "options": {
+          "largest": "Apenas o maior objeto",
+          "all": "Todos os objetos correspondentes (um recorte que inclui todos)"
+        }
+      },
+      "outputFieldId": {
+        "label": "Salvar imagem em"
+      },
+      "detailsOutputFieldId": {
+        "label": "Salvar detalhes em",
+        "description": "Opcional. Recebe um JSON com a quantidade de correspondências e as caixas.",
+        "sameAsOutput": "Escolha um campo diferente da imagem de saída.",
+        "sameAsInput": "Escolha um campo diferente da imagem de origem."
+      },
+      "overwriteWarning": "O resultado substituirá a imagem de origem neste campo.",
+      "states": {
+        "success": "Encontrado",
+        "skip": "Não encontrado",
+        "error": "Falhou"
+      }
     }
   },
   "flows": {
     "export": {
       "notPublished": "Este fluxo nunca foi publicado. Publique-o antes de exportar.",
+      "viewOnly": "Este fluxo foi instalado de um modelo somente leitura, por isso não pode ser exportado.",
       "failed": "Falha na exportação. Tente novamente."
     },
     "title": "Fluxos",
@@ -2613,7 +2973,18 @@
       "sendGoogleAdsConversion": "Enviar conversão do Google Ads",
       "changeGamificationScore": "Alterar pontos de gamificação",
       "sendViewCatalog": "Ver catálogo",
-      "sendProducts": "Enviar produtos"
+      "sendProducts": "Enviar produtos",
+      "sendCollection": "Coleção",
+      "pipeline": "Funis",
+      "moreOptions": "Mais opções",
+      "findPlacesNearMe": "Encontrar lugares perto de mim",
+      "callPhoneNumber": "Ligar para um número de telefone",
+      "copyText": "Copiar texto"
+    },
+    "externalRequest": {
+      "errors": {
+        "requestFailed": "Não foi possível testar a solicitação externa. Verifique a configuração da solicitação e tente novamente."
+      }
     },
     "splitTraffic": {
       "balanceHint": "A soma total deve ser igual a 100%.",
@@ -2644,7 +3015,12 @@
       "customField": "Campo personalizado",
       "selectCustomFieldPlaceholder": "Selecione um campo personalizado",
       "addMapping": "Adicionar mapeamento",
-      "addCustomField": "Adicionar"
+      "addCustomField": "Adicionar",
+      "fileBadge": "Arquivo",
+      "fileFormat": "Links dos arquivos",
+      "fileFormatAllUrls": "Todos os links, separados por vírgula",
+      "fileFormatFirstUrl": "Somente o primeiro link",
+      "fileFormatHint": "O campo personalizado salva os links dos arquivos enviados, conforme escolhido aqui."
     },
     "sendCarousel": {
       "addSlide": "Adicionar cartão",
@@ -2794,6 +3170,156 @@
       "productsSelected": "{count, plural, one {# produto} other {# produtos}}",
       "noneSelected": "Nenhum produto ainda",
       "sendFailed": "Não foi possível enviar os produtos."
+    },
+    "sendCollection": {
+      "title": "Coleção",
+      "dataType": "Tipo de dado",
+      "dataTypes": {
+        "products": "Produtos"
+      },
+      "collectionType": "Tipo de coleção",
+      "collectionTypes": {
+        "automated": {
+          "label": "Automática",
+          "description": "Itens atuais e futuros que atendem às condições serão adicionados automaticamente."
+        },
+        "manual": {
+          "label": "Manual",
+          "description": "Adicione os itens um a um."
+        }
+      },
+      "condition": "Condição",
+      "name": "Nome",
+      "optional": "(Opcional)",
+      "category": "Categoria",
+      "subcategory": "Subcategoria",
+      "vendor": "Fornecedor",
+      "all": "Todos",
+      "items": "Itens",
+      "select": "Selecionar",
+      "selectPlaceholder": "Selecione 1 ou mais itens",
+      "selectAll": "Selecionar tudo",
+      "deselectAll": "Desmarcar tudo",
+      "maxProducts": "Até {count} produtos; um produto que a loja não mostra mais é ignorado.",
+      "automatedHint": "Envia até {count} produtos correspondentes como cards que abrem cada produto na loja.",
+      "summaryAll": "Todos os produtos da loja",
+      "summaryAutomated": "Produtos: {filters}",
+      "summaryManual": "{count, plural, one {# produto} other {# produtos}}",
+      "cancel": "Cancelar",
+      "save": "Salvar"
+    },
+    "pipelineStep": {
+      "action": "Ação",
+      "pipeline": "Funil",
+      "targetHint": "Atua no item aberto mais recente do contato neste funil. O caminho Ignorar é executado quando não há nenhum.",
+      "noPipelines": "Nenhum funil encontrado",
+      "actions": {
+        "addToPipeline": "Adicionar contato ao funil",
+        "moveToStage": "Mover para uma etapa",
+        "changeValue": "Alterar valor",
+        "assign": "Atribuir a administradores",
+        "changeStatus": "Alterar status",
+        "changePriority": "Alterar prioridade",
+        "changeDueDate": "Alterar prazo",
+        "changeTitle": "Alterar título",
+        "setCustomField": "Definir campo personalizado",
+        "clearCustomField": "Limpar campos personalizados",
+        "changeDescription": "Alterar descrição",
+        "removeFromPipeline": "Remover contato do funil",
+        "addComment": "Adicionar comentário",
+        "transfer": "Transferir para outro funil"
+      },
+      "title": "Título",
+      "description": "Descrição",
+      "stage": "Etapa",
+      "firstStage": "Primeira etapa",
+      "status": "Status",
+      "assigneeMembers": "Administradores atribuídos",
+      "assigneeTeams": "Equipes atribuídas",
+      "value": "Valor",
+      "priority": "Prioridade",
+      "dueDate": "Prazo",
+      "dueNone": "Nenhum",
+      "dueNoneHint": "O item não tem prazo.",
+      "dueCustomField": "De um campo personalizado de data",
+      "dueFixed": "Data e hora fixas",
+      "dueField": "Campo personalizado de data ou data e hora",
+      "fieldValues": "Campos personalizados",
+      "field": "Campo",
+      "fieldValue": "Valor",
+      "fields": "Campos",
+      "addField": "Adicionar valor de campo",
+      "removeHint": "Exclui o item aberto mais recente do contato neste funil.",
+      "comment": "Comentário",
+      "destinationPipeline": "Funil de destino",
+      "destinationStage": "Etapa de destino",
+      "missingRequiredFields": "Campos obrigatórios sem valor: {names}. O item não pode ser criado até que cada um tenha um valor.",
+      "addRequiredFields": "Adicionar campos obrigatórios"
+    },
+    "aiSegmentImage": {
+      "label": "{name}: Segmentar imagem"
+    },
+    "aiSpeechToText": {
+      "muse": {
+        "formatHint": "Somente arquivos WAV são aceitos: PCM 16 bits, mono, 16 kHz ou 24 kHz, até 10 minutos. Qualquer outro arquivo (por exemplo, mensagens de voz) vai para o ramo de erro.",
+        "languageBias": {
+          "label": "Preferência de idioma",
+          "description": "Idiomas prováveis do áudio. Deixe em branco para detectar automaticamente.",
+          "placeholder": "Detecção automática"
+        },
+        "keywords": {
+          "label": "Palavras-chave",
+          "description": "Nomes ou termos do setor que ajudam o Muse a escrever as palavras corretamente.",
+          "placeholder": "Adicione uma palavra-chave e pressione Enter"
+        }
+      },
+      "languages": {
+        "Arabic": "Árabe",
+        "Bengali": "Bengali",
+        "Dutch": "Holandês",
+        "English": "Inglês",
+        "French": "Francês",
+        "German": "Alemão",
+        "Hebrew": "Hebraico",
+        "Hindi": "Hindi",
+        "Indonesian": "Indonésio",
+        "Italian": "Italiano",
+        "Japanese": "Japonês",
+        "Kannada": "Canarim",
+        "Korean": "Coreano",
+        "Malay": "Malaio",
+        "MandarinChinese": "Chinês mandarim",
+        "Marathi": "Marati",
+        "Polish": "Polonês",
+        "Portuguese": "Português",
+        "Spanish": "Espanhol",
+        "Tagalog": "Tagalo",
+        "Tamil": "Tâmil",
+        "Telugu": "Télugo",
+        "Thai": "Tailandês",
+        "Turkish": "Turco",
+        "Vietnamese": "Vietnamita"
+      }
+    },
+    "findPlacesNearMe": {
+      "category": "Categoria de local",
+      "allLocations": "Todos os locais",
+      "whatsappOnly": "Enviado apenas para contatos do WhatsApp.",
+      "noLocationSource": "A localização precisa ser coletada neste fluxo: adicione uma etapa Obter dados do usuário com formato de resposta Localização antes desta ação. Uma localização salva por outro fluxo não é usada. Sem ela, esta ação é ignorada."
+    },
+    "callPhoneNumber": {
+      "fallbackHint": "Em canais que não conseguem fazer uma ligação, o contato recebe este número como resposta.",
+      "countryLabel": "Código do país",
+      "noCountry": "Nenhum país",
+      "invalidForCountry": "Este não é um número de telefone válido para {country}.",
+      "needsCountry": "Escolha o país ou comece o número com + e o código do país.",
+      "invalidInternational": "Este não é um número de telefone internacional válido."
+    },
+    "copyText": {
+      "textLabel": "Texto a copiar",
+      "limitHint": "Até {max} caracteres depois de preencher as variáveis.",
+      "fallbackHint": "Em canais que não copiam texto, o contato recebe este texto como resposta.",
+      "viewerTitle": "Copia este texto"
     }
   },
   "folders": {
@@ -2818,7 +3344,7 @@
     "title": "Geral"
   },
   "facebookMarketingMessages": {
-    "deleteWarning": "Isso remove a campanha apenas do ChatbotX. A campanha de mensagens da Meta continua ativa — pause ou exclua no Gerenciador de Anúncios.",
+    "deleteWarning": "Isso exclui a campanha de mensagens da Meta e remove a campanha do ChatbotX. Se a Meta recusar a exclusão, a campanha é mantida.",
     "title": "Facebook Marketing Messages",
     "description": "Aumente o engajamento e as vendas com mensagens promocionais personalizadas no Messenger.",
     "create": "Criar novo",
@@ -2843,13 +3369,197 @@
       "generic": "Genérico",
       "greeting": "Saudação",
       "quickReplies": "Respostas rápidas",
-      "elements": "Cartões"
+      "elements": "Cartões",
+      "targetMessaging": "Público das mensagens",
+      "targetOptIn": "Opt-in",
+      "targetOptInDescription": "Clientes da página que concordaram em receber mensagens de marketing",
+      "targetCustomAudience": "Público personalizado",
+      "targetCustomAudienceDescription": "Enviar mensagens para públicos enviados a partir de um arquivo",
+      "audience": "Público personalizado"
     },
+    "noReadyAudiences": "Nenhum público personalizado pronto para esta Página e conta de anúncios.",
+    "manageAudiences": "Gerenciar públicos",
     "errors": {
       "notConfigured": "O Facebook Marketing Messages não está configurado. Peça ao seu administrador para definir o ID de configuração das Mensagens de marketing.",
       "notGranted": "Conceda acesso para usar o recurso Mensagens de marketing.",
       "tosNotAccepted": "Para usar este recurso, aceite os termos de objeto personalizado em {url}",
-      "notFound": "Mensagem de marketing não encontrada."
+      "notFound": "Mensagem de marketing não encontrada.",
+      "audienceNotTargetable": "O público personalizado selecionado não está pronto ou não pertence a esta Página e conta de anúncios.",
+      "connectFirst": "Conecte primeiro o Marketing Messages no app do ChatbotX.",
+      "mmInvalidState": "Esta ação não está disponível no estado atual da campanha.",
+      "mmCampaignEnded": "A campanha de mensagens da Meta foi encerrada, então não pode ser enviada nem retomada.",
+      "mmPageNotConnected": "A Página desta campanha não está conectada a este workspace.",
+      "mmContentLocked": "O conteúdo não pode ser alterado depois que a primeira mensagem for enviada.",
+      "metaDeleteFailed": "A Meta não conseguiu excluir esta campanha, então ela foi mantida. {message}",
+      "statisticsUnknownAdAccount": "Este workspace não tem campanhas de Marketing Messages nessa conta de anúncios.",
+      "statisticsInvalidRange": "Escolha uma data de início igual ou anterior à data de término, nos últimos 37 meses."
+    },
+    "tabs": {
+      "campaigns": "Campanhas",
+      "audiences": "Públicos",
+      "statistics": "Estatísticas"
+    },
+    "audiences": {
+      "title": "Públicos personalizados",
+      "create": "Criar novo",
+      "uploadMore": "Enviar mais linhas",
+      "empty": "Nenhum público personalizado ainda.",
+      "deleteTitle": "Excluir público personalizado",
+      "deleteWarning": "Isso exclui o público personalizado \"{name}\" na Meta e no ChatbotX. Não é possível desfazer.",
+      "deleted": "Público personalizado excluído.",
+      "pageDisconnected": "Página desconectada",
+      "status": {
+        "ready": "Pronto",
+        "missing": "Excluído na Meta"
+      },
+      "fields": {
+        "customAudienceId": "ID do público personalizado",
+        "approximateCount": "Contagem aproximada",
+        "status": "Status",
+        "file": "Enviar arquivo"
+      },
+      "wizard": {
+        "title": "Criar público personalizado",
+        "uploadMoreTitle": "Enviar mais linhas",
+        "steps": {
+          "prepare": "Preparar lista",
+          "upload": "Enviar",
+          "confirm": "Confirmar"
+        },
+        "prepareDescription": "Uma lista de assinantes é um arquivo CSV ou TXT com as informações usadas para criar seu público para mensagens de marketing. Usamos o número de telefone para corresponder seus assinantes a usuários do Facebook e do Instagram. Antes de as informações serem enviadas a nós, sua lista de identificadores é convertida em um código aleatório por hash.",
+        "aboutHashing": "Sobre o hash",
+        "downloadTemplate": "Baixar modelo de arquivo",
+        "mainIdentifiers": "Inclua pelo menos um identificador principal",
+        "moreIdentifiers": "Inclua mais identificadores",
+        "identifiers": {
+          "email": "E-mail",
+          "phone": "Número de telefone",
+          "madid": "ID de publicidade para dispositivos móveis",
+          "fn": "Nome",
+          "ln": "Sobrenome",
+          "ct": "Cidade",
+          "st": "Estado/Província",
+          "country": "País",
+          "zip": "CEP",
+          "dob": "Data de nascimento",
+          "doby": "Ano de nascimento",
+          "gen": "Gênero"
+        },
+        "uploadNote": "Antes de enviar a lista, verifique se os identificadores estão completos e no formato correto. A lista deve estar no formato .csv, .txt ou .xlsx.",
+        "namePlaceholder": "Digite o nome do público...",
+        "descriptionPlaceholder": "Breve descrição (se houver)",
+        "dropzone": "Clique para enviar ou arraste e solte",
+        "maxFileSize": "Tamanho máximo do arquivo: 20 MB",
+        "fileRequired": "Selecione um arquivo para enviar.",
+        "fileTooLarge": "O arquivo é maior que 20 MB.",
+        "fileType": "O arquivo deve ser .csv, .txt ou .xlsx.",
+        "next": "Avançar",
+        "back": "Voltar",
+        "upload": "Enviar",
+        "done": "Concluído",
+        "successTitle": "Envio concluído",
+        "successRows": "Sua lista de assinantes do Messenger foi enviada: {count, plural, one {# linha} other {# linhas}}",
+        "skippedRows": "{count, plural, one {# linha foi ignorada} other {# linhas foram ignoradas}} (sem e-mail ou telefone válido).",
+        "invalidRows": "{count, plural, one {# linha foi rejeitada} other {# linhas foram rejeitadas}} pela Meta.",
+        "matchingNote": "Podemos precisar de alguns minutos para concluir a correspondência dos seus assinantes com pessoas no Facebook. Você pode verificar o status na lista de públicos."
+      },
+      "errors": {
+        "audienceInvalidFile": "Não foi possível ler o arquivo. Use um arquivo .csv, .txt ou .xlsx com linha de cabeçalho.",
+        "audienceTooManyRows": "O arquivo tem mais de {max, number} linhas.",
+        "audienceNoIdentifier": "O arquivo precisa de uma coluna de e-mail ou telefone.",
+        "audienceNoValidRows": "Nenhuma linha tem um e-mail ou número de telefone válido.",
+        "audiencePartialUpload": "O público foi criado, mas o envio parou após {received, number} linhas. Use \"Enviar mais linhas\" para tentar novamente.",
+        "audienceNotFound": "Público personalizado não encontrado.",
+        "audienceCreateRejected": "A Meta rejeitou o público: {reason}",
+        "uploadUncertain": "O envio pode não ter sido concluído. Feche esta janela e confira a lista de públicos; use \"Enviar mais linhas\" se o público foi criado.",
+        "pageNotConnected": "A Página selecionada não está conectada a este espaço de trabalho.",
+        "audienceInUse": "Este público personalizado é usado por {count, plural, one {# mensagem de marketing} other {# mensagens de marketing}} e não pode ser excluído."
+      }
+    },
+    "delivery": {
+      "title": "Envio",
+      "contentLocked": "O conteúdo está bloqueado porque mensagens já foram enviadas.",
+      "topicsReturned": "Tópicos retornados pela Meta: {topics}",
+      "recipients": "{count} destinatários",
+      "startsAt": "Início: {date}",
+      "completedAt": "Concluído: {date}",
+      "errorBreakdown": "Falhas",
+      "retrying": "A Meta não está aceitando envios no momento; tentando novamente automaticamente.",
+      "counts": {
+        "sent": "Enviadas",
+        "delivered": "Entregues",
+        "unconfirmed": "Não confirmadas"
+      },
+      "status": {
+        "notSent": "Não enviado",
+        "scheduled": "Agendado",
+        "sending": "Enviando",
+        "waitingNextDay": "Aguardando o próximo dia",
+        "paused": "Pausado",
+        "stopped": "Parado"
+      },
+      "reason": {
+        "pageNotConnected": "A Página não está conectada a este workspace.",
+        "quotaReached": "Pausado: sua cota de mensagens foi atingida.",
+        "workspaceBlocked": "Pausado: este workspace está bloqueado.",
+        "grantInvalid": "Pausado: a conexão com o Facebook expirou. Reconecte o Marketing Messages.",
+        "metaBlocker": "A Meta está bloqueando esta campanha.",
+        "contentRejected": "A Meta rejeitou o conteúdo da mensagem.",
+        "noTokens": "Nenhum destinatário encontrado para esta campanha.",
+        "noMatchingTopic": "Nenhum destinatário com consentimento corresponde ao tópico \"Updates and promotions\".",
+        "tokenFetchFailed": "Não foi possível obter os destinatários da Meta.",
+        "campaignEnded": "A campanha da Meta foi encerrada.",
+        "lifetimeBudgetReached": "O orçamento total foi esgotado."
+      },
+      "errors": {
+        "grantInvalid": "A conexão com o Facebook expirou.",
+        "campaignInactive": "A campanha da Meta não está ativa.",
+        "budgetReached": "Orçamento esgotado.",
+        "dailyBudgetReached": "Orçamento diário atingido.",
+        "optedOut": "O destinatário cancelou o recebimento.",
+        "frequencyLimit": "Limite de frequência do destinatário atingido.",
+        "contentRejected": "Conteúdo da mensagem rejeitado pela Meta.",
+        "deliveryFailed": "Falha na entrega.",
+        "outcomeUnknown": "Resultado da entrega desconhecido."
+      }
+    },
+    "statistics": {
+      "searchPlaceholder": "Pesquisar por ID ou nome",
+      "adAccount": "Conta de anúncios",
+      "dateRange": "Período",
+      "timezoneHint": "Datas em {timezone}",
+      "presets": {
+        "last7": "Últimos 7 dias",
+        "last30": "Últimos 30 dias",
+        "last90": "Últimos 90 dias",
+        "thisMonth": "Este mês",
+        "lastMonth": "Mês passado"
+      },
+      "columns": {
+        "id": "ID",
+        "name": "Nome",
+        "page": "Página do Facebook",
+        "delivered": "Mensagens entregues",
+        "readRate": "Taxa de leitura",
+        "linkClicks": "Cliques no link",
+        "linkClickRate": "Taxa de cliques no link",
+        "costPerClick": "Custo por clique",
+        "costPerDelivery": "Custo por entrega",
+        "spend": "Valor gasto"
+      },
+      "notes": {
+        "delivery": "A Meta não informa esse dado para destinatários na Europa ou no Japão; essas campanhas mostram -.",
+        "clicks": "A Meta não informa esse dado para destinatários na Europa, Argentina, Turquia, Coreia do Sul ou Japão; essas campanhas mostram -."
+      },
+      "footer": {
+        "label": "Total: {count, plural, one {# campanha} other {# campanhas}}",
+        "total": "Total",
+        "average": "Média"
+      },
+      "totalsUnavailable": "Os totais não estão disponíveis agora. Tente novamente em instantes.",
+      "readOnly": "Reconecte o Marketing Messages para ver as estatísticas.",
+      "empty": "Ainda não há campanhas de Marketing Messages. Crie uma na aba Campanhas.",
+      "noResults": "Nenhuma campanha corresponde à sua pesquisa."
     }
   },
   "facebookAds": {
@@ -3530,14 +4240,22 @@
         "inProgress": "A conexão já está em andamento.",
         "unknown": "Algo deu errado.",
         "followUpFailed": "Configuração incompleta — conclua nas configurações do canal.",
-        "webhookSubscribeFailed": "Conectado, mas a assinatura do webhook falhou — tente novamente nas configurações da conexão."
+        "webhookSubscribeFailed": "Conectado, mas a assinatura do webhook falhou — tente novamente nas configurações da conexão.",
+        "providerUnavailable": "O provedor está temporariamente indisponível. Tente novamente em alguns minutos."
       },
       "sessionError": {
         "sessionExpired": "Sua sessão expirou. Reconecte-se.",
         "notMember": "Você não é mais membro deste workspace.",
         "trialExpired": "Seu período de teste expirou.",
         "macLimitReached": "Você atingiu o limite da sua conta.",
-        "credentialMissing": "Credenciais ausentes. Reconecte-se."
+        "credentialMissing": "Credenciais ausentes. Reconecte-se.",
+        "noPages": "Não encontramos nenhuma Página do Facebook para conectar. Conecte novamente e permita acesso a pelo menos uma Página que você gerencia.",
+        "noInstagramAccounts": "Não encontramos nenhuma conta do Instagram para conectar. Conecte novamente e permita acesso a pelo menos uma conta.",
+        "exchangeFailed": "Não foi possível concluir o login. Conecte novamente.",
+        "providerError": "Não conseguimos carregar suas contas agora. Tente novamente em alguns minutos.",
+        "connectFailed": "Algo deu errado ao conectar. Tente novamente.",
+        "tooManyAttempts": "Há muitas tentativas de conexão não concluídas. Aguarde alguns minutos e tente novamente.",
+        "notAllowed": "No momento, você não pode conectar canais aqui. Recarregue a página para ver o motivo."
       },
       "cancelRemaining": "Cancelar restantes",
       "retryFailed": "Tentar novamente ({count})",
@@ -3603,7 +4321,8 @@
   "workspaces": {
     "list": {
       "title": "Lista de espaços de trabalho"
-    }
+    },
+    "defaultName": "Workspace de {name}"
   },
   "workspaceToken": {
     "title": "Token do espaço de trabalho"
@@ -3620,6 +4339,7 @@
       "months": "{count} mês",
       "years": "{count} a"
     },
+    "realtimeRevokeWarning": "Não foi possível confirmar a revogação de acesso imediatamente - ela terá efeito na próxima reconexão do membro.",
     "moveFeature": "Mover {feature}",
     "poweredBy": "Desenvolvido por {name}",
     "noGiphyApiKey": "Nenhuma chave da API do GIPHY encontrada. Adicione uma nas Configurações da plataforma.",
@@ -3757,6 +4477,9 @@
     "waTemplateMpmTooManySections": "Um botão multiproduto pode ter no máximo 10 seções. Remova algumas seções antes de publicar.",
     "waTemplateMpmTooManyProducts": "Um botão multiproduto pode ter no máximo 30 produtos no total. Remova alguns produtos antes de publicar.",
     "waTemplateLtoExpirationRequired": "Escolha uma data de expiração para a oferta por tempo limitado antes de enviar.",
+    "waTemplatePaymentRequestIncomplete": "Preencha os dados de pagamento deste botão antes de publicar.",
+    "waTemplatePaymentRequestInvalid": "Um dado de pagamento tem formato inválido. Verifique o valor, o link e os dígitos do cartão.",
+    "waTemplatePaymentRequestMisplaced": "Os dados de pagamento só podem ser definidos em um botão de pagamento de um modelo comum (não carrossel).",
     "waTemplateMpmIncompleteProducts": "Cada seção precisa de pelo menos um produto selecionado — remova linhas vazias ou escolha um produto.",
     "unsupportedBlock": "Este canal não oferece suporte a este bloco.",
     "constraintExceeded": "O limite deste canal foi excedido.",
@@ -3783,7 +4506,15 @@
       "noAnswer": "Sem resposta",
       "labelsUnavailable": "Não foi possível carregar as perguntas do Flow, então os nomes dos campos são exibidos.",
       "yes": "Sim",
-      "no": "Não"
+      "no": "Não",
+      "fileNotSaved": "Arquivo não salvo",
+      "filesNotSaved": "{count, plural, one {# arquivo não foi salvo} other {# arquivos não foram salvos}}",
+      "filesAttached": "{count, plural, one {# arquivo anexado} other {# arquivos anexados}}",
+      "fileFailure": {
+        "too_large": "Arquivo grande demais",
+        "unsupported_type": "Tipo de arquivo não compatível",
+        "download_failed": "Não foi possível baixar"
+      }
     },
     "sendViewCatalogBodyTooLong": "O texto da mensagem é longo demais para uma mensagem de catálogo. Encurte-o.",
     "sendViewCatalogFooterTooLong": "O rodapé é longo demais para uma mensagem de catálogo. Encurte-o.",
@@ -3810,7 +4541,24 @@
     "savedReplyImagesRemoved": "As imagens que não podem ser enviadas aqui foram removidas",
     "onlyImagesAllowed": "Somente imagens podem ser adicionadas",
     "tooManySavedReplyImages": "Uma resposta salva pode ter no máximo {max} imagens",
-    "savedReplyImagesNotSentHere": "As imagens não serão enviadas aqui"
+    "savedReplyImagesNotSentHere": "As imagens não serão enviadas aqui",
+    "invalidPhoneNumber": "Este não é um número de telefone válido. Inclua o código do país, por exemplo +1.",
+    "buttonCallPhoneNumberUnsupported": "Este botão não pode ligar para um número aqui. Escolha outra ação.",
+    "buttonCopyTextUnsupported": "Este botão não pode copiar texto aqui. Escolha outra ação.",
+    "paymentRequest": {
+      "title": "Solicitação de pagamento",
+      "cardEnding": "Cartão final {lastFourDigits}",
+      "status": "O WhatsApp não informa o pagamento. Confira no seu provedor de pagamento.",
+      "cardStatus": "A confirmação do cliente não cobra o cartão. Faça a cobrança pelo seu provedor de pagamento.",
+      "sentFromTemplate": "Modelo: {name}"
+    },
+    "paymentConfirmation": {
+      "title": "O cliente confirmou o pagamento",
+      "cardTitle": "O cliente confirmou o pagamento com cartão",
+      "cardEnding": "Cartão final {lastFourDigits}",
+      "notCharged": "Ainda não cobrado. Faça a cobrança pelo seu provedor de pagamento.",
+      "reference": "Referência {referenceId}"
+    }
   },
   "instagram": {
     "description": "Esta integração permite criar bots do Instagram.",
@@ -3907,6 +4655,7 @@
         "buttonText": "Texto do botão",
         "buttonType": "Tipo de botão",
         "visitWebsite": "Visitar site",
+        "openMiniApp": "Abrir Mini App",
         "callPhoneNumber": "Ligar para número de telefone",
         "postback": "Botão"
       },
@@ -3968,6 +4717,18 @@
       "label": "DeepSeek"
     },
     "title": "DeepSeek"
+  },
+  "muse": {
+    "autoReply": {
+      "description": "Ative a resposta automática por IA para responder aos usuários com naturalidade usando os dados da sua empresa.",
+      "label": "Resposta automática por IA"
+    },
+    "connect": {
+      "description": "Responda aos usuários com naturalidade usando IA baseada nos dados da sua empresa.",
+      "embeddingHint": "O Muse não oferece modelos de embedding. A base de conhecimento e os arquivos de IA ainda precisam de uma integração com OpenAI ou Gemini.",
+      "label": "Muse"
+    },
+    "title": "Muse"
   },
   "decision": {
     "addConnection": "Add AI Router connection",
@@ -4104,12 +4865,17 @@
     "deepseek": {
       "description": "Descrição da integração com o DeepSeek",
       "title": "Integração com o DeepSeek"
+    },
+    "muse": {
+      "description": "Descrição da integração com o Muse",
+      "title": "Integração com o Muse"
     }
   },
   "auth": {
     "orContinueWith": "Ou continue com",
     "continueWithFacebook": "Continuar com o Facebook",
     "continueWithGoogle": "Continuar com o Google",
+    "continueWithProvider": "Continuar com {name}",
     "continueWithEmail": "Continuar com o e-mail",
     "continueWithMagicLink": "Continuar com o link mágico",
     "dontHaveAnAccount": "Não tem uma conta?",
@@ -4140,11 +4906,15 @@
     "changePasswordTitle": "Altere sua senha",
     "changePasswordDescription": "Defina uma nova senha antes de continuar.",
     "passwordChangeSuccess": "Senha alterada",
+    "signUpDisabledTitle": "O cadastro está desativado",
+    "signUpDisabledDescription": "Novas contas só podem ser criadas por um administrador ou por um link de convite.",
     "oauthError": {
       "accountNotLinked": "Já existe uma conta com este e-mail e ela não pôde ser vinculada. Entre da mesma forma que antes ou fale com o suporte.",
       "unableToLinkAccount": "Não foi possível vincular este login à conta existente. Entre da mesma forma que antes ou fale com o suporte.",
       "sessionExpired": "A tentativa de login expirou. Tente novamente.",
       "accessDenied": "O login foi cancelado.",
+      "signUpDisabled": "Esta conta ainda não existe e o cadastro está desativado. Peça a um administrador para criá-la para você.",
+      "invalidInvitation": "Este convite é inválido ou expirou.",
       "generic": "Falha no login. Tente novamente."
     }
   },
@@ -4168,6 +4938,9 @@
     "maxCharacters": "Máximo de {max} caracteres.",
     "invalidApiKey": "Chave de API inválida",
     "maxMustBeGreaterThanMin": "{maxField} deve ser maior ou igual a {minField}",
+    "trigger": {
+      "actionReferenceNotFound": "An action refers to a record that no longer exists. Re-select it in the action and save again."
+    },
     "inboundWebhook": {
       "inboxRequired": "Escolha uma caixa de entrada.",
       "inboxNotFound": "A caixa de entrada selecionada não foi encontrada.",
@@ -4177,11 +4950,31 @@
       "unknownFieldTarget": "Um campo de contato mapeado não existe mais.",
       "actionReferenceNotFound": "Uma ação faz referência a um fluxo, tag ou campo que não existe mais.",
       "fieldMappingRequired": "Adicione pelo menos um mapeamento de campo."
+    },
+    "form": {
+      "required": "Este campo é obrigatório.",
+      "minLength": "Digite pelo menos {minimum} caracteres.",
+      "maxLength": "Digite no máximo {maximum} caracteres.",
+      "minNumber": "Digite um número de pelo menos {minimum}.",
+      "moreThan": "Digite um número maior que {minimum}.",
+      "maxNumber": "Digite um número de no máximo {maximum}.",
+      "lessThan": "Digite um número menor que {maximum}.",
+      "number": "Digite um número.",
+      "wholeNumber": "Digite um número inteiro.",
+      "minItems": "Escolha pelo menos {minimum}.",
+      "maxItems": "Escolha no máximo {maximum}.",
+      "email": "Digite um e-mail válido.",
+      "url": "Digite um link válido começando com https://.",
+      "format": "Este valor não está no formato correto.",
+      "option": "Escolha uma das opções.",
+      "invalid": "Este valor não é válido.",
+      "checkFields": "Alguns campos precisam ser corrigidos. Veja os marcados em vermelho."
     }
   },
   "webchat": {
     "chatUnavailable": "Este chat está indisponível no momento.",
     "description": "Permita que seus clientes recebam respostas automatizadas instantâneas da sua empresa diretamente pelo seu site",
+    "loadMessagesError": "Não foi possível carregar as mensagens. Verifique sua conexão e tente novamente.",
     "rateLimitExceeded": "Muitas solicitações. Tente novamente em instantes.",
     "title": "Chat na Web",
     "workspaceUnavailable": "Este espaço de trabalho não está mais disponível.",
@@ -4337,7 +5130,28 @@
         "mpmSectionLimitReached": "Máximo de 10 seções atingido.",
         "mpmProductLimitReached": "Máximo de 30 produtos atingido.",
         "mpmProductsSummary": "{productCount} produtos em {sectionCount} seções",
-        "unsupportedButtonParam": "Este tipo de botão ainda não é compatível."
+        "unsupportedButtonParam": "Este tipo de botão ainda não é compatível.",
+        "payment": {
+          "method": {
+            "pix": "Pix",
+            "boleto": "Boleto",
+            "payment_link": "Link de pagamento",
+            "card_on_file": "Pagamento com cartão em um clique"
+          },
+          "field": {
+            "code": "Código Pix",
+            "digitableLine": "Linha digitável do boleto",
+            "url": "URL do link de pagamento",
+            "lastFourDigits": "Últimos 4 dígitos do cartão",
+            "credentialId": "ID da credencial do cartão (opcional)",
+            "amount": "Valor em BRL, ex.: 12.34"
+          },
+          "notice": {
+            "general": "Use uma variável para que cada cliente receba os próprios dados de pagamento.",
+            "cardOnFile": "O pagamento com cartão em um clique só funciona para empresas habilitadas pela Meta."
+          },
+          "unsupportedButton": "Este modelo tem um botão de pagamento que não pode ser enviado: não foi possível determinar o tipo de pagamento. Sincronize os modelos novamente ou escolha outro."
+        }
       }
     },
     "sampleBodyCardContent": {
@@ -4494,7 +5308,6 @@
     "templateHeader": {
       "label": "Cabeçalho do modelo"
     },
-    "transferPhoneNumber": "Transferir telefone de outro provedor do WhatsApp",
     "selectPage": {
       "tryAgain": "Tentar reconectar"
     },
@@ -4751,7 +5564,18 @@
         "callInformation": "Informações da chamada"
       }
     },
-    "credentialSecretsRequired": "Informe o segredo do app e o token de usuário do sistema. Eles ainda não foram salvos."
+    "credentialSecretsRequired": "Informe o segredo do app e o token de usuário do sistema. Eles ainda não foram salvos.",
+    "embeddedSignupCancelled": "O cadastro foi cancelado — você pode fechar esta aba.",
+    "embeddedSignupFailed": "O cadastro não foi concluído — feche esta aba e tente novamente.",
+    "payment": {
+      "settings": {
+        "title": "Pagamentos",
+        "description": "Como este número envia os botões de solicitação de pagamento.",
+        "pixRedirectLabel": "Enviar Pix com redirecionamento",
+        "pixRedirectDescription": "O comprador abre o app do banco para pagar e volta ao WhatsApp. Ative só depois de a Meta integrar sua empresa; quem não pode ser redirecionado ainda recebe copia e cola.",
+        "adminOnly": "Somente administradores do workspace podem alterar as configurações de pagamento."
+      }
+    }
   },
   "zalo": {
     "title": "Zalo OA",
@@ -4774,7 +5598,8 @@
     "chatbotInvitationDescription1": "Participe de {chatbotName}",
     "chatbotInvitationDescription2": "{userName} convidou você para participar de {chatbotName}.",
     "invalidInvitation": "Este convite é inválido ou expirou.",
-    "workspaceUnavailable": "Este espaço de trabalho não está mais disponível."
+    "workspaceUnavailable": "Este espaço de trabalho não está mais disponível.",
+    "signUpToJoin": "Crie uma conta para participar"
   },
   "trigger": {
     "when": "Quando isto acontecer",
@@ -4795,11 +5620,11 @@
       "incomingCall": "Chamada recebida",
       "missedAudioCall": "Chamada de áudio perdida",
       "callEnded": "Chamada encerrada",
-      "ticketCreated": "Ticket criado",
-      "ticketMovedToStage": "Ticket movido para a etapa",
-      "ticketValueChanged": "Valor do ticket alterado",
-      "ticketStatusChanged": "Status do ticket alterado",
-      "ticketPriorityChanged": "Prioridade do ticket alterada",
+      "pipelineItemCreated": "Ticket criado",
+      "pipelineItemMovedToStage": "Ticket movido para a etapa",
+      "pipelineItemValueChanged": "Valor do ticket alterado",
+      "pipelineItemStatusChanged": "Status do ticket alterado",
+      "pipelineItemPriorityChanged": "Prioridade do ticket alterada",
       "subscribedToSequence": "Inscrito na sequência",
       "unsubscribedFromSequence": "Inscrição na sequência cancelada",
       "shoppingCartSent": "Contato enviou carrinho de compras",
@@ -4810,15 +5635,24 @@
       "orderShipped": "Pedido enviado",
       "orderConcluded": "Pedido concluído",
       "orderCancelled": "Pedido cancelado",
+      "orderPaid": "Pedido pago",
+      "orderRefunded": "Pedido reembolsado",
       "categoryAddedToCart": "Categoria adicionada ao carrinho",
       "productAddedToCart": "Produto adicionado ao carrinho",
       "productRemovedFromCart": "Produto removido do carrinho",
       "productOrdered": "Produto pedido",
       "contactReferredANewContact": "Contato indicou um novo contato",
       "contactReferredExistingContact": "Contato indicou um contato existente",
+      "contactBlockedBot": "Contato bloqueou o bot",
+      "contactUnblockedBot": "Contato desbloqueou o bot",
       "callRecorded": "Chamada gravada",
       "callTranscribed": "Chamada transcrita",
-      "anyProduct": "Qualquer produto"
+      "anyProduct": "Qualquer produto",
+      "anyCategory": "Qualquer categoria",
+      "anyPipeline": "Qualquer funil",
+      "anyStage": "Qualquer etapa",
+      "unavailablePipeline": "Pipeline excluído ou indisponível",
+      "unavailableStage": "Etapa excluída ou indisponível"
     },
     "actions": {
       "addTag": "Adicionar tag",
@@ -4826,6 +5660,7 @@
       "setCustomField": "Definir campo personalizado",
       "clearCustomField": "Limpar campo personalizado",
       "startAnotherFlow": "Iniciar outro fluxo",
+      "startExternalStep": "Start External Step",
       "notifyAdmins": "Notificar administradores",
       "transferConversationToHuman": "Transferir conversa para um atendente",
       "sendMetaCapiEvent": "Enviar evento Meta CAPI",
@@ -4867,7 +5702,26 @@
     "countCapped": "{count}+ contatos",
     "exportAllNotice": "Todos os contatos que correspondem ao filtro atual serão exportados.",
     "exportTakingLong": "A exportação está demorando mais do que o esperado",
-    "exportTakingLongDescription": "A exportação ainda está sendo processada. Você pode fechar esta caixa de diálogo e verificar novamente em alguns minutos no histórico de exportações."
+    "exportTakingLongDescription": "A exportação ainda está sendo processada. Você pode fechar esta caixa de diálogo e verificar novamente em alguns minutos no histórico de exportações.",
+    "search": {
+      "placeholder": "Pesquisar (nome, e-mail, telefone, ID do contato)",
+      "searching": "Pesquisando…",
+      "error": "Não foi possível pesquisar contatos",
+      "empty": "Nenhum contato encontrado"
+    },
+    "exportHistory": {
+      "title": "Histórico de exportações",
+      "description": "Exportações de contatos dos últimos {days} dias. Depois disso, os arquivos são excluídos.",
+      "empty": "Nenhuma exportação ainda.",
+      "requestedBy": "Por {name}",
+      "deletesOn": "Excluído em {date}",
+      "rows": "{count, plural, one {# contato} other {# contatos}}",
+      "status": {
+        "pending": "Processando",
+        "uploaded": "Pronto",
+        "failed": "Falhou"
+      }
+    }
   },
   "contactScan": {
     "menu": {
@@ -4939,7 +5793,8 @@
       "userPlaceholder": "ID do usuário",
       "keyword": "Palavra-chave",
       "keywordPlaceholder": "Ação ou detalhe",
-      "allAdmins": "Todos os admins"
+      "allAdmins": "Todos os admins",
+      "allWorkspaces": "Todos os espaços de trabalho"
     }
   },
   "customFields": {
@@ -4960,7 +5815,36 @@
       "pageTitle": "Palavras-chave de página",
       "page": "Responde automaticamente quando você envia uma mensagem contendo uma palavra-chave para um contato."
     },
-    "pageWarning": "O conteúdo de uma mensagem com uma palavra-chave de Página pode causar o envio de mensagens ao cliente em um loop infinito. Desative a palavra-chave de Página imediatamente se isso ocorrer!"
+    "pageWarning": "O conteúdo de uma mensagem com uma palavra-chave de Página pode causar o envio de mensagens ao cliente em um loop infinito. Desative a palavra-chave de Página imediatamente se isso ocorrer!",
+    "conditions": {
+      "operators": {
+        "is": "A mensagem é",
+        "similarTo": "A mensagem é parecida com",
+        "contains": "A mensagem contém",
+        "containsPhone": "A mensagem contém telefone",
+        "containsEmail": "A mensagem contém e-mail",
+        "containsImage": "A mensagem contém imagem",
+        "containsVideo": "A mensagem contém vídeo",
+        "containsLink": "A mensagem contém link",
+        "containsWholeWord": "A mensagem contém a palavra inteira",
+        "beginsWith": "A mensagem começa com",
+        "endsWith": "A mensagem termina com",
+        "isThumbsUp": "A mensagem é 👍",
+        "notContains": "A mensagem não contém",
+        "matchesRegex": "A mensagem corresponde à regex"
+      },
+      "and": "e",
+      "addCondition": "Condição da mensagem",
+      "removeCondition": "Remover condição",
+      "note": "As palavras-chave não diferenciam maiúsculas nem acentos, ex.: \"Tư vấn\" e \"tu van\" são reconhecidas como iguais.",
+      "keywordPlaceholder": "+ Palavra-chave",
+      "regexPlaceholder": "+ Regex",
+      "errors": {
+        "keywordConditionValuesRequired": "Adicione pelo menos uma palavra-chave.",
+        "keywordConditionTakesNoValues": "Esta condição não usa palavras-chave.",
+        "invalidKeywordRegex": "Expressão regular inválida."
+      }
+    }
   },
   "triggers": {
     "title": "Gatilhos"
@@ -5063,6 +5947,7 @@
     "gemini": "Gemini",
     "claude": "Claude",
     "deepseek": "DeepSeek",
+    "muse": "Muse",
     "openrouter": "OpenRouter",
     "openaiCompatible": "Compatível com OpenAI"
   },
@@ -5100,11 +5985,99 @@
   },
   "pollManager": {
     "title": "Gerenciador de enquetes",
-    "description": "Crie e gerencie enquetes para seus contatos."
+    "description": "Conduza sistemas de enquete ou votação. Você também pode usá-lo para coletar a opinião dos clientes.",
+    "feature": "Poll",
+    "deleteDescription": "Deleting a poll also deletes its candidates and votes. This cannot be undone.",
+    "list": {
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "votes": "Votes",
+      "getLink": "Get Link"
+    },
+    "getLink": {
+      "title": "Get Link",
+      "description": "Share a link that opens a chat and starts the poll.",
+      "omnichannel": "Omnichannel",
+      "noInboxes": "No connected channels can open this poll yet.",
+      "loadError": "Could not load the links."
+    },
+    "form": {
+      "createTitle": "Create poll",
+      "editTitle": "Edit poll",
+      "votingPeriod": "Voting period",
+      "imageRequired": "An image is required.",
+      "dateRangeInvalid": "A data de término deve ser posterior à data de início.",
+      "candidatesTitle": "Candidates or Options",
+      "candidateNumber": "Candidate {number}",
+      "moreOptions": "More Options",
+      "afterVoteFlow": "Flow to be sent after the user votes",
+      "afterVoteFlowNone": "None",
+      "removeVotesTitle": "Remove candidates?",
+      "removeVotesDescription": "Deleting candidates also deletes their votes."
+    },
+    "analytics": {
+      "title": "Analytics",
+      "results": "Results",
+      "votesPerGender": "Votes per gender",
+      "totalVotes": "Total votes",
+      "noVotes": "No votes yet",
+      "other": "Other",
+      "male": "Male",
+      "female": "Female",
+      "unknown": "Unknown",
+      "loadError": "Could not load the analytics.",
+      "columns": {
+        "name": "Name",
+        "totalVotes": "Total votes",
+        "totalPercent": "T%",
+        "maleVotes": "Male votes",
+        "malePercent": "M%",
+        "femaleVotes": "Female votes",
+        "femalePercent": "F%"
+      }
+    }
   },
   "placesNearMe": {
     "title": "Locais próximos",
-    "description": "Encontre locais próximos aos seus contatos."
+    "description": "Permita que seus clientes encontrem facilmente os locais da sua empresa perto deles.",
+    "tabs": {
+      "locations": "Locais",
+      "categories": "Categorias"
+    },
+    "categories": {
+      "columns": {
+        "locations": "Locais"
+      },
+      "add": "Adicionar categoria",
+      "edit": "Editar categoria",
+      "empty": "Nenhuma categoria ainda.",
+      "created": "Categoria adicionada",
+      "updated": "Categoria atualizada",
+      "deleted": "Categoria excluída",
+      "saveError": "Não foi possível salvar a categoria",
+      "deleteError": "Não foi possível excluir a categoria",
+      "deleteTitle": "Excluir {name}?",
+      "deleteDescription": "{count, plural, =0 {Nenhum local usa esta categoria.} one {# local ficará sem categoria.} other {# locais ficarão sem categoria.}}"
+    },
+    "locations": {
+      "columns": {
+        "coordinates": "Coordenadas"
+      },
+      "preview": "Pré-visualizar",
+      "add": "Adicionar local",
+      "edit": "Editar local",
+      "empty": "Nenhum local ainda.",
+      "created": "Local adicionado",
+      "updated": "Local atualizado",
+      "deleted": "Local excluído",
+      "saveError": "Não foi possível salvar o local",
+      "deleteError": "Não foi possível excluir o local",
+      "deleteTitle": "Excluir {name}?",
+      "deleteDescription": "Este local será excluído permanentemente.",
+      "noCategory": "Sem categoria",
+      "latitude": "Latitude",
+      "longitude": "Longitude"
+    }
   },
   "questionnaires": {
     "title": "Questionários",
@@ -6086,6 +7059,9 @@
   "templates": {
     "title": "Modelos",
     "description": "Crie e gerencie seus modelos.",
+    "createDialog": {
+      "title": "Novo modelo"
+    },
     "share": {
       "label": "Compartilhar",
       "enabled": "Compartilhado",
@@ -6094,14 +7070,135 @@
       "dialogDescription": "Qualquer pessoa com este link pode instalar uma cópia deste modelo em um espaço de trabalho da sua organização.",
       "enableLabel": "Ativar link de compartilhamento",
       "linkLabel": "Link de compartilhamento",
-      "description": "Qualquer pessoa com o link pode instalar este modelo em seu próprio espaço de trabalho."
+      "rotateLabel": "Girar link",
+      "rotateTitle": "Girar link de compartilhamento?",
+      "rotateDescription": "O link atual deixa de funcionar imediatamente. Quem ainda precisar instalar este modelo vai precisar do novo link.",
+      "rotated": "Link de compartilhamento girado",
+      "expiryLabel": "Expiração do link",
+      "expiryHint": "Deixe em branco para um link que nunca expira.",
+      "clearExpiry": "Remover expiração",
+      "expiredNotice": "Este link expirou. Defina uma data posterior ou remova a expiração para compartilhá-lo novamente.",
+      "templateId": "ID do modelo",
+      "templateKey": "Chave do modelo",
+      "showKey": "Mostrar chave",
+      "hideKey": "Ocultar chave",
+      "copyField": "Copiar {field}"
+    },
+    "sync": {
+      "title": "Atualizações",
+      "updateAvailable": "Atualização disponível",
+      "upToDate": "Atualizado",
+      "sourceDeleted": "Modelo excluído",
+      "sourceDeletedHint": "O editor excluiu este modelo. Sua cópia continua funcionando, mas não pode mais ser atualizada.",
+      "updateNow": "Atualizar agora",
+      "updating": "Atualizando…",
+      "version": "Versão do modelo {version}",
+      "lastSynced": "última atualização em {date}",
+      "autoUpdateLabel": "Atualizar automaticamente quando o modelo mudar",
+      "noHistory": "Nenhuma atualização ainda.",
+      "countAdded": "{count} adicionados",
+      "countUpdated": "{count} atualizados",
+      "countDetached": "{count} não seguem mais o modelo",
+      "notUpdatable": "{count} ainda não atualizáveis",
+      "overwritten": "{name} foi editado e substituído pela atualização",
+      "restore": "Restaurar minha versão",
+      "restored": "Sua versão foi restaurada",
+      "status": {
+        "pending": "Na fila",
+        "running": "Em execução",
+        "completed": "Concluído",
+        "partial": "Parcial",
+        "failed": "Falhou",
+        "skipped": "Ignorado",
+        "cancelled": "Cancelado"
+      },
+      "trigger": {
+        "autoUpdate": "Automático",
+        "manual": "Manual",
+        "reinstall": "Reinstalação"
+      },
+      "requestedVersion": "solicitada v{version}",
+      "errors": {
+        "unknown": "A atualização falhou. Tente novamente ou fale com o suporte se continuar falhando.",
+        "templateSyncFailed": "A atualização falhou. Tente novamente.",
+        "templateSyncSuperseded": "Uma atualização mais recente substituiu esta.",
+        "templateSyncAbandoned": "A atualização não terminou a tempo e foi encerrada.",
+        "templateInstallationInactive": "Esta instalação não está mais ativa.",
+        "workspaceOwnerBlocked": "A conta do proprietário do espaço de trabalho está bloqueada.",
+        "templateUninstallInProgress": "O modelo está sendo desinstalado.",
+        "templateAutoUpdateOff": "As atualizações automáticas estão desativadas.",
+        "templateUpToDate": "A cópia já está atualizada.",
+        "templateInstallerAccessLost": "Quem instalou não tem mais permissão para atualizar esta cópia.",
+        "templateInstallationSourceMissing": "O modelo foi excluído antes de a atualização rodar.",
+        "templateCategoryPermissionDenied": "Você não tem mais permissão para atualizar tudo neste modelo.",
+        "templatePayloadIncompatible": "Este modelo foi salvo em um formato mais novo do que este servidor consegue instalar.",
+        "templateCrossTenantInstall": "Este modelo não está disponível para o seu espaço de trabalho.",
+        "templateInvalidInboxBinding": "Uma caixa de entrada selecionada não corresponde ao modelo."
+      }
+    },
+    "versions": {
+      "detailsTab": "Detalhes",
+      "tab": "Versões",
+      "versionNumber": "Versão {version}",
+      "current": "Atual",
+      "first": "Primeira versão",
+      "noDetail": "Nenhum detalhe foi registrado para esta versão.",
+      "added": "Adicionado",
+      "changed": "Alterado",
+      "removed": "Removido"
+    },
+    "installers": {
+      "title": "Ver análises",
+      "workspace": "Espaço de trabalho",
+      "lastInstalled": "Última instalação",
+      "version": "Versão",
+      "autoUpdate": "Atualização automática",
+      "uninstalled": "Desinstalado",
+      "hidden": "Espaço de trabalho não compartilhado",
+      "uninstallNotAllowed": "O instalador não permitiu que editores desinstalem esta cópia.",
+      "loadError": "Não foi possível carregar os instaladores. Tente novamente.",
+      "automatic": "Automática",
+      "details": "Detalhes",
+      "noIssues": "Nenhum aviso ou erro."
     },
     "installs": {
       "title": "Instalações",
       "resources": "Recursos",
       "warnings": "Avisos",
       "completedAt": "Concluído em",
-      "autoUpdate": "Atualização automática"
+      "autoUpdate": "Atualização automática",
+      "installedBy": "Instalado por",
+      "viaApi": "Token de API",
+      "attempts": "Tentativas",
+      "autoUpdateOn": "Ativada",
+      "autoUpdateOff": "Desativada",
+      "retry": "Tentar instalar novamente",
+      "resourcesTitle": "Recursos instalados",
+      "noResources": "Nada foi criado ainda.",
+      "deletedResource": "Recurso excluído",
+      "viewOnly": "Somente visualização",
+      "created": "Criado",
+      "reused": "Reutilizado",
+      "loadMore": "Carregar mais",
+      "statusFilter": "Status",
+      "allStatuses": "Todos os status",
+      "errors": {
+        "unknown": "A instalação falhou. Tente novamente ou entre em contato com o suporte se continuar falhando.",
+        "templatePayloadIncompatible": "Este modelo foi salvo em um formato mais novo do que este servidor consegue instalar.",
+        "templateInstallationSourceMissing": "O modelo foi excluído antes de a instalação ser executada.",
+        "templateCrossTenantInstall": "Este modelo não está disponível para o seu espaço de trabalho.",
+        "templateCategoryPermissionDenied": "Você não tem mais permissão para instalar tudo neste modelo.",
+        "templateInvalidInboxBinding": "Uma caixa de entrada selecionada não corresponde ao modelo.",
+        "templateInstallEnqueueFailed": "Não foi possível colocar a instalação na fila.",
+        "templateInstallFailed": "A instalação falhou. Tente novamente.",
+        "templateInstallAbandoned": "A instalação não terminou a tempo e foi encerrada.",
+        "templateInstallSuperseded": "Uma instalação mais recente deste modelo substituiu esta.",
+        "workspaceOwnerBlocked": "A conta do proprietário do espaço de trabalho está bloqueada."
+      },
+      "uninstalledBy": "{by, select, publisher {O publicador desinstalou este modelo.} installer {Este modelo foi desinstalado deste espaço de trabalho.} other {Este modelo foi desinstalado.}}",
+      "uninstalledSummary": "{deleted} excluídos, {kept} mantidos.",
+      "lastAttemptAt": "Última tentativa",
+      "installedAutomatically": "Instalado automaticamente (padrão do white-label)"
     },
     "form": {
       "contents": "Conteúdo do modelo",
@@ -6114,14 +7211,26 @@
       "allowDelete": "Permitir exclusão após a instalação",
       "publisherName": "Nome do publicador",
       "youtubeVideoId": "ID do vídeo do YouTube",
-      "youtubeVideoIdDescription": "O ID de 11 caracteres da URL do vídeo, ex.: \"dQw4w9WgXcQ\" em youtube.com/watch?v=dQw4w9WgXcQ",
+      "youtubeVideoIdDescription": "O ID de 11 caracteres da URL do vídeo, ex.: \"xxxxxxxxxxx\" em youtube.com/watch?v=xxxxxxxxxxx",
       "testLink": "Link de teste",
       "imageUrl": "Imagem de capa",
       "installBehavior": "Comportamento de instalação",
-      "createInstallFolder": "Instalar em uma pasta dedicada",
+      "createInstallFolder": "Criar uma pasta na conta instalada e instalar os recursos.",
       "createInstallFolderDescription": "Agrupa todos os recursos instalados em uma nova pasta com o nome deste modelo.",
-      "defaultAutoUpdate": "Marcar instalações para atualização por padrão",
-      "defaultAutoUpdateDescription": "Novas instalações mostrarão um aviso de atualização disponível sempre que você republicar este modelo."
+      "defaultAutoUpdate": "Atualizar automaticamente os modelos instalados",
+      "defaultAutoUpdateDescription": "Sempre que você salvar este modelo com conteúdo alterado, as instalações com atualização automática serão sobrescritas com o novo conteúdo (as cópias editadas pelo instalador passam antes por backup). Os instaladores podem desativar isso.",
+      "viewOnly": "Somente visualização",
+      "viewOnlyAll": "Tornar todos os selecionados somente visualização",
+      "includedAutomatically": {
+        "title": "Incluídos automaticamente",
+        "hint": "Trazidos junto porque algo que você selecionou depende deles. Somente leitura.",
+        "rows": "{count, plural, one {# item a mais} other {# itens a mais}}",
+        "kind": {
+          "folders": "Pastas",
+          "placeCategories": "Categorias de lugares"
+        }
+      },
+      "viewOnlyCopyIncluded": "Algo que você selecionou (ou algo de que ele precisa) foi instalado de um modelo somente leitura, então não pode ser compartilhado em um novo modelo."
     },
     "categories": {
       "flows": "Fluxos",
@@ -6136,8 +7245,116 @@
       "keywords": "Palavras-chave",
       "entryPointLinks": "Links de ponto de entrada",
       "triggers": "Gatilhos",
-      "fbCommentAutomations": "Automações de comentários do Facebook",
-      "settings": "Configurações"
+      "fbCommentAutomations": "Automações de comentários",
+      "settings": "Campos do bot e respostas salvas",
+      "sequences": "Sequências",
+      "aiMcpServers": "Servidores MCP",
+      "aiFiles": "Arquivos de conhecimento de IA",
+      "questionnaires": "Questionários",
+      "couponTopics": "Tópicos de cupons",
+      "pipelines": "Funis"
+    },
+    "locked": {
+      "flowBanner": "Este fluxo foi instalado de um modelo somente visualização. Você pode vê-lo, mas não editá-lo.",
+      "badge": "Somente visualização",
+      "editorBanner": "Isto foi instalado de um modelo somente visualização. Você pode vê-lo, mas não editá-lo.",
+      "badgeHint": "Instalado a partir de um modelo somente para visualização"
+    },
+    "channels": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "instagramFacebook": "Instagram (login do Facebook)",
+      "threads": "Threads",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "zalo": "Zalo",
+      "webchat": "Webchat",
+      "line": "LINE",
+      "email": "E-mail"
+    },
+    "uninstall": {
+      "title": "Desinstalar modelo",
+      "description": "O modelo remove tudo o que criou neste espaço de trabalho, inclusive cópias editadas. Tags, campos e pastas compartilhados, itens que já existiam e tudo o que você construiu em cima de uma cópia são mantidos.",
+      "loading": "Verificando o que vai acontecer…",
+      "previewFailed": "Não foi possível verificar o que uma desinstalação faria.",
+      "failed": "Não foi possível desinstalar o modelo.",
+      "confirm": "Desinstalar",
+      "action": "Desinstalar",
+      "deleted": "{count, plural, one {# item será excluído} other {# itens serão excluídos}}",
+      "deletedDone": "{count, plural, one {# item foi excluído} other {# itens foram excluídos}}",
+      "keptModified": "{count, plural, one {# cópia editada ou não verificada será mantida} other {# cópias editadas ou não verificadas serão mantidas}}",
+      "keptShared": "{count, plural, one {# tag ou campo compartilhado será mantido} other {# tags e campos compartilhados serão mantidos}}",
+      "keptByPolicy": "{count, plural, one {# outro item será mantido} other {# outros itens serão mantidos}}",
+      "keptHasDependents": "{count, plural, one {# cópia será mantida porque algo ainda a usa} other {# cópias serão mantidas porque algo ainda as usa}}",
+      "deletedModified": "{count, plural, one {# deles foi editado por você: essas edições serão perdidas e não poderão ser restauradas} other {# deles foram editados por você: essas edições serão perdidas e não poderão ser restauradas}}",
+      "keptLockedByOther": "{count, plural, one {# item será mantido porque outra instalação de modelo ainda o protege} other {# itens serão mantidos porque outra instalação de modelo ainda os protege}}",
+      "confirmCheckbox": "Entendo que isso exclui os itens acima e não pode ser desfeito",
+      "started": "Desinstalação iniciada",
+      "inProgress": "Desinstalando…",
+      "retry": "Tentar desinstalar novamente",
+      "state": {
+        "pending": "Desinstalação na fila",
+        "running": "Desinstalando…",
+        "partial": "Desinstalação incompleta, tente novamente",
+        "failed": "Falha na desinstalação, tente novamente",
+        "skipped": "Desinstalação ignorada: o espaço de trabalho está bloqueado"
+      },
+      "deletedUnverified": "{count, plural, one {# deles não pode ser verificado quanto a edições: se você o alterou, essas alterações serão perdidas} other {# deles não podem ser verificados quanto a edições: se você os alterou, essas alterações serão perdidas}}",
+      "cancelAction": "Cancelar desinstalação",
+      "cancelled": "Desinstalação cancelada: os itens restantes voltam a ser seus",
+      "blockedByReference": "{count, plural, one {# item não foi excluído porque algo que você criou ainda aponta para ele: remova essa referência e tente a desinstalação novamente} other {# itens não foram excluídos porque algo que você criou ainda aponta para eles: remova essas referências e tente a desinstalação novamente}}",
+      "keptPartlyRemoved": "{count, plural, one {# cópia foi mantida após uma desinstalação bloqueada; o histórico e os dados de proteção contra duplicidade podem ter sido removidos, então revise-a antes de ativá-la} other {# cópias foram mantidas após uma desinstalação bloqueada; o histórico e os dados de proteção contra duplicidade podem ter sido removidos, então revise-as antes de ativá-las}}",
+      "keptInactiveForReview": "{count, plural, one {# cópia foi deixada inativa: seu histórico e os dados de proteção contra duplicidade foram removidos, então revise-a antes de ativá-la} other {# cópias foram deixadas inativas: seu histórico e os dados de proteção contra duplicidade foram removidos, então revise-as antes de ativá-las}}",
+      "keptHistoryRemoved": "{count, plural, one {# cópia foi mantida, mas seu histórico foi removido (não há nada para ativar): revise-a antes de confiar nela} other {# cópias foram mantidas, mas seu histórico foi removido (não há nada para ativar): revise-as antes de confiar nelas}}",
+      "cancelledPartial": "{count, plural, one {# item já está sendo excluído e será concluído; o restante foi devolvido} other {# itens já estão sendo excluídos e serão concluídos; o restante foi devolvido}}"
+    },
+    "warningCodes": {
+      "aiFileTooLarge": "Este arquivo de conhecimento é maior do que uma instalação de modelo pode copiar, por isso foi ignorado.",
+      "aiFileUnavailable": "Não foi possível copiar este arquivo de conhecimento, por isso ele foi ignorado.",
+      "assigneeRequired": "Escolha a quem esta etapa atribui a conversa.",
+      "ambiguousSourceFieldToken": "Vários campos de origem têm este nome, então as variáveis que o usam foram mantidas sem alteração.",
+      "backupTooLarge": "Um item editado localmente era grande demais para o backup, então não foi sobrescrito.",
+      "backupUnavailable": "O backup deste item não está mais disponível.",
+      "botFieldRenamed": "Já existe um campo de bot com este nome e outro tipo, então foi criado um campo renomeado.",
+      "categoryPermissionDenied": "Você não tem permissão para esta categoria, então ela foi ignorada.",
+      "couponTopicExpired": "Este tópico de cupom já expirou.",
+      "credentialRequired": "Adicione as credenciais deste item antes de usá-lo.",
+      "custom": "Um item referenciado não foi encontrado neste espaço de trabalho, então o vínculo foi removido.",
+      "customField": "Um item referenciado não foi encontrado neste espaço de trabalho, então o vínculo foi removido.",
+      "customFieldRenamed": "Já existe um campo com este nome e outro tipo, então foi criado um campo renomeado.",
+      "enqueueFailed": "Não foi possível colocar o processamento em segundo plano deste item na fila.",
+      "flow": "Um item referenciado não foi encontrado neste espaço de trabalho, então o vínculo foi removido.",
+      "flowInvalidStructure": "A estrutura do Flow é inválida, então ele foi ignorado.",
+      "flowNotPublished": "O Flow foi instalado como rascunho e não está publicado.",
+      "flowSkippedRequiredReference": "O Flow foi ignorado porque uma referência obrigatória não pôde ser resolvida.",
+      "folder": "Um item referenciado não foi encontrado neste espaço de trabalho, então o vínculo foi removido.",
+      "inboxBindingRequired": "Escolha uma caixa de entrada para este canal; até lá, o item permanece inativo.",
+      "integration": "Um item referenciado não foi encontrado neste espaço de trabalho, então o vínculo foi removido.",
+      "localModifiedOverwritten": "Um item editado localmente foi sobrescrito. Um backup foi salvo e pode ser restaurado.",
+      "name": "Não foi encontrado um nome livre para este item, então ele foi ignorado.",
+      "noEmbeddingProvider": "Nenhum provedor de embeddings está configurado neste workspace, por isso os arquivos de conhecimento foram ignorados. Conecte o OpenAI ou o Gemini e reinstale.",
+      "notUpdatable": "Este tipo de item ainda não é atualizado automaticamente.",
+      "pipeline": "Usa um pipeline que não existe mais.",
+      "pipelineField": "Usa um campo de pipeline que não existe mais.",
+      "pipelineStage": "Usa uma etapa de pipeline que não existe mais.",
+      "postSelectionRequired": "Selecione a publicação novamente: a publicação original não pôde ser transferida.",
+      "product": "Um item referenciado não foi encontrado neste espaço de trabalho, então o vínculo foi removido.",
+      "productCategory": "Um item referenciado não foi encontrado neste espaço de trabalho, então o vínculo foi removido.",
+      "questionImage": "Não foi possível copiar uma imagem.",
+      "quota": "Um limite do plano foi atingido, então o item foi ignorado.",
+      "referenceRemoved": "Uma referência que não pôde ser resolvida foi removida.",
+      "savedReply": "Um item referenciado não foi encontrado neste espaço de trabalho, então o vínculo foi removido.",
+      "savedReplyImage": "Não foi possível copiar uma imagem.",
+      "tag": "Um item referenciado não foi encontrado neste espaço de trabalho, então o vínculo foi removido.",
+      "unlisted": "Item não foi totalmente trazido: {code}",
+      "workspaceMember": "Atribuído a um membro que não está neste workspace.",
+      "workspaceUnavailable": "Este espaço de trabalho não está mais disponível, então o item foi ignorado."
+    },
+    "tabs": {
+      "mine": "Meus modelos",
+      "installed": "Instalados",
+      "installedEmpty": "Nenhum modelo instalado ainda. Os modelos que você instalar de outro espaço de trabalho aparecerão aqui."
     }
   },
   "qrCodeGenerator": {
@@ -6167,7 +7384,31 @@
       "supportOff": "Desativado",
       "searchPlaceholder": "Pesquisar por nome, e-mail do proprietário ou ID",
       "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
-      "supportAccessible": "Accessible"
+      "supportAccessible": "Accessible",
+      "periodStart": "Period start",
+      "periodEnd": "Period end",
+      "requestedBy": "Requested by",
+      "workspaceId": "Workspace ID",
+      "language": "Language",
+      "planSnapshot": "Plan at deletion",
+      "ownerQuota": "Owner quota",
+      "usagePeriods": "Usage periods",
+      "deletedTitle": "Deleted workspaces",
+      "deletedDescription": "Purge evidence for deleted workspaces.",
+      "purgedAt": "Purged at",
+      "deletionRequestedAt": "Deletion requested at",
+      "scheduledDeletionAt": "Scheduled deletion at",
+      "evidence": "Evidence",
+      "usage": "Usage snapshot",
+      "members": "Members",
+      "notAvailable": "Not available",
+      "createButton": "Create workspace",
+      "createTitle": "Create workspace for an owner",
+      "createDescription": "Creates a workspace for the owner's email, adding any member emails you list. A new email gets a mailed temporary password.",
+      "ownerEmail": "Owner email",
+      "memberEmails": "Member emails",
+      "membersHint": "Every member gets the permissions selected below. New emails get a mailed temporary password.",
+      "createdSummary": "Workspace created for {ownerEmail} — {memberCount} member(s) added, {newAccountCount} new account(s) emailed a temporary password."
     },
     "admins": {
       "title": "Platform administrators",
@@ -6177,12 +7418,29 @@
       "addButton": "Add administrator",
       "role": "Role",
       "bootstrap": "Environment bootstrap administrator",
+      "roles": {
+        "superAdmin": "Super admin",
+        "support": "Support"
+      },
       "remove": "Remove administrator",
       "empty": "No platform administrators are configured.",
       "added": "Platform administrator added.",
       "removed": "Platform administrator removed.",
       "addError": "Could not add the platform administrator.",
       "removeError": "Could not remove the platform administrator."
+    },
+    "auditLogs": {
+      "title": "Logs de auditoria da plataforma",
+      "description": "Atividade de auditoria em todos os espaços de trabalho desta plataforma."
+    },
+    "smtp": {
+      "title": "Configurações de SMTP",
+      "description": "Transporte de e-mail da plataforma. Deixe em branco para continuar usando as variáveis de ambiente SMTP_SERVER e SMTP_FROM.",
+      "usingEnv": "Nenhuma configuração de SMTP salva — o e-mail da plataforma usa a variável de ambiente SMTP_SERVER.",
+      "remove": "Remover configurações de SMTP",
+      "errors": {
+        "passwordRequired": "Digite a senha do SMTP."
+      }
     }
   },
   "platformCredentials": {
@@ -6218,6 +7476,23 @@
     "description": "Marque um canal para impedir que os espaços de trabalho deste locatário o criem.",
     "hint": "Deixe todos os canais desmarcados para permitir todos eles.",
     "hiddenByPlatform": "Ocultado pelo administrador da plataforma — você não pode reativar este canal."
+  },
+  "platformDefaultTemplate": {
+    "title": "Modelo padrão",
+    "description": "Instala este modelo em todo novo espaço de trabalho criado sob este white-label. Os espaços existentes não são alterados.",
+    "clearTitle": "Remover o modelo padrão?",
+    "clearDescription": "Novos espaços de trabalho deixam de receber um modelo automaticamente. Os que já o têm continuam com ele.",
+    "status": {
+      "notConfigured": "Não definido",
+      "ready": "Ativo",
+      "templateUnavailable": "Modelo indisponível",
+      "shareDisabled": "Link de compartilhamento desativado",
+      "keyRotated": "Chave inválida"
+    },
+    "errors": {
+      "unavailable": "O ID ou a chave do modelo não é válido.",
+      "shareDisabled": "Ative primeiro o link de compartilhamento do modelo."
+    }
   },
   "platformEmailTemplates": {
     "title": "Modelos de e-mail",
@@ -6261,6 +7536,7 @@
     }
   },
   "manageSidebar": {
+    "administrationGroup": "Administração",
     "platformGroup": "Plataforma",
     "toolsGroup": "Ferramentas",
     "saasGroup": "SaaS",
@@ -6301,14 +7577,39 @@
     "invalidTitle": "Este link não está mais disponível.",
     "invalidDescription": "Este link de compartilhamento do modelo é inválido, está desativado ou expirou.",
     "byPublisher": "Por {publisherName}",
-    "includes": "Este modelo inclui",
     "videoTitle": "Vídeo de prévia do modelo",
-    "tryItOut": "Experimente",
-    "signInToInstall": "Faça login para instalar",
+    "preview": "Pré-visualizar",
+    "aboutTemplate": "Sobre este modelo",
     "selectWorkspace": "Selecione um espaço de trabalho",
     "install": "Instalar",
     "installStarted": "Instalação iniciada",
-    "noEligibleWorkspaces": "Você não tem um espaço de trabalho elegível para instalar este modelo."
+    "noEligibleWorkspaces": "Você não tem um espaço de trabalho elegível para instalar este modelo.",
+    "alreadyInstalled": "Este modelo já está instalado neste espaço de trabalho.",
+    "viewInstall": "Ver instalação",
+    "installAnotherCopy": "Instalar outra cópia",
+    "inboxesTitle": "Caixas de entrada",
+    "inboxesHint": "Este modelo foi criado em torno destas caixas de entrada. Escolha quais das suas próprias caixas de entrada usar; o que ficar de fora é instalado desativado.",
+    "noInbox": "Não conectar — instalar desativado",
+    "noInboxAvailable": "Nenhuma caixa de entrada conectada neste canal",
+    "updateExisting": "Atualizar cópia instalada",
+    "updateStarted": "Atualização iniciada",
+    "autoUpdateLabel": "Atualizar automaticamente quando o modelo mudar",
+    "collisions": {
+      "title": "O que a instalação fará aqui",
+      "loading": "Verificando este espaço de trabalho…",
+      "action": {
+        "create": "Criado",
+        "reuse": "Reutilizado",
+        "rename": "Renomeado",
+        "bind": "Vinculado",
+        "unbound": "Deixado sem vínculo"
+      },
+      "detail": {
+        "rename": "“{name}” já existe com outro tipo, então o do modelo é adicionado com um novo nome.",
+        "unbound": "“{name}” fica sem conexão até você escolher uma caixa de entrada."
+      }
+    },
+    "createWorkspace": "Criar um novo espaço de trabalho"
   },
   "extensionsMe": {
     "actions": {
@@ -6337,7 +7638,144 @@
     "unknown": "Desconhecido"
   },
   "orders": {
-    "title": "Pedidos"
+    "title": "Pedidos",
+    "empty": "Nenhum pedido ainda.",
+    "searchPlaceholder": "Buscar por nome, telefone, e-mail ou número do pedido",
+    "orderNumber": "Pedido nº {number}",
+    "print": "Imprimir",
+    "inbox": "Caixa de entrada",
+    "statusUpdated": "Status do pedido atualizado",
+    "statusUpdateError": "Não foi possível atualizar o status do pedido",
+    "updateStatusTitle": "Atualizar status do pedido",
+    "message": "Mensagem",
+    "messagePlaceholder": "Opcional",
+    "messageDescription": "Enviada ao cliente na conversa dele.",
+    "cancel": "Cancelar",
+    "continue": "Continuar",
+    "delete": "Excluir",
+    "deleted": "Pedido excluído",
+    "deleteError": "Não foi possível excluir o pedido",
+    "deleteTitle": "Excluir o pedido nº {number}?",
+    "deleteDescription": "O pedido, seus itens e seu histórico são removidos. O estoque que ele ainda reserva é devolvido.",
+    "columns": {
+      "name": "Nome",
+      "total": "Total",
+      "status": "Status",
+      "date": "Data",
+      "rating": "Avaliação",
+      "quantity": "Quantidade",
+      "price": "Preço",
+      "vendor": "Fornecedor",
+      "orderStatus": "Status do pedido",
+      "payment": "Pagamento"
+    },
+    "fields": {
+      "name": "Nome",
+      "email": "E-mail",
+      "phone": "Telefone",
+      "country": "País",
+      "state": "Estado",
+      "city": "Cidade",
+      "street": "Rua",
+      "zip": "CEP",
+      "shippingType": "Entrega",
+      "orderId": "ID do pedido",
+      "date": "Data",
+      "subtotal": "Subtotal",
+      "discount": "Desconto",
+      "deliveryCost": "Custo de entrega",
+      "otherTaxes": "Outros impostos",
+      "total": "Total",
+      "paymentMethod": "Forma de pagamento",
+      "status": "Status",
+      "note": "Observação",
+      "cancelReason": "Motivo do cancelamento",
+      "rating": "Avaliação",
+      "ratingComment": "Comentário do cliente",
+      "coupon": "Cupom ({code})",
+      "paymentStatus": "Status do pagamento",
+      "payments": "Pagamentos online"
+    },
+    "statuses": {
+      "pending": "Não processado",
+      "accepted": "Aceito",
+      "shipped": "Enviado",
+      "concluded": "Concluído",
+      "cancelled": "Cancelado"
+    },
+    "transitions": {
+      "accepted": "Aceitar",
+      "shipped": "Enviar",
+      "concluded": "Concluir",
+      "cancelled": "Cancelar"
+    },
+    "paymentMethods": {
+      "cod": "Pagamento na entrega",
+      "stripe": "Cartão",
+      "paypal": "PayPal"
+    },
+    "shippingTypes": {
+      "delivery": "Entregar ao cliente",
+      "pickup": "Retirar na loja"
+    },
+    "description": "Pedidos feitos pelos seus clientes.",
+    "ratingValue": "{rating}/5 ★",
+    "paymentStatuses": {
+      "unpaid": "Não pago",
+      "paid": "Pago",
+      "refunded": "Reembolsado"
+    },
+    "attemptStatuses": {
+      "open": "Aguardando",
+      "paid": "Pago",
+      "expired": "Expirado",
+      "refunded": "Reembolsado"
+    },
+    "testPayment": "teste",
+    "awaitingPaymentHint": "Aguardando o pagamento online do cliente. O pedido poderá ser aceito depois de pago.",
+    "refundWarning": "{amount} serão reembolsados ao cliente.",
+    "paymentStates": {
+      "paid": "Pago",
+      "refunded": "Reembolsado",
+      "awaitingPayment": "Aguardando pagamento",
+      "payOnDelivery": "Pagamento na entrega",
+      "notPaid": "Não pago"
+    },
+    "paymentUntil": "até {time}",
+    "paymentExpiredCancelReason": "Pagamento não recebido a tempo.",
+    "exportTruncated": "A exportação foi limitada aos primeiros {count} pedidos",
+    "exportError": "Não foi possível exportar os pedidos",
+    "shopify": {
+      "syncOrders": "Sincronizar pedidos",
+      "orderColumn": "Pedido",
+      "customerColumn": "Cliente",
+      "paymentPending": "Pendente",
+      "paymentFilter": "Pagamento",
+      "paymentFilterAll": "Pagamento: Todos",
+      "fulfillmentFilter": "Atendimento",
+      "fulfillmentFilterAll": "Atendimento: Todos",
+      "fulfillmentStatuses": {
+        "fulfilled": "Atendido",
+        "unfulfilled": "Não atendido",
+        "partial": "Parcial"
+      },
+      "viewDetails": "Ver detalhes",
+      "viewOnStore": "Ver no {store}",
+      "detailsTitle": "Pedido {name}",
+      "placedOn": "Feito na loja {store} • {date}",
+      "customerDetails": "Detalhes do cliente",
+      "shippingAddress": "Endereço de entrega",
+      "noShippingAddress": "Sem endereço de entrega",
+      "tracking": "Rastreamento: {company} #{number}",
+      "lineItems": "Itens do pedido",
+      "itemColumn": "Item",
+      "skuColumn": "SKU",
+      "shipping": "Frete",
+      "free": "Grátis",
+      "loading": "Carregando...",
+      "loadError": "Não foi possível carregar os detalhes do pedido",
+      "close": "Fechar"
+    }
   },
   "products": {
     "title": "Produtos",
@@ -6394,7 +7832,8 @@
         "label": "Permitir que os clientes comprem este produto quando estiver sem estoque"
       },
       "vendor": {
-        "label": "Fornecedor"
+        "label": "Fornecedor",
+        "none": "Nenhum"
       },
       "rank": {
         "label": "Classificação"
@@ -6446,17 +7885,67 @@
       "variantsDescription": "Adicione variantes se este produto tiver várias versões, como tamanhos ou cores diferentes",
       "metaCatalogId": {
         "label": "ID do Catálogo da Meta"
+      },
+      "status": {
+        "label": "Status",
+        "values": {
+          "active": "Ativo",
+          "draft": "Rascunho",
+          "unlisted": "Não listado"
+        }
       }
     },
     "inventoryPolicy": {
       "dont_track": "Não controlar o estoque",
       "track": "Controlar o estoque"
+    },
+    "shopify": {
+      "openStore": "Abrir {store}",
+      "syncProducts": "Sincronizar produtos",
+      "syncStarted": "Sincronização iniciada",
+      "syncError": "Não foi possível iniciar a sincronização",
+      "viewDetails": "Ver detalhes",
+      "editOnStore": "Editar no {store}",
+      "copyProductLink": "Copiar link do produto",
+      "linkCopied": "Link do produto copiado",
+      "noProductLink": "Este produto não tem link na loja",
+      "inStock": "{count} em estoque",
+      "inStockWithVariants": "{count} em estoque ({variants} variantes)",
+      "detailsTitle": "Detalhes do produto — {name}",
+      "detailsSubtitle": "Sincronizado da loja {store} {shop}",
+      "summaryLine": "Categoria: {category} • Estoque total: {units} unidades em {variants, plural, one {# variante} other {# variantes}}",
+      "uncategorized": "Sem categoria",
+      "variantsTitle": "Variantes ({count})",
+      "variantColumn": "Variante",
+      "skuColumn": "SKU",
+      "priceColumn": "Preço",
+      "inventoryColumn": "Estoque",
+      "defaultVariant": "Padrão",
+      "loading": "Carregando...",
+      "loadError": "Não foi possível carregar os detalhes do produto",
+      "close": "Fechar"
     }
   },
   "tiktok": {
     "title": "TikTok",
     "description": "Conecte sua conta do TikTok para responder a mensagens diretas.",
     "refreshToken": "Atualizar token"
+  },
+  "contactAdReferrals": {
+    "title": "Histórico de anúncios",
+    "empty": "Nenhum clique em anúncio registrado para este contato ainda."
+  },
+  "adsReferralStats": {
+    "title": "Contatos por anúncio",
+    "description": "Contatos alcançados por cada anúncio e conversões atribuídas aos seus cliques. Os cliques são contados desde o início do rastreamento.",
+    "ad": "Anúncio",
+    "contacts": "Contatos",
+    "firstTouch": "Primeiro contato",
+    "leads": "Leads",
+    "purchases": "Compras",
+    "revenue": "Receita",
+    "empty": "Nenhum clique em anúncio neste período.",
+    "timeout": "Este relatório demorou demais. Escolha um intervalo de datas menor."
   },
   "coupons": {
     "title": "Cupons",
@@ -6527,8 +8016,8 @@
     "loadError": "Não foi possível carregar as categorias de produtos.",
     "all": "Todos os produtos",
     "create": "Criar categoria",
-    "edit": "Renomear categoria",
-    "name": "Nome da categoria",
+    "edit": "Editar",
+    "name": "Nome",
     "namePlaceholder": "Ex.: Coleção de verão",
     "parent": "Categoria principal",
     "noParent": "Nenhuma (nível superior)",
@@ -6548,12 +8037,25 @@
     "columns": {
       "name": "Nome",
       "products": "Produtos",
-      "subcategories": "Subcategorias"
+      "subcategories": "Subcategorias",
+      "visible": "Visível"
     },
     "expand": "Mostrar subcategorias",
     "collapse": "Ocultar subcategorias",
     "productCount": "{count, plural, =0 {Nenhum produto} one {# produto} other {# produtos}}",
-    "deleteChildrenWarning": "{count, plural, one {A # subcategoria será excluída também.} other {As # subcategorias serão excluídas também.}}"
+    "deleteChildrenWarning": "{count, plural, one {A # subcategoria será excluída também.} other {As # subcategorias serão excluídas também.}}",
+    "add": "Adicionar",
+    "dialogTitle": "Categoria",
+    "image": "Imagem",
+    "continue": "Continuar",
+    "subcategories": "Subcategorias",
+    "subcategoriesOf": "Subcategorias de {name}",
+    "emptySub": "Nenhuma subcategoria ainda.",
+    "back": "Voltar às categorias",
+    "getId": "Obter ID",
+    "idCopied": "ID da categoria {id} copiado",
+    "idCopyError": "Não foi possível copiar o ID",
+    "description": "Agrupe seus produtos em categorias e subcategorias."
   },
   "productImport": {
     "title": "Importar",
@@ -6758,6 +8260,7 @@
       "invalidTokenTitle": "Este link de agendamento está indisponível.",
       "invalidTokenDescription": "O link pode estar inválido ou expirado. Solicite um novo link de agendamento.",
       "staleSlot": "Este horário não está mais disponível. Escolha outro horário.",
+      "alreadyScheduled": "Este contato já tem um agendamento neste horário neste calendário. Escolha outro horário.",
       "availabilityChanged": "A disponibilidade mudou enquanto você escolhia um horário. Escolha novamente.",
       "submitFailed": "Não foi possível concluir esta solicitação. Tente novamente."
     },
@@ -6847,6 +8350,15 @@
     },
     "messages": {
       "empty": "Ainda não há compromissos."
+    },
+    "actions": {
+      "create": "Criar agendamento"
+    },
+    "create": {
+      "title": "Criar agendamento",
+      "description": "Escolha um calendário e um horário disponível para agendar para este contato.",
+      "noConversationHint": "Nenhuma conversa está aberta, então o contato não receberá uma mensagem de confirmação.",
+      "success": "Agendamento criado."
     }
   },
   "appointmentManagement": {
@@ -8093,7 +9605,9 @@
       "customer_service": "Atendimento ao cliente",
       "escalation": "Escalonamento",
       "marketing": "Marketing",
-      "utility": "Utilidade"
+      "utility": "Utilidade",
+      "calls": "Chamadas",
+      "other": "Outro"
     },
     "pill": {
       "standby": "Standby ({owner})",
@@ -8103,14 +9617,18 @@
     "release": {
       "label": "Liberar",
       "tooltip": "Libere esta conversa para que outros apps possam responder",
-      "success": "Conversa liberada"
+      "success": "Conversa liberada",
+      "menu": "Liberar ou transferir"
     },
     "pass": {
-      "menuItem": "Passar para escalonamento",
-      "title": "Passar para o parceiro de escalonamento?",
-      "description": "Passar esta conversa para o seu parceiro de escalonamento? Suas respostas ficarão pausadas até a conversa voltar.",
+      "menuItem": "Transferir para um parceiro",
+      "title": "Transferir para um parceiro?",
+      "description": "Escolha quem assume esta conversa. Suas respostas ficam em pausa até a conversa voltar.",
       "confirm": "Passar",
-      "success": "Conversa passada ao parceiro de escalonamento"
+      "success": "Conversa passada ao parceiro de escalonamento",
+      "targetLabel": "Transferir para",
+      "noteLabel": "Nota para o parceiro receptor",
+      "successTargeted": "Conversa transferida para {role}"
     },
     "aiHandover": {
       "label": "BizAI",
@@ -8129,7 +9647,10 @@
       "notEscalation": "Somente o parceiro de escalonamento pode assumir. O roteamento é configurado no Meta Business Suite.",
       "notPrimaryReceiver": "Este app precisa ser o receptor principal da Página para assumir. Defina isso nas configurações do Handover Protocol da Página.",
       "learnMore": "Saiba mais",
-      "dismiss": "Enviar mesmo assim"
+      "dismiss": "Enviar mesmo assim",
+      "takeOverTitle": "Assumir esta conversa?",
+      "takeOverDescription": "O parceiro deixa de atendê-la e você assume o controle. Você pode deixar uma nota para ele.",
+      "takeOverNoteLabel": "Nota para o parceiro atual"
     },
     "divider": {
       "ownerHandling": "{owner} agora está atendendo esta conversa",
@@ -8182,7 +9703,17 @@
       "adminOnly": "Somente administradores do workspace podem alterar o roteamento",
       "flowNotFound": "O fluxo selecionado não foi encontrado ou não está ativo",
       "integrationNotFound": "Número do WhatsApp não encontrado",
-      "messengerIntegrationNotFound": "Página do Messenger não encontrada"
+      "messengerIntegrationNotFound": "Página do Messenger não encontrada",
+      "rolesTitle": "Suas funções de roteamento neste número",
+      "rolesDescription": "Atribuídas pela empresa no Meta Business Suite.",
+      "rolesNone": "Nenhuma função de roteamento foi atribuída a você neste número.",
+      "rolesNeverChecked": "Ainda não verificado.",
+      "rolesNotEnabled": "O roteamento de conversas não está ativado para este número.",
+      "rolesStandbyOn": "Acesso em espera: ativado (você vê conversas que não são suas)",
+      "rolesStandbyOff": "Acesso em espera: desativado",
+      "rolesCheckedAt": "Verificado {time}",
+      "rolesRefresh": "Verificar novamente",
+      "rolesSyncFailed": "Não foi possível obter as funções de roteamento da Meta. Tente novamente."
     },
     "errors": {
       "unsupported": "O roteamento de conversas não está disponível neste canal",
@@ -8192,8 +9723,12 @@
     "step": {
       "action": "Ação",
       "release": "Liberar a conversa",
-      "pass": "Passar para o parceiro de escalonamento",
-      "helper": "Somente WhatsApp. Em outros canais, ou quando a conversa não é gerenciada aqui, a etapa segue o caminho de erro."
+      "pass": "Transferir para um parceiro",
+      "helper": "Somente WhatsApp. Em outros canais, ou quando a conversa não é gerenciada aqui, a etapa segue o caminho de erro.",
+      "targetRole": "Transferir para",
+      "targetRoleDefault": "Parceiro de escalonamento (padrão)",
+      "metadata": "Nota de transferência",
+      "metadataHelper": "Opcional. Enviada como está ao app que recebe a conversa. Variáveis são aceitas. Até {max} caracteres."
     },
     "template": {
       "sent": "Modelo enviado"
@@ -8527,7 +10062,7 @@
       "too_many_components": "Uma tela pode conter no máximo {max} componentes.",
       "component_limit": "Uma tela pode conter no máximo {max} × {type}.",
       "picker_conflict": "Uma tela não pode ter envio de fotos e envio de documentos ao mesmo tempo.",
-      "picker_multiple_in_complete": "Defina {property} como 1: o WhatsApp envia apenas um arquivo ao concluir o flow.",
+      "picker_multiple_in_complete": "O WhatsApp envia no máximo {max} arquivos ao concluir o fluxo. Reduza o máximo de arquivos dos campos de arquivo que levam a esta tela.",
       "footer_not_last": "O Footer deve ser o último componente da tela.",
       "footer_in_nested_branch": "Um Footer só pode ficar diretamente em um ramo If de primeiro nível.",
       "footer_missing_in_branch": "Se um ramo tem Footer, o outro ramo também precisa de um.",
@@ -9033,6 +10568,720 @@
       "closed": "Fechado"
     }
   },
+  "productVendors": {
+    "title": "Fornecedores",
+    "add": "Adicionar",
+    "edit": "Editar",
+    "delete": "Excluir",
+    "actions": "Ações",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "moreOptions": "Mais opções",
+    "empty": "Nenhum fornecedor ainda.",
+    "created": "Fornecedor adicionado",
+    "updated": "Fornecedor atualizado",
+    "deleted": "Fornecedor excluído",
+    "saveError": "Não foi possível salvar o fornecedor",
+    "deleteError": "Não foi possível excluir o fornecedor",
+    "deleteTitle": "Excluir {name}?",
+    "deleteDescription": "{count, plural, =0 {Nenhum produto usa este fornecedor.} one {# produto ficará sem fornecedor.} other {# produtos ficarão sem fornecedor.}}",
+    "fields": {
+      "name": "Nome",
+      "shortDescription": "Descrição curta",
+      "phone": "Telefone",
+      "storeAddress": "Endereço da loja",
+      "image": "Imagem",
+      "optional": "Opcional",
+      "discountPercent": "Desconto (0-100%)",
+      "minimumOrderValue": "Valor mínimo do pedido",
+      "openHours": "Horário de funcionamento",
+      "category": "Categoria",
+      "subcategory": "Subcategoria",
+      "none": "Nenhum"
+    },
+    "columns": {
+      "name": "Nome",
+      "products": "Total de produtos",
+      "active": "Ativo"
+    },
+    "description": "Vendedores e marcas aos quais seus produtos pertencem."
+  },
+  "ecommerceSettings": {
+    "save": "Salvar",
+    "saved": "Configurações salvas",
+    "saveError": "Não foi possível salvar as configurações",
+    "rank": {
+      "label": "Posição",
+      "default": "Padrão"
+    },
+    "tabs": {
+      "general": "Geral",
+      "payments": "Pagamentos",
+      "shipping": "Entrega",
+      "checkout": "Checkout",
+      "shopify": "Shopify",
+      "woocommerce": "WooCommerce"
+    },
+    "general": {
+      "orderingAvailable": {
+        "label": "Pedidos disponíveis",
+        "description": "Use este campo para impedir que clientes façam pedidos sem alterar seu horário de funcionamento. O horário de funcionamento também controla sua disponibilidade."
+      },
+      "webshopProductView": {
+        "label": "Exibição de produtos na loja virtual",
+        "description": "Controla como os produtos são exibidos na sua loja virtual.",
+        "options": {
+          "list": "Lista",
+          "listWithoutImage": "Lista sem imagem",
+          "card": "Cartão",
+          "cardSquare": "Cartão com imagem quadrada",
+          "image": "Imagem",
+          "imageSquare": "Imagem (quadrada)"
+        }
+      },
+      "openHours": {
+        "label": "Horário de funcionamento",
+        "description": "Os intervalos de tempo em que seus clientes podem fazer um pedido."
+      },
+      "searchProducts": {
+        "label": "Buscar produtos",
+        "description": "Permite que os clientes enviem mensagens para encontrar produtos."
+      },
+      "facebookPixelId": {
+        "label": "Facebook Pixel",
+        "description": "Acompanhe conversões com o Pixel do Facebook e meça os resultados dos seus anúncios. Os seguintes eventos são rastreados: ADD_TO_CART, INITIATE_CHECKOUT, PURCHASE, VIEW_CONTENT"
+      },
+      "abandonedCart": {
+        "label": "Mensagem de carrinho abandonado",
+        "description": "O tempo de espera antes de enviar uma mensagem de carrinho abandonado, depois que o usuário sai do seu bot com um item no carrinho.",
+        "disabled": "Desativado",
+        "afterMinutes": "Após {count} minutos",
+        "afterHours": "{count, plural, one {Após # hora} other {Após # horas}}"
+      },
+      "productButtons": {
+        "label": "Botões nos produtos",
+        "description": "Esta configuração controla quais botões aparecem nos produtos dentro do seu bot.",
+        "options": {
+          "addToCart": "Adicionar ao carrinho",
+          "share": "Compartilhar",
+          "similar": "Semelhantes",
+          "save": "Salvar"
+        }
+      },
+      "productImageSize": {
+        "label": "Tamanho da imagem dos produtos",
+        "description": "Esta configuração controla o tamanho da imagem dos produtos dentro do seu bot",
+        "options": {
+          "bigSquare": "Grande (quadrada)",
+          "mediumRectangle": "Média (retangular)"
+        }
+      },
+      "allowRateOrders": {
+        "label": "Permitir avaliar pedidos",
+        "description": "Permite que os clientes avaliem um pedido e escrevam uma opinião se não ficarem satisfeitos. Somente os administradores do bot veem as avaliações"
+      },
+      "notifyOnCartStatusChange": {
+        "label": "Enviar notificação ao mudar o status do carrinho",
+        "description": "O cliente receberá notificações sempre que você mudar o status do pedido. Não é possível desativar a notificação de cancelamento e de conclusão do pedido."
+      },
+      "abandonedCartFlow": {
+        "label": "Fluxo de carrinho abandonado",
+        "description": "O fluxo que o bot executa para o cliente quando o carrinho fica abandonado por esse tempo. Use '{{shop_token}}' nos botões para abrir o carrinho. Triggers também podem usar o evento \"Cart abandoned\".",
+        "none": "Sem fluxo (apenas evento de trigger)"
+      },
+      "storeSource": {
+        "label": "Origem da loja",
+        "description": "Selecione a origem da loja usada para gerenciar seus produtos, estoque e pedidos. Com o Shopify / WooCommerce, todos os produtos e pedidos são gerenciados diretamente na sua loja Shopify / WooCommerce.",
+        "options": {
+          "chatbotx": "ChatbotX",
+          "shopify": "Shopify",
+          "woocommerce": "WooCommerce"
+        }
+      }
+    },
+    "payments": {
+      "currencyMismatch": "{count, plural, one {# produto tem preço} other {# produtos têm preço}} em outra moeda que não {currency}. Os pedidos cobram o preço em {currency}.",
+      "paymentMethods": {
+        "label": "Formas de pagamento",
+        "description": "As formas de pagamento ativas na página de checkout. A primeira da lista será a selecionada na página de checkout.",
+        "options": {
+          "cod": "Pagamento na entrega",
+          "stripe": "Cartão",
+          "paypal": "PayPal"
+        },
+        "connectHint": "Para oferecer {provider}, conecte-o em <link>Configurações → Integrações</link>."
+      },
+      "currency": {
+        "label": "Moeda",
+        "description": "Esta é a moeda em que você define os preços dos produtos. Os clientes serão cobrados nesta moeda."
+      },
+      "currencyPosition": {
+        "label": "Posição da moeda",
+        "description": "Esta opção permite controlar a posição da moeda.",
+        "options": {
+          "left": "Esquerda",
+          "leftSpace": "Esquerda com espaço",
+          "right": "Direita",
+          "rightSpace": "Direita com espaço"
+        }
+      },
+      "currencySymbol": {
+        "label": "Símbolo da moeda",
+        "description": "O símbolo da moeda aparece antes dos preços. Se quiser um espaço entre o símbolo e os preços, adicione um espaço no fim do símbolo."
+      },
+      "serviceFeePercent": {
+        "label": "Outras taxas / Taxas de serviço (0 - 100%)",
+        "description": "Outras taxas relacionadas à venda."
+      }
+    },
+    "shipping": {
+      "shippingType": {
+        "label": "Tipo de entrega",
+        "description": "Esta opção permite controlar como o cliente receberá o pedido.",
+        "options": {
+          "none": "Nenhum",
+          "delivery": "Entregar ao cliente",
+          "pickup": "Retirar na loja",
+          "deliveryAndPickup": "Entregar ao cliente, Retirar na loja"
+        }
+      },
+      "storeAddress": {
+        "label": "Endereço da loja",
+        "description": "Este endereço é mostrado ao cliente na página de checkout se você permitir retirada na loja."
+      },
+      "shippingCountries": {
+        "label": "Países de entrega",
+        "description": "Os países para os quais você envia pedidos."
+      },
+      "defaultShippingCountry": {
+        "label": "País de entrega padrão",
+        "description": "O país que será selecionado por padrão na página de checkout.",
+        "none": "Nenhum"
+      },
+      "deliveryCost": {
+        "label": "Custo de entrega",
+        "description": "Uma taxa fixa para entregar o pedido no endereço do cliente."
+      },
+      "defaultCountryNotShipped": "Escolha um dos países de entrega."
+    },
+    "checkout": {
+      "checkoutMode": {
+        "label": "Checkout",
+        "description": "Esta configuração controla onde seus clientes finalizam os pedidos. Se quiser que o usuário conclua o pedido fora do seu bot, como no seu site, Amazon etc., não use nossa página de checkout padrão.",
+        "options": {
+          "default": "Página de checkout padrão",
+          "externalLink": "Página de checkout externa personalizada",
+          "flow": "Fluxo",
+          "productPage": "Visitar a página externa do produto"
+        }
+      },
+      "checkoutLink": {
+        "label": "Link da página de checkout",
+        "description": "A página externa onde os clientes finalizam os pedidos."
+      },
+      "checkoutFlowId": {
+        "label": "Fluxo de checkout",
+        "description": "O fluxo executado quando um cliente faz o checkout.",
+        "placeholder": "Selecione um fluxo"
+      },
+      "minimumOrderValue": {
+        "label": "Valor mínimo do pedido",
+        "description": "O valor mínimo do pedido que um cliente pode fazer. Esta condição é verificada depois de aplicados todos os descontos."
+      },
+      "requiredFields": {
+        "requireName": {
+          "label": "Exigir nome do comprador",
+          "description": "O nome do comprador será coletado durante o checkout."
+        },
+        "requireEmail": {
+          "label": "Exigir endereço de e-mail",
+          "description": "O e-mail do comprador será coletado durante o checkout."
+        },
+        "requirePhone": {
+          "label": "Exigir número de telefone",
+          "description": "O telefone do comprador será coletado durante o checkout."
+        },
+        "requireState": {
+          "label": "Exigir estado/província",
+          "description": "O estado do comprador será coletado durante o checkout."
+        },
+        "requireZip": {
+          "label": "Exigir CEP",
+          "description": "O CEP do comprador será coletado durante o checkout."
+        }
+      },
+      "orderConfirmationMode": {
+        "label": "Mensagem de confirmação do pedido",
+        "description": "O que o cliente recebe no chat quando faz o pedido. A mensagem padrão mostra os detalhes do pedido no idioma do workspace.",
+        "options": {
+          "default": "Mensagem padrão",
+          "flow": "Executar um fluxo",
+          "none": "Não enviar nada"
+        }
+      },
+      "orderConfirmationFlowId": {
+        "label": "Fluxo de confirmação do pedido",
+        "description": "O fluxo enviado ao cliente no lugar da mensagem padrão quando ele faz o pedido."
+      },
+      "shopifyCheckoutMethod": {
+        "label": "Método de checkout",
+        "description": "Escolha se os clientes concluem o pagamento na página de checkout do Shopify ou fazem o pedido diretamente na loja virtual.",
+        "options": {
+          "webCheckout": "Checkout web do Shopify",
+          "inApp": "Checkout no app"
+        }
+      },
+      "shopifyAutoApplyDiscounts": {
+        "label": "Aplicar códigos de desconto automaticamente",
+        "description": "Permite que os clientes apliquem códigos de desconto do Shopify diretamente no carrinho antes de serem redirecionados ao checkout."
+      },
+      "wooCommerceCheckoutMethod": {
+        "description": "Escolha se os clientes pagam na página de pagamento da sua loja WooCommerce ou fazem o pedido direto na loja virtual (pagamento na entrega).",
+        "options": {
+          "webCheckout": "Página de pagamento do WooCommerce",
+          "inApp": "Checkout no app"
+        }
+      },
+      "wooCommerceAutoApplyDiscounts": {
+        "description": "Permite que os clientes apliquem códigos de desconto do WooCommerce diretamente no carrinho antes de serem redirecionados ao checkout."
+      },
+      "inAppDeliveryCost": {
+        "label": "Custo de entrega",
+        "description": "Taxa de entrega adicionada aos pedidos do checkout no app."
+      },
+      "wooCommerceDeliveryCost": {
+        "description": "Taxa de entrega adicionada aos pedidos enviados ao WooCommerce, nos dois métodos de checkout."
+      }
+    },
+    "shopify": {
+      "shopDomain": {
+        "label": "Domínio da loja",
+        "placeholder": "your-store.myshopify.com",
+        "hint": "Informe o domínio .myshopify.com da sua loja Shopify.",
+        "connectedHint": "O domínio da sua loja Shopify conectada."
+      },
+      "authKind": {
+        "label": "Autenticação",
+        "description": "Como o ChatbotX acessa sua loja: com o token de acesso da Admin API de um app personalizado ou com o Client ID e o secret de um app criado no Shopify Dev Dashboard.",
+        "options": {
+          "token": "Token de acesso da Admin API",
+          "clientCredentials": "Client ID e secret (app do Dev Dashboard)"
+        }
+      },
+      "accessToken": {
+        "label": "Token de acesso da Admin API",
+        "hint": "O token de acesso da Admin API do seu app personalizado. Conceda a ele estes escopos: {scopes}.",
+        "connectedHint": "Seu token de acesso da Shopify Admin API é armazenado criptografado."
+      },
+      "apiSecret": {
+        "label": "Chave secreta da API",
+        "hint": "A chave secreta da API do app, usada para verificar os webhooks enviados pelo Shopify."
+      },
+      "clientId": {
+        "label": "Client ID",
+        "hint": "O Client ID do seu app do Dev Dashboard. Conceda a ele estes escopos: {scopes}."
+      },
+      "clientSecret": {
+        "label": "Client Secret",
+        "hint": "O Client Secret do app. Ele é armazenado criptografado."
+      },
+      "webhookUrl": {
+        "label": "URL do webhook",
+        "description": "Registrada automaticamente no Shopify ao conectar para receber atualizações de produtos, estoque e pedidos em tempo real."
+      },
+      "syncNow": "Sincronizar agora",
+      "syncStarted": "Sincronização iniciada",
+      "syncError": "Não foi possível iniciar a sincronização",
+      "syncStatus": {
+        "label": "Status da sincronização",
+        "description": "Produtos, códigos de desconto e pedidos são espelhados da sua loja Shopify.",
+        "connectedTo": "Conectado a {shopDomain}",
+        "lastSynced": "Última sincronização: {time} ({productCount} produtos, {orderCount} pedidos)",
+        "neverSynced": "Ainda não sincronizado",
+        "noReason": "Reconecte sua loja para continuar.",
+        "invalid": "A conexão não é mais válida: {reason}",
+        "state": {
+          "idle": "Inativo",
+          "queued": "Sincronização na fila...",
+          "running": "Sincronizando...",
+          "succeeded": "Última sincronização concluída com sucesso",
+          "failed": "Última sincronização falhou"
+        }
+      }
+    },
+    "woocommerce": {
+      "siteUrl": {
+        "label": "URL da loja",
+        "placeholder": "https://example.com",
+        "hint": "O endereço do seu site WordPress, começando com https://. No WordPress, Settings → Permalinks não pode estar em Plain.",
+        "connectedHint": "Sua loja WooCommerce conectada."
+      },
+      "consumerKey": {
+        "label": "Consumer key",
+        "hint": "Crie uma chave em WooCommerce → Settings → Advanced → REST API → Add key com permissão Read/Write e cole a Consumer key dela (ck_…).",
+        "connectedHint": "O início da chave conectada. As chaves são armazenadas criptografadas."
+      },
+      "consumerSecret": {
+        "label": "Consumer secret",
+        "hint": "O Consumer secret da chave (cs_…). Ele é armazenado criptografado."
+      },
+      "webhookUrl": {
+        "label": "URL do webhook",
+        "description": "Registrada automaticamente no WooCommerce ao conectar para receber atualizações de produtos, estoque e pedidos em tempo real."
+      },
+      "syncNow": "Sincronizar agora",
+      "syncStarted": "Sincronização iniciada",
+      "syncError": "Não foi possível iniciar a sincronização",
+      "syncStatus": {
+        "label": "Status da sincronização",
+        "description": "Produtos, códigos de desconto e pedidos são espelhados da sua loja WooCommerce.",
+        "connectedTo": "Conectado a {store}",
+        "lastSynced": "Última sincronização: {time} ({productCount} produtos, {orderCount} pedidos)",
+        "neverSynced": "Ainda não sincronizado",
+        "noReason": "Reconecte sua loja para continuar.",
+        "invalid": "A conexão não é mais válida: {reason}",
+        "state": {
+          "idle": "Inativo",
+          "queued": "Sincronização na fila...",
+          "running": "Sincronizando...",
+          "succeeded": "Última sincronização concluída com sucesso",
+          "failed": "Última sincronização falhou"
+        }
+      }
+    }
+  },
+  "openHours": {
+    "alwaysOpen": "Sempre aberto",
+    "addNew": "Adicionar novo",
+    "dialogTitle": "Horário de funcionamento",
+    "name": "Nome",
+    "namePlaceholder": "ex.: Dias úteis",
+    "day": "Dia",
+    "from": "Abre",
+    "to": "Fecha",
+    "add": "Adicionar horário",
+    "remove": "Remover",
+    "cancel": "Cancelar",
+    "continue": "Continuar",
+    "created": "Horário de funcionamento criado",
+    "saveError": "Não foi possível salvar o horário de funcionamento",
+    "days": {
+      "0": "Domingo",
+      "1": "Segunda-feira",
+      "2": "Terça-feira",
+      "3": "Quarta-feira",
+      "4": "Quinta-feira",
+      "5": "Sexta-feira",
+      "6": "Sábado"
+    },
+    "sameTimes": "Os horários de abertura e fechamento devem ser diferentes."
+  },
+  "webshop": {
+    "metadataTitle": "Loja",
+    "metadataOrderTitle": "Seu pedido",
+    "invalidLinkTitle": "Este link não funciona",
+    "invalidLinkDescription": "Ele pode ter expirado. Peça um novo link à loja no chat.",
+    "previewBanner": "Prévia: é assim que os clientes veem. Não é possível fazer pedidos pela prévia.",
+    "previewOrderingOff": "Prévia: não é possível fazer pedidos",
+    "closed": {
+      "orderingUnavailable": "A loja não está aceitando pedidos agora.",
+      "outsideOpenHours": "A loja está fechada agora. Você ainda pode olhar."
+    },
+    "searchPlaceholder": "Buscar produtos",
+    "categories": "Categorias",
+    "allCategories": "Todas as categorias",
+    "vendors": "Fornecedores",
+    "allVendors": "Todos os fornecedores",
+    "noProducts": "Nenhum produto encontrado.",
+    "productNotFound": "Este produto não está mais disponível.",
+    "outOfStock": "Esgotado",
+    "addToCart": "Adicionar ao carrinho",
+    "added": "Adicionado ao carrinho",
+    "chooseOptions": "Escolher opções",
+    "chooseOption": "Escolha {name}",
+    "variantUnavailable": "Esta combinação não está disponível.",
+    "buy": "Comprar",
+    "share": "Compartilhar",
+    "linkCopied": "Copiado",
+    "similar": "Semelhantes",
+    "save": "Salvar",
+    "saved": "Salvo",
+    "showImage": "Mostrar imagem {number}",
+    "increase": "Aumentar quantidade",
+    "decrease": "Diminuir quantidade",
+    "remove": "Remover",
+    "cart": "Carrinho",
+    "cartEmpty": "Seu carrinho está vazio.",
+    "continueShopping": "Continuar comprando",
+    "unavailableItems": "{count, plural, one {# item não pode ser pedido agora} other {# itens não podem ser pedidos agora}}",
+    "unavailableNotOrdered": "Eles não entram no pedido e continuam no carrinho.",
+    "unavailable": "Não está mais disponível",
+    "unavailableHint": "Escolha as opções novamente",
+    "deletedProduct": "Produto excluído",
+    "summary": {
+      "subtotal": "Subtotal",
+      "discount": "Desconto",
+      "delivery": "Entrega",
+      "otherFees": "Outras taxas",
+      "total": "Total",
+      "coupon": "Cupom ({code})",
+      "title": "Resumo do pedido",
+      "saved": "Você economiza {amount}",
+      "deliveryAtCheckout": "Calculado no checkout"
+    },
+    "belowMinimum": "O pedido mínimo é de {amount}.",
+    "checkOut": "Finalizar compra",
+    "contactDetails": "Seus dados",
+    "optional": "(opcional)",
+    "fields": {
+      "name": "Nome",
+      "email": "E-mail",
+      "phone": "Telefone",
+      "country": "País",
+      "state": "Estado",
+      "city": "Cidade",
+      "address1": "Endereço",
+      "address2": "Apartamento, prédio etc.",
+      "zip": "CEP",
+      "note": "Observação para a loja"
+    },
+    "shipping": {
+      "title": "Entrega",
+      "delivery": "Entregar no meu endereço",
+      "pickup": "Retirar na loja",
+      "storeAddress": "Endereço da loja: {address}"
+    },
+    "payment": {
+      "title": "Pagamento",
+      "cod": "Pagamento na entrega",
+      "stripe": "Cartão",
+      "paypal": "PayPal",
+      "paid": "Pago",
+      "refunded": "Reembolsado",
+      "awaiting": "Aguardando o seu pagamento",
+      "payBefore": "Pague antes de {time}, ou o pedido será cancelado.",
+      "payNow": "Pagar agora",
+      "onlineHint": "Você vai pagar na próxima página. Seu pedido fica reservado por 30 minutos.",
+      "continueToPayment": "Continuar para o pagamento",
+      "notYet": "Ainda não recebemos o seu pagamento. Se você acabou de pagar, aguarde um momento e atualize esta página.",
+      "leftPaymentPage": "Você saiu da página de pagamento. Ainda dá para pagar abaixo.",
+      "paidThanks": "Pagamento recebido. Obrigado pelo seu pedido!"
+    },
+    "placeOrder": "Fazer pedido",
+    "orderPlaced": "Obrigado! Seu pedido foi feito. Enviaremos atualizações no chat.",
+    "orderTitle": "Pedido #{number}",
+    "orderNotFound": "Pedido não encontrado.",
+    "placedAt": "Feito em {date}",
+    "status": {
+      "pending": "Não processado",
+      "accepted": "Em processamento",
+      "shipped": "Enviado",
+      "concluded": "Concluído",
+      "cancelled": "Cancelado"
+    },
+    "rateTitle": "Avalie seu pedido",
+    "rateComment": "Conte à loja o que achou (opcional)",
+    "rateSubmit": "Enviar avaliação",
+    "rateThanks": "Obrigado pela avaliação!",
+    "yourRating": "Sua avaliação",
+    "ratingValue": "{rating} de 5 estrelas",
+    "previous": "Anterior",
+    "next": "Próximo",
+    "pageOf": "Página {page} de {pageCount}",
+    "errors": {
+      "generic": "Algo deu errado. Tente novamente.",
+      "checkFields": "Verifique os campos.",
+      "fieldRequired": "{field} é obrigatório.",
+      "countryUnavailable": "A loja não entrega neste país.",
+      "invalidLink": "Este link não funciona mais. Peça um novo à loja.",
+      "webshopPreviewOnly": "Esta é uma prévia. Só é possível pedir pelo link de um cliente.",
+      "rateLimited": "Muitas tentativas. Aguarde um pouco e tente novamente.",
+      "orderingUnavailable": "A loja não está aceitando pedidos agora.",
+      "orderBelowMinimum": "O pedido mínimo é de {minimum}.",
+      "orderBelowVendorMinimum": "Os itens de {vendorName} precisam somar pelo menos {minimum}.",
+      "orderOutOfStock": "{productName} está esgotado.",
+      "orderProductUnavailable": "Alguns itens não podem mais ser pedidos. Confira seu carrinho.",
+      "orderEmpty": "Seu carrinho está vazio.",
+      "orderShippingTypeUnavailable": "Esta opção de entrega não está disponível.",
+      "webshopRatingNotAllowed": "Este pedido não pode ser avaliado.",
+      "webshopCartFull": "Seu carrinho pode conter no máximo {maximum} itens diferentes.",
+      "notFound": "Este produto não está mais disponível.",
+      "discountCodeNotFound": "Este código de desconto não existe.",
+      "discountCodeInactive": "Este código não está ativo.",
+      "discountCodeNotStarted": "Este código ainda não é válido.",
+      "discountCodeExpired": "Este código expirou.",
+      "discountCodeUsageLimitReached": "Este código esgotou.",
+      "discountCodeAlreadyUsed": "Você já usou este código.",
+      "discountCodeNotEligible": "Este código não está disponível para você.",
+      "discountCodeNotApplicable": "Este código não se aplica ao seu carrinho.",
+      "discountCodeMinimumAmount": "Este código exige compra mínima de {minimum}. Adicione mais {missing}.",
+      "discountCodeMinimumQuantity": "Este código exige pelo menos {minimum} itens. Adicione mais {missing}.",
+      "paymentMethodUnavailable": "Esta forma de pagamento não está disponível.",
+      "paymentProviderNotConnected": "Esta forma de pagamento não está disponível.",
+      "paymentProviderUnavailable": "O serviço de pagamento não está respondendo. Tente novamente em instantes.",
+      "paymentProviderRejected": "Não foi possível iniciar o pagamento. Escolha outra forma de pagamento.",
+      "paymentProviderCredentialsRejected": "Não foi possível iniciar o pagamento. Escolha outra forma de pagamento.",
+      "paymentAmountUnsupported": "Este pedido não pode ser pago online. Escolha outra forma de pagamento.",
+      "orderPaymentNotOpen": "Este pedido não pode mais ser pago online."
+    },
+    "discount": {
+      "label": "Código de desconto",
+      "placeholder": "Código de desconto",
+      "apply": "Aplicar",
+      "applied": "Código aplicado",
+      "automatic": "aplicado automaticamente",
+      "remove": "Remover código",
+      "available": "Cupons que você pode usar",
+      "freeShipping": "Frete grátis",
+      "bestChoice": "Melhor escolha",
+      "expiresOn": "Válido até {date}",
+      "noExpiry": "Sem validade",
+      "inUse": "Em uso",
+      "saves": "Economize {amount}",
+      "showMore": "{count, plural, one {Ver mais # cupom} other {Ver mais # cupons}}",
+      "showLess": "Ver menos",
+      "removeShort": "Remover",
+      "expired": "Expirado",
+      "usedUp": "Esgotado",
+      "notEligible": "Ainda não elegível"
+    },
+    "itemCount": "{count, plural, one {# item} other {# itens}}",
+    "relatedProducts": "Você também pode gostar",
+    "soldOut": "Esgotado",
+    "sku": "SKU: {sku}",
+    "allProducts": "Todos os produtos",
+    "noCategories": "Esta loja ainda não tem categorias."
+  },
+  "webshopLinks": {
+    "preview": "Pré-visualizar",
+    "getLink": "Obter link",
+    "copied": "Link copiado. Coloque-o em um botão do bot: cada contato abre a própria loja.",
+    "error": "Não foi possível obter o link.",
+    "copyError": "Não foi possível copiar o link.",
+    "shopLink": {
+      "label": "URL da loja",
+      "hint": "Cole este link em um botão de um fluxo, transmissão ou sequência. Cada contato que o receber abre a própria loja e pode fazer pedidos."
+    },
+    "productLink": {
+      "label": "URL Pública",
+      "hint": "Copie e cole a URL no seu fluxo, transmissão ou sequência. Cada contato que a receber abre este produto e pode fazer o pedido."
+    },
+    "bar": "Compartilhe a loja: obtenha links da loja, do carrinho e das categorias para botões de fluxos, transmissões e sequências.",
+    "dialog": {
+      "title": "Links da loja",
+      "description": "Cole um link em um botão de um fluxo, transmissão ou sequência. Cada contato que o recebe abre sua própria loja.",
+      "shopHint": "Abre a página inicial da loja com todos os produtos."
+    },
+    "cartLink": {
+      "label": "Carrinho",
+      "hint": "Abre o carrinho do contato, pronto para finalizar a compra."
+    },
+    "categoriesLink": {
+      "label": "Categorias",
+      "hint": "Abre a lista de categorias da loja."
+    }
+  },
+  "discountCodes": {
+    "title": "Cupons",
+    "description": "Códigos de desconto que os clientes usam no checkout ou que se aplicam sozinhos.",
+    "add": "Adicionar",
+    "edit": "Editar cupom",
+    "automatic": "Automático",
+    "never": "Nunca",
+    "searchPlaceholder": "Buscar códigos…",
+    "saveError": "Não foi possível salvar o cupom.",
+    "created": "Cupom criado",
+    "updated": "Cupom salvo",
+    "deleted": "Cupom excluído",
+    "deleteError": "Não foi possível excluir o cupom.",
+    "deleteTitle": "Excluir o cupom {code}?",
+    "deleteDescription": "Os clientes não poderão mais usá-lo. Pedidos que o usaram mantêm o desconto.",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "save": "Salvar",
+    "columns": {
+      "name": "Nome",
+      "discount": "Desconto",
+      "used": "Usado",
+      "end": "Fim",
+      "active": "Ativo"
+    },
+    "discountTypes": {
+      "percentage": "Porcentagem",
+      "fixedAmount": "Valor fixo",
+      "freeShipping": "Frete grátis"
+    },
+    "appliesTo": {
+      "entireOrder": "Pedido inteiro",
+      "category": "Categoria específica",
+      "products": "Produtos específicos"
+    },
+    "minimumTypes": {
+      "none": "Nenhum",
+      "amount": "Valor mínimo de compra",
+      "quantity": "Quantidade mínima de itens"
+    },
+    "eligibilities": {
+      "everyone": "Todos",
+      "specificCustomers": "Clientes específicos"
+    },
+    "form": {
+      "discountCode": "Código de desconto",
+      "code": "Código",
+      "generate": "Gerar",
+      "autoApply": "Aplicar este cupom automaticamente aos carrinhos",
+      "autoApplyHint": "Os carrinhos recebem sem o cliente digitar. Com vários cupons automáticos, vence o de maior desconto.",
+      "typedHint": "Os clientes vão digitar este código no checkout.",
+      "options": "Opções",
+      "discountType": "Tipo de desconto",
+      "discountValuePercent": "Valor do desconto (%)",
+      "discountValueAmount": "Valor do desconto ({currency})",
+      "freeShippingHint": "Remove o custo de entrega dos pedidos entregues ao cliente.",
+      "appliesTo": "Aplica-se a",
+      "category": "Categoria",
+      "products": "Produtos",
+      "productsPlaceholder": "Escolha produtos",
+      "minimumRequirement": "Requisito mínimo",
+      "minimumAmount": "Valor mínimo ({currency})",
+      "minimumQuantity": "Número mínimo de itens",
+      "usageLimits": "Limites de uso",
+      "limitTotal": "Limitar quantas vezes o desconto pode ser usado no total",
+      "usedSoFar": "{count, plural, one {Usado # vez até agora} other {Usado # vezes até agora}}",
+      "oncePerCustomer": "Um uso por cliente",
+      "customerEligibility": "Clientes elegíveis",
+      "specificCustomersHint": "Apenas contatos que correspondem ao filtro abaixo no momento do pedido.",
+      "activeDates": "Período de validade",
+      "startDate": "Data de início",
+      "endDate": "Data de término",
+      "isActive": "Ativo"
+    },
+    "rules": {
+      "codeCharacters": "Use apenas letras sem acento, números, - e _.",
+      "usageBelowUsed": "Este código já foi usado {count} vezes; o limite não pode ser menor.",
+      "customerConditionRequired": "Adicione pelo menos uma condição.",
+      "endAfterStart": "A data de término deve ser depois da data de início."
+    }
+  },
+  "ecommerceAnalytics": {
+    "title": "Análises",
+    "lifetime": "Desde o início",
+    "sales": "Vendas",
+    "orders": "Pedidos",
+    "products": "Produtos",
+    "salesByDate": "Vendas por data",
+    "ordersByDate": "Pedidos por data",
+    "topProducts": "Produtos mais vendidos",
+    "topVendors": "Fornecedores destaque",
+    "columns": {
+      "name": "Nome",
+      "sales": "Vendas"
+    },
+    "noData": "Sem dados neste período",
+    "refresh": "Atualizar",
+    "change": "{value}%",
+    "noPrevious": "novo",
+    "otherCurrencyOrders": "{count} pedidos em outras moedas não estão incluídos nestes números"
+  },
   "responseSla": {
     "label": "SLA de resposta",
     "title": "SLA de resposta",
@@ -9052,5 +11301,611 @@
     "metHelp": "Parcela das respostas com SLA que o cumpriram.",
     "eligibleCount": "{count} respostas tinham SLA",
     "enable": "Ativar SLA de resposta"
+  },
+  "stripe": {
+    "title": "Stripe",
+    "setting": {
+      "label": "Stripe",
+      "description": "Receba pagamentos com cartão na sua loja virtual com a sua própria conta Stripe. O dinheiro vai direto para a sua conta Stripe."
+    },
+    "connectWithStripe": "Conectar com Stripe",
+    "connectWithKey": "Usar chave secreta",
+    "connectionType": {
+      "oauth": "Stripe Connect",
+      "apiKey": "Chave secreta"
+    },
+    "fields": {
+      "secretKey": "Chave secreta",
+      "secretKeyHint": "Começa com sk_live_ (ou sk_test_ no modo de teste). Uma chave restrita (rk_…) também funciona se puder ler a conta e gravar Checkout Sessions, Refunds e Webhook Endpoints."
+    },
+    "dialog": {
+      "description": "Copie sua chave secreta em <link>Stripe Dashboard → Developers → API keys</link> e cole aqui. Nós a verificamos, configuramos as notificações de pagamento na sua conta Stripe e guardamos a chave criptografada."
+    },
+    "testMode": "Modo de teste",
+    "liveMode": "Ao vivo",
+    "chargesDisabled": "Sua conta Stripe ainda não pode receber pagamentos. Conclua a configuração no painel do Stripe.",
+    "outcome": {
+      "expired": "O link de conexão com o Stripe expirou. Tente novamente.",
+      "access_denied": "A conexão não foi permitida no Stripe.",
+      "stripeAccountAlreadyConnected": "Esta conta Stripe já está conectada a outro workspace.",
+      "stripePlatformNotConfigured": "O Stripe ainda não está configurado nesta plataforma.",
+      "superAdminRequired": "Somente um administrador do workspace pode conectar o Stripe.",
+      "signInRequired": "Faça login e tente novamente.",
+      "paymentProviderCredentialsRejected": "O Stripe recusou a conexão. Tente novamente.",
+      "startedByAnotherUser": "Somente quem clicou em Conectar pode concluir. Clique em Conectar novamente.",
+      "paymentProviderInUse": "Há pedidos em aberto que ainda precisam desta conta Stripe. Conclua ou cancele-os primeiro."
+    },
+    "platform": {
+      "connectClientId": "Connect client ID",
+      "connectClientIdHint": "Em Stripe Dashboard → Settings → Connect → Onboarding options → OAuth (começa com ca_). As lojas conectam a própria conta Stripe por ele.",
+      "redirectUri": "Redirect URI",
+      "webhookReady": "As lojas podem conectar o Stripe e os pagamentos delas são confirmados automaticamente.",
+      "webhookMissing": "O webhook de pagamentos não existe. Salve estas configurações novamente para criá-lo.",
+      "connectMissing": "Adicione o Connect client ID para que as lojas possam conectar a conta Stripe delas."
+    }
+  },
+  "paypal": {
+    "title": "PayPal",
+    "setting": {
+      "label": "PayPal",
+      "description": "Receba pagamentos PayPal na sua loja virtual com a sua própria conta PayPal."
+    },
+    "sandbox": "Sandbox",
+    "liveMode": "Ao vivo",
+    "fields": {
+      "clientId": "Client ID",
+      "clientSecret": "Secret"
+    },
+    "dialog": {
+      "description": "Crie um app REST em <link>PayPal Developer → Apps & Credentials</link> e cole o Client ID e o Secret dele. O modo ao vivo ou sandbox é detectado pelas chaves."
+    }
+  },
+  "pipelines": {
+    "title": "Funis",
+    "retry": "Tentar novamente",
+    "save": "Salvar",
+    "saveFailed": "Não foi possível salvar as alterações. Tente novamente.",
+    "list": {
+      "name": "Nome",
+      "type": "Tipo",
+      "items": "Itens",
+      "add": "Adicionar funil",
+      "empty": "Nenhum funil ainda",
+      "emptyHint": "Crie um funil para acompanhar negócios, tickets ou qualquer processo como cartões em um quadro.",
+      "error": "Não foi possível carregar os funis",
+      "contacts": "Contatos",
+      "addShort": "Adicionar",
+      "description": "Acompanhe oportunidades, tickets ou qualquer processo como cartões que avançam pelas etapas."
+    },
+    "types": {
+      "opportunity": {
+        "label": "Central de Oportunidades",
+        "description": "Acompanhe negócios de vendas por etapas. Primeira etapa: Lead."
+      },
+      "ticket": {
+        "label": "Central de Suporte",
+        "description": "Gerencie solicitações de suporte. Primeira etapa: Novo problema."
+      },
+      "custom": {
+        "label": "Quadro personalizado",
+        "description": "Crie seu próprio processo. Primeira etapa: Entrada."
+      }
+    },
+    "noun": {
+      "opportunity": {
+        "one": "Oportunidade",
+        "many": "Oportunidades",
+        "add": "Adicionar oportunidade"
+      },
+      "ticket": {
+        "one": "Ticket",
+        "many": "Tickets",
+        "add": "Adicionar ticket"
+      },
+      "card": {
+        "one": "Cartão",
+        "many": "Cartões",
+        "add": "Adicionar cartão"
+      }
+    },
+    "create": {
+      "title": "Novo funil",
+      "description": "Escolha para que serve o quadro e dê um nome a ele.",
+      "type": "Tipo",
+      "name": "Nome do funil",
+      "namePlaceholder": "ex.: Vendas",
+      "submit": "Criar funil",
+      "success": "Funil criado"
+    },
+    "menu": {
+      "open": "Ações do funil",
+      "rename": "Renomear",
+      "duplicate": "Duplicar",
+      "delete": "Excluir"
+    },
+    "rename": {
+      "title": "Renomear funil",
+      "submit": "Renomear",
+      "success": "Funil renomeado"
+    },
+    "duplicate": {
+      "success": "Funil duplicado"
+    },
+    "delete": {
+      "title": "Excluir funil",
+      "description": "{name} e todas as suas etapas e itens serão excluídos. Esta ação não pode ser desfeita.",
+      "success": "Funil excluído"
+    },
+    "board": {
+      "title": "Quadro",
+      "count": "{count, plural, one {# item} other {# itens}}",
+      "total": "Total {value}",
+      "search": "Pesquisar por título, número ou contato",
+      "sort": "Ordenar",
+      "filter": "Filtrar",
+      "analytics": "Análises",
+      "settings": "Configurações",
+      "emptyStage": "Arraste e solte um cartão aqui para movê-lo para esta etapa.",
+      "loadMore": "Carregar mais",
+      "loadMoreFailed": "Não foi possível carregar mais itens",
+      "error": "Não foi possível carregar o quadro",
+      "processing": "Processando esta etapa…",
+      "moveFailed": "Não foi possível mover o cartão",
+      "sortOptions": {
+        "createdAtDesc": "Data de criação (Novo para Antigo)",
+        "createdAtAsc": "Data de criação (Antigo para Novo)",
+        "updatedAtDesc": "Data de atualização (Novo para Antigo)",
+        "valueDesc": "Valor da oportunidade (Maior para Menor)",
+        "valueAsc": "Valor da oportunidade (Menor para Maior)",
+        "dueDateAsc": "Data de vencimento (Mais próxima para Mais distante)",
+        "dueDateDesc": "Data de vencimento (Mais distante para Mais próxima)",
+        "priorityDesc": "Prioridade (Maior para Menor)",
+        "priorityAsc": "Prioridade (Menor para Maior)",
+        "updatedAtAsc": "Data de atualização (Antigo para Novo)"
+      },
+      "searchAction": "Pesquisar",
+      "closeSearch": "Fechar pesquisa",
+      "cardMenu": "Ações do cartão",
+      "moveTo": "Mover para",
+      "unknownContact": "Contato desconhecido",
+      "staleError": "Não foi possível atualizar o quadro. O que você vê pode estar desatualizado."
+    },
+    "stage": {
+      "add": "Adicionar etapa",
+      "name": "Nome da etapa",
+      "namePlaceholder": "Nome da etapa",
+      "menu": "Ações da etapa",
+      "edit": "Editar etapa",
+      "delete": "Excluir etapa",
+      "deleteTitle": "Excluir etapa",
+      "deleteDescription": "{name} e todos os itens nela serão excluídos. Esta ação não pode ser desfeita.",
+      "moveItemsTo": "Mover itens para",
+      "deleteItemsToo": "Excluir os itens também",
+      "description": "Descrição",
+      "textColor": "Cor do texto",
+      "backgroundColor": "Cor de fundo",
+      "saved": "Etapa salva",
+      "deleted": "Etapa excluída",
+      "queued": "A etapa está sendo esvaziada em segundo plano.",
+      "resetColor": "Padrão",
+      "deleteMoveDescription": "{name} será excluída. Seus itens serão movidos para {target}.",
+      "rename": "Renomear",
+      "settings": "Configurações",
+      "general": "Geral",
+      "color": "Cor",
+      "cancel": "Cancelar"
+    },
+    "priority": {
+      "low": "Baixa",
+      "medium": "Média",
+      "high": "Alta"
+    },
+    "item": {
+      "loading": "Carregando…",
+      "error": "Não foi possível carregar este item",
+      "title": "Título",
+      "status": "Status",
+      "stage": "Etapa",
+      "priority": "Prioridade",
+      "value": "Valor",
+      "dueDate": "Prazo",
+      "assignees": "Administradores atribuídos",
+      "description": "Descrição",
+      "attachments": "Anexos",
+      "attach": "Anexar arquivos",
+      "noAttachments": "Nenhum anexo",
+      "removeAttachment": "Remover anexo",
+      "removeAttachmentDescription": "O arquivo é removido deste item, mas permanece na biblioteca de mídia.",
+      "comments": "Comentários",
+      "addComment": "Adicionar comentário",
+      "commentPlaceholder": "Escreva um comentário…",
+      "noComments": "Nenhum comentário ainda",
+      "deleteComment": "Excluir comentário",
+      "deleteCommentDescription": "Este comentário será excluído. Não é possível desfazer.",
+      "activity": "Atividade",
+      "noActivity": "Nenhuma atividade ainda",
+      "transfer": "Transferir para funil",
+      "transferTitle": "Transferir para outro funil",
+      "transferDescription": "O item mantém seu número e data de criação. Os campos personalizados são transferidos quando o outro funil tem um campo com o mesmo nome de referência e tipo.",
+      "destinationPipeline": "Funil de destino",
+      "destinationStage": "Etapa de destino",
+      "firstStage": "Primeira etapa",
+      "choose": "Escolher…",
+      "transferred": "Item transferido",
+      "delete": "Excluir",
+      "deleteDescription": "Um item será excluído. Esta ação não pode ser desfeita.",
+      "deleted": "Item excluído",
+      "number": "Número",
+      "createdBy": "Criado por",
+      "createdByValue": "{name} em {date}",
+      "inbox": "Caixa de entrada",
+      "moreActions": "Mais ações",
+      "noDescription": "Sem descrição",
+      "yes": "Sim",
+      "no": "Não",
+      "assigneesMembers": "Agentes",
+      "assigneesTeams": "Equipes da caixa de entrada",
+      "assigneesSearch": "Pesquisar administradores ou equipes…",
+      "assigneesEmpty": "Nenhum resultado",
+      "assigneesPlaceholder": "Selecione administradores ou equipes",
+      "olderComments": "Mostrar comentários anteriores",
+      "olderActivity": "Ver atividade anterior",
+      "activityFilter": "Filtrar",
+      "activityFilterCount": "{count, plural, one {# filtro} other {# filtros}}",
+      "activityFilterClear": "Mostrar tudo",
+      "noFilteredActivity": "Nenhuma atividade corresponde a este filtro.",
+      "activityGroup": {
+        "lifecycle": "Criação e transferência",
+        "stage": "Etapa",
+        "status": "Status",
+        "value": "Valor",
+        "priority": "Prioridade",
+        "dueDate": "Data de vencimento",
+        "details": "Título, descrição e campos",
+        "assignees": "Responsáveis",
+        "comments": "Comentários",
+        "attachments": "Anexos"
+      }
+    },
+    "activity": {
+      "created": "Criado",
+      "stageChanged": "Movido para outra etapa",
+      "statusChanged": "Status alterado",
+      "valueChanged": "Valor alterado",
+      "priorityChanged": "Prioridade alterada",
+      "dueDateChanged": "Prazo alterado",
+      "titleChanged": "Título alterado",
+      "descriptionChanged": "Descrição alterada",
+      "fieldValuesChanged": "Campos personalizados alterados",
+      "assigneesChanged": "Responsáveis alterados",
+      "attachmentAdded": "Anexo adicionado",
+      "attachmentRemoved": "Anexo removido",
+      "commentAdded": "Comentário adicionado",
+      "commentDeleted": "Comentário excluído",
+      "transferred": "Transferido de outro funil",
+      "deleted": "Excluído"
+    },
+    "activityActor": {
+      "flow": "Fluxo",
+      "trigger": "Gatilho",
+      "workspaceToken": "API",
+      "system": "Sistema",
+      "formerMember": "Ex-membro"
+    },
+    "add": {
+      "changeContact": "Escolher outro contato",
+      "success": "Criado",
+      "stepContact": "Selecione um contato",
+      "stepDetails": "Detalhes de {noun}",
+      "contact": "Contato",
+      "addNewContact": "Adicionar novo"
+    },
+    "filter": {
+      "title": "Filtrar",
+      "status": "Status",
+      "statusLabels": {
+        "open": "Aberto",
+        "won": "Ganho",
+        "lost": "Perdido"
+      },
+      "priority": "Prioridade",
+      "assignee": "Administradores atribuídos",
+      "value": "Valor de {noun}",
+      "min": "Mín.",
+      "max": "Máx.",
+      "dueDate": "Prazo",
+      "createdAt": "Data de criação",
+      "from": "De",
+      "to": "Até",
+      "clear": "Limpar filtros",
+      "apply": "Aplicar",
+      "back": "Voltar",
+      "updatedAt": "Data de atualização",
+      "resolvedOn": "{noun} resolvido em",
+      "statusChangedOn": "Status alterado em",
+      "stageChangedOn": "Etapa alterada em",
+      "lastCommentOn": "Último comentário em",
+      "customFields": "Campos personalizados",
+      "any": "Qualquer",
+      "yes": "Sim",
+      "no": "Não",
+      "notResolvedOn": "{noun} não resolvido em",
+      "equal": "Igual a",
+      "different": "Diferente de",
+      "reset": "Redefinir",
+      "presets": {
+        "thisWeek": "Esta semana",
+        "lastWeek": "Semana passada",
+        "last14": "Últimos 14 dias",
+        "thisYear": "Este ano",
+        "lastYear": "Ano passado",
+        "tomorrow": "Amanhã",
+        "next7": "Em 7 dias",
+        "next14": "Em 14 dias",
+        "next30": "Em 30 dias",
+        "allTime": "Todo o período"
+      },
+      "pickDate": "Escolha uma data",
+      "activity": "Atividade",
+      "activityKinds": "Tipo de alteração",
+      "activityActors": "Feito por",
+      "activityWhen": "Quando",
+      "activityAutomation": "Automação"
+    },
+    "analytics": {
+      "title": "Análises",
+      "loading": "Carregando estatísticas…",
+      "error": "Não foi possível carregar as estatísticas",
+      "created": "Criados",
+      "won": "Ganhos",
+      "wonValue": "Valor ganho",
+      "lost": "Perdidos",
+      "lostValue": "Valor perdido",
+      "admin": "Administrador",
+      "automation": "Automação",
+      "back": "Voltar",
+      "admins": "Administradores",
+      "chart": {
+        "created": "Novos por dia",
+        "won": "Ganhos por dia",
+        "lost": "Perdidos por dia",
+        "wonValue": "Valor ganho por dia",
+        "lostValue": "Valor perdido por dia"
+      },
+      "pie": {
+        "created": "Criados por admin",
+        "won": "Ganhos por admin",
+        "lost": "Perdidos por admin",
+        "other": "Outros",
+        "empty": "Sem dados"
+      }
+    },
+    "settings": {
+      "title": "Configurações do funil",
+      "general": "Geral",
+      "fields": "Campos personalizados",
+      "display": "Exibição",
+      "permissions": "Permissões",
+      "saved": "Configurações salvas",
+      "referenceName": "Nome de referência",
+      "referenceNameHint": "Usado nas variáveis pipelines.reference_name.stage_name. Alterá-lo quebra mensagens que usam o nome antigo.",
+      "referenceNameFormat": "Use letras minúsculas, números e sublinhados, começando com uma letra (ex.: close_date).",
+      "currency": "Moeda",
+      "currencyFollowCountry": "País do workspace · {country} · {currency}",
+      "currencyFollowNoCountry": "Workspace sem país · {currency}",
+      "currencyHint": "Segue o País-alvo do workspace (Configurações → Geral) e se atualiza quando ele muda. Sem país definido, usa-se USD. Os valores nunca são convertidos.",
+      "assignContact": "Atribuir o contato a um administrador quando um item for atribuído",
+      "limit": "Limitar itens abertos por contato",
+      "statusLabels": "Rótulos de status",
+      "status": {
+        "open": "Aberto",
+        "won": "Ganho",
+        "lost": "Perdido"
+      },
+      "features": "Recursos visíveis",
+      "cardElements": "Elementos do cartão",
+      "card": {
+        "contactPhone": "Telefone do contato",
+        "contactEmail": "E-mail do contato",
+        "createdAt": "Data de criação",
+        "updatedAt": "Data de atualização",
+        "assignees": "Administradores atribuídos",
+        "comments": "Comentários",
+        "cardId": "Número do item",
+        "priority": "Prioridade",
+        "value": "Valor",
+        "dueDate": "Prazo"
+      },
+      "noFields": "Nenhum campo personalizado ainda",
+      "fieldName": "Nome do campo",
+      "fieldReference": "Nome de referência",
+      "fieldType": "Tipo de campo",
+      "required": "Obrigatório",
+      "requiredShort": "obrigatório",
+      "addField": "Adicionar campo",
+      "fieldAdded": "Campo adicionado",
+      "deleteField": "Excluir campo",
+      "permissionsHint": "Proprietários e administradores do workspace sempre têm acesso total. Conceda aos outros membros o que eles podem fazer neste funil.",
+      "revoke": "Revogar",
+      "permission": {
+        "view": "Ver",
+        "edit": "Editar",
+        "delete": "Excluir",
+        "settings": "Configurações"
+      },
+      "noMembers": "Nenhum outro membro para configurar",
+      "confirmDeleteField": "Excluir este campo e todos os seus valores em todos os itens?",
+      "adminPermissions": "Permissões de administrador",
+      "cardVisibleElements": "Elementos visíveis do cartão"
+    },
+    "panel": {
+      "empty": "Nenhum item de funil para este contato",
+      "error": "Não foi possível carregar os itens do funil",
+      "choosePipeline": "Escolha um funil",
+      "add": "Adicionar novo"
+    },
+    "variables": {
+      "group": "Funis",
+      "attributes": {
+        "name": "Nome do item",
+        "stageName": "Etapa",
+        "status": "Status",
+        "priority": "Prioridade",
+        "value": "Valor",
+        "assignedAdmins": "Administradores atribuídos",
+        "createdDate": "Data de criação",
+        "dueDate": "Prazo",
+        "updatedDate": "Data de atualização",
+        "id": "ID do item"
+      }
+    }
+  },
+  "oauthConsent": {
+    "title": "Authorize {clientName}",
+    "description": "This application is requesting access to your workspace.",
+    "permissionsTitle": "Requested permissions",
+    "signedInAs": "Signed in as",
+    "approve": "Approve",
+    "deny": "Deny",
+    "failed": "Não foi possível concluir a autorização. Tente novamente.",
+    "workspaceLabel": "Workspace",
+    "workspacePlaceholder": "Selecione um workspace",
+    "workspaceHint": "{clientName} só pode agir neste workspace. Para trocar depois, desconecte e conecte novamente.",
+    "noWorkspaces": "Você não é administrador de nenhum workspace, então não pode autorizar este aplicativo."
+  },
+  "chatbotxMcp": {
+    "title": "ChatbotX MCP",
+    "workspaceId": "Workspace ID",
+    "streamableUrl": "Streamable HTTP URL",
+    "sseUrl": "Legacy SSE URL",
+    "guide": {
+      "title": "Connect an MCP client",
+      "step1": "Copy the configuration for your MCP client.",
+      "step2": "Paste it into the client.",
+      "step3": "The client opens a browser. Sign in and approve access.",
+      "step4": "Your workspace tools appear after approval.",
+      "ownerOnly": "Only workspace owners and superAdmins can authorize MCP access."
+    },
+    "clients": {
+      "claudeCode": "Claude Code",
+      "claudeDesktop": "Claude Desktop",
+      "cursor": "Cursor",
+      "chatgpt": "ChatGPT",
+      "stdio": "stdio fallback",
+      "stdioHint": "Use a workspace token for this fallback."
+    },
+    "grants": {
+      "title": "Authorized applications",
+      "description": "Grants belong to your account and apply to every workspace you administer; revoking disconnects the client everywhere.",
+      "empty": "OAuth grants appear here after you connect an MCP client.",
+      "client": "Client",
+      "scopes": "Scopes",
+      "firstAuthorizedAt": "First authorized",
+      "lastRefreshedAt": "Last refreshed",
+      "activeUntil": "Active until",
+      "noActiveToken": "No active token",
+      "revoke": "Revoke",
+      "revokeConfirmTitle": "Revoke application access?",
+      "revokeConfirmDescription": "Revoke access for {clientName}? This disconnects the client everywhere.",
+      "revokedSuccess": "Application access revoked.",
+      "notFound": "OAuth grant no longer exists"
+    }
+  },
+  "connectionStatus": {
+    "column": "Status",
+    "reconnecting": "The provider is reconnecting this account. Messages are held until it finishes.",
+    "accessRemoved": "The provider removed access to this account. Reconnect to resume.",
+    "needsReconnect": "Reconnect required.",
+    "inactive": "This channel is inactive."
+  },
+  "inbox": {
+    "createAppointment": {
+      "title": "Criar agendamento",
+      "description": "Envie ao contato um link de reserva de um calendário ou abra-o para reservar em nome dele.",
+      "inactive": "Inativo",
+      "sendLink": "Enviar link do calendário",
+      "goToLink": "Ir para o link do calendário",
+      "sent": "Link de reserva enviado.",
+      "failed": "Não foi possível criar o link de reserva.",
+      "noCalendars": "Ainda não há calendários de agendamento.",
+      "manageCalendars": "Gerenciar calendários de agendamento"
+    }
+  },
+  "templateStore": {
+    "title": "Loja de templates",
+    "description": "Templates aprovados para a loja pública. Cada template aparece nas categorias que você escolher.",
+    "add": "Adicionar",
+    "addCategory": "Adicionar categoria",
+    "renameCategory": "Renomear",
+    "editCategories": "Editar categorias",
+    "templateId": "ID do template",
+    "template": "Template",
+    "categories": "Categorias",
+    "categoriesPlaceholder": "Sem categoria",
+    "close": "Fechar",
+    "removeChip": "Remover {name}",
+    "categoriesHint": "Opcional. Sem categoria, o template aparece só em “Todos”.",
+    "noCategoriesYet": "Ainda não há categorias.",
+    "added": "Template adicionado à loja",
+    "updated": "Categorias atualizadas",
+    "removed": "Template removido da loja",
+    "removeError": "Não foi possível remover o template",
+    "removeTitle": "Remover {name}?",
+    "removeDescription": "Ele some da loja. O template em si e suas instalações não são afetados.",
+    "saveError": "Não foi possível salvar",
+    "deleteError": "Não foi possível excluir a categoria",
+    "categoryCreated": "Categoria criada",
+    "categoryUpdated": "Categoria atualizada",
+    "categoryMoved": "Categoria movida",
+    "categoryDeleted": "Categoria excluída",
+    "deleteCategoryTitle": "Excluir {name}?",
+    "deleteCategoryDescription": "Templates nesta categoria: {count}. Eles continuam na loja e aparecem em “Todos”.",
+    "moveUp": "Mover para cima",
+    "moveDown": "Mover para baixo",
+    "searchPlaceholder": "Buscar por nome ou ID do template",
+    "emptyListings": "Ainda não há templates aprovados.",
+    "noMatches": "Nenhum template corresponde à busca ou aos filtros.",
+    "allCategories": "Todas as categorias",
+    "allStatuses": "Todos os status",
+    "installs": "Instalações",
+    "owner": "Proprietário",
+    "statusLabel": "Status",
+    "openInStore": "Abrir loja",
+    "storeUnavailable": "Sua loja abre no seu domínio personalizado. Configure um para abri-la.",
+    "openTemplatePage": "Abrir página do template",
+    "remove": "Remover",
+    "status": {
+      "published": "Publicado",
+      "templateUnavailable": "Template indisponível",
+      "shareDisabled": "Link de compartilhamento desativado"
+    },
+    "errors": {
+      "templateUnavailable": "Nenhum template com este ID pode ser adicionado à sua loja.",
+      "listingExists": "Este template já está na sua loja.",
+      "listingUnavailable": "Esta entrada da loja não existe mais.",
+      "listingLimit": "Uma loja pode conter no máximo {templateLimit} templates.",
+      "categoryUnavailable": "Esta categoria não existe mais.",
+      "categoryNameTaken": "Já existe uma categoria com este nome.",
+      "categoryLimit": "Uma loja pode ter no máximo {categoryLimit} categorias."
+    },
+    "store": {
+      "subtitle": "Templates prontos para instalar com um clique.",
+      "pageTitle": "{tenantName} – Loja de templates",
+      "empty": "Ainda não há templates na loja.",
+      "search": "Buscar templates",
+      "all": "Todos",
+      "categories": "Categorias da loja",
+      "noResults": "Nenhum template corresponde à sua busca.",
+      "clearSearch": "Limpar busca",
+      "by": "Por {publisherName}"
+    },
+    "picker": {
+      "placeholder": "Selecione um template",
+      "search": "Buscar por nome ou ID do template",
+      "empty": "Nenhum template disponível para adicionar.",
+      "error": "Não foi possível carregar os templates.",
+      "retry": "Tentar novamente",
+      "meta": "ID {id} · {workspace}"
+    }
   }
 }

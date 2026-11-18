@@ -113,6 +113,41 @@ describe("AI agent actions native tool", () => {
     expect(actionTool.description).not.toContain("u_private-admin-id")
   })
 
+  test("names the custom field of each value action in the tool description", () => {
+    const actionTool = createAIAgentActionsTool({
+      context: {
+        contactId: "contact-1",
+        contactInboxId: "contact-inbox-1",
+        conversationId: "conversation-1",
+        ruleId: "",
+        triggerMessageId: "message-1",
+        workspaceId: "workspace-1",
+      },
+      executedRuleIds: new Set(),
+      fieldNames: new Map([["field-refund-reason", "Refund reason"]]),
+      rules: [
+        {
+          id: "refund",
+          when: "The customer asks for a refund.",
+          actions: [
+            { id: "tag-refund", type: "add_tag", tagId: "private-tag-id" },
+            {
+              id: "11760660297804961",
+              type: "set_custom_field",
+              customFieldId: "field-refund-reason",
+            },
+          ],
+        },
+      ],
+    })
+
+    expect(actionTool.description).toContain(
+      'actionId 11760660297804961: custom field "Refund reason"',
+    )
+    expect(actionTool.description).not.toContain("field-refund-reason")
+    expect(actionTool.description).not.toContain("private-tag-id")
+  })
+
   test("validates the whole call before execution and runs selected rules in persisted order", async () => {
     actionExecutorMock.mockImplementation(async ({ action }) => ({
       actionId: action.id,
@@ -148,7 +183,7 @@ describe("AI agent actions native tool", () => {
 
     await actionTool.execute(
       { matches: [{ ruleId: "second" }, { ruleId: "first" }] },
-      { experimental_context: undefined, messages: [], toolCallId: "tool-1" },
+      { context: undefined, messages: [], toolCallId: "tool-1" },
     )
 
     expect(
@@ -194,12 +229,12 @@ describe("AI agent actions native tool", () => {
 
     const firstCall = actionTool.execute(
       { matches: [{ ruleId: "rule-1" }] },
-      { experimental_context: undefined, messages: [], toolCallId: "tool-1" },
+      { context: undefined, messages: [], toolCallId: "tool-1" },
     )
     await vi.waitFor(() => expect(actionExecutorMock).toHaveBeenCalledOnce())
     const secondCall = actionTool.execute(
       { matches: [{ ruleId: "rule-1" }] },
-      { experimental_context: undefined, messages: [], toolCallId: "tool-2" },
+      { context: undefined, messages: [], toolCallId: "tool-2" },
     )
 
     await expect(secondCall).resolves.toMatchObject({
@@ -240,7 +275,7 @@ describe("AI agent actions native tool", () => {
           { ruleId: "rule-1", values: [{ actionId: "archive", value: "x" }] },
         ],
       },
-      { experimental_context: undefined, messages: [], toolCallId: "tool-1" },
+      { context: undefined, messages: [], toolCallId: "tool-1" },
     )
 
     expect(result).toMatchObject({

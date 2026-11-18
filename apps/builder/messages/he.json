@@ -185,9 +185,141 @@
     "name": "סוכנים"
   },
   "aiFiles": {
+    "detail": {
+      "title": "Knowledge details",
+      "details": "Details",
+      "noChunkingInfo": "No processing information is available yet."
+    },
+    "chunking": {
+      "title": "Chunking",
+      "strategyLabel": "Strategy",
+      "version": "Chunker version",
+      "chunkSize": "Chunk size",
+      "overlapSize": "Overlap size",
+      "chunkCount": "Chunks",
+      "processedAt": "Processed at",
+      "outdated": "Reindex recommended",
+      "strategy": {
+        "prose": "Prose",
+        "tabular": "Tabular",
+        "markdown": "Markdown"
+      },
+      "configDefault": "Chunking parameters: defaults ({chunkSize} characters, overlap {overlapSize}).",
+      "configCustom": "Chunking parameters: {chunkSize} characters, overlap {overlapSize}."
+    },
+    "processingRun": {
+      "title": "Processing run",
+      "noRun": "No processing run has been tracked for this file yet.",
+      "queuedAt": "Queued at",
+      "startedAt": "Started at",
+      "heartbeatAt": "Last heartbeat",
+      "finishedAt": "Finished at",
+      "stale": "Processing appears stalled",
+      "failedBadge": "Processing failed",
+      "successNote": "Chunking and embedding enqueueing completed. The file is searchable when embedding status is also complete.",
+      "status": {
+        "queued": "Queued",
+        "processing": "Processing",
+        "success": "Prepared",
+        "error": "Failed"
+      },
+      "error": {
+        "fileTooLarge": "The file is too large to process.",
+        "tooManyChunks": "The file produced too many chunks.",
+        "fileUnreadable": "The file could not be read. For CSV files, save as CSV UTF-8 and try again.",
+        "noExtractableContent": "No content could be extracted. Check the spreadsheet header row, or the file may be a scan or empty.",
+        "noEmbeddingProvider": "No embedding provider is configured.",
+        "enqueueFailed": "The file was saved but processing could not be queued. Reindex it to try again.",
+        "unknown": "Processing failed unexpectedly."
+      }
+    },
+    "reindex": {
+      "action": "Reindex",
+      "confirmTitle": "Reindex this file?",
+      "confirmDescription": "The file will be processed with the current chunker.",
+      "downtimeWarning": "Search may be temporarily unavailable while this file is reindexed.",
+      "queued": "Reindex queued",
+      "alreadyRunning": "Processing is already running for this file.",
+      "rateLimited": "Too many requests. Try again shortly.",
+      "parameters": "Chunking parameters",
+      "strategyLabel": "How to split",
+      "strategy": {
+        "auto": "Automatic (by file type)",
+        "prose": "Plain text"
+      },
+      "chunkSize": "Chunk size (characters)",
+      "overlapSize": "Overlap (characters)",
+      "overlapDisabledTabular": "Spreadsheets keep each row whole, so overlap is not used.",
+      "tabularHeaderRow": "Header row (spreadsheets)",
+      "presets": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "custom": "Custom chunk size"
+      },
+      "resetDefaults": "Restore defaults",
+      "estimate": "Estimate: about {estimate} chunks (currently {current})",
+      "reembedWarning": "Changing parameters re-embeds the whole file (about {count} chunks) with your workspace key, and the file cannot be searched until it finishes.",
+      "largeChunkWarning": "Larger chunks make every agent answer read more text and cost more tokens.",
+      "noChangeNote": "Parameters are unchanged: chunks that are already embedded are kept and not embedded again.",
+      "conflict": "This file is being processed, so the new parameters were not applied. Try again when processing finishes."
+    },
+    "chunks": {
+      "indexOutdated": "Some chunks have no position yet. Reindex the file to number them."
+    },
     "description": "העניקו לסוכנים שלכם גישה לקובצי PDF, למסמכים ועוד",
     "title": "ידע",
-    "noEmbeddingProvider": "לא הוגדר ספק הטמעות. הטמעות של קובצי AI דורשות שילוב OpenAI או Gemini. ‏DeepSeek ו-Claude אינם תומכים במודלים של הטמעות."
+    "noEmbeddingProvider": "לא הוגדר ספק הטמעות. הטמעות של קובצי AI דורשות שילוב OpenAI או Gemini. ‏DeepSeek ו-Claude אינם תומכים במודלים של הטמעות.",
+    "testQuery": {
+      "title": "Test query",
+      "description": "Pick files, ask a question and see which chunk answers it. Only the retrieval step is simulated; no AI answer is generated.",
+      "open": "Test query",
+      "backToKnowledge": "Back to Knowledge",
+      "run": "Run test",
+      "files": "Files",
+      "filterFiles": "Filter files by name",
+      "selectAllReady": "Select all ready files",
+      "selectedCount": "{count}/{max} selected",
+      "fileNotReady": "This file has no chunks ready for search yet.",
+      "question": "Question",
+      "expected": "Expected answer (optional)",
+      "expectedHelp": "Type the answer exactly as it appears in the document, accents included. It is matched against every chunk of the selected files.",
+      "limit": "Result limit",
+      "simulationNote": "This simulates retrieval only; an agent may phrase a question differently. Each run uses one embedding from your workspace key.",
+      "rateLimited": "Too many test requests. Try again shortly.",
+      "byFile": "By file",
+      "matches": "{count} matching chunks",
+      "bestRank": "best rank {rank}",
+      "needsReindex": "Needs reindex",
+      "openDetail": "Open details",
+      "rank": "#{rank}",
+      "chunkNumber": "chunk #{index}",
+      "chunkUnnumbered": "chunk not numbered",
+      "aiWillSee": "AI will see",
+      "belowThreshold": "Below threshold",
+      "containsExpected": "Contains the answer",
+      "thresholdLine": "Threshold {threshold}",
+      "appliedConfig": "Applied configuration",
+      "agentDefaultThreshold": "Agent default threshold",
+      "timings": "Search time",
+      "scoreNotComparable": "Similarity scores are not directly comparable across embedding models.",
+      "answerLocation": "Answer is in {file} · {chunk} · rank {rank}",
+      "splitHint": "The answer may be split between two chunks. Try a larger chunk size or overlap, or check the file was read correctly.",
+      "previousRun": "Previous run ({time}): answer rank {from} → now {to}",
+      "previousRunTop": "Previous run ({time}): {changed} of {total} top chunks changed",
+      "verdict": {
+        "inTopResults": "The AI will see the expected answer.",
+        "foundButLowRank": "The answer is in the documents but ranks too low for the AI to see it. Try a closer question, or reindex with smaller chunks.",
+        "notInAnyChunk": "No chunk of the selected files contains the answer. The document may be read or split wrongly: view the chunks or reindex with other settings."
+      },
+      "diagnosis": {
+        "ok": "Matching chunks found.",
+        "noReadyChunks": "No chunks are ready for search yet. Open the file to check its processing status.",
+        "allBelowThreshold": "Chunks were found but all are below the threshold. Try a lower trial threshold.",
+        "noMatches": "No matching chunks were found.",
+        "agentHasNoFiles": "This agent has no knowledge files."
+      }
+    }
   },
   "aiFunctions": {
     "description": "הגדירו פונקציות LLM כדי להפוך את סוכן ה-AI שלכם לחכם יותר",
@@ -317,6 +449,7 @@
   "flows": {
     "export": {
       "notPublished": "תהליך זה מעולם לא פורסם. יש לפרסם אותו לפני הייצוא.",
+      "viewOnly": "התהליך הזה הותקן מתבנית לצפייה בלבד, ולכן אי אפשר לייצא אותו.",
       "failed": "הייצוא נכשל. יש לנסות שוב."
     },
     "title": "תהליכים",
@@ -486,7 +619,18 @@
       "sendGoogleAdsConversion": "שליחת המרה של Google Ads",
       "changeGamificationScore": "שינוי נקודות משחוק",
       "sendViewCatalog": "הצגת קטלוג",
-      "sendProducts": "שליחת מוצרים"
+      "sendProducts": "שליחת מוצרים",
+      "sendCollection": "אוסף",
+      "pipeline": "פייפליינים",
+      "moreOptions": "אפשרויות נוספות",
+      "findPlacesNearMe": "מצא מקומות בקרבתי",
+      "callPhoneNumber": "התקשרות למספר טלפון",
+      "copyText": "העתקת טקסט"
+    },
+    "externalRequest": {
+      "errors": {
+        "requestFailed": "לא ניתן לבדוק את הבקשה החיצונית. בדקו את הגדרת הבקשה ונסו שוב."
+      }
     },
     "splitTraffic": {
       "balanceHint": "הסכום הכולל חייב להיות 100%.",
@@ -517,7 +661,12 @@
       "customField": "שדה מותאם אישית",
       "selectCustomFieldPlaceholder": "בחירת שדה מותאם אישית",
       "addMapping": "הוספת מיפוי",
-      "addCustomField": "הוספת חדש"
+      "addCustomField": "הוספת חדש",
+      "fileBadge": "קובץ",
+      "fileFormat": "קישורי קבצים",
+      "fileFormatAllUrls": "כל הקישורים, מופרדים בפסיקים",
+      "fileFormatFirstUrl": "הקישור הראשון בלבד",
+      "fileFormatHint": "השדה המותאם שומר קישורים לקבצים שהועלו, לפי הבחירה כאן."
     },
     "sendCarousel": {
       "addSlide": "הוספת כרטיס",
@@ -667,6 +816,156 @@
       "productsSelected": "{count, plural, one {מוצר #} other {# מוצרים}}",
       "noneSelected": "עדיין אין מוצרים",
       "sendFailed": "לא ניתן היה לשלוח את המוצרים."
+    },
+    "sendCollection": {
+      "title": "אוסף",
+      "dataType": "סוג נתונים",
+      "dataTypes": {
+        "products": "מוצרים"
+      },
+      "collectionType": "סוג אוסף",
+      "collectionTypes": {
+        "automated": {
+          "label": "אוטומטי",
+          "description": "פריטים קיימים ועתידיים שתואמים לתנאים יתווספו אוטומטית."
+        },
+        "manual": {
+          "label": "ידני",
+          "description": "הוסיפו פריטים אחד אחד."
+        }
+      },
+      "condition": "תנאי",
+      "name": "שם",
+      "optional": "(אופציונלי)",
+      "category": "קטגוריה",
+      "subcategory": "תת-קטגוריה",
+      "vendor": "ספק",
+      "all": "הכול",
+      "items": "פריטים",
+      "select": "בחירה",
+      "selectPlaceholder": "בחרו פריט אחד או יותר",
+      "selectAll": "בחירת הכול",
+      "deselectAll": "ביטול בחירת הכול",
+      "maxProducts": "עד {count} מוצרים; מוצר שהחנות כבר לא מציגה מדולג.",
+      "automatedHint": "שולח עד {count} מוצרים תואמים ככרטיסים שפותחים את המוצר בחנות.",
+      "summaryAll": "כל המוצרים שהחנות מציגה",
+      "summaryAutomated": "מוצרים: {filters}",
+      "summaryManual": "{count, plural, one {מוצר #} other {# מוצרים}}",
+      "cancel": "ביטול",
+      "save": "שמירה"
+    },
+    "pipelineStep": {
+      "action": "פעולה",
+      "pipeline": "פייפליין",
+      "targetHint": "פועל על הפריט הפתוח האחרון של איש הקשר בפייפליין זה. נתיב הדילוג מופעל כשאין פריט כזה.",
+      "noPipelines": "לא נמצאו פייפליינים",
+      "actions": {
+        "addToPipeline": "הוספת איש קשר לפייפליין",
+        "moveToStage": "העברה לשלב",
+        "changeValue": "שינוי ערך",
+        "assign": "הקצאה למנהלים",
+        "changeStatus": "שינוי סטטוס",
+        "changePriority": "שינוי עדיפות",
+        "changeDueDate": "שינוי תאריך יעד",
+        "changeTitle": "שינוי כותרת",
+        "setCustomField": "הגדרת שדה מותאם אישית",
+        "clearCustomField": "ניקוי שדות מותאמים אישית",
+        "changeDescription": "שינוי תיאור",
+        "removeFromPipeline": "הסרת איש קשר מהפייפליין",
+        "addComment": "הוספת תגובה",
+        "transfer": "העברה לפייפליין אחר"
+      },
+      "title": "כותרת",
+      "description": "תיאור",
+      "stage": "שלב",
+      "firstStage": "שלב ראשון",
+      "status": "סטטוס",
+      "assigneeMembers": "מנהלים מוקצים",
+      "assigneeTeams": "צוותים מוקצים",
+      "value": "ערך",
+      "priority": "עדיפות",
+      "dueDate": "תאריך יעד",
+      "dueNone": "ללא",
+      "dueNoneHint": "לפריט אין תאריך יעד.",
+      "dueCustomField": "משדה מותאם אישית מסוג תאריך",
+      "dueFixed": "תאריך ושעה קבועים",
+      "dueField": "שדה מותאם אישית מסוג תאריך או תאריך ושעה",
+      "fieldValues": "שדות מותאמים אישית",
+      "field": "שדה",
+      "fieldValue": "ערך",
+      "fields": "שדות",
+      "addField": "הוספת ערך שדה",
+      "removeHint": "מוחק את הפריט הפתוח האחרון של איש הקשר בפייפליין זה.",
+      "comment": "תגובה",
+      "destinationPipeline": "פייפליין יעד",
+      "destinationStage": "שלב יעד",
+      "missingRequiredFields": "שדות חובה ללא ערך: {names}. לא ניתן ליצור את הפריט עד שלכל אחד מהם יהיה ערך.",
+      "addRequiredFields": "הוסף שדות חובה"
+    },
+    "aiSegmentImage": {
+      "label": "{name}: פילוח תמונה"
+    },
+    "aiSpeechToText": {
+      "muse": {
+        "formatHint": "מתקבלים רק קובצי WAV: ‏PCM ‏16 ביט, מונו, 16 או 24 קילו-הרץ, עד 10 דקות. כל קובץ אחר (למשל הודעות קוליות) עובר לענף השגיאה.",
+        "languageBias": {
+          "label": "העדפת שפה",
+          "description": "השפות שבהן סביר שהשמע מוקלט. השאירו ריק לזיהוי אוטומטי.",
+          "placeholder": "זיהוי אוטומטי"
+        },
+        "keywords": {
+          "label": "מילות מפתח",
+          "description": "שמות או מונחים מקצועיים שעוזרים ל-Muse לאיית מילים נכון.",
+          "placeholder": "הוסיפו מילת מפתח והקישו Enter"
+        }
+      },
+      "languages": {
+        "Arabic": "ערבית",
+        "Bengali": "בנגלית",
+        "Dutch": "הולנדית",
+        "English": "אנגלית",
+        "French": "צרפתית",
+        "German": "גרמנית",
+        "Hebrew": "עברית",
+        "Hindi": "הינדי",
+        "Indonesian": "אינדונזית",
+        "Italian": "איטלקית",
+        "Japanese": "יפנית",
+        "Kannada": "קנאדה",
+        "Korean": "קוריאנית",
+        "Malay": "מלאית",
+        "MandarinChinese": "סינית מנדרינית",
+        "Marathi": "מראטהית",
+        "Polish": "פולנית",
+        "Portuguese": "פורטוגזית",
+        "Spanish": "ספרדית",
+        "Tagalog": "טאגאלוג",
+        "Tamil": "טמילית",
+        "Telugu": "טלוגו",
+        "Thai": "תאית",
+        "Turkish": "טורקית",
+        "Vietnamese": "וייטנאמית"
+      }
+    },
+    "findPlacesNearMe": {
+      "category": "קטגוריית מיקום",
+      "allLocations": "כל המיקומים",
+      "whatsappOnly": "נשלח רק לאנשי קשר ב-WhatsApp.",
+      "noLocationSource": "יש לאסוף את המיקום בזרימה הזו: הוסף לפני פעולה זו שלב קבלת נתוני משתמש עם פורמט תשובה מיקום. מיקום שנשמר בזרימה אחרת אינו בשימוש. בלעדיו, פעולה זו מדולגת."
+    },
+    "callPhoneNumber": {
+      "fallbackHint": "בערוצים שאינם יכולים לבצע שיחה, איש הקשר יקבל את המספר הזה כתשובה במקום.",
+      "countryLabel": "קידומת מדינה",
+      "noCountry": "ללא מדינה",
+      "invalidForCountry": "זה אינו מספר טלפון תקין עבור {country}.",
+      "needsCountry": "בחרו מדינה, או התחילו את המספר ב-+ ובקידומת המדינה.",
+      "invalidInternational": "זה אינו מספר טלפון בינלאומי תקין."
+    },
+    "copyText": {
+      "textLabel": "טקסט להעתקה",
+      "limitHint": "עד {max} תווים אחרי מילוי המשתנים.",
+      "fallbackHint": "בערוצים שלא יכולים להעתיק טקסט, איש הקשר מקבל את הטקסט הזה כתשובה.",
+      "viewerTitle": "מעתיק את הטקסט הזה"
     }
   },
   "folders": {
@@ -691,7 +990,7 @@
     "title": "כללי"
   },
   "facebookMarketingMessages": {
-    "deleteWarning": "פעולה זו מסירה את הקמפיין מ-ChatbotX בלבד. קמפיין ההודעות של Meta ממשיך לפעול — השהה או מחק אותו במנהל המודעות.",
+    "deleteWarning": "פעולה זו מוחקת את קמפיין ההודעות ב-Meta ומסירה את הקמפיין מ-ChatbotX. אם Meta תסרב למחיקה, הקמפיין יישמר.",
     "title": "Facebook Marketing Messages",
     "description": "הגדל מעורבות ומכירות בעזרת הודעות קידום מותאמות אישית ב-Messenger.",
     "create": "צור חדש",
@@ -716,13 +1015,197 @@
       "generic": "גנרי",
       "greeting": "ברכה",
       "quickReplies": "תשובות מהירות",
-      "elements": "כרטיסים"
+      "elements": "כרטיסים",
+      "targetMessaging": "טירגוט הודעות",
+      "targetOptIn": "הסכמה (Opt-in)",
+      "targetOptInDescription": "לקוחות בדף שהסכימו לקבל הודעות שיווקיות",
+      "targetCustomAudience": "קהל מותאם אישית",
+      "targetCustomAudienceDescription": "שליחת הודעות לקהלים שהועלו מקובץ",
+      "audience": "קהל מותאם אישית"
     },
+    "noReadyAudiences": "אין קהלים מותאמים אישית מוכנים לדף ולחשבון המודעות הזה.",
+    "manageAudiences": "ניהול קהלים",
     "errors": {
       "notConfigured": "‏Facebook Marketing Messages אינו מוגדר. בקש מהמנהל להגדיר את מזהה התצורה של הודעות שיווקיות.",
       "notGranted": "יש להעניק הרשאה כדי להשתמש בתכונת ההודעות השיווקיות.",
       "tosNotAccepted": "כדי להשתמש בתכונה זו, יש לאשר את תנאי האובייקט המותאם בכתובת {url}",
-      "notFound": "ההודעה השיווקית לא נמצאה."
+      "notFound": "ההודעה השיווקית לא נמצאה.",
+      "audienceNotTargetable": "הקהל המותאם אישית שנבחר אינו מוכן או אינו שייך לדף ולחשבון המודעות הזה.",
+      "connectFirst": "יש לחבר תחילה את Marketing Messages באפליקציית ChatbotX.",
+      "mmInvalidState": "פעולה זו אינה זמינה במצב הנוכחי של הקמפיין.",
+      "mmCampaignEnded": "קמפיין ההודעות ב-Meta הסתיים, ולכן לא ניתן לשלוח או לחדש אותו.",
+      "mmPageNotConnected": "הדף של קמפיין זה אינו מחובר לסביבת העבודה הזו.",
+      "mmContentLocked": "לא ניתן לשנות את התוכן לאחר שליחת ההודעה הראשונה.",
+      "metaDeleteFailed": "Meta לא הצליחה למחוק את הקמפיין הזה, ולכן הוא נשמר. {message}",
+      "statisticsUnknownAdAccount": "לסביבת עבודה זו אין קמפיינים של הודעות שיווקיות בחשבון המודעות הזה.",
+      "statisticsInvalidRange": "בחרו תאריך התחלה שאינו מאוחר מתאריך הסיום, בטווח 37 החודשים האחרונים."
+    },
+    "tabs": {
+      "campaigns": "קמפיינים",
+      "audiences": "קהלים",
+      "statistics": "סטטיסטיקות"
+    },
+    "audiences": {
+      "title": "קהלים מותאמים אישית",
+      "create": "יצירה חדשה",
+      "uploadMore": "העלאת שורות נוספות",
+      "empty": "עדיין אין קהלים מותאמים אישית.",
+      "deleteTitle": "מחיקת קהל מותאם אישית",
+      "deleteWarning": "פעולה זו מוחקת את הקהל המותאם אישית \"{name}\" ב-Meta וב-ChatbotX. לא ניתן לבטל אותה.",
+      "deleted": "הקהל המותאם אישית נמחק.",
+      "pageDisconnected": "הדף נותק",
+      "status": {
+        "ready": "מוכן",
+        "missing": "נמחק ב-Meta"
+      },
+      "fields": {
+        "customAudienceId": "מזהה קהל מותאם אישית",
+        "approximateCount": "כמות משוערת",
+        "status": "סטטוס",
+        "file": "העלאת קובץ"
+      },
+      "wizard": {
+        "title": "יצירת קהל מותאם אישית",
+        "uploadMoreTitle": "העלאת שורות נוספות",
+        "steps": {
+          "prepare": "הכנת הרשימה",
+          "upload": "העלאה",
+          "confirm": "אישור"
+        },
+        "prepareDescription": "רשימת מנויים היא קובץ CSV או TXT המכיל מידע המשמש ליצירת הקהל שלך להודעות שיווקיות. אנו משתמשים במספר הטלפון כדי להתאים בין המנויים שלך לבין משתמשי פייסבוק ואינסטגרם. לפני שהמידע נשלח אלינו, רשימת המזהים שלך עוברת גיבוב (hash) לקוד אקראי.",
+        "aboutHashing": "מידע על גיבוב",
+        "downloadTemplate": "הורדת תבנית קובץ",
+        "mainIdentifiers": "כלול לפחות מזהה ראשי אחד",
+        "moreIdentifiers": "כלול מזהים נוספים",
+        "identifiers": {
+          "email": "אימייל",
+          "phone": "מספר טלפון",
+          "madid": "מזהה מפרסם בנייד",
+          "fn": "שם פרטי",
+          "ln": "שם משפחה",
+          "ct": "עיר",
+          "st": "מדינה/מחוז",
+          "country": "מדינה",
+          "zip": "מיקוד",
+          "dob": "תאריך לידה",
+          "doby": "שנת לידה",
+          "gen": "מגדר"
+        },
+        "uploadNote": "לפני העלאת הרשימה, ודא שהמזהים שלמים ובפורמט הנכון. הרשימה חייבת להיות בפורמט .csv,‏ .txt או .xlsx.",
+        "namePlaceholder": "הזן שם קהל...",
+        "descriptionPlaceholder": "תיאור קצר (אם יש)",
+        "dropzone": "לחץ להעלאה או גרור ושחרר",
+        "maxFileSize": "גודל קובץ מרבי: 20MB",
+        "fileRequired": "בחר קובץ להעלאה.",
+        "fileTooLarge": "הקובץ גדול מ-20MB.",
+        "fileType": "הקובץ חייב להיות בפורמט .csv,‏ .txt או .xlsx.",
+        "next": "הבא",
+        "back": "חזרה",
+        "upload": "העלאה",
+        "done": "סיום",
+        "successTitle": "ההעלאה הצליחה",
+        "successRows": "רשימת המנויים שלך ב-Messenger הועלתה: {count, plural, one {שורה #} other {# שורות}}",
+        "skippedRows": "{count, plural, one {שורה # דולגה} other {# שורות דולגו}} (אין אימייל או טלפון תקינים).",
+        "invalidRows": "{count, plural, one {שורה # נדחתה} other {# שורות נדחו}} על ידי Meta.",
+        "matchingNote": "ייתכן שנזדקק לכמה דקות כדי להשלים את ההתאמה בין המנויים שלך לבין אנשים בפייסבוק. אפשר לבדוק את הסטטוס ברשימת הקהלים."
+      },
+      "errors": {
+        "audienceInvalidFile": "לא ניתן היה לקרוא את הקובץ. השתמש בקובץ .csv,‏ .txt או .xlsx עם שורת כותרת.",
+        "audienceTooManyRows": "בקובץ יש יותר מ-{max, number} שורות.",
+        "audienceNoIdentifier": "הקובץ חייב לכלול עמודת אימייל או טלפון.",
+        "audienceNoValidRows": "אין אף שורה עם אימייל או מספר טלפון תקינים.",
+        "audiencePartialUpload": "הקהל נוצר, אך ההעלאה נעצרה לאחר {received, number} שורות. השתמש ב\"העלאת שורות נוספות\" כדי לנסות שוב.",
+        "audienceNotFound": "הקהל המותאם אישית לא נמצא.",
+        "audienceCreateRejected": "Meta דחתה את הקהל: {reason}",
+        "uploadUncertain": "ייתכן שההעלאה לא הושלמה. סגרו את החלון ובדקו את רשימת הקהלים; השתמשו ב\"העלאת שורות נוספות\" אם הקהל נוצר.",
+        "pageNotConnected": "הדף שנבחר אינו מחובר למרחב עבודה זה.",
+        "audienceInUse": "הקהל המותאם אישית הזה נמצא בשימוש ב-{count, plural, one {# הודעה שיווקית} other {# הודעות שיווקיות}} ולא ניתן למחוק אותו."
+      }
+    },
+    "delivery": {
+      "title": "משלוח",
+      "contentLocked": "התוכן נעול מכיוון שהודעות כבר נשלחו.",
+      "topicsReturned": "הנושאים ש-Meta החזירה: {topics}",
+      "recipients": "{count} נמענים",
+      "startsAt": "התחלה: {date}",
+      "completedAt": "הושלם: {date}",
+      "errorBreakdown": "כשלונות",
+      "retrying": "Meta לא מקבלת שליחות כרגע; מתבצע ניסיון חוזר אוטומטי.",
+      "counts": {
+        "sent": "נשלחו",
+        "delivered": "נמסרו",
+        "unconfirmed": "לא אושרו"
+      },
+      "status": {
+        "notSent": "לא נשלח",
+        "scheduled": "מתוזמן",
+        "sending": "בשליחה",
+        "waitingNextDay": "ממתין ליום הבא",
+        "paused": "מושהה",
+        "stopped": "הופסק"
+      },
+      "reason": {
+        "pageNotConnected": "הדף אינו מחובר לסביבת עבודה זו.",
+        "quotaReached": "מושהה: מכסת ההודעות הושגה.",
+        "workspaceBlocked": "מושהה: סביבת עבודה זו חסומה.",
+        "grantInvalid": "מושהה: חיבור Facebook פג תוקף. חברו מחדש את Marketing Messages.",
+        "metaBlocker": "Meta חוסמת קמפיין זה.",
+        "contentRejected": "Meta דחתה את תוכן ההודעה.",
+        "noTokens": "לא נמצאו נמענים לקמפיין זה.",
+        "noMatchingTopic": "אף נמען שהביע הסכמה אינו תואם לנושא \"Updates and promotions\".",
+        "tokenFetchFailed": "לא ניתן היה להביא נמענים מ-Meta.",
+        "campaignEnded": "קמפיין Meta הסתיים.",
+        "lifetimeBudgetReached": "התקציב הכולל נוצל במלואו."
+      },
+      "errors": {
+        "grantInvalid": "חיבור Facebook פג תוקף.",
+        "campaignInactive": "קמפיין Meta אינו פעיל.",
+        "budgetReached": "התקציב נוצל במלואו.",
+        "dailyBudgetReached": "התקציב היומי הושג.",
+        "optedOut": "הנמען ביטל את המנוי.",
+        "frequencyLimit": "מגבלת התדירות של הנמען הושגה.",
+        "contentRejected": "תוכן ההודעה נדחה על ידי Meta.",
+        "deliveryFailed": "המשלוח נכשל.",
+        "outcomeUnknown": "תוצאת המשלוח אינה ידועה."
+      }
+    },
+    "statistics": {
+      "searchPlaceholder": "חיפוש לפי מזהה או שם",
+      "adAccount": "חשבון מודעות",
+      "dateRange": "טווח תאריכים",
+      "timezoneHint": "תאריכים לפי {timezone}",
+      "presets": {
+        "last7": "7 הימים האחרונים",
+        "last30": "30 הימים האחרונים",
+        "last90": "90 הימים האחרונים",
+        "thisMonth": "החודש",
+        "lastMonth": "החודש שעבר"
+      },
+      "columns": {
+        "id": "מזהה",
+        "name": "שם",
+        "page": "דף פייסבוק",
+        "delivered": "הודעות שנמסרו",
+        "readRate": "שיעור קריאה",
+        "linkClicks": "קליקים על קישורים",
+        "linkClickRate": "שיעור קליקים על קישורים",
+        "costPerClick": "עלות לקליק",
+        "costPerDelivery": "עלות למסירה",
+        "spend": "סכום שהוצא"
+      },
+      "notes": {
+        "delivery": "Meta לא מדווחת על כך עבור נמענים באירופה או ביפן; קמפיינים אלה מציגים -.",
+        "clicks": "Meta לא מדווחת על כך עבור נמענים באירופה, ארגנטינה, טורקיה, דרום קוריאה או יפן; קמפיינים אלה מציגים -."
+      },
+      "footer": {
+        "label": "סה\"כ: {count, plural, one {# קמפיין} other {# קמפיינים}}",
+        "total": "סה\"כ",
+        "average": "ממוצע"
+      },
+      "totalsUnavailable": "הסכומים אינם זמינים כרגע. נסו שוב בעוד רגע.",
+      "readOnly": "חברו מחדש את ההודעות השיווקיות כדי לראות סטטיסטיקות.",
+      "empty": "עדיין אין קמפיינים של הודעות שיווקיות. צרו אחד בלשונית הקמפיינים.",
+      "noResults": "אין קמפיינים התואמים לחיפוש."
     }
   },
   "facebookAds": {
@@ -1424,14 +1907,22 @@
         "inProgress": "חיבור כבר מתבצע.",
         "unknown": "משהו השתבש.",
         "followUpFailed": "ההגדרה לא הושלמה — סיים אותה מהגדרות הערוץ.",
-        "webhookSubscribeFailed": "מחובר, אך ההרשמה ל-webhook נכשלה — נסה שוב מהגדרות החיבור."
+        "webhookSubscribeFailed": "מחובר, אך ההרשמה ל-webhook נכשלה — נסה שוב מהגדרות החיבור.",
+        "providerUnavailable": "הספק אינו זמין זמנית. נסו שוב בעוד כמה דקות."
       },
       "sessionError": {
         "sessionExpired": "פג תוקף ההפעלה שלך. יש להתחבר שוב.",
         "notMember": "אינך עוד חבר בסביבת עבודה זו.",
         "trialExpired": "תקופת הניסיון שלך הסתיימה.",
         "macLimitReached": "הגעת למגבלת החשבון שלך.",
-        "credentialMissing": "חסרים פרטי גישה. יש להתחבר שוב."
+        "credentialMissing": "חסרים פרטי גישה. יש להתחבר שוב.",
+        "noPages": "לא מצאנו אף דף פייסבוק לחיבור. התחברו שוב ואפשרו גישה לפחות לדף אחד שאתם מנהלים.",
+        "noInstagramAccounts": "לא מצאנו אף חשבון אינסטגרם לחיבור. התחברו שוב ואפשרו גישה לפחות לחשבון אחד.",
+        "exchangeFailed": "לא ניתן היה להשלים את ההתחברות. נא להתחבר שוב.",
+        "providerError": "לא הצלחנו לטעון את החשבונות שלכם כרגע. נסו שוב בעוד כמה דקות.",
+        "connectFailed": "משהו השתבש במהלך החיבור. נסו שוב.",
+        "tooManyAttempts": "יש יותר מדי ניסיונות חיבור שלא הושלמו. המתינו כמה דקות ונסו שוב.",
+        "notAllowed": "לא ניתן לחבר ערוצים כאן כרגע. טענו מחדש את הדף כדי לראות למה."
       },
       "cancelRemaining": "בטל את השאר",
       "retryFailed": "נסה שוב ({count})",
@@ -1497,7 +1988,8 @@
   "workspaces": {
     "list": {
       "title": "רשימת סביבות עבודה"
-    }
+    },
+    "defaultName": "סביבת העבודה של {name}"
   },
   "workspaceToken": {
     "title": "אסימון סביבת עבודה"
@@ -1514,6 +2006,7 @@
       "months": "{count} חוד׳",
       "years": "{count} שנ׳"
     },
+    "realtimeRevokeWarning": "לא ניתן היה לאשר את ביטול הגישה באופן מיידי - הוא ייכנס לתוקף בהתחברות הבאה של החבר.",
     "moveFeature": "העברת {feature}",
     "poweredBy": "מופעל על ידי {name}",
     "noGiphyApiKey": "לא נמצא מפתח API של GIPHY. הוסיפו מפתח בהגדרות הפלטפורמה.",
@@ -1651,6 +2144,9 @@
     "waTemplateMpmTooManySections": "לכפתור רב-מוצרים יכולים להיות עד 10 מקטעים לכל היותר. הסר מקטעים לפני הפרסום.",
     "waTemplateMpmTooManyProducts": "לכפתור רב-מוצרים יכולים להיות עד 30 מוצרים בסך הכל. הסר מוצרים לפני הפרסום.",
     "waTemplateLtoExpirationRequired": "בחרו תאריך תפוגה למבצע המוגבל בזמן לפני השליחה.",
+    "waTemplatePaymentRequestIncomplete": "מלאו את פרטי התשלום של כפתור זה לפני הפרסום.",
+    "waTemplatePaymentRequestInvalid": "לפרט תשלום יש פורמט לא תקין. בדקו את הסכום, הקישור וספרות הכרטיס.",
+    "waTemplatePaymentRequestMisplaced": "ניתן להגדיר פרטי תשלום רק בכפתור תשלום של תבנית רגילה (לא קרוסלה).",
     "waTemplateMpmIncompleteProducts": "כל מקטע צריך לפחות מוצר אחד שנבחר — הסירו שורות ריקות או בחרו להן מוצר.",
     "unsupportedBlock": "הערוץ הזה אינו תומך בבלוק הזה.",
     "constraintExceeded": "חרגת ממגבלת הערוץ.",
@@ -1677,7 +2173,15 @@
       "noAnswer": "אין תשובה",
       "labelsUnavailable": "לא ניתן לטעון את שאלות ה-Flow, לכן מוצגים שמות השדות.",
       "yes": "כן",
-      "no": "לא"
+      "no": "לא",
+      "fileNotSaved": "הקובץ לא נשמר",
+      "filesNotSaved": "{count, plural, one {# קובץ לא נשמר} other {# קבצים לא נשמרו}}",
+      "filesAttached": "{count, plural, one {# קובץ מצורף} other {# קבצים מצורפים}}",
+      "fileFailure": {
+        "too_large": "הקובץ גדול מדי",
+        "unsupported_type": "סוג קובץ לא נתמך",
+        "download_failed": "ההורדה נכשלה"
+      }
     },
     "sendViewCatalogBodyTooLong": "טקסט ההודעה ארוך מדי להודעת קטלוג. קצרו אותו.",
     "sendViewCatalogFooterTooLong": "הכותרת התחתונה ארוכה מדי להודעת קטלוג. קצרו אותה.",
@@ -1704,7 +2208,24 @@
     "savedReplyImagesRemoved": "תמונות שלא ניתן לשלוח כאן הוסרו",
     "onlyImagesAllowed": "ניתן להוסיף תמונות בלבד",
     "tooManySavedReplyImages": "תשובה שמורה יכולה לכלול עד {max} תמונות",
-    "savedReplyImagesNotSentHere": "התמונות לא יישלחו כאן"
+    "savedReplyImagesNotSentHere": "התמונות לא יישלחו כאן",
+    "invalidPhoneNumber": "זה אינו מספר טלפון תקין. כללו את קידומת המדינה, לדוגמה ‎+1.",
+    "buttonCallPhoneNumberUnsupported": "כפתור זה אינו יכול להתקשר למספר טלפון כאן. בחרו פעולה אחרת.",
+    "buttonCopyTextUnsupported": "הכפתור הזה לא יכול להעתיק טקסט כאן. בחרו פעולה אחרת.",
+    "paymentRequest": {
+      "title": "בקשת תשלום",
+      "cardEnding": "כרטיס המסתיים ב-{lastFourDigits}",
+      "status": "WhatsApp לא מדווח על תשלום. בדוק אצל ספק התשלומים שלך.",
+      "cardStatus": "אישור הלקוח אינו מחייב את הכרטיס. חייב דרך ספק התשלומים שלך.",
+      "sentFromTemplate": "תבנית: {name}"
+    },
+    "paymentConfirmation": {
+      "title": "הלקוח אישר את התשלום",
+      "cardTitle": "הלקוח אישר את התשלום בכרטיס",
+      "cardEnding": "כרטיס המסתיים ב-{lastFourDigits}",
+      "notCharged": "עדיין לא חויב. חייב דרך ספק התשלומים שלך.",
+      "reference": "אסמכתה {referenceId}"
+    }
   },
   "instagram": {
     "description": "שילוב זה מאפשר ליצור בוטים ל-Instagram.",
@@ -1775,6 +2296,7 @@
         "buttonText": "טקסט הכפתור",
         "buttonType": "סוג כפתור",
         "visitWebsite": "ביקור באתר",
+        "openMiniApp": "פתיחת מיני אפליקציה",
         "callPhoneNumber": "חיוג למספר טלפון",
         "postback": "כפתור"
       },
@@ -1862,6 +2384,18 @@
       "label": "DeepSeek"
     },
     "title": "DeepSeek"
+  },
+  "muse": {
+    "autoReply": {
+      "description": "הפעילו מענה אוטומטי כדי להשיב למשתמשים באופן טבעי באמצעות AI המבוסס על הנתונים העסקיים שלכם.",
+      "label": "מענה אוטומטי באמצעות AI"
+    },
+    "connect": {
+      "description": "השיבו למשתמשים באופן טבעי באמצעות AI המבוסס על הנתונים העסקיים שלכם.",
+      "embeddingHint": "Muse אינו מספק מודלי הטמעה. מאגר הידע וקובצי ה-AI עדיין דורשים שילוב של OpenAI או Gemini.",
+      "label": "Muse"
+    },
+    "title": "Muse"
   },
   "decision": {
     "addConnection": "Add AI Router connection",
@@ -1998,12 +2532,17 @@
     "deepseek": {
       "description": "תיאור שילוב DeepSeek",
       "title": "שילוב DeepSeek"
+    },
+    "muse": {
+      "description": "תיאור שילוב Muse",
+      "title": "שילוב Muse"
     }
   },
   "auth": {
     "orContinueWith": "או המשך באמצעות",
     "continueWithFacebook": "המשך באמצעות Facebook",
     "continueWithGoogle": "המשך באמצעות Google",
+    "continueWithProvider": "המשך באמצעות {name}",
     "continueWithEmail": "המשך באמצעות אימייל",
     "continueWithMagicLink": "המשך באמצעות קישור קסם",
     "dontHaveAnAccount": "אין לכם חשבון?",
@@ -2034,11 +2573,15 @@
     "changePasswordTitle": "שינוי הסיסמה",
     "changePasswordDescription": "הגדירו סיסמה חדשה לפני שתמשיכו.",
     "passwordChangeSuccess": "הסיסמה שונתה",
+    "signUpDisabledTitle": "ההרשמה מושבתת",
+    "signUpDisabledDescription": "ניתן ליצור חשבונות חדשים רק על ידי מנהל מערכת או באמצעות קישור הזמנה.",
     "oauthError": {
       "accountNotLinked": "כבר קיים חשבון עם כתובת האימייל הזו ולא ניתן היה לקשר אותו. התחבר באותה דרך שבה התחברת קודם, או פנה לתמיכה.",
       "unableToLinkAccount": "לא הצלחנו לקשר את ההתחברות הזו לחשבון הקיים. התחבר באותה דרך שבה התחברת קודם, או פנה לתמיכה.",
       "sessionExpired": "ניסיון ההתחברות פג תוקף. נסה שוב.",
       "accessDenied": "ההתחברות בוטלה.",
+      "signUpDisabled": "חשבון זה עדיין לא קיים וההרשמה מושבתת. בקש ממנהל מערכת ליצור אותו עבורך.",
+      "invalidInvitation": "הזמנה זו אינה תקפה או שפג תוקפה.",
       "generic": "ההתחברות נכשלה. נסה שוב."
     }
   },
@@ -2062,6 +2605,9 @@
     "maxCharacters": "מקסימום {max} תווים.",
     "invalidApiKey": "מפתח API לא תקין",
     "maxMustBeGreaterThanMin": "{maxField} חייב להיות גדול או שווה ל-{minField}",
+    "trigger": {
+      "actionReferenceNotFound": "An action refers to a record that no longer exists. Re-select it in the action and save again."
+    },
     "inboundWebhook": {
       "inboxRequired": "בחרו תיבת דואר נכנס.",
       "inboxNotFound": "תיבת הדואר הנכנס שנבחרה לא נמצאה.",
@@ -2071,11 +2617,31 @@
       "unknownFieldTarget": "שדה איש קשר ממופה כבר אינו קיים.",
       "actionReferenceNotFound": "פעולה מפנה לתהליך, תגית או שדה שכבר אינם קיימים.",
       "fieldMappingRequired": "הוסיפו לפחות מיפוי שדה אחד."
+    },
+    "form": {
+      "required": "שדה זה הוא חובה.",
+      "minLength": "הזינו לפחות {minimum} תווים.",
+      "maxLength": "הזינו לכל היותר {maximum} תווים.",
+      "minNumber": "הזינו מספר של {minimum} לפחות.",
+      "moreThan": "הזינו מספר גדול מ-{minimum}.",
+      "maxNumber": "הזינו מספר של {maximum} לכל היותר.",
+      "lessThan": "הזינו מספר קטן מ-{maximum}.",
+      "number": "הזינו מספר.",
+      "wholeNumber": "הזינו מספר שלם.",
+      "minItems": "בחרו לפחות {minimum}.",
+      "maxItems": "בחרו לכל היותר {maximum}.",
+      "email": "הזינו כתובת אימייל תקינה.",
+      "url": "הזינו קישור תקין שמתחיל ב-https://.",
+      "format": "הערך אינו בפורמט הנכון.",
+      "option": "בחרו אחת מהאפשרויות.",
+      "invalid": "הערך אינו תקין.",
+      "checkFields": "יש שדות שצריך לתקן. בדקו את השדות המסומנים באדום."
     }
   },
   "webchat": {
     "chatUnavailable": "צ'אט זה אינו זמין כרגע.",
     "description": "אפשרו ללקוחות לקבל תגובות אוטומטיות מיידיות מהעסק שלכם ישירות באתר",
+    "loadMessagesError": "לא ניתן היה לטעון את ההודעות. בדקו את החיבור ונסו שוב.",
     "rateLimitExceeded": "יותר מדי בקשות. נסו שוב בעוד רגע.",
     "title": "צ'אט אינטרנט",
     "workspaceUnavailable": "סביבת עבודה זו אינה זמינה עוד.",
@@ -2231,7 +2797,28 @@
         "mpmSectionLimitReached": "הגעת למקסימום של 10 מקטעים.",
         "mpmProductLimitReached": "הגעת למקסימום של 30 מוצרים.",
         "mpmProductsSummary": "{productCount} מוצרים ב-{sectionCount} מקטעים",
-        "unsupportedButtonParam": "סוג כפתור זה עדיין אינו נתמך."
+        "unsupportedButtonParam": "סוג כפתור זה עדיין אינו נתמך.",
+        "payment": {
+          "method": {
+            "pix": "Pix",
+            "boleto": "Boleto",
+            "payment_link": "קישור תשלום",
+            "card_on_file": "תשלום בכרטיס בלחיצה אחת"
+          },
+          "field": {
+            "code": "קוד Pix",
+            "digitableLine": "שורת Boleto",
+            "url": "כתובת URL של קישור התשלום",
+            "lastFourDigits": "4 הספרות האחרונות של הכרטיס",
+            "credentialId": "מזהה אישור הכרטיס (אופציונלי)",
+            "amount": "סכום ב-BRL, לדוגמה 12.34"
+          },
+          "notice": {
+            "general": "השתמש במשתנה כדי שכל לקוח יקבל פרטי תשלום משלו.",
+            "cardOnFile": "תשלום בכרטיס בלחיצה אחת עובד רק לעסקים ש-Meta הפעילה עבורם."
+          },
+          "unsupportedButton": "בתבנית זו יש כפתור תשלום שלא ניתן לשלוח: לא ניתן היה לקבוע את סוג התשלום. סנכרנו את התבניות מחדש או בחרו תבנית אחרת."
+        }
       }
     },
     "sampleBodyCardContent": {
@@ -2388,7 +2975,6 @@
     "templateHeader": {
       "label": "כותרת התבנית"
     },
-    "transferPhoneNumber": "העברת מספר טלפון מספק WhatsApp אחר",
     "selectPage": {
       "tryAgain": "ניסיון חיבור מחדש"
     },
@@ -2645,7 +3231,18 @@
         "callInformation": "פרטי השיחה"
       }
     },
-    "credentialSecretsRequired": "הזינו את סוד האפליקציה ואת אסימון משתמש המערכת. הם עדיין לא נשמרו."
+    "credentialSecretsRequired": "הזינו את סוד האפליקציה ואת אסימון משתמש המערכת. הם עדיין לא נשמרו.",
+    "embeddedSignupCancelled": "ההרשמה בוטלה — אפשר לסגור את הכרטיסייה.",
+    "embeddedSignupFailed": "ההרשמה לא הושלמה — סגרו את הכרטיסייה ונסו שוב.",
+    "payment": {
+      "settings": {
+        "title": "תשלומים",
+        "description": "איך המספר הזה שולח כפתורי בקשת תשלום.",
+        "pixRedirectLabel": "שליחת Pix עם הפניה",
+        "pixRedirectDescription": "הקונים פותחים את אפליקציית הבנק לתשלום וחוזרים ל-WhatsApp. הפעילו רק לאחר ש-Meta קלטה את העסק שלכם; קונים שלא ניתן להפנות יקבלו עדיין העתק והדבק.",
+        "adminOnly": "רק מנהלי סביבת העבודה יכולים לשנות הגדרות תשלום."
+      }
+    }
   },
   "zalo": {
     "title": "Zalo OA",
@@ -2668,7 +3265,8 @@
     "chatbotInvitationDescription1": "הצטרפות אל {chatbotName}",
     "chatbotInvitationDescription2": "{userName} הזמין אתכם להצטרף אל {chatbotName}.",
     "invalidInvitation": "הזמנה זו אינה תקינה או שפג תוקפה.",
-    "workspaceUnavailable": "סביבת עבודה זו אינה זמינה עוד."
+    "workspaceUnavailable": "סביבת עבודה זו אינה זמינה עוד.",
+    "signUpToJoin": "צור חשבון כדי להצטרף"
   },
   "inboxes": {
     "markReadOnOutbound": {
@@ -3033,11 +3631,11 @@
       "incomingCall": "שיחה נכנסת",
       "missedAudioCall": "שיחה קולית שלא נענתה",
       "callEnded": "השיחה הסתיימה",
-      "ticketCreated": "כרטיס נוצר",
-      "ticketMovedToStage": "כרטיס הועבר לשלב",
-      "ticketValueChanged": "ערך הכרטיס השתנה",
-      "ticketStatusChanged": "מצב הכרטיס השתנה",
-      "ticketPriorityChanged": "עדיפות הכרטיס השתנתה",
+      "pipelineItemCreated": "כרטיס נוצר",
+      "pipelineItemMovedToStage": "כרטיס הועבר לשלב",
+      "pipelineItemValueChanged": "ערך הכרטיס השתנה",
+      "pipelineItemStatusChanged": "מצב הכרטיס השתנה",
+      "pipelineItemPriorityChanged": "עדיפות הכרטיס השתנתה",
       "subscribedToSequence": "נרשם לרצף",
       "unsubscribedFromSequence": "ביטל הרשמה לרצף",
       "shoppingCartSent": "איש הקשר שלח עגלת קניות",
@@ -3048,15 +3646,24 @@
       "orderShipped": "ההזמנה נשלחה",
       "orderConcluded": "ההזמנה הושלמה",
       "orderCancelled": "ההזמנה בוטלה",
+      "orderPaid": "ההזמנה שולמה",
+      "orderRefunded": "ההזמנה הוחזרה",
       "categoryAddedToCart": "קטגוריה נוספה לעגלה",
       "productAddedToCart": "מוצר נוסף לעגלה",
       "productRemovedFromCart": "מוצר הוסר מהעגלה",
       "productOrdered": "מוצר הוזמן",
       "contactReferredANewContact": "איש קשר הפנה איש קשר חדש",
       "contactReferredExistingContact": "איש קשר הפנה איש קשר קיים",
+      "contactBlockedBot": "איש הקשר חסם את הבוט",
+      "contactUnblockedBot": "איש הקשר ביטל את חסימת הבוט",
       "callRecorded": "השיחה הוקלטה",
       "callTranscribed": "השיחה תומללה",
-      "anyProduct": "כל מוצר"
+      "anyProduct": "כל מוצר",
+      "anyCategory": "כל קטגוריה",
+      "anyPipeline": "כל הפייפליינים",
+      "anyStage": "כל השלבים",
+      "unavailablePipeline": "צינור שנמחק או אינו זמין",
+      "unavailableStage": "שלב שנמחק או אינו זמין"
     },
     "actions": {
       "addTag": "הוספת תגית",
@@ -3064,6 +3671,7 @@
       "setCustomField": "הגדרת שדה מותאם אישית",
       "clearCustomField": "ניקוי שדה מותאם אישית",
       "startAnotherFlow": "הפעלת תהליך אחר",
+      "startExternalStep": "Start External Step",
       "notifyAdmins": "יידוע מנהלי מערכת",
       "transferConversationToHuman": "העברת השיחה לנציג אנושי",
       "sendMetaCapiEvent": "שליחת אירוע Meta CAPI",
@@ -3105,7 +3713,26 @@
     "countCapped": "{count}+ אנשי קשר",
     "exportAllNotice": "כל אנשי הקשר שתואמים למסנן הנוכחי ייוצאו.",
     "exportTakingLong": "הייצוא נמשך זמן רב מהצפוי",
-    "exportTakingLongDescription": "הייצוא עדיין בעיבוד. ניתן לסגור חלון זה ולבדוק שוב בעוד מספר דקות בהיסטוריית הייצוא."
+    "exportTakingLongDescription": "הייצוא עדיין בעיבוד. ניתן לסגור חלון זה ולבדוק שוב בעוד מספר דקות בהיסטוריית הייצוא.",
+    "search": {
+      "placeholder": "חיפוש (שם, אימייל, טלפון, מזהה איש קשר)",
+      "searching": "מחפש…",
+      "error": "לא ניתן לחפש אנשי קשר",
+      "empty": "לא נמצאו אנשי קשר"
+    },
+    "exportHistory": {
+      "title": "היסטוריית ייצוא",
+      "description": "ייצואי אנשי קשר מ-{days} הימים האחרונים. לאחר מכן הקבצים נמחקים.",
+      "empty": "אין ייצואים עדיין.",
+      "requestedBy": "על ידי {name}",
+      "deletesOn": "יימחק ב-{date}",
+      "rows": "{count, plural, one {# איש קשר} other {# אנשי קשר}}",
+      "status": {
+        "pending": "בעיבוד",
+        "uploaded": "מוכן",
+        "failed": "נכשל"
+      }
+    }
   },
   "contactScan": {
     "menu": {
@@ -3177,7 +3804,8 @@
       "userPlaceholder": "מזהה משתמש",
       "keyword": "מילת מפתח",
       "keywordPlaceholder": "פעולה או פרטים",
-      "allAdmins": "כל המנהלים"
+      "allAdmins": "כל המנהלים",
+      "allWorkspaces": "כל סביבות העבודה"
     }
   },
   "customFields": {
@@ -3198,7 +3826,36 @@
       "pageTitle": "מילות מפתח של עמוד",
       "page": "השב באופן אוטומטי כאשר אתה שולח הודעה המכילה מילת מפתח לאיש קשר."
     },
-    "pageWarning": "תוכן הודעה המכיל מילת מפתח לעמוד עלול לגרום לשליחת הודעות ללקוח בלופ אינסופי. השבת את מילת המפתח לעמוד באופן מיידי אם נתקלת במקרה זה!"
+    "pageWarning": "תוכן הודעה המכיל מילת מפתח לעמוד עלול לגרום לשליחת הודעות ללקוח בלופ אינסופי. השבת את מילת המפתח לעמוד באופן מיידי אם נתקלת במקרה זה!",
+    "conditions": {
+      "operators": {
+        "is": "ההודעה היא",
+        "similarTo": "ההודעה דומה ל",
+        "contains": "ההודעה מכילה",
+        "containsPhone": "ההודעה מכילה טלפון",
+        "containsEmail": "ההודעה מכילה אימייל",
+        "containsImage": "ההודעה מכילה תמונה",
+        "containsVideo": "ההודעה מכילה וידאו",
+        "containsLink": "ההודעה מכילה קישור",
+        "containsWholeWord": "ההודעה מכילה מילה שלמה",
+        "beginsWith": "ההודעה מתחילה ב",
+        "endsWith": "ההודעה מסתיימת ב",
+        "isThumbsUp": "ההודעה היא 👍",
+        "notContains": "ההודעה לא מכילה",
+        "matchesRegex": "ההודעה תואמת ביטוי רגולרי"
+      },
+      "and": "וגם",
+      "addCondition": "תנאי הודעה",
+      "removeCondition": "הסר תנאי",
+      "note": "מילות מפתח אינן תלויות באותיות גדולות/קטנות ומתעלמות מסימני ניקוד, למשל \"Tư vấn\" ו-\"tu van\" נחשבות זהות.",
+      "keywordPlaceholder": "+ מילת מפתח",
+      "regexPlaceholder": "+ ביטוי רגולרי",
+      "errors": {
+        "keywordConditionValuesRequired": "הוסף לפחות מילת מפתח אחת.",
+        "keywordConditionTakesNoValues": "תנאי זה אינו דורש מילות מפתח.",
+        "invalidKeywordRegex": "ביטוי רגולרי לא תקין."
+      }
+    }
   },
   "triggers": {
     "title": "גורמים מפעילים"
@@ -3301,6 +3958,7 @@
     "gemini": "Gemini",
     "claude": "Claude",
     "deepseek": "DeepSeek",
+    "muse": "Muse",
     "openrouter": "OpenRouter",
     "openaiCompatible": "תואם OpenAI"
   },
@@ -3338,11 +3996,99 @@
   },
   "pollManager": {
     "title": "מנהל סקרים",
-    "description": "יצירה וניהול של סקרים עבור אנשי הקשר שלכם."
+    "description": "הפעילו מערכות סקר או הצבעה. אפשר להשתמש בהן גם כדי לאסוף את דעות הלקוחות.",
+    "feature": "Poll",
+    "deleteDescription": "Deleting a poll also deletes its candidates and votes. This cannot be undone.",
+    "list": {
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "votes": "Votes",
+      "getLink": "Get Link"
+    },
+    "getLink": {
+      "title": "Get Link",
+      "description": "Share a link that opens a chat and starts the poll.",
+      "omnichannel": "Omnichannel",
+      "noInboxes": "No connected channels can open this poll yet.",
+      "loadError": "Could not load the links."
+    },
+    "form": {
+      "createTitle": "Create poll",
+      "editTitle": "Edit poll",
+      "votingPeriod": "Voting period",
+      "imageRequired": "An image is required.",
+      "dateRangeInvalid": "תאריך הסיום חייב להיות אחרי תאריך ההתחלה.",
+      "candidatesTitle": "Candidates or Options",
+      "candidateNumber": "Candidate {number}",
+      "moreOptions": "More Options",
+      "afterVoteFlow": "Flow to be sent after the user votes",
+      "afterVoteFlowNone": "None",
+      "removeVotesTitle": "Remove candidates?",
+      "removeVotesDescription": "Deleting candidates also deletes their votes."
+    },
+    "analytics": {
+      "title": "Analytics",
+      "results": "Results",
+      "votesPerGender": "Votes per gender",
+      "totalVotes": "Total votes",
+      "noVotes": "No votes yet",
+      "other": "Other",
+      "male": "Male",
+      "female": "Female",
+      "unknown": "Unknown",
+      "loadError": "Could not load the analytics.",
+      "columns": {
+        "name": "Name",
+        "totalVotes": "Total votes",
+        "totalPercent": "T%",
+        "maleVotes": "Male votes",
+        "malePercent": "M%",
+        "femaleVotes": "Female votes",
+        "femalePercent": "F%"
+      }
+    }
   },
   "placesNearMe": {
     "title": "מקומות בקרבתי",
-    "description": "מציאת מקומות בקרבת אנשי הקשר שלכם."
+    "description": "אפשרו ללקוחות שלכם למצוא בקלות את מיקומי העסק שלכם הקרובים אליהם.",
+    "tabs": {
+      "locations": "מיקומים",
+      "categories": "קטגוריות"
+    },
+    "categories": {
+      "columns": {
+        "locations": "מיקומים"
+      },
+      "add": "הוספת קטגוריה",
+      "edit": "עריכת קטגוריה",
+      "empty": "עדיין אין קטגוריות.",
+      "created": "הקטגוריה נוספה",
+      "updated": "הקטגוריה עודכנה",
+      "deleted": "הקטגוריה נמחקה",
+      "saveError": "לא ניתן לשמור את הקטגוריה",
+      "deleteError": "לא ניתן למחוק את הקטגוריה",
+      "deleteTitle": "למחוק את {name}?",
+      "deleteDescription": "{count, plural, =0 {אף מיקום לא משתמש בקטגוריה זו.} one {# מיקום יהפוך ללא קטגוריה.} other {# מיקומים יהפכו ללא קטגוריה.}}"
+    },
+    "locations": {
+      "columns": {
+        "coordinates": "קואורדינטות"
+      },
+      "preview": "תצוגה מקדימה",
+      "add": "הוספת מיקום",
+      "edit": "עריכת מיקום",
+      "empty": "אין מיקומים עדיין.",
+      "created": "המיקום נוסף",
+      "updated": "המיקום עודכן",
+      "deleted": "המיקום נמחק",
+      "saveError": "לא ניתן לשמור את המיקום",
+      "deleteError": "לא ניתן למחוק את המיקום",
+      "deleteTitle": "למחוק את {name}?",
+      "deleteDescription": "מיקום זה יימחק לצמיתות.",
+      "noCategory": "ללא קטגוריה",
+      "latitude": "קו רוחב",
+      "longitude": "קו אורך"
+    }
   },
   "questionnaires": {
     "title": "שאלונים",
@@ -3959,6 +4705,9 @@
   "templates": {
     "title": "תבניות",
     "description": "צור ונהל את התבניות שלך.",
+    "createDialog": {
+      "title": "תבנית חדשה"
+    },
     "share": {
       "label": "שיתוף",
       "enabled": "משותפת",
@@ -3967,14 +4716,135 @@
       "dialogDescription": "כל מי שיש לו את הקישור הזה יכול להתקין עותק של התבנית הזו בסביבת עבודה בארגון שלך.",
       "enableLabel": "הפעלת קישור שיתוף",
       "linkLabel": "קישור שיתוף",
-      "description": "כל מי שיש לו את הקישור יכול להתקין את התבנית הזו בסביבת העבודה שלו."
+      "rotateLabel": "החלפת קישור",
+      "rotateTitle": "להחליף את קישור השיתוף?",
+      "rotateDescription": "הקישור הנוכחי יפסיק לעבוד מיד. כל מי שעדיין צריך להתקין את התבנית הזו יזדקק לקישור החדש.",
+      "rotated": "קישור השיתוף הוחלף",
+      "expiryLabel": "תפוגת הקישור",
+      "expiryHint": "השאירו ריק לקישור שאינו פג לעולם.",
+      "clearExpiry": "הסרת תפוגה",
+      "expiredNotice": "תוקף הקישור פג. הגדירו תאריך מאוחר יותר או הסירו את התפוגה כדי לשתף אותו שוב.",
+      "templateId": "מזהה תבנית",
+      "templateKey": "מפתח תבנית",
+      "showKey": "הצג מפתח",
+      "hideKey": "הסתר מפתח",
+      "copyField": "העתק {field}"
+    },
+    "sync": {
+      "title": "עדכונים",
+      "updateAvailable": "יש עדכון זמין",
+      "upToDate": "מעודכן",
+      "sourceDeleted": "התבנית נמחקה",
+      "sourceDeletedHint": "המפרסם מחק את התבנית הזו. העותק שלך ממשיך לעבוד אך לא ניתן עוד לעדכן אותו.",
+      "updateNow": "עדכן עכשיו",
+      "updating": "מעדכן…",
+      "version": "גרסת תבנית {version}",
+      "lastSynced": "עודכן לאחרונה {date}",
+      "autoUpdateLabel": "עדכון אוטומטי כשהתבנית משתנה",
+      "noHistory": "אין עדכונים עדיין.",
+      "countAdded": "נוספו {count}",
+      "countUpdated": "עודכנו {count}",
+      "countDetached": "{count} כבר לא עוקבים אחר התבנית",
+      "notUpdatable": "{count} עדיין לא ניתנים לעדכון",
+      "overwritten": "{name} נערך והוחלף בעדכון",
+      "restore": "שחזור הגרסה שלי",
+      "restored": "הגרסה שלך שוחזרה",
+      "status": {
+        "pending": "בתור",
+        "running": "פועל",
+        "completed": "הושלם",
+        "partial": "חלקי",
+        "failed": "נכשל",
+        "skipped": "דולג",
+        "cancelled": "בוטל"
+      },
+      "trigger": {
+        "autoUpdate": "אוטומטי",
+        "manual": "ידני",
+        "reinstall": "התקנה מחדש"
+      },
+      "requestedVersion": "התבקשה v{version}",
+      "errors": {
+        "unknown": "העדכון נכשל. נסו שוב, או פנו לתמיכה אם הוא ממשיך להיכשל.",
+        "templateSyncFailed": "העדכון נכשל. נסו שוב.",
+        "templateSyncSuperseded": "עדכון חדש יותר החליף את העדכון הזה.",
+        "templateSyncAbandoned": "העדכון לא הסתיים בזמן ונסגר.",
+        "templateInstallationInactive": "ההתקנה הזו כבר לא פעילה.",
+        "workspaceOwnerBlocked": "חשבון הבעלים של סביבת העבודה חסום.",
+        "templateUninstallInProgress": "התבנית נמצאת בתהליך הסרה.",
+        "templateAutoUpdateOff": "העדכונים האוטומטיים כבויים.",
+        "templateUpToDate": "העותק כבר מעודכן.",
+        "templateInstallerAccessLost": "למי שהתקין כבר אין הרשאה לעדכן את העותק הזה.",
+        "templateInstallationSourceMissing": "התבנית נמחקה לפני שהעדכון רץ.",
+        "templateCategoryPermissionDenied": "כבר אין לכם הרשאה לעדכן את כל התוכן של התבנית הזו.",
+        "templatePayloadIncompatible": "התבנית נשמרה בפורמט חדש יותר ממה שהשרת הזה יכול להתקין.",
+        "templateCrossTenantInstall": "התבנית הזו אינה זמינה לסביבת העבודה שלך.",
+        "templateInvalidInboxBinding": "תיבת דואר נכנס שנבחרה אינה תואמת לתבנית."
+      }
+    },
+    "versions": {
+      "detailsTab": "פרטים",
+      "tab": "גרסאות",
+      "versionNumber": "גרסה {version}",
+      "current": "נוכחית",
+      "first": "גרסה ראשונה",
+      "noDetail": "לא נרשמו פרטים לגרסה זו.",
+      "added": "נוסף",
+      "changed": "שונה",
+      "removed": "הוסר"
+    },
+    "installers": {
+      "title": "הצגת נתונים",
+      "workspace": "סביבת עבודה",
+      "lastInstalled": "הותקן לאחרונה",
+      "version": "גרסה",
+      "autoUpdate": "עדכון אוטומטי",
+      "uninstalled": "הוסר",
+      "hidden": "סביבת העבודה לא משותפת",
+      "uninstallNotAllowed": "המתקין לא אישר למפרסמים להסיר עותק זה.",
+      "loadError": "לא ניתן לטעון את המתקינים. נסו שוב.",
+      "automatic": "אוטומטי",
+      "details": "פרטים",
+      "noIssues": "אין אזהרות או שגיאות."
     },
     "installs": {
       "title": "התקנות",
       "resources": "משאבים",
       "warnings": "אזהרות",
       "completedAt": "הושלם בתאריך",
-      "autoUpdate": "עדכון אוטומטי"
+      "autoUpdate": "עדכון אוטומטי",
+      "installedBy": "הותקן על ידי",
+      "viaApi": "טוקן API",
+      "attempts": "ניסיונות",
+      "autoUpdateOn": "פעיל",
+      "autoUpdateOff": "כבוי",
+      "retry": "ניסיון התקנה חוזר",
+      "resourcesTitle": "משאבים שהותקנו",
+      "noResources": "עדיין לא נוצר דבר.",
+      "deletedResource": "משאב שנמחק",
+      "viewOnly": "צפייה בלבד",
+      "created": "נוצר",
+      "reused": "נעשה בו שימוש חוזר",
+      "loadMore": "טען עוד",
+      "statusFilter": "סטטוס",
+      "allStatuses": "כל הסטטוסים",
+      "errors": {
+        "unknown": "ההתקנה נכשלה. נסו שוב, או פנו לתמיכה אם הבעיה נמשכת.",
+        "templatePayloadIncompatible": "התבנית נשמרה בפורמט חדש יותר ממה שהשרת הזה יכול להתקין.",
+        "templateInstallationSourceMissing": "התבנית נמחקה לפני שההתקנה רצה.",
+        "templateCrossTenantInstall": "התבנית הזו אינה זמינה לסביבת העבודה שלך.",
+        "templateCategoryPermissionDenied": "כבר אין לך הרשאה להתקין את כל מה שבתבנית הזו.",
+        "templateInvalidInboxBinding": "תיבת דואר נכנס שנבחרה אינה תואמת לתבנית.",
+        "templateInstallEnqueueFailed": "לא ניתן היה להכניס את ההתקנה לתור.",
+        "templateInstallFailed": "ההתקנה נכשלה. נסו שוב.",
+        "templateInstallAbandoned": "ההתקנה לא הסתיימה בזמן ונסגרה.",
+        "templateInstallSuperseded": "התקנה חדשה יותר של התבנית הזו החליפה את זו.",
+        "workspaceOwnerBlocked": "חשבון הבעלים של סביבת העבודה חסום."
+      },
+      "uninstalledBy": "{by, select, publisher {המפרסם הסיר את התבנית הזו.} installer {התבנית הזו הוסרה מסביבת העבודה הזו.} other {התבנית הזו הוסרה.}}",
+      "uninstalledSummary": "{deleted} נמחקו, {kept} נשמרו.",
+      "lastAttemptAt": "ניסיון אחרון",
+      "installedAutomatically": "הותקן אוטומטית (ברירת המחדל של ה-white-label)"
     },
     "form": {
       "contents": "תוכן התבנית",
@@ -3987,14 +4857,26 @@
       "allowDelete": "אפשר מחיקה לאחר ההתקנה",
       "publisherName": "שם המפרסם",
       "youtubeVideoId": "מזהה סרטון YouTube",
-      "youtubeVideoIdDescription": "המזהה בן 11 התווים מכתובת ה-URL של הסרטון, למשל \"dQw4w9WgXcQ\" בכתובת youtube.com/watch?v=dQw4w9WgXcQ",
+      "youtubeVideoIdDescription": "המזהה בן 11 התווים מכתובת ה-URL של הסרטון, למשל \"xxxxxxxxxxx\" בכתובת youtube.com/watch?v=xxxxxxxxxxx",
       "testLink": "קישור בדיקה",
       "imageUrl": "תמונת שער",
       "installBehavior": "התנהגות ההתקנה",
-      "createInstallFolder": "התקנה בתיקייה ייעודית",
+      "createInstallFolder": "יצירת תיקייה בחשבון המותקן והתקנת המשאבים.",
       "createInstallFolderDescription": "מקנן כל משאב שהותקן בתוך תיקייה חדשה אחת הנקראת על שם התבנית הזו.",
-      "defaultAutoUpdate": "סימון התקנות לעדכון כברירת מחדל",
-      "defaultAutoUpdateDescription": "התקנות חדשות יציגו הודעת עדכון זמין בכל פעם שתפרסם מחדש את התבנית הזו."
+      "defaultAutoUpdate": "עדכון אוטומטי של תבניות מותקנות",
+      "defaultAutoUpdateDescription": "בכל פעם ששומרים את התבנית עם תוכן ששונה, התקנות שמופעל בהן עדכון אוטומטי נדרסות בתוכן החדש (עותקים שהמתקין ערך מגובים קודם). המתקינים יכולים לכבות זאת.",
+      "viewOnly": "צפייה בלבד",
+      "viewOnlyAll": "הפוך את כל הנבחרים לצפייה בלבד",
+      "includedAutomatically": {
+        "title": "נכלל אוטומטית",
+        "hint": "נכלל כי משהו שבחרתם זקוק לו. לקריאה בלבד.",
+        "rows": "{count, plural, one {# פריט נוסף} other {# פריטים נוספים}}",
+        "kind": {
+          "folders": "תיקיות",
+          "placeCategories": "קטגוריות מקומות"
+        }
+      },
+      "viewOnlyCopyIncluded": "פריט שבחרת (או פריט שהוא צריך) הותקן מתבנית לצפייה בלבד, ולכן אי אפשר לשתף אותו בתבנית חדשה."
     },
     "categories": {
       "flows": "תהליכים",
@@ -4009,8 +4891,116 @@
       "keywords": "מילות מפתח",
       "entryPointLinks": "קישורים לנקודות כניסה",
       "triggers": "גורמים מפעילים",
-      "fbCommentAutomations": "אוטומציות תגובות פייסבוק",
-      "settings": "הגדרות"
+      "fbCommentAutomations": "אוטומציות תגובות",
+      "settings": "שדות בוט ותשובות שמורות",
+      "sequences": "רצפים",
+      "aiMcpServers": "שרתי MCP",
+      "aiFiles": "קובצי ידע של AI",
+      "questionnaires": "שאלונים",
+      "couponTopics": "נושאי קופונים",
+      "pipelines": "פייפליינים"
+    },
+    "locked": {
+      "flowBanner": "הזרימה הותקנה מתבנית לצפייה בלבד. אפשר לצפות בה אך לא לערוך אותה.",
+      "badge": "לצפייה בלבד",
+      "editorBanner": "הפריט הותקן מתבנית לצפייה בלבד. אפשר לצפות בו אך לא לערוך אותו.",
+      "badgeHint": "הותקן מתבנית לצפייה בלבד"
+    },
+    "channels": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "instagramFacebook": "Instagram (Facebook login)",
+      "threads": "Threads",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "zalo": "Zalo",
+      "webchat": "צ'אט אינטרנטי",
+      "line": "LINE",
+      "email": "אימייל"
+    },
+    "uninstall": {
+      "title": "הסרת תבנית",
+      "description": "התבנית מסירה את כל מה שיצרה בסביבת העבודה הזו, כולל עותקים שנערכו. תגיות, שדות ותיקיות משותפים, פריטים שהיו קיימים קודם וכל מה שבניתם על בסיס עותק נשמרים.",
+      "loading": "בודק מה יקרה…",
+      "previewFailed": "לא ניתן היה לבדוק מה תעשה ההסרה.",
+      "failed": "לא ניתן היה להסיר את התבנית.",
+      "confirm": "הסרה",
+      "action": "הסרה",
+      "deleted": "{count, plural, one {# פריט יימחק} other {# פריטים יימחקו}}",
+      "deletedDone": "{count, plural, one {# פריט נמחק} other {# פריטים נמחקו}}",
+      "keptModified": "{count, plural, one {# עותק שנערך או לא אומת נשמר} other {# עותקים שנערכו או לא אומתו נשמרים}}",
+      "keptShared": "{count, plural, one {# תגית או שדה משותף נשמרים} other {# תגיות ושדות משותפים נשמרים}}",
+      "keptByPolicy": "{count, plural, one {# פריט נוסף נשמר} other {# פריטים נוספים נשמרים}}",
+      "keptHasDependents": "{count, plural, one {# עותק נשמר כי משהו עדיין משתמש בו} other {# עותקים נשמרים כי משהו עדיין משתמש בהם}}",
+      "deletedModified": "{count, plural, one {# מהם נערך על ידך: העריכות יאבדו ולא ניתן יהיה לשחזר אותן} other {# מהם נערכו על ידך: העריכות יאבדו ולא ניתן יהיה לשחזר אותן}}",
+      "keptLockedByOther": "{count, plural, one {# פריט נשמר כי התקנה אחרת של תבנית עדיין מגנה עליו} other {# פריטים נשמרים כי התקנה אחרת של תבנית עדיין מגנה עליהם}}",
+      "confirmCheckbox": "אני מבין/ה שפעולה זו מוחקת את הפריטים שלמעלה ואי אפשר לבטל אותה",
+      "started": "ההסרה התחילה",
+      "inProgress": "מסיר…",
+      "retry": "ניסיון הסרה חוזר",
+      "state": {
+        "pending": "ההסרה בתור",
+        "running": "מסיר…",
+        "partial": "ההסרה לא הושלמה, נסו שוב",
+        "failed": "ההסרה נכשלה, נסו שוב",
+        "skipped": "ההסרה דולגה: סביבת העבודה חסומה"
+      },
+      "deletedUnverified": "{count, plural, one {# מהם אינו ניתן לבדיקה לגבי עריכות: אם שינית אותו, השינויים יאבדו} other {# מהם אינם ניתנים לבדיקה לגבי עריכות: אם שינית אותם, השינויים יאבדו}}",
+      "cancelAction": "ביטול ההסרה",
+      "cancelled": "ההסרה בוטלה: הפריטים שנותרו שוב שלך לשימוש",
+      "blockedByReference": "{count, plural, one {# פריט לא נמחק כי משהו שיצרת עדיין מפנה אליו: הסירו את ההפניה ואז נסו שוב את ההסרה} other {# פריטים לא נמחקו כי דברים שיצרת עדיין מפנים אליהם: הסירו את ההפניות ואז נסו שוב את ההסרה}}",
+      "keptPartlyRemoved": "{count, plural, one {# עותק נשמר לאחר הסרה חסומה; ההיסטוריה ונתוני ההגנה מכפילויות אולי הוסרו, ולכן בדקו אותו לפני שתפעילו אותו} other {# עותקים נשמרו לאחר הסרה חסומה; ההיסטוריה ונתוני ההגנה מכפילויות אולי הוסרו, ולכן בדקו אותם לפני שתפעילו אותם}}",
+      "keptInactiveForReview": "{count, plural, one {# עותק נותר לא פעיל: ההיסטוריה ונתוני ההגנה מכפילויות שלו הוסרו, ולכן בדקו אותו לפני שתפעילו אותו} other {# עותקים נותרו לא פעילים: ההיסטוריה ונתוני ההגנה מכפילויות שלהם הוסרו, ולכן בדקו אותם לפני שתפעילו אותם}}",
+      "keptHistoryRemoved": "{count, plural, one {# עותק נשמר, אך ההיסטוריה שלו הוסרה (אין מה להפעיל): בדקו אותו לפני שתסתמכו עליו} other {# עותקים נשמרו, אך ההיסטוריה שלהם הוסרה (אין מה להפעיל): בדקו אותם לפני שתסתמכו עליהם}}",
+      "cancelledPartial": "{count, plural, one {# פריט כבר בתהליך מחיקה ויסתיים; השאר הוחזר} other {# פריטים כבר בתהליך מחיקה ויסתיימו; השאר הוחזר}}"
+    },
+    "warningCodes": {
+      "aiFileTooLarge": "קובץ הידע הזה גדול ממה שהתקנת תבנית יכולה להעתיק, ולכן דולג.",
+      "aiFileUnavailable": "לא ניתן היה להעתיק את קובץ הידע הזה, ולכן דולג.",
+      "assigneeRequired": "בחר למי השלב הזה משייך את השיחה.",
+      "ambiguousSourceFieldToken": "כמה שדות מקור חולקים את השם הזה, ולכן המשתנים שמשתמשים בו נשארו ללא שינוי.",
+      "backupTooLarge": "פריט שנערך מקומית היה גדול מדי לגיבוי, ולכן לא נדרס.",
+      "backupUnavailable": "הגיבוי של פריט זה אינו זמין עוד.",
+      "botFieldRenamed": "כבר קיים שדה בוט בשם הזה מסוג אחר, ולכן נוצר שדה בשם חדש.",
+      "categoryPermissionDenied": "אין לך הרשאה לקטגוריה זו, ולכן היא דולגה.",
+      "couponTopicExpired": "נושא הקופון הזה כבר פג תוקף.",
+      "credentialRequired": "הוסף את פרטי הגישה של פריט זה לפני השימוש בו.",
+      "custom": "פריט מוזכר לא נמצא בסביבת העבודה הזו, ולכן הקישור הוסר.",
+      "customField": "פריט מוזכר לא נמצא בסביבת העבודה הזו, ולכן הקישור הוסר.",
+      "customFieldRenamed": "כבר קיים שדה בשם הזה מסוג אחר, ולכן נוצר שדה בשם שונה.",
+      "enqueueFailed": "לא ניתן היה להכניס לתור את העיבוד ברקע עבור פריט זה.",
+      "flow": "פריט מוזכר לא נמצא בסביבת העבודה הזו, ולכן הקישור הוסר.",
+      "flowInvalidStructure": "המבנה של ה-Flow אינו תקין, ולכן הוא דולג.",
+      "flowNotPublished": "ה-Flow הותקן כטיוטה ואינו מפורסם.",
+      "flowSkippedRequiredReference": "ה-Flow דולג כי לא ניתן היה לפתור הפניה נדרשת.",
+      "folder": "פריט מוזכר לא נמצא בסביבת העבודה הזו, ולכן הקישור הוסר.",
+      "inboxBindingRequired": "בחר תיבת דואר נכנס עבור ערוץ זה; עד אז הפריט יישאר לא פעיל.",
+      "integration": "פריט מוזכר לא נמצא בסביבת העבודה הזו, ולכן הקישור הוסר.",
+      "localModifiedOverwritten": "פריט שנערך מקומית נדרס. נשמר גיבוי וניתן לשחזר אותו.",
+      "name": "לא נמצא שם פנוי עבור פריט זה, ולכן הוא דולג.",
+      "noEmbeddingProvider": "לא הוגדר ספק embedding בסביבת העבודה הזו, ולכן קובצי הידע דולגו. חברו את OpenAI או Gemini והתקינו מחדש.",
+      "notUpdatable": "סוג פריט זה עדיין אינו מתעדכן אוטומטית.",
+      "pipeline": "משתמש בצינור שכבר לא קיים.",
+      "pipelineField": "משתמש בשדה צינור שכבר לא קיים.",
+      "pipelineStage": "משתמש בשלב צינור שכבר לא קיים.",
+      "postSelectionRequired": "בחר את הפוסט שוב: לא ניתן היה להעביר את הפוסט המקורי.",
+      "product": "פריט מוזכר לא נמצא בסביבת העבודה הזו, ולכן הקישור הוסר.",
+      "productCategory": "פריט מוזכר לא נמצא בסביבת העבודה הזו, ולכן הקישור הוסר.",
+      "questionImage": "לא ניתן היה להעתיק תמונה.",
+      "quota": "הגעת למגבלת החבילה, ולכן הפריט דולג.",
+      "referenceRemoved": "הפניה שלא ניתן היה לפתור הוסרה.",
+      "savedReply": "פריט מוזכר לא נמצא בסביבת העבודה הזו, ולכן הקישור הוסר.",
+      "savedReplyImage": "לא ניתן היה להעתיק תמונה.",
+      "tag": "פריט מוזכר לא נמצא בסביבת העבודה הזו, ולכן הקישור הוסר.",
+      "unlisted": "הפריט לא הועבר במלואו: {code}",
+      "workspaceMember": "משויך לחבר שאינו בסביבת העבודה הזו.",
+      "workspaceUnavailable": "סביבת העבודה הזו כבר אינה זמינה, ולכן הפריט דולג."
+    },
+    "tabs": {
+      "mine": "התבניות שלי",
+      "installed": "מותקנות",
+      "installedEmpty": "עדיין אין תבניות מותקנות. תבניות שתתקינו מסביבת עבודה אחרת יופיעו כאן."
     }
   },
   "qrCodeGenerator": {
@@ -4040,7 +5030,31 @@
       "supportOff": "כבוי",
       "searchPlaceholder": "חפש לפי שם, אימייל של הבעלים או מזהה",
       "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
-      "supportAccessible": "Accessible"
+      "supportAccessible": "Accessible",
+      "periodStart": "Period start",
+      "periodEnd": "Period end",
+      "requestedBy": "Requested by",
+      "workspaceId": "Workspace ID",
+      "language": "Language",
+      "planSnapshot": "Plan at deletion",
+      "ownerQuota": "Owner quota",
+      "usagePeriods": "Usage periods",
+      "deletedTitle": "Deleted workspaces",
+      "deletedDescription": "Purge evidence for deleted workspaces.",
+      "purgedAt": "Purged at",
+      "deletionRequestedAt": "Deletion requested at",
+      "scheduledDeletionAt": "Scheduled deletion at",
+      "evidence": "Evidence",
+      "usage": "Usage snapshot",
+      "members": "Members",
+      "notAvailable": "Not available",
+      "createButton": "Create workspace",
+      "createTitle": "Create workspace for an owner",
+      "createDescription": "Creates a workspace for the owner's email, adding any member emails you list. A new email gets a mailed temporary password.",
+      "ownerEmail": "Owner email",
+      "memberEmails": "Member emails",
+      "membersHint": "Every member gets the permissions selected below. New emails get a mailed temporary password.",
+      "createdSummary": "Workspace created for {ownerEmail} — {memberCount} member(s) added, {newAccountCount} new account(s) emailed a temporary password."
     },
     "admins": {
       "title": "Platform administrators",
@@ -4050,12 +5064,29 @@
       "addButton": "Add administrator",
       "role": "Role",
       "bootstrap": "Environment bootstrap administrator",
+      "roles": {
+        "superAdmin": "Super admin",
+        "support": "Support"
+      },
       "remove": "Remove administrator",
       "empty": "No platform administrators are configured.",
       "added": "Platform administrator added.",
       "removed": "Platform administrator removed.",
       "addError": "Could not add the platform administrator.",
       "removeError": "Could not remove the platform administrator."
+    },
+    "auditLogs": {
+      "title": "יומני ביקורת של הפלטפורמה",
+      "description": "פעילות ביקורת בכל סביבות העבודה בפלטפורמה זו."
+    },
+    "smtp": {
+      "title": "הגדרות SMTP",
+      "description": "שירות שליחת הדוא\"ל של הפלטפורמה. השאר ריק כדי להמשיך להשתמש במשתני הסביבה SMTP_SERVER ו-SMTP_FROM.",
+      "usingEnv": "לא נשמרו הגדרות SMTP — דוא\"ל הפלטפורמה משתמש במשתנה הסביבה SMTP_SERVER.",
+      "remove": "הסר הגדרות SMTP",
+      "errors": {
+        "passwordRequired": "הזן את סיסמת ה-SMTP."
+      }
     }
   },
   "platformCredentials": {
@@ -4091,6 +5122,23 @@
     "description": "סמנו ערוץ כדי למנוע מסביבות העבודה בדייר זה ליצור אותו.",
     "hint": "השאירו את כל הערוצים לא מסומנים כדי לאפשר את כולם.",
     "hiddenByPlatform": "הוסתר על ידי מנהל הפלטפורמה — לא ניתן להפעיל מחדש ערוץ זה."
+  },
+  "platformDefaultTemplate": {
+    "title": "תבנית ברירת מחדל",
+    "description": "התקן תבנית זו בכל סביבת עבודה חדשה שנוצרת תחת ה-white-label הזה. סביבות עבודה קיימות לא ישתנו.",
+    "clearTitle": "להסיר את תבנית ברירת המחדל?",
+    "clearDescription": "סביבות עבודה חדשות לא יקבלו תבנית אוטומטית. סביבות שכבר קיבלו אותה ישמרו אותה.",
+    "status": {
+      "notConfigured": "לא הוגדר",
+      "ready": "פעיל",
+      "templateUnavailable": "התבנית אינה זמינה",
+      "shareDisabled": "קישור השיתוף כבוי",
+      "keyRotated": "המפתח אינו תקין"
+    },
+    "errors": {
+      "unavailable": "מזהה התבנית או המפתח אינם תקינים.",
+      "shareDisabled": "הפעל קודם את קישור השיתוף של התבנית."
+    }
   },
   "platformEmailTemplates": {
     "title": "תבניות דוא\"ל",
@@ -4134,6 +5182,7 @@
     }
   },
   "manageSidebar": {
+    "administrationGroup": "ניהול",
     "platformGroup": "פלטפורמה",
     "toolsGroup": "כלים",
     "saasGroup": "SaaS",
@@ -4174,14 +5223,39 @@
     "invalidTitle": "קישור זה אינו זמין עוד.",
     "invalidDescription": "קישור השיתוף של התבנית הזו אינו תקין, מושבת או שפג תוקפו.",
     "byPublisher": "מאת {publisherName}",
-    "includes": "התבנית הזו כוללת",
     "videoTitle": "סרטון תצוגה מקדימה של התבנית",
-    "tryItOut": "נסה עכשיו",
-    "signInToInstall": "התחבר כדי להתקין",
+    "preview": "תצוגה מקדימה",
+    "aboutTemplate": "אודות תבנית זו",
     "selectWorkspace": "בחר סביבת עבודה",
     "install": "התקן",
     "installStarted": "ההתקנה החלה",
-    "noEligibleWorkspaces": "אין לך סביבת עבודה מתאימה להתקנת התבנית הזו."
+    "noEligibleWorkspaces": "אין לך סביבת עבודה מתאימה להתקנת התבנית הזו.",
+    "alreadyInstalled": "התבנית הזו כבר מותקנת בסביבת העבודה הזו.",
+    "viewInstall": "הצגת ההתקנה",
+    "installAnotherCopy": "התקנת עותק נוסף",
+    "inboxesTitle": "תיבות דואר נכנס",
+    "inboxesHint": "התבנית הזו נבנתה סביב תיבות הדואר הנכנס האלה. בחרו באילו מהתיבות שלכם להשתמש; מה שיושאר בחוץ יותקן במצב כבוי.",
+    "noInbox": "לא לחבר — להתקין במצב כבוי",
+    "noInboxAvailable": "אין תיבת דואר נכנס מחוברת בערוץ הזה",
+    "updateExisting": "עדכון העותק המותקן",
+    "updateStarted": "העדכון התחיל",
+    "autoUpdateLabel": "עדכון אוטומטי כשהתבנית משתנה",
+    "collisions": {
+      "title": "מה ההתקנה תעשה כאן",
+      "loading": "בודק את סביבת העבודה הזו…",
+      "action": {
+        "create": "נוצר",
+        "reuse": "נעשה בו שימוש חוזר",
+        "rename": "שונה שמו",
+        "bind": "חובר",
+        "unbound": "נותר לא מחובר"
+      },
+      "detail": {
+        "rename": "“{name}” כבר קיים מסוג אחר, ולכן הפריט מהתבנית נוסף בשם חדש.",
+        "unbound": "“{name}” נשאר לא מחובר עד שתבחרו תיבת דואר נכנס."
+      }
+    },
+    "createWorkspace": "צור סביבת עבודה חדשה"
   },
   "extensionsMe": {
     "actions": {
@@ -4210,7 +5284,144 @@
     "unknown": "לא ידוע"
   },
   "orders": {
-    "title": "הזמנות"
+    "title": "הזמנות",
+    "empty": "אין הזמנות עדיין.",
+    "searchPlaceholder": "חיפוש לפי שם, טלפון, אימייל או מספר הזמנה",
+    "orderNumber": "הזמנה #{number}",
+    "print": "הדפסה",
+    "inbox": "תיבת הודעות",
+    "statusUpdated": "סטטוס ההזמנה עודכן",
+    "statusUpdateError": "לא ניתן לעדכן את סטטוס ההזמנה",
+    "updateStatusTitle": "עדכון סטטוס הזמנה",
+    "message": "הודעה",
+    "messagePlaceholder": "אופציונלי",
+    "messageDescription": "נשלחת ללקוח בשיחה שלו.",
+    "cancel": "ביטול",
+    "continue": "המשך",
+    "delete": "מחיקה",
+    "deleted": "ההזמנה נמחקה",
+    "deleteError": "לא ניתן למחוק את ההזמנה",
+    "deleteTitle": "למחוק את הזמנה #{number}?",
+    "deleteDescription": "ההזמנה, הפריטים שלה וההיסטוריה שלה יימחקו. מלאי שעדיין שמור עבורה יוחזר.",
+    "columns": {
+      "name": "שם",
+      "total": "סה״כ",
+      "status": "סטטוס",
+      "date": "תאריך",
+      "rating": "דירוג",
+      "quantity": "כמות",
+      "price": "מחיר",
+      "vendor": "ספק",
+      "orderStatus": "סטטוס הזמנה",
+      "payment": "תשלום"
+    },
+    "fields": {
+      "name": "שם",
+      "email": "אימייל",
+      "phone": "טלפון",
+      "country": "מדינה",
+      "state": "מחוז",
+      "city": "עיר",
+      "street": "רחוב",
+      "zip": "מיקוד",
+      "shippingType": "משלוח",
+      "orderId": "מזהה הזמנה",
+      "date": "תאריך",
+      "subtotal": "סכום ביניים",
+      "discount": "הנחה",
+      "deliveryCost": "עלות משלוח",
+      "otherTaxes": "מיסים נוספים",
+      "total": "סה״כ",
+      "paymentMethod": "אמצעי תשלום",
+      "status": "סטטוס",
+      "note": "הערה",
+      "cancelReason": "סיבת הביטול",
+      "rating": "דירוג",
+      "ratingComment": "תגובת הלקוח",
+      "coupon": "קופון ({code})",
+      "paymentStatus": "סטטוס תשלום",
+      "payments": "תשלומים מקוונים"
+    },
+    "statuses": {
+      "pending": "לא טופלה",
+      "accepted": "אושרה",
+      "shipped": "נשלחה",
+      "concluded": "הושלמה",
+      "cancelled": "בוטלה"
+    },
+    "transitions": {
+      "accepted": "אישור",
+      "shipped": "שליחה",
+      "concluded": "השלמה",
+      "cancelled": "ביטול"
+    },
+    "paymentMethods": {
+      "cod": "תשלום במזומן בעת המסירה",
+      "stripe": "כרטיס",
+      "paypal": "PayPal"
+    },
+    "shippingTypes": {
+      "delivery": "משלוח ללקוח",
+      "pickup": "איסוף מהחנות"
+    },
+    "description": "הזמנות שביצעו הלקוחות שלך.",
+    "ratingValue": "{rating}/5 ★",
+    "paymentStatuses": {
+      "unpaid": "לא שולם",
+      "paid": "שולם",
+      "refunded": "הוחזר"
+    },
+    "attemptStatuses": {
+      "open": "ממתין",
+      "paid": "שולם",
+      "expired": "פג תוקף",
+      "refunded": "הוחזר"
+    },
+    "testPayment": "בדיקה",
+    "awaitingPaymentHint": "ממתין לתשלום המקוון של הלקוח. ניתן לאשר את ההזמנה לאחר התשלום.",
+    "refundWarning": "{amount} יוחזרו ללקוח.",
+    "paymentStates": {
+      "paid": "שולם",
+      "refunded": "הוחזר",
+      "awaitingPayment": "ממתין לתשלום",
+      "payOnDelivery": "תשלום במסירה",
+      "notPaid": "לא שולם"
+    },
+    "paymentUntil": "עד {time}",
+    "paymentExpiredCancelReason": "התשלום לא התקבל בזמן.",
+    "exportTruncated": "הייצוא הוגבל ל-{count} ההזמנות הראשונות",
+    "exportError": "לא ניתן לייצא את ההזמנות",
+    "shopify": {
+      "syncOrders": "סנכרן הזמנות",
+      "orderColumn": "הזמנה",
+      "customerColumn": "לקוח",
+      "paymentPending": "ממתין",
+      "paymentFilter": "תשלום",
+      "paymentFilterAll": "תשלום: הכול",
+      "fulfillmentFilter": "מילוי הזמנה",
+      "fulfillmentFilterAll": "מילוי הזמנה: הכול",
+      "fulfillmentStatuses": {
+        "fulfilled": "מולאה",
+        "unfulfilled": "לא מולאה",
+        "partial": "חלקית"
+      },
+      "viewDetails": "הצג פרטים",
+      "viewOnStore": "הצג ב-{store}",
+      "detailsTitle": "הזמנה {name}",
+      "placedOn": "בוצעה בחנות {store} • {date}",
+      "customerDetails": "פרטי לקוח",
+      "shippingAddress": "כתובת למשלוח",
+      "noShippingAddress": "אין כתובת למשלוח",
+      "tracking": "מעקב: {company} #{number}",
+      "lineItems": "פריטים בהזמנה",
+      "itemColumn": "פריט",
+      "skuColumn": "SKU",
+      "shipping": "משלוח",
+      "free": "חינם",
+      "loading": "טוען...",
+      "loadError": "לא ניתן לטעון את פרטי ההזמנה",
+      "close": "סגור"
+    }
   },
   "products": {
     "title": "מוצרים",
@@ -4267,7 +5478,8 @@
         "label": "אפשר ללקוחות לרכוש מוצר זה כאשר אזל מהמלאי"
       },
       "vendor": {
-        "label": "ספק"
+        "label": "ספק",
+        "none": "ללא"
       },
       "rank": {
         "label": "דירוג"
@@ -4319,17 +5531,67 @@
       "variantsDescription": "הוסיפו וריאציות אם למוצר יש כמה גרסאות, כגון גדלים או צבעים שונים",
       "metaCatalogId": {
         "label": "מזהה קטלוג Meta"
+      },
+      "status": {
+        "label": "סטטוס",
+        "values": {
+          "active": "פעיל",
+          "draft": "טיוטה",
+          "unlisted": "לא רשום"
+        }
       }
     },
     "inventoryPolicy": {
       "dont_track": "אין לעקוב אחר המלאי",
       "track": "מעקב אחר מלאי"
+    },
+    "shopify": {
+      "openStore": "פתח את {store}",
+      "syncProducts": "סנכרן מוצרים",
+      "syncStarted": "הסנכרון התחיל",
+      "syncError": "לא ניתן להתחיל את הסנכרון",
+      "viewDetails": "הצג פרטים",
+      "editOnStore": "ערוך ב-{store}",
+      "copyProductLink": "העתק קישור למוצר",
+      "linkCopied": "הקישור למוצר הועתק",
+      "noProductLink": "למוצר זה אין קישור בחנות",
+      "inStock": "{count} במלאי",
+      "inStockWithVariants": "{count} במלאי ({variants} וריאנטים)",
+      "detailsTitle": "פרטי מוצר — {name}",
+      "detailsSubtitle": "סונכרן מחנות ה-{store} {shop}",
+      "summaryLine": "קטגוריה: {category} • סך המלאי: {units} יחידות ב-{variants, plural, one {וריאנט #} other {# וריאנטים}}",
+      "uncategorized": "ללא קטגוריה",
+      "variantsTitle": "וריאנטים ({count})",
+      "variantColumn": "וריאנט",
+      "skuColumn": "SKU",
+      "priceColumn": "מחיר",
+      "inventoryColumn": "מלאי",
+      "defaultVariant": "ברירת מחדל",
+      "loading": "טוען...",
+      "loadError": "לא ניתן לטעון את פרטי המוצר",
+      "close": "סגור"
     }
   },
   "tiktok": {
     "title": "TikTok",
     "description": "חברו את חשבון TikTok שלכם כדי להשיב להודעות ישירות.",
     "refreshToken": "רענון אסימון"
+  },
+  "contactAdReferrals": {
+    "title": "היסטוריית מודעות",
+    "empty": "עדיין לא נרשמו לחיצות על מודעות עבור איש קשר זה."
+  },
+  "adsReferralStats": {
+    "title": "אנשי קשר לפי מודעה",
+    "description": "אנשי הקשר שכל מודעה הגיעה אליהם וההמרות המיוחסות ללחיצות עליה. נספרות לחיצות מתחילת המעקב.",
+    "ad": "מודעה",
+    "contacts": "אנשי קשר",
+    "firstTouch": "מגע ראשון",
+    "leads": "לידים",
+    "purchases": "רכישות",
+    "revenue": "הכנסות",
+    "empty": "אין לחיצות על מודעות בתקופה זו.",
+    "timeout": "הדוח לקח יותר מדי זמן. בחרו טווח תאריכים קצר יותר."
   },
   "coupons": {
     "title": "קופונים",
@@ -4400,8 +5662,8 @@
     "loadError": "לא ניתן לטעון את קטגוריות המוצרים.",
     "all": "כל המוצרים",
     "create": "יצירת קטגוריה",
-    "edit": "שינוי שם קטגוריה",
-    "name": "שם קטגוריה",
+    "edit": "עריכה",
+    "name": "שם",
     "namePlaceholder": "לדוגמה, קולקציית קיץ",
     "parent": "קטגוריית אב",
     "noParent": "ללא (רמה עליונה)",
@@ -4421,12 +5683,25 @@
     "columns": {
       "name": "שם",
       "products": "מוצרים",
-      "subcategories": "קטגוריות משנה"
+      "subcategories": "קטגוריות משנה",
+      "visible": "גלוי"
     },
     "expand": "הצגת קטגוריות משנה",
     "collapse": "הסתרת קטגוריות משנה",
     "productCount": "{count, plural, =0 {אין מוצרים} one {# מוצר} other {# מוצרים}}",
-    "deleteChildrenWarning": "{count, plural, one {גם # קטגוריית המשנה שלה תימחק.} other {גם # קטגוריות המשנה שלה יימחקו.}}"
+    "deleteChildrenWarning": "{count, plural, one {גם # קטגוריית המשנה שלה תימחק.} other {גם # קטגוריות המשנה שלה יימחקו.}}",
+    "add": "הוספה",
+    "dialogTitle": "קטגוריה",
+    "image": "תמונה",
+    "continue": "המשך",
+    "subcategories": "תתי-קטגוריות",
+    "subcategoriesOf": "תתי-קטגוריות של {name}",
+    "emptySub": "אין תתי-קטגוריות עדיין.",
+    "back": "חזרה לקטגוריות",
+    "getId": "קבלת מזהה",
+    "idCopied": "מזהה הקטגוריה {id} הועתק",
+    "idCopyError": "לא ניתן להעתיק את המזהה",
+    "description": "קבץ את המוצרים שלך לקטגוריות ולתת-קטגוריות."
   },
   "productImport": {
     "title": "ייבוא",
@@ -4832,6 +6107,13 @@
     "bot": {
       "label": "בוט"
     },
+    "botCategory": {
+      "options": {
+        "all": "הכל",
+        "human": "אדם",
+        "bot": "בוט"
+      }
+    },
     "botResponse": {
       "label": "תגובת בוט"
     },
@@ -4850,7 +6132,8 @@
     },
     "button": {
       "label": "כפתור",
-      "whenPressed": "כאשר כפתור זה נלחץ"
+      "whenPressed": "כאשר כפתור זה נלחץ",
+      "callToThisNumber": "התקשר למספר זה"
     },
     "buttonLabel": {
       "label": "תווית כפתור"
@@ -4917,6 +6200,15 @@
       "label": "שדה מותאם אישית",
       "savePayloadTo": "שמירת התגובה בשדה מותאם אישית",
       "set_value": "הגדרת ערך",
+      "clear": "Clear value",
+      "formula": "Use custom formula",
+      "set_now": "Set to now",
+      "date_expression": "Free-form date (with math)",
+      "add_minutes": "Add minutes",
+      "add_hours": "Add hours",
+      "add_days": "Add days",
+      "formulaHint": "Math where value is the current number, e.g. round(value * 1.1). Functions: abs, ceil, floor, round, min, max, pow, sqrt, log, sin, cos.",
+      "dateExpressionHint": "e.g. now + 2 days - 3 hours. Units: min, h, d, w, mo, y.",
       "append": "הוספה לסוף",
       "prepend": "הוספה להתחלה",
       "increase": "הגדלה ב-",
@@ -5036,7 +6328,8 @@
       "label": "תהליכים",
       "placeholder": "בחירת תהליך",
       "aiGenerateTextAgent": "{aiName}: סוכן ליצירת טקסט",
-      "aiDeleteMessageHistory": "{aiName}: מחיקת היסטוריית הודעות"
+      "aiDeleteMessageHistory": "{aiName}: מחיקת היסטוריית הודעות",
+      "aiSegmentImage": "{aiName}: פילוח תמונה"
     },
     "steps": {
       "label": "צומת",
@@ -5415,10 +6708,11 @@
       "processing": "בעיבוד",
       "installing": "Installing",
       "completed": "הושלם",
-      "partial": "Partial",
+      "partial": "חלקי",
       "failed": "נכשל",
       "success": "הצלחה",
-      "error": "שגיאה"
+      "error": "שגיאה",
+      "uninstalled": "Uninstalled"
     },
     "subtitle": {
       "placeholder": "הזנת כותרת משנה"
@@ -5448,6 +6742,7 @@
       "label": "נלחץ (%)"
     },
     "targetCountry": {
+      "currencyHint": "קובע גם את מטבע ברירת המחדל של פייפליינים שאין להם מטבע משלהם.",
       "description": "המדינה שבה מתגוררים רוב אנשי הקשר שלכם.",
       "label": "מדינת יעד"
     },
@@ -5847,6 +7142,10 @@
       "label": "כתובת שולח",
       "placeholder": "noreply@example.com"
     },
+    "fromName": {
+      "label": "שם השולח",
+      "placeholder": "ChatbotX"
+    },
     "messageTemplate": {
       "label": "תבנית הודעה"
     },
@@ -5953,7 +7252,13 @@
       "commentToMessage": "Comment-to-Message",
       "commentToMessageDescription": "Lets this account answer high-intent comments with a direct message. Required for TikTok comment automations that use a private reply.",
       "commentToMessageEligibility": "Only available to Business Accounts registered in Vietnam, Indonesia or Thailand, owned by someone over 18, that are registered businesses or have run Messaging Ads, with messaging permissions set to \"Requests\".",
-      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting."
+      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting.",
+      "features": "תכונות",
+      "featureMessaging": "הודעות",
+      "featureMessagingDescription": "קבלה ושליחה של הודעות ישירות. TikTok אינה מציעה הודעות לחשבונות הרשומים באזור הכלכלי האירופי, בשווייץ או בבריטניה — כבו את האפשרות עבורם.",
+      "featureComments": "תגובות",
+      "featureCommentsDescription": "קבלת תגובות לאוטומציית תגובות: תגובה פומבית, לייק והסתרה.",
+      "featuresReconnectHint": "השינויים חלים על חשבונות שיחוברו מעכשיו. חברו מחדש חשבונות קיימים כדי לעדכן את ההרשאות שלהם."
     },
     "drip": {
       "label": "Drip"
@@ -5991,6 +7296,12 @@
     },
     "lastAd": {
       "label": "מודעה אחרונה"
+    },
+    "adIds": {
+      "label": "כל מזהי המודעות"
+    },
+    "adId": {
+      "label": "מזהה המודעה הראשונה"
     },
     "lastAdSourcePlatform": {
       "label": "פלטפורמת המקור של המודעה האחרונה"
@@ -6137,7 +7448,11 @@
       "ads": "מודעות",
       "settings": "הגדרות",
       "miniApps": "Mini Apps",
-      "leaderboards": "טבלאות מובילים"
+      "leaderboards": "טבלאות מובילים",
+      "pipelines": "צינורות עבודה",
+      "places": "מקומות",
+      "templates": "תבניות",
+      "polls": "Polls"
     },
     "adReferral": {
       "label": "Ads",
@@ -6146,7 +7461,8 @@
       "ctid": "CTID",
       "googleAds": "Google Ads",
       "googleAdsWhatsapp": "GA CCWA",
-      "googleAdsMessenger": "GA CCTM"
+      "googleAdsMessenger": "GA CCTM",
+      "googleAdsZalo": "GA Zalo"
     },
     "adSource": {
       "label": "Ad source"
@@ -6194,6 +7510,81 @@
     },
     "miniApp": {
       "label": "מיני אפליקציה"
+    },
+    "lastOpportunityId": {
+      "label": "מזהה ההזדמנות האחרונה"
+    },
+    "adminName": {
+      "label": "שם המנהל השולח"
+    },
+    "adminTeamName": {
+      "label": "צוותי המנהל השולח"
+    },
+    "bookingId": {
+      "label": "מזהה הזמנה"
+    },
+    "lastPoints": {
+      "label": "נקודות השאלון האחרון"
+    },
+    "lastAdHeadline": {
+      "label": "כותרת המודעה האחרונה"
+    },
+    "lastAdBody": {
+      "label": "טקסט המודעה האחרון"
+    },
+    "lastStoryId": {
+      "label": "מזהה הסטורי האחרון"
+    },
+    "lastLeadId": {
+      "label": "מזהה הליד האחרון"
+    },
+    "lastFormId": {
+      "label": "מזהה הטופס האחרון"
+    },
+    "lastFormName": {
+      "label": "שם הטופס האחרון"
+    },
+    "lastAdgroupId": {
+      "label": "מזהה קבוצת המודעות האחרונה"
+    },
+    "lastTextInput": {
+      "label": "קלט הטקסט האחרון"
+    },
+    "empty": {
+      "label": "ריק"
+    },
+    "aiSegmentImage": {
+      "description": "מאתר אובייקט בתמונה באמצעות SAM 3.1 ושומר שלו תמונה חתוכה.",
+      "inputFieldId": {
+        "label": "תמונת מקור"
+      },
+      "target": {
+        "label": "אובייקט לאיתור",
+        "description": "צירוף שמני קצר כמו \"מכונית אדומה\" או \"קופסת מוצר\". לא שאלה ולא פקודה.",
+        "placeholder": "קופסת מוצר"
+      },
+      "matchSelection": {
+        "label": "התאמות",
+        "options": {
+          "largest": "רק האובייקט הגדול ביותר",
+          "all": "כל האובייקטים התואמים (חיתוך אחד שמקיף אותם)"
+        }
+      },
+      "outputFieldId": {
+        "label": "שמירת התמונה ב"
+      },
+      "detailsOutputFieldId": {
+        "label": "שמירת הפרטים ב",
+        "description": "אופציונלי. מקבל JSON עם מספר ההתאמות והמסגרות.",
+        "sameAsOutput": "יש לבחור שדה שונה משדה תמונת הפלט.",
+        "sameAsInput": "יש לבחור שדה שונה משדה תמונת המקור."
+      },
+      "overwriteWarning": "התוצאה תחליף את תמונת המקור בשדה זה.",
+      "states": {
+        "success": "נמצא",
+        "skip": "לא נמצא",
+        "error": "נכשל"
+      }
     }
   },
   "billing": {
@@ -6299,6 +7690,8 @@
       "description": "שליחת תהליך לכל אנשי הקשר."
     },
     "receiversCount": "נמענים: {count}",
+    "receiversCountCapped": "נמענים: {count}+",
+    "receiversCountUnknown": "נמענים: ?",
     "receiversLoading": "נמענים: בטעינה...",
     "whatsappTemplateMessage": {
       "title": "הודעת תבנית",
@@ -6489,6 +7882,7 @@
       "clicked": "נלחץ",
       "failed": "נכשל",
       "missed": "הוחמצו",
+      "moderated": "בפיקוח",
       "noContacts": "לא נמצאו אנשי קשר",
       "noComment": "(ללא טקסט)",
       "pageInfo": "עמוד {page} מתוך {pageCount}",
@@ -6508,7 +7902,9 @@
       "contactNotNew": "איש הקשר אינו חדש",
       "alreadyRepliedOnPost": "כבר הושבה תשובה בפוסט זה",
       "engagedOnOtherPost": "כבר היה מעורב בפוסט אחר",
-      "mentionCountNotMatched": "מספר האזכורים לא תאם"
+      "mentionCountNotMatched": "מספר האזכורים לא תאם",
+      "noImageAttachment": "לא צורפה תמונה",
+      "moderated": "הוסתר או נמחק על ידי ניהול התוכן"
     },
     "replyTo": {
       "mentions": "תגובות עם מספיק אזכורים",
@@ -6528,6 +7924,10 @@
       "label": "עקוב אם משתמש מתייג משתמשים אחרים",
       "descriptionText": "סופר את החשבונות שתויגו בכל תגובה ומוסיף אותם לסכומים המצטברים של איש הקשר בכל התגובות. השתמשו ב-'{{total_tagged}}' לכל החשבונות שתויגו וב-'{{total_new_tagged}}' לחשבונות שמעולם לא שלחו הודעה לדף שלכם או היו אנשי קשר."
     },
+    "onlyCommentsWithImage": {
+      "label": "להגיב רק לתגובות עם תמונה",
+      "descriptionText": "להגיב אוטומטית רק כשהתגובה כוללת תמונה. קובצי GIF ומדבקות אינם נחשבים. תגובות ללא תמונה מדולגות והאוטומציה הבאה נבדקת."
+    },
     "card": {
       "reply": "תגובה"
     },
@@ -6545,10 +7945,92 @@
       "column": "חשבון",
       "disconnected": "חשבון מנותק",
       "disconnectedDescription": "האוטומציה הזו מקושרת לחשבון שכבר אינו מחובר, ולכן היא לא עונה לאף תגובה. חברו מחדש את החשבון או בחרו חשבון אחר."
+    },
+    "aiModeration": {
+      "enabled": "פיקוח בינה מלאכותית",
+      "description": "סוכן בינה מלאכותית קורא כל תגובה לפני שהבוט משיב, ומסתיר או מוחק תגובות בקטגוריות שלמטה. על תגובה שנוהלה לא משיבים לעולם.",
+      "aiAgentDescription": "נעשה שימוש רק במודל הבינה המלאכותית של הסוכן, ולא בהנחיה שלו.",
+      "categoriesLabel": "חסימת תגובות שהן",
+      "categories": {
+        "hate": "דברי שנאה",
+        "offensive": "פוגעניות",
+        "harassment": "הטרדה",
+        "negative": "עוינות כלפי המותג",
+        "spam": "ספאם או הונאה"
+      },
+      "categoryDescriptions": {
+        "hate": "תוקפות קבוצה בגלל גזע, דת, מגדר, לאום וכדומה",
+        "offensive": "העלבות, קללות, שפה וולגרית",
+        "harassment": "איומים, בריונות, התקפות על אדם",
+        "negative": "נועדו לפגוע במותג. תלונות מנומסות אינן נחסמות",
+        "spam": "הונאות, פישינג, קידום לא קשור"
+      },
+      "instruction": "הנחיות נוספות לבינה המלאכותית",
+      "instructionDescription": "אופציונלי. ספרו לבינה המלאכותית מה לאפשר ומה לחסום.",
+      "instructionPlaceholder": "לדוגמה: אל תחסמו לקוחות שמתלוננים על המחיר",
+      "action": "כשתגובה נחסמת",
+      "actions": {
+        "hide": "להסתיר אותה",
+        "delete": "למחוק אותה"
+      },
+      "deleteWarning": "תגובות שנמחקו אובדות לצמיתות ולא ניתן לשחזר אותן. הסתרה בטוחה יותר אם הבינה המלאכותית טועה."
+    },
+    "moderationLog": {
+      "title": "תגובות שנוהלו",
+      "description": "תגובות שהאוטומציה הזו הסתירה או מחקה, והסיבה.",
+      "allActions": "כל הפעולות",
+      "allSources": "כללים ובינה מלאכותית",
+      "actions": {
+        "hide": "מוסתרת",
+        "delete": "נמחקה"
+      },
+      "sources": {
+        "rule": "לפי כלל הסתרה",
+        "ai": "לפי בינה מלאכותית"
+      },
+      "statuses": {
+        "pending": "בתהליך",
+        "done": "הושלם",
+        "failed": "נכשל"
+      },
+      "rules": {
+        "all": "הסתרת כל התגובות",
+        "phoneNumber": "מכיל מספר טלפון",
+        "link": "מכיל קישור",
+        "keyword": "מכיל מילת מפתח",
+        "image": "מכיל תמונה",
+        "video": "מכיל סרטון",
+        "gif": "מכיל GIF",
+        "emoji": "מכיל אמוג'י"
+      },
+      "summary": {
+        "total": "{count} נוהלו",
+        "hidden": "{count} הוסתרו",
+        "deleted": "{count} נמחקו",
+        "byAI": "{count} לפי בינה מלאכותית",
+        "byRule": "{count} לפי כללים",
+        "failed": "{count} נכשלו"
+      },
+      "columns": {
+        "time": "זמן",
+        "contact": "איש קשר",
+        "comment": "תגובה",
+        "action": "פעולה",
+        "reason": "סיבה",
+        "status": "סטטוס"
+      },
+      "loading": "טוען…",
+      "empty": "עדיין לא הוסתרו או נמחקו תגובות.",
+      "unknownContact": "לא ידוע",
+      "noText": "(ללא טקסט)",
+      "previous": "הקודם",
+      "next": "הבא",
+      "page": "עמוד {page} מתוך {pageCount}"
     }
   },
   "condition": {
     "unknownValue": "לא ידוע",
+    "deletedValue": "נמחק (#{id})",
     "yes": "כן",
     "no": "לא",
     "valuePlaceholder": "...",
@@ -6663,6 +8145,7 @@
       "contactCreatedAt": "איש הקשר נוצר בתאריך",
       "fromCtwaAd": "ממודעה",
       "fromGoogleAd": "מ-Google Ads",
+      "clickedAd": "לחץ על מודעה",
       "ctwaConversion": "המרת מודעה",
       "lastUserInputTypes": {
         "text": "טקסט",
@@ -6678,7 +8161,8 @@
       "ctwaConversionTypes": {
         "lead": "ליד",
         "purchase": "רכישה"
-      }
+      },
+      "pipelineItem": "פריט בפייפליין"
     },
     "fieldGroups": {
       "opportunity": "הזדמנות",
@@ -6695,7 +8179,8 @@
       "botFields": "שדות בוט",
       "email": "דוא\"ל",
       "sms": "SMS",
-      "ctwaAds": "מודעות"
+      "ctwaAds": "מודעות",
+      "pipeline": "פייפליינים"
     },
     "languages": {
       "ar": "ערבית",
@@ -6724,6 +8209,7 @@
     "sources": {
       "direct": "ישיר",
       "comments": "תגובות",
+      "liveComments": "תגובות בשידור חי",
       "ads": "מודעות",
       "fbLeadAd": "מודעת לידים של FB",
       "inboundMessage": "הודעה נכנסת",
@@ -6742,6 +8228,22 @@
       },
       "adPrefix": "מודעה",
       "allAds": "כל המודעות"
+    },
+    "noTopic": "ללא נושא",
+    "trackingSince": "במעקב מאז {date}. פעילות קודמת אינה נכללת.",
+    "pipelineItem": {
+      "anyPipeline": "כל הפייפליינים",
+      "anyStatus": "כל הסטטוסים",
+      "attributes": {
+        "exists": "פריטים",
+        "status": "סטטוס הפריט",
+        "stage": "שלב הפריט",
+        "priority": "עדיפות הפריט"
+      },
+      "operators": {
+        "has": "יש",
+        "hasNo": "אין"
+      }
     }
   },
   "bookingWebview": {
@@ -6758,6 +8260,7 @@
       "invalidTokenTitle": "קישור קביעת הפגישה הזה אינו זמין.",
       "invalidTokenDescription": "ייתכן שהקישור אינו תקין או שפג תוקפו. בקשו קישור קביעת פגישה חדש.",
       "staleSlot": "הזמן הזה כבר אינו זמין. בחרו זמן אחר.",
+      "alreadyScheduled": "לאיש הקשר הזה כבר יש פגישה בשעה הזו ביומן הזה. בחרו זמן אחר.",
       "availabilityChanged": "הזמינות השתנתה בזמן שבחרתם זמן. בחרו שוב.",
       "submitFailed": "לא הצלחנו להשלים את הבקשה הזו. נסו שוב."
     },
@@ -6847,6 +8350,15 @@
     },
     "messages": {
       "empty": "עדיין אין פגישות."
+    },
+    "actions": {
+      "create": "יצירת פגישה"
+    },
+    "create": {
+      "title": "יצירת פגישה",
+      "description": "בחרו יומן ושעה פנויה כדי להזמין עבור איש קשר זה.",
+      "noConversationHint": "אין שיחה פתוחה, ולכן איש הקשר לא יקבל הודעת אישור.",
+      "success": "הפגישה נוצרה."
     }
   },
   "appointmentManagement": {
@@ -8093,7 +9605,9 @@
       "customer_service": "שירות לקוחות",
       "escalation": "הסלמה",
       "marketing": "שיווק",
-      "utility": "שירות"
+      "utility": "שירות",
+      "calls": "שיחות",
+      "other": "אחר"
     },
     "pill": {
       "standby": "המתנה ({owner})",
@@ -8103,14 +9617,18 @@
     "release": {
       "label": "שחרור",
       "tooltip": "שחרר את השיחה כדי שאפליקציות אחרות יוכלו להשיב",
-      "success": "השיחה שוחררה"
+      "success": "השיחה שוחררה",
+      "menu": "שחרור או העברה"
     },
     "pass": {
-      "menuItem": "העבר להסלמה",
-      "title": "להעביר לשותף ההסלמה?",
-      "description": "להעביר את השיחה לשותף ההסלמה שלך? התשובות שלך יושהו עד שהשיחה תחזור.",
+      "menuItem": "העבר לשותף",
+      "title": "להעביר לשותף?",
+      "description": "בחרו מי יטפל בשיחה. התשובות שלכם יושהו עד שהשיחה תחזור.",
       "confirm": "העבר",
-      "success": "השיחה הועברה לשותף ההסלמה"
+      "success": "השיחה הועברה לשותף ההסלמה",
+      "targetLabel": "העבר אל",
+      "noteLabel": "הערה לשותף המקבל",
+      "successTargeted": "השיחה הועברה אל {role}"
     },
     "aiHandover": {
       "label": "BizAI",
@@ -8129,7 +9647,10 @@
       "notEscalation": "רק שותף ההסלמה יכול לקחת שליטה. הניתוב מוגדר ב-Meta Business Suite.",
       "notPrimaryReceiver": "האפליקציה הזו חייבת להיות המקבל הראשי של הדף כדי לקחת שליטה. ניתן להגדיר זאת בהגדרות Handover Protocol של הדף.",
       "learnMore": "למידע נוסף",
-      "dismiss": "שלח בכל זאת"
+      "dismiss": "שלח בכל זאת",
+      "takeOverTitle": "לקחת שליטה בשיחה?",
+      "takeOverDescription": "השותף מפסיק לטפל בה ואתם מקבלים את השליטה. אפשר להשאיר לו הערה.",
+      "takeOverNoteLabel": "הערה לשותף הנוכחי"
     },
     "divider": {
       "ownerHandling": "{owner} מטפל עכשיו בשיחה הזו",
@@ -8182,7 +9703,17 @@
       "adminOnly": "רק מנהלי סביבת העבודה יכולים לשנות ניתוב",
       "flowNotFound": "התהליך שנבחר לא נמצא או שאינו פעיל",
       "integrationNotFound": "מספר WhatsApp לא נמצא",
-      "messengerIntegrationNotFound": "דף Messenger לא נמצא"
+      "messengerIntegrationNotFound": "דף Messenger לא נמצא",
+      "rolesTitle": "תפקידי הניתוב שלך במספר הזה",
+      "rolesDescription": "מוקצים על ידי העסק ב-Meta Business Suite.",
+      "rolesNone": "לא הוקצה לך תפקיד ניתוב במספר הזה.",
+      "rolesNeverChecked": "טרם נבדק.",
+      "rolesNotEnabled": "ניתוב שיחות אינו מופעל עבור המספר הזה.",
+      "rolesStandbyOn": "גישת המתנה: פעילה (ניתן לראות שיחות שאינן בבעלותך)",
+      "rolesStandbyOff": "גישת המתנה: כבויה",
+      "rolesCheckedAt": "נבדק {time}",
+      "rolesRefresh": "בדוק שוב",
+      "rolesSyncFailed": "לא ניתן היה לקבל את תפקידי הניתוב מ-Meta. נסה שוב."
     },
     "errors": {
       "unsupported": "ניתוב שיחות אינו זמין בערוץ הזה",
@@ -8192,8 +9723,12 @@
     "step": {
       "action": "פעולה",
       "release": "שחרר את השיחה",
-      "pass": "העבר לשותף ההסלמה",
-      "helper": "וואטסאפ בלבד. בערוצים אחרים, או כשהשיחה אינה בבעלות כאן, השלב ממשיך בנתיב השגיאה."
+      "pass": "העבר לשותף",
+      "helper": "וואטסאפ בלבד. בערוצים אחרים, או כשהשיחה אינה בבעלות כאן, השלב ממשיך בנתיב השגיאה.",
+      "targetRole": "העבר אל",
+      "targetRoleDefault": "שותף הסלמה (ברירת מחדל)",
+      "metadata": "הערת מסירה",
+      "metadataHelper": "אופציונלי. נשלחת כפי שהיא לאפליקציה שמקבלת את השיחה. משתנים נתמכים. עד {max} תווים."
     },
     "template": {
       "sent": "התבנית נשלחה"
@@ -8527,7 +10062,7 @@
       "too_many_components": "מסך יכול להכיל לכל היותר {max} רכיבים.",
       "component_limit": "מסך יכול להכיל לכל היותר {max} × {type}.",
       "picker_conflict": "מסך לא יכול לכלול גם העלאת תמונות וגם העלאת מסמכים.",
-      "picker_multiple_in_complete": "הגדירו את {property} ל-1: WhatsApp שולח קובץ אחד בלבד כשה-Flow מסתיים.",
+      "picker_multiple_in_complete": "וואטסאפ שולח עד {max} קבצים בסיום הזרימה. הקטן את מספר הקבצים המרבי בשדות הקבצים המובילים למסך זה.",
       "footer_not_last": "ה-Footer חייב להיות הרכיב האחרון במסך.",
       "footer_in_nested_branch": "Footer יכול להיות רק ישירות בענף If ברמה הראשונה.",
       "footer_missing_in_branch": "אם לענף אחד יש Footer, גם לענף השני צריך להיות Footer.",
@@ -9033,6 +10568,720 @@
       "closed": "סגור"
     }
   },
+  "productVendors": {
+    "title": "ספקים",
+    "add": "הוספה",
+    "edit": "עריכה",
+    "delete": "מחיקה",
+    "actions": "פעולות",
+    "save": "שמירה",
+    "cancel": "ביטול",
+    "moreOptions": "אפשרויות נוספות",
+    "empty": "אין ספקים עדיין.",
+    "created": "הספק נוסף",
+    "updated": "הספק עודכן",
+    "deleted": "הספק נמחק",
+    "saveError": "לא ניתן לשמור את הספק",
+    "deleteError": "לא ניתן למחוק את הספק",
+    "deleteTitle": "למחוק את {name}?",
+    "deleteDescription": "{count, plural, =0 {אין מוצרים שמשתמשים בספק הזה.} one {# מוצרים יישארו בלי ספק.} other {# מוצרים יישארו בלי ספק.}}",
+    "fields": {
+      "name": "שם",
+      "shortDescription": "תיאור קצר",
+      "phone": "טלפון",
+      "storeAddress": "כתובת החנות",
+      "image": "תמונה",
+      "optional": "אופציונלי",
+      "discountPercent": "הנחה (0-100%)",
+      "minimumOrderValue": "ערך הזמנה מינימלי",
+      "openHours": "שעות פעילות",
+      "category": "קטגוריה",
+      "subcategory": "תת-קטגוריה",
+      "none": "ללא"
+    },
+    "columns": {
+      "name": "שם",
+      "products": "סה״כ מוצרים",
+      "active": "פעיל"
+    },
+    "description": "המוכרים והמותגים שאליהם שייכים המוצרים שלך."
+  },
+  "ecommerceSettings": {
+    "save": "שמירה",
+    "saved": "ההגדרות נשמרו",
+    "saveError": "לא ניתן לשמור את ההגדרות",
+    "rank": {
+      "label": "דירוג",
+      "default": "ברירת מחדל"
+    },
+    "tabs": {
+      "general": "כללי",
+      "payments": "תשלומים",
+      "shipping": "משלוח",
+      "checkout": "תשלום",
+      "shopify": "Shopify",
+      "woocommerce": "WooCommerce"
+    },
+    "general": {
+      "orderingAvailable": {
+        "label": "ניתן להזמין",
+        "description": "השתמשו בשדה הזה כדי למנוע מלקוחות לבצע הזמנות בלי לשנות את שעות הפעילות. גם שעות הפעילות קובעות את הזמינות שלכם."
+      },
+      "webshopProductView": {
+        "label": "תצוגת מוצרים בחנות האינטרנט",
+        "description": "שליטה באופן שבו מוצרים מוצגים בחנות האינטרנט שלכם.",
+        "options": {
+          "list": "רשימה",
+          "listWithoutImage": "רשימה בלי תמונה",
+          "card": "כרטיס",
+          "cardSquare": "כרטיס עם תמונה מרובעת",
+          "image": "תמונה",
+          "imageSquare": "תמונה (מרובעת)"
+        }
+      },
+      "openHours": {
+        "label": "שעות פעילות",
+        "description": "טווחי הזמן שבהם הלקוחות יכולים לבצע הזמנה."
+      },
+      "searchProducts": {
+        "label": "חיפוש מוצרים",
+        "description": "אפשרו ללקוחות לשלוח הודעות כדי למצוא מוצרים."
+      },
+      "facebookPixelId": {
+        "label": "Facebook Pixel",
+        "description": "עקבו אחר המרות עם Facebook Pixel ומדדו את תוצאות המודעות שלכם. האירועים הבאים נמדדים: ADD_TO_CART, INITIATE_CHECKOUT, PURCHASE, VIEW_CONTENT"
+      },
+      "abandonedCart": {
+        "label": "הודעה על עגלה נטושה",
+        "description": "משך ההמתנה לפני שליחת הודעה על עגלה נטושה, אחרי שהמשתמש עוזב את הבוט עם פריט בעגלה.",
+        "disabled": "מושבת",
+        "afterMinutes": "אחרי {count} דקות",
+        "afterHours": "{count, plural, one {אחרי # שעות} other {אחרי # שעות}}"
+      },
+      "productButtons": {
+        "label": "כפתורים במוצרים",
+        "description": "ההגדרה הזו קובעת אילו כפתורים מוצגים במוצרים בתוך הבוט שלכם.",
+        "options": {
+          "addToCart": "הוספה לעגלה",
+          "share": "שיתוף",
+          "similar": "דומים",
+          "save": "שמירה"
+        }
+      },
+      "productImageSize": {
+        "label": "גודל תמונת המוצרים",
+        "description": "ההגדרה הזו קובעת את גודל התמונה של מוצרים בתוך הבוט שלכם",
+        "options": {
+          "bigSquare": "גדול (מרובע)",
+          "mediumRectangle": "בינוני (מלבן)"
+        }
+      },
+      "allowRateOrders": {
+        "label": "אפשרו דירוג הזמנות",
+        "description": "אפשרו ללקוחות לדרג הזמנה ולכתוב חוות דעת אם אינם מרוצים. רק מנהלי הבוט יכולים לראות את חוות הדעת"
+      },
+      "notifyOnCartStatusChange": {
+        "label": "שליחת התראה בעת שינוי סטטוס העגלה",
+        "description": "הלקוח יקבל התראה בכל פעם שתשנו את סטטוס ההזמנה. אי אפשר להשבית את ההתראה על ביטול הזמנה ועל השלמתה."
+      },
+      "abandonedCartFlow": {
+        "label": "פלואו לעגלה נטושה",
+        "description": "הפלואו שהבוט מריץ ללקוח כשהעגלה נזנחה למשך זמן זה. השתמשו ב-'{{shop_token}}' בכפתורים כדי לפתוח את העגלה. טריגרים יכולים להשתמש גם באירוע \"Cart abandoned\".",
+        "none": "ללא פלואו (רק אירוע טריגר)"
+      },
+      "storeSource": {
+        "label": "מקור החנות",
+        "description": "בחר את מקור החנות המשמש לניהול המוצרים, המלאי וההזמנות שלך. כשהמקור מוגדר ל-Shopify / WooCommerce, כל המוצרים וההזמנות מנוהלים ישירות מחנות ה-Shopify / WooCommerce שלך.",
+        "options": {
+          "chatbotx": "ChatbotX",
+          "shopify": "Shopify",
+          "woocommerce": "WooCommerce"
+        }
+      }
+    },
+    "payments": {
+      "currencyMismatch": "המחיר של {count, plural, one {# מוצרים נקבע} other {# מוצרים נקבע}} במטבע שאינו {currency}. הזמנות מחייבות את המחיר שלהן ב-{currency}.",
+      "paymentMethods": {
+        "label": "אמצעי תשלום",
+        "description": "אמצעי התשלום שמופעלים בדף התשלום. אמצעי התשלום הראשון ברשימה יהיה זה שנבחר בדף התשלום.",
+        "options": {
+          "cod": "תשלום במזומן בעת המסירה",
+          "stripe": "כרטיס",
+          "paypal": "PayPal"
+        },
+        "connectHint": "כדי להציע {provider}, חבר אותו ב-<link>הגדרות → שילובים</link>."
+      },
+      "currency": {
+        "label": "מטבע",
+        "description": "זה המטבע שבו אתם קובעים את מחירי המוצרים. הלקוחות יחויבו במטבע הזה."
+      },
+      "currencyPosition": {
+        "label": "מיקום המטבע",
+        "description": "האפשרות הזו מאפשרת לשלוט במיקום המטבע.",
+        "options": {
+          "left": "שמאל",
+          "leftSpace": "שמאל עם רווח",
+          "right": "ימין",
+          "rightSpace": "ימין עם רווח"
+        }
+      },
+      "currencySymbol": {
+        "label": "סמל המטבע",
+        "description": "סמל המטבע מוצג לפני המחירים. אם אתם רוצים רווח בין הסמל למחירים, הוסיפו רווח בסוף הסמל."
+      },
+      "serviceFeePercent": {
+        "label": "עמלות נוספות / עמלות שירות (0 - 100%)",
+        "description": "עמלות נוספות הקשורות למכירה."
+      }
+    },
+    "shipping": {
+      "shippingType": {
+        "label": "סוג משלוח",
+        "description": "האפשרות הזו מאפשרת לשלוט באופן שבו הלקוח יקבל את ההזמנה.",
+        "options": {
+          "none": "ללא",
+          "delivery": "משלוח ללקוח",
+          "pickup": "איסוף מהחנות",
+          "deliveryAndPickup": "משלוח ללקוח, איסוף מהחנות"
+        }
+      },
+      "storeAddress": {
+        "label": "כתובת החנות",
+        "description": "הכתובת הזו מוצגת ללקוח בדף התשלום אם אתם מאפשרים איסוף מהחנות."
+      },
+      "shippingCountries": {
+        "label": "מדינות משלוח",
+        "description": "המדינות שאליהן אתם שולחים הזמנות."
+      },
+      "defaultShippingCountry": {
+        "label": "מדינת משלוח ברירת מחדל",
+        "description": "המדינה שתיבחר כברירת מחדל בדף התשלום.",
+        "none": "ללא"
+      },
+      "deliveryCost": {
+        "label": "עלות משלוח",
+        "description": "תעריף קבוע למשלוח ההזמנה לכתובת הלקוח."
+      },
+      "defaultCountryNotShipped": "בחרו אחת ממדינות המשלוח."
+    },
+    "checkout": {
+      "checkoutMode": {
+        "label": "תשלום",
+        "description": "ההגדרה הזו קובעת היכן הלקוחות ישלימו את ההזמנות. אם אתם רוצים שהמשתמש ישלים את ההזמנה מחוץ לבוט, למשל באתר שלכם, ב-Amazon וכו׳, אל תשתמשו בדף התשלום המובנה שלנו.",
+        "options": {
+          "default": "דף תשלום ברירת מחדל",
+          "externalLink": "דף תשלום חיצוני מותאם אישית",
+          "flow": "Flow",
+          "productPage": "מעבר לדף המוצר החיצוני"
+        }
+      },
+      "checkoutLink": {
+        "label": "קישור לדף התשלום",
+        "description": "הדף החיצוני שבו הלקוחות משלימים את ההזמנות."
+      },
+      "checkoutFlowId": {
+        "label": "Flow תשלום",
+        "description": "ה-Flow שרץ כשלקוח עובר לתשלום.",
+        "placeholder": "בחירת Flow"
+      },
+      "minimumOrderValue": {
+        "label": "ערך הזמנה מינימלי",
+        "description": "הערך המינימלי של הזמנה שלקוח יכול לבצע. התנאי נבדק אחרי החלת כל ההנחות."
+      },
+      "requiredFields": {
+        "requireName": {
+          "label": "חובה למלא שם הקונה",
+          "description": "שם הקונה ייאסף במהלך התשלום."
+        },
+        "requireEmail": {
+          "label": "חובה למלא כתובת אימייל",
+          "description": "האימייל של הקונה ייאסף במהלך התשלום."
+        },
+        "requirePhone": {
+          "label": "חובה למלא מספר טלפון",
+          "description": "הטלפון של הקונה ייאסף במהלך התשלום."
+        },
+        "requireState": {
+          "label": "חובה למלא מדינה/מחוז",
+          "description": "המחוז של הקונה ייאסף במהלך התשלום."
+        },
+        "requireZip": {
+          "label": "חובה למלא מיקוד",
+          "description": "המיקוד של הקונה ייאסף במהלך התשלום."
+        }
+      },
+      "orderConfirmationMode": {
+        "label": "הודעת אישור הזמנה",
+        "description": "מה הלקוח מקבל בשיחה כשההזמנה מתבצעת. הודעת ברירת המחדל מציגה את פרטי ההזמנה בשפת סביבת העבודה.",
+        "options": {
+          "default": "הודעת ברירת מחדל",
+          "flow": "הפעלת תהליך",
+          "none": "לא לשלוח כלום"
+        }
+      },
+      "orderConfirmationFlowId": {
+        "label": "תהליך אישור הזמנה",
+        "description": "התהליך שנשלח ללקוח במקום הודעת ברירת המחדל כשההזמנה מתבצעת."
+      },
+      "shopifyCheckoutMethod": {
+        "label": "שיטת תשלום",
+        "description": "בחר אם הלקוחות משלימים את התשלום בעמוד התשלום של Shopify או מבצעים את ההזמנה ישירות בחנות המקוונת.",
+        "options": {
+          "webCheckout": "תשלום ב-Shopify באינטרנט",
+          "inApp": "תשלום בתוך האפליקציה"
+        }
+      },
+      "shopifyAutoApplyDiscounts": {
+        "label": "החלת קודי הנחה אוטומטית",
+        "description": "אפשר ללקוחות להחיל קודי הנחה של Shopify ישירות על העגלה לפני המעבר לתשלום."
+      },
+      "wooCommerceCheckoutMethod": {
+        "description": "בחרו אם הלקוחות משלמים בדף התשלום של חנות ה-WooCommerce שלכם או מבצעים את ההזמנה ישירות בחנות המקוונת (תשלום במסירה).",
+        "options": {
+          "webCheckout": "דף התשלום של WooCommerce",
+          "inApp": "תשלום בתוך האפליקציה"
+        }
+      },
+      "wooCommerceAutoApplyDiscounts": {
+        "description": "אפשר ללקוחות להחיל קודי הנחה של WooCommerce ישירות על העגלה לפני המעבר לתשלום."
+      },
+      "inAppDeliveryCost": {
+        "label": "עלות משלוח",
+        "description": "דמי משלוח שמתווספים להזמנות בתשלום בתוך האפליקציה."
+      },
+      "wooCommerceDeliveryCost": {
+        "description": "דמי משלוח שנוספים להזמנות הנשלחות ל-WooCommerce, בשתי שיטות התשלום."
+      }
+    },
+    "shopify": {
+      "shopDomain": {
+        "label": "דומיין החנות",
+        "placeholder": "your-store.myshopify.com",
+        "hint": "הזן את דומיין ה-.myshopify.com של חנות ה-Shopify שלך.",
+        "connectedHint": "הדומיין של חנות ה-Shopify המחוברת שלך."
+      },
+      "authKind": {
+        "label": "אימות",
+        "description": "כיצד ChatbotX מתחבר לחנות שלך: באמצעות אסימון גישה של Admin API מאפליקציה מותאמת אישית, או באמצעות Client ID וסוד של אפליקציה שנוצרה ב-Shopify Dev Dashboard.",
+        "options": {
+          "token": "אסימון גישה של Admin API",
+          "clientCredentials": "Client ID וסוד (אפליקציית Dev Dashboard)"
+        }
+      },
+      "accessToken": {
+        "label": "אסימון גישה של Admin API",
+        "hint": "אסימון הגישה של Admin API של האפליקציה המותאמת אישית שלך. העניקו לו את ההרשאות הבאות: {scopes}.",
+        "connectedHint": "אסימון הגישה של Shopify Admin API שלך נשמר בהצפנה."
+      },
+      "apiSecret": {
+        "label": "מפתח סודי של API",
+        "hint": "המפתח הסודי של ה-API של האפליקציה, המשמש לאימות webhooks שנשלחים מ-Shopify."
+      },
+      "clientId": {
+        "label": "Client ID",
+        "hint": "ה-Client ID של אפליקציית Dev Dashboard שלך. העניקו לו את ההרשאות הבאות: {scopes}."
+      },
+      "clientSecret": {
+        "label": "Client Secret",
+        "hint": "ה-Client Secret של האפליקציה. הוא נשמר בהצפנה."
+      },
+      "webhookUrl": {
+        "label": "כתובת Webhook",
+        "description": "נרשמת אוטומטית ב-Shopify בעת החיבור כדי לקבל עדכוני מוצרים, מלאי והזמנות בזמן אמת."
+      },
+      "syncNow": "סנכרן עכשיו",
+      "syncStarted": "הסנכרון התחיל",
+      "syncError": "לא ניתן להתחיל את הסנכרון",
+      "syncStatus": {
+        "label": "סטטוס סנכרון",
+        "description": "מוצרים, קודי הנחה והזמנות משוכפלים מחנות ה-Shopify שלך.",
+        "connectedTo": "מחובר אל {shopDomain}",
+        "lastSynced": "סנכרון אחרון: {time} ({productCount} מוצרים, {orderCount} הזמנות)",
+        "neverSynced": "טרם סונכרן",
+        "noReason": "חבר מחדש את החנות כדי להמשיך.",
+        "invalid": "החיבור כבר אינו תקף: {reason}",
+        "state": {
+          "idle": "במנוחה",
+          "queued": "הסנכרון בתור...",
+          "running": "מסנכרן...",
+          "succeeded": "הסנכרון האחרון הצליח",
+          "failed": "הסנכרון האחרון נכשל"
+        }
+      }
+    },
+    "woocommerce": {
+      "siteUrl": {
+        "label": "כתובת החנות",
+        "placeholder": "https://example.com",
+        "hint": "כתובת אתר ה-WordPress שלך, המתחילה ב-https://. ב-WordPress, ההגדרה Settings → Permalinks אינה יכולה להיות Plain.",
+        "connectedHint": "חנות ה-WooCommerce המחוברת שלך."
+      },
+      "consumerKey": {
+        "label": "Consumer key",
+        "hint": "צרו מפתח ב-WooCommerce → Settings → Advanced → REST API → Add key עם הרשאת Read/Write, והדביקו את ה-Consumer key שלו (ck_…).",
+        "connectedHint": "תחילת המפתח המחובר. המפתחות נשמרים מוצפנים."
+      },
+      "consumerSecret": {
+        "label": "Consumer secret",
+        "hint": "ה-Consumer secret של המפתח (cs_…). הוא נשמר מוצפן."
+      },
+      "webhookUrl": {
+        "label": "כתובת Webhook",
+        "description": "נרשמת אוטומטית ב-WooCommerce בעת החיבור כדי לקבל עדכוני מוצרים, מלאי והזמנות בזמן אמת."
+      },
+      "syncNow": "סנכרן עכשיו",
+      "syncStarted": "הסנכרון התחיל",
+      "syncError": "לא ניתן להתחיל את הסנכרון",
+      "syncStatus": {
+        "label": "סטטוס סנכרון",
+        "description": "מוצרים, קודי הנחה והזמנות משוכפלים מחנות ה-WooCommerce שלך.",
+        "connectedTo": "מחובר אל {store}",
+        "lastSynced": "סנכרון אחרון: {time} ({productCount} מוצרים, {orderCount} הזמנות)",
+        "neverSynced": "טרם סונכרן",
+        "noReason": "חבר מחדש את החנות כדי להמשיך.",
+        "invalid": "החיבור כבר אינו תקף: {reason}",
+        "state": {
+          "idle": "במנוחה",
+          "queued": "הסנכרון בתור...",
+          "running": "מסנכרן...",
+          "succeeded": "הסנכרון האחרון הצליח",
+          "failed": "הסנכרון האחרון נכשל"
+        }
+      }
+    }
+  },
+  "openHours": {
+    "alwaysOpen": "תמיד פתוח",
+    "addNew": "הוספת חדש",
+    "dialogTitle": "שעות פעילות",
+    "name": "שם",
+    "namePlaceholder": "לדוגמה: ימי חול",
+    "day": "יום",
+    "from": "פתיחה",
+    "to": "סגירה",
+    "add": "הוספת שעות",
+    "remove": "הסרה",
+    "cancel": "ביטול",
+    "continue": "המשך",
+    "created": "שעות הפעילות נוצרו",
+    "saveError": "לא ניתן לשמור את שעות הפעילות",
+    "days": {
+      "0": "ראשון",
+      "1": "שני",
+      "2": "שלישי",
+      "3": "רביעי",
+      "4": "חמישי",
+      "5": "שישי",
+      "6": "שבת"
+    },
+    "sameTimes": "שעת הפתיחה ושעת הסגירה חייבות להיות שונות."
+  },
+  "webshop": {
+    "metadataTitle": "חנות",
+    "metadataOrderTitle": "ההזמנה שלך",
+    "invalidLinkTitle": "הקישור הזה לא עובד",
+    "invalidLinkDescription": "ייתכן שתוקפו פג. בקשו מהחנות קישור חדש בצ'אט.",
+    "previewBanner": "תצוגה מקדימה: כך הלקוחות רואים את הדף. לא ניתן להזמין מתצוגה מקדימה.",
+    "previewOrderingOff": "תצוגה מקדימה: לא ניתן להזמין",
+    "closed": {
+      "orderingUnavailable": "החנות לא מקבלת הזמנות כרגע.",
+      "outsideOpenHours": "החנות סגורה כרגע. אפשר עדיין להסתכל."
+    },
+    "searchPlaceholder": "חיפוש מוצרים",
+    "categories": "קטגוריות",
+    "allCategories": "כל הקטגוריות",
+    "vendors": "ספקים",
+    "allVendors": "כל הספקים",
+    "noProducts": "לא נמצאו מוצרים.",
+    "productNotFound": "המוצר הזה כבר לא זמין.",
+    "outOfStock": "אזל מהמלאי",
+    "addToCart": "הוספה לעגלה",
+    "added": "נוסף לעגלה",
+    "chooseOptions": "בחירת אפשרויות",
+    "chooseOption": "בחירת {name}",
+    "variantUnavailable": "השילוב הזה לא זמין.",
+    "buy": "קנייה",
+    "share": "שיתוף",
+    "linkCopied": "הועתק",
+    "similar": "דומים",
+    "save": "שמירה",
+    "saved": "נשמר",
+    "showImage": "הצגת תמונה {number}",
+    "increase": "הגדלת כמות",
+    "decrease": "הקטנת כמות",
+    "remove": "הסרה",
+    "cart": "עגלה",
+    "cartEmpty": "העגלה שלך ריקה.",
+    "continueShopping": "המשך קנייה",
+    "unavailableItems": "{count, plural, one {לא ניתן להזמין כרגע # פריט} other {לא ניתן להזמין כרגע # פריטים}}",
+    "unavailableNotOrdered": "הם לא ייכללו בהזמנה ויישארו בעגלה.",
+    "unavailable": "כבר לא זמין",
+    "unavailableHint": "בחרו שוב את האפשרויות",
+    "deletedProduct": "מוצר שנמחק",
+    "summary": {
+      "subtotal": "סכום ביניים",
+      "discount": "הנחה",
+      "delivery": "משלוח",
+      "otherFees": "עמלות אחרות",
+      "total": "סה\"כ",
+      "coupon": "קופון ({code})",
+      "title": "סיכום הזמנה",
+      "saved": "חסכתם {amount}",
+      "deliveryAtCheckout": "מחושב בעת התשלום"
+    },
+    "belowMinimum": "ההזמנה המינימלית היא {amount}.",
+    "checkOut": "לתשלום",
+    "contactDetails": "הפרטים שלך",
+    "optional": "(אופציונלי)",
+    "fields": {
+      "name": "שם",
+      "email": "אימייל",
+      "phone": "טלפון",
+      "country": "מדינה",
+      "state": "מחוז",
+      "city": "עיר",
+      "address1": "כתובת",
+      "address2": "דירה, בניין וכו'",
+      "zip": "מיקוד",
+      "note": "הערה לחנות"
+    },
+    "shipping": {
+      "title": "משלוח",
+      "delivery": "משלוח לכתובת שלי",
+      "pickup": "איסוף מהחנות",
+      "storeAddress": "כתובת החנות: {address}"
+    },
+    "payment": {
+      "title": "תשלום",
+      "cod": "תשלום במזומן בעת המסירה",
+      "stripe": "כרטיס",
+      "paypal": "PayPal",
+      "paid": "שולם",
+      "refunded": "הוחזר",
+      "awaiting": "ממתין לתשלום שלך",
+      "payBefore": "שלם לפני {time}, אחרת ההזמנה תבוטל.",
+      "payNow": "שלם עכשיו",
+      "onlineHint": "התשלום יתבצע בעמוד הבא. ההזמנה שלך נשמרת למשך 30 דקות.",
+      "continueToPayment": "המשך לתשלום",
+      "notYet": "עדיין לא קיבלנו את התשלום שלך. אם שילמת הרגע, המתן רגע ורענן את העמוד.",
+      "leftPaymentPage": "יצאת מעמוד התשלום. עדיין אפשר לשלם למטה.",
+      "paidThanks": "התשלום התקבל. תודה על ההזמנה!"
+    },
+    "placeOrder": "ביצוע הזמנה",
+    "orderPlaced": "תודה! ההזמנה שלך התקבלה. נשלח לך עדכונים בצ'אט.",
+    "orderTitle": "הזמנה #{number}",
+    "orderNotFound": "ההזמנה לא נמצאה.",
+    "placedAt": "הוזמן ב-{date}",
+    "status": {
+      "pending": "לא טופל",
+      "accepted": "בטיפול",
+      "shipped": "נשלח",
+      "concluded": "הושלם",
+      "cancelled": "בוטל"
+    },
+    "rateTitle": "דרגו את ההזמנה",
+    "rateComment": "ספרו לחנות מה דעתכם (אופציונלי)",
+    "rateSubmit": "שליחת דירוג",
+    "rateThanks": "תודה על הדירוג!",
+    "yourRating": "הדירוג שלך",
+    "ratingValue": "{rating} מתוך 5 כוכבים",
+    "previous": "הקודם",
+    "next": "הבא",
+    "pageOf": "עמוד {page} מתוך {pageCount}",
+    "errors": {
+      "generic": "משהו השתבש. נסו שוב.",
+      "checkFields": "אנא בדקו את השדות.",
+      "fieldRequired": "השדה {field} הוא חובה.",
+      "countryUnavailable": "החנות לא שולחת למדינה הזו.",
+      "invalidLink": "הקישור כבר לא עובד. בקשו מהחנות קישור חדש.",
+      "webshopPreviewOnly": "זו תצוגה מקדימה. אפשר להזמין רק מקישור של לקוח.",
+      "rateLimited": "יותר מדי ניסיונות. המתינו רגע ונסו שוב.",
+      "orderingUnavailable": "החנות לא מקבלת הזמנות כרגע.",
+      "orderBelowMinimum": "ההזמנה המינימלית היא {minimum}.",
+      "orderBelowVendorMinimum": "המוצרים של {vendorName} צריכים להסתכם לפחות ב-{minimum}.",
+      "orderOutOfStock": "{productName} אזל מהמלאי.",
+      "orderProductUnavailable": "חלק מהפריטים כבר לא ניתנים להזמנה. בדקו את העגלה.",
+      "orderEmpty": "העגלה שלך ריקה.",
+      "orderShippingTypeUnavailable": "אפשרות המשלוח הזו לא זמינה.",
+      "webshopRatingNotAllowed": "לא ניתן לדרג את ההזמנה הזו.",
+      "webshopCartFull": "העגלה שלך יכולה להכיל עד {maximum} פריטים שונים.",
+      "notFound": "המוצר הזה כבר לא זמין.",
+      "discountCodeNotFound": "קוד ההנחה לא קיים.",
+      "discountCodeInactive": "קוד ההנחה לא פעיל.",
+      "discountCodeNotStarted": "קוד ההנחה עדיין לא בתוקף.",
+      "discountCodeExpired": "תוקף קוד ההנחה פג.",
+      "discountCodeUsageLimitReached": "קוד ההנחה נוצל עד תום.",
+      "discountCodeAlreadyUsed": "כבר השתמשת בקוד ההנחה הזה.",
+      "discountCodeNotEligible": "קוד ההנחה לא זמין עבורך.",
+      "discountCodeNotApplicable": "קוד ההנחה לא חל על מה שבעגלה.",
+      "discountCodeMinimumAmount": "הקוד דורש קנייה של {minimum} לפחות. הוסיפו עוד {missing}.",
+      "discountCodeMinimumQuantity": "הקוד דורש לפחות {minimum} פריטים. הוסיפו עוד {missing}.",
+      "paymentMethodUnavailable": "אמצעי תשלום זה אינו זמין.",
+      "paymentProviderNotConnected": "אמצעי תשלום זה אינו זמין.",
+      "paymentProviderUnavailable": "שירות התשלום אינו מגיב. נסה שוב בעוד רגע.",
+      "paymentProviderRejected": "לא ניתן היה להתחיל את התשלום. בחר אמצעי תשלום אחר.",
+      "paymentProviderCredentialsRejected": "לא ניתן היה להתחיל את התשלום. בחר אמצעי תשלום אחר.",
+      "paymentAmountUnsupported": "לא ניתן לשלם על הזמנה זו באינטרנט. בחר אמצעי תשלום אחר.",
+      "orderPaymentNotOpen": "לא ניתן יותר לשלם על הזמנה זו באינטרנט."
+    },
+    "discount": {
+      "label": "קוד הנחה",
+      "placeholder": "קוד הנחה",
+      "apply": "החלה",
+      "applied": "קוד ההנחה הוחל",
+      "automatic": "הוחל אוטומטית",
+      "remove": "הסרת קוד ההנחה",
+      "available": "קודים שאפשר להשתמש בהם",
+      "freeShipping": "משלוח חינם",
+      "bestChoice": "הבחירה הטובה ביותר",
+      "expiresOn": "בתוקף עד {date}",
+      "noExpiry": "ללא תפוגה",
+      "inUse": "בשימוש",
+      "saves": "חיסכון של {amount}",
+      "showMore": "{count, plural, one {הצגת # קוד נוסף} other {הצגת # קודים נוספים}}",
+      "showLess": "הצגת פחות",
+      "removeShort": "הסרה",
+      "expired": "פג תוקף",
+      "usedUp": "נוצל",
+      "notEligible": "עדיין לא זכאי"
+    },
+    "itemCount": "{count, plural, one {# פריט} other {# פריטים}}",
+    "relatedProducts": "אולי תאהבו גם",
+    "soldOut": "אזל המלאי",
+    "sku": "SKU: {sku}",
+    "allProducts": "כל המוצרים",
+    "noCategories": "אין עדיין קטגוריות בחנות."
+  },
+  "webshopLinks": {
+    "preview": "תצוגה מקדימה",
+    "getLink": "קבלת קישור",
+    "copied": "הקישור הועתק. שימו אותו על כפתור בבוט: כל איש קשר יפתח את החנות שלו.",
+    "error": "לא ניתן לקבל את הקישור.",
+    "copyError": "לא ניתן להעתיק את הקישור.",
+    "shopLink": {
+      "label": "כתובת החנות",
+      "hint": "הדביקו את הקישור הזה בכפתור בזרימה, בשידור או ברצף. כל איש קשר שמקבל אותו פותח חנות משלו ויכול להזמין."
+    },
+    "productLink": {
+      "label": "קישור ציבורי",
+      "hint": "העתיקו והדביקו את הכתובת בזרימה, בשידור או ברצף. כל איש קשר שמקבל אותה פותח את המוצר הזה ויכול להזמין."
+    },
+    "bar": "שתף את החנות: קבל קישורים לחנות, לעגלה ולקטגוריות עבור כפתורים בזרימות, שידורים ורצפים.",
+    "dialog": {
+      "title": "קישורי החנות",
+      "description": "הדבק קישור בכפתור בזרימה, בשידור או ברצף. כל איש קשר שמקבל אותו פותח חנות משלו.",
+      "shopHint": "פותח את דף הבית של החנות עם כל המוצרים שלה."
+    },
+    "cartLink": {
+      "label": "עגלה",
+      "hint": "פותח את עגלת איש הקשר, מוכנה לתשלום."
+    },
+    "categoriesLink": {
+      "label": "קטגוריות",
+      "hint": "פותח את רשימת הקטגוריות של החנות."
+    }
+  },
+  "discountCodes": {
+    "title": "קופונים",
+    "description": "קודי הנחה שהלקוחות מזינים בתשלום, או שחלים אוטומטית.",
+    "add": "הוספה",
+    "edit": "עריכת קופון",
+    "automatic": "אוטומטי",
+    "never": "אף פעם",
+    "searchPlaceholder": "חיפוש קודים…",
+    "saveError": "לא ניתן לשמור את הקופון.",
+    "created": "הקופון נוצר",
+    "updated": "הקופון נשמר",
+    "deleted": "הקופון נמחק",
+    "deleteError": "לא ניתן למחוק את הקופון.",
+    "deleteTitle": "למחוק את הקופון {code}?",
+    "deleteDescription": "הלקוחות לא יוכלו להשתמש בו יותר. הזמנות שהשתמשו בו שומרות על ההנחה.",
+    "cancel": "ביטול",
+    "delete": "מחיקה",
+    "save": "שמירה",
+    "columns": {
+      "name": "שם",
+      "discount": "הנחה",
+      "used": "בשימוש",
+      "end": "סיום",
+      "active": "פעיל"
+    },
+    "discountTypes": {
+      "percentage": "אחוז",
+      "fixedAmount": "סכום קבוע",
+      "freeShipping": "משלוח חינם"
+    },
+    "appliesTo": {
+      "entireOrder": "כל ההזמנה",
+      "category": "קטגוריה מסוימת",
+      "products": "מוצרים מסוימים"
+    },
+    "minimumTypes": {
+      "none": "ללא",
+      "amount": "סכום קנייה מינימלי",
+      "quantity": "כמות פריטים מינימלית"
+    },
+    "eligibilities": {
+      "everyone": "כולם",
+      "specificCustomers": "לקוחות מסוימים"
+    },
+    "form": {
+      "discountCode": "קוד הנחה",
+      "code": "קוד",
+      "generate": "יצירה",
+      "autoApply": "להחיל את הקופון אוטומטית על עגלות",
+      "autoApplyHint": "העגלות מקבלות אותו בלי שהלקוח יקליד. עם כמה קופונים אוטומטיים, זה עם ההנחה הגדולה ביותר גובר.",
+      "typedHint": "הלקוחות יזינו את קוד ההנחה בתשלום.",
+      "options": "אפשרויות",
+      "discountType": "סוג הנחה",
+      "discountValuePercent": "ערך ההנחה (%)",
+      "discountValueAmount": "ערך ההנחה ({currency})",
+      "freeShippingHint": "מוריד את דמי המשלוח מהזמנות שנשלחות ללקוח.",
+      "appliesTo": "חל על",
+      "category": "קטגוריה",
+      "products": "מוצרים",
+      "productsPlaceholder": "בחירת מוצרים",
+      "minimumRequirement": "דרישת מינימום",
+      "minimumAmount": "סכום מינימלי ({currency})",
+      "minimumQuantity": "מספר פריטים מינימלי",
+      "usageLimits": "מגבלות שימוש",
+      "limitTotal": "הגבלת מספר השימושים הכולל בהנחה",
+      "usedSoFar": "{count, plural, one {נוצל # פעם עד כה} other {נוצל # פעמים עד כה}}",
+      "oncePerCustomer": "שימוש אחד ללקוח",
+      "customerEligibility": "זכאות לקוחות",
+      "specificCustomersHint": "רק אנשי קשר שתואמים את המסנן למטה בזמן ההזמנה.",
+      "activeDates": "תאריכי תוקף",
+      "startDate": "תאריך התחלה",
+      "endDate": "תאריך סיום",
+      "isActive": "פעיל"
+    },
+    "rules": {
+      "codeCharacters": "השתמשו רק באותיות לטיניות ללא סימנים, ספרות, - ו-_.",
+      "usageBelowUsed": "הקוד כבר נוצל {count} פעמים; המגבלה לא יכולה להיות נמוכה יותר.",
+      "customerConditionRequired": "הוסיפו לפחות תנאי אחד.",
+      "endAfterStart": "תאריך הסיום חייב להיות אחרי תאריך ההתחלה."
+    }
+  },
+  "ecommerceAnalytics": {
+    "title": "אנליטיקה",
+    "lifetime": "מאז ומעולם",
+    "sales": "מכירות",
+    "orders": "הזמנות",
+    "products": "מוצרים",
+    "salesByDate": "מכירות לפי תאריך",
+    "ordersByDate": "הזמנות לפי תאריך",
+    "topProducts": "המוצרים המובילים",
+    "topVendors": "הספקים המובילים",
+    "columns": {
+      "name": "שם",
+      "sales": "מכירות"
+    },
+    "noData": "אין נתונים בתקופה זו",
+    "refresh": "רענון",
+    "change": "{value}%",
+    "noPrevious": "חדש",
+    "otherCurrencyOrders": "{count} הזמנות במטבעות אחרים לא נכללות בנתונים אלה"
+  },
   "responseSla": {
     "label": "SLA תגובה",
     "title": "SLA תגובה",
@@ -9052,5 +11301,611 @@
     "metHelp": "שיעור התגובות עם SLA שעמדו בו.",
     "eligibleCount": "ל-{count} תגובות היה SLA",
     "enable": "הפעלת SLA תגובה"
+  },
+  "stripe": {
+    "title": "Stripe",
+    "setting": {
+      "label": "Stripe",
+      "description": "קבל תשלומים בכרטיס אשראי בחנות האינטרנט שלך באמצעות חשבון ה-Stripe שלך. הכסף עובר ישירות לחשבון ה-Stripe שלך."
+    },
+    "connectWithStripe": "התחברות עם Stripe",
+    "connectWithKey": "שימוש במפתח סודי",
+    "connectionType": {
+      "oauth": "Stripe Connect",
+      "apiKey": "מפתח סודי"
+    },
+    "fields": {
+      "secretKey": "מפתח סודי",
+      "secretKeyHint": "מתחיל ב-sk_live_ (או sk_test_ למצב בדיקה). גם מפתח מוגבל (rk_…) עובד אם הוא יכול לקרוא את החשבון ולכתוב Checkout Sessions, Refunds ו-Webhook Endpoints."
+    },
+    "dialog": {
+      "description": "העתיקו את המפתח הסודי מ-<link>Stripe Dashboard ← Developers ← API keys</link> והדביקו אותו כאן. נבדוק אותו, נגדיר התראות תשלום בחשבון ה-Stripe שלכם ונשמור את המפתח מוצפן."
+    },
+    "testMode": "מצב בדיקה",
+    "liveMode": "חי",
+    "chargesDisabled": "חשבון ה-Stripe שלך עדיין לא יכול לקבל תשלומים. סיים את ההגדרה בלוח הבקרה של Stripe.",
+    "outcome": {
+      "expired": "קישור החיבור ל-Stripe פג תוקף. נסה שוב.",
+      "access_denied": "החיבור לא אושר ב-Stripe.",
+      "stripeAccountAlreadyConnected": "חשבון Stripe זה כבר מחובר לסביבת עבודה אחרת.",
+      "stripePlatformNotConfigured": "Stripe עדיין לא מוגדר בפלטפורמה הזו.",
+      "superAdminRequired": "רק מנהל סביבת עבודה יכול לחבר את Stripe.",
+      "signInRequired": "התחבר ונסה שוב.",
+      "paymentProviderCredentialsRejected": "Stripe דחה את החיבור. נסה שוב.",
+      "startedByAnotherUser": "רק מי שלחץ על התחברות יכול להשלים זאת. אנא לחץ שוב על התחברות.",
+      "paymentProviderInUse": "הזמנות פתוחות עדיין צריכות את חשבון Stripe הזה. השלם או בטל אותן קודם."
+    },
+    "platform": {
+      "connectClientId": "Connect client ID",
+      "connectClientIdHint": "מתוך Stripe Dashboard → Settings → Connect → Onboarding options → OAuth (מתחיל ב-ca_). חנויות מחברות דרכו את חשבון ה-Stripe שלהן.",
+      "redirectUri": "Redirect URI",
+      "webhookReady": "חנויות יכולות לחבר את Stripe, והתשלומים שלהן מאושרים אוטומטית.",
+      "webhookMissing": "ה-webhook של התשלומים חסר. שמור שוב את ההגדרות האלה כדי ליצור אותו.",
+      "connectMissing": "הוסף את Connect client ID כדי שחנויות יוכלו לחבר את חשבון ה-Stripe שלהן."
+    }
+  },
+  "paypal": {
+    "title": "PayPal",
+    "setting": {
+      "label": "PayPal",
+      "description": "קבל תשלומי PayPal בחנות האינטרנט שלך באמצעות חשבון ה-PayPal שלך."
+    },
+    "sandbox": "Sandbox",
+    "liveMode": "חי",
+    "fields": {
+      "clientId": "Client ID",
+      "clientSecret": "Secret"
+    },
+    "dialog": {
+      "description": "צור אפליקציית REST ב-<link>PayPal Developer → Apps & Credentials</link> והדבק את ה-Client ID וה-Secret שלה. מצב חי או Sandbox מזוהה לפי המפתחות."
+    }
+  },
+  "pipelines": {
+    "title": "פייפליינים",
+    "retry": "נסו שוב",
+    "save": "שמירה",
+    "saveFailed": "לא ניתן היה לשמור את השינויים. נסו שוב.",
+    "list": {
+      "name": "שם",
+      "type": "סוג",
+      "items": "פריטים",
+      "add": "הוספת פייפליין",
+      "empty": "אין עדיין פייפליינים",
+      "emptyHint": "צרו פייפליין כדי לעקוב אחר עסקאות, פניות או כל תהליך אחר ככרטיסים בלוח.",
+      "error": "לא ניתן לטעון את הפייפליינים",
+      "contacts": "אנשי קשר",
+      "addShort": "הוספה",
+      "description": "עקבו אחר עסקאות, פניות או כל תהליך ככרטיסים שעוברים בין שלבים."
+    },
+    "types": {
+      "opportunity": {
+        "label": "מרכז הזדמנויות",
+        "description": "עקבו אחר עסקאות מכירה לאורך השלבים. שלב ראשון: ליד."
+      },
+      "ticket": {
+        "label": "מרכז תמיכה",
+        "description": "טפלו בפניות תמיכה. שלב ראשון: בעיה חדשה."
+      },
+      "custom": {
+        "label": "לוח מותאם אישית",
+        "description": "בנו תהליך משלכם. שלב ראשון: קליטה."
+      }
+    },
+    "noun": {
+      "opportunity": {
+        "one": "הזדמנות",
+        "many": "הזדמנויות",
+        "add": "הוספת הזדמנות"
+      },
+      "ticket": {
+        "one": "פנייה",
+        "many": "פניות",
+        "add": "הוספת פנייה"
+      },
+      "card": {
+        "one": "כרטיס",
+        "many": "כרטיסים",
+        "add": "הוספת כרטיס"
+      }
+    },
+    "create": {
+      "title": "פייפליין חדש",
+      "description": "בחרו למה הלוח מיועד, ואז תנו לו שם.",
+      "type": "סוג",
+      "name": "שם הפייפליין",
+      "namePlaceholder": "לדוגמה: מכירות",
+      "submit": "יצירת פייפליין",
+      "success": "הפייפליין נוצר"
+    },
+    "menu": {
+      "open": "פעולות פייפליין",
+      "rename": "שינוי שם",
+      "duplicate": "שכפול",
+      "delete": "מחיקה"
+    },
+    "rename": {
+      "title": "שינוי שם הפייפליין",
+      "submit": "שינוי שם",
+      "success": "שם הפייפליין שונה"
+    },
+    "duplicate": {
+      "success": "הפייפליין שוכפל"
+    },
+    "delete": {
+      "title": "מחיקת פייפליין",
+      "description": "{name} וכל השלבים והפריטים שלו יימחקו. לא ניתן לבטל פעולה זו.",
+      "success": "הפייפליין נמחק"
+    },
+    "board": {
+      "title": "לוח",
+      "count": "{count, plural, one {פריט #} other {# פריטים}}",
+      "total": "סך הכול {value}",
+      "search": "חיפוש לפי כותרת, מספר או איש קשר",
+      "sort": "מיון",
+      "filter": "סינון",
+      "analytics": "ניתוח נתונים",
+      "settings": "הגדרות",
+      "emptyStage": "גררו ושחררו כאן כרטיס כדי להעביר אותו לשלב זה.",
+      "loadMore": "טעינת עוד",
+      "loadMoreFailed": "לא ניתן לטעון פריטים נוספים",
+      "error": "לא ניתן לטעון את הלוח",
+      "processing": "מעבד את השלב…",
+      "moveFailed": "לא ניתן להעביר את הכרטיס",
+      "sortOptions": {
+        "createdAtDesc": "תאריך יצירה (מחדש לישן)",
+        "createdAtAsc": "תאריך יצירה (מישן לחדש)",
+        "updatedAtDesc": "תאריך עדכון (מחדש לישן)",
+        "valueDesc": "ערך ההזדמנות (מגבוה לנמוך)",
+        "valueAsc": "ערך ההזדמנות (מנמוך לגבוה)",
+        "dueDateAsc": "תאריך יעד (מהקרוב לרחוק)",
+        "dueDateDesc": "תאריך יעד (מהרחוק לקרוב)",
+        "priorityDesc": "עדיפות (מגבוה לנמוך)",
+        "priorityAsc": "עדיפות (מנמוך לגבוה)",
+        "updatedAtAsc": "תאריך עדכון (מישן לחדש)"
+      },
+      "searchAction": "חיפוש",
+      "closeSearch": "סגירת החיפוש",
+      "cardMenu": "פעולות כרטיס",
+      "moveTo": "העברה אל",
+      "unknownContact": "איש קשר לא ידוע",
+      "staleError": "לא ניתן לרענן את הלוח. ייתכן שהמידע המוצג אינו עדכני."
+    },
+    "stage": {
+      "add": "הוספת שלב",
+      "name": "שם השלב",
+      "namePlaceholder": "שם השלב",
+      "menu": "פעולות שלב",
+      "edit": "עריכת שלב",
+      "delete": "מחיקת שלב",
+      "deleteTitle": "מחיקת שלב",
+      "deleteDescription": "{name} וכל הפריטים בו יימחקו. לא ניתן לבטל פעולה זו.",
+      "moveItemsTo": "העברת הפריטים אל",
+      "deleteItemsToo": "מחיקת הפריטים גם כן",
+      "description": "תיאור",
+      "textColor": "צבע טקסט",
+      "backgroundColor": "צבע רקע",
+      "saved": "השלב נשמר",
+      "deleted": "השלב נמחק",
+      "queued": "השלב מתרוקן ברקע.",
+      "resetColor": "ברירת מחדל",
+      "deleteMoveDescription": "{name} יימחק. הפריטים שלו יועברו אל {target}.",
+      "rename": "שינוי שם",
+      "settings": "הגדרות",
+      "general": "כללי",
+      "color": "צבע",
+      "cancel": "ביטול"
+    },
+    "priority": {
+      "low": "נמוכה",
+      "medium": "בינונית",
+      "high": "גבוהה"
+    },
+    "item": {
+      "loading": "טוען…",
+      "error": "לא ניתן לטעון פריט זה",
+      "title": "כותרת",
+      "status": "סטטוס",
+      "stage": "שלב",
+      "priority": "עדיפות",
+      "value": "ערך",
+      "dueDate": "תאריך יעד",
+      "assignees": "מנהלים מוקצים",
+      "description": "תיאור",
+      "attachments": "קבצים מצורפים",
+      "attach": "צירוף קבצים",
+      "noAttachments": "אין קבצים מצורפים",
+      "removeAttachment": "הסרת קובץ מצורף",
+      "removeAttachmentDescription": "הקובץ יוסר מפריט זה אך יישאר בספריית המדיה.",
+      "comments": "תגובות",
+      "addComment": "הוספת תגובה",
+      "commentPlaceholder": "כתבו תגובה…",
+      "noComments": "אין עדיין תגובות",
+      "deleteComment": "מחיקת תגובה",
+      "deleteCommentDescription": "התגובה תימחק. לא ניתן לבטל פעולה זו.",
+      "activity": "פעילות",
+      "noActivity": "אין עדיין פעילות",
+      "transfer": "העברה לפייפליין",
+      "transferTitle": "העברה לפייפליין אחר",
+      "transferDescription": "הפריט שומר על המספר ועל תאריך היצירה שלו. שדות מותאמים אישית מועברים כאשר בפייפליין השני יש שדה עם אותו שם הפניה ואותו סוג.",
+      "destinationPipeline": "פייפליין יעד",
+      "destinationStage": "שלב יעד",
+      "firstStage": "שלב ראשון",
+      "choose": "בחירה…",
+      "transferred": "הפריט הועבר",
+      "delete": "מחיקה",
+      "deleteDescription": "פריט אחד יימחק. לא ניתן לבטל פעולה זו.",
+      "deleted": "הפריט נמחק",
+      "number": "מספר",
+      "createdBy": "נוצר על ידי",
+      "createdByValue": "{name} ב-{date}",
+      "inbox": "תיבת הודעות",
+      "moreActions": "פעולות נוספות",
+      "noDescription": "אין תיאור",
+      "yes": "כן",
+      "no": "לא",
+      "assigneesMembers": "נציגים",
+      "assigneesTeams": "צוותי תיבת הודעות",
+      "assigneesSearch": "חיפוש מנהלים או צוותים…",
+      "assigneesEmpty": "אין תוצאות",
+      "assigneesPlaceholder": "בחירת מנהלים או צוותים",
+      "olderComments": "הצג תגובות ישנות יותר",
+      "olderActivity": "הצגת פעילות ישנה יותר",
+      "activityFilter": "סינון",
+      "activityFilterCount": "{count, plural, one {# מסנן} other {# מסננים}}",
+      "activityFilterClear": "הצג הכול",
+      "noFilteredActivity": "אין פעילות שתואמת למסנן הזה.",
+      "activityGroup": {
+        "lifecycle": "יצירה והעברה",
+        "stage": "שלב",
+        "status": "סטטוס",
+        "value": "ערך",
+        "priority": "עדיפות",
+        "dueDate": "תאריך יעד",
+        "details": "כותרת, תיאור ושדות",
+        "assignees": "אחראים",
+        "comments": "תגובות",
+        "attachments": "קבצים מצורפים"
+      }
+    },
+    "activity": {
+      "created": "נוצר",
+      "stageChanged": "הועבר לשלב אחר",
+      "statusChanged": "הסטטוס שונה",
+      "valueChanged": "הערך שונה",
+      "priorityChanged": "העדיפות שונתה",
+      "dueDateChanged": "תאריך היעד שונה",
+      "titleChanged": "הכותרת שונתה",
+      "descriptionChanged": "התיאור שונה",
+      "fieldValuesChanged": "השדות המותאמים אישית שונו",
+      "assigneesChanged": "המוקצים שונו",
+      "attachmentAdded": "נוסף קובץ מצורף",
+      "attachmentRemoved": "הוסר קובץ מצורף",
+      "commentAdded": "נוספה תגובה",
+      "commentDeleted": "התגובה נמחקה",
+      "transferred": "הועבר מפייפליין אחר",
+      "deleted": "נמחק"
+    },
+    "activityActor": {
+      "flow": "תהליך",
+      "trigger": "טריגר",
+      "workspaceToken": "API",
+      "system": "מערכת",
+      "formerMember": "חבר לשעבר"
+    },
+    "add": {
+      "changeContact": "בחירת איש קשר אחר",
+      "success": "נוצר",
+      "stepContact": "בחירת איש קשר",
+      "stepDetails": "פרטי {noun}",
+      "contact": "איש קשר",
+      "addNewContact": "הוספת חדש"
+    },
+    "filter": {
+      "title": "סינון",
+      "status": "סטטוס",
+      "statusLabels": {
+        "open": "פתוח",
+        "won": "זכייה",
+        "lost": "הפסד"
+      },
+      "priority": "עדיפות",
+      "assignee": "מנהלים מוקצים",
+      "value": "ערך {noun}",
+      "min": "מינימום",
+      "max": "מקסימום",
+      "dueDate": "תאריך יעד",
+      "createdAt": "תאריך יצירה",
+      "from": "מתאריך",
+      "to": "עד תאריך",
+      "clear": "ניקוי מסננים",
+      "apply": "החלה",
+      "back": "חזרה",
+      "updatedAt": "תאריך עדכון",
+      "resolvedOn": "תאריך סגירת {noun}",
+      "statusChangedOn": "תאריך שינוי הסטטוס",
+      "stageChangedOn": "תאריך שינוי השלב",
+      "lastCommentOn": "תאריך התגובה האחרונה",
+      "customFields": "שדות מותאמים אישית",
+      "any": "הכול",
+      "yes": "כן",
+      "no": "לא",
+      "notResolvedOn": "{noun} שלא נסגר בתאריך",
+      "equal": "שווה ל",
+      "different": "שונה מ",
+      "reset": "איפוס",
+      "presets": {
+        "thisWeek": "השבוע",
+        "lastWeek": "שבוע שעבר",
+        "last14": "14 הימים האחרונים",
+        "thisYear": "השנה",
+        "lastYear": "שנה שעברה",
+        "tomorrow": "מחר",
+        "next7": "בעוד 7 ימים",
+        "next14": "בעוד 14 ימים",
+        "next30": "בעוד 30 ימים",
+        "allTime": "כל הזמנים"
+      },
+      "pickDate": "בחר תאריך",
+      "activity": "פעילות",
+      "activityKinds": "סוג השינוי",
+      "activityActors": "בוצע על ידי",
+      "activityWhen": "מתי",
+      "activityAutomation": "אוטומציה"
+    },
+    "analytics": {
+      "title": "ניתוח נתונים",
+      "loading": "טוען סטטיסטיקות…",
+      "error": "לא ניתן לטעון את הסטטיסטיקות",
+      "created": "נוצרו",
+      "won": "זכיות",
+      "wonValue": "ערך הזכיות",
+      "lost": "הפסדים",
+      "lostValue": "ערך ההפסדים",
+      "admin": "מנהל",
+      "automation": "אוטומציה",
+      "back": "חזרה",
+      "admins": "מנהלים",
+      "chart": {
+        "created": "חדשים ליום",
+        "won": "זכיות ליום",
+        "lost": "הפסדים ליום",
+        "wonValue": "ערך זכיות ליום",
+        "lostValue": "ערך הפסדים ליום"
+      },
+      "pie": {
+        "created": "נוצרו לפי מנהל",
+        "won": "נוצחו לפי מנהל",
+        "lost": "אבדו לפי מנהל",
+        "other": "אחר",
+        "empty": "אין נתונים"
+      }
+    },
+    "settings": {
+      "title": "הגדרות הפייפליין",
+      "general": "כללי",
+      "fields": "שדות מותאמים אישית",
+      "display": "תצוגה",
+      "permissions": "הרשאות",
+      "saved": "ההגדרות נשמרו",
+      "referenceName": "שם הפניה",
+      "referenceNameHint": "משמש במשתנים pipelines.reference_name.stage_name. שינויו ישבש הודעות שמשתמשות בשם הישן.",
+      "referenceNameFormat": "השתמשו באותיות לטיניות קטנות, ספרות וקו תחתון, החל באות (למשל close_date).",
+      "currency": "מטבע",
+      "currencyFollowCountry": "מדינת סביבת העבודה · {country} · {currency}",
+      "currencyFollowNoCountry": "לא הוגדרה מדינה לסביבת העבודה · {currency}",
+      "currencyHint": "עוקב אחר מדינת היעד של סביבת העבודה (הגדרות ← כללי) ומתעדכן כשהיא משתנה. אם לא הוגדרה מדינה, נעשה שימוש ב-USD. ערכים אינם מומרים לעולם.",
+      "assignContact": "הקצאת איש הקשר למנהל כאשר פריט מוקצה",
+      "limit": "הגבלת מספר הפריטים הפתוחים לכל איש קשר",
+      "statusLabels": "תוויות סטטוס",
+      "status": {
+        "open": "פתוח",
+        "won": "זכייה",
+        "lost": "הפסד"
+      },
+      "features": "תכונות גלויות",
+      "cardElements": "רכיבי הכרטיס",
+      "card": {
+        "contactPhone": "טלפון איש הקשר",
+        "contactEmail": "אימייל איש הקשר",
+        "createdAt": "תאריך יצירה",
+        "updatedAt": "תאריך עדכון",
+        "assignees": "מנהלים מוקצים",
+        "comments": "תגובות",
+        "cardId": "מספר הפריט",
+        "priority": "עדיפות",
+        "value": "ערך",
+        "dueDate": "תאריך יעד"
+      },
+      "noFields": "אין עדיין שדות מותאמים אישית",
+      "fieldName": "שם השדה",
+      "fieldReference": "שם הפניה",
+      "fieldType": "סוג השדה",
+      "required": "שדה חובה",
+      "requiredShort": "חובה",
+      "addField": "הוספת שדה",
+      "fieldAdded": "השדה נוסף",
+      "deleteField": "מחיקת שדה",
+      "permissionsHint": "לבעלים ולמנהלים של סביבת העבודה יש תמיד גישה מלאה. הקצו לחברים האחרים את ההרשאות שלהם בפייפליין זה.",
+      "revoke": "ביטול הרשאה",
+      "permission": {
+        "view": "צפייה",
+        "edit": "עריכה",
+        "delete": "מחיקה",
+        "settings": "הגדרות"
+      },
+      "noMembers": "אין חברים נוספים להגדרה",
+      "confirmDeleteField": "למחוק את השדה הזה ואת כל ערכיו בכל הפריטים?",
+      "adminPermissions": "הרשאות מנהל",
+      "cardVisibleElements": "רכיבים גלויים בכרטיס"
+    },
+    "panel": {
+      "empty": "אין פריטי פייפליין עבור איש קשר זה",
+      "error": "לא ניתן לטעון את פריטי הפייפליין",
+      "choosePipeline": "בחירת פייפליין",
+      "add": "הוספת חדש"
+    },
+    "variables": {
+      "group": "פייפליינים",
+      "attributes": {
+        "name": "שם הפריט",
+        "stageName": "שלב",
+        "status": "סטטוס",
+        "priority": "עדיפות",
+        "value": "ערך",
+        "assignedAdmins": "מנהלים מוקצים",
+        "createdDate": "תאריך יצירה",
+        "dueDate": "תאריך יעד",
+        "updatedDate": "תאריך עדכון",
+        "id": "מזהה הפריט"
+      }
+    }
+  },
+  "oauthConsent": {
+    "title": "Authorize {clientName}",
+    "description": "This application is requesting access to your workspace.",
+    "permissionsTitle": "Requested permissions",
+    "signedInAs": "Signed in as",
+    "approve": "Approve",
+    "deny": "Deny",
+    "failed": "לא ניתן היה להשלים את ההרשאה. נסה שוב.",
+    "workspaceLabel": "סביבת עבודה",
+    "workspacePlaceholder": "בחר סביבת עבודה",
+    "workspaceHint": "{clientName} יכול לפעול רק בסביבת עבודה זו. כדי להחליף בהמשך, נתק והתחבר מחדש.",
+    "noWorkspaces": "אינך מנהל באף סביבת עבודה, ולכן אינך יכול לאשר את האפליקציה הזו."
+  },
+  "chatbotxMcp": {
+    "title": "ChatbotX MCP",
+    "workspaceId": "Workspace ID",
+    "streamableUrl": "Streamable HTTP URL",
+    "sseUrl": "Legacy SSE URL",
+    "guide": {
+      "title": "Connect an MCP client",
+      "step1": "Copy the configuration for your MCP client.",
+      "step2": "Paste it into the client.",
+      "step3": "The client opens a browser. Sign in and approve access.",
+      "step4": "Your workspace tools appear after approval.",
+      "ownerOnly": "Only workspace owners and superAdmins can authorize MCP access."
+    },
+    "clients": {
+      "claudeCode": "Claude Code",
+      "claudeDesktop": "Claude Desktop",
+      "cursor": "Cursor",
+      "chatgpt": "ChatGPT",
+      "stdio": "stdio fallback",
+      "stdioHint": "Use a workspace token for this fallback."
+    },
+    "grants": {
+      "title": "Authorized applications",
+      "description": "Grants belong to your account and apply to every workspace you administer; revoking disconnects the client everywhere.",
+      "empty": "OAuth grants appear here after you connect an MCP client.",
+      "client": "Client",
+      "scopes": "Scopes",
+      "firstAuthorizedAt": "First authorized",
+      "lastRefreshedAt": "Last refreshed",
+      "activeUntil": "Active until",
+      "noActiveToken": "No active token",
+      "revoke": "Revoke",
+      "revokeConfirmTitle": "Revoke application access?",
+      "revokeConfirmDescription": "Revoke access for {clientName}? This disconnects the client everywhere.",
+      "revokedSuccess": "Application access revoked.",
+      "notFound": "OAuth grant no longer exists"
+    }
+  },
+  "connectionStatus": {
+    "column": "Status",
+    "reconnecting": "The provider is reconnecting this account. Messages are held until it finishes.",
+    "accessRemoved": "The provider removed access to this account. Reconnect to resume.",
+    "needsReconnect": "Reconnect required.",
+    "inactive": "This channel is inactive."
+  },
+  "inbox": {
+    "createAppointment": {
+      "title": "יצירת פגישה",
+      "description": "שלחו לאיש הקשר קישור הזמנה ליומן, או פתחו אותו כדי להזמין בשמו.",
+      "inactive": "לא פעיל",
+      "sendLink": "שליחת קישור ליומן",
+      "goToLink": "מעבר לקישור היומן",
+      "sent": "קישור ההזמנה נשלח.",
+      "failed": "לא ניתן ליצור את קישור ההזמנה.",
+      "noCalendars": "אין עדיין יומני פגישות.",
+      "manageCalendars": "ניהול יומני פגישות"
+    }
+  },
+  "templateStore": {
+    "title": "חנות תבניות",
+    "description": "תבניות שאושרו לחנות הציבורית. כל תבנית מופיעה בקטגוריות שתבחרו.",
+    "add": "הוספה",
+    "addCategory": "הוספת קטגוריה",
+    "renameCategory": "שינוי שם",
+    "editCategories": "עריכת קטגוריות",
+    "templateId": "מזהה תבנית",
+    "template": "תבנית",
+    "categories": "קטגוריות",
+    "categoriesPlaceholder": "ללא קטגוריה",
+    "close": "סגירה",
+    "removeChip": "הסרת {name}",
+    "categoriesHint": "אופציונלי. בלי קטגוריה התבנית תופיע רק תחת «הכול».",
+    "noCategoriesYet": "עדיין אין קטגוריות.",
+    "added": "התבנית נוספה לחנות",
+    "updated": "הקטגוריות עודכנו",
+    "removed": "התבנית הוסרה מהחנות",
+    "removeError": "לא ניתן להסיר את התבנית",
+    "removeTitle": "להסיר את {name}?",
+    "removeDescription": "היא תיעלם מהחנות. התבנית עצמה וההתקנות שלה לא מושפעות.",
+    "saveError": "לא ניתן לשמור",
+    "deleteError": "לא ניתן למחוק את הקטגוריה",
+    "categoryCreated": "הקטגוריה נוצרה",
+    "categoryUpdated": "הקטגוריה עודכנה",
+    "categoryMoved": "הקטגוריה הועברה",
+    "categoryDeleted": "הקטגוריה נמחקה",
+    "deleteCategoryTitle": "למחוק את {name}?",
+    "deleteCategoryDescription": "תבניות בקטגוריה זו: {count}. הן נשארות בחנות ומופיעות תחת «הכול».",
+    "moveUp": "הזזה למעלה",
+    "moveDown": "הזזה למטה",
+    "searchPlaceholder": "חיפוש לפי שם או מזהה תבנית",
+    "emptyListings": "עדיין אין תבניות מאושרות.",
+    "noMatches": "אין תבניות שמתאימות לחיפוש או למסננים.",
+    "allCategories": "כל הקטגוריות",
+    "allStatuses": "כל הסטטוסים",
+    "installs": "התקנות",
+    "owner": "בעלים",
+    "statusLabel": "סטטוס",
+    "openInStore": "פתיחת החנות",
+    "storeUnavailable": "החנות שלכם נפתחת בדומיין המותאם שלכם. הגדירו אחד כדי לפתוח אותה.",
+    "openTemplatePage": "פתיחת דף התבנית",
+    "remove": "הסרה",
+    "status": {
+      "published": "פורסם",
+      "templateUnavailable": "התבנית אינה זמינה",
+      "shareDisabled": "קישור השיתוף כבוי"
+    },
+    "errors": {
+      "templateUnavailable": "לא ניתן להוסיף לחנות שלכם תבנית עם מזהה זה.",
+      "listingExists": "התבנית הזו כבר בחנות שלכם.",
+      "listingUnavailable": "פריט החנות הזה כבר לא קיים.",
+      "listingLimit": "חנות יכולה להכיל עד {templateLimit} תבניות.",
+      "categoryUnavailable": "הקטגוריה הזו כבר לא קיימת.",
+      "categoryNameTaken": "כבר קיימת קטגוריה בשם הזה.",
+      "categoryLimit": "בחנות יכולות להיות עד {categoryLimit} קטגוריות."
+    },
+    "store": {
+      "subtitle": "תבניות מוכנות שאפשר להתקין בלחיצה אחת.",
+      "pageTitle": "{tenantName} – חנות תבניות",
+      "empty": "אין עדיין תבניות בחנות.",
+      "search": "חיפוש תבניות",
+      "all": "הכול",
+      "categories": "קטגוריות החנות",
+      "noResults": "אין תבניות שמתאימות לחיפוש.",
+      "clearSearch": "ניקוי החיפוש",
+      "by": "מאת {publisherName}"
+    },
+    "picker": {
+      "placeholder": "בחרו תבנית",
+      "search": "חיפוש לפי שם או מזהה תבנית",
+      "empty": "אין תבניות זמינות להוספה.",
+      "error": "לא ניתן לטעון תבניות.",
+      "retry": "נסו שוב",
+      "meta": "ID {id} · {workspace}"
+    }
   }
 }

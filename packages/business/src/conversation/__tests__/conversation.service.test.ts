@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
   isUserOnShift: vi.fn(),
+  assignmentSelectForUpdate: vi.fn(),
   conversationFindMany: vi.fn(),
   conversationFindFirst: vi.fn(),
   latestAttribution: vi.fn(),
@@ -18,7 +19,7 @@ const mocks = vi.hoisted(() => ({
   findInboxTeamByIdOrFail: vi.fn(),
   inboxTeamExists: vi.fn(),
   assignUserIfUnassigned: vi.fn(),
-  broadcastToWorkspaceParty: vi.fn(),
+  publishWorkspaceRealtimeEvent: vi.fn(),
   releaseOwnedThreadsForContacts: vi.fn(),
   // Captures tagged-template calls (`sql\`GREATEST(${a}, ${b})\``) as a plain
   // `{ strings, values }` fragment so tests can assert both the emitted SQL
@@ -29,42 +30,49 @@ const mocks = vi.hoisted(() => ({
   })),
   cancelQuickReplyFollowUps: vi.fn(),
   closeHumanReplyWindow: vi.fn(),
+  insertDmConversationsIfAbsent: vi.fn(),
   trackWindow: vi.fn(),
 }))
 
-vi.mock("@chatbotx.io/database/client", () => ({
-  db: {
-    query: {
-      conversationModel: {
-        findMany: mocks.conversationFindMany,
-        findFirst: mocks.conversationFindFirst,
-      },
+vi.mock("@chatbotx.io/database/client", () => {
+  const update = (..._args: unknown[]) => ({
+    set: (values: unknown) => {
+      mocks.updateSet(values)
+      return {
+        where: (condition: unknown) => {
+          mocks.updateWhere(condition)
+          return {
+            returning: (...returningArgs: unknown[]) =>
+              mocks.updateReturning(...returningArgs),
+          }
+        },
+      }
     },
-    // Tagged plain objects (not bare `vi.fn()`) so `.where(cond)` can be
-    // asserted on directly — mirrors `tag-service-soft-delete.test.ts`.
-    // This is what lets `updateAssignment`'s test below prove the
-    // `eq(workspaceId)` clause is actually present in the WHERE, not just
-    // that *some* condition was passed.
-    update: (..._args: unknown[]) => ({
-      set: (values: unknown) => {
-        mocks.updateSet(values)
-        return {
-          where: (cond: unknown) => {
-            mocks.updateWhere(cond)
-            return {
-              returning: (...rArgs: unknown[]) =>
-                mocks.updateReturning(...rArgs),
-            }
-          },
-        }
-      },
+  })
+  const select = () => ({
+    from: () => ({
+      where: () => ({ for: mocks.assignmentSelectForUpdate }),
     }),
-  },
-  and: (...args: unknown[]) => ({ and: args }),
-  eq: (a: unknown, b: unknown) => ({ eq: [a, b] }),
-  inArray: (col: unknown, vals: unknown) => ({ inArray: [col, vals] }),
-  sql: mocks.sql,
-}))
+  })
+  return {
+    db: {
+      query: {
+        conversationModel: {
+          findMany: mocks.conversationFindMany,
+          findFirst: mocks.conversationFindFirst,
+        },
+      },
+      select,
+      transaction: (callback: (tx: unknown) => unknown) =>
+        callback({ select, update }),
+      update,
+    },
+    and: (...args: unknown[]) => ({ and: args }),
+    eq: (a: unknown, b: unknown) => ({ eq: [a, b] }),
+    inArray: (col: unknown, vals: unknown) => ({ inArray: [col, vals] }),
+    sql: mocks.sql,
+  }
+})
 
 // Plain object stubs only — importing the real schema opens a database
 // connection through the sharding client. The extra models come from
@@ -100,6 +108,7 @@ vi.mock("@chatbotx.io/database/repositories", () => ({
   getSafeSinceTime: mocks.getSafeSinceTime,
   assignUserIfUnassigned: mocks.assignUserIfUnassigned,
   closeHumanReplyWindow: mocks.closeHumanReplyWindow,
+  insertDmConversationsIfAbsent: mocks.insertDmConversationsIfAbsent,
 }))
 
 vi.mock("@chatbotx.io/worker-config", async (importOriginal) => {
@@ -111,17 +120,25 @@ vi.mock("@chatbotx.io/worker-config", async (importOriginal) => {
   }
 })
 
-vi.mock("@chatbotx.io/partysocket-config", () => ({
+vi.mock("@chatbotx.io/realtime-protocol", () => ({
   RealtimeEventType: {
     conversationCreated: "conversationCreated",
     conversationUpdated: "conversationUpdated",
     conversationAssigned: "conversationAssigned",
   },
+  routeForAssignment: vi.fn(() => ({
+    assignedTeamIds: [],
+    assignedUserIds: [],
+  })),
+  routeForConversation: vi.fn(() => ({
+    assignedTeamIds: [],
+    assignedUserIds: [],
+  })),
 }))
 
 vi.mock("../../platform/realtime-broadcast", () => ({
-  broadcastToWorkspaceParty: mocks.broadcastToWorkspaceParty,
-  publishToWorkspaceParty: mocks.broadcastToWorkspaceParty,
+  publishWorkspaceRealtimeEvent: mocks.publishWorkspaceRealtimeEvent,
+  queueWorkspaceRealtimeEvent: mocks.publishWorkspaceRealtimeEvent,
 }))
 
 // `conversationService` now imports `contactService` (for the location write
@@ -206,6 +223,8 @@ beforeEach(() => {
   mocks.isUserOnShift.mockResolvedValue(true)
   mocks.latestAttribution.mockReset()
   mocks.latestAttribution.mockResolvedValue([])
+  mocks.assignmentSelectForUpdate.mockReset()
+  mocks.assignmentSelectForUpdate.mockResolvedValue([])
   mocks.conversationFindMany.mockReset()
   mocks.conversationFindFirst.mockReset()
   mocks.updateSet.mockReset()
@@ -225,7 +244,7 @@ beforeEach(() => {
   mocks.inboxTeamExists.mockReset()
   mocks.assignUserIfUnassigned.mockReset()
   vi.mocked(invalidateCacheByTags).mockReset()
-  mocks.broadcastToWorkspaceParty.mockReset()
+  mocks.publishWorkspaceRealtimeEvent.mockReset()
   vi.mocked(notificationQueue.addBulk).mockReset()
   vi.mocked(emitConversationAssigned).mockReset()
   vi.mocked(emit).mockReset()
@@ -456,6 +475,103 @@ describe("ConversationService.findOrCreate concurrent insert", () => {
   })
 })
 
+// A broadcast must reach every contact in its audience, including a contact
+// that has only ever commented (no DM yet): the bulk resolver opens the
+// missing DMs instead of leaving them out.
+describe("ConversationService.findOrCreateDMByContactIds", () => {
+  const tx = {
+    query: { conversationModel: { findMany: mocks.conversationFindMany } },
+  } as unknown as Parameters<
+    typeof conversationService.findOrCreateDMByContactIds
+  >[0]["tx"]
+
+  beforeEach(() => {
+    mocks.conversationFindMany.mockReset()
+    mocks.insertDmConversationsIfAbsent.mockReset()
+  })
+
+  test("returns existing DMs without inserting when every contact has one", async () => {
+    const rows = [
+      { id: "conv-1", contactId: "contact-1" },
+      { id: "conv-2", contactId: "contact-2" },
+    ]
+    mocks.conversationFindMany.mockResolvedValue(rows)
+
+    const result = await conversationService.findOrCreateDMByContactIds({
+      workspaceId: WORKSPACE_ID,
+      contactIds: ["contact-1", "contact-2"],
+      tx,
+    })
+
+    expect(result).toEqual(rows)
+    expect(mocks.insertDmConversationsIfAbsent).not.toHaveBeenCalled()
+  })
+
+  test("opens a DM only for contacts that have none, then re-reads them all", async () => {
+    const existing = { id: "conv-1", contactId: "contact-1" }
+    const opened = { id: "conv-2", contactId: "contact-2" }
+    mocks.conversationFindMany
+      .mockResolvedValueOnce([existing])
+      .mockResolvedValueOnce([existing, opened])
+
+    const result = await conversationService.findOrCreateDMByContactIds({
+      workspaceId: WORKSPACE_ID,
+      contactIds: ["contact-1", "contact-2", "contact-2"],
+      tx,
+    })
+
+    expect(mocks.insertDmConversationsIfAbsent).toHaveBeenCalledWith(
+      { workspaceId: WORKSPACE_ID, contactIds: ["contact-2"] },
+      tx,
+    )
+    expect(result).toEqual([existing, opened])
+  })
+
+  test("returns the DM a concurrent writer opened first when our insert is skipped", async () => {
+    const winner = { id: "conv-winner", contactId: "contact-1" }
+    mocks.conversationFindMany
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([winner])
+
+    const result = await conversationService.findOrCreateDMByContactIds({
+      workspaceId: WORKSPACE_ID,
+      contactIds: ["contact-1"],
+      tx,
+    })
+
+    expect(mocks.insertDmConversationsIfAbsent).toHaveBeenCalledTimes(1)
+    expect(result).toEqual([winner])
+  })
+
+  test("propagates an insert failure instead of returning a partial list", async () => {
+    mocks.conversationFindMany.mockResolvedValueOnce([])
+    mocks.insertDmConversationsIfAbsent.mockRejectedValueOnce(
+      new Error("insert failed"),
+    )
+
+    await expect(
+      conversationService.findOrCreateDMByContactIds({
+        workspaceId: WORKSPACE_ID,
+        contactIds: ["contact-1"],
+        tx,
+      }),
+    ).rejects.toThrow("insert failed")
+    expect(mocks.conversationFindMany).toHaveBeenCalledTimes(1)
+  })
+
+  test("short-circuits with no query when contactIds is empty", async () => {
+    const result = await conversationService.findOrCreateDMByContactIds({
+      workspaceId: WORKSPACE_ID,
+      contactIds: [],
+      tx,
+    })
+
+    expect(result).toEqual([])
+    expect(mocks.conversationFindMany).not.toHaveBeenCalled()
+    expect(mocks.insertDmConversationsIfAbsent).not.toHaveBeenCalled()
+  })
+})
+
 describe("ConversationService.updateAssignment", () => {
   test("scopes the update WHERE clause to the workspace, not just the conversation ids", async () => {
     // Regression test for a cross-tenant write: this method previously
@@ -495,7 +611,7 @@ describe("ConversationService.updateAssignment", () => {
       order.push("invalidate")
       return Promise.resolve()
     })
-    mocks.broadcastToWorkspaceParty.mockImplementation(() => {
+    mocks.publishWorkspaceRealtimeEvent.mockImplementation(() => {
       order.push("broadcast")
       return Promise.resolve()
     })
@@ -542,14 +658,17 @@ describe("ConversationService.updateAssignment", () => {
       `conversations:${WORKSPACE_ID}`,
       "conversations:conv-1",
     ])
-    expect(mocks.broadcastToWorkspaceParty).toHaveBeenCalledWith(WORKSPACE_ID, {
-      eventType: "conversationAssigned",
-      data: {
-        conversationIds: ["conv-1"],
-        assignedUserId: "user-2",
-        assignedInboxTeamId: null,
-      },
-    })
+    expect(mocks.publishWorkspaceRealtimeEvent).toHaveBeenCalledWith(
+      WORKSPACE_ID,
+      expect.objectContaining({
+        eventType: "conversationAssigned",
+        data: {
+          conversationIds: ["conv-1"],
+          assignedUserId: "user-2",
+          assignedInboxTeamId: null,
+        },
+      }),
+    )
     expect(notificationQueue.addBulk).toHaveBeenCalledWith([
       {
         name: "notifyConversationAssigned",
@@ -596,7 +715,7 @@ describe("ConversationService.updateAssignment", () => {
 
     expect(result).toEqual([])
     expect(invalidateCacheByTags).not.toHaveBeenCalled()
-    expect(mocks.broadcastToWorkspaceParty).not.toHaveBeenCalled()
+    expect(mocks.publishWorkspaceRealtimeEvent).not.toHaveBeenCalled()
     expect(notificationQueue.addBulk).not.toHaveBeenCalled()
     expect(emitConversationAssigned).not.toHaveBeenCalled()
     expect(emit).not.toHaveBeenCalled()
@@ -671,7 +790,7 @@ describe("ConversationService.claimForCallAgent", () => {
     })
 
     expect(result).toEqual([])
-    expect(mocks.broadcastToWorkspaceParty).not.toHaveBeenCalled()
+    expect(mocks.publishWorkspaceRealtimeEvent).not.toHaveBeenCalled()
     expect(notificationQueue.addBulk).not.toHaveBeenCalled()
     expect(emitConversationAssigned).not.toHaveBeenCalled()
     expect(emit).not.toHaveBeenCalled()

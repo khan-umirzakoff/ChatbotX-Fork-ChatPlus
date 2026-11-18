@@ -1,48 +1,28 @@
 post-checkout:
   jobs:
     - name: branch-name
-      run: |
-        BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
-        PATTERN='^(feat|fix|bugfix|refactor|docs|style|test|chore|ci|perf|build|revert)/.+'
-        # Skip checks for detached HEAD, main, master, develop, release, and bot-generated branches
-        if echo "$BRANCH" | grep -qE '^(main|master|develop|HEAD|release/.+|dependabot/.+|renovate/.+)$'; then
-          exit 0
-        fi
-        if ! echo "$BRANCH" | grep -qE "$PATTERN"; then
-          echo "❌ Invalid branch name: '$BRANCH'"
-          echo ""
-          echo "Expected: <type>/<description>"
-          echo "  Types: feat, fix, bugfix, refactor, docs, style, test, chore, ci, perf, build, revert"
-          echo "  Example: feat/instagram-channel"
-          echo "  Example: fix/whatsapp-webhook"
-          echo ""
-          echo "Rename it with: git branch -m <new-name>"
-          exit 1
-        fi
+      run: sh scripts/git-hooks/check-branch-name.sh
 
 pre-commit:
   jobs:
-    - run: pnpm ultracite fix
+    # Only the staged files: a bare `ultracite fix` rewrote the whole repo.
+    - run: pnpm ultracite fix {staged_files}
       glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc}"
       stage_fixed: true
+      skip: [merge, rebase]
+    # Only workspaces changed since HEAD (staged + unstaged) and their
+    # dependents, two tsc at a time like the root `check-types` script. A bare
+    # `turbo check-types` ran all 64 workspaces at turbo's default concurrency
+    # of 10, with builder alone allowed an 8 GB heap.
     - name: typecheck
-      run: pnpm turbo check-types
+      run: pnpm turbo check-types --filter="...[HEAD]" --concurrency=2
+      # Test files are type-checked by default. Export CHECK_TYPES_SKIP_TESTS=1
+      # locally to skip them in builder (~10% faster, ~1 GB lighter); CI still
+      # checks them.
       glob: "**/*.{ts,tsx}"
+      # A merge from main stages every file main changed; CI type-checks it.
+      skip: [merge, rebase]
 
 commit-msg:
   jobs:
-    - run: |
-        MSG=$(cat {1})
-        PATTERN='^(feat|fix|bugfix|refactor|docs|style|test|chore|ci|perf|build|revert)(\(.+\))?!?: .{1,100}$'
-        if ! echo "$MSG" | grep -qE "$PATTERN"; then
-          echo "❌ Invalid commit message format."
-          echo ""
-          echo "Expected: <type>(<scope>): <subject>"
-          echo "  Types: feat, fix, bugfix, refactor, docs, style, test, chore, ci, perf, build, revert"
-          echo "  Append ! before the colon to mark a breaking change: feat(auth)!: remove legacy login"
-          echo "  Example: feat(auth): add OAuth2 login"
-          echo "  Example: fix: handle null response from API"
-          echo ""
-          echo "Got: $MSG"
-          exit 1
-        fi
+    - run: sh scripts/git-hooks/check-commit-msg.sh '{1}'

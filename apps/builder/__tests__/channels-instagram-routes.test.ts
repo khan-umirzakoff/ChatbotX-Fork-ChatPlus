@@ -24,6 +24,7 @@ const {
   mockStartSession,
   mockUpdateReturnUrl,
   mockWorkspaceCreate,
+  mockEnsureConnectTargetForOwner,
 } = vi.hoisted(() => ({
   mockFailSession: vi.fn(),
   mockFindWorkspaceById: vi.fn(async () => ({
@@ -42,7 +43,11 @@ const {
   mockResolveOAuthCredential: vi.fn(),
   mockStartSession: vi.fn(),
   mockUpdateReturnUrl: vi.fn(),
-  mockWorkspaceCreate: vi.fn(async () => ({ id: "ws-new", ownerId: "user-1" })),
+  mockWorkspaceCreate: vi.fn(async (_args?: unknown) => ({
+    id: "ws-new",
+    ownerId: "user-1",
+  })),
+  mockEnsureConnectTargetForOwner: vi.fn(),
 }))
 
 vi.mock("next/navigation", () => ({
@@ -76,8 +81,8 @@ vi.mock("@chatbotx.io/utils", async (importOriginal) => {
 vi.mock("@chatbotx.io/business", () => ({
   workspaceService: {
     findById: mockFindWorkspaceById,
-    findActiveByOwner: vi.fn(async () => undefined),
     create: mockWorkspaceCreate,
+    ensureConnectTargetForOwner: mockEnsureConnectTargetForOwner,
   },
 }))
 
@@ -119,6 +124,20 @@ function requestWithWorkspaceId(workspaceId: string | null) {
 beforeEach(() => {
   vi.clearAllMocks()
   mockGetCurrentUserId.mockResolvedValue("user-1")
+  mockEnsureConnectTargetForOwner.mockImplementation(
+    async (props: {
+      ownerId: string
+      name: string
+      quotaConsumption?: unknown
+      tx?: unknown
+    }) =>
+      await mockWorkspaceCreate({
+        data: { name: props.name, ownerId: props.ownerId },
+        createdBy: props.ownerId,
+        quotaConsumption: props.quotaConsumption,
+        tx: props.tx,
+      }),
+  )
   mockFindWorkspaceById.mockResolvedValue({ id: "ws-1", ownerId: "owner-1" })
   mockResolveOAuthCredential.mockResolvedValue({
     credential: { clientId: "app-id", clientSecret: "app-secret" },
@@ -194,16 +213,17 @@ describe.each([
     )
 
     // The callback itself, once invoked (as the real `startSession` does
-    // inside its transaction), still creates the user's first workspace.
+    // inside its transaction), creates or reuses the owner's empty target.
     const passedCreateWorkspace = mockStartSession.mock.calls[0]?.[0]
       .createWorkspace as (tx: unknown) => Promise<{ id: string }>
     await expect(passedCreateWorkspace("tx")).resolves.toEqual({
       id: "ws-new",
       ownerId: "user-1",
     })
-    expect(mockWorkspaceCreate).toHaveBeenCalledWith({
-      data: { name: "New Workspace", ownerId: "user-1" },
-      createdBy: "user-1",
+    expect(mockEnsureConnectTargetForOwner).toHaveBeenCalledWith({
+      ownerId: "user-1",
+      name: "New Workspace",
+      quotaConsumption: undefined,
       tx: "tx",
     })
   })
@@ -214,8 +234,9 @@ describe.each([
     )
     const { GET } = await import(routePath)
 
+    // A connect that never started is a failed connect, not an expired one.
     await expect(GET(requestWithWorkspaceId(null))).rejects.toThrow(
-      "redirect:/channels/create?error=sessionExpired",
+      "redirect:/channels/create?error=connectFailed",
     )
 
     // `workspaceService.create` directly from this route. Previously the
@@ -267,17 +288,31 @@ describe.each([
 
   test("fails the session and redirects to an error page when startSession returns a non-open_url next action, instead of an unhandled throw", async () => {
     mockStartSession.mockResolvedValue({
-      session: { id: "session-1" },
+      session: { id: "session-1", workspaceId: "ws-1" },
       nextAction: { type: "show_qr", qr: "data:image/png;base64,..." },
     })
     const { GET } = await import(routePath)
 
+    // The workspace the user started in survives the failure, so retrying
+    // from the error page connects there instead of minting a new workspace.
     await expect(GET(requestWithWorkspaceId("ws-1"))).rejects.toThrow(
-      "redirect:/channels/create?error=sessionExpired",
+      "redirect:/channels/create?workspaceId=ws-1&error=connectFailed",
     )
     expect(mockFailSession).toHaveBeenCalledWith(
-      { id: "session-1" },
+      { id: "session-1", workspaceId: "ws-1" },
       "internal_error",
+    )
+  })
+
+  test("a first connect that fails after its session started keeps the workspace it just created", async () => {
+    mockStartSession.mockResolvedValue({
+      session: { id: "session-1", workspaceId: "ws-new" },
+      nextAction: { type: "show_qr", qr: "data:image/png;base64,..." },
+    })
+    const { GET } = await import(routePath)
+
+    await expect(GET(requestWithWorkspaceId(null))).rejects.toThrow(
+      "redirect:/channels/create?workspaceId=ws-new&error=connectFailed",
     )
   })
 

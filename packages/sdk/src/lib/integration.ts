@@ -66,6 +66,9 @@ export type RichResponseContentAttributes = {
         | { type: "actions"; actions: Record<string, unknown>[] }
         | { type: "text"; text: string }
         | { type: "unsupported"; reason: string }
+        | { type: "poll_open"; pollId: string }
+        | { type: "poll_vote"; pollId: string; candidateId: string }
+        | { type: "poll_list" }
     }
   >
 }
@@ -398,7 +401,22 @@ export type ContactHandlers<IAuth extends AuthValue> = {
   getProfile: Handler<
     {
       ctx: Context<IAuth>
-      data: { includeProfileSnapshot?: boolean; sourceId: string }
+      data: {
+        // Download and store the profile picture (default). A caller that does
+        // not need the picture yet (contact creation on a lazy-avatar channel)
+        // passes false and the picture is fetched the first time it is needed.
+        includeAvatar?: boolean
+        includeProfileSnapshot?: boolean
+        /**
+         * Deadline for the channel's profile request (including reading the
+         * response), for best-effort lookups that must not hold the receive
+         * job; no retries when set. Unset = the channel's default client
+         * policy. Avatar download is not covered: callers set `includeAvatar:
+         * false`.
+         */
+        requestTimeoutMs?: number
+        sourceId: string
+      }
     },
     IncomingContact
   >
@@ -515,6 +533,14 @@ export type IntegrationDefinition<
     [key: string]: IChannel<IAuth>
   }
   actions: IActions
+  /**
+   * Whether the provider reports per-message delivery receipts that this
+   * integration turns into `message:delivered` events. Declared explicitly
+   * because registering `handleMessageStatus` does not prove it (Messenger
+   * receives receipts and discards them). A channel without receipts has its
+   * successful send treated as the delivery moment.
+   */
+  deliveryReceipts?: boolean
   handleRequest: Handler<
     HandleRequestProps<IConfig>,
     Oauth2AuthValue | string | number
@@ -599,6 +625,10 @@ export class Integration<
   get channels() {
     // biome-ignore lint/suspicious/noExplicitAny: wip
     return this.props.channels || ({} as { [key: string]: IChannel<any> })
+  }
+
+  get deliveryReceipts(): boolean {
+    return this.props.deliveryReceipts === true
   }
 
   get disconnect(): T["disconnect"] {

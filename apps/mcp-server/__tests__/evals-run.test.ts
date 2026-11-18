@@ -3,7 +3,10 @@ import { type EvalCase, materializeCases } from "../evals/cases"
 import {
   assertComparableManifests,
   type EvalManifest,
+  getAggregateUsage,
+  getFinalStepUsage,
   validateCaseCoverage,
+  withConfirmationArgument,
 } from "../evals/run-contract"
 import { fixtureOperationIds } from "../evals/sandbox"
 
@@ -55,6 +58,54 @@ const evalCase: EvalCase = {
 }
 
 describe("evaluation runner contracts", () => {
+  test("records final-step rather than aggregate multi-step usage", async () => {
+    const finalStepUsage = { inputTokens: 30, outputTokens: 7, totalTokens: 37 }
+    const aggregateUsage = {
+      inputTokens: 60,
+      outputTokens: 15,
+      totalTokens: 75,
+    }
+
+    const multiStepResult = {
+      finalStep: { usage: finalStepUsage },
+      usage: aggregateUsage,
+    }
+
+    await expect(getFinalStepUsage(multiStepResult)).resolves.toEqual(
+      finalStepUsage,
+    )
+  })
+
+  test("exposes aggregate multi-step usage alongside final-step usage", () => {
+    const aggregateUsage = {
+      inputTokens: 60,
+      outputTokens: 15,
+      totalTokens: 75,
+    }
+
+    expect(
+      getAggregateUsage({
+        finalStep: { usage: { totalTokens: 37 } },
+        usage: aggregateUsage,
+      }),
+    ).toEqual(aggregateUsage)
+  })
+
+  test("retries confirmation in direct and meta-tool argument shapes", () => {
+    expect(
+      withConfirmationArgument("contacts_send_message", { id: "1" }),
+    ).toEqual({ _confirm: true, id: "1" })
+    expect(
+      withConfirmationArgument("call_tool", {
+        arguments: { id: "1" },
+        name: "contacts_send_message",
+      }),
+    ).toEqual({
+      arguments: { _confirm: true, id: "1" },
+      name: "contacts_send_message",
+    })
+  })
+
   test("permits source and instructions snapshots to differ", () => {
     const baseline = manifest()
     const candidate = {

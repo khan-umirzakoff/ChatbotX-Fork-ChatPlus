@@ -1,9 +1,11 @@
+import { ChatbotXException } from "@chatbotx.io/business/errors"
 import { externalRequestStepDefaultFn } from "@chatbotx.io/flow-config"
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
   execute: vi.fn(),
   executeAndMap: vi.fn(),
+  logStepProviderError: vi.fn(async () => undefined),
   setValues: vi.fn(async () => undefined),
 }))
 
@@ -15,6 +17,10 @@ vi.mock("@chatbotx.io/business", () => ({
   contactCustomFieldService: {
     setValues: mocks.setValues,
   },
+}))
+
+vi.mock("../src/integration/handlers/flow-utils", () => ({
+  logStepProviderError: mocks.logStepProviderError,
 }))
 
 vi.mock("@chatbotx.io/variables", () => ({
@@ -118,7 +124,7 @@ describe("externalRequest step handler", () => {
     )
   })
 
-  test("maps a non-2xx status to an error result", async () => {
+  test("logs a provider error for a non-2xx status", async () => {
     mocks.executeAndMap.mockResolvedValue({
       statusCode: 500,
       durationMs: 10,
@@ -129,10 +135,18 @@ describe("externalRequest step handler", () => {
     const result = await externalRequest(createProps())
 
     expect(result).toMatchObject({ status: "error" })
-    expect(result.errorMessage).toContain("500")
+    expect(mocks.logStepProviderError).toHaveBeenCalledWith(
+      "external-request",
+      expect.objectContaining({
+        contactInbox: expect.objectContaining({ id: "contact-inbox-1" }),
+        conversation: expect.objectContaining({ id: "conversation-1" }),
+      }),
+      "Request failed with status 500",
+      "500",
+    )
   })
 
-  test("returns an error result when the request throws", async () => {
+  test("logs a provider error when the request throws", async () => {
     mocks.executeAndMap.mockRejectedValue(new Error("network failure"))
 
     const result = await externalRequest(createProps())
@@ -142,6 +156,35 @@ describe("externalRequest step handler", () => {
       errorMessage: "network failure",
       result: null,
     })
+    expect(mocks.logStepProviderError).toHaveBeenCalledWith(
+      "external-request",
+      expect.any(Object),
+      expect.objectContaining({ message: "network failure" }),
+      null,
+    )
+  })
+
+  test("logs an SSRF rejection without an endpoint HTTP status", async () => {
+    const error = new ChatbotXException(
+      "This URL is not allowed for external requests",
+      "ssrfBlocked",
+      400,
+    )
+    mocks.executeAndMap.mockRejectedValue(error)
+
+    const result = await externalRequest(createProps())
+
+    expect(result).toEqual({
+      status: "error",
+      errorMessage: "This URL is not allowed for external requests",
+      result: null,
+    })
+    expect(mocks.logStepProviderError).toHaveBeenCalledWith(
+      "external-request",
+      expect.any(Object),
+      error,
+      null,
+    )
   })
 
   test("JSON-escapes a contact variable substituted into jsonBody", async () => {
@@ -173,5 +216,57 @@ describe("externalRequest step handler", () => {
       // Conversation context is what lets {{me}} scope its privacy link.
       conversation: expect.objectContaining({ id: "conversation-1" }),
     })
+  })
+
+  test("substitutes a system field that resolves to an empty string in the JSON body", async () => {
+    // `{{empty}}` always resolves to "". A blank value must replace the
+    // placeholder; leaving it makes the request send the literal `{{empty}}`.
+    const { getSystemFieldValue } = await import("@chatbotx.io/variables")
+    vi.mocked(getSystemFieldValue).mockResolvedValueOnce("")
+    mocks.executeAndMap.mockResolvedValue({
+      statusCode: 200,
+      durationMs: 10,
+      responseBody: "{}",
+      responseHeaders: {},
+    })
+
+    const props = createProps()
+    props.step = {
+      ...props.step,
+      method: "POST",
+      body: { bodyType: "json", jsonBody: '{"note":"{{empty}}"}' },
+    }
+
+    await externalRequest(props)
+
+    const call = mocks.executeAndMap.mock.calls[0]?.[0]
+    expect(call.input.body.jsonBody).toBe('{"note":""}')
+  })
+
+  test("carries the inbox sender into every variable resolution of the step", async () => {
+    mocks.executeAndMap.mockResolvedValue({
+      statusCode: 200,
+      durationMs: 10,
+      responseBody: "{}",
+      responseHeaders: {},
+    })
+
+    const props = { ...createProps(), sentByUserId: "user-1" }
+    props.step = {
+      ...props.step,
+      method: "POST",
+      body: { bodyType: "json", jsonBody: '{"by":"{{admin_name}}"}' },
+    }
+
+    await externalRequest(props)
+
+    expect(resolveContactVariablesDeep).toHaveBeenCalledWith(
+      "contact-1",
+      expect.anything(),
+      expect.objectContaining({ sentByUserId: "user-1" }),
+    )
+    expect(contactVariableService.getAll).toHaveBeenCalledWith(
+      expect.objectContaining({ sentByUserId: "user-1" }),
+    )
   })
 })

@@ -5,12 +5,17 @@ import type {
   SystemToolExecutors,
 } from "@chatbotx.io/ai/server"
 import {
+  ensureAttachmentStored,
+  MediaNotReadyError,
+} from "@chatbotx.io/channel-registry/media-hydration"
+import {
   getHeavyJobCompletionWaitTimeoutMs,
   getHeavyJobOptions,
-  getHeavyQueueEvents,
+  getQueueEvents,
   HeavyJobAction,
   heavyExtractTextFromFileResultSchema,
   heavyQueue,
+  queueNames,
   waitForJobCompletionWithRetries,
 } from "@chatbotx.io/worker-config"
 import { normalizeError } from "universal-error-normalizer"
@@ -81,7 +86,7 @@ async function parseFallbackSnippets(input: {
   const rawResult = await waitForJobCompletionWithRetries(
     job,
     heavyQueue,
-    getHeavyQueueEvents(),
+    getQueueEvents(queueNames.enum.heavy),
     getHeavyJobCompletionWaitTimeoutMs(
       HeavyJobAction.extractTextFromFile,
       env.HEAVY_JOB_WAIT_TIMEOUT_MS,
@@ -128,12 +133,24 @@ export function createDocumentReaderExecutor(options: {
       }
 
       let snippets = preparedContext.snippets
-      if (snippets.length === 0 && preparedContext.resolvedSource.attachment) {
+      const { attachment } = preparedContext.resolvedSource
+      if (snippets.length === 0 && attachment) {
+        // A lazily-ingested document is still a provider URL: store it now,
+        // the extraction job reads the object from storage.
+        const stored = await ensureAttachmentStored({
+          attachmentId: attachment.id,
+          workspaceId: context.workspaceId,
+          messageCreatedAt: attachment.messageCreatedAt,
+          originPath: attachment.originPath,
+        })
+        if (!stored) {
+          return "I couldn't find a supported PDF or DOCX document in this conversation yet."
+        }
         snippets = await parseFallbackSnippets({
-          attachmentId: preparedContext.resolvedSource.attachment.id,
+          attachmentId: attachment.id,
           conversationId: context.conversationId,
-          mimeType: preparedContext.resolvedSource.attachment.mimeType,
-          originPath: preparedContext.resolvedSource.attachment.originPath,
+          mimeType: stored.mimeType ?? attachment.mimeType,
+          originPath: stored.originPath,
           query: args.query,
           workspaceId: context.workspaceId,
         })
@@ -154,6 +171,9 @@ export function createDocumentReaderExecutor(options: {
         fileOnlyTrigger: options.fileOnlyTrigger,
       })
     } catch (error) {
+      if (error instanceof MediaNotReadyError) {
+        return "The document is still being fetched. Please ask again in a moment."
+      }
       const normalizedError = normalizeError(error)
       logger.error(
         {

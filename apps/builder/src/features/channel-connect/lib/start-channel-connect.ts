@@ -22,7 +22,11 @@ import { requireWorkspacePermission } from "@/lib/auth/require-workspace-permiss
 import { getCurrentUserId } from "@/lib/auth/utils"
 import { logger } from "@/lib/log"
 import { resolvePlatformOwnerId } from "@/lib/platform-credential-owner"
-import { createFirstWorkspace } from "@/lib/workspace/create-first-workspace"
+import {
+  createChannelPath,
+  createFirstWorkspace,
+} from "@/lib/workspace/create-first-workspace"
+import { startFailureErrorCode } from "./connect-error-code"
 
 /** What a `beforeStart` hook decides once the credential/workspace are resolved. */
 export type BeforeStartResult =
@@ -38,6 +42,8 @@ export type BeforeStartContext = {
    * `Promise.all` instead of waiting on workspace resolve-or-create first.
    */
   targetWorkspacePromise: Promise<WorkspaceModel>
+  /** Provider callback URL persisted on final OAuth auth values. */
+  callbackUrl: string
   /** Type-erased (`ConnectionCredential = unknown`, same as `resolveOAuthCredential`'s own return) — a caller that needs the concrete shape casts it, same as every other generic-credential call site. */
   credential: Record<string, unknown>
 }
@@ -57,7 +63,18 @@ export type StartChannelConnectOptions = {
   beforeStart?: (ctx: BeforeStartContext) => Promise<BeforeStartResult>
 }
 
-const START_FAILURE_REDIRECT = "/channels/create?error=sessionExpired"
+/**
+ * Where a connect that could not start lands; see `startFailureErrorCode`.
+ * Keeps the workspace so a retry connects into it instead of the
+ * first-workspace flow (which would try to create one): the request's own
+ * `workspaceId` before a session exists, `session.workspaceId` after (a
+ * first connect has just created that workspace).
+ */
+const startFailureRedirect = (
+  workspaceId: string | undefined,
+  err?: unknown,
+): string =>
+  createChannelPath({ error: startFailureErrorCode(err), workspaceId })
 
 /**
  * Shared GET-route body behind the three `channels/<channel>[/create]/
@@ -103,7 +120,9 @@ export async function startChannelConnect(
   // materialized workspace to run concurrently with its own lookup and, on
   // a hit, to mint its own session outside the normal OAuth round trip — so
   // with a hook present (or an existing `workspaceId` targeted), the
-  // workspace is still resolved/created eagerly here.
+  // workspace is still resolved/created eagerly here. The create helper
+  // reuses only an empty workspace, so replaying this GET never selects a
+  // workspace that already has a channel.
   //
   // Without a hook (Instagram, Instagram-via-Facebook's first-channel
   // path), nothing needs the workspace before `startSession` itself, so its
@@ -130,6 +149,7 @@ export async function startChannelConnect(
       userId,
       platformOwnerId,
       targetWorkspacePromise,
+      callbackUrl: resolved.callbackUrl,
       credential: resolved.credential,
     })
     if (before.type === "redirect") {
@@ -175,14 +195,14 @@ export async function startChannelConnect(
     // `redirect()` throws a `NEXT_REDIRECT` control-flow error, which
     // reaches this `catch` same as a real failure. `unstable_rethrow` lets
     // it keep propagating instead of being logged and replaced with the
-    // generic `START_FAILURE_REDIRECT` here, which would otherwise mask the
+    // generic `startFailureRedirect` here, which would otherwise mask the
     // specific plan-limit message with a misleading "session expired" one.
     unstable_rethrow(err)
     logger.error(
       { err, provider: options.provider, workspaceId },
       "Failed to start a channel connect session",
     )
-    redirect(START_FAILURE_REDIRECT)
+    redirect(startFailureRedirect(workspaceId, err))
   }
 
   // Set in a follow-up call, not passed into `startSession` itself — the
@@ -201,7 +221,7 @@ export async function startChannelConnect(
       "Failed to set the connect session return URL",
     )
     await failSession(session, "internal_error")
-    redirect(START_FAILURE_REDIRECT)
+    redirect(startFailureRedirect(session.workspaceId))
   }
 
   if (nextAction.type !== "open_url") {
@@ -210,7 +230,7 @@ export async function startChannelConnect(
       `Unexpected connect next action for ${options.provider}`,
     )
     await failSession(session, "internal_error")
-    redirect(START_FAILURE_REDIRECT)
+    redirect(startFailureRedirect(session.workspaceId))
   }
 
   redirect(nextAction.url)

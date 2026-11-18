@@ -78,6 +78,7 @@ vi.mock("@/features/custom-fields/provider/custom-field-hook", () => {
 vi.mock("@/features/flows/provider/flow-hook", () => {
   const options: never[] = []
   return {
+    useFlowNodeReferenceOptions: () => options,
     useFlowSelectOptions: () => options,
   }
 })
@@ -119,6 +120,20 @@ vi.mock("@/features/users/provider/user-hook", () => {
 
 vi.mock("@/features/contact-filter/components/use-filter-value-labels", () => ({
   useFilterValueLabels: () => undefined,
+}))
+
+vi.mock(
+  "@/features/contact-filter/components/use-activity-filters-enabled",
+  () => ({ useActivityFiltersEnabled: () => true }),
+)
+
+vi.mock(
+  "@/features/contact-filter/components/use-product-filter-options",
+  () => ({ useProductFilterOptions: () => [] }),
+)
+
+vi.mock("@/features/pipelines/lib/use-pipeline-options", () => ({
+  usePipelineOptions: () => ({ pipelines: [], isLoading: false }),
 }))
 
 vi.mock("@/hooks/routing", () => ({

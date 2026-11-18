@@ -1,9 +1,11 @@
 ---
 name: drizzle-database
 description: >-
-  Work with Drizzle ORM database schema, migrations, relations, and queries in
-  PostgreSQL. Use when creating tables, modifying schema, writing migrations,
-  defining relations, or querying the database.
+  Use when creating or changing a table in `packages/database/src/schema`,
+  generating a migration (`make:migration`), adding relations to
+  `relations/index.ts`, fixing `db:check-drift`, or writing Drizzle queries in a
+  repository. Covers migration safety (never auto-apply `db:migrate`) and the
+  `.default()`-is-not-a-DB-default trap.
 ---
 
 # Drizzle Database
@@ -55,6 +57,8 @@ export const myModel = pgTable(
 - `bigintAsString()` custom type: stores `bigint` in DB, exposes as `string` in app
 - FK pattern: `.references(() => otherModel.id, { onDelete, onUpdate })`
 - Index naming: `TableName_columnName_idx` or `TableName_column_key` for unique
+- Every FK column must lead an index so RI cascade lookups do not scan child tables. `pnpm --filter @chatbotx.io/database test` runs `workspace-purge-coverage.test.ts`, which rejects any newly unindexed FK.
+- A new table with `workspaceId` requires the `workspace-purge` skill. Partitioned-table indexes use the per-partition recipe in `20260924105732_add_contact_inbox_fk_indexes`.
 
 ### Enums
 
@@ -94,6 +98,8 @@ export const myModel = pgTable("MyModel", {
 
 The enum name passed to `pgEnum` becomes the PostgreSQL enum type name — use `camelCase` matching the column name.
 
+> **Templates.** A new table holding content users build, or a new column on a template-copied kind (or an id column pointing at one), must be registered with the Templates engine — read the `template-integration` skill before writing the migration.
+
 ## Relations
 
 Define in `src/relations/<domain>.ts` using `defineRelationsPart`:
@@ -128,10 +134,15 @@ Then add the export to `src/relations/index.ts`.
 
 1. **Modify schema** in `src/schema/` (and `src/relations/` if needed)
 2. **Generate migration:** `pnpm --filter database make:migration <descriptive_name>`
-3. **Apply migration:** `pnpm --filter database db:migrate`
-4. **Inspect:** `pnpm --filter database db:studio`
+3. **Read the generated SQL** and show it to the user. Diff it against the schema change: the snapshot chain has broken before, so a migration can re-add columns that already exist.
+4. **Apply only after explicit user approval:** `pnpm --filter database db:migrate`. Never apply it automatically, even when a plan lists it as a verification step.
+5. **Inspect:** `pnpm --filter database db:studio`
 
-Migrations output to `packages/database/drizzle/<timestamp>_<name>/migration.sql`.
+Migrations output to `packages/database/drizzle/<timestamp>_<name>/migration.sql`. `pnpm lint` runs `db:check-drift`, which fails when `src/schema` and the snapshot chain disagree.
+
+### Trap — `.default()` is not a database default
+
+`.default(...)` only makes the column optional in `$inferInsert`; drizzle emits the bare `DEFAULT` keyword and never inlines the value. A `jsonb().default(sql\`[]\`)` serializes as *no* database default, so omitting the key is a NOT NULL violation at runtime that `db:check-drift` cannot see. Prefer a real SQL default; if a column must stay TS-only, add it to `packages/database/__tests__/integration/schema-default-parity.test.ts` and write the value explicitly on every insert path.
 
 ## Schema Registration
 
@@ -171,7 +182,7 @@ When adding a new channel or integration type:
 
 ## Query Patterns
 
-**Important:** Direct `db` usage is only allowed inside `packages/database/src/repositories/` and `packages/business/src/`. App-layer code (`apps/`, `integrations/`) must call a service or repository instead. See `.agents/rules/data-access.md`.
+**Important:** Direct `db` usage is only allowed inside `packages/database/src/repositories/` and `packages/business/src/`. App-layer code (`apps/`, `integrations/`) calls a service from `@chatbotx.io/business`, never `db` (lint-enforced) and not a repository unless it is a pure read with no business logic. See `.agents/rules/data-access.md`.
 
 ### Relational Queries (inside a service or repository)
 
@@ -217,8 +228,9 @@ const item = await findOrFail({ table: myModel, where: { id } })
 `Workspace.scheduledDeletionAt` is the repository's soft-delete convention:
 use a nullable timestamp with an index. Scheduling sets it to `now + 24h`,
 cancellation clears it, and the workspace row remains live during the grace
-window. The hourly purge cron then hard-deletes due rows, allowing the normal
-foreign-key cascade to remove children. `UserQuota.channelsTornDownAt` is the
+window. The hourly purge cron drains large children in bounded batches before
+hard-deleting the workspace; read `workspace-purge` before adding a
+workspace-scoped table or teardown step. `UserQuota.channelsTornDownAt` is the
 sibling marker for one-shot trial-expiry channel teardown; it is not a second
 soft-delete state.
 

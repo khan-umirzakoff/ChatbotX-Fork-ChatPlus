@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto"
 import { channelTypes } from "@chatbotx.io/database/partials"
 import {
   PURGE_BROADCASTS_INTERVAL_MINUTES,
@@ -19,6 +20,47 @@ const CLOUD_ONLY_SCHEDULERS = [
   ScheduleJobData.unsubscribeExpiredTrials,
 ] as const
 
+const LICENSE_REFRESH_MINUTE = randomInt(60)
+
+/**
+ * Second of the minute each every-minute scanner fires at, so they do not all
+ * start at :00 (a CPU/DB spike on an idle worker). Jobs that read the minute
+ * boundary (`startOfMinute`) or start user-scheduled sends stay on
+ * "* * * * *" and are deliberately NOT listed here: enqueueBroadcast,
+ * enqueueRecurringBroadcasts, enqueueMarketingMessages, evaluateTriggers,
+ * evaluateDateTimeWebhooks.
+ */
+const EVERY_MINUTE_SECOND_OFFSETS = {
+  // Smallest offsets for the two deadline-driven jobs. Both already act up to
+  // a minute after the deadline (it falls on an arbitrary second), so this
+  // adds at most 2 s / 4 s to how late an overdue order expires or an overdue
+  // leaderboard finishes.
+  expireUnpaidOrders: 2,
+  finishOverdueLeaderboards: 4,
+  // Reads campaigns in status "sending", which the steps queued by
+  // enqueueMarketingMessages (kept at :00) set. Running a few seconds later
+  // lets a fast step land first; no ordering is required or guaranteed.
+  dispatchMarketingMessages: 8,
+  scanAbandonedCarts: 16,
+  reconcileBroadcasts: 20,
+  dispatchProfileSnapshots: 24,
+  scanCoexistRuns: 28,
+  scanContactScans: 32,
+  scanAiHandoverBulkRuns: 36,
+  finalizeBroadcasts: 40,
+  finalizeMarketingMessages: 44,
+  reconcileMetaCatalogSyncs: 48,
+} as const satisfies Partial<Record<keyof typeof ScheduleJobData, number>>
+
+// Job names (the values call sites pass) that have an offset. Intersecting with
+// the table keys makes a name/key mismatch a compile error, not a lookup miss.
+type SpreadEveryMinuteJob = keyof typeof EVERY_MINUTE_SECOND_OFFSETS &
+  (typeof ScheduleJobData)[keyof typeof ScheduleJobData]
+
+/** BullMQ cron (cron-parser) reads a 6-field pattern as seconds-first. */
+const everyMinuteAtOffset = (job: SpreadEveryMinuteJob): string =>
+  `${EVERY_MINUTE_SECOND_OFFSETS[job]} * * * * *`
+
 export const registerSchedules = async () => {
   if (!(scheduleQueue instanceof Queue)) {
     return
@@ -34,9 +76,37 @@ export const registerSchedules = async () => {
   }
 
   await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.scanAbandonedCarts,
+    {
+      pattern: everyMinuteAtOffset(ScheduleJobData.scanAbandonedCarts),
+    },
+    {
+      name: ScheduleJobData.scanAbandonedCarts,
+      data: {
+        type: ScheduleJobData.scanAbandonedCarts,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.expireUnpaidOrders,
+    {
+      pattern: everyMinuteAtOffset(ScheduleJobData.expireUnpaidOrders),
+    },
+    {
+      name: ScheduleJobData.expireUnpaidOrders,
+      data: {
+        type: ScheduleJobData.expireUnpaidOrders,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
     ScheduleJobData.dispatchProfileSnapshots,
     {
-      pattern: "* * * * *",
+      pattern: everyMinuteAtOffset(ScheduleJobData.dispatchProfileSnapshots),
     },
     {
       name: ScheduleJobData.dispatchProfileSnapshots,
@@ -80,7 +150,7 @@ export const registerSchedules = async () => {
   await scheduleQueue.upsertJobScheduler(
     ScheduleJobData.finalizeBroadcasts,
     {
-      pattern: "* * * * *",
+      pattern: everyMinuteAtOffset(ScheduleJobData.finalizeBroadcasts),
     },
     {
       name: ScheduleJobData.finalizeBroadcasts,
@@ -94,12 +164,54 @@ export const registerSchedules = async () => {
   await scheduleQueue.upsertJobScheduler(
     ScheduleJobData.reconcileBroadcasts,
     {
-      pattern: "* * * * *",
+      pattern: everyMinuteAtOffset(ScheduleJobData.reconcileBroadcasts),
     },
     {
       name: ScheduleJobData.reconcileBroadcasts,
       data: {
         type: ScheduleJobData.reconcileBroadcasts,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.enqueueMarketingMessages,
+    {
+      pattern: "* * * * *",
+    },
+    {
+      name: ScheduleJobData.enqueueMarketingMessages,
+      data: {
+        type: ScheduleJobData.enqueueMarketingMessages,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.dispatchMarketingMessages,
+    {
+      pattern: everyMinuteAtOffset(ScheduleJobData.dispatchMarketingMessages),
+    },
+    {
+      name: ScheduleJobData.dispatchMarketingMessages,
+      data: {
+        type: ScheduleJobData.dispatchMarketingMessages,
+        data: {},
+      },
+    },
+  )
+
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.finalizeMarketingMessages,
+    {
+      pattern: everyMinuteAtOffset(ScheduleJobData.finalizeMarketingMessages),
+    },
+    {
+      name: ScheduleJobData.finalizeMarketingMessages,
+      data: {
+        type: ScheduleJobData.finalizeMarketingMessages,
         data: {},
       },
     },
@@ -243,7 +355,7 @@ export const registerSchedules = async () => {
   await scheduleQueue.upsertJobScheduler(
     ScheduleJobData.finishOverdueLeaderboards,
     {
-      pattern: "* * * * *",
+      pattern: everyMinuteAtOffset(ScheduleJobData.finishOverdueLeaderboards),
     },
     {
       name: ScheduleJobData.finishOverdueLeaderboards,
@@ -272,7 +384,7 @@ export const registerSchedules = async () => {
   await scheduleQueue.upsertJobScheduler(
     ScheduleJobData.scanCoexistRuns,
     {
-      pattern: "* * * * *",
+      pattern: everyMinuteAtOffset(ScheduleJobData.scanCoexistRuns),
     },
     {
       name: ScheduleJobData.scanCoexistRuns,
@@ -286,7 +398,7 @@ export const registerSchedules = async () => {
   await scheduleQueue.upsertJobScheduler(
     ScheduleJobData.scanContactScans,
     {
-      pattern: "* * * * *",
+      pattern: everyMinuteAtOffset(ScheduleJobData.scanContactScans),
     },
     {
       name: ScheduleJobData.scanContactScans,
@@ -300,7 +412,7 @@ export const registerSchedules = async () => {
   await scheduleQueue.upsertJobScheduler(
     ScheduleJobData.scanAiHandoverBulkRuns,
     {
-      pattern: "* * * * *",
+      pattern: everyMinuteAtOffset(ScheduleJobData.scanAiHandoverBulkRuns),
     },
     {
       name: ScheduleJobData.scanAiHandoverBulkRuns,
@@ -314,7 +426,7 @@ export const registerSchedules = async () => {
   await scheduleQueue.upsertJobScheduler(
     ScheduleJobData.reconcileMetaCatalogSyncs,
     {
-      pattern: "* * * * *",
+      pattern: everyMinuteAtOffset(ScheduleJobData.reconcileMetaCatalogSyncs),
     },
     {
       name: ScheduleJobData.reconcileMetaCatalogSyncs,
@@ -365,6 +477,22 @@ export const registerSchedules = async () => {
       name: ScheduleJobData.redispatchInboundWebhookRequests,
       data: {
         type: ScheduleJobData.redispatchInboundWebhookRequests,
+        data: {},
+      },
+    },
+  )
+
+  // The template-install outbox sweep (the row is the outbox) applies to
+  // every edition.
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.redispatchTemplateJobs,
+    {
+      pattern: "*/5 * * * *",
+    },
+    {
+      name: ScheduleJobData.redispatchTemplateJobs,
+      data: {
+        type: ScheduleJobData.redispatchTemplateJobs,
         data: {},
       },
     },
@@ -482,6 +610,22 @@ export const registerSchedules = async () => {
     },
   )
 
+  // Better Auth retains every refreshed OAuth token row, so daily retention
+  // prevents active MCP connections from growing the table unboundedly.
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.purgeExpiredOAuthTokens,
+    {
+      pattern: "0 4 * * *",
+    },
+    {
+      name: ScheduleJobData.purgeExpiredOAuthTokens,
+      data: {
+        type: ScheduleJobData.purgeExpiredOAuthTokens,
+        data: {},
+      },
+    },
+  )
+
   // Deliberately NOT in CLOUD_ONLY_SCHEDULERS — recipient-row retention
   // applies to every edition.
   await scheduleQueue.upsertJobScheduler(
@@ -546,6 +690,26 @@ export const registerSchedules = async () => {
     },
   )
 
+  if (env.NEXT_PUBLIC_EDITION === "community") {
+    // upsertJobScheduler persists in Redis: a scheduler left by an earlier
+    // licensed boot keeps firing after a downgrade until it is removed.
+    await scheduleQueue.removeJobScheduler(ScheduleJobData.refreshLicense)
+  } else {
+    await scheduleQueue.upsertJobScheduler(
+      ScheduleJobData.refreshLicense,
+      {
+        pattern: `${LICENSE_REFRESH_MINUTE} * * * *`,
+      },
+      {
+        name: ScheduleJobData.refreshLicense,
+        data: {
+          type: ScheduleJobData.refreshLicense,
+          data: {},
+        },
+      },
+    )
+  }
+
   if (isCloud) {
     await scheduleQueue.upsertJobScheduler(
       ScheduleJobData.unsubscribeExpiredTrials,
@@ -561,6 +725,21 @@ export const registerSchedules = async () => {
       },
     )
   }
+
+  // Contact exports hold email and phone numbers, so they are not kept forever.
+  await scheduleQueue.upsertJobScheduler(
+    ScheduleJobData.purgeExpiredContactExports,
+    {
+      pattern: "30 4 * * *",
+    },
+    {
+      name: ScheduleJobData.purgeExpiredContactExports,
+      data: {
+        type: ScheduleJobData.purgeExpiredContactExports,
+        data: {},
+      },
+    },
+  )
 
   // WhatsApp calling.
   await scheduleQueue.upsertJobScheduler(

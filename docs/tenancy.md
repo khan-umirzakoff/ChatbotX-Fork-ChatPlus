@@ -33,6 +33,16 @@ When adding a column with `Record<ChannelType, …>`-style fan-out, remember the
 relational-query wiring: a new table needs both an `import` and a spread in
 `packages/database/src/relations/index.ts` (see `AGENTS.md` invariants).
 
+## Invitation links
+
+An invitation URL is issued on the host that currently serves its workspace:
+the workspace's own tenant when that tenant is active and has an active custom
+domain, otherwise the platform host. Invitation validation resolves the same
+serving tenant from the request host, so a reseller domain cannot resolve a
+root or another reseller's invitation. Suspending a reseller tenant, or
+removing its active domain, moves invitation issuance and validation back to
+the platform host until the tenant has an active domain again.
+
 ## Auth scoping
 
 Tenant scoping lives in `packages/auth/src/tenant-context.ts` and `server.ts`.
@@ -176,6 +186,16 @@ custom domain:
 | WhatsApp webhook | `{origin}/integrations/whatsapp/webhook` |
 | TikTok webhook | `{origin}/integrations/tiktok/webhook` |
 | Threads webhook | `{origin}/integrations/threads/webhook` |
+| Stripe Connect (web shop payments) | `{origin}/integrations/stripe/callback` — the Connect webhook `{origin}/api/payments/stripe/webhook/{credentialId}` is created automatically when the Stripe settings are saved |
+
+Web shop payments follow the same split. A store's PayPal webhook is created on
+connect at the **workspace's** own domain (`resolveWorkspaceAppUrl`: the
+reseller's active custom domain, else the builder URL), and the shop links and the
+Stripe/PayPal return pages a customer lands on use that domain too. A Connect or
+PayPal webhook keeps the URL it was created with: after a reseller's domain changes,
+save the Stripe settings again (the endpoint is replaced, new before old) or
+reconnect PayPal. Missed events in between are not lost money — the order page and
+the every-minute sweep ask the provider directly.
 
 (The WhatsApp manual-connect flow registers a per-integration variant,
 `{origin}/integrations/whatsapp/webhook/{integrationId}`, sent to Meta as
@@ -206,6 +226,92 @@ owner host-first and this helper workspace-first, they agree for a workspace
 reached on its own tenant's domain; they can differ if a workspace is opened on
 another host. It lives under `google-ads/` today; move it to a shared location
 before reusing it for another provider.
+
+## Default workspace
+
+A user with no workspace membership gets a default workspace when they open
+`/` (`ensureFirstWorkspace` → `workspaceService.ensureFirstForOwner`, locked
+per owner), so setup does not wait on connecting a channel. Invited users
+are not given an extra one. When a plan limit blocks creation, `/` falls back
+to the workspace list.
+
+## Default template for new workspaces
+
+A tenant owner can pick one template that is installed into every workspace created
+under the tenant: the reseller at `/manage/default-template` (cloud), the super admin for
+the root tenant at `/admin/default-template` (every edition). They enter the template's
+**Template ID** (`Template.id`) and **Template Key** (its share token); the share panel and
+`templates.getLink` show both. Existing workspaces are never touched.
+
+A template's share link is always built on the host serving its workspace
+(`resolveTemplateShareUrl`, on `resolveWorkspaceAppUrl`): the tenant's active custom domain
+when it has one, whichever host the publisher is browsing. The share page's logo and its
+sign-in link follow the host the visitor opened, so a white-label link stays white-label.
+
+- **Data.** `TenantDefaultTemplate` (one row per tenant, PK `tenantId`, cascades with the
+  tenant and the template) holds `templateId`, `keyHash` (the SHA-256 of the key at the
+  time it was entered) and `encryptedKey` (that key, encrypted with the tenant-bound AAD
+  `tenantDefaultTemplate:<tenantId>`). Only the settings page of the tenant's own admin
+  reads it back, so the saved ID and key stay shown after the publisher rotates the share
+  link; the table is not cached. `TemplateInstallation.installSource` (`manual` | `tenantDefault`, default
+  `manual`) records how a copy came to exist; retries and syncs never rewrite it.
+- **History.** `TenantDefaultTemplateEvent` is append-only: every save, and every clear that removed a default, writes one row
+  (`action` set | cleared, the template, the acting user, the time) in the same transaction
+  as the change. `templateId` has no foreign key, so the history outlives a deleted template;
+  the actor is nulled if the user is deleted; the rows go with the tenant. A workspace that
+  should have received the default but did not can be found by comparing the tenant's
+  workspaces created while a default was set against their `tenantDefault` installations;
+  why it was skipped is only in the log (`Skipped the tenant default template`).
+- **Settings** (`tenantDefaultTemplateService`, `enterprise/tenant`): `set` answers a
+  missing, deleted, other-tenant or wrong-key template with one generic error
+  (`tenantDefaultTemplateUnavailable`, so ids are no oracle) and a switched-off share with
+  `tenantDefaultTemplateShareDisabled` only after the key matched. It never provisions a
+  tenant. `getSettings` reports `ready`, `templateUnavailable`, `shareDisabled` or
+  `keyRotated` (the template's share token no longer matches `keyHash`; the page labels it
+  "Key invalid", and saving the old key again is refused until the new key is entered).
+- **On workspace creation** (`workspaceService.create` → `stageTenantDefaultInstall`, a
+  private leaf module) the `pending` installation row is written in the creation
+  transaction: no payload is read, the version is pinned by
+  `templateVersionRepository.pinVersionNumber`, the installer is null with
+  `installedByKind: "apiToken"` (the existing full-power, no-user actor) and
+  `publisherUninstallGrant` set: the publisher sees the workspace name and can uninstall,
+  as with a manual install. A suspended tenant is skipped silently;
+  expected drift of the configured template (deleted, share off, rotated key) is logged and
+  skipped; an operational error aborts the creation so "every new workspace gets the
+  default" is never silently broken.
+- **Dispatch.** The job is enqueued after the transaction commits
+  (`dispatchStagedInstalls`, subpath `@chatbotx.io/business/template-install-dispatch`): by
+  `workspaceService.create` for an owned transaction, and by the caller for a
+  caller-owned one (`startSession`, webchat, Telegram, WhatsApp, API connects). It is
+  idempotent; the installation sweep recovers a lost enqueue within minutes, so only
+  latency depends on it. Any new place that creates a workspace inside its own
+  transaction must call it after the commit.
+- **A share link wins over the default.** "Create a new workspace" on a share page's install
+  screen remembers that template for the user (`templateInstallIntentService`, Redis, 5
+  minutes, one slot per user). `workspaceService.create` takes it first, so a refused creation
+  ends it too; staging then installs that template in place of the default, as the creator's
+  own install (`stageSharedTemplateInstall`). A link that stopped
+  working falls back to the default. It also ends on an install from the share page, on a
+  cancelled OAuth, when the connect reuses an existing workspace, on the home page, on any
+  screen outside `/channels`, `/connect` and `/auth` (`TemplateInstallIntentGuard`), and, on
+  the server, on `/channels/create` reached without `fromTemplate=1` or with a `workspaceId`. The admin
+  console's creation never reads it. Browser-only: an agent creates the workspace, then installs.
+- **Not on the public API.** Tenant administration is exempt from invariant 23; the
+  workspace-level pieces are public (`templates.getLink` returns `templateId` and
+  `templateKey`, installations carry `installSource`).
+
+## Platform templates and publisher rights
+
+- **Same tenant, plus the platform's.** A template installs into a workspace of its own
+  tenant, or (when it belongs to the root tenant, ChatbotX cloud) into a workspace of any
+  white-label tenant (`canInstallFromTenant`). A white-label tenant's template never leaves
+  its tenant. A copy that crosses tenants never grants its publisher anything: the install forces it
+  off and switching it on later (`templateInstallations.update`) is refused
+  (`templatePublisherGrantCrossTenant`); the publisher-side uninstall stays same-tenant only.
+- **Who may see and remove installs.** A publisher sees the workspace name of every install
+  of their template in the same tenant and may uninstall it
+  (`TemplateInstallation.publisherUninstallGrant`, on by default, no UI choice). An API caller
+  can still turn it off with `templateInstallations.update`.
 
 ## Branding
 
@@ -324,17 +430,22 @@ Every `consume` and `incrementBy` call on `UserQuotaService` is write-through: i
    - **Reseller owner with active tenant** → calls `userQuotaService.reconcileOwnerPoolUsage(ownerId, tenantId)`: runs five parallel `COUNT(*)`/`SUM` queries scoped to `workspaceModel.tenantId` and writes the authoritative current counts to both the `UserQuota` row and the Redis live hash.
    - **Everyone else** → runs per-owner self-count queries scoped to `workspaceModel.ownerId` and writes the same columns.
 
-Counts are written directly (not `GREATEST`), so a reconcile tick always self-heals any drift.
+Capacity counts are written directly (not `GREATEST`), so a reconcile tick self-heals drift and resource deletion frees capacity.
 
-Reconcile is a **backstop**, not the only place counts shrink. `contacts`/`mac` release synchronously
-when `contactService.delete()` removes a contact, and `channels` releases synchronously when
+### MAC billing ledger
+
+MAC is different: `WorkspaceMac` is an owner-keyed, period-scoped billing ledger. MAC is incremented with the monthly-contact presence insert and retained after a workspace is deleted; reconciliation sums that retained rollup and raises `UserQuota.macUsed` with `GREATEST`. Deleting contacts or a workspace therefore never reduces billed MAC during a period. Only the private `quota-worker` resets MAC when it advances the billing period.
+
+Workspace deletion records retain the workspace name, owner/requester email, membership and channel summaries, and billing rollups for billing-dispute and legal-claims evidence. They are retained outside Workspace cascades and are not exposed through workspace API tokens.
+
+Reconcile remains a **backstop** for capacity counters. `contacts` release synchronously
+when `contactService.delete()` removes a contact, and `channels` release synchronously when
 `inboxService.disconnect()` disconnects a channel — both call the existing
 `quotaEnforcementService.release`/`releaseBy` (pool-aware, floor-at-zero) right at the delete/disconnect
 call site, best-effort (`.catch()` + log, never blocking the delete). A workspace hard-delete
-(`workspaceService.purgeDueScheduled`) instead calls `userQuotaService.reconcileOwnerPoolUsage` for the
-affected owner immediately after the batch delete — a full absolute recount, since a workspace teardown
-cascades away its contacts/channels/MAC too. The scheduled reconcile above remains the authority for
-races, failures in the synchronous release, and any other drift.
+(`workspaceService.purgeDueScheduled`) reconciles capacity for the affected owner immediately after the
+batch delete. The scheduled reconcile remains the authority for races, failures in the synchronous
+release, and other drift.
 
 The private `quota-worker` remains the authority for plan limits and period resets; this repository
 also owns the runtime trial-expiry lifecycle: an expired cloud trial enters a blocked, read/delete-only

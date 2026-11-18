@@ -5,10 +5,11 @@ import {
   contactService,
   workspaceService,
 } from "@chatbotx.io/business"
-import type {
-  CommentAutomationMissReason,
-  CommentReply,
-  IntegrationType,
+import {
+  type CommentAutomationMissReason,
+  type CommentReply,
+  commentAutomationChannelSupportsImageFilter,
+  type IntegrationType,
 } from "@chatbotx.io/database/partials"
 import { createMessageRepository } from "@chatbotx.io/database/repositories"
 import type {
@@ -40,22 +41,14 @@ import {
   type CommentAutomationChannelType,
   supportsCommentLike,
 } from "./channel-type"
-import {
-  createAttachmentInfoResolver,
-  needsAttachmentInfo,
-} from "./comment-attachment"
+import { createAttachmentInfoResolver } from "./comment-attachment"
 import {
   type CommentTagInfo,
   countMentions,
   createCommentTagResolvers,
 } from "./comment-tags"
 import { enqueueDeferredPrivateReply } from "./deferred-private-reply"
-import {
-  applyHideComments,
-  hasHideCommentAction,
-  supportsHideComments,
-  supportsHideForComment,
-} from "./hide-comments"
+import { applyHideRules, moderateCommentWithAI } from "./moderation"
 import {
   executePrivateReply,
   isCommentFlaggedHighIntent,
@@ -154,10 +147,9 @@ export async function processCommentAutomation(
   // not enough to tell which Page, post or workspace lost a reply.
   //
   // An `IntegrationNotFoundError` from the lookup below needs nothing extra
-  // here: `runWithOrphanedIntegrationCleanup` (see `integration/job-context.ts`)
-  // already disconnects the orphaned integration and marks the job
-  // unrecoverable, which is a better answer than an error-log row. (Channels in
-  // `isExpectedOrphan` complete the job instead; none has comment automation.)
+  // here: this channel-originated job passes through
+  // `runIntegrationJobWithWebhookContext` in `integration/job-context.ts`,
+  // which completes the job after throttled orphaned-integration cleanup.
   let context: Awaited<ReturnType<typeof loadCommentAutomationContext>>
   try {
     context = await loadCommentAutomationContext({
@@ -347,6 +339,30 @@ export async function processCommentAutomation(
         collectMiss(automation.id, "postNotMatched")
         continue
       }
+
+      // Before the reply filters on purpose: an abusive comment must be
+      // checked whether or not this automation would have answered it, and a
+      // comment the AI moderates is never answered. The hide rules keep their
+      // old place below — after the filters, hiding AND answering.
+      const moderation = await moderateCommentWithAI({
+        automation,
+        channelType,
+        data,
+        contactInbox,
+        loadCommentMessage,
+      })
+      if (moderation === "pendingAI") {
+        // Not a miss yet: the AI job records one if it moderates the comment,
+        // or re-runs this automation past moderation if it does not.
+        logAutomationSkipped({
+          automationId: automation.id,
+          commentId,
+          postId,
+          workspaceId,
+          reason: "waiting for AI moderation",
+        })
+        continue
+      }
       if (
         automation.options.ignoreCommentReplies &&
         isCommentReply(parentId, postId, commentId)
@@ -395,6 +411,31 @@ export async function processCommentAutomation(
             reason: `comment tagged ${mentionCount} accounts, expected at least ${automation.includeKeywords.mentionCount ?? 1}`,
           })
           collectMiss(automation.id, "mentionCountNotMatched")
+          continue
+        }
+      }
+
+      // After the text gates on purpose: this one may cost a Graph call, which
+      // `resolveAttachmentInfo` makes at most once per comment and shares with
+      // the hide rules below.
+      if (automation.options.onlyCommentsWithImage) {
+        if (!commentAutomationChannelSupportsImageFilter(channelType)) {
+          // Skipping here would make the automation answer no one, so the
+          // switch is ignored rather than enforced.
+          logUnsupportedCapability({
+            automationId: automation.id,
+            commentId,
+            capability: "image filter unsupported",
+          })
+        } else if (!(await resolveAttachmentInfo()).hasImage) {
+          logAutomationSkipped({
+            automationId: automation.id,
+            commentId,
+            postId,
+            workspaceId,
+            reason: "comment has no image attachment",
+          })
+          collectMiss(automation.id, "noImageAttachment")
           continue
         }
       }
@@ -529,55 +570,15 @@ export async function processCommentAutomation(
           }
         }
 
-        if (hasHideCommentAction(automation.hideComments)) {
-          if (
-            supportsHideComments(channelType) &&
-            !supportsHideForComment(
-              channelType,
-              isCommentReply(parentId, postId, commentId),
-            )
-          ) {
-            logUnsupportedCapability({
-              automationId: automation.id,
-              commentId,
-              capability: "hide nested reply unsupported",
-            })
-          } else if (supportsHideComments(channelType)) {
-            const { hasImage, hasVideo, hasGif } = needsAttachmentInfo(
-              automation.hideComments,
-            )
-              ? await resolveAttachmentInfo()
-              : { hasImage: false, hasVideo: false, hasGif: false }
-
-            applyHideComments(automation.hideComments, commentId, message, {
-              conversation: conversationRef,
-              contactInbox,
-              messageId: dbMessage.id,
-              messageCreatedAt: dbMessage.createdAt,
-              hasImage,
-              hasVideo,
-              hasGif,
-            }).catch((err: unknown) =>
-              logger.error(
-                { err, automationId: automation.id, commentId },
-                "Failed to apply hide comments",
-              ),
-            )
-          } else {
-            if (needsAttachmentInfo(automation.hideComments)) {
-              logUnsupportedCapability({
-                automationId: automation.id,
-                commentId,
-                capability: "attachment lookup unsupported",
-              })
-            }
-            logUnsupportedCapability({
-              automationId: automation.id,
-              commentId,
-              capability: "hide or unhide comment unsupported",
-            })
-          }
-        }
+        await applyHideRules({
+          automation,
+          channelType,
+          data,
+          contactInbox,
+          occurredAt,
+          loadCommentMessage,
+          resolveAttachmentInfo,
+        })
       } else {
         // Liking, hiding and parent threading all hang off the incoming
         // comment's message row. Losing it degrades all three without touching

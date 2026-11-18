@@ -183,6 +183,19 @@ export class ChatbotXException extends Error {
   }
 }
 
+/** A field operation the calculator rejected; `reason` is machine-readable. */
+export const invalidFieldOperationException = (
+  reason: string,
+): ChatbotXException => {
+  const exception = new ChatbotXException(
+    `This operation cannot be applied to the field (${reason}).`,
+    "invalidFieldOperation",
+    400,
+  )
+  exception.data = { reason }
+  return exception
+}
+
 /**
  * A bounded workspace purge reached its per-run limit while rows still
  * remain. The scheduled worker treats this as an expected, resumable state:
@@ -208,6 +221,28 @@ export const workspaceDeletionStartedException = () =>
     "Workspace deletion is already in progress",
     "workspaceDeletionStarted",
     409,
+  )
+
+/**
+ * A count ran past its statement timeout. The caller can narrow the filter or
+ * ask for `countMode: "bounded"`, which stops at a fixed cap.
+ */
+export const countTimeoutException = () =>
+  new ChatbotXException(
+    'Counting took too long. Narrow the filter, or use countMode "bounded" for a capped count.',
+    "countTimeout",
+    503,
+  )
+
+/**
+ * A report ran past its statement timeout. The caller can narrow the date
+ * range or the channel and try again.
+ */
+export const reportTimeoutException = () =>
+  new ChatbotXException(
+    "The report took too long. Narrow the date range or the channel.",
+    "reportTimeout",
+    503,
   )
 
 /** The request field a broadcast validation failure points at. */
@@ -240,6 +275,9 @@ export class BroadcastValidationException extends ChatbotXException {
 
 export const notFoundException = (message: string) =>
   new ChatbotXException(message, "notFound", 404)
+
+export const conflictException = (message: string, code: string) =>
+  new ChatbotXException(message, code, 409)
 
 /**
  * A field-scoped validation failure raised from inside a service. The
@@ -386,6 +424,29 @@ export const workspaceLimitReachedException = () =>
   new ChatbotXException(
     "Workspace limit reached for this plan",
     "workspaceLimitReached",
+  )
+
+/** The admin console's "create workspace for an owner" flow refuses a second workspace for an owner who already has a live one — one owner, one owned workspace. */
+export const ownerAlreadyHasWorkspaceException = () =>
+  new ChatbotXException(
+    "This owner already has a workspace.",
+    "ownerAlreadyHasWorkspace",
+    409,
+  )
+
+/** A member email the admin console's create-workspace flow could not resolve to a user in the owner's tenant — only a root-tenant email auto-provisions; a reseller sub-tenant email must already exist. */
+export const adminWorkspaceMemberNotFoundException = (email: string) =>
+  new ChatbotXException(
+    `No user found for "${email}" in this tenant.`,
+    "memberNotFound",
+    404,
+  )
+
+/** The owner's `teamMembers` plan limit has no room left for the owner plus every requested member added in the same batch. */
+export const teamMembersLimitReachedException = () =>
+  new ChatbotXException(
+    "Team member limit reached for this plan",
+    "teamMembersLimit",
   )
 
 /**

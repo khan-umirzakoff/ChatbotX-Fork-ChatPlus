@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   refreshForRouting: vi.fn(),
   findWhatsappFlowSourceId: vi.fn(),
   loggerWarn: vi.fn(),
+  loggerInfo: vi.fn(),
 }))
 
 const REJECTION_CODE = 1_234_567
@@ -27,8 +28,13 @@ vi.mock("@chatbotx.io/business", () => ({
   },
   contactService: { unblockIfBlocked: vi.fn().mockResolvedValue(null) },
   conversationService: { markReadByOutbound: vi.fn().mockResolvedValue(true) },
-  publishToWorkspaceParty: vi.fn(),
-  broadcastToWorkspaceParty: vi.fn(),
+  messageService: {
+    updateSendError: mocks.updateSendError,
+    updateSourceId: mocks.updateSourceId,
+    updateAttributes: vi.fn().mockResolvedValue(undefined),
+    findWithAttachments: vi.fn().mockResolvedValue(null),
+  },
+  queueWorkspaceRealtimeEvent: vi.fn(),
   whatsappCallPermissionService: { recordPermanentGrant: vi.fn() },
   threadControlService: {
     recordEvent: mocks.recordEvent,
@@ -63,6 +69,9 @@ vi.mock("@chatbotx.io/database/repositories", () => ({
 
 vi.mock("@chatbotx.io/integration-whatsapp", () => ({
   THREAD_CONTROL_REJECTION_CODES: new Set([REJECTION_CODE]),
+  readWhatsappOriginErrorDetail: (originError: { fbtraceId?: string }) => ({
+    fbtraceId: originError?.fbtraceId,
+  }),
 }))
 
 vi.mock("@chatbotx.io/sdk", async (importOriginal) => {
@@ -77,7 +86,7 @@ vi.mock("../src/lib/logger", () => ({
   logger: {
     error: vi.fn(),
     warn: mocks.loggerWarn,
-    info: vi.fn(),
+    info: mocks.loggerInfo,
     debug: vi.fn(),
   },
 }))
@@ -88,7 +97,6 @@ vi.mock("../src/services/integrations", () => ({
 }))
 
 vi.mock("@chatbotx.io/worker-config", () => ({
-  ChatJobAction: { broadcastEvent: "broadcastEvent" },
   chatQueue: { add: vi.fn() },
 }))
 
@@ -410,6 +418,24 @@ describe("send gate — sendMessageToChannel (Service messages)", () => {
     )
     expect(mocks.updateSendError).toHaveBeenCalledTimes(1)
     expect(result).toEqual({ messageIds: [], sentCount: 0 })
+  })
+
+  test("a Meta ownership rejection logs the fbtrace_id as a top-level field", async () => {
+    mocks.runChannelHandler.mockRejectedValue(
+      rejection(REJECTION_CODE).setOriginError({ fbtraceId: "trace-9" }),
+    )
+
+    await sendDirect({
+      ...baseContactInbox,
+      threadControlState: "owned",
+      threadControlUpdatedAt: iso(HOUR),
+      lastIncomingMessageAt: iso(HOUR),
+    })
+
+    expect(mocks.loggerInfo).toHaveBeenCalledWith(
+      expect.objectContaining({ code: REJECTION_CODE, fbtraceId: "trace-9" }),
+      expect.stringContaining("thread not owned"),
+    )
   })
 
   test("other permission errors are not mistaken for an ownership rejection", async () => {

@@ -3,6 +3,10 @@ import { defineConfig } from "tsdown"
 export default defineConfig({
   format: ["esm"],
   entry: [
+    // Single-process bundles: core consumers (`worker core`), and core plus
+    // schedule and sequence workers (`worker standalone`, the image default).
+    "src/core.ts",
+    "src/standalone.ts",
     "src/chat/worker.ts",
     "src/integration/worker.ts",
     "src/ai-agent/worker.ts",
@@ -17,6 +21,7 @@ export default defineConfig({
     "src/events/worker.ts",
     "src/notification/worker.ts",
     "src/low/worker.ts",
+    "src/marketing-message/worker.ts",
   ],
   dts: false,
   shims: true,
@@ -24,7 +29,9 @@ export default defineConfig({
     skipNodeModulesBundle: false,
     // https://github.com/egoist/tsdown/issues/619
     alwaysBundle: [/(.*)/],
-    neverBundle: ["react"],
+    // sharp is a native addon (libvips): it cannot be bundled, so the release
+    // image installs it next to `dist` (see docker/Dockerfile).
+    neverBundle: ["react", "sharp"],
   },
   clean: true,
   // target: 'node20',

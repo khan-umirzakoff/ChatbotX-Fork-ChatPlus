@@ -2,7 +2,7 @@ import { aiTimeouts } from "@chatbotx.io/ai"
 import { contactCustomFieldService } from "@chatbotx.io/business"
 import type { AIExtractDataSchema } from "@chatbotx.io/flow-config"
 import { contactVariableService } from "@chatbotx.io/variables"
-import { APICallError, generateObject } from "ai"
+import { APICallError, generateText, Output } from "ai"
 import { normalizeError } from "universal-error-normalizer"
 import { z } from "zod"
 import { logger } from "../../../lib/logger"
@@ -22,7 +22,6 @@ const ERROR_INSUFFICIENT_CREDITS =
 
 type AIExtractUserContent =
   | { type: "text"; text: string }
-  | { type: "image"; image: string }
   | { type: "file"; data: string; mediaType: string }
 
 const INPUT_FILE_MEDIA_TYPE = "application/pdf"
@@ -43,8 +42,9 @@ const getInputValue = async (props: {
   step: AIExtractDataSchema
   conversation: ExecuteStepProps<AIExtractDataSchema>["conversation"]
   contactInbox: ExecuteStepProps<AIExtractDataSchema>["contactInbox"]
+  sentByUserId: ExecuteStepProps<AIExtractDataSchema>["sentByUserId"]
 }) => {
-  const { step, conversation, contactInbox } = props
+  const { step, conversation, contactInbox, sentByUserId } = props
 
   if (step.inputType === "text") {
     let inputText = step.inputFieldId.trim()
@@ -53,6 +53,7 @@ const getInputValue = async (props: {
       contactId: conversation.contactId,
       contactInbox,
       conversation,
+      sentByUserId,
     })
 
     inputText = await contactVariableService.replaceAll({
@@ -90,7 +91,7 @@ const buildUserContent = (props: {
   if (inputType === "text") {
     content.push({ type: "text", text: inputValue })
   } else if (inputType === "image") {
-    content.push({ type: "image", image: inputValue })
+    content.push({ type: "file", data: inputValue, mediaType: "image/*" })
   } else {
     content.push({
       type: "file",
@@ -113,6 +114,7 @@ export async function handleAIExtractData({
   step,
   metadata,
   isBulkBroadcast,
+  sentByUserId,
 }: ExecuteStepProps<AIExtractDataSchema>): Promise<ExecuteStepResult> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), aiTimeouts.aiTotal)
@@ -136,6 +138,7 @@ export async function handleAIExtractData({
       step,
       conversation,
       contactInbox,
+      sentByUserId,
     })
 
     if (!inputValue) {
@@ -207,20 +210,24 @@ ${schemaDescription}`
     // Scoped to the provider call itself. The surrounding `try` also covers
     // our own reads and the custom-field writes below, and attributing one of
     // those to the AI vendor would put a false provider on the row.
-    const { object: extractedData } = await generateObject({
+    // `result.output` throws when the response does not match the schema, so
+    // it is read inside the attributed chain.
+    const extractedData = await generateText({
       model: resolvedModel.model,
-      system: systemPrompt,
+      instructions: systemPrompt,
       messages: [userMessage],
       abortSignal: controller.signal,
-      schema: dynamicSchema,
-    }).catch(async (error: unknown) => {
-      await logStepProviderError(
-        aiErrorLogProvider(step.provider),
-        { conversation, contactInbox },
-        error,
-      )
-      throw error
+      output: Output.object({ schema: dynamicSchema }),
     })
+      .then((result) => result.output)
+      .catch(async (error: unknown) => {
+        await logStepProviderError(
+          aiErrorLogProvider(step.provider),
+          { conversation, contactInbox },
+          error,
+        )
+        throw error
+      })
 
     await Promise.all(
       step.extractFields.map(async (mapping) => {

@@ -17,25 +17,33 @@ export const PUBLIC_ROUTES = [
   "/leaderboards",
   // Public Mini App runner; submissions are attributed only via a signed token.
   "/mini-apps",
+  // Invitation codes are enrollment capabilities; accepting still requires a session.
+  "/invitations",
   "/auth",
   "/api",
+  "/.well-known",
   // Like "/api": the RPC handler runs the full router, where every procedure
   // carries its own auth middleware and answers an unauthenticated call with
   // a 401. Redirecting here instead would hand the typed client the sign-in
   // page's HTML, which it cannot tell from a failed call.
   "/rpc",
   "/ws",
+  "/mcp",
   "/storage",
   "/checkout",
   "/unsubscribe",
   "/email-topic",
   "/extensions",
   "/booking",
+  // Web shop; the cart and orders are attributed only via a signed shop token.
+  "/shop",
   "/portal/redeem",
   "/webchat",
   // Bot simulator preview: frames a website with the webchat widget for demos.
   "/bs",
   "/t/",
+  // The tenant's public template store; templates open on /t/template.
+  "/store",
   // The neutral `ConnectSession` completion page — the person finishing an
   // API/MCP-started OAuth connect is never necessarily a builder user or a
   // member of the workspace that started it. `sessionId` itself is the

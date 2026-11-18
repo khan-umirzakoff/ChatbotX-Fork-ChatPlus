@@ -4,11 +4,13 @@ import type {
   IncomingCommerceEvent,
   IncomingContact,
   IncomingMessage,
+  MessageReferral,
   ThreadControlReceiveInfo,
 } from "./message"
 
 export * from "./audience-event"
 export * from "./context"
+export * from "./flow-response-file"
 export * from "./message"
 export * from "./meta-messaging"
 export * from "./mime-types"
@@ -37,29 +39,6 @@ export const HandleRequestType = {
   generateAuthUrl: "generate-auth-url",
 } as const
 
-export type MessageReferral = {
-  ref?: string | null
-  source?: string | null
-  type?: string | null
-  adId?: string | null
-  adTitle?: string | null
-  sourceUrl?: string | null
-  sourcePlatform?: string | null
-  ctwaClid?: string | null
-  postId?: string | null
-  photoUrl?: string | null
-  videoUrl?: string | null
-  productId?: string | null
-  flowId?: string | null
-  gclid?: string | null
-  gbraid?: string | null
-  googleCampaignId?: string | null
-  googleAdGroupId?: string | null
-  googleAdId?: string | null
-  googleClickReceivedAt?: string | null
-  raw?: Record<string, unknown>
-}
-
 export type ReceivedMessageResult = {
   message: IncomingMessage | null
   contact: IncomingContact
@@ -69,6 +48,12 @@ export type ReceivedMessageResult = {
   ref: string | null
   referralSource?: string | null
   referral?: MessageReferral | null
+  /**
+   * The provider's own time for this delivery. Set by channels that can deliver
+   * a referral on its own (no message); it makes that referral idempotent when
+   * the webhook is retried.
+   */
+  occurredAt?: Date | null
   buttonTitle?: string | null
   /**
    * Origin of an outgoing echo, when the channel can tell. Unset or null

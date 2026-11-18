@@ -11,6 +11,7 @@ import type { MediaTokenPayload } from "@chatbotx.io/encryption"
 import { verifyMediaToken } from "@chatbotx.io/encryption"
 import { getPublicOriginFromRequest } from "@chatbotx.io/utils"
 import {
+  LOW_BULK_PRIORITY,
   LowJobAction,
   type LowJobCoexistAttachmentDownload,
   lowQueue,
@@ -89,6 +90,8 @@ export const enqueueAttachmentMirror = (input: {
   channel?: string
   integrationId?: string
   messageId: string
+  // Parent message time: routes the job's sharded lookup straight to its window.
+  messageCreatedAt?: Date
   workspaceId: string
 }): void => {
   if (input.channel && input.integrationId) {
@@ -106,6 +109,7 @@ export const enqueueAttachmentMirror = (input: {
   resolveIntegrationForAttachment({
     attachmentId: input.attachmentId,
     workspaceId: input.workspaceId,
+    messageCreatedAt: input.messageCreatedAt,
   })
     .then(async (resolved) => {
       if (!(resolved && isAttachmentChannel(resolved.channel))) {
@@ -145,7 +149,7 @@ const addAttachmentJob = (
     .add(
       LowJobAction.coexistAttachmentDownload,
       { type: LowJobAction.coexistAttachmentDownload, data },
-      options,
+      { ...options, priority: LOW_BULK_PRIORITY },
     )
     .catch((err: unknown) => {
       httpLogger.error(
@@ -160,6 +164,7 @@ function enqueueResolvedAttachmentMirror(input: {
   channel: AttachmentChannel
   integrationId: string
   messageId: string
+  messageCreatedAt?: Date
   workspaceId: string
 }): void {
   addAttachmentJob(
@@ -168,6 +173,9 @@ function enqueueResolvedAttachmentMirror(input: {
       workspaceId: input.workspaceId,
       channel: input.channel,
       integrationId: input.integrationId,
+      ...(input.messageCreatedAt
+        ? { messageCreatedAt: input.messageCreatedAt.getTime() }
+        : {}),
     },
     {
       jobId: `media-message-${input.messageId}`,
@@ -231,6 +239,7 @@ export const enqueueAvatarMirror = (input: {
       },
       {
         jobId: `update-avatar-${input.contactInboxId}`,
+        priority: LOW_BULK_PRIORITY,
         attempts: 2,
         removeOnComplete: true,
         removeOnFail: { count: 100 },

@@ -1,5 +1,8 @@
 import { getAuditActor } from "@chatbotx.io/business/audit"
-import type { DefaultJobData } from "@chatbotx.io/worker-config"
+import type {
+  DefaultJobData,
+  TemplateJobData,
+} from "@chatbotx.io/worker-config"
 import { beforeEach, describe, expect, test, vi } from "vitest"
 
 type DefaultWorkerJob = {
@@ -11,6 +14,13 @@ type DefaultWorkerJob = {
 
 type DefaultWorkerProcessor = (job: DefaultWorkerJob) => Promise<void>
 
+type TemplateWorkerProcessor = (job: {
+  attemptsMade: number
+  data: TemplateJobData
+  id: string
+  name: string
+}) => Promise<void>
+
 const workerState = vi.hoisted(() => ({
   defaultQueueAdd: vi.fn(),
   checkMetaCatalogSync: vi.fn(),
@@ -21,11 +31,23 @@ const workerState = vi.hoisted(() => ({
   loggerInfo: vi.fn(),
   loggerWarn: vi.fn(),
   processor: undefined as DefaultWorkerProcessor | undefined,
+  templateProcessor: undefined as TemplateWorkerProcessor | undefined,
+  templateConcurrency: undefined as number | undefined,
+  installTemplate: vi.fn(),
+  failBlockedTemplateInstall: vi.fn(),
+  syncTemplateInstallation: vi.fn(),
+  skipBlockedTemplateSync: vi.fn(),
+  uninstallTemplate: vi.fn(),
+  skipBlockedTemplateUninstall: vi.fn(),
+  fanOutTemplateUpdate: vi.fn(),
   resolveWorkspaceId: vi.fn(),
+  retryRealtimeMemberRevoke: vi.fn(),
   sendAppointmentReminder: vi.fn(),
   submitMetaCatalogSync: vi.fn(),
   syncWelcomeMessageFlows: vi.fn(),
   deleteWelcomeMessageFlows: vi.fn(),
+  processPipelineStageBulk: vi.fn(),
+  releasePipelineStageBulkClaim: vi.fn(),
   workerClose: vi.fn(async () => undefined),
   workerOn: vi.fn(),
 }))
@@ -36,10 +58,17 @@ vi.mock("bullmq", () => {
     on = workerState.workerOn
 
     constructor(
-      _queueName: unknown,
+      queueName: unknown,
       processor: DefaultWorkerProcessor,
-      _options: unknown,
+      options: { concurrency?: number },
     ) {
+      // The default process hosts two workers: keep each one's processor.
+      if (queueName === "template") {
+        workerState.templateProcessor =
+          processor as unknown as TemplateWorkerProcessor
+        workerState.templateConcurrency = options.concurrency
+        return
+      }
       workerState.processor = processor
     }
   }
@@ -75,6 +104,8 @@ vi.mock("@chatbotx.io/worker-config", async (importOriginal) => {
       submitMetaCatalogSync: "submitMetaCatalogSync",
       syncWelcomeMessageFlows: "syncWelcomeMessageFlows",
       deleteWelcomeMessageFlows: "deleteWelcomeMessageFlows",
+      retryRealtimeMemberRevoke: "retryRealtimeMemberRevoke",
+      processPipelineStageBulk: "processPipelineStageBulk",
     },
     defaultQueue: {
       add: (...args: unknown[]) => workerState.defaultQueueAdd(...args),
@@ -85,10 +116,16 @@ vi.mock("@chatbotx.io/worker-config", async (importOriginal) => {
     queueNames: {
       enum: {
         default: "default",
+        template: "template",
       },
     },
   }
 })
+
+vi.mock("../src/default/handlers/pipeline-stage-bulk", () => ({
+  processPipelineStageBulk: workerState.processPipelineStageBulk,
+  releasePipelineStageBulkClaim: workerState.releasePipelineStageBulkClaim,
+}))
 
 vi.mock("../src/lib/is-blocked-workspace", () => ({
   isBlockedWorkspace: (workspaceId: string | undefined) =>
@@ -101,6 +138,7 @@ vi.mock("../src/lib/resolve-workspace-id", () => ({
 
 vi.mock("../src/lib/logger", () => ({
   logger: {
+    debug: vi.fn(),
     error: (...args: unknown[]) => workerState.loggerError(...args),
     info: (...args: unknown[]) => workerState.loggerInfo(...args),
     warn: (...args: unknown[]) => workerState.loggerWarn(...args),
@@ -156,9 +194,28 @@ vi.mock("../src/default/handlers/sync-tag", () => ({
   handleSyncTag: vi.fn(),
 }))
 
+vi.mock("../src/default/handlers/retry-realtime-member-revoke", () => ({
+  retryRealtimeMemberRevoke: workerState.retryRealtimeMemberRevoke,
+}))
 vi.mock("../src/default/handlers/welcome-message-flows", () => ({
   syncWelcomeMessageFlows: workerState.syncWelcomeMessageFlows,
   deleteWelcomeMessageFlows: workerState.deleteWelcomeMessageFlows,
+}))
+
+vi.mock("../src/default/handlers/install-template", () => ({
+  installTemplate: workerState.installTemplate,
+  failBlockedTemplateInstall: workerState.failBlockedTemplateInstall,
+}))
+vi.mock("../src/default/handlers/sync-template-installation", () => ({
+  syncTemplateInstallation: workerState.syncTemplateInstallation,
+  skipBlockedTemplateSync: workerState.skipBlockedTemplateSync,
+}))
+vi.mock("../src/default/handlers/uninstall-template", () => ({
+  uninstallTemplate: workerState.uninstallTemplate,
+  skipBlockedTemplateUninstall: workerState.skipBlockedTemplateUninstall,
+}))
+vi.mock("../src/default/handlers/fan-out-template-update", () => ({
+  fanOutTemplateUpdate: workerState.fanOutTemplateUpdate,
 }))
 
 await import("../src/default/worker")
@@ -201,6 +258,7 @@ const triggerFailed = async (
 const processDefaultJob = async (
   data: DefaultJobData,
   attemptsMade = 0,
+  attempts = 8,
 ): Promise<void> => {
   if (!workerState.processor) {
     throw new Error("Default worker processor was not captured")
@@ -211,6 +269,7 @@ const processDefaultJob = async (
     data,
     id: "job-1",
     name: data.type,
+    opts: { attempts },
   })
 }
 
@@ -224,10 +283,13 @@ beforeEach(() => {
   workerState.loggerInfo.mockReset()
   workerState.loggerWarn.mockReset()
   workerState.resolveWorkspaceId.mockReset()
+  workerState.retryRealtimeMemberRevoke.mockReset()
   workerState.sendAppointmentReminder.mockReset()
   workerState.submitMetaCatalogSync.mockReset()
   workerState.syncWelcomeMessageFlows.mockReset()
   workerState.deleteWelcomeMessageFlows.mockReset()
+  workerState.processPipelineStageBulk.mockReset()
+  workerState.releasePipelineStageBulkClaim.mockReset()
   workerState.resolveWorkspaceId.mockResolvedValue("workspace-1")
   workerState.isBlockedWorkspace.mockResolvedValue(false)
 })
@@ -302,6 +364,63 @@ describe("default worker", () => {
     )
   })
 
+  test("retries failed realtime member revocations through the default worker", async () => {
+    const jobData: DefaultJobData = {
+      type: "retryRealtimeMemberRevoke",
+      data: {
+        reason: "deleted",
+        revokedAtMs: 1000,
+        userId: "user-1",
+        workspaceId: "workspace-1",
+      },
+    }
+
+    await processDefaultJob(jobData)
+
+    expect(workerState.retryRealtimeMemberRevoke).toHaveBeenCalledWith(
+      jobData.data,
+    )
+  })
+
+  test("skips member revocations for blocked workspaces", async () => {
+    workerState.isBlockedWorkspace.mockResolvedValue(true)
+    const jobData: DefaultJobData = {
+      type: "retryRealtimeMemberRevoke",
+      data: {
+        reason: "deleted",
+        revokedAtMs: 1000,
+        userId: "user-1",
+        workspaceId: "workspace-1",
+      },
+    }
+
+    await processDefaultJob(jobData)
+
+    expect(workerState.isBlockedWorkspace).toHaveBeenCalledWith("workspace-1")
+    expect(workerState.retryRealtimeMemberRevoke).not.toHaveBeenCalled()
+  })
+
+  test("logs a durable signal when the final revoke retry fails", async () => {
+    const error = new Error("Redis unavailable")
+    workerState.retryRealtimeMemberRevoke.mockRejectedValueOnce(error)
+    const jobData: DefaultJobData = {
+      type: "retryRealtimeMemberRevoke",
+      data: {
+        reason: "deleted",
+        revokedAtMs: 1000,
+        userId: "user-1",
+        workspaceId: "workspace-1",
+      },
+    }
+
+    await expect(processDefaultJob(jobData, 7)).rejects.toThrow(error)
+
+    expect(workerState.loggerError).toHaveBeenCalledWith(
+      { err: error, userId: "user-1", workspaceId: "workspace-1" },
+      "Realtime member connection revoke retry exhausted",
+    )
+  })
+
   test("populates the audit actor with the resolved workspace and job source", async () => {
     let capturedActor: ReturnType<typeof getAuditActor>
     workerState.handleBulkTagContacts.mockImplementationOnce(() => {
@@ -365,5 +484,110 @@ describe("default worker — welcome message flows", () => {
 
     expect(workerState.syncWelcomeMessageFlows).not.toHaveBeenCalled()
     expect(workerState.deleteWelcomeMessageFlows).not.toHaveBeenCalled()
+  })
+})
+
+describe("pipeline stage bulk jobs", () => {
+  const job: DefaultJobData = {
+    type: "processPipelineStageBulk",
+    data: {
+      workspaceId: "workspace-1",
+      pipelineId: "2",
+      stageId: "3",
+      bulkJobId: "pipeline-stage-bulk-3-1",
+      moveItemsToStageId: null,
+      actorUserId: null,
+    },
+  }
+
+  test("runs the queued stage removal for active workspaces", async () => {
+    await processDefaultJob(job)
+
+    expect(workerState.isBlockedWorkspace).toHaveBeenCalledWith("workspace-1")
+    expect(workerState.processPipelineStageBulk).toHaveBeenCalledWith(job.data)
+    expect(workerState.releasePipelineStageBulkClaim).not.toHaveBeenCalled()
+  })
+
+  test("a blocked owner skips the job and releases its claim on the stage", async () => {
+    workerState.isBlockedWorkspace.mockResolvedValue(true)
+
+    await processDefaultJob(job)
+
+    expect(workerState.processPipelineStageBulk).not.toHaveBeenCalled()
+    expect(workerState.releasePipelineStageBulkClaim).toHaveBeenCalledWith(
+      job.data,
+    )
+  })
+})
+
+describe("template worker", () => {
+  const processTemplateJob = async (data: TemplateJobData): Promise<void> => {
+    if (!workerState.templateProcessor) {
+      throw new Error("Template worker processor was not captured")
+    }
+    await workerState.templateProcessor({
+      attemptsMade: 0,
+      data,
+      id: "job-1",
+      name: data.type,
+    })
+  }
+
+  test("runs off its own queue with its own bounded concurrency", () => {
+    expect(workerState.templateProcessor).toBeDefined()
+    expect(workerState.templateConcurrency).toBe(2)
+  })
+
+  test.each([
+    [
+      "installTemplate",
+      { installationId: "i1", workspaceId: "workspace-1" },
+      "installTemplate",
+    ],
+    [
+      "syncTemplateInstallation",
+      { syncId: "s1", workspaceId: "workspace-1" },
+      "syncTemplateInstallation",
+    ],
+    [
+      "uninstallTemplate",
+      { installationId: "i1", workspaceId: "workspace-1", attempt: 1 },
+      "uninstallTemplate",
+    ],
+    [
+      "fanOutTemplateUpdate",
+      { templateId: "t1", workspaceId: "workspace-1", version: 2 },
+      "fanOutTemplateUpdate",
+    ],
+  ] as const)("routes %s to its handler", async (type, data, handler) => {
+    await processTemplateJob({ type, data } as TemplateJobData)
+
+    expect(workerState[handler]).toHaveBeenCalledTimes(1)
+    expect(workerState.processor).toBeDefined()
+  })
+
+  test.each([
+    ["installTemplate", "failBlockedTemplateInstall", "installTemplate"],
+    [
+      "syncTemplateInstallation",
+      "skipBlockedTemplateSync",
+      "syncTemplateInstallation",
+    ],
+    ["uninstallTemplate", "skipBlockedTemplateUninstall", "uninstallTemplate"],
+  ] as const)("a blocked owner's %s leaves its pending set without running", async (type, onBlocked, handler) => {
+    workerState.isBlockedWorkspace.mockResolvedValue(true)
+
+    await processTemplateJob({
+      type,
+      data: {
+        installationId: "i1",
+        syncId: "s1",
+        workspaceId: "workspace-1",
+        attempt: 1,
+      },
+    } as TemplateJobData)
+
+    expect(workerState[onBlocked]).toHaveBeenCalledTimes(1)
+    expect(workerState[handler]).not.toHaveBeenCalled()
   })
 })

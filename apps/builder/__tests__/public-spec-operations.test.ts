@@ -152,17 +152,22 @@ function collectCopyStrings(
 
 beforeAll(async () => {
   const { publicRouter } = await import("@/routers/public")
-  const { publicSpecGenerateOptions, withChannelApiTokenSecurity } =
-    await import("@/lib/orpc/public-spec")
+  const {
+    publicSpecGenerateOptions,
+    withChannelApiTokenSecurity,
+    withMcpHitlPolicy,
+  } = await import("@/lib/orpc/public-spec")
 
   const generator = new OpenAPIGenerator({
     schemaConverters: [new ZodToJsonSchemaConverter()],
   })
 
-  const spec = withChannelApiTokenSecurity(
-    await generator.generate(
-      publicRouter,
-      publicSpecGenerateOptions("public-spec-operations.test"),
+  const spec = withMcpHitlPolicy(
+    withChannelApiTokenSecurity(
+      await generator.generate(
+        publicRouter,
+        publicSpecGenerateOptions("public-spec-operations.test"),
+      ),
     ),
   )
   if (process.env.MCP_EVAL_SPEC_OUTPUT) {
@@ -443,14 +448,29 @@ describe("public API spec — operation naming guard", () => {
     }
   })
 
-  test("every non-channel operation requires only workspace-token schemes", () => {
+  test("every non-channel operation requires only workspace-token schemes, except the mobile-only ones", () => {
+    // The `/v1/me` surface and the realtime connect token only work with a
+    // native mobile app access token (a workspace API token or MCP token has no
+    // member identity there), so they declare that scheme and the CLI/MCP
+    // loaders skip them.
+    const mobileOnlyPaths = new Set([
+      "/v1/me",
+      "/v1/me/workspaces",
+      "/v1/me/device-tokens",
+      "/v1/me/password",
+      "/v1/realtime/connect-token",
+    ])
     const nonChannelOps = operations.filter(
       (op) => !op.path.startsWith("/v1/channels/api/"),
     )
 
     expect(nonChannelOps.length).toBeGreaterThan(0)
     for (const op of nonChannelOps) {
-      expect(op.security).toBeUndefined()
+      if (mobileOnlyPaths.has(op.path)) {
+        expect(op.security).toEqual([{ mobileAppToken: [] }])
+      } else {
+        expect(op.security).toBeUndefined()
+      }
     }
   })
 
@@ -855,6 +875,10 @@ describe("public API spec — error response coverage", () => {
   // silently limited to the default) by the same dropped-DELETE-body bug
   // this change fixes. `miniApps.delete` (`deleteWhatsappFlows`, defaulted
   // to false) opts into also removing the Mini App's Flows on Meta.
+  // `pipelines.deleteStage` (`moveItemsToStageId`, optional) moves the stage's
+  // items to another stage before deleting it instead of deleting them.
+  // `me.unregisterDeviceToken` (`token`) names which of the user's push tokens
+  // to remove; a push token has no path id and the value is opaque.
   test("DELETE operations with a request body are exactly the reviewed set", () => {
     const deletesWithBody = operations
       .filter((op) => op.method === "DELETE" && op.bodySchema)
@@ -863,12 +887,15 @@ describe("public API spec — error response coverage", () => {
 
     expect(deletesWithBody).toEqual([
       "contacts.removeTags",
+      "contacts.removeTagsByName",
       "contacts.unsubscribeSequences",
       "decisionProfiles.deleteMany",
       "inboxTeams.removeMembers",
       "keywords.delete",
+      "me.unregisterDeviceToken",
       "messages.delete",
       "miniApps.delete",
+      "pipelines.deleteStage",
     ])
   })
 })
@@ -1173,5 +1200,35 @@ describe("public API spec — catalog and call conditions", () => {
     const schema = JSON.stringify(requestSchemasByOperationId[operationId])
 
     expect(schema).toContain("products.list")
+  })
+})
+
+describe("public API spec — AI file processing runs", () => {
+  test.each([
+    "aiFiles.get",
+    "aiFiles.create",
+    "aiFiles.reindex",
+  ])("%s documents the full processing run shape", (operationId) => {
+    const schema = JSON.stringify(responseSchemasByOperationId[operationId])
+
+    for (const field of [
+      "processingRun",
+      "chunkingOutdated",
+      "chunkingConfig",
+      "indexOutdated",
+      "heartbeatAt",
+      "stale",
+      '"queued"',
+      '"enqueueFailed"',
+      '"fileUnreadable"',
+    ]) {
+      expect(schema).toContain(field)
+    }
+  })
+
+  test("reindex documents coalescing", () => {
+    expect(
+      JSON.stringify(responseSchemasByOperationId["aiFiles.reindex"]),
+    ).toContain("coalesced")
   })
 })

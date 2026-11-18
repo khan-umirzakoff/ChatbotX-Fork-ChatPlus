@@ -63,6 +63,7 @@ vi.mock("@chatbotx.io/database/partials", async () =>
 )
 
 vi.mock("@chatbotx.io/flow-config", () => ({
+  BUTTON_LABEL_MAX: 20,
   BROADCAST_PAYLOAD_TYPE: "broadcast",
 }))
 
@@ -334,6 +335,40 @@ describe("processBroadcastContacts", () => {
           priority: 5,
           removeOnComplete: { age: 3600, count: 100_000 },
         },
+      )
+    })
+  })
+
+  describe("broadcast with a payment request on the WhatsApp channel", () => {
+    test("hands the stored payment request to every recipient's job unchanged", async () => {
+      const templateData = {
+        button: [
+          {
+            sub_type: "payment_request",
+            index: 0,
+            payment_request: { method: "pix", code: "{{pix_code}}" },
+          },
+        ],
+      }
+      listSendableById.mockResolvedValue([
+        makeBroadcast({
+          templateId: "tmpl-1",
+          channel: "whatsapp",
+          templateData: { ...templateData, buttons: [] },
+        }),
+      ])
+      listPendingRecipients.mockResolvedValue([makeContactOnBroadcast()])
+
+      await processBroadcastContacts(BROADCAST_ID)
+
+      expect(chatAddSpy).toHaveBeenCalledWith(
+        "sendWhatsappTemplateMessage",
+        expect.objectContaining({
+          data: expect.objectContaining({
+            templateData: expect.objectContaining(templateData),
+          }),
+        }),
+        expect.anything(),
       )
     })
   })

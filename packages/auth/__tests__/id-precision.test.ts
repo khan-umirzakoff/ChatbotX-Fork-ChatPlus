@@ -33,6 +33,9 @@ vi.mock("better-auth/next-js", () => ({
 vi.mock("better-auth/plugins", () => ({
   anonymous: () => ({ id: "anonymous" }),
   bearer: () => ({ id: "bearer" }),
+  genericOAuth: () => ({ id: "generic-oauth" }),
+  jwt: () => ({ id: "jwt" }),
+  mcp: () => ({ id: "mcp" }),
   magicLink: () => ({ id: "magic-link" }),
   oneTimeToken: () => ({ id: "one-time-token" }),
 }))
@@ -44,6 +47,14 @@ vi.mock("@chatbotx.io/database/client", () => ({
 vi.mock("@chatbotx.io/database/schema", () => ({
   ROOT_TENANT_ID: "1",
   accountModel: {},
+  jwkModel: {},
+  oauthAccessTokenModel: {},
+  oauthClientAssertionModel: {},
+  oauthClientModel: {},
+  oauthClientResourceModel: {},
+  oauthConsentModel: {},
+  oauthRefreshTokenModel: {},
+  oauthResourceModel: {},
   sessionModel: {},
   userModel: {},
   verificationModel: {},
@@ -56,6 +67,7 @@ vi.mock("@chatbotx.io/business", () => ({
     findPlatform: vi.fn(),
   },
   resolveTenantSettingsByDomain: vi.fn(),
+  invitationService: { findActiveByCode: vi.fn().mockResolvedValue(null) },
 }))
 
 vi.mock("@chatbotx.io/utils", async () => {

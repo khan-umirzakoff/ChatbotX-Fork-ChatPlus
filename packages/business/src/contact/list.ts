@@ -1,5 +1,6 @@
 import {
   type ChannelType,
+  type CountMode,
   requiresRecentInteractionWindow,
 } from "@chatbotx.io/database/partials"
 import type {
@@ -10,6 +11,7 @@ import { contactRepository } from "@chatbotx.io/database/repositories"
 import type { ContactModel } from "@chatbotx.io/database/types"
 import { getPaginationWithDefaults } from "@chatbotx.io/database/utils"
 import type { BroadcastSubaction } from "@chatbotx.io/utils/broadcast"
+import { type CountOutcome, countByMode } from "../count-mode"
 import { inboxService } from "../inbox/service"
 import { logger } from "../logger"
 import type { ContactAccessScope } from "./service"
@@ -191,6 +193,7 @@ function toListWhereInput(
     contactFilter: input.contactFilter,
     inboxScope,
     restrictToAssignedUserId: scope?.restrictToAssignedUserId,
+    restrictToTeamIds: scope?.restrictToTeamIds,
     includeEmailAndPhone: scope?.canViewEmailAndPhone !== false,
   }
 }
@@ -209,8 +212,9 @@ async function getTotalContactsFromStats(
 }
 
 /**
- * "table" is the contacts page's column-level projection (no email/phone
- * column is selected, so there is nothing to mask). Otherwise
+ * "table" is the contacts page's column-level projection (email and phone are
+ * selected only to stand in for a missing name, and are masked like the full
+ * projection). Otherwise
  * `listWithInboxesAndConversation` is the "full" relation set minus
  * tags/customFields — used when `include` omits both.
  */
@@ -269,10 +273,13 @@ export async function list(
   input: ListInput,
 ): Promise<ContactListResult<ContactTableListRow | ContactModel>> {
   const { data, pageCount, scope, include, countResult } = await runList(input)
+  // Unscoped (token) callers see PII; scoped members only when permitted.
+  const masksPii = Boolean(scope && !scope.canViewEmailAndPhone)
 
   if (input.projection === "table") {
+    const tableData = data as ContactTableListRow[]
     return {
-      data: data as ContactTableListRow[],
+      data: masksPii ? tableData.map(maskContactEmailAndPhone) : tableData,
       pageCount,
       totalCount: countResult.total,
       totalCountCapped: countResult.capped,
@@ -280,11 +287,9 @@ export async function list(
   }
 
   const fullData = data as ContactFullListRow[]
-  // Unscoped (token) callers see PII; scoped members only when permitted.
-  const maskedData =
-    scope && !scope.canViewEmailAndPhone
-      ? fullData.map(maskContactEmailAndPhone)
-      : fullData
+  const maskedData = masksPii
+    ? fullData.map(maskContactEmailAndPhone)
+    : fullData
   const visibleData: ContactFullListRow[] = include
     ? maskedData.map((contact) =>
         stripUnrequestedContactRelations<ContactFullListRow>(contact, include),
@@ -299,7 +304,9 @@ export async function list(
   }
 }
 
-export async function count(input: CountInput): Promise<{ total: number }> {
+export async function count(
+  input: CountInput & { countMode?: CountMode },
+): Promise<CountOutcome> {
   const scope = resolveScope(input.scope)
   const inboxScope = await resolveInboxScope(input)
   if (
@@ -307,18 +314,27 @@ export async function count(input: CountInput): Promise<{ total: number }> {
       input.keyword ||
       input.contactFilter ||
       inboxScope ||
-      scope?.restrictToAssignedUserId
+      scope?.restrictToAssignedUserId ||
+      scope?.restrictToTeamIds !== undefined
     )
   ) {
-    return getTotalContactsFromStats(input.workspaceId)
+    // The stats shortcut is an O(1) read, so it is exact in either mode.
+    return {
+      ...(await getTotalContactsFromStats(input.workspaceId)),
+      totalCountCapped: false,
+    }
   }
 
   const where = contactRepository.buildListWhere(
     toListWhereInput(input, scope, inboxScope),
   )
 
-  const total = await contactRepository.count({ where })
-  return { total }
+  return await countByMode({
+    mode: input.countMode,
+    exact: (client) => contactRepository.count({ client, where }),
+    bounded: (cap, client) =>
+      contactRepository.countCapped({ client, where, cap }),
+  })
 }
 
 // Back-compat for the deprecated `contacts.findByCustomField` alias — use

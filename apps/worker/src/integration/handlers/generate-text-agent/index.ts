@@ -8,6 +8,7 @@ import {
   aiAgentProviders,
 } from "@chatbotx.io/database/partials"
 import type { AIGenerateTextAgentSchema } from "@chatbotx.io/flow-config"
+import { resolveContactVariablesDeep } from "@chatbotx.io/variables"
 import { normalizeError } from "universal-error-normalizer"
 import { logger } from "../../../lib/logger"
 import { saveResultToCustomField } from "../../utils/contact"
@@ -25,6 +26,7 @@ export async function handleAIGenerateTextAgent({
   conversation,
   contactInbox,
   step,
+  sentByUserId,
 }: ExecuteStepProps<AIGenerateTextAgentSchema>): Promise<ExecuteStepResult> {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), aiTimeouts.aiTotal)
@@ -56,11 +58,17 @@ export async function handleAIGenerateTextAgent({
       preferredModels: aiAgentModels,
     })
 
-    const messages = await buildAIAgentMessages(
-      conversation,
-      contactInbox,
-      step,
+    // The message is authored with the variable picker; resolve `{{var}}`
+    // before it reaches the model (a no-op without placeholders).
+    const message = await resolveContactVariablesDeep(
+      conversation.contactId,
+      step.message,
+      { contactInbox, conversation, sentByUserId },
     )
+    const messages = await buildAIAgentMessages(conversation, contactInbox, {
+      ...step,
+      message,
+    })
     const summary = aiContext?.summary || ""
     const preferredModel = resolvePreferredModel(step)
     const preferredProvider =
@@ -91,6 +99,7 @@ export async function handleAIGenerateTextAgent({
       messages,
       aiAgent,
       summary,
+      sentByUserId,
       ...(preferredModel
         ? { preferredModel }
         : { preferredProvider: preferredProvider?.data }),

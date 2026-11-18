@@ -1,4 +1,7 @@
-import { triggerEventTypes } from "@chatbotx.io/database/partials"
+import {
+  type TriggerEventType,
+  triggerEventTypes,
+} from "@chatbotx.io/database/partials"
 import type { WorkspaceModel } from "@chatbotx.io/database/types"
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import type { ConditionEvaluationContext } from "../src/trigger/types"
@@ -346,7 +349,7 @@ describe("ConditionEvaluator WhatsApp call conditions", () => {
   test("a condition the screen does not offer still does not match", async () => {
     await expect(
       evaluator.evaluate(
-        buildContext({ type: triggerEventTypes.enum.ticketCreated }),
+        buildContext({ type: "bogusEvent" as TriggerEventType }),
       ),
     ).resolves.toBe(false)
   })
@@ -377,6 +380,70 @@ describe("ConditionEvaluator catalog conditions", () => {
     [triggerEventTypes.enum.shoppingCartSent, cart],
     [triggerEventTypes.enum.userAskedAboutProduct, inquiry],
   ] as const
+
+  describe("store events", () => {
+    const order = {
+      products: [
+        { productId: "product-1", categoryIds: [], quantity: 1 },
+        { productId: null, categoryIds: [], quantity: 1 },
+      ],
+    }
+    const cartItem = {
+      product: {
+        productId: "product-1",
+        variantId: null,
+        name: "Shirt",
+        categoryIds: ["category-1", "sub-1"],
+      },
+      quantity: 1,
+      change: 1,
+    }
+
+    test.each([
+      [triggerEventTypes.enum.productOrdered, order],
+      [triggerEventTypes.enum.productAddedToCart, cartItem],
+      [triggerEventTypes.enum.productRemovedFromCart, cartItem],
+    ] as const)("%s matches its product, and any product when unpinned", async (type, data) => {
+      for (const [sourceId, expected] of [
+        [null, true],
+        ["product-1", true],
+        ["product-2", false],
+      ] as const) {
+        await expect(
+          evaluator.evaluate(buildContext({ type, sourceId }, data)),
+        ).resolves.toBe(expected)
+      }
+    })
+
+    test("categoryAddedToCart matches the product's category or sub-category", async () => {
+      const type = triggerEventTypes.enum.categoryAddedToCart
+      for (const [sourceId, expected] of [
+        [null, true],
+        ["category-1", true],
+        ["sub-1", true],
+        ["category-2", false],
+      ] as const) {
+        await expect(
+          evaluator.evaluate(buildContext({ type, sourceId }, cartItem)),
+        ).resolves.toBe(expected)
+      }
+    })
+
+    test.each([
+      triggerEventTypes.enum.newOrder,
+      triggerEventTypes.enum.orderAccepted,
+      triggerEventTypes.enum.orderShipped,
+      triggerEventTypes.enum.orderConcluded,
+      triggerEventTypes.enum.orderCancelled,
+      triggerEventTypes.enum.orderPaid,
+      triggerEventTypes.enum.orderRefunded,
+      triggerEventTypes.enum.cartAbandoned,
+    ])("%s: the event happening is the condition", async (type) => {
+      await expect(
+        evaluator.evaluate(buildContext({ type, sourceId: null }, {})),
+      ).resolves.toBe(true)
+    })
+  })
 
   test.each(
     cases,
@@ -423,5 +490,58 @@ describe("ConditionEvaluator catalog conditions", () => {
     await expect(
       evaluator.evaluate(buildContext({ type, sourceId: "product-1" }, {})),
     ).resolves.toBe(false)
+  })
+})
+
+describe("ConditionEvaluator pipeline item conditions", () => {
+  const evaluator = new ConditionEvaluator()
+  const metadata = { pipelineId: "p-1", stageId: "s-2" }
+
+  test.each([
+    triggerEventTypes.enum.pipelineItemCreated,
+    triggerEventTypes.enum.pipelineItemMovedToStage,
+    triggerEventTypes.enum.pipelineItemValueChanged,
+    triggerEventTypes.enum.pipelineItemStatusChanged,
+    triggerEventTypes.enum.pipelineItemPriorityChanged,
+  ])("%s without a pinned pipeline matches any pipeline", async (type) => {
+    await expect(
+      evaluator.evaluate(buildContext({ type }, metadata)),
+    ).resolves.toBe(true)
+  })
+
+  test("a pinned pipeline matches only that pipeline", async () => {
+    const type = triggerEventTypes.enum.pipelineItemCreated
+
+    await expect(
+      evaluator.evaluate(buildContext({ type, sourceId: "p-1" }, metadata)),
+    ).resolves.toBe(true)
+    await expect(
+      evaluator.evaluate(buildContext({ type, sourceId: "p-9" }, metadata)),
+    ).resolves.toBe(false)
+  })
+
+  test("a moved-to-stage condition pinned to a stage matches only that destination", async () => {
+    const type = triggerEventTypes.enum.pipelineItemMovedToStage
+
+    await expect(
+      evaluator.evaluate(
+        buildContext({ type, value: { stageId: "s-2" } }, metadata),
+      ),
+    ).resolves.toBe(true)
+    await expect(
+      evaluator.evaluate(
+        buildContext({ type, value: { stageId: "s-3" } }, metadata),
+      ),
+    ).resolves.toBe(false)
+  })
+
+  test("a null or empty stage filter matches any destination", async () => {
+    const type = triggerEventTypes.enum.pipelineItemMovedToStage
+
+    await expect(
+      evaluator.evaluate(
+        buildContext({ type, value: { stageId: null } }, metadata),
+      ),
+    ).resolves.toBe(true)
   })
 })

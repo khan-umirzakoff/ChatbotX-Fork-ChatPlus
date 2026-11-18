@@ -94,6 +94,10 @@ export const commonApiErrors = {
     message: "You do not have permission to perform this action",
     status: 403,
   },
+  WORKSPACE_SELECTION_REQUIRED: {
+    message: "Workspace selection is required",
+    status: 400,
+  },
   trialExpired: {
     message: DENIAL_MESSAGES.trialExpired,
     status: 403,
@@ -171,6 +175,36 @@ export const possibleErrorsOnListingResource = {
 } satisfies ErrorMap
 
 /**
+ * A count that outruns its statement timeout answers 503 `countTimeout`
+ * (`countTimeoutException` in `@chatbotx.io/business`); the caller retries
+ * with `countMode: "bounded"`.
+ */
+const countTimeout = {
+  message: "Counting took too long",
+  status: 503,
+} as const
+
+export const possibleErrorsOnCounting = {
+  businessError,
+  countTimeout,
+} satisfies ErrorMap
+
+/**
+ * A report that outruns its statement timeout answers 503 `reportTimeout`
+ * (`reportTimeoutException` in `@chatbotx.io/business`); the caller retries
+ * with a shorter date range or a narrower channel.
+ */
+const reportTimeout = {
+  message: "The report took too long",
+  status: 503,
+} as const
+
+export const possibleErrorsOnReporting = {
+  businessError,
+  reportTimeout,
+} satisfies ErrorMap
+
+/**
  * Per-router sets carry only what varies by operation shape. The auth,
  * rate-limit, and both validation codes come from `commonApiErrors`, attached
  * once to the public stacks in `@/orpc` — never re-declare them here.
@@ -188,10 +222,35 @@ export const possibleErrorsOnCreatingBroadcast = {
   ...possibleIdempotencyErrors,
 } satisfies ErrorMap
 
+/**
+ * A product, category, vendor, discount code or order mirrored from a
+ * connected external store — Shopify or WooCommerce, named in `data.store` —
+ * (or any create while the store source is one): it is changed on that
+ * store. `externalStoreManagedException` in
+ * `packages/business/src/external-store/errors.ts`.
+ */
+export const externalStoreManagedErrors = {
+  externalStoreManaged: {
+    message:
+      "Managed in the connected Shopify or WooCommerce store; change it there and it syncs here",
+    status: 409,
+  },
+} satisfies ErrorMap
+
 export const possibleErrorsOnMutatingResource = {
   notFound,
   businessError,
   ...possibleIdempotencyErrors,
+} satisfies ErrorMap
+
+/** Reindex with parameters while a processing run is already active. */
+export const possibleErrorsOnReindexingResource = {
+  ...possibleErrorsOnMutatingResource,
+  conflict: {
+    message:
+      "File is being processed; parameters were not applied. Retry when processingRun finishes.",
+    status: 409,
+  },
 } satisfies ErrorMap
 
 const decisionValidationErrors = {
@@ -317,8 +376,15 @@ export const possibleErrorsOnReadingWithBody = {
   businessError,
 } satisfies ErrorMap
 
+/** A body-filtered read that counts (`broadcasts.previewAudience`). */
+export const possibleErrorsOnCountingWithBody = {
+  ...possibleErrorsOnReadingWithBody,
+  countTimeout,
+} satisfies ErrorMap
+
 /** Starting a product import: one import per workspace (409), file checks (404/422). */
 export const possibleErrorsOnStartingProductImport = {
+  ...externalStoreManagedErrors,
   notFound,
   businessError,
   // Reading the file's headers when `columnMap` is omitted.
@@ -440,9 +506,27 @@ export const possibleErrorsOnSendingCapiTestEvent = {
   },
 } satisfies ErrorMap
 
+/** Syncing WhatsApp routing roles: Meta's lookup can fail (502). */
+export const possibleErrorsOnSyncingRoutingRoles = {
+  ...possibleErrorsOnMutatingResource,
+  routingRolesUnavailable: {
+    message: "Meta did not return the routing roles. Try again.",
+    status: 502,
+  },
+} satisfies ErrorMap
+
 /** Cursor-paged list: a cursor that does not decode is a 400. */
 export const possibleErrorsOnListingWithCursor = {
   ...possibleErrorsOnListingResource,
+  invalidCursor: {
+    message: "The cursor is invalid. Start again without a cursor.",
+    status: 400,
+  },
+} satisfies ErrorMap
+
+/** Cursor-paged children of one resource: the parent can also be absent. */
+export const possibleErrorsOnFindingWithCursor = {
+  ...possibleErrorsOnFindingResource,
   invalidCursor: {
     message: "The cursor is invalid. Start again without a cursor.",
     status: 400,
@@ -552,15 +636,37 @@ const appointmentDeleteBlocked = {
   status: 409,
 }
 
+const invalidAppointmentConversation = {
+  message: "Appointment conversation does not belong to the contact",
+  status: 400,
+}
+
+const appointmentCalendarInactive = {
+  message: "Appointment calendar is inactive",
+  status: 409,
+}
+
 export const possibleErrorsOnBookingAppointment = {
   notFound,
   businessError,
+  invalidAppointmentConversation,
   slotUnavailable,
   appointmentAvailabilityChanged,
   appointmentAlreadyScheduled,
   appointmentNotCancellable,
   appointmentDeleteBlocked,
   ...possibleIdempotencyErrors,
+} satisfies ErrorMap
+
+/**
+ * `appointments.createBookingLink`: an inactive calendar is a 409
+ * `appointmentCalendarInactive`; with `send=true` the message send can also
+ * fail like `messages.create` (`validation` 422 is in `commonApiErrors`).
+ */
+export const possibleErrorsOnCreatingBookingLink = {
+  notFound,
+  appointmentCalendarInactive,
+  ...possibleErrorsOnCreatingResource,
 } satisfies ErrorMap
 
 /**
@@ -971,9 +1077,16 @@ const invalidCustomFieldValue = {
   status: 400,
 }
 
+const invalidFieldOperation = {
+  message:
+    "The operation or its value does not fit this field's type; the message names the reason.",
+  status: 400,
+}
+
 export const possibleErrorsOnWritingContactFields = {
   ...possibleErrorsOnMutatingResource,
   invalidCustomFieldValue,
+  invalidFieldOperation,
 } satisfies ErrorMap
 
 /** Create-or-update by identifier: unknown `id:` contact (404), phone taken (422). */
@@ -992,12 +1105,6 @@ export const possibleErrorsOnCreatingContact = {
   notFound,
   invalidCustomFieldValue,
 } satisfies ErrorMap
-
-/** A bot-field value that does not fit the field's type. */
-const invalidFieldOperation = {
-  message: "The value does not fit this bot field's type.",
-  status: 400,
-}
 
 export const possibleErrorsOnCreatingBotField = {
   ...possibleErrorsOnCreatingResource,
@@ -1026,4 +1133,338 @@ export const possibleErrorsOnDeletingTemplateResource = {
 export const possibleErrorsOnCreatingInFolder = {
   ...possibleErrorsOnCreatingResource,
   notFound,
+} satisfies ErrorMap
+
+/**
+ * Vendor create/update enforce `Vendor_workspaceId_name_key`
+ * (`vendorService` in packages/business/src/vendor/service.ts).
+ */
+const productVendorErrors = {
+  productVendorDuplicated: {
+    message: "A vendor with this name already exists",
+    status: 400,
+  },
+  productVendorNameRequired: {
+    message: "Vendor name is required",
+    status: 400,
+  },
+} satisfies ErrorMap
+
+export const possibleErrorsOnCreatingProductVendor = {
+  ...externalStoreManagedErrors,
+  ...possibleErrorsOnCreatingResource,
+  ...productVendorErrors,
+} satisfies ErrorMap
+
+export const possibleErrorsOnMutatingProductVendor = {
+  ...externalStoreManagedErrors,
+  ...possibleErrorsOnMutatingResource,
+  ...productVendorErrors,
+} satisfies ErrorMap
+
+/**
+ * Place category create/update enforce unique names per workspace
+ * (`placeCategoryService` in packages/business/src/place-near-me).
+ */
+const placeCategoryErrors = {
+  placeCategoryDuplicated: {
+    message: "A place category with this name already exists",
+    status: 409,
+  },
+  placeCategoryNameRequired: {
+    message: "Place category name is required",
+    status: 400,
+  },
+} satisfies ErrorMap
+
+export const possibleErrorsOnCreatingPlaceCategory = {
+  ...possibleErrorsOnCreatingResource,
+  ...placeCategoryErrors,
+} satisfies ErrorMap
+
+export const possibleErrorsOnMutatingPlaceCategory = {
+  ...possibleErrorsOnMutatingResource,
+  ...placeCategoryErrors,
+} satisfies ErrorMap
+
+/** `ecommerceSettingsService.update` refuses a Pro setting the plan lacks. */
+export const possibleErrorsOnUpdatingEcommerceSettings = {
+  ...possibleErrorsOnMutatingResource,
+  ecommerceProFeatureRequired: {
+    message: "This setting needs a Pro plan",
+    status: 403,
+  },
+  paymentProviderNotConnected: {
+    message: "Connect this payment provider in Settings → Integrations first",
+    status: 400,
+  },
+  paymentCurrencyUnsupported: {
+    message: "The payment provider does not take payments in this currency",
+    status: 400,
+  },
+  externalStoreNotConnected: {
+    message:
+      "Connect the Shopify or WooCommerce store before switching the store source to it",
+    status: 400,
+  },
+} satisfies ErrorMap
+
+/**
+ * `orderService.place` (packages/business/src/order/service.ts) refuses an
+ * order with these codes; see `packages/business/src/order/errors.ts`.
+ */
+/** Why a discount code cannot be used on an order. */
+const discountCodeUseErrors = {
+  discountCodeNotFound: {
+    message: "This discount code does not exist",
+    status: 404,
+  },
+  discountCodeInactive: {
+    message: "This discount code is turned off",
+    status: 400,
+  },
+  discountCodeNotStarted: {
+    message: "This discount code is not valid yet",
+    status: 400,
+  },
+  discountCodeExpired: {
+    message: "This discount code has expired",
+    status: 400,
+  },
+  discountCodeUsageLimitReached: {
+    message: "This discount code has been used up",
+    status: 400,
+  },
+  discountCodeAlreadyUsed: {
+    message: "This discount code can be used once per customer",
+    status: 400,
+  },
+  discountCodeNotEligible: {
+    message: "This discount code is not available to this customer",
+    status: 400,
+  },
+  discountCodeMinimumNotMet: {
+    message: "The order does not meet the discount code's minimum",
+    status: 400,
+  },
+  discountCodeNotApplicable: {
+    message: "The discount code does not apply to anything in the order",
+    status: 400,
+  },
+} satisfies ErrorMap
+
+export const possibleErrorsOnCreatingDiscountCode = {
+  ...externalStoreManagedErrors,
+  ...possibleErrorsOnCreatingResource,
+  discountCodeDuplicated: {
+    message: "A discount code with this name already exists",
+    status: 409,
+  },
+} satisfies ErrorMap
+
+export const possibleErrorsOnMutatingDiscountCode = {
+  ...externalStoreManagedErrors,
+  ...possibleErrorsOnMutatingResource,
+  discountCodeDuplicated: {
+    message: "A discount code with this name already exists",
+    status: 409,
+  },
+} satisfies ErrorMap
+
+export const possibleErrorsOnPlacingOrder = {
+  ...possibleErrorsOnMutatingResource,
+  ...discountCodeUseErrors,
+  orderEmpty: { message: "An order needs at least one item", status: 400 },
+  orderingUnavailable: {
+    message: "The store is not taking orders right now",
+    status: 400,
+  },
+  orderProductUnavailable: {
+    message: "A product in the order is not available",
+    status: 400,
+  },
+  orderOutOfStock: {
+    message: "A product in the order is out of stock",
+    status: 400,
+  },
+  orderBelowMinimum: {
+    message: "The order is below the store minimum",
+    status: 400,
+  },
+  orderBelowVendorMinimum: {
+    message: "The items of a vendor are below its minimum order",
+    status: 400,
+  },
+  orderShippingTypeUnavailable: {
+    message: "The store does not offer this shipping type",
+    status: 400,
+  },
+  paymentMethodUnavailable: {
+    message: "The store does not take this payment method",
+    status: 400,
+  },
+  orderPaymentContactRequired: {
+    message: "An order paid online needs a contact",
+    status: 400,
+  },
+} satisfies ErrorMap
+
+/**
+ * A store's Stripe or PayPal refusing or not answering — see
+ * `packages/business/src/payment-provider/errors.ts`. `data.provider` says
+ * which, `data.providerCode` the provider's own code.
+ */
+const paymentProviderErrors = {
+  paymentProviderNotConnected: {
+    message: "Connect this payment provider in Settings → Integrations first",
+    status: 400,
+  },
+  paymentProviderCredentialsRejected: {
+    message: "The payment provider refused the credentials",
+    status: 400,
+  },
+  paymentProviderRejected: {
+    message: "The payment provider refused the request",
+    status: 400,
+  },
+  paymentProviderUnavailable: {
+    message: "The payment provider is not answering; try again shortly",
+    status: 503,
+  },
+  paymentAmountUnsupported: {
+    message: "The payment provider cannot charge this amount exactly",
+    status: 400,
+  },
+} satisfies ErrorMap
+
+/** Connecting or disconnecting a store's Stripe or PayPal. */
+export const possibleErrorsOnConnectingPaymentProvider = {
+  ...possibleErrorsOnMutatingResource,
+  ...paymentProviderErrors,
+  stripePlatformNotConfigured: {
+    message: "Stripe Connect is not set up on this platform",
+    status: 400,
+  },
+  stripeAccountAlreadyConnected: {
+    message: "This Stripe account is connected to another workspace",
+    status: 409,
+  },
+  stripeSecretKeyInvalid: {
+    message:
+      "Not a Stripe secret key: paste sk_live_…, sk_test_… or a restricted rk_… key",
+    status: 400,
+  },
+  paymentProviderInUse: {
+    message:
+      "Open orders still need this payment account; complete or cancel them first",
+    status: 409,
+  },
+} satisfies ErrorMap
+
+/** Accept/ship/conclude/cancel: a move the order's status does not allow. */
+export const possibleErrorsOnTransitioningOrder = {
+  ...externalStoreManagedErrors,
+  ...possibleErrorsOnMutatingResource,
+  ...paymentProviderErrors,
+  orderInvalidStatusTransition: {
+    message: "The order's current status does not allow this change",
+    status: 409,
+  },
+  orderAwaitingPayment: {
+    message: "The order is waiting for its online payment",
+    status: 409,
+  },
+  orderRefundFailed: {
+    message:
+      "The payment could not be refunded, so the order was not cancelled",
+    status: 502,
+  },
+  orderPaymentProcessing: {
+    message: "A payment for this order is still being processed",
+    status: 409,
+  },
+} satisfies ErrorMap
+
+/** Deleting an order: a paid online order is cancelled (refunded) instead. */
+export const possibleErrorsOnDeletingOrder = {
+  ...externalStoreManagedErrors,
+  ...possibleErrorsOnDeletingResource,
+  ...paymentProviderErrors,
+  orderPaidOnline: {
+    message: "The order was paid online; cancel it to refund the payment",
+    status: 409,
+  },
+} satisfies ErrorMap
+
+/** Opening the provider's page for an order still waiting for its payment. */
+export const possibleErrorsOnStartingOrderPayment = {
+  ...possibleErrorsOnMutatingResource,
+  ...paymentProviderErrors,
+  orderPaymentNotOpen: {
+    message: "This order cannot be paid online now",
+    status: 409,
+  },
+  orderPaymentContactRequired: {
+    message: "An order paid online needs a contact",
+    status: 400,
+  },
+} satisfies ErrorMap
+
+/**
+ * Pipeline writes can fail with three 409s of their own. oRPC matches a thrown
+ * error to its declaration by code and exact status, so they are declared here
+ * rather than folded into `businessError`. The body-level idempotency conflict
+ * has its own code: `idempotencyKeyReused` already means a reused
+ * `Idempotency-Key` header (422).
+ */
+export const possibleErrorsOnMutatingPipeline = {
+  notFound,
+  businessError,
+  stageBusy: {
+    message: "The stage is being processed in the background",
+    status: 409,
+  },
+  pipelineItemLimitReached: {
+    message: "The contact already has the maximum number of open items",
+    status: 409,
+  },
+  pipelineItemIdempotencyKeyConflict: {
+    message: "This idempotency key was already used for another contact",
+    status: 409,
+  },
+  ...possibleIdempotencyErrors,
+} satisfies ErrorMap
+
+/** Connect, sync and disconnect of the Shopify store source. */
+export const possibleErrorsOnShopify = {
+  ...possibleErrorsOnMutatingResource,
+  shopifyNotConnected: {
+    message: "Connect a Shopify store first",
+    status: 400,
+  },
+  shopifyCredentialsInvalid: {
+    message: "Shopify did not accept these credentials",
+    status: 400,
+  },
+  shopifySyncInProgress: {
+    message: "A Shopify sync is already running",
+    status: 409,
+  },
+} satisfies ErrorMap
+
+/** Connect, sync and disconnect of the WooCommerce store source. */
+export const possibleErrorsOnWooCommerce = {
+  ...possibleErrorsOnMutatingResource,
+  woocommerceNotConnected: {
+    message: "Connect a WooCommerce store first",
+    status: 400,
+  },
+  woocommerceCredentialsInvalid: {
+    message: "WooCommerce did not accept this connection",
+    status: 400,
+  },
+  woocommerceSyncInProgress: {
+    message: "A WooCommerce sync is already running",
+    status: 409,
+  },
 } satisfies ErrorMap

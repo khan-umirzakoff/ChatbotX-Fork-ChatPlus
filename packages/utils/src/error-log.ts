@@ -50,6 +50,7 @@ export const errorLogProviders = z.enum([
   "moosend",
   // productivity
   "google-sheets",
+  "external-request",
   "google-calendar",
   "google-ads",
   // AI vendors. Hand-listed rather than derived: the source of truth
@@ -64,6 +65,7 @@ export const errorLogProviders = z.enum([
   "claude",
   "deepseek",
   "openrouter",
+  "muse",
   "openai-compatible",
 ])
 
@@ -115,6 +117,7 @@ export const errorLogProviderLabels = {
   moosend: "Moosend",
   // productivity
   "google-sheets": "Google sheets",
+  "external-request": "External request",
   "google-calendar": "Google calendar",
   "google-ads": "Google Ads",
   // AI vendors — the same names the builder's provider picker shows
@@ -124,6 +127,7 @@ export const errorLogProviderLabels = {
   claude: "Claude",
   deepseek: "DeepSeek",
   openrouter: "OpenRouter",
+  muse: "Muse",
   "openai-compatible": "OpenAI Compatible",
 } as const satisfies Record<ErrorLogProvider, string>
 

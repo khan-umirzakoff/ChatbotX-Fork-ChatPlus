@@ -86,6 +86,9 @@ const READ_ONLY_TOKEN_ALLOWED_POST_PATHS = new Set<string>([
   ADS_CAMPAIGNS_INSIGHTS_PATH,
   // Tag-id -> name lookup only: a primary-key read, no writes.
   FILTER_VALUE_LABELS_TOKEN_PATH,
+  // Template previews: reads that use POST for their body.
+  "/v1/templates/dependencies-preview",
+  "/v1/templates/locked-resources",
 ])
 
 /**
@@ -185,12 +188,28 @@ export const workspaceAccessDenialOrpcError = (
  */
 export const BROADCAST_STOP_TOKEN_PATH = "/v1/broadcasts/{id}/stop"
 
+/**
+ * Stopping a Marketing Messages campaign must stay possible on a trial-expired
+ * or over-limit workspace, like the builder's `stopMarketingMessageAction`
+ * (`workspaceActionClientAllowExpired`). It only stops work and never touches
+ * Meta. Gate-only allow-list: a `read_only` token still cannot call it.
+ */
+export const MARKETING_MESSAGE_STOP_TOKEN_PATH =
+  "/v1/marketing-messages/campaigns/{id}/stop"
+
 const READ_ONLY_POST_PATHS = new Set<string>([
   CONVERSATIONS_LIST_POST_PATH,
   FILTER_VALUE_LABELS_POST_PATH,
   FILTER_VALUE_LABELS_TOKEN_PATH,
   BROADCAST_STOP_TOKEN_PATH,
+  MARKETING_MESSAGE_STOP_TOKEN_PATH,
   BROADCAST_AUDIENCE_PREVIEW_TOKEN_PATH,
+  // Template uninstall and its cancel remove or give back copies: a
+  // delete/cancel-type action, open on a trial-expired workspace like the UI
+  // (invariant 14). Trial gate only — they are writes, never read_only-token.
+  "/v1/template-installations/{id}/uninstall",
+  "/v1/template-installations/{id}/uninstall/cancel",
+  "/v1/templates/{id}/installers/{installerId}/uninstall",
 ])
 
 export async function assertWorkspaceOwnerAccessForMethod(props: {

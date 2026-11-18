@@ -51,6 +51,7 @@ vi.mock("@/features/analytics/components/analytics-nav", () => ({
 }))
 
 vi.mock("@chatbotx.io/business", () => ({
+  templateInstallIntentService: { clear: vi.fn(async () => undefined) },
   isWorkspaceScheduledForDeletion: (
     workspace:
       | { scheduledDeletionAt?: Date | string | null }
@@ -60,6 +61,9 @@ vi.mock("@chatbotx.io/business", () => ({
   inboxService: {
     distinctConnectedChannels: vi.fn(async () => []),
     find: vi.fn(async () => ({ markReadOnOutbound: false })),
+  },
+  integrationWebchatService: {
+    findByIdForWorkspace: vi.fn(async () => ({})),
   },
   platformCredentialService: {
     resolveForOwner: vi.fn(async () => null),
@@ -158,10 +162,6 @@ vi.mock(
     UpdateWebchatForm: () => null,
   }),
 )
-
-vi.mock("@/features/integration-webchat/queries", () => ({
-  findIntegrationWebchat: vi.fn(async () => ({})),
-}))
 
 vi.mock(
   "@/features/integration-instagram/components/update-instagram-form",

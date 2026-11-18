@@ -109,9 +109,16 @@ const POST_VERB_OVERRIDES: Record<string, string> = {
 }
 
 // Sub-paths that are actions themselves (not nouns), collapse to group:action (2-level)
-const ACTION_SUBPATHS = new Set(["block", "unblock", "reset"])
+const ACTION_SUBPATHS = new Set(["block", "unblock", "reset", "reindex"])
 // Singleton resources — GET on the collection returns a single object, use "get" not "list"
-const SINGLETON_RESOURCES = new Set(["workspaces", "response-sla"])
+// One per workspace: `GET /v1/shopify` (and `/v1/woocommerce`) reads the
+// connection, not a list.
+const SINGLETON_RESOURCES = new Set([
+  "workspaces",
+  "response-sla",
+  "shopify",
+  "woocommerce",
+])
 // Two-segment singleton resources that have a read AND a write route on the
 // same path (`GET`/`PATCH /v1/workspace/settings`): the method picks the verb,
 // otherwise both would derive the same command name and one would be dropped.
@@ -119,6 +126,7 @@ const METHOD_VERBED_SINGLETON_PATHS = new Set([
   "workspace/settings",
   "messenger/templates/{id}",
   "products/meta-catalog",
+  "ecommerce/settings",
 ])
 // Collections under a resource that take both a list (GET) and a create (POST)
 // on the same path, which the generic naming would collapse into one command.
@@ -193,8 +201,16 @@ const COMMAND_NAME_OVERRIDES: Readonly<Record<string, string>> = {
     "instagram-channels:settings:edit",
   "PATCH /v1/inboxes/{inboxId}/ai-handover/settings": "inboxes:settings:edit",
   "PATCH /v1/bot-fields/{idOrName}": "bot-fields:edit",
+  // Same path as GET/PUT/DELETE `integrations:find-by-ai`; without this the
+  // PATCH would be silently dropped as a duplicate command name.
+  "PATCH /v1/integrations/ai/{provider}": "integrations:update-ai",
   "DELETE /v1/analytics/flows/{flowId}/stats": "analytics:reset-flow-stats",
   "POST /v1/decision-connections/{id}/test": "decision-connections:test",
+  // Derives to `whatsapp-channels:sync:add`, the name of
+  // `POST /v1/whatsapp-channels/{id}/templates/sync`; without this one of the
+  // two would be silently dropped.
+  "POST /v1/whatsapp-channels/{id}/routing-roles/sync":
+    "whatsapp-channels:routing-roles:sync",
   "POST /v1/ads/campaigns": "ads:create-campaign",
   "POST /v1/ads/conversion-rules": "ads:create-conversion-rule",
   "PATCH /v1/ads/conversion-rules/{id}": "ads:update-conversion-rule",
@@ -208,6 +224,53 @@ const COMMAND_NAME_OVERRIDES: Readonly<Record<string, string>> = {
   "GET /v1/mini-apps/{id}/whatsapp-preview": "mini-apps:whatsapp-preview",
   "GET /v1/conversations/{conversationId}/messages/{messageId}/flow-response":
     "conversations:flow-response:get",
+  // Pipeline actions are verbs on the pipeline or item, not sub-resources to "add".
+  "POST /v1/pipelines/{id}/duplicate": "pipelines:duplicate",
+  "POST /v1/pipelines/{id}/stages/reorder": "pipelines:stages:reorder",
+  "POST /v1/pipelines/{id}/items/{itemId}/move": "pipelines:item:move",
+  "POST /v1/pipelines/{id}/items/{itemId}/transfer": "pipelines:item:transfer",
+  "GET /v1/pipelines/{id}/stats": "pipelines:stats",
+  "GET /v1/pipelines/{id}/stage-totals": "pipelines:stage-totals",
+  // Template share/analytics/retry are verbs on the template or install.
+  "GET /v1/templates/{id}/link": "templates:link",
+  "PUT /v1/templates/{id}/share": "templates:share",
+  "POST /v1/templates/{id}/share/rotate": "templates:rotate-share",
+  "GET /v1/templates/{id}/analytics": "templates:analytics",
+  "GET /v1/templates/{id}/installers": "templates:installers",
+  "GET /v1/templates/{id}/installers/{installerId}/uninstall-preview":
+    "templates:uninstall-preview",
+  "POST /v1/templates/{id}/installers/{installerId}/uninstall":
+    "templates:uninstall-installer",
+  "GET /v1/template-installations/{id}/uninstall-preview":
+    "template-installations:uninstall-preview",
+  "POST /v1/template-installations/{id}/uninstall":
+    "template-installations:uninstall",
+  "POST /v1/template-installations/{id}/uninstall/cancel":
+    "template-installations:cancel-uninstall",
+  "POST /v1/template-installations/{id}/retry": "template-installations:retry",
+  "POST /v1/template-installations/{id}/sync": "template-installations:sync",
+  "GET /v1/template-installations/{id}/syncs": "template-installations:syncs",
+  "GET /v1/template-installations/{id}/syncs/{syncId}":
+    "template-installations:sync-detail",
+  "POST /v1/template-installations/{id}/backups/{backupId}/restore":
+    "template-installations:restore-backup",
+  // Order status moves are verbs on the order, not sub-resources to "add".
+  "POST /v1/orders/{id}/accept": "orders:accept",
+  "POST /v1/orders/{id}/ship": "orders:ship",
+  "POST /v1/orders/{id}/conclude": "orders:conclude",
+  "POST /v1/orders/{id}/cancel": "orders:cancel",
+  "GET /v1/marketing-messages/campaigns": "marketing-messages:list-campaigns",
+  "POST /v1/marketing-messages/campaigns": "marketing-messages:create-campaign",
+  "GET /v1/marketing-messages/campaigns/{id}":
+    "marketing-messages:get-campaign",
+  "PUT /v1/marketing-messages/campaigns/{id}":
+    "marketing-messages:update-campaign",
+  "DELETE /v1/marketing-messages/campaigns/{id}":
+    "marketing-messages:delete-campaign",
+  "GET /v1/marketing-messages/audiences": "marketing-messages:list-audiences",
+  "POST /v1/marketing-messages/audiences": "marketing-messages:create-audience",
+  "DELETE /v1/marketing-messages/audiences/{id}":
+    "marketing-messages:delete-audience",
 }
 
 export function pathAndMethodToCommandName(

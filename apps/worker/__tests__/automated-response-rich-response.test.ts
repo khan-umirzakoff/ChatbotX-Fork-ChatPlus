@@ -64,7 +64,12 @@ const richResponseFormatMock = vi.hoisted(() =>
 
 vi.mock("@chatbotx.io/ai", () => ({
   aiProviders: { openai: "openai" },
-  aiTimeouts: { aiTotal: 30_000, aiStep: 10_000, aiChunk: 5000 },
+  aiTimeouts: {
+    aiTotal: 30_000,
+    aiStep: 10_000,
+    aiFirstChunk: 5000,
+    aiChunk: 5000,
+  },
   helpTexts: {
     richResponseFormat: richResponseFormatMock,
     unavailable: "Sorry, I cannot help right now.",
@@ -81,6 +86,8 @@ vi.mock("@chatbotx.io/ai", () => ({
     urlReader: "urlReader",
   },
   toolPrefixes: { enum: { sys: "sys", file: "file", fn: "fn", mcp: "mcp" } },
+  toFinalStepTextStream: vi.fn((stream: unknown) => stream),
+  toStepSeparatedTextStream: vi.fn((stream: unknown) => stream),
   appendFabricationGuard: (p: string) => p,
   appendHandoffPolicy: (p: string) => p,
   appendKnowledgeBaseGuard: (p: string) => p,
@@ -124,7 +131,7 @@ vi.mock("ai", () => ({
     textStream: emptyAsyncIterable(),
     usage: Promise.resolve({ totalTokens: 0 }),
   })),
-  stepCountIs: vi.fn(() => () => false),
+  isStepCount: vi.fn(() => () => false),
 }))
 
 vi.mock(
@@ -319,7 +326,7 @@ describe("replyByAI — rich mode routing", () => {
       aiAgent: makeAIAgent({ isRichResponse: true }),
     })
 
-    const systemPrompt = vi.mocked(streamText).mock.calls[0]?.[0].system
+    const systemPrompt = vi.mocked(streamText).mock.calls[0]?.[0].instructions
 
     expect(systemPrompt).toContain("RICH RESPONSE FORMAT (REQUIRED)")
     expect(systemPrompt).toContain("Output must be exactly one JSON object")

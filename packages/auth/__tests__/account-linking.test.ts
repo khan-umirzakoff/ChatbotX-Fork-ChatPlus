@@ -4,8 +4,9 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
  * Hoisted mock handles. `vi.mock` factories run before module top-level, so any
  * value a factory references must be created with `vi.hoisted`.
  */
-const { betterAuthMock } = vi.hoisted(() => ({
+const { betterAuthMock, revokeAllForUser } = vi.hoisted(() => ({
   betterAuthMock: vi.fn((config: Record<string, unknown>) => config),
+  revokeAllForUser: vi.fn(async () => undefined),
 }))
 
 // Mirrors trusted-origins-build-phase.test.ts's approach: stub `betterAuth` to
@@ -31,6 +32,9 @@ vi.mock("better-auth/next-js", () => ({
 vi.mock("better-auth/plugins", () => ({
   anonymous: () => ({ id: "anonymous" }),
   bearer: () => ({ id: "bearer" }),
+  genericOAuth: () => ({ id: "generic-oauth" }),
+  jwt: () => ({ id: "jwt" }),
+  mcp: () => ({ id: "mcp" }),
   magicLink: () => ({ id: "magic-link" }),
   oneTimeToken: () => ({ id: "one-time-token" }),
 }))
@@ -41,6 +45,14 @@ vi.mock("@chatbotx.io/database/client", () => ({
 
 vi.mock("@chatbotx.io/database/schema", () => ({
   accountModel: {},
+  jwkModel: {},
+  oauthAccessTokenModel: {},
+  oauthClientAssertionModel: {},
+  oauthClientModel: {},
+  oauthClientResourceModel: {},
+  oauthConsentModel: {},
+  oauthRefreshTokenModel: {},
+  oauthResourceModel: {},
   sessionModel: {},
   userModel: {},
   verificationModel: {},
@@ -53,11 +65,14 @@ vi.mock("@chatbotx.io/business", () => ({
     findPlatform: vi.fn(),
   },
   resolveTenantSettingsByDomain: vi.fn(),
+  invitationService: { findActiveByCode: vi.fn().mockResolvedValue(null) },
+  mobileRefreshTokenService: { revokeAllForUser },
 }))
 
 vi.mock("@chatbotx.io/utils", () => ({
   createId: () => "test-id",
   getPublicOriginFromRequest: vi.fn(),
+  parseEnvBool: (value: unknown) => value === true || value === "true",
 }))
 
 vi.mock("@chatbotx.io/mail", () => ({
@@ -89,6 +104,35 @@ describe("createAuth account linking", () => {
     vi.unstubAllEnvs()
   })
 
+  test("revokes mobile refresh tokens after a successful password reset", async () => {
+    const { createAuth } = await import("../src/server")
+    createAuth({})
+    const config = betterAuthMock.mock.calls.at(-1)?.[0] as {
+      emailAndPassword: {
+        onPasswordReset: (input: { user: { id: string } }) => Promise<void>
+      }
+    }
+
+    await config.emailAndPassword.onPasswordReset({ user: { id: "user-1" } })
+
+    expect(revokeAllForUser).toHaveBeenCalledWith({ userId: "user-1" })
+  })
+
+  test("surfaces mobile refresh-token revocation failure after password reset", async () => {
+    revokeAllForUser.mockRejectedValueOnce(new Error("database unavailable"))
+    const { createAuth } = await import("../src/server")
+    createAuth({})
+    const config = betterAuthMock.mock.calls.at(-1)?.[0] as {
+      emailAndPassword: {
+        onPasswordReset: (input: { user: { id: string } }) => Promise<void>
+      }
+    }
+
+    await expect(
+      config.emailAndPassword.onPasswordReset({ user: { id: "user-1" } }),
+    ).rejects.toThrow("database unavailable")
+  })
+
   test("trusts social providers, allows linking into an unverified local user, and keeps emails matched", async () => {
     const { createAuth } = await import("../src/server")
     createAuth({})
@@ -104,7 +148,7 @@ describe("createAuth account linking", () => {
     }
     const linking = config.account.accountLinking
     expect(linking.enabled).toBe(true)
-    expect(linking.trustedProviders).toEqual(["google", "facebook"])
+    expect(linking.trustedProviders).toEqual(["google", "facebook", "apple"])
     expect(linking.requireLocalEmailVerified).toBe(false)
     expect(linking.allowDifferentEmails).toBeUndefined()
   })

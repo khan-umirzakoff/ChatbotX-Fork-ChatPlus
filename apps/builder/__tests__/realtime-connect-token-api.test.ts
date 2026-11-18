@@ -52,9 +52,16 @@ const { authorizedAPI, mocks, workspaceAuthorizedMidddleware } = vi.hoisted(
 vi.mock("@/orpc", () => ({ authorizedAPI }))
 vi.mock("@/middlewares/auth", () => ({ workspaceAuthorizedMidddleware }))
 vi.mock("@chatbotx.io/business", () => ({
+  conversationMemberScope: {
+    resolve: vi.fn(({ userId }: { userId: string }) => ({
+      chatScope: "all",
+      teamIds: [],
+      userId,
+    })),
+  },
   resolveBroadcastSecret: mocks.resolveBroadcastSecret,
 }))
-vi.mock("@chatbotx.io/partysocket-config/auth", () => ({
+vi.mock("@chatbotx.io/realtime-protocol/auth", () => ({
   signMemberConnectToken: mocks.signMemberConnectToken,
 }))
 
@@ -77,39 +84,26 @@ describe("mintWorkspaceConnectTokenAuthenticatedAPI", () => {
       context: {
         user: { id: "u_1" },
         workspace: { id: "ws_1" },
+        workspaceMember: { permissions: {} },
+        requestIssuedAtMs: 1_700_000_000_000,
       },
     })
 
-    expect(mocks.signMemberConnectToken).toHaveBeenCalledWith(
-      { workspaceId: "ws_1", userId: "u_1" },
-      "the-secret",
-    )
-    expect(mocks.resolveBroadcastSecret).toHaveBeenCalledWith()
-    expect(result).toEqual({ token: "signed-token" })
-  })
-
-  test("route is registered under the expected workspace-scoped path", () => {
     expect(mocks.state.routeConfig).toMatchObject({
       method: "GET",
       path: "/workspaces/{workspaceId}/realtime/connect-token",
     })
-  })
-
-  test("stays a read method so a trial-expired or MAC-limited cloud workspace can still open its inbox socket", async () => {
-    // `workspaceAuthorizedMidddleware` refuses any method outside
-    // GET/HEAD/DELETE for a blocked owner (invariant #14). Every channel's
-    // realtime feed connects through this token, so a mutation method here
-    // would black out the live inbox — not just calling.
-    const { isWorkspaceMutationMethod } = await import(
-      "@/lib/workspace/authorize-workspace-access"
+    expect(mocks.signMemberConnectToken).toHaveBeenCalledWith(
+      {
+        workspaceId: "ws_1",
+        userId: "u_1",
+        chatScope: "all",
+        teamIds: [],
+        issuedAtMs: 1_700_000_000_000,
+      },
+      "the-secret",
     )
-
-    expect(
-      isWorkspaceMutationMethod(
-        mocks.state.routeConfig?.method as Parameters<
-          typeof isWorkspaceMutationMethod
-        >[0],
-      ),
-    ).toBe(false)
+    expect(mocks.resolveBroadcastSecret).toHaveBeenCalledWith()
+    expect(result).toEqual({ token: "signed-token" })
   })
 })

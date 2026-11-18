@@ -3,10 +3,13 @@ import {
   metaCatalogItemRepository,
   productRepository,
 } from "@chatbotx.io/database/repositories"
+import { logger } from "../logger"
 import {
   getProductCategoryPathKey,
   productCategoryService,
 } from "../product-category"
+import { listLockedIds } from "../template/installed-resource.service"
+import { vendorService } from "../vendor/service"
 
 export type MetaCatalogImportProduct = {
   retailerId: string
@@ -26,7 +29,21 @@ export type MetaCatalogImportProduct = {
   inventoryPolicy?: "dont_track" | "track"
   allowOutOfStockPurchase?: boolean
   images?: Array<{ url: string; type: "link" }>
-  isActive?: boolean
+  status?: "active" | "draft"
+}
+
+/** Lower-cased vendor name → vendor id, as `vendorService.resolveByNames` returns. */
+type VendorIds = Map<string, string>
+
+const toVendorValues = (
+  product: MetaCatalogImportProduct,
+  vendorIds: VendorIds,
+): { vendorId?: string | null } => {
+  if (product.vendor === undefined) {
+    return {}
+  }
+  const name = product.vendor?.trim()
+  return { vendorId: name ? (vendorIds.get(name.toLowerCase()) ?? null) : null }
 }
 
 const toProductValues = (
@@ -35,6 +52,7 @@ const toProductValues = (
     string,
     { categoryId: string; subcategoryId: string | null }
   >,
+  vendorIds: VendorIds,
   includeSku: boolean,
 ) => {
   let categoryPath:
@@ -67,7 +85,7 @@ const toProductValues = (
       : { longDescription: product.longDescription }),
     ...(categoryPath ?? {}),
     ...(product.tags === undefined ? {} : { tags: product.tags }),
-    ...(product.vendor === undefined ? {} : { vendor: product.vendor }),
+    ...toVendorValues(product, vendorIds),
     ...(product.inventoryQuantity === undefined
       ? {}
       : { inventoryQuantity: product.inventoryQuantity }),
@@ -78,7 +96,7 @@ const toProductValues = (
       ? {}
       : { allowOutOfStockPurchase: product.allowOutOfStockPurchase }),
     ...(product.images === undefined ? {} : { images: product.images }),
-    ...(product.isActive === undefined ? {} : { isActive: product.isActive }),
+    ...(product.status === undefined ? {} : { status: product.status }),
   }
 }
 
@@ -197,12 +215,35 @@ class MetaCatalogImportService {
         createMissing: true,
         tx,
       })
+      const vendorIds = await vendorService.resolveByNames({
+        workspaceId: input.workspaceId,
+        names: uniqueProducts.flatMap((product) => product.vendor ?? []),
+        createMissing: true,
+        tx,
+      })
+      // Template-locked products keep their content: skip them rather than
+      // fail the whole catalog import.
+      const lockedProductIds = new Set(
+        await listLockedIds({
+          workspaceId: input.workspaceId,
+          resourceKind: "product",
+          resourceIds: existingProducts.map(({ productId }) => productId),
+          tx,
+        }),
+      )
       for (const { product, productId } of existingProducts) {
+        if (lockedProductIds.has(productId)) {
+          logger.info(
+            { workspaceId: input.workspaceId, productId },
+            "Meta Catalog import skipped a template-locked product",
+          )
+          continue
+        }
         const updated = await productRepository.update(
           {
             workspaceId: input.workspaceId,
             productId,
-            values: toProductValues(product, categoryPaths, false),
+            values: toProductValues(product, categoryPaths, vendorIds, false),
           },
           tx,
         )
@@ -219,7 +260,7 @@ class MetaCatalogImportService {
               {
                 workspaceId: input.workspaceId,
                 products: missingProducts.map((product) =>
-                  toProductValues(product, categoryPaths, true),
+                  toProductValues(product, categoryPaths, vendorIds, true),
                 ),
               },
               tx,

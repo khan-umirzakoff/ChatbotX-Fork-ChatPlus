@@ -65,6 +65,19 @@ export const router = {
   couponsAPI: lazy(() =>
     import("@/features/coupons/api").then((m) => ({ default: m.couponsAPI })),
   ),
+  pipelinesAPI: lazy(() =>
+    import("@/features/pipelines/api").then((m) => ({
+      default: m.pipelinesAPI,
+    })),
+  ),
+  pollsAPI: lazy(() =>
+    import("@/features/polls/api").then((m) => ({ default: m.pollsAPI })),
+  ),
+  placesNearMeAPI: lazy(() =>
+    import("@/features/places-near-me/api").then((m) => ({
+      default: m.placesNearMeAPI,
+    })),
+  ),
   leaderboardsAPI: lazy(() =>
     import("@/features/leaderboards/api").then((m) => ({
       default: m.leaderboardsAPI,

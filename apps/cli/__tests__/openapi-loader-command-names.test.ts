@@ -229,6 +229,34 @@ describe("pathAndMethodToCommandName — bot field reset", () => {
   })
 })
 
+describe("pathAndMethodToCommandName — AI file tools", () => {
+  test("search, chunk listing and reindex get distinct, readable commands", () => {
+    expect(pathAndMethodToCommandName("/v1/ai-files/search", "POST")).toBe(
+      "ai-files:search",
+    )
+    expect(pathAndMethodToCommandName("/v1/ai-files/{id}/chunks", "GET")).toBe(
+      "ai-files:chunks:list",
+    )
+    expect(
+      pathAndMethodToCommandName("/v1/ai-files/{id}/reindex", "POST"),
+    ).toBe("ai-files:reindex")
+  })
+
+  test("do not collide with the existing ai-files commands", () => {
+    const names = [
+      ["/v1/ai-files", "GET"],
+      ["/v1/ai-files", "POST"],
+      ["/v1/ai-files/{id}", "GET"],
+      ["/v1/ai-files/{id}", "DELETE"],
+      ["/v1/ai-files/search", "POST"],
+      ["/v1/ai-files/{id}/chunks", "GET"],
+      ["/v1/ai-files/{id}/reindex", "POST"],
+    ].map(([path, method]) => pathAndMethodToCommandName(path, method))
+
+    expect(new Set(names).size).toBe(names.length)
+  })
+})
+
 describe("pathAndMethodToCommandName — response SLA singleton", () => {
   test("reads, replaces and deletes the one policy without colliding", () => {
     expect(pathAndMethodToCommandName("/v1/response-sla", "get")).toBe(
@@ -365,5 +393,208 @@ describe("pathAndMethodToCommandName — repeating broadcasts", () => {
     expect(existing).not.toContain("broadcasts:preview-recurrence")
     expect(existing).not.toContain("broadcasts:run-groups:list")
     expect(existing).not.toContain("broadcasts:occurrences:list")
+  })
+})
+
+describe("pathAndMethodToCommandName — ecommerce", () => {
+  // A command whose derived name collides is silently dropped by the CLI, so
+  // every ecommerce operation is pinned here.
+  test("orders, vendors and store settings each get their own command", () => {
+    const names = [
+      pathAndMethodToCommandName("/v1/orders", "GET"),
+      pathAndMethodToCommandName("/v1/orders/{id}", "GET"),
+      pathAndMethodToCommandName("/v1/orders", "POST"),
+      pathAndMethodToCommandName("/v1/orders/{id}/accept", "POST"),
+      pathAndMethodToCommandName("/v1/orders/{id}/ship", "POST"),
+      pathAndMethodToCommandName("/v1/orders/{id}/conclude", "POST"),
+      pathAndMethodToCommandName("/v1/orders/{id}/cancel", "POST"),
+      pathAndMethodToCommandName("/v1/orders/{id}", "DELETE"),
+      pathAndMethodToCommandName("/v1/open-hours", "GET"),
+      pathAndMethodToCommandName("/v1/open-hours", "POST"),
+      pathAndMethodToCommandName("/v1/open-hours/{id}", "PATCH"),
+      pathAndMethodToCommandName("/v1/open-hours/{id}", "DELETE"),
+      pathAndMethodToCommandName(
+        "/v1/product-categories/{id}/visible",
+        "PATCH",
+      ),
+      pathAndMethodToCommandName("/v1/product-vendors", "GET"),
+      pathAndMethodToCommandName("/v1/product-vendors", "POST"),
+      pathAndMethodToCommandName("/v1/product-vendors/{id}", "PATCH"),
+      pathAndMethodToCommandName("/v1/product-vendors/{id}", "DELETE"),
+      pathAndMethodToCommandName("/v1/ecommerce/settings", "GET"),
+      pathAndMethodToCommandName("/v1/ecommerce/settings", "PATCH"),
+      pathAndMethodToCommandName("/v1/webshop/link", "GET"),
+      pathAndMethodToCommandName("/v1/carts/{identifier}", "GET"),
+      pathAndMethodToCommandName("/v1/discount-codes", "GET"),
+      pathAndMethodToCommandName("/v1/discount-codes/{id}", "GET"),
+      pathAndMethodToCommandName("/v1/discount-codes/generate-code", "GET"),
+      pathAndMethodToCommandName("/v1/discount-codes", "POST"),
+      pathAndMethodToCommandName("/v1/discount-codes/{id}", "PATCH"),
+      pathAndMethodToCommandName("/v1/discount-codes/{id}/active", "PATCH"),
+      pathAndMethodToCommandName("/v1/discount-codes/{id}", "DELETE"),
+      pathAndMethodToCommandName("/v1/discount-codes/validate", "POST"),
+      pathAndMethodToCommandName("/v1/ecommerce/analytics", "GET"),
+    ]
+    expect(names).toEqual([
+      "orders:list",
+      "orders:get",
+      "orders:create",
+      "orders:accept",
+      "orders:ship",
+      "orders:conclude",
+      "orders:cancel",
+      "orders:delete",
+      "open-hours:list",
+      "open-hours:create",
+      "open-hours:update",
+      "open-hours:delete",
+      "product-categories:visible:update",
+      "product-vendors:list",
+      "product-vendors:create",
+      "product-vendors:update",
+      "product-vendors:delete",
+      "ecommerce:settings:get",
+      "ecommerce:settings:update",
+      "webshop:link",
+      "carts:get",
+      "discount-codes:list",
+      "discount-codes:get",
+      "discount-codes:generate-code",
+      "discount-codes:create",
+      "discount-codes:update",
+      "discount-codes:active:update",
+      "discount-codes:delete",
+      "discount-codes:validate",
+      "ecommerce:analytics",
+    ])
+    expect(new Set(names)).toHaveLength(names.length)
+  })
+})
+
+describe("pathAndMethodToCommandName — pipeline actions", () => {
+  test.each([
+    ["POST", "/v1/pipelines/{id}/duplicate", "pipelines:duplicate"],
+    ["POST", "/v1/pipelines/{id}/stages/reorder", "pipelines:stages:reorder"],
+    ["POST", "/v1/pipelines/{id}/items/{itemId}/move", "pipelines:item:move"],
+    [
+      "POST",
+      "/v1/pipelines/{id}/items/{itemId}/transfer",
+      "pipelines:item:transfer",
+    ],
+    ["GET", "/v1/pipelines/{id}/stats", "pipelines:stats"],
+  ])("%s %s is %s", (method, path, expected) => {
+    expect(pathAndMethodToCommandName(path, method)).toBe(expected)
+  })
+
+  test("creating an item and a stage keep their own commands", () => {
+    expect(pathAndMethodToCommandName("/v1/pipelines/{id}/items", "POST")).toBe(
+      "pipelines:item:add",
+    )
+    expect(
+      pathAndMethodToCommandName("/v1/pipelines/{id}/stages", "POST"),
+    ).toBe("pipelines:stage:add")
+  })
+})
+
+describe("pathAndMethodToCommandName — every pipelines operation", () => {
+  // Mirrors each `.route()` in apps/builder/src/features/pipelines/api/public*.ts.
+  // A derived name shared by two operations silently drops one CLI command.
+  const pipelineRoutes: [string, string][] = [
+    ["GET", "/v1/pipelines"],
+    ["GET", "/v1/pipelines/{id}"],
+    ["POST", "/v1/pipelines"],
+    ["PATCH", "/v1/pipelines/{id}"],
+    ["DELETE", "/v1/pipelines/{id}"],
+    ["POST", "/v1/pipelines/{id}/duplicate"],
+    ["POST", "/v1/pipelines/{id}/stages"],
+    ["PATCH", "/v1/pipelines/{id}/stages/{stageId}"],
+    ["DELETE", "/v1/pipelines/{id}/stages/{stageId}"],
+    ["POST", "/v1/pipelines/{id}/stages/reorder"],
+    ["GET", "/v1/pipelines/{id}/fields"],
+    ["POST", "/v1/pipelines/{id}/fields"],
+    ["PATCH", "/v1/pipelines/{id}/fields/{fieldId}"],
+    ["DELETE", "/v1/pipelines/{id}/fields/{fieldId}"],
+    ["GET", "/v1/pipelines/{id}/members"],
+    ["PUT", "/v1/pipelines/{id}/members/{workspaceMemberId}"],
+    ["DELETE", "/v1/pipelines/{id}/members/{workspaceMemberId}"],
+    ["GET", "/v1/pipelines/{id}/stats"],
+    ["GET", "/v1/contacts/{identifier}/pipeline-items"],
+    ["GET", "/v1/pipelines/{id}/items"],
+    ["GET", "/v1/pipelines/{id}/items/{itemId}"],
+    ["POST", "/v1/pipelines/{id}/items"],
+    ["PATCH", "/v1/pipelines/{id}/items/{itemId}"],
+    ["POST", "/v1/pipelines/{id}/items/{itemId}/move"],
+    ["POST", "/v1/pipelines/{id}/items/{itemId}/transfer"],
+    ["DELETE", "/v1/pipelines/{id}/items/{itemId}"],
+    ["GET", "/v1/pipelines/{id}/items/{itemId}/comments"],
+    ["POST", "/v1/pipelines/{id}/items/{itemId}/comments"],
+    ["DELETE", "/v1/pipelines/{id}/items/{itemId}/comments/{commentId}"],
+    ["POST", "/v1/pipelines/{id}/items/{itemId}/attachments"],
+    [
+      "DELETE",
+      "/v1/pipelines/{id}/items/{itemId}/attachments/{mediaLibraryFileId}",
+    ],
+    ["GET", "/v1/pipelines/{id}/items/{itemId}/activity"],
+  ]
+
+  test("no two pipelines operations derive the same command name", () => {
+    const names = pipelineRoutes.map(([method, path]) =>
+      pathAndMethodToCommandName(path, method),
+    )
+
+    expect(new Set(names)).toHaveLength(names.length)
+    for (const name of names) {
+      expect(name).not.toBe("")
+    }
+  })
+
+  test("pipelines names do not collide with the contacts commands", () => {
+    const contactNames = [
+      pathAndMethodToCommandName("/v1/contacts", "GET"),
+      pathAndMethodToCommandName("/v1/contacts/{identifier}", "GET"),
+    ]
+    const pipelineNames = pipelineRoutes.map(([method, path]) =>
+      pathAndMethodToCommandName(path, method),
+    )
+
+    for (const name of contactNames) {
+      expect(pipelineNames).not.toContain(name)
+    }
+  })
+})
+
+describe("pathAndMethodToCommandName — AI provider integration", () => {
+  test("PATCH (AI Reply switch) does not collide with the GET `find-by-ai` command", () => {
+    expect(
+      pathAndMethodToCommandName("/v1/integrations/ai/{provider}", "GET"),
+    ).toBe("integrations:find-by-ai")
+    expect(
+      pathAndMethodToCommandName("/v1/integrations/ai/{provider}", "PATCH"),
+    ).toBe("integrations:update-ai")
+  })
+})
+
+describe("pathAndMethodToCommandName — WhatsApp routing roles", () => {
+  test("syncing routing roles does not collide with the template sync", () => {
+    const names = [
+      pathAndMethodToCommandName(
+        "/v1/whatsapp-channels/{id}/routing-roles",
+        "GET",
+      ),
+      pathAndMethodToCommandName(
+        "/v1/whatsapp-channels/{id}/routing-roles/sync",
+        "POST",
+      ),
+      pathAndMethodToCommandName(
+        "/v1/whatsapp-channels/{id}/templates/sync",
+        "POST",
+      ),
+    ]
+    expect(names).toEqual([
+      "whatsapp-channels:routing-roles:list",
+      "whatsapp-channels:routing-roles:sync",
+      "whatsapp-channels:sync:add",
+    ])
+    expect(new Set(names)).toHaveLength(names.length)
   })
 })

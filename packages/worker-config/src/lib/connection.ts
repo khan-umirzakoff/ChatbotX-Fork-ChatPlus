@@ -45,6 +45,12 @@ export const queueGroupByName: Record<QueueName, QueueGroup> = {
   profileSnapshot: "bulk",
   // Leaderboard scoring: bursty (livestream comments) but never latency-critical.
   leaderboard: "bulk",
+  // FB Marketing Messages campaign steps: long-running Meta sends, isolated
+  // from the shared schedule queue so they never hold its slots.
+  marketingMessage: "bulk",
+  // Template install / sync / uninstall: long transactions, bursty on a
+  // widely installed template's save, never latency-critical.
+  template: "bulk",
 }
 
 function resolveGroupUrl(group: QueueGroup): string {
@@ -114,4 +120,6 @@ export const fakeQueue = {
   getWaitingCount: () => Promise.resolve(0),
   getPrioritizedCount: () => Promise.resolve(0),
   getDelayedCount: () => Promise.resolve(0),
+  getJobCounts: (..._types: string[]) =>
+    Promise.resolve<Record<string, number>>({}),
 }

@@ -1,5 +1,8 @@
 import {
   type ContactInfoType,
+  type PipelineActorKind,
+  type PipelineItemPriority,
+  type PipelineItemStatus,
   type TriggerEventType,
   triggerEventTypes,
 } from "@chatbotx.io/database/partials"
@@ -9,6 +12,10 @@ import type {
 } from "@chatbotx.io/sdk"
 import { withContactInboxMetadata } from "./contact-inbox-context"
 import type { DecisionFlowOrigin } from "./decision-flow-lineage"
+import type {
+  OrderStatusEventType,
+  PipelineEventType,
+} from "./event-type-registry"
 
 /** Channel-neutral voice-call event metadata carried to triggers/webhooks. */
 export type CallEventMetadata = { callId: string }
@@ -42,6 +49,85 @@ export type ShoppingCartSentMetadata = InboundCommerceEventMetadata & {
 }
 export type UserAskedAboutProductMetadata = InboundCommerceEventMetadata & {
   product: ResolvedInboundProductReference
+}
+
+/** A product as an order or cart event names it. */
+export type CommerceEventProduct = {
+  productId: string | null
+  variantId: string | null
+  name: string
+  /** The product's category and sub-category, for category conditions. */
+  categoryIds: string[]
+}
+
+/**
+ * An order event. There is no `sourceId`: `productOrdered` names every
+ * product of the order and its product filter is applied by the evaluator.
+ */
+export type OrderEventMetadata = {
+  orderId: string
+  orderNumber: number
+  status: string
+  source: string
+  total: number
+  currency: string
+  discountCode: string | null
+  channel: string | null
+  conversationId: string | null
+  products: Array<
+    CommerceEventProduct & { quantity: number; lineTotal: number }
+  >
+}
+
+/**
+ * A pipeline item event, also the outbound webhook JSON. `sourceId` is the
+ * pipeline id so a trigger can be pinned to one pipeline.
+ */
+export type PipelineItemEventMetadata = {
+  sourceId: string
+  pipelineId: string
+  pipelineName: string
+  pipelineReferenceName: string
+  itemId: string
+  itemNumber: number
+  title: string
+  contactId: string
+  stageId: string
+  stageName: string
+  status: PipelineItemStatus
+  statusLabel: string
+  priority: PipelineItemPriority
+  value: number | null
+  currency: string
+  dueDate: string | null
+  actorKind: PipelineActorKind
+  actorUserId: string | null
+  fromStageId?: string
+  fromStageName?: string
+  fromPipelineId?: string
+  previousStatus?: PipelineItemStatus
+  previousValue?: number | null
+  previousPriority?: PipelineItemPriority
+}
+
+/** A product added to or taken out of the web shop cart. */
+export type CartItemEventMetadata = {
+  channel: string | null
+  product: CommerceEventProduct
+  /** The product's quantity in the cart after the change. */
+  quantity: number
+  /** How many were added (positive) or taken out (negative). */
+  change: number
+}
+
+/** A cart left without checking out for the store's reminder delay. */
+export type CartAbandonedMetadata = {
+  channel: string | null
+  conversationId: string | null
+  itemCount: number
+  total: number
+  currency: string
+  items: Array<CommerceEventProduct & { quantity: number }>
 }
 
 /**
@@ -265,6 +351,34 @@ export abstract class BaseEventEmitter {
     })
   }
 
+  /** The contact blocked the bot on `channel` (today only Telegram reports it). */
+  async contactBlockedBot(
+    workspaceId: string,
+    contactId: string,
+    channel: string,
+    contactInboxId?: string,
+  ): Promise<void> {
+    await this.emit(triggerEventTypes.enum.contactBlockedBot, {
+      workspaceId,
+      contactId,
+      metadata: withContactInboxMetadata({ channel }, contactInboxId),
+    })
+  }
+
+  /** The contact unblocked the bot on `channel` (or restarted it after blocking). */
+  async contactUnblockedBot(
+    workspaceId: string,
+    contactId: string,
+    channel: string,
+    contactInboxId?: string,
+  ): Promise<void> {
+    await this.emit(triggerEventTypes.enum.contactUnblockedBot, {
+      workspaceId,
+      contactId,
+      metadata: withContactInboxMetadata({ channel }, contactInboxId),
+    })
+  }
+
   async conversationArchived(
     workspaceId: string,
     contactId: string,
@@ -401,6 +515,77 @@ export abstract class BaseEventEmitter {
     contactInboxId?: string,
   ): Promise<void> {
     await this.emit(triggerEventTypes.enum.shoppingCartSent, {
+      workspaceId,
+      contactId,
+      metadata: withContactInboxMetadata(metadata, contactInboxId),
+    })
+  }
+
+  async orderStatus(
+    eventType: OrderStatusEventType,
+    workspaceId: string,
+    contactId: string,
+    metadata: OrderEventMetadata,
+    contactInboxId?: string,
+  ): Promise<void> {
+    await this.emit(eventType, {
+      workspaceId,
+      contactId,
+      metadata: withContactInboxMetadata(metadata, contactInboxId),
+    })
+  }
+
+  async pipelineItem(
+    eventType: PipelineEventType,
+    workspaceId: string,
+    contactId: string,
+    metadata: PipelineItemEventMetadata,
+    contactInboxId?: string,
+  ): Promise<void> {
+    await this.emit(eventType, {
+      workspaceId,
+      contactId,
+      metadata: withContactInboxMetadata(metadata, contactInboxId),
+    })
+  }
+
+  async productOrdered(
+    workspaceId: string,
+    contactId: string,
+    metadata: OrderEventMetadata,
+    contactInboxId?: string,
+  ): Promise<void> {
+    await this.emit(triggerEventTypes.enum.productOrdered, {
+      workspaceId,
+      contactId,
+      metadata: withContactInboxMetadata(metadata, contactInboxId),
+    })
+  }
+
+  async cartItemChanged(
+    eventType:
+      | typeof triggerEventTypes.enum.productAddedToCart
+      | typeof triggerEventTypes.enum.productRemovedFromCart
+      | typeof triggerEventTypes.enum.categoryAddedToCart,
+    workspaceId: string,
+    contactId: string,
+    metadata: CartItemEventMetadata,
+    contactInboxId?: string,
+  ): Promise<void> {
+    await this.emit(eventType, {
+      workspaceId,
+      contactId,
+      metadata: withContactInboxMetadata(metadata, contactInboxId),
+    })
+  }
+
+  async cartAbandoned(
+    workspaceId: string,
+    contactId: string,
+    metadata: CartAbandonedMetadata,
+    contactInboxId?: string,
+  ): Promise<void> {
+    await this.emit(triggerEventTypes.enum.cartAbandoned, {
       workspaceId,
       contactId,
       metadata: withContactInboxMetadata(metadata, contactInboxId),

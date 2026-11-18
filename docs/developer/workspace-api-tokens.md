@@ -4,6 +4,9 @@ This document is for developers adding or changing workspace-token (public
 API) surfaces. Workspace API tokens are bearer credentials, so their storage,
 lookup, and scoping rules are security boundaries.
 
+
+For MCP OAuth 2.1 access-token behavior and workspace selection, see
+[MCP OAuth 2.1](../mcp-oauth.md).
 ## Token model
 
 Tokens live in the `WorkspaceApiToken` table
@@ -57,6 +60,54 @@ on the mutations. See `docs/working-hours.md`.
 The `appointments` scope existed in the enum and UI registry for some time
 before any endpoint used it — see "Appointments scope — endpoint-to-scope
 table" below for the full surface now behind it.
+
+## AI files search and reindex
+
+AI file procedures use the `automation` scope. `GET aiFiles.listChunks` is
+available to both `full` and `read_only` tokens; it is the safe way to inspect
+stored chunks. `POST aiFiles.search` and `POST aiFiles.reindex` require a
+`full` token: search creates an embedding using the workspace provider and
+reindex queues extraction, chunking, and embedding work. Each is limited to
+approximately 30 requests per minute per workspace (five per ten seconds).
+
+Uploads (`aiFiles.create`) are tracked the same way: a `processingRun` with
+`status = error` and `error = enqueueFailed` in a `201` response means the file
+was stored but its processing job could not be queued — call
+`aiFiles.reindex` with that `id`. A run with `stale = true` has had no worker
+heartbeat for an hour and can be replaced by a new `aiFiles.reindex`.
+
+After `aiFiles.reindex`, poll `aiFiles.get`. `processingRun.status` reports
+the extract/chunk/enqueue run (`success` does not mean all embeddings have
+finished); wait for both `processingRun.status = success` and
+`processingStatus = success` before relying on search results. A coalesced
+reindex response means an active run already exists and no second job was
+queued.
+
+### Testing a question and tuning chunking
+
+`POST aiFiles.search` with `fileIds` (or `agentId`) returns, per result, the
+chunk position (`chunkIndex`), the score, whether it passed the threshold
+(`passedThreshold`, which follows the optional trial `similarityThreshold`) and
+`agentVisible` — whether the agent's own tool would return it using only the
+searched files (provider default threshold, top five; never affected by the
+trial threshold). Send `expectedText` (up to 200 characters, case-insensitive,
+accents matter) to get `expected.verdict` in the same call without an extra
+embedding: `inTopResults`, `foundButLowRank` or `notInAnyChunk`. An answer split
+across two chunks reports `notInAnyChunk`.
+
+`aiFiles.listChunks` pages follow document order; pass `fromChunkIndex` to open
+the first page at a position. `cursor` is opaque — copy `nextCursor`, never
+build one.
+
+`aiFiles.reindex` accepts `chunkingConfig` (`strategy` `auto|prose`, `chunkSize`
+200–2000, `overlapSize` up to half of `chunkSize`, `tabularHeaderRow` 1–20).
+Omit it to keep the stored parameters, send `null` to reset to the defaults.
+The effective values are `chunkingConfig` on `aiFiles.get`. Changing them
+re-embeds the whole file on the workspace's embedding key and the file is not
+searchable until it finishes. Sending parameters while a run is active returns
+`409 conflict` and applies nothing; without parameters the call coalesces.
+Chunks stored before positions existed have `chunkIndex = null` and
+`indexOutdated = true`; reindex numbers them.
 
 ## The default token and `{{api_key}}`
 
@@ -213,17 +264,33 @@ The full endpoint-to-scope mapping is generated, not hand-maintained here —
 see `/api/spec.json` (built from `apps/builder/src/routers/public.ts`) for
 the authoritative, current list, and
 `apps/builder/__tests__/*-public-scope.test.ts` for the tests that enforce
-each feature's scope assignment at compile/test time. The 18
+each feature's scope assignment at compile/test time. The 20
 `*-public-scope.test.ts` files are: `ads`, `analytics`, `appointments`,
 `automation`, `broadcasts`, `channels-and-integrations`, `channels`,
-`contacts`, `conversations`, `coupons`, `email-topics`, `error-logs`,
-`integrations`, `media`, `minigames`, `product-categories`, `products` and
-`sequences`.
+`contacts`, `conversations`, `coupons`, `ecommerce` (orders, product vendors,
+store settings), `email-topics`, `error-logs`, `integrations`, `media`,
+`minigames`, `pipelines`, `product-categories`, `products` and `sequences`.
+
+The `polls` scope covers the Poll Manager routes
+(`apps/builder/src/features/polls/api/public.ts`, router key `polls`:
+`GET/POST /v1/polls`, `GET/PATCH/DELETE /v1/polls/{id}`,
+`POST /v1/polls/bulk-delete`, `GET /v1/polls/{id}/links`,
+`GET /v1/polls/{id}/analytics`). A `read_only` token can list, get, fetch
+links and analytics but is blocked on create, update and delete.
 
 What follows are the scope-assignment decisions and gotchas that aren't
 derivable from the code or those tests — read before adding or reassigning
 an endpoint's scope.
 
+- **Pipelines** — scope `pipelines`. A workspace token is governed by its
+  scope, not by per-pipeline member grants (those only limit signed-in
+  members), so a `pipelines` token can read and manage every pipeline,
+  including `setMember`. Attachments reference media-library files:
+  uploading one (`mediaLibrary.createUploadUrl` → `mediaLibrary.createFile`)
+  needs the `media` scope as well. `GET /v1/contacts/{identifier}/pipeline-items`
+  lives under the contacts path but is a `pipelines` operation. Changes made
+  through a token are attributed to the token (`actorKind: workspaceToken`).
+- **Templates** — scope `templates`. Covers `/v1/templates*` (create, update, delete, share link, rotate, analytics, `installers` — who installed it, by opaque reference, with the workspace name shown only when the installer allowed it — and publisher-side uninstall), `/v1/template-previews/{id}` (the path id is a share token) and `/v1/template-installations*` (install — an already installed template is updated in place unless `allowDuplicate` —, retry, status, resources, `update` for auto-update and the publisher-uninstall consent, `sync` and its history, `restoreBackup`, and `uninstall` with its preview). A token acts with its own power: a `full` token may use every template category, a `read_only` token only reads (including the uninstall previews). An install made through a token has no installing user (`installedBy` is null); the worker therefore skips the per-user permission re-check that member installs get. Installs reach only workspaces of the template's tenant. `flows.export` stays under `automation`.
 - **Contacts** — Contacts' public surface is split by concern across
   submodules — some in `features/contacts/api/public/` (`crud.ts`,
   `tags.ts`, `custom-fields.ts`, `bulk.ts`, `export.ts`,
@@ -717,6 +784,10 @@ Two invariants specific to this scope:
 Existing scoped tokens do not gain the new scope; only `null`-scoped tokens
 can reach it.
 
+The `places` scope covers the Places Near Me endpoints (place categories and
+locations). Tokens with an explicit scope list must be edited to add it;
+tokens with `scopes: null` get it automatically.
+
 ## Token management
 
 - Creating and revoking tokens requires the caller to be a workspace
@@ -754,7 +825,8 @@ approved as UI-only.
   builder), never the stored key.
 - `contacts.export` `fields` need a kind prefix: `sys:<column>` (firstName,
   lastName, fullName, email, phoneNumber, gender, source, lastReadAt,
-  blockedAt, contactId, sourceUserId = WhatsApp BSUID), `cus:<customFieldId>`,
+  blockedAt, contactId, sourceUserId = WhatsApp BSUID, adIds = every ad id the
+  contact came from, oldest first, at most `CONTACT_AD_IDS_LIMIT` = 50), `cus:<customFieldId>`,
   `tag:<tagId>`. A key without a prefix is rejected (422).
 - `POST /v1/contacts/filter-value-labels` is a pure read (id lists too large
   for a query string) that names the tag ids a `contactFilter` references; it is

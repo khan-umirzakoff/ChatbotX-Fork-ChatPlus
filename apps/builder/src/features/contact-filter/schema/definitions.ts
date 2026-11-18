@@ -32,6 +32,11 @@ export type ContactFilterOptionSource =
   | "inboxes"
   | "tags"
   | "flows"
+  | "flowNodes"
+  | "keywords"
+  | "whatsappFlows"
+  | "emailTopics"
+  | "ads"
   | "broadcasts"
   | "sequences"
   | "reflinks"
@@ -39,6 +44,7 @@ export type ContactFilterOptionSource =
   | "ctwaConversionTypes"
   | "channelPosts"
   | "workingHours"
+  | "products"
 
 /**
  * Where a contact-filter field may be used. `contacts` is every list/audience
@@ -214,6 +220,11 @@ export const CONTACT_FILTER_FIELD_DEFINITIONS = [
     optionSource: "none",
   },
   {
+    field: contactFilterFields.enum.lastDelivered,
+    schemaKind: "datetime",
+    optionSource: "none",
+  },
+  {
     field: contactFilterFields.enum.lastSeen,
     schemaKind: "datetime",
     optionSource: "none",
@@ -262,6 +273,31 @@ export const CONTACT_FILTER_FIELD_DEFINITIONS = [
     field: contactFilterFields.enum.entryPointsLinks,
     schemaKind: "multiSelect",
     optionSource: "reflinks",
+  },
+  {
+    field: contactFilterFields.enum.completedWhatsAppFlows,
+    schemaKind: "multiSelect",
+    optionSource: "whatsappFlows",
+  },
+  {
+    field: contactFilterFields.enum.sentMessage,
+    schemaKind: "text",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.keywordsReceived,
+    schemaKind: "multiSelect",
+    optionSource: "keywords",
+  },
+  {
+    field: contactFilterFields.enum.executedFlow,
+    schemaKind: "multiSelect",
+    optionSource: "flows",
+  },
+  {
+    field: contactFilterFields.enum.executedStep,
+    schemaKind: "multiSelect",
+    optionSource: "flowNodes",
   },
   {
     field: contactFilterFields.enum.consecutiveAiFailures,
@@ -342,6 +378,26 @@ export const CONTACT_FILTER_FIELD_DEFINITIONS = [
     schemaKind: "boolean",
     optionSource: "none",
   },
+  {
+    field: contactFilterFields.enum.emailSent,
+    schemaKind: "multiSelect",
+    optionSource: "emailTopics",
+  },
+  {
+    field: contactFilterFields.enum.emailDelivered,
+    schemaKind: "multiSelect",
+    optionSource: "emailTopics",
+  },
+  {
+    field: contactFilterFields.enum.emailOpened,
+    schemaKind: "multiSelect",
+    optionSource: "emailTopics",
+  },
+  {
+    field: contactFilterFields.enum.emailClicked,
+    schemaKind: "multiSelect",
+    optionSource: "emailTopics",
+  },
   // --- Ads (CTWA / Google) ---
   {
     field: contactFilterFields.enum.fromCtwaAd,
@@ -354,9 +410,55 @@ export const CONTACT_FILTER_FIELD_DEFINITIONS = [
     optionSource: "none",
   },
   {
+    field: contactFilterFields.enum.clickedAd,
+    schemaKind: "multiSelect",
+    optionSource: "ads",
+  },
+  {
     field: contactFilterFields.enum.ctwaConversion,
     schemaKind: "multiSelect",
     optionSource: "ctwaConversionTypes",
+  },
+  // --- Ecommerce: orders (not cancelled, store currency) and the web shop cart ---
+  {
+    field: contactFilterFields.enum.totalSpent,
+    schemaKind: "number",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.numberOfOrders,
+    schemaKind: "number",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.bought,
+    schemaKind: "datetime",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.boughtItems,
+    schemaKind: "select",
+    optionSource: "products",
+  },
+  {
+    field: contactFilterFields.enum.shoppingCartIsEmpty,
+    schemaKind: "boolean",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.shoppingCartContainsItems,
+    schemaKind: "select",
+    optionSource: "products",
+  },
+  {
+    field: contactFilterFields.enum.shoppingCartSubtotal,
+    schemaKind: "number",
+    optionSource: "none",
+  },
+  {
+    field: contactFilterFields.enum.shoppingCartTotal,
+    schemaKind: "number",
+    optionSource: "none",
   },
   // --- System fields ---
   {

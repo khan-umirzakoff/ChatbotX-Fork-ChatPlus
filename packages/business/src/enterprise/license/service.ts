@@ -1,5 +1,7 @@
+import { licenseRepository } from "@chatbotx.io/database/repositories"
 import { decodeProtectedHeader, errors, importSPKI, jwtVerify } from "jose"
 import { isCloud, isEnterprise, keys } from "../../keys"
+import { logger } from "../../logger"
 import { LICENSE_ISSUER, LICENSE_PUBLIC_KEYS } from "./public-keys"
 import {
   type LicenseFeature,
@@ -13,7 +15,20 @@ const LICENSE_ALGORITHM = "EdDSA"
 const LICENSE_TOKEN_TYPE = "JWT"
 const DAY_IN_MS = 24 * 60 * 60 * 1000
 
-export type LicenseState = "valid" | "expired" | "invalid" | "missing"
+/**
+ * Days an expired license keeps its entitlements before the deployment falls
+ * back to the community feature set. Deliberately a source constant and not an
+ * env var: this is an MIT codebase, so an operator-tunable grace length would
+ * be an unbounded free-enterprise switch.
+ */
+export const LICENSE_GRACE_PERIOD_DAYS = 7
+const LICENSE_GRACE_PERIOD_MS = LICENSE_GRACE_PERIOD_DAYS * DAY_IN_MS
+
+export type LicenseState = "valid" | "grace" | "expired" | "invalid" | "missing"
+
+/** Whether a resolved state still unlocks enterprise features. */
+export const isLicenseEntitled = (state: LicenseState): boolean =>
+  state === "valid" || state === "grace"
 
 export interface LicenseStatus {
   customerName: string | null
@@ -21,6 +36,8 @@ export interface LicenseStatus {
   error: string | null
   expiresAt: string | null
   features: LicenseFeature[]
+  /** `exp` + the grace period; `null` when no signed claims were readable. */
+  graceEndsAt: string | null
   issuedAt: string | null
   keyId: string | null
   licenseId: string | null
@@ -36,7 +53,12 @@ export interface VerifyLicenseOptions {
   currentDate?: Date
 }
 
-let cachedLicense: Promise<LicenseStatus> | undefined
+/** How long a resolved status is reused before the DB is re-read. */
+const LICENSE_CACHE_TTL_MS = 60_000
+
+let cached: { status: LicenseStatus; readAt: number } | undefined
+let inFlight: Promise<LicenseStatus> | undefined
+let generation = 0
 
 const emptyLimits = (): LicenseLimits => ({
   maxWorkspaces: null,
@@ -72,6 +94,7 @@ const missingStatus = (): LicenseStatus => ({
   issuedAt: null,
   expiresAt: null,
   daysRemaining: null,
+  graceEndsAt: null,
   keyId: null,
   error: "LICENSE_KEY is not configured",
 })
@@ -89,6 +112,7 @@ const invalidStatus = (
   issuedAt: null,
   expiresAt: null,
   daysRemaining: null,
+  graceEndsAt: null,
   keyId,
   error: errorMessage(error),
 })
@@ -117,8 +141,11 @@ const statusFromPayload = ({
     )
   }
 
+  const graceEndsAtMs = parsed.exp * 1000 + LICENSE_GRACE_PERIOD_MS
+  const inGrace = state === "expired" && currentDate.getTime() < graceEndsAtMs
+
   return {
-    state,
+    state: inGrace ? "grace" : state,
     licenseId: parsed.licenseId,
     customerName: parsed.customerName,
     tier: parsed.tier,
@@ -127,6 +154,7 @@ const statusFromPayload = ({
     issuedAt: toIsoDate(parsed.iat),
     expiresAt: toIsoDate(parsed.exp),
     daysRemaining: calculateDaysRemaining(parsed.exp, currentDate),
+    graceEndsAt: new Date(graceEndsAtMs).toISOString(),
     keyId,
     error,
   }
@@ -193,7 +221,7 @@ export const verifyLicenseToken = async (
   }
 }
 
-const resolveAllowedTiers = ():
+export const resolveAllowedTiers = ():
   | readonly LicensePayload["tier"][]
   | undefined => {
   if (isCloud()) {
@@ -205,24 +233,123 @@ const resolveAllowedTiers = ():
   }
 }
 
-const resolveLicenseFromEnv = (): Promise<LicenseStatus> => {
-  const token = keys().LICENSE_KEY?.trim()
+const LICENSE_STATE_RANK: Record<LicenseState, number> = {
+  valid: 3,
+  grace: 2,
+  expired: 1,
+  invalid: 0,
+  missing: 0,
+}
 
-  if (!token) {
-    return Promise.resolve(missingStatus())
+export const isNewerLicense = (
+  candidate: LicenseStatus,
+  current: LicenseStatus,
+): boolean => {
+  const candidateRank = LICENSE_STATE_RANK[candidate.state]
+  const currentRank = LICENSE_STATE_RANK[current.state]
+  if (candidateRank !== currentRank) {
+    return candidateRank > currentRank
   }
 
-  return verifyLicenseToken(token, LICENSE_PUBLIC_KEYS, {
-    allowedTiers: resolveAllowedTiers(),
+  const candidateIssuedAt = Date.parse(candidate.issuedAt ?? "")
+  const currentIssuedAt = Date.parse(current.issuedAt ?? "")
+  if (candidateIssuedAt !== currentIssuedAt) {
+    return candidateIssuedAt > currentIssuedAt
+  }
+
+  return (
+    Date.parse(candidate.expiresAt ?? "") > Date.parse(current.expiresAt ?? "")
+  )
+}
+
+const readStoredToken = async (
+  licenseId: string,
+): Promise<string | undefined> => {
+  try {
+    return await licenseRepository.findTokenByLicenseId(licenseId)
+  } catch (err) {
+    // A fresh deployment reaches this before migrations run, and the DB can be
+    // down at boot. Neither may take enterprise features offline.
+    logger.warn({ err }, "license: could not read the stored license token")
+    return
+  }
+}
+
+const resolveLicense = async (): Promise<LicenseStatus> => {
+  const envToken = keys().LICENSE_KEY?.trim()
+  if (!envToken) {
+    return missingStatus()
+  }
+
+  const allowedTiers = resolveAllowedTiers()
+  const envStatus = await verifyLicenseToken(envToken, LICENSE_PUBLIC_KEYS, {
+    allowedTiers,
   })
+  if (!envStatus.licenseId) {
+    return envStatus
+  }
+
+  const storedToken = await readStoredToken(envStatus.licenseId)
+  if (!storedToken) {
+    return envStatus
+  }
+
+  const storedStatus = await verifyLicenseToken(
+    storedToken,
+    LICENSE_PUBLIC_KEYS,
+    { allowedTiers },
+  )
+  if (
+    storedStatus.state === "invalid" ||
+    storedStatus.licenseId !== envStatus.licenseId
+  ) {
+    logger.warn(
+      {
+        err: storedStatus.error,
+        licenseId: envStatus.licenseId,
+        state: storedStatus.state,
+      },
+      "license: ignoring an unusable stored license token",
+    )
+    return envStatus
+  }
+
+  return isNewerLicense(storedStatus, envStatus) ? storedStatus : envStatus
 }
 
 export const loadLicense = (): Promise<LicenseStatus> => {
-  if (!cachedLicense) {
-    cachedLicense = resolveLicenseFromEnv()
+  if (cached && Date.now() - cached.readAt < LICENSE_CACHE_TTL_MS) {
+    return Promise.resolve(cached.status)
   }
 
-  return cachedLicense
+  if (inFlight) {
+    return inFlight
+  }
+
+  const cacheGeneration = generation
+  let pending: Promise<LicenseStatus>
+  pending = resolveLicense()
+    .then((status) => {
+      if (generation === cacheGeneration) {
+        cached = { status, readAt: Date.now() }
+      }
+      return status
+    })
+    .finally(() => {
+      if (inFlight === pending) {
+        inFlight = undefined
+      }
+    })
+  inFlight = pending
+
+  return pending
+}
+
+/** Drop the TTL cache so the next read re-resolves immediately. */
+export const invalidateLicenseCache = (): void => {
+  generation += 1
+  cached = undefined
+  inFlight = undefined
 }
 
 export const getLicense = loadLicense
@@ -232,7 +359,7 @@ export const getLicenseStatus = loadLicense
 export const hasFeature = async (feature: LicenseFeature): Promise<boolean> => {
   const license = await getLicense()
 
-  return license.state === "valid" && license.features.includes(feature)
+  return isLicenseEntitled(license.state) && license.features.includes(feature)
 }
 
 export const getLimit = async (
@@ -240,7 +367,7 @@ export const getLimit = async (
 ): Promise<LicenseLimits[LicenseLimitKey] | undefined> => {
   const license = await getLicense()
 
-  if (license.state !== "valid") {
+  if (!isLicenseEntitled(license.state)) {
     return
   }
 

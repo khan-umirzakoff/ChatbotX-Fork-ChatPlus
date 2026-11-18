@@ -1,6 +1,33 @@
 import type { ButtonPayload } from "@chatbotx.io/flow-config"
 import { z } from "zod"
 import type { ChannelError } from "../channel-error"
+import { guessFileTypeFromMimeType } from "../util"
+import type { FlowResponseFile } from "./flow-response-file"
+import { EXTENSION_MIME_TYPES } from "./mime-types"
+
+export type MessageReferral = {
+  ref?: string | null
+  source?: string | null
+  type?: string | null
+  adId?: string | null
+  adTitle?: string | null
+  adBody?: string | null
+  sourceUrl?: string | null
+  sourcePlatform?: string | null
+  ctwaClid?: string | null
+  postId?: string | null
+  photoUrl?: string | null
+  videoUrl?: string | null
+  productId?: string | null
+  flowId?: string | null
+  gclid?: string | null
+  gbraid?: string | null
+  googleCampaignId?: string | null
+  googleAdGroupId?: string | null
+  googleAdId?: string | null
+  googleClickReceivedAt?: string | null
+  raw?: Record<string, unknown>
+}
 
 export type IncomingContact = {
   sourceId: string
@@ -46,6 +73,12 @@ export type IncomingContact = {
    * from the contact fields: callers persist it on the channel connection.
    */
   profileSnapshot?: ContactProfileSnapshot | null
+  /**
+   * Attribution the channel resolves by an API lookup instead of from the
+   * webhook (Zalo `dynamic_param`). Persisted on `ContactInbox.referral` by the
+   * worker, never on `Contact`.
+   */
+  referral?: MessageReferral | null
 }
 
 /**
@@ -280,6 +313,14 @@ export type ThreadControlReceiveInfo = {
    * delivery.
    */
   ownerRole?: ThreadControlRole | null
+  /**
+   * `false` when the delivery says nothing about who owns the thread, so it is
+   * stored but never recorded as a routing transition. WhatsApp: a partner's
+   * template echo — marketing, utility and authentication templates can be
+   * sent by any partner and "never change ownership" (Meta thread lifecycle).
+   * Absent = the delivery signals ownership as usual.
+   */
+  signalsOwnership?: boolean
 }
 
 export type ThreadControlWebhookEvent = {
@@ -471,6 +512,7 @@ export type IncomingMessage = {
     | MessageSharedPostEntity
     | MessageWhatsappCallEntity
     | MessageWhatsappCallPermissionReplyEntity
+    | MessageWhatsappPaymentMethodEntity
     | { [x: string]: unknown }
   attachments?: IncomingAttachment[]
   clientId?: string | null
@@ -482,6 +524,17 @@ export type MessageWhatsappFlowResponseEntity = {
   flowResponse: Record<string, unknown>
   flowToken: string | null
   decoded: ButtonPayload | null
+  /**
+   * The provider's id of the message that sent the Flow (WhatsApp: the
+   * reply's `context.id`), the `sourceId` of that outgoing message. Kept as
+   * received; absent when the provider gave none and on older messages.
+   */
+  contextMessageId?: string
+  /**
+   * Files attached to answers, by response key. Absent on messages stored
+   * before file ingestion existed and on responses without file answers.
+   */
+  files?: Record<string, FlowResponseFile[]>
 }
 
 /**
@@ -599,6 +652,24 @@ export type MessageWhatsappCallPermissionReplyEntity = {
   /** Unix seconds; absent for permanent grants. */
   expirationTimestamp?: number
   responseSource?: string
+}
+
+/**
+ * Carried on the message written when a contact confirms a one-click payment
+ * (`interactive.type: "payment_method"`). It only records the buyer's intent
+ * and the credential to charge: nothing here charges or settles the payment.
+ * The raw webhook object is kept verbatim for fields not modeled here.
+ */
+export type MessageWhatsappPaymentMethodEntity = {
+  type: "whatsapp_payment_method"
+  /** Meta's value, e.g. `offsite_card_pay`; `unknown` when it was missing. */
+  paymentMethod: string
+  lastFourDigits?: string
+  credentialId?: string
+  referenceId?: string
+  /** Unix seconds. */
+  paymentTimestamp?: number
+  raw: Record<string, unknown>
 }
 
 /**
@@ -782,6 +853,15 @@ export const getWhatsappFlowResponse = (
     : undefined
 }
 
+/** The ingested files of one response key; empty when the key has none. */
+export const getFlowResponseFiles = (
+  entity: Pick<MessageWhatsappFlowResponseEntity, "files">,
+  key: string,
+): FlowResponseFile[] =>
+  entity.files && Object.hasOwn(entity.files, key)
+    ? (entity.files[key] ?? [])
+    : []
+
 export const getWhatsappCallPermissionReply = (
   contentAttributes: unknown,
 ): MessageWhatsappCallPermissionReplyEntity | undefined => {
@@ -795,12 +875,27 @@ export const getWhatsappCallPermissionReply = (
     : undefined
 }
 
+export const getWhatsappPaymentMethod = (
+  contentAttributes: unknown,
+): MessageWhatsappPaymentMethodEntity | undefined => {
+  if (!contentAttributes || typeof contentAttributes !== "object") {
+    return
+  }
+  const attrs = contentAttributes as { type?: string }
+  return attrs.type === "whatsapp_payment_method"
+    ? (contentAttributes as MessageWhatsappPaymentMethodEntity)
+    : undefined
+}
+
 export const MessageEntitySchema = z.custom<IncomingMessage>(
   (data) => typeof data === "object",
 )
 
 export type IncomingAttachment = {
-  sourceId: string
+  // The provider's attachment id, or null when the channel's webhook does not
+  // carry one (a lazily-ingested attachment: the row is paired with the
+  // provider's media list later).
+  sourceId: string | null
   fileType: IncomingFileType
   mimeType: string
   originPath: string
@@ -809,6 +904,110 @@ export type IncomingAttachment = {
   width?: number | null
   height?: number | null
   name?: string
+  /**
+   * Set by the channel when the attachment arrived as a photo message, as
+   * opposed to an image sent as a document/file (a scan, an invoice) whose
+   * original the sender meant to keep. Only photos are re-encoded in storage.
+   * Not persisted.
+   */
+  isPhotoMessage?: boolean
+  /**
+   * Set when the channel already re-encoded the image before its first write
+   * (inline compression), so no background re-encode job is needed. Not
+   * persisted.
+   */
+  optimized?: boolean
+}
+
+/**
+ * The persisted form of `isPhotoMessage` (`Attachment.keepOriginal`): only an
+ * image sent as a file — not a photo message — keeps its original bytes.
+ * Other kinds have no opinion (null), except a `file` the channel explicitly
+ * marked as not a photo: its kind may be a guess (a pending attachment with an
+ * extension-less URL) and it can turn out to be an image once downloaded. The
+ * one place this rule lives; the webhook path and the history importers both
+ * call it.
+ */
+export const toKeepOriginal = (
+  attachment: Pick<IncomingAttachment, "fileType" | "isPhotoMessage">,
+): boolean | null => {
+  if (attachment.fileType === "image") {
+    return !attachment.isPhotoMessage
+  }
+  return attachment.fileType === "file" && attachment.isPhotoMessage === false
+    ? true
+    : null
+}
+
+const DEFERRABLE_ATTACHMENT_TYPES = ["image", "video", "audio", "file"] as const
+
+export type DeferrableAttachmentType =
+  (typeof DEFERRABLE_ATTACHMENT_TYPES)[number]
+
+/**
+ * Whether a channel's attachment type is plain media that can be fetched again
+ * later. Other types (templates, shares, stories, locations, fallbacks) are
+ * stored or handled at ingestion as before.
+ */
+export const isDeferrableAttachmentType = (
+  type: string,
+): type is DeferrableAttachmentType =>
+  (DEFERRABLE_ATTACHMENT_TYPES as readonly string[]).includes(type)
+
+const DEFAULT_MIME_TYPE_BY_KIND: Record<DeferrableAttachmentType, string> = {
+  image: "image/jpeg",
+  video: "video/mp4",
+  audio: "audio/mpeg",
+  file: "application/octet-stream",
+}
+
+const mimeTypeFromUrl = (url: string): string | undefined => {
+  try {
+    const extension = new URL(url).pathname.split(".").pop()?.toLowerCase()
+    return extension ? EXTENSION_MIME_TYPES[extension] : undefined
+  } catch {
+    return
+  }
+}
+
+/**
+ * An attachment ingested without downloading it: the provider's URL is kept as
+ * the reference (`originPath`) and the bytes are stored on first use. The size
+ * and dimensions are unknown until then. The MIME type and kind are a best
+ * guess from the URL and must agree with each other:
+ * - a webhook `file` takes the kind of its URL's MIME type, as the eager path
+ *   does with the real content (a JPEG sent as a file is an image);
+ * - an `image`/`video`/`audio` keeps its declared kind, and an extension that
+ *   contradicts it (a voice clip delivered as `.mp4`) falls back to the kind's
+ *   default MIME type.
+ *
+ * Null for a `file` whose URL does not tell what it is: its kind and MIME type
+ * decide where it shows up (an AI document reader looks for PDF/DOCX), so the
+ * caller downloads it at once, which reads the real content type.
+ */
+export const toPendingIncomingAttachment = (input: {
+  url: string
+  type: DeferrableAttachmentType
+}): IncomingAttachment | null => {
+  const fromUrl = mimeTypeFromUrl(input.url)
+  if (input.type === "file" && !fromUrl) {
+    return null
+  }
+  const mimeType =
+    fromUrl &&
+    (input.type === "file" || guessFileTypeFromMimeType(fromUrl) === input.type)
+      ? fromUrl
+      : DEFAULT_MIME_TYPE_BY_KIND[input.type]
+
+  return {
+    sourceId: null,
+    fileType:
+      input.type === "file" ? guessFileTypeFromMimeType(mimeType) : input.type,
+    mimeType,
+    originPath: input.url,
+    size: 0,
+    isPhotoMessage: input.type === "image",
+  }
 }
 
 export type OutgoingAttachment = {
@@ -825,6 +1024,9 @@ export type OutgoingAttachment = {
 export type ExternalMediaResult = {
   originPath: string
   size: number
+  /** Only set when the stored bytes were re-encoded here. */
+  mimeType?: string
+  optimized?: boolean
   width?: number
   height?: number
   name?: string
@@ -849,6 +1051,20 @@ export type MessageButtonTemplate = {
     }
   | {
       buttonType: "postback"
+      postback: string
+    }
+  | {
+      buttonType: "phoneNumber"
+      /** Dialable number in E.164 form. */
+      phoneNumber: string
+      /** Replayed on channels that cannot dial: the tap replies with the number. */
+      postback: string
+    }
+  | {
+      buttonType: "copyText"
+      /** Text a tap copies to the contact's clipboard (1–256 characters). */
+      copyText: string
+      /** Replayed on channels that cannot copy: the tap replies with the text. */
       postback: string
     }
 )
@@ -925,7 +1141,7 @@ export const URL_QUICK_REPLY_CAPABLE_CHANNELS: ReadonlySet<string> = new Set([
 export function getCanonicalReplyPayload(
   button: MessageButtonTemplate,
 ): string {
-  if (button.buttonType === "postback") {
+  if (button.buttonType !== "url") {
     return button.postback
   }
 

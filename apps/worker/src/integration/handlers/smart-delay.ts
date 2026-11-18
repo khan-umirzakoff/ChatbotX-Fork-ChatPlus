@@ -15,6 +15,8 @@ import {
 } from "@chatbotx.io/flow-config"
 import { createId } from "@chatbotx.io/utils"
 import {
+  type FlowJobPriorityOptions,
+  flowContinuationJobOptions,
   IntegrationJobAction,
   type IntegrationJobData,
   integrationQueue,
@@ -25,6 +27,8 @@ import { logger } from "../../lib/logger"
 type SmartDelayJobSpec = {
   name: IntegrationJobData["type"]
   data: IntegrationJobData
+  /** The resumed run's tier (`flowContinuationJobOptions`). */
+  opts: FlowJobPriorityOptions
 }
 
 type SmartDelayResumeJobExtras = {
@@ -44,15 +48,22 @@ const parseResumeMetadata = (
   return parsed.success ? parsed.data : undefined
 }
 
+const resolveResumeMetadata = (
+  row: SmartDelayRow,
+  extras?: SmartDelayResumeJobExtras,
+): MetadataPayload | undefined =>
+  extras?.metadata ?? parseResumeMetadata(row.metadata)
+
 export const buildSendFlowResumeJob = (
   row: SmartDelayRow,
   extras?: SmartDelayResumeJobExtras,
 ): SmartDelayJobSpec => {
-  const metadata = extras?.metadata ?? parseResumeMetadata(row.metadata)
+  const metadata = resolveResumeMetadata(row, extras)
   const appointmentId = extras?.appointmentId ?? row.appointmentId ?? undefined
 
   return {
     name: IntegrationJobAction.sendFlow,
+    opts: flowContinuationJobOptions(metadata),
     data: {
       type: IntegrationJobAction.sendFlow,
       data: {
@@ -69,8 +80,12 @@ export const buildSendFlowResumeJob = (
   }
 }
 
-const buildResumeFollowUpJob = (row: SmartDelayRow): SmartDelayJobSpec => ({
+const buildResumeFollowUpJob = (
+  row: SmartDelayRow,
+  extras?: SmartDelayResumeJobExtras,
+): SmartDelayJobSpec => ({
   name: IntegrationJobAction.resumeFollowUp,
+  opts: flowContinuationJobOptions(resolveResumeMetadata(row, extras)),
   data: {
     type: IntegrationJobAction.resumeFollowUp,
     data: { smartDelayId: row.id },
@@ -79,16 +94,34 @@ const buildResumeFollowUpJob = (row: SmartDelayRow): SmartDelayJobSpec => ({
 
 const buildResumeQuickReplyFollowUpJob = (
   row: SmartDelayRow,
+  extras?: SmartDelayResumeJobExtras,
 ): SmartDelayJobSpec => ({
   name: IntegrationJobAction.resumeQuickReplyFollowUp,
+  opts: flowContinuationJobOptions(resolveResumeMetadata(row, extras)),
   data: {
     type: IntegrationJobAction.resumeQuickReplyFollowUp,
     data: { smartDelayId: row.id },
   },
 })
 
-const buildResumeWaitJob = (row: SmartDelayRow): SmartDelayJobSpec => ({
+const buildResumeStepInputTimeoutJob = (
+  row: SmartDelayRow,
+  extras?: SmartDelayResumeJobExtras,
+): SmartDelayJobSpec => ({
+  name: IntegrationJobAction.resumeStepInputTimeout,
+  opts: flowContinuationJobOptions(resolveResumeMetadata(row, extras)),
+  data: {
+    type: IntegrationJobAction.resumeStepInputTimeout,
+    data: { smartDelayId: row.id },
+  },
+})
+
+const buildResumeWaitJob = (
+  row: SmartDelayRow,
+  extras?: SmartDelayResumeJobExtras,
+): SmartDelayJobSpec => ({
   name: IntegrationJobAction.resumeWait,
+  opts: flowContinuationJobOptions(resolveResumeMetadata(row, extras)),
   data: {
     type: IntegrationJobAction.resumeWait,
     data: { smartDelayId: row.id },
@@ -102,11 +135,13 @@ export const smartDelayResumeJobFactories: Record<
   [smartDelayTypes.enum.waitNode]: buildResumeWaitJob,
   [smartDelayTypes.enum.followUp]: buildResumeFollowUpJob,
   [smartDelayTypes.enum.quickReplyFollowUp]: buildResumeQuickReplyFollowUpJob,
+  [smartDelayTypes.enum.stepInputTimeout]: buildResumeStepInputTimeoutJob,
 }
 
+/** Persists a delay; null when it must not be armed (see the handler). */
 const smartDelayPersistenceHandlers: Record<
   SmartDelayType,
-  (row: SmartDelayRow) => Promise<SmartDelayRow>
+  (row: SmartDelayRow) => Promise<SmartDelayRow | null>
 > = {
   [smartDelayTypes.enum.waitNode]: async (data) => {
     await smartDelayService.create({ data })
@@ -116,6 +151,8 @@ const smartDelayPersistenceHandlers: Record<
     await smartDelayService.upsertFollowUp({ data }),
   [smartDelayTypes.enum.quickReplyFollowUp]: async (data) =>
     await smartDelayService.upsertQuickReplyFollowUp({ data }),
+  [smartDelayTypes.enum.stepInputTimeout]: async (data) =>
+    await smartDelayService.upsertStepInputTimeout({ data }),
 }
 
 export async function scheduleSmartDelayResume(props: {
@@ -126,7 +163,8 @@ export async function scheduleSmartDelayResume(props: {
   flowVersionId: string | null
   conversationId: string
   contactInboxId: string
-  connectedNodeId: string
+  /** The node resumed when the delay fires. */
+  nodeId: string
   stepId: string
   metadata?: MetadataPayload
   sendFrom?: "inbox"
@@ -141,7 +179,7 @@ export async function scheduleSmartDelayResume(props: {
     contactInboxId: props.contactInboxId,
     appointmentId: props.appointmentId ?? null,
     conversationId: props.conversationId,
-    nodeId: props.connectedNodeId,
+    nodeId: props.nodeId,
     stepId: props.stepId,
     metadata: props.metadata ?? null,
     type: props.type,
@@ -152,6 +190,13 @@ export async function scheduleSmartDelayResume(props: {
 
   // Insert tracking record first so a crash during enqueue still has a recovery path via scanner.
   const persistedRow = await smartDelayPersistenceHandlers[props.type](row)
+  if (!persistedRow) {
+    logger.info(
+      { conversationId: props.conversationId, type: props.type },
+      "Smart delay not armed: superseded before it was persisted",
+    )
+    return
+  }
 
   const diffMs = persistedRow.triggerAt.getTime() - Date.now()
   if (diffMs > ENQUEUE_DELAY_MS) {
@@ -167,6 +212,7 @@ export async function scheduleSmartDelayResume(props: {
       appointmentId: props.appointmentId,
     })
     await integrationQueue.add(job.name, job.data, {
+      ...job.opts,
       delay: Math.max(0, diffMs),
       jobId: buildJobId(persistedRow.id, persistedRow.triggerAt),
     })

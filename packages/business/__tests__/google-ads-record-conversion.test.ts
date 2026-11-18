@@ -4,6 +4,7 @@ import { MAX_REDRIVE_GENERATIONS } from "../src/google-ads/timing"
 
 const mocks = vi.hoisted(() => ({
   findGoogleClickAttribution: vi.fn(),
+  findLatestAdTouchId: vi.fn(),
   insertIgnoreDuplicate: vi.fn(),
   findByTransactionId: vi.fn(),
   redrive: vi.fn(),
@@ -15,6 +16,9 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@chatbotx.io/database/repositories", () => ({
   contactInboxRepository: {
     findGoogleClickAttribution: mocks.findGoogleClickAttribution,
+  },
+  contactReferralEventRepository: {
+    findLatestAdTouchId: mocks.findLatestAdTouchId,
   },
   googleAdsConversionEventRepository: {
     insertIgnoreDuplicate: mocks.insertIgnoreDuplicate,
@@ -115,7 +119,23 @@ describe("recordGoogleAdsConversion", () => {
     mocks.findGoogleClickAttribution.mockResolvedValue(attribution())
     mocks.getSetup.mockResolvedValue(readySetup())
     mocks.insertIgnoreDuplicate.mockResolvedValue(storedEvent())
+    mocks.findLatestAdTouchId.mockResolvedValue(null)
     mocks.isSendJobLive.mockResolvedValue(false)
+  })
+
+  test.each([
+    "whatsapp",
+    "messenger",
+    "zalo",
+  ])("queues a conversion for a click captured on %s", async (channel) => {
+    mocks.findGoogleClickAttribution.mockResolvedValue({
+      ...attribution(),
+      channel,
+    })
+
+    const result = await recordGoogleAdsConversion(input())
+
+    expect(result).toEqual({ status: "queued", event: storedEvent() })
   })
 
   test("queues a new event and enqueues generation 0 with the click-age delay", async () => {
@@ -167,6 +187,35 @@ describe("recordGoogleAdsConversion", () => {
         attempt: 0,
         processingAttempts: 0,
       }),
+    )
+  })
+
+  test("links the event to the ad touch of the credited click", async () => {
+    mocks.findLatestAdTouchId.mockResolvedValueOnce("touch-1")
+
+    await recordGoogleAdsConversion(input())
+
+    expect(mocks.findLatestAdTouchId).toHaveBeenCalledWith(
+      {
+        workspaceId: "ws-1",
+        contactInboxId: "ci-1",
+        provider: "google",
+        clickId: "GCLID-SECRET",
+      },
+      expect.anything(),
+    )
+    expect(mocks.insertIgnoreDuplicate).toHaveBeenCalledWith(
+      expect.objectContaining({ referralEventId: "touch-1" }),
+    )
+  })
+
+  test("records the event unlinked when the click predates the touch log", async () => {
+    mocks.findLatestAdTouchId.mockResolvedValueOnce(null)
+
+    await recordGoogleAdsConversion(input())
+
+    expect(mocks.insertIgnoreDuplicate).toHaveBeenCalledWith(
+      expect.objectContaining({ referralEventId: null }),
     )
   })
 

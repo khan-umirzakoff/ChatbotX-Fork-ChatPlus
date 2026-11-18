@@ -45,8 +45,10 @@ vi.mock("@chatbotx.io/database/client", () => ({
   inArray: vi.fn((column: unknown, values: unknown) => ({
     inArray: [column, values],
   })),
+  isNull: vi.fn(),
   lte: vi.fn(),
   ne: vi.fn(),
+  or: vi.fn(),
   sql: Object.assign(
     vi.fn(() => ({ sql: true })),
     { raw: vi.fn() },
@@ -415,8 +417,6 @@ describe("userQuotaService.reconcileOwnerPoolUsage", () => {
       "2",
       "channels",
       "0",
-      "mac",
-      "0",
     )
   })
 })
@@ -458,5 +458,41 @@ describe("userQuotaService.isTeamMemberLimitReached", () => {
 
     expect(countDistinct).toHaveBeenCalledWith("workspaceMember.userId")
     expect(eq).toHaveBeenCalledWith("workspace.tenantId", "tenant-1")
+  })
+})
+
+describe("userQuotaService.isTeamMemberLimitReached — additionalCount", () => {
+  test("a batch that exactly fills the limit is not reached", async () => {
+    findFirstQuota.mockResolvedValue({
+      planStatus: "active",
+      teamMembersLimit: 5,
+      teamMembersUsed: 0,
+    })
+    reconcileCounts.push(3)
+
+    await expect(
+      userQuotaService.isTeamMemberLimitReached(
+        { ownerId: "owner-1" },
+        "owner-1",
+        2,
+      ),
+    ).resolves.toBe(false)
+  })
+
+  test("a batch that overshoots the limit by one is reached", async () => {
+    findFirstQuota.mockResolvedValue({
+      planStatus: "active",
+      teamMembersLimit: 5,
+      teamMembersUsed: 0,
+    })
+    reconcileCounts.push(3)
+
+    await expect(
+      userQuotaService.isTeamMemberLimitReached(
+        { ownerId: "owner-1" },
+        "owner-1",
+        3,
+      ),
+    ).resolves.toBe(true)
   })
 })

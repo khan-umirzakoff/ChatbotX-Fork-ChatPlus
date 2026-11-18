@@ -17,10 +17,13 @@ const mocks = vi.hoisted(() => ({
   resolveAssigneeName: vi.fn(),
   listContactTagsString: vi.fn(),
   listContactNotesString: vi.fn(),
+  listContactAdIdsString: vi.fn(),
+  getFirstContactAdId: vi.fn(),
   getLatestContactNoteString: vi.fn(),
   getChatHistory: vi.fn(),
   getContactLastInput: vi.fn(),
   getContactLastInputType: vi.fn(),
+  getContactLastTextInput: vi.fn(),
   getQueuedMessages: vi.fn(),
 }))
 
@@ -34,6 +37,8 @@ vi.mock("../src/helpers/assigned", () => ({
 vi.mock("../src/helpers/contact", () => ({
   listContactTagsString: mocks.listContactTagsString,
   listContactNotesString: mocks.listContactNotesString,
+  listContactAdIdsString: mocks.listContactAdIdsString,
+  getFirstContactAdId: mocks.getFirstContactAdId,
   getLatestContactNoteString: mocks.getLatestContactNoteString,
   findPrimaryContactChannel: vi.fn(),
 }))
@@ -49,6 +54,7 @@ vi.mock("../src/helpers/queued-messages", () => ({
 vi.mock("../src/helpers/last-input", () => ({
   getContactLastInput: mocks.getContactLastInput,
   getContactLastInputType: mocks.getContactLastInputType,
+  getContactLastTextInput: mocks.getContactLastTextInput,
 }))
 
 vi.mock("../src/helpers/integration-fields", () => ({
@@ -202,6 +208,27 @@ describe("getSystemFieldValue — helper-backed fields", () => {
     )
   })
 
+  test("ad_ids and ad_id read the contact's ad touch log through their own helpers", async () => {
+    mocks.listContactAdIdsString.mockResolvedValue("ad-1, ad-2")
+    mocks.getFirstContactAdId.mockResolvedValue("ad-1")
+
+    await expect(
+      getSystemFieldValue(context, systemFieldTypes.enum.ad_ids),
+    ).resolves.toBe("ad-1, ad-2")
+    await expect(
+      getSystemFieldValue(context, systemFieldTypes.enum.ad_id),
+    ).resolves.toBe("ad-1")
+
+    expect(mocks.listContactAdIdsString).toHaveBeenCalledWith(
+      "contact-1",
+      "workspace-1",
+    )
+    expect(mocks.getFirstContactAdId).toHaveBeenCalledWith(
+      "contact-1",
+      "workspace-1",
+    )
+  })
+
   test("last_input and last_input_type call separate helpers", async () => {
     mocks.getContactLastInput.mockResolvedValue("hello")
     mocks.getContactLastInputType.mockResolvedValue("text")
@@ -217,12 +244,24 @@ describe("getSystemFieldValue — helper-backed fields", () => {
     expect(mocks.getContactLastInputType).toHaveBeenCalledWith("contact-1")
   })
 
+  test("last_text_input calls its own helper", async () => {
+    mocks.getContactLastTextInput.mockResolvedValue("typed text")
+
+    await expect(
+      getSystemFieldValue(context, systemFieldTypes.enum.last_text_input),
+    ).resolves.toBe("typed text")
+
+    expect(mocks.getContactLastTextInput).toHaveBeenCalledWith("contact-1")
+  })
+
   test("a null from any helper passes straight through", async () => {
     const nullable: [string, ReturnType<typeof vi.fn>][] = [
       [systemFieldTypes.enum.chat_history, mocks.getChatHistory],
       [systemFieldTypes.enum["ai.queued.messages"], mocks.getQueuedMessages],
       [systemFieldTypes.enum.user_tags, mocks.listContactTagsString],
       [systemFieldTypes.enum.user_notes, mocks.listContactNotesString],
+      [systemFieldTypes.enum.ad_ids, mocks.listContactAdIdsString],
+      [systemFieldTypes.enum.ad_id, mocks.getFirstContactAdId],
       [systemFieldTypes.enum.last_user_note, mocks.getLatestContactNoteString],
       [systemFieldTypes.enum.member_name, mocks.resolveAssigneeName],
       [systemFieldTypes.enum.team_name, mocks.getAssignedTeamName],

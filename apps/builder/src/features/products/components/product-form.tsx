@@ -25,6 +25,8 @@ import { useTranslations } from "next-intl"
 import type { BaseSyntheticEvent } from "react"
 import { useMemo, useState } from "react"
 import { type UseFormReturn, useWatch } from "react-hook-form"
+import { PublicUrlSection } from "@/components/public-url-section"
+import { LockedContent } from "@/features/templates/components/locked-editor"
 import { PRICE_INPUT_PROPS, PRODUCT_CURRENCIES } from "../constants"
 import type { ProductFormRequest } from "../schema/action"
 import { ProductImagesSection } from "./product-images-section"
@@ -38,6 +40,11 @@ type ProductFormProps = {
   isEdit?: boolean
   /** Only ever set on an existing product that has been synced with Meta. */
   metaCatalogId?: string | null
+  /**
+   * An existing product's shop page for a flow button (`{{shop_token}}`
+   * signed per contact), shown like a Mini App's Public URL.
+   */
+  publicUrl?: string | null
 }
 
 export function ProductForm({
@@ -46,6 +53,7 @@ export function ProductForm({
   handleSubmitWithAction,
   isEdit = false,
   metaCatalogId = null,
+  publicUrl = null,
 }: ProductFormProps) {
   const t = useTranslations()
   const router = useRouter()
@@ -80,29 +88,31 @@ export function ProductForm({
           onSubmit={handleSubmitWithAction}
         >
           {/* Basic Info */}
-          <Card>
-            <CardContent className="space-y-4 pt-6">
-              <InputField
-                label={t("fields.name.label")}
-                name="name"
-                placeholder={t("fields.name.placeholder")}
-                required
-              />
-              <InputField
-                label={t("products.fields.shortDescription.label")}
-                name="shortDescription"
-              />
-              <div className="space-y-1">
-                <TextareaField
-                  label={t("products.fields.longDescription.label")}
-                  name="longDescription"
+          <LockedContent>
+            <Card>
+              <CardContent className="space-y-4 pt-6">
+                <InputField
+                  label={t("fields.name.label")}
+                  name="name"
+                  placeholder={t("fields.name.placeholder")}
+                  required
                 />
-                <p className="text-end text-muted-foreground text-xs">
-                  {longDescription.length}/840
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+                <InputField
+                  label={t("products.fields.shortDescription.label")}
+                  name="shortDescription"
+                />
+                <div className="space-y-1">
+                  <TextareaField
+                    label={t("products.fields.longDescription.label")}
+                    name="longDescription"
+                  />
+                  <p className="text-end text-muted-foreground text-xs">
+                    {longDescription.length}/840
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </LockedContent>
           {/* Pricing */}
           <Card>
             <CardHeader>
@@ -111,37 +121,41 @@ export function ProductForm({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <LockedContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <InputNumberField
+                    {...PRICE_INPUT_PROPS}
+                    label={t("products.fields.price.label")}
+                    min={0}
+                    name="price"
+                    required
+                  />
+                  <InputNumberField
+                    {...PRICE_INPUT_PROPS}
+                    label={t("products.fields.taxes.label")}
+                    max={100}
+                    min={0}
+                    name="taxes"
+                    required
+                  />
+                  <InputNumberField
+                    {...PRICE_INPUT_PROPS}
+                    label={t("products.fields.discount.label")}
+                    max={100}
+                    min={0}
+                    name="discount"
+                    required
+                  />
+                </div>
+              </LockedContent>
               <div className="grid grid-cols-3 gap-4">
-                <InputNumberField
-                  {...PRICE_INPUT_PROPS}
-                  label={t("products.fields.price.label")}
-                  min={0}
-                  name="price"
-                  required
-                />
-                <InputNumberField
-                  {...PRICE_INPUT_PROPS}
-                  label={t("products.fields.taxes.label")}
-                  max={100}
-                  min={0}
-                  name="taxes"
-                  required
-                />
-                <InputNumberField
-                  {...PRICE_INPUT_PROPS}
-                  label={t("products.fields.discount.label")}
-                  max={100}
-                  min={0}
-                  name="discount"
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                <SelectField
-                  label={t("products.fields.currency.label")}
-                  name="currency"
-                  options={currencyOptions}
-                />
+                <LockedContent className="">
+                  <SelectField
+                    label={t("products.fields.currency.label")}
+                    name="currency"
+                    options={currencyOptions}
+                  />
+                </LockedContent>
                 <InputField
                   description={t("products.fields.productUrl.description")}
                   descriptionType="tooltip"
@@ -155,7 +169,9 @@ export function ProductForm({
             </CardContent>
           </Card>
           {/* Images */}
-          <ProductImagesSection workspaceId={workspaceId} />
+          <LockedContent className="">
+            <ProductImagesSection workspaceId={workspaceId} />
+          </LockedContent>
           {/* Inventory */}
           <Card>
             <CardHeader>
@@ -164,11 +180,13 @@ export function ProductForm({
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <InputField
-                label={t("products.fields.sku.label")}
-                name="sku"
-                placeholder={t("products.fields.sku.placeholder")}
-              />
+              <LockedContent className="">
+                <InputField
+                  label={t("products.fields.sku.label")}
+                  name="sku"
+                  placeholder={t("products.fields.sku.placeholder")}
+                />
+              </LockedContent>
               <div className="grid grid-cols-2 gap-4">
                 <SelectField
                   label={t("products.fields.inventoryPolicy.label")}
@@ -205,7 +223,9 @@ export function ProductForm({
             </CardContent>
           </Card>
           {/* Variants */}
-          <ProductVariantsSection />
+          <LockedContent className="">
+            <ProductVariantsSection />
+          </LockedContent>
           {/* More Options toggle */}
           <button
             className="mb-2 flex w-full items-center gap-2 font-medium text-primary text-sm hover:underline"
@@ -237,7 +257,18 @@ export function ProductForm({
               </CardContent>
             </Card>
           ) : null}
-          <div className="flex items-center justify-end gap-2">
+          {/* Pinned like the Mini App editor's bar: the Public URL and Save
+              stay at the bottom of the screen however long the form is. */}
+          <div className="sticky bottom-0 z-10 -mx-6 flex flex-wrap items-center justify-end gap-3 border-t bg-background px-6 py-3">
+            {publicUrl ? (
+              <div className="min-w-0 flex-1">
+                <PublicUrlSection
+                  hint={t("webshopLinks.productLink.hint")}
+                  label={t("webshopLinks.productLink.label")}
+                  publicUrl={publicUrl}
+                />
+              </div>
+            ) : null}
             <Button
               onClick={() => router.push(`/space/${workspaceId}/products`)}
               type="button"

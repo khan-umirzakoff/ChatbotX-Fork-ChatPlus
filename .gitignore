@@ -48,7 +48,6 @@ yarn-error.log*
 .idea/
 .windsurf/skills
 
-.partykit
 test.rest
 test-webchat
 
@@ -62,6 +61,10 @@ CLAUDE.md
 .pnpm-store/
 .plans/
 
+# Local PartyKit dev state (Durable Object sqlite/wal files). The realtime
+# gateway no longer uses PartyKit; these linger from older checkouts.
+.partykit/
+
 # MCP business-evaluation harness output (episodes, manifests, server
 # snapshots) — regenerated per run via `pnpm --filter chatbotx-mcp eval:business`.
 apps/mcp-server/evals/out/
@@ -70,3 +73,6 @@ apps/mcp-server/evals/out/
 # local working material — never commit them to source.
 docs/**/*.pdf
 docs/plans/
+
+# TypeScript incremental build info (restored from cache in CI)
+*.tsbuildinfo

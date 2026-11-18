@@ -1,6 +1,9 @@
 import {
   inventoryPolicyTypes,
   metaCatalogSyncScopes,
+  type ProductStatus,
+  productStatuses,
+  storeSources,
 } from "@chatbotx.io/database/partials"
 import {
   createSelectSchema,
@@ -26,34 +29,66 @@ export const publicProductResource = createSelectSchema(productModel, {
   ),
   tags: z.array(z.string()),
   inventoryPolicy: inventoryPolicyTypes,
-}).pick({
-  id: true,
-  workspaceId: true,
-  name: true,
-  shortDescription: true,
-  longDescription: true,
-  price: true,
-  taxes: true,
-  discount: true,
-  currency: true,
-  productUrl: true,
-  sku: true,
-  inventoryPolicy: true,
-  inventoryQuantity: true,
-  allowOutOfStockPurchase: true,
-  images: true,
-  tags: true,
-  vendor: true,
-  rank: true,
-  categoryId: true,
-  subcategoryId: true,
-  isActive: true,
-  isSearchable: true,
-  allowSpecialRequest: true,
-  isAddonOnly: true,
-  createdAt: true,
-  updatedAt: true,
+  vendorId: z.string().nullable(),
+  source: storeSources.describe(
+    "`shopify` or `woocommerce` for a product mirrored from the connected store: read-only, edited on that store — its `status` included.",
+  ),
+  externalId: z
+    .string()
+    .nullable()
+    .describe(
+      "The store's product id: Shopify's product GID, or WooCommerce's product id.",
+    ),
+  externalHandle: z
+    .string()
+    .nullable()
+    .describe("The product's handle (Shopify) or slug (WooCommerce)."),
+  status: productStatuses.describe(
+    "Only `active` is shown and orderable; `draft` and `unlisted` are hidden. A mirrored product follows its store's status (Shopify `ARCHIVED` and WooCommerce drafts read as `draft`; a hidden or private WooCommerce product as `unlisted`); set our own products' status with `products.setActive`.",
+  ),
 })
+  .extend({
+    isActive: z
+      .boolean()
+      .describe("Deprecated: `status` is `active`. Read `status` instead."),
+    vendor: z
+      .string()
+      .nullable()
+      .describe("The vendor's name, from `productVendors.list`."),
+  })
+  .pick({
+    id: true,
+    workspaceId: true,
+    name: true,
+    shortDescription: true,
+    longDescription: true,
+    price: true,
+    taxes: true,
+    discount: true,
+    currency: true,
+    productUrl: true,
+    sku: true,
+    inventoryPolicy: true,
+    inventoryQuantity: true,
+    allowOutOfStockPurchase: true,
+    images: true,
+    tags: true,
+    vendor: true,
+    vendorId: true,
+    rank: true,
+    categoryId: true,
+    subcategoryId: true,
+    status: true,
+    isActive: true,
+    isSearchable: true,
+    allowSpecialRequest: true,
+    isAddonOnly: true,
+    source: true,
+    externalId: true,
+    externalHandle: true,
+    createdAt: true,
+    updatedAt: true,
+  })
 
 const variantOption = z.object({
   name: z.string(),
@@ -65,6 +100,21 @@ const variant = z.object({
   combination: z.record(z.string(), z.string()),
   price: z.number(),
   isEnabled: z.boolean(),
+  sku: z.string().nullable().optional().describe("The variant's own SKU."),
+  inventoryQuantity: z
+    .number()
+    .nullable()
+    .optional()
+    .describe(
+      "Stock of this variant alone (Shopify and WooCommerce variants); null when stock is kept on the product.",
+    ),
+  externalId: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      "The store's variant id: Shopify's variant GID, or WooCommerce's variation id (with `~n` for one of an \"Any …\" variation's combinations).",
+    ),
 })
 
 const addon = z.object({
@@ -72,6 +122,14 @@ const addon = z.object({
   maxSelections: z.number(),
   addonProductIds: z.array(z.string()),
 })
+
+/**
+ * Adds the `isActive` the public product carried before `status` replaced it,
+ * so a client still reading it keeps working.
+ */
+export const withLegacyIsActive = <Product extends { status: ProductStatus }>(
+  product: Product,
+) => ({ ...product, isActive: product.status === "active" })
 
 export const publicProductDetailResource = publicProductResource.extend({
   variantOptions: z.array(variantOption),

@@ -5,12 +5,15 @@ export const triggerActions = z.enum([
   "startExternalStep",
   "addTag",
   "removeTag",
+  "addSequence",
+  "removeSequence",
   "setCustomField",
   "clearCustomField",
   "transferConversationToHuman",
   "sendMetaCapiEvent",
   "sendGoogleAdsConversion",
   "runGoogleSheet",
+  "pipeline",
   "archiveConversation",
   "unarchiveConversation",
   "assignConversation",
@@ -19,6 +22,9 @@ export const triggerActions = z.enum([
   "enableBot",
 ])
 export type TriggerAction = z.infer<typeof triggerActions>
+
+/** Sequences one `addSequence` / `removeSequence` action may name; `addSequence` costs one enrollment transaction per id at run time. */
+export const MAX_SEQUENCES_PER_TRIGGER_ACTION = 50
 
 export const triggerEventTypes = z.enum([
   "tagApplied",
@@ -39,11 +45,11 @@ export const triggerEventTypes = z.enum([
   "callEnded",
   "callRecorded",
   "callTranscribed",
-  "ticketCreated",
-  "ticketMovedToStage",
-  "ticketValueChanged",
-  "ticketStatusChanged",
-  "ticketPriorityChanged",
+  "pipelineItemCreated",
+  "pipelineItemMovedToStage",
+  "pipelineItemValueChanged",
+  "pipelineItemStatusChanged",
+  "pipelineItemPriorityChanged",
   "subscribedToSequence",
   "unsubscribedFromSequence",
   "shoppingCartSent",
@@ -54,11 +60,15 @@ export const triggerEventTypes = z.enum([
   "orderShipped",
   "orderConcluded",
   "orderCancelled",
+  "orderPaid",
+  "orderRefunded",
   "categoryAddedToCart",
   "productAddedToCart",
   "productRemovedFromCart",
   "productOrdered",
   "contactReferredANewContact",
   "contactReferredExistingContact",
+  "contactBlockedBot",
+  "contactUnblockedBot",
 ])
 export type TriggerEventType = z.infer<typeof triggerEventTypes>

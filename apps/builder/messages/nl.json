@@ -185,9 +185,141 @@
     "name": "Agents"
   },
   "aiFiles": {
+    "detail": {
+      "title": "Knowledge details",
+      "details": "Details",
+      "noChunkingInfo": "No processing information is available yet."
+    },
+    "chunking": {
+      "title": "Chunking",
+      "strategyLabel": "Strategy",
+      "version": "Chunker version",
+      "chunkSize": "Chunk size",
+      "overlapSize": "Overlap size",
+      "chunkCount": "Chunks",
+      "processedAt": "Processed at",
+      "outdated": "Reindex recommended",
+      "strategy": {
+        "prose": "Prose",
+        "tabular": "Tabular",
+        "markdown": "Markdown"
+      },
+      "configDefault": "Chunking parameters: defaults ({chunkSize} characters, overlap {overlapSize}).",
+      "configCustom": "Chunking parameters: {chunkSize} characters, overlap {overlapSize}."
+    },
+    "processingRun": {
+      "title": "Processing run",
+      "noRun": "No processing run has been tracked for this file yet.",
+      "queuedAt": "Queued at",
+      "startedAt": "Started at",
+      "heartbeatAt": "Last heartbeat",
+      "finishedAt": "Finished at",
+      "stale": "Processing appears stalled",
+      "failedBadge": "Processing failed",
+      "successNote": "Chunking and embedding enqueueing completed. The file is searchable when embedding status is also complete.",
+      "status": {
+        "queued": "Queued",
+        "processing": "Processing",
+        "success": "Prepared",
+        "error": "Failed"
+      },
+      "error": {
+        "fileTooLarge": "The file is too large to process.",
+        "tooManyChunks": "The file produced too many chunks.",
+        "fileUnreadable": "The file could not be read. For CSV files, save as CSV UTF-8 and try again.",
+        "noExtractableContent": "No content could be extracted. Check the spreadsheet header row, or the file may be a scan or empty.",
+        "noEmbeddingProvider": "No embedding provider is configured.",
+        "enqueueFailed": "The file was saved but processing could not be queued. Reindex it to try again.",
+        "unknown": "Processing failed unexpectedly."
+      }
+    },
+    "reindex": {
+      "action": "Reindex",
+      "confirmTitle": "Reindex this file?",
+      "confirmDescription": "The file will be processed with the current chunker.",
+      "downtimeWarning": "Search may be temporarily unavailable while this file is reindexed.",
+      "queued": "Reindex queued",
+      "alreadyRunning": "Processing is already running for this file.",
+      "rateLimited": "Too many requests. Try again shortly.",
+      "parameters": "Chunking parameters",
+      "strategyLabel": "How to split",
+      "strategy": {
+        "auto": "Automatic (by file type)",
+        "prose": "Plain text"
+      },
+      "chunkSize": "Chunk size (characters)",
+      "overlapSize": "Overlap (characters)",
+      "overlapDisabledTabular": "Spreadsheets keep each row whole, so overlap is not used.",
+      "tabularHeaderRow": "Header row (spreadsheets)",
+      "presets": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "custom": "Custom chunk size"
+      },
+      "resetDefaults": "Restore defaults",
+      "estimate": "Estimate: about {estimate} chunks (currently {current})",
+      "reembedWarning": "Changing parameters re-embeds the whole file (about {count} chunks) with your workspace key, and the file cannot be searched until it finishes.",
+      "largeChunkWarning": "Larger chunks make every agent answer read more text and cost more tokens.",
+      "noChangeNote": "Parameters are unchanged: chunks that are already embedded are kept and not embedded again.",
+      "conflict": "This file is being processed, so the new parameters were not applied. Try again when processing finishes."
+    },
+    "chunks": {
+      "indexOutdated": "Some chunks have no position yet. Reindex the file to number them."
+    },
     "description": "Geef je agents toegang tot pdf's, documenten en meer",
     "title": "Kennis",
-    "noEmbeddingProvider": "Er is geen embeddingprovider geconfigureerd. Voor embeddings van AI-bestanden is een integratie met OpenAI of Gemini vereist. DeepSeek en Claude ondersteunen geen embeddingmodellen."
+    "noEmbeddingProvider": "Er is geen embeddingprovider geconfigureerd. Voor embeddings van AI-bestanden is een integratie met OpenAI of Gemini vereist. DeepSeek en Claude ondersteunen geen embeddingmodellen.",
+    "testQuery": {
+      "title": "Test query",
+      "description": "Pick files, ask a question and see which chunk answers it. Only the retrieval step is simulated; no AI answer is generated.",
+      "open": "Test query",
+      "backToKnowledge": "Back to Knowledge",
+      "run": "Run test",
+      "files": "Files",
+      "filterFiles": "Filter files by name",
+      "selectAllReady": "Select all ready files",
+      "selectedCount": "{count}/{max} selected",
+      "fileNotReady": "This file has no chunks ready for search yet.",
+      "question": "Question",
+      "expected": "Expected answer (optional)",
+      "expectedHelp": "Type the answer exactly as it appears in the document, accents included. It is matched against every chunk of the selected files.",
+      "limit": "Result limit",
+      "simulationNote": "This simulates retrieval only; an agent may phrase a question differently. Each run uses one embedding from your workspace key.",
+      "rateLimited": "Too many test requests. Try again shortly.",
+      "byFile": "By file",
+      "matches": "{count} matching chunks",
+      "bestRank": "best rank {rank}",
+      "needsReindex": "Needs reindex",
+      "openDetail": "Open details",
+      "rank": "#{rank}",
+      "chunkNumber": "chunk #{index}",
+      "chunkUnnumbered": "chunk not numbered",
+      "aiWillSee": "AI will see",
+      "belowThreshold": "Below threshold",
+      "containsExpected": "Contains the answer",
+      "thresholdLine": "Threshold {threshold}",
+      "appliedConfig": "Applied configuration",
+      "agentDefaultThreshold": "Agent default threshold",
+      "timings": "Search time",
+      "scoreNotComparable": "Similarity scores are not directly comparable across embedding models.",
+      "answerLocation": "Answer is in {file} · {chunk} · rank {rank}",
+      "splitHint": "The answer may be split between two chunks. Try a larger chunk size or overlap, or check the file was read correctly.",
+      "previousRun": "Previous run ({time}): answer rank {from} → now {to}",
+      "previousRunTop": "Previous run ({time}): {changed} of {total} top chunks changed",
+      "verdict": {
+        "inTopResults": "The AI will see the expected answer.",
+        "foundButLowRank": "The answer is in the documents but ranks too low for the AI to see it. Try a closer question, or reindex with smaller chunks.",
+        "notInAnyChunk": "No chunk of the selected files contains the answer. The document may be read or split wrongly: view the chunks or reindex with other settings."
+      },
+      "diagnosis": {
+        "ok": "Matching chunks found.",
+        "noReadyChunks": "No chunks are ready for search yet. Open the file to check its processing status.",
+        "allBelowThreshold": "Chunks were found but all are below the threshold. Try a lower trial threshold.",
+        "noMatches": "No matching chunks were found.",
+        "agentHasNoFiles": "This agent has no knowledge files."
+      }
+    }
   },
   "aiFunctions": {
     "description": "Configureer LLM-functies om je AI-agent intelligenter te maken",
@@ -435,6 +567,8 @@
       "description": "Stuur een flow naar alle contacten."
     },
     "receiversCount": "Ontvangers: {count}",
+    "receiversCountCapped": "Ontvangers: {count}+",
+    "receiversCountUnknown": "Ontvangers: ?",
     "receiversLoading": "Ontvangers: laden...",
     "whatsappTemplateMessage": {
       "title": "Sjabloonbericht",
@@ -625,6 +759,7 @@
       "clicked": "Geklikt",
       "failed": "Mislukt",
       "missed": "Gemist",
+      "moderated": "Gemodereerd",
       "noContacts": "Geen contacten gevonden",
       "noComment": "(geen tekst)",
       "pageInfo": "Pagina {page} van {pageCount}",
@@ -644,7 +779,9 @@
       "contactNotNew": "Contact is niet nieuw",
       "alreadyRepliedOnPost": "Al beantwoord op dit bericht",
       "engagedOnOtherPost": "Al gereageerd op een ander bericht",
-      "mentionCountNotMatched": "Aantal vermeldingen kwam niet overeen"
+      "mentionCountNotMatched": "Aantal vermeldingen kwam niet overeen",
+      "noImageAttachment": "Geen foto bijgevoegd",
+      "moderated": "Verborgen of verwijderd door moderatie"
     },
     "replyTo": {
       "mentions": "Reacties met genoeg vermeldingen",
@@ -664,6 +801,10 @@
       "label": "Bijhouden of een gebruiker andere gebruikers tagt",
       "descriptionText": "Telt de accounts die in elke reactie worden getagd en telt ze op bij de totalen van het contact over alle reacties. Gebruik '{{total_tagged}}' voor alle getagde accounts en '{{total_new_tagged}}' voor accounts die je pagina nooit een bericht hebben gestuurd of nooit contact zijn geweest."
     },
+    "onlyCommentsWithImage": {
+      "label": "Alleen reageren op reacties met een foto",
+      "descriptionText": "Alleen automatisch reageren als de reactie een foto bevat. GIF's en stickers tellen niet mee. Reacties zonder foto worden overgeslagen en de volgende automatisering wordt geprobeerd."
+    },
     "card": {
       "reply": "Antwoord"
     },
@@ -681,6 +822,87 @@
       "column": "Account",
       "disconnected": "Ontkoppeld account",
       "disconnectedDescription": "Deze automatisering hoort bij een account dat niet meer gekoppeld is en reageert dus op geen enkele reactie. Koppel het account opnieuw of kies een ander."
+    },
+    "aiModeration": {
+      "enabled": "AI-moderatie",
+      "description": "Een AI-agent leest elke opmerking voordat de bot antwoordt en verbergt of verwijdert opmerkingen in de onderstaande categorieën. Op een gemodereerde opmerking wordt nooit gereageerd.",
+      "aiAgentDescription": "Alleen het AI-model van de agent wordt gebruikt, niet de prompt.",
+      "categoriesLabel": "Opmerkingen blokkeren die",
+      "categories": {
+        "hate": "Haatzaaiend zijn",
+        "offensive": "Beledigend zijn",
+        "harassment": "Intimidatie zijn",
+        "negative": "Vijandig zijn jegens het merk",
+        "spam": "Spam of oplichting zijn"
+      },
+      "categoryDescriptions": {
+        "hate": "Valt een groep aan op basis van ras, religie, geslacht, nationaliteit en dergelijke",
+        "offensive": "Beledigingen, vloeken, vulgair taalgebruik",
+        "harassment": "Bedreigingen, pesten, aanvallen op een persoon",
+        "negative": "Bedoeld om het merk te schaden. Beleefde klachten worden niet geblokkeerd",
+        "spam": "Oplichting, phishing, niet-gerelateerde promotie"
+      },
+      "instruction": "Extra instructies voor de AI",
+      "instructionDescription": "Optioneel. Vertel de AI wat er moet worden toegestaan of geblokkeerd.",
+      "instructionPlaceholder": "bijv. Blokkeer geen klanten die klagen over de prijs",
+      "action": "Wanneer een opmerking wordt geblokkeerd",
+      "actions": {
+        "hide": "Verbergen",
+        "delete": "Verwijderen"
+      },
+      "deleteWarning": "Verwijderde opmerkingen zijn voorgoed weg en kunnen niet worden hersteld. Verbergen is veiliger als de AI zich vergist."
+    },
+    "moderationLog": {
+      "title": "Gemodereerde opmerkingen",
+      "description": "Opmerkingen die deze automatisering heeft verborgen of verwijderd, en waarom.",
+      "allActions": "Alle acties",
+      "allSources": "Regels en AI",
+      "actions": {
+        "hide": "Verborgen",
+        "delete": "Verwijderd"
+      },
+      "sources": {
+        "rule": "Door een verbergregel",
+        "ai": "Door AI"
+      },
+      "statuses": {
+        "pending": "Bezig",
+        "done": "Klaar",
+        "failed": "Mislukt"
+      },
+      "rules": {
+        "all": "Alle opmerkingen verbergen",
+        "phoneNumber": "Bevat telefoonnummer",
+        "link": "Bevat link",
+        "keyword": "Bevat trefwoord",
+        "image": "Bevat afbeelding",
+        "video": "Bevat video",
+        "gif": "Bevat GIF",
+        "emoji": "Bevat emoji"
+      },
+      "summary": {
+        "total": "{count} gemodereerd",
+        "hidden": "{count} verborgen",
+        "deleted": "{count} verwijderd",
+        "byAI": "{count} door AI",
+        "byRule": "{count} door regels",
+        "failed": "{count} mislukt"
+      },
+      "columns": {
+        "time": "Tijd",
+        "contact": "Contact",
+        "comment": "Opmerking",
+        "action": "Actie",
+        "reason": "Reden",
+        "status": "Status"
+      },
+      "loading": "Laden…",
+      "empty": "Er zijn nog geen opmerkingen verborgen of verwijderd.",
+      "unknownContact": "Onbekend",
+      "noText": "(geen tekst)",
+      "previous": "Vorige",
+      "next": "Volgende",
+      "page": "Pagina {page} van {pageCount}"
     }
   },
   "fields": {
@@ -880,6 +1102,13 @@
     "bot": {
       "label": "Bot"
     },
+    "botCategory": {
+      "options": {
+        "all": "Alle",
+        "human": "Mens",
+        "bot": "Bot"
+      }
+    },
     "botResponse": {
       "label": "Botantwoord"
     },
@@ -898,7 +1127,8 @@
     },
     "button": {
       "label": "Knop",
-      "whenPressed": "Wanneer op deze knop wordt gedrukt"
+      "whenPressed": "Wanneer op deze knop wordt gedrukt",
+      "callToThisNumber": "Bel dit nummer"
     },
     "buttonLabel": {
       "label": "Knoplabel"
@@ -969,6 +1199,15 @@
       "prepend": "Aan het begin toevoegen",
       "increase": "Verhogen met",
       "decrease": "Verlagen met",
+      "clear": "Clear value",
+      "formula": "Use custom formula",
+      "set_now": "Set to now",
+      "date_expression": "Free-form date (with math)",
+      "add_minutes": "Add minutes",
+      "add_hours": "Add hours",
+      "add_days": "Add days",
+      "formulaHint": "Math where value is the current number, e.g. round(value * 1.1). Functions: abs, ceil, floor, round, min, max, pow, sqrt, log, sin, cos.",
+      "dateExpressionHint": "e.g. now + 2 days - 3 hours. Units: min, h, d, w, mo, y.",
       "groupSystemFields": "Systeemvelden",
       "groupCustomFields": "Aangepaste velden",
       "groupAccountFields": "Botvelden"
@@ -1084,7 +1323,8 @@
       "label": "Flows",
       "placeholder": "Selecteer een flow",
       "aiGenerateTextAgent": "{aiName}: tekstagent genereren",
-      "aiDeleteMessageHistory": "{aiName}: berichtgeschiedenis verwijderen"
+      "aiDeleteMessageHistory": "{aiName}: berichtgeschiedenis verwijderen",
+      "aiSegmentImage": "{aiName}: Afbeelding segmenteren"
     },
     "steps": {
       "label": "Node",
@@ -1463,7 +1703,8 @@
       "processing": "Wordt verwerkt",
       "installing": "Installing",
       "completed": "Voltooid",
-      "partial": "Partial",
+      "partial": "Gedeeltelijk",
+      "uninstalled": "Uninstalled",
       "failed": "Mislukt",
       "success": "Geslaagd",
       "error": "Fout"
@@ -1496,6 +1737,7 @@
       "label": "Geklikt (%)"
     },
     "targetCountry": {
+      "currencyHint": "Bepaalt ook de standaardvaluta van pipelines zonder eigen valuta.",
       "description": "Het land waar de meeste van je contacten wonen.",
       "label": "Doelland"
     },
@@ -1895,6 +2137,10 @@
       "label": "Afzenderadres",
       "placeholder": "noreply@example.com"
     },
+    "fromName": {
+      "label": "Afzendernaam",
+      "placeholder": "ChatbotX"
+    },
     "messageTemplate": {
       "label": "Berichtsjabloon"
     },
@@ -2001,7 +2247,13 @@
       "commentToMessage": "Comment-to-Message",
       "commentToMessageDescription": "Lets this account answer high-intent comments with a direct message. Required for TikTok comment automations that use a private reply.",
       "commentToMessageEligibility": "Only available to Business Accounts registered in Vietnam, Indonesia or Thailand, owned by someone over 18, that are registered businesses or have run Messaging Ads, with messaging permissions set to \"Requests\".",
-      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting."
+      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting.",
+      "features": "Functies",
+      "featureMessaging": "Berichten",
+      "featureMessagingDescription": "Directe berichten ontvangen en verzenden. TikTok biedt geen berichten aan voor accounts die in de EER, Zwitserland of het VK zijn geregistreerd — schakel het voor die accounts uit.",
+      "featureComments": "Reacties",
+      "featureCommentsDescription": "Reacties ontvangen voor reactie-automatisering: openbaar antwoorden, liken en verbergen.",
+      "featuresReconnectHint": "Wijzigingen gelden voor accounts die vanaf nu worden gekoppeld. Koppel bestaande accounts opnieuw om hun machtigingen bij te werken."
     },
     "drip": {
       "label": "Drip"
@@ -2039,6 +2291,12 @@
     },
     "lastAd": {
       "label": "Laatste advertentie"
+    },
+    "adIds": {
+      "label": "Alle advertentie-ID's"
+    },
+    "adId": {
+      "label": "Eerste advertentie-ID"
     },
     "lastAdSourcePlatform": {
       "label": "Bronplatform van laatste advertentie"
@@ -2185,7 +2443,11 @@
       "ads": "Advertenties",
       "settings": "Instellingen",
       "miniApps": "Mini Apps",
-      "leaderboards": "Ranglijsten"
+      "leaderboards": "Ranglijsten",
+      "pipelines": "Pijplijnen",
+      "places": "Plaatsen",
+      "templates": "Sjablonen",
+      "polls": "Polls"
     },
     "adReferral": {
       "label": "Ads",
@@ -2194,7 +2456,8 @@
       "ctid": "CTID",
       "googleAds": "Google Ads",
       "googleAdsWhatsapp": "GA CCWA",
-      "googleAdsMessenger": "GA CCTM"
+      "googleAdsMessenger": "GA CCTM",
+      "googleAdsZalo": "GA Zalo"
     },
     "adSource": {
       "label": "Ad source"
@@ -2242,10 +2505,86 @@
     },
     "miniApp": {
       "label": "Mini-app"
+    },
+    "lastOpportunityId": {
+      "label": "Laatste verkoopkans-ID"
+    },
+    "adminName": {
+      "label": "Naam van verzendende admin"
+    },
+    "adminTeamName": {
+      "label": "Teams van verzendende admin"
+    },
+    "bookingId": {
+      "label": "Boekings-ID"
+    },
+    "lastPoints": {
+      "label": "Laatste vragenlijstpunten"
+    },
+    "lastAdHeadline": {
+      "label": "Laatste advertentiekop"
+    },
+    "lastAdBody": {
+      "label": "Laatste advertentietekst"
+    },
+    "lastStoryId": {
+      "label": "Laatste story-ID"
+    },
+    "lastLeadId": {
+      "label": "Laatste lead-ID"
+    },
+    "lastFormId": {
+      "label": "Laatste formulier-ID"
+    },
+    "lastFormName": {
+      "label": "Laatste formuliernaam"
+    },
+    "lastAdgroupId": {
+      "label": "Laatste advertentiegroep-ID"
+    },
+    "lastTextInput": {
+      "label": "Laatste tekstinvoer"
+    },
+    "empty": {
+      "label": "Leeg"
+    },
+    "aiSegmentImage": {
+      "description": "Vindt een object in een afbeelding met SAM 3.1 en slaat een bijgesneden afbeelding ervan op.",
+      "inputFieldId": {
+        "label": "Bronafbeelding"
+      },
+      "target": {
+        "label": "Te vinden object",
+        "description": "Een korte zelfstandignaamwoordgroep zoals \"rode auto\" of \"productdoos\". Geen vraag of opdracht.",
+        "placeholder": "productdoos"
+      },
+      "matchSelection": {
+        "label": "Overeenkomsten",
+        "options": {
+          "largest": "Alleen grootste object",
+          "all": "Alle overeenkomende objecten (één uitsnede eromheen)"
+        }
+      },
+      "outputFieldId": {
+        "label": "Afbeelding opslaan in"
+      },
+      "detailsOutputFieldId": {
+        "label": "Details opslaan in",
+        "description": "Optioneel. Ontvangt JSON met het aantal overeenkomsten en de kaders.",
+        "sameAsOutput": "Kies een ander veld dan de uitvoerafbeelding.",
+        "sameAsInput": "Kies een ander veld dan de bronafbeelding."
+      },
+      "overwriteWarning": "Het resultaat vervangt de bronafbeelding in dit veld.",
+      "states": {
+        "success": "Gevonden",
+        "skip": "Niet gevonden",
+        "error": "Mislukt"
+      }
     }
   },
   "condition": {
     "unknownValue": "Onbekend",
+    "deletedValue": "Verwijderd (#{id})",
     "yes": "Ja",
     "no": "Nee",
     "valuePlaceholder": "...",
@@ -2360,6 +2699,7 @@
       "contactCreatedAt": "Contact aangemaakt op",
       "fromCtwaAd": "Van advertentie",
       "fromGoogleAd": "Van Google Ads",
+      "clickedAd": "Op advertentie geklikt",
       "ctwaConversion": "Advertentieconversie",
       "lastUserInputTypes": {
         "text": "Tekst",
@@ -2375,7 +2715,8 @@
       "ctwaConversionTypes": {
         "lead": "Lead",
         "purchase": "Aankoop"
-      }
+      },
+      "pipelineItem": "Pipeline-item"
     },
     "fieldGroups": {
       "opportunity": "Verkoopkans",
@@ -2392,7 +2733,8 @@
       "botFields": "Botvelden",
       "email": "E-mail",
       "sms": "Sms",
-      "ctwaAds": "Advertenties"
+      "ctwaAds": "Advertenties",
+      "pipeline": "Pipelines"
     },
     "languages": {
       "ar": "Arabisch",
@@ -2421,6 +2763,7 @@
     "sources": {
       "direct": "Direct",
       "comments": "Opmerkingen",
+      "liveComments": "Livestream-reacties",
       "ads": "Advertenties",
       "fbLeadAd": "FB-leadadvertentie",
       "inboundMessage": "Inkomend bericht",
@@ -2439,11 +2782,28 @@
       },
       "adPrefix": "advertentie",
       "allAds": "alle advertenties"
+    },
+    "noTopic": "Geen onderwerp",
+    "trackingSince": "Bijgehouden sinds {date}. Eerdere activiteit is niet inbegrepen.",
+    "pipelineItem": {
+      "anyPipeline": "Elke pipeline",
+      "anyStatus": "Elke status",
+      "attributes": {
+        "exists": "Items",
+        "status": "Itemstatus",
+        "stage": "Itemfase",
+        "priority": "Itemprioriteit"
+      },
+      "operators": {
+        "has": "Heeft",
+        "hasNo": "Heeft geen"
+      }
     }
   },
   "flows": {
     "export": {
       "notPublished": "Deze flow is nog nooit gepubliceerd. Publiceer deze voordat je exporteert.",
+      "viewOnly": "Deze flow is geïnstalleerd vanuit een alleen-lezen-sjabloon en kan daarom niet worden geëxporteerd.",
       "failed": "Exporteren mislukt. Probeer het opnieuw."
     },
     "title": "Flows",
@@ -2613,7 +2973,18 @@
       "sendGoogleAdsConversion": "Google Ads-conversie verzenden",
       "changeGamificationScore": "Gamificationpunten wijzigen",
       "sendViewCatalog": "Catalogus bekijken",
-      "sendProducts": "Producten verzenden"
+      "sendProducts": "Producten verzenden",
+      "sendCollection": "Collectie",
+      "pipeline": "Pipelines",
+      "moreOptions": "Meer opties",
+      "findPlacesNearMe": "Plaatsen bij mij in de buurt zoeken",
+      "callPhoneNumber": "Telefoonnummer bellen",
+      "copyText": "Tekst kopiëren"
+    },
+    "externalRequest": {
+      "errors": {
+        "requestFailed": "De externe aanvraag kan niet worden getest. Controleer de aanvraagconfiguratie en probeer het opnieuw."
+      }
     },
     "splitTraffic": {
       "balanceHint": "De totale som moet gelijk zijn aan 100%.",
@@ -2644,7 +3015,12 @@
       "customField": "Aangepast veld",
       "selectCustomFieldPlaceholder": "Selecteer een aangepast veld",
       "addMapping": "Toewijzing toevoegen",
-      "addCustomField": "Nieuwe toevoegen"
+      "addCustomField": "Nieuwe toevoegen",
+      "fileBadge": "Bestand",
+      "fileFormat": "Bestandslinks",
+      "fileFormatAllUrls": "Alle links, gescheiden door komma's",
+      "fileFormatFirstUrl": "Alleen de eerste link",
+      "fileFormatHint": "Het aangepaste veld bewaart links naar de geüploade bestanden, zoals hier gekozen."
     },
     "sendCarousel": {
       "addSlide": "Kaart toevoegen",
@@ -2794,6 +3170,156 @@
       "productsSelected": "{count, plural, one {# product} other {# producten}}",
       "noneSelected": "Nog geen producten",
       "sendFailed": "De producten konden niet worden verzonden."
+    },
+    "sendCollection": {
+      "title": "Collectie",
+      "dataType": "Gegevenstype",
+      "dataTypes": {
+        "products": "Producten"
+      },
+      "collectionType": "Type collectie",
+      "collectionTypes": {
+        "automated": {
+          "label": "Automatisch",
+          "description": "Bestaande en toekomstige artikelen die aan de voorwaarden voldoen, worden automatisch toegevoegd."
+        },
+        "manual": {
+          "label": "Handmatig",
+          "description": "Voeg artikelen één voor één toe."
+        }
+      },
+      "condition": "Voorwaarde",
+      "name": "Naam",
+      "optional": "(Optioneel)",
+      "category": "Categorie",
+      "subcategory": "Subcategorie",
+      "vendor": "Leverancier",
+      "all": "Alle",
+      "items": "Artikelen",
+      "select": "Selecteren",
+      "selectPlaceholder": "Selecteer 1 of meer artikelen",
+      "selectAll": "Alles selecteren",
+      "deselectAll": "Alles deselecteren",
+      "maxProducts": "Tot {count} producten; een product dat de winkel niet meer toont, wordt overgeslagen.",
+      "automatedHint": "Stuurt tot {count} passende producten als kaarten die het product in de webwinkel openen.",
+      "summaryAll": "Alle producten van de winkel",
+      "summaryAutomated": "Producten: {filters}",
+      "summaryManual": "{count, plural, one {# product} other {# producten}}",
+      "cancel": "Annuleren",
+      "save": "Opslaan"
+    },
+    "pipelineStep": {
+      "action": "Actie",
+      "pipeline": "Pipeline",
+      "targetHint": "Werkt op het laatste open item van het contact in deze pipeline. Het pad Overslaan wordt uitgevoerd als er geen is.",
+      "noPipelines": "Geen pipelines gevonden",
+      "actions": {
+        "addToPipeline": "Contact aan pipeline toevoegen",
+        "moveToStage": "Naar een fase verplaatsen",
+        "changeValue": "Waarde wijzigen",
+        "assign": "Aan beheerders toewijzen",
+        "changeStatus": "Status wijzigen",
+        "changePriority": "Prioriteit wijzigen",
+        "changeDueDate": "Vervaldatum wijzigen",
+        "changeTitle": "Titel wijzigen",
+        "setCustomField": "Aangepast veld instellen",
+        "clearCustomField": "Aangepaste velden wissen",
+        "changeDescription": "Beschrijving wijzigen",
+        "removeFromPipeline": "Contact uit pipeline verwijderen",
+        "addComment": "Opmerking toevoegen",
+        "transfer": "Naar een andere pipeline overdragen"
+      },
+      "title": "Titel",
+      "description": "Beschrijving",
+      "stage": "Fase",
+      "firstStage": "Eerste fase",
+      "status": "Status",
+      "assigneeMembers": "Toegewezen beheerders",
+      "assigneeTeams": "Toegewezen teams",
+      "value": "Waarde",
+      "priority": "Prioriteit",
+      "dueDate": "Vervaldatum",
+      "dueNone": "Geen",
+      "dueNoneHint": "Het item heeft geen vervaldatum.",
+      "dueCustomField": "Uit een aangepast datumveld",
+      "dueFixed": "Vaste datum en tijd",
+      "dueField": "Aangepast veld met datum of datum en tijd",
+      "fieldValues": "Aangepaste velden",
+      "field": "Veld",
+      "fieldValue": "Waarde",
+      "fields": "Velden",
+      "addField": "Veldwaarde toevoegen",
+      "removeHint": "Verwijdert het laatste open item van het contact in deze pipeline.",
+      "comment": "Opmerking",
+      "destinationPipeline": "Doelpipeline",
+      "destinationStage": "Doelfase",
+      "missingRequiredFields": "Verplichte velden zonder waarde: {names}. Het item kan pas worden aangemaakt als elk veld een waarde heeft.",
+      "addRequiredFields": "Verplichte velden toevoegen"
+    },
+    "aiSegmentImage": {
+      "label": "{name}: Afbeelding segmenteren"
+    },
+    "aiSpeechToText": {
+      "muse": {
+        "formatHint": "Alleen WAV-bestanden worden geaccepteerd: PCM 16-bit, mono, 16 kHz of 24 kHz, maximaal 10 minuten. Elk ander bestand (bijvoorbeeld spraakberichten) gaat naar de foutvertakking.",
+        "languageBias": {
+          "label": "Taalvoorkeur",
+          "description": "Talen waarin de audio waarschijnlijk is. Laat leeg voor automatische detectie.",
+          "placeholder": "Automatisch detecteren"
+        },
+        "keywords": {
+          "label": "Trefwoorden",
+          "description": "Namen of vaktermen waarmee Muse woorden correct spelt.",
+          "placeholder": "Voeg een trefwoord toe en druk op Enter"
+        }
+      },
+      "languages": {
+        "Arabic": "Arabisch",
+        "Bengali": "Bengaals",
+        "Dutch": "Nederlands",
+        "English": "Engels",
+        "French": "Frans",
+        "German": "Duits",
+        "Hebrew": "Hebreeuws",
+        "Hindi": "Hindi",
+        "Indonesian": "Indonesisch",
+        "Italian": "Italiaans",
+        "Japanese": "Japans",
+        "Kannada": "Kannada",
+        "Korean": "Koreaans",
+        "Malay": "Maleis",
+        "MandarinChinese": "Mandarijn-Chinees",
+        "Marathi": "Marathi",
+        "Polish": "Pools",
+        "Portuguese": "Portugees",
+        "Spanish": "Spaans",
+        "Tagalog": "Tagalog",
+        "Tamil": "Tamil",
+        "Telugu": "Telugu",
+        "Thai": "Thai",
+        "Turkish": "Turks",
+        "Vietnamese": "Vietnamees"
+      }
+    },
+    "findPlacesNearMe": {
+      "category": "Locatiecategorie",
+      "allLocations": "Alle locaties",
+      "whatsappOnly": "Alleen verzonden naar WhatsApp-contacten.",
+      "noLocationSource": "De locatie moet in deze flow worden verzameld: voeg vóór deze actie een stap Gebruikersgegevens ophalen toe met antwoordformaat Locatie. Een locatie die door een andere flow is opgeslagen, wordt niet gebruikt. Zonder die stap wordt deze actie overgeslagen."
+    },
+    "callPhoneNumber": {
+      "fallbackHint": "Op kanalen die geen gesprek kunnen starten, ontvangt het contact dit nummer als antwoord.",
+      "countryLabel": "Landcode",
+      "noCountry": "Geen land",
+      "invalidForCountry": "Dit is geen geldig telefoonnummer voor {country}.",
+      "needsCountry": "Kies het land of begin het nummer met + en de landcode.",
+      "invalidInternational": "Dit is geen geldig internationaal telefoonnummer."
+    },
+    "copyText": {
+      "textLabel": "Te kopiëren tekst",
+      "limitHint": "Maximaal {max} tekens nadat de variabelen zijn ingevuld.",
+      "fallbackHint": "Op kanalen die geen tekst kunnen kopiëren, ontvangt het contact deze tekst als antwoord.",
+      "viewerTitle": "Kopieert deze tekst"
     }
   },
   "folders": {
@@ -2818,7 +3344,7 @@
     "title": "Algemeen"
   },
   "facebookMarketingMessages": {
-    "deleteWarning": "Hiermee verwijder je de campagne alleen uit ChatbotX. De Meta-berichtcampagne blijft lopen — pauzeer of verwijder deze in Advertentiebeheer.",
+    "deleteWarning": "Hiermee verwijder je de Meta-berichtencampagne en haal je de campagne uit ChatbotX. Als Meta het verwijderen weigert, blijft de campagne behouden.",
     "title": "Facebook Marketing Messages",
     "description": "Verhoog betrokkenheid en verkoop met gepersonaliseerde promotieberichten op Messenger.",
     "create": "Nieuw maken",
@@ -2843,13 +3369,197 @@
       "generic": "Generiek",
       "greeting": "Begroeting",
       "quickReplies": "Snelle antwoorden",
-      "elements": "Kaarten"
+      "elements": "Kaarten",
+      "targetMessaging": "Doelgroep voor berichten",
+      "targetOptIn": "Opt-in",
+      "targetOptInDescription": "Klanten op de pagina die hebben ingestemd met het ontvangen van marketingberichten",
+      "targetCustomAudience": "Aangepaste doelgroep",
+      "targetCustomAudienceDescription": "Berichten sturen naar doelgroepen die uit een bestand zijn geüpload",
+      "audience": "Aangepaste doelgroep"
     },
+    "noReadyAudiences": "Geen gereede aangepaste doelgroepen voor deze pagina en dit advertentieaccount.",
+    "manageAudiences": "Doelgroepen beheren",
     "errors": {
       "notConfigured": "Facebook Marketing Messages is niet geconfigureerd. Vraag je beheerder om de configuratie-ID voor marketingberichten in te stellen.",
       "notGranted": "Geef toegang om de functie Marketingberichten te gebruiken.",
       "tosNotAccepted": "Accepteer de voorwaarden voor aangepaste objecten op {url} om deze functie te gebruiken",
-      "notFound": "Marketingbericht niet gevonden."
+      "notFound": "Marketingbericht niet gevonden.",
+      "audienceNotTargetable": "De geselecteerde aangepaste doelgroep is niet gereed of hoort niet bij deze pagina en dit advertentieaccount.",
+      "connectFirst": "Verbind Marketing Messages eerst in de ChatbotX-app.",
+      "mmInvalidState": "Deze actie is niet beschikbaar in de huidige status van de campagne.",
+      "mmCampaignEnded": "De Meta-berichtencampagne is afgelopen en kan daarom niet worden verzonden of hervat.",
+      "mmPageNotConnected": "De pagina van deze campagne is niet verbonden met deze werkruimte.",
+      "mmContentLocked": "De inhoud kan niet meer worden gewijzigd nadat het eerste bericht is verzonden.",
+      "metaDeleteFailed": "Meta kon deze campagne niet verwijderen, dus deze is behouden. {message}",
+      "statisticsUnknownAdAccount": "Deze werkruimte heeft geen Marketing Messages-campagnes op dat advertentieaccount.",
+      "statisticsInvalidRange": "Kies een startdatum op of vóór de einddatum, binnen de afgelopen 37 maanden."
+    },
+    "tabs": {
+      "campaigns": "Campagnes",
+      "audiences": "Doelgroepen",
+      "statistics": "Statistieken"
+    },
+    "audiences": {
+      "title": "Aangepaste doelgroepen",
+      "create": "Nieuw maken",
+      "uploadMore": "Meer rijen uploaden",
+      "empty": "Nog geen aangepaste doelgroepen.",
+      "deleteTitle": "Aangepaste doelgroep verwijderen",
+      "deleteWarning": "Hiermee wordt de aangepaste doelgroep \"{name}\" op Meta en in ChatbotX verwijderd. Dit kan niet ongedaan worden gemaakt.",
+      "deleted": "Aangepaste doelgroep verwijderd.",
+      "pageDisconnected": "Pagina losgekoppeld",
+      "status": {
+        "ready": "Gereed",
+        "missing": "Verwijderd op Meta"
+      },
+      "fields": {
+        "customAudienceId": "ID van aangepaste doelgroep",
+        "approximateCount": "Geschat aantal",
+        "status": "Status",
+        "file": "Bestand uploaden"
+      },
+      "wizard": {
+        "title": "Aangepaste doelgroep maken",
+        "uploadMoreTitle": "Meer rijen uploaden",
+        "steps": {
+          "prepare": "Lijst voorbereiden",
+          "upload": "Uploaden",
+          "confirm": "Bevestigen"
+        },
+        "prepareDescription": "Een abonneelijst is een CSV- of TXT-bestand met informatie waarmee je je doelgroep voor marketingberichten opbouwt. We gebruiken het telefoonnummer om je abonnees te koppelen aan Facebook- en Instagram-gebruikers. Voordat de informatie naar ons wordt verzonden, wordt je lijst met identificatoren gehasht tot willekeurige code.",
+        "aboutHashing": "Over hashing",
+        "downloadTemplate": "Bestandssjabloon downloaden",
+        "mainIdentifiers": "Voeg ten minste één hoofdidentificator toe",
+        "moreIdentifiers": "Voeg meer identificatoren toe",
+        "identifiers": {
+          "email": "E-mail",
+          "phone": "Telefoonnummer",
+          "madid": "Mobiel advertentie-ID",
+          "fn": "Voornaam",
+          "ln": "Achternaam",
+          "ct": "Plaats",
+          "st": "Staat/provincie",
+          "country": "Land",
+          "zip": "Postcode",
+          "dob": "Geboortedatum",
+          "doby": "Geboortejaar",
+          "gen": "Geslacht"
+        },
+        "uploadNote": "Zorg er voor het uploaden van de lijst voor dat de identificatoren compleet zijn en de juiste notatie hebben. De lijst moet de indeling .csv, .txt of .xlsx hebben.",
+        "namePlaceholder": "Voer de naam van de doelgroep in...",
+        "descriptionPlaceholder": "Korte beschrijving (indien van toepassing)",
+        "dropzone": "Klik om te uploaden of sleep en zet neer",
+        "maxFileSize": "Maximale bestandsgrootte: 20 MB",
+        "fileRequired": "Selecteer een bestand om te uploaden.",
+        "fileTooLarge": "Het bestand is groter dan 20 MB.",
+        "fileType": "Het bestand moet .csv, .txt of .xlsx zijn.",
+        "next": "Volgende",
+        "back": "Terug",
+        "upload": "Uploaden",
+        "done": "Klaar",
+        "successTitle": "Upload geslaagd",
+        "successRows": "Je Messenger-abonneelijst is geüpload: {count, plural, one {# rij} other {# rijen}}",
+        "skippedRows": "{count, plural, one {# rij is} other {# rijen zijn}} overgeslagen (geen geldig e-mailadres of telefoonnummer).",
+        "invalidRows": "{count, plural, one {# rij is} other {# rijen zijn}} geweigerd door Meta.",
+        "matchingNote": "Het kan enkele minuten duren voordat je abonnees zijn gekoppeld aan mensen op Facebook. Je kunt de status bekijken in de doelgroeplijst."
+      },
+      "errors": {
+        "audienceInvalidFile": "Het bestand kan niet worden gelezen. Gebruik een .csv-, .txt- of .xlsx-bestand met een koprij.",
+        "audienceTooManyRows": "Het bestand heeft meer dan {max, number} rijen.",
+        "audienceNoIdentifier": "Het bestand heeft een e-mail- of telefoonkolom nodig.",
+        "audienceNoValidRows": "Geen enkele rij heeft een geldig e-mailadres of telefoonnummer.",
+        "audiencePartialUpload": "De doelgroep is gemaakt, maar de upload is gestopt na {received, number} rijen. Gebruik \"Meer rijen uploaden\" om het opnieuw te proberen.",
+        "audienceNotFound": "Aangepaste doelgroep niet gevonden.",
+        "audienceCreateRejected": "Meta heeft de doelgroep afgewezen: {reason}",
+        "uploadUncertain": "De upload is mogelijk niet voltooid. Sluit dit venster en controleer de doelgroeplijst; gebruik \"Meer rijen uploaden\" als de doelgroep is aangemaakt.",
+        "pageNotConnected": "De geselecteerde Pagina is niet verbonden met deze workspace.",
+        "audienceInUse": "Deze aangepaste doelgroep wordt gebruikt door {count, plural, one {# marketingbericht} other {# marketingberichten}} en kan niet worden verwijderd."
+      }
+    },
+    "delivery": {
+      "title": "Bezorging",
+      "contentLocked": "De inhoud is vergrendeld omdat er al berichten zijn verzonden.",
+      "topicsReturned": "Door Meta teruggegeven onderwerpen: {topics}",
+      "recipients": "{count} ontvangers",
+      "startsAt": "Start: {date}",
+      "completedAt": "Voltooid: {date}",
+      "errorBreakdown": "Fouten",
+      "retrying": "Meta accepteert momenteel geen verzendingen; er wordt automatisch opnieuw geprobeerd.",
+      "counts": {
+        "sent": "Verzonden",
+        "delivered": "Bezorgd",
+        "unconfirmed": "Onbevestigd"
+      },
+      "status": {
+        "notSent": "Niet verzonden",
+        "scheduled": "Gepland",
+        "sending": "Wordt verzonden",
+        "waitingNextDay": "Wacht op de volgende dag",
+        "paused": "Gepauzeerd",
+        "stopped": "Gestopt"
+      },
+      "reason": {
+        "pageNotConnected": "De Pagina is niet verbonden met deze workspace.",
+        "quotaReached": "Gepauzeerd: je berichtenquotum is bereikt.",
+        "workspaceBlocked": "Gepauzeerd: deze workspace is geblokkeerd.",
+        "grantInvalid": "Gepauzeerd: de Facebook-verbinding is verlopen. Verbind Marketing Messages opnieuw.",
+        "metaBlocker": "Meta blokkeert deze campagne.",
+        "contentRejected": "Meta heeft de berichtinhoud afgewezen.",
+        "noTokens": "Er zijn geen ontvangers gevonden voor deze campagne.",
+        "noMatchingTopic": "Geen ontvanger met toestemming komt overeen met het onderwerp \"Updates and promotions\".",
+        "tokenFetchFailed": "Ontvangers konden niet bij Meta worden opgehaald.",
+        "campaignEnded": "De Meta-campagne is afgelopen.",
+        "lifetimeBudgetReached": "Het totale budget is op."
+      },
+      "errors": {
+        "grantInvalid": "De Facebook-verbinding is verlopen.",
+        "campaignInactive": "De Meta-campagne is niet actief.",
+        "budgetReached": "Budget op.",
+        "dailyBudgetReached": "Dagbudget bereikt.",
+        "optedOut": "De ontvanger heeft zich afgemeld.",
+        "frequencyLimit": "Frequentielimiet van de ontvanger bereikt.",
+        "contentRejected": "Berichtinhoud afgewezen door Meta.",
+        "deliveryFailed": "Bezorging mislukt.",
+        "outcomeUnknown": "Bezorgresultaat onbekend."
+      }
+    },
+    "statistics": {
+      "searchPlaceholder": "Zoeken op ID of naam",
+      "adAccount": "Advertentieaccount",
+      "dateRange": "Periode",
+      "timezoneHint": "Datums in {timezone}",
+      "presets": {
+        "last7": "Afgelopen 7 dagen",
+        "last30": "Afgelopen 30 dagen",
+        "last90": "Afgelopen 90 dagen",
+        "thisMonth": "Deze maand",
+        "lastMonth": "Vorige maand"
+      },
+      "columns": {
+        "id": "ID",
+        "name": "Naam",
+        "page": "Facebook-pagina",
+        "delivered": "Afgeleverde berichten",
+        "readRate": "Leespercentage",
+        "linkClicks": "Linkklikken",
+        "linkClickRate": "Linkklikpercentage",
+        "costPerClick": "Kosten per klik",
+        "costPerDelivery": "Kosten per aflevering",
+        "spend": "Uitgegeven bedrag"
+      },
+      "notes": {
+        "delivery": "Meta rapporteert dit niet voor ontvangers in Europa of Japan; die campagnes tonen -.",
+        "clicks": "Meta rapporteert dit niet voor ontvangers in Europa, Argentinië, Turkije, Zuid-Korea of Japan; die campagnes tonen -."
+      },
+      "footer": {
+        "label": "Totaal: {count, plural, one {# campagne} other {# campagnes}}",
+        "total": "Totaal",
+        "average": "Gemiddelde"
+      },
+      "totalsUnavailable": "Totalen zijn nu niet beschikbaar. Probeer het zo opnieuw.",
+      "readOnly": "Maak opnieuw verbinding met Marketing Messages om statistieken te zien.",
+      "empty": "Nog geen Marketing Messages-campagnes. Maak er een aan op het tabblad Campagnes.",
+      "noResults": "Geen campagnes gevonden voor je zoekopdracht."
     }
   },
   "facebookAds": {
@@ -3551,14 +4261,22 @@
         "inProgress": "Verbinding is al bezig.",
         "unknown": "Er is iets misgegaan.",
         "followUpFailed": "Instellen niet voltooid — rond dit af via de kanaalinstellingen.",
-        "webhookSubscribeFailed": "Verbonden, maar het webhook-abonnement is mislukt — probeer het opnieuw via de verbindingsinstellingen."
+        "webhookSubscribeFailed": "Verbonden, maar het webhook-abonnement is mislukt — probeer het opnieuw via de verbindingsinstellingen.",
+        "providerUnavailable": "De provider is tijdelijk niet beschikbaar. Probeer het over een paar minuten opnieuw."
       },
       "sessionError": {
         "sessionExpired": "Je sessie is verlopen. Maak opnieuw verbinding.",
         "notMember": "Je bent geen lid meer van deze werkruimte.",
         "trialExpired": "Je proefperiode is verlopen.",
         "macLimitReached": "Je hebt je accountlimiet bereikt.",
-        "credentialMissing": "Ontbrekende inloggegevens. Maak opnieuw verbinding."
+        "credentialMissing": "Ontbrekende inloggegevens. Maak opnieuw verbinding.",
+        "noPages": "We hebben geen Facebook-pagina gevonden om te koppelen. Koppel opnieuw en geef toegang tot minstens één pagina die je beheert.",
+        "noInstagramAccounts": "We hebben geen Instagram-account gevonden om te koppelen. Koppel opnieuw en geef toegang tot minstens één account.",
+        "exchangeFailed": "Het inloggen kon niet worden voltooid. Koppel opnieuw.",
+        "providerError": "We konden je accounts nu niet laden. Probeer het over een paar minuten opnieuw.",
+        "connectFailed": "Er ging iets mis bij het koppelen. Probeer het opnieuw.",
+        "tooManyAttempts": "Er zijn te veel onvoltooide koppelpogingen. Wacht een paar minuten en probeer het dan opnieuw.",
+        "notAllowed": "Je kunt hier nu geen kanalen koppelen. Laad de pagina opnieuw om te zien waarom."
       },
       "cancelRemaining": "Resterende annuleren",
       "retryFailed": "Opnieuw proberen ({count})",
@@ -3624,7 +4342,8 @@
   "workspaces": {
     "list": {
       "title": "Lijst met workspaces"
-    }
+    },
+    "defaultName": "Werkruimte van {name}"
   },
   "workspaceToken": {
     "title": "Workspacetoken"
@@ -3641,6 +4360,7 @@
       "months": "{count} mnd",
       "years": "{count} j"
     },
+    "realtimeRevokeWarning": "De toegangsintrekking kon niet direct worden bevestigd - deze wordt van kracht bij de volgende herverbinding van het lid.",
     "moveFeature": "{feature} verplaatsen",
     "poweredBy": "Mogelijk gemaakt door {name}",
     "noGiphyApiKey": "Geen GIPHY API-sleutel gevonden. Voeg er een toe in Platforminstellingen.",
@@ -3778,6 +4498,9 @@
     "waTemplateMpmTooManySections": "Een multi-productknop kan maximaal 10 secties hebben. Verwijder enkele secties voordat je publiceert.",
     "waTemplateMpmTooManyProducts": "Een multi-productknop kan in totaal maximaal 30 producten hebben. Verwijder enkele producten voordat je publiceert.",
     "waTemplateLtoExpirationRequired": "Kies een vervaldatum voor de tijdelijke aanbieding voordat je verzendt.",
+    "waTemplatePaymentRequestIncomplete": "Vul de betaalgegevens van deze knop in voordat je publiceert.",
+    "waTemplatePaymentRequestInvalid": "Een betaalgegeven heeft een ongeldig formaat. Controleer het bedrag, de link en de kaartcijfers.",
+    "waTemplatePaymentRequestMisplaced": "Betaalgegevens kunnen alleen worden ingesteld op een betaalknop van een gewone sjabloon (geen carrousel).",
     "waTemplateMpmIncompleteProducts": "Elke sectie heeft minstens één geselecteerd product nodig — verwijder lege rijen of kies er een product voor.",
     "unsupportedBlock": "Dit kanaal ondersteunt dit blok niet.",
     "constraintExceeded": "De limiet van dit kanaal is overschreden.",
@@ -3804,7 +4527,15 @@
       "noAnswer": "Geen antwoord",
       "labelsUnavailable": "De vragen van de Flow konden niet worden geladen, daarom worden de veldnamen getoond.",
       "yes": "Ja",
-      "no": "Nee"
+      "no": "Nee",
+      "fileNotSaved": "Bestand niet opgeslagen",
+      "filesNotSaved": "{count, plural, one {# bestand is niet opgeslagen} other {# bestanden zijn niet opgeslagen}}",
+      "filesAttached": "{count, plural, one {# bijlage} other {# bijlagen}}",
+      "fileFailure": {
+        "too_large": "Bestand te groot",
+        "unsupported_type": "Bestandstype niet ondersteund",
+        "download_failed": "Downloaden mislukt"
+      }
     },
     "sendViewCatalogBodyTooLong": "De berichttekst is te lang voor een catalogusbericht. Maak hem korter.",
     "sendViewCatalogFooterTooLong": "De voettekst is te lang voor een catalogusbericht. Maak hem korter.",
@@ -3831,7 +4562,24 @@
     "savedReplyImagesRemoved": "Afbeeldingen die hier niet verstuurd kunnen worden, zijn verwijderd",
     "onlyImagesAllowed": "Alleen afbeeldingen kunnen worden toegevoegd",
     "tooManySavedReplyImages": "Een opgeslagen antwoord kan maximaal {max} afbeeldingen bevatten",
-    "savedReplyImagesNotSentHere": "Afbeeldingen worden hier niet verstuurd"
+    "savedReplyImagesNotSentHere": "Afbeeldingen worden hier niet verstuurd",
+    "invalidPhoneNumber": "Dit is geen geldig telefoonnummer. Voeg de landcode toe, bijvoorbeeld +1.",
+    "buttonCallPhoneNumberUnsupported": "Deze knop kan hier geen telefoonnummer bellen. Kies een andere actie.",
+    "buttonCopyTextUnsupported": "Deze knop kan hier geen tekst kopiëren. Kies een andere actie.",
+    "paymentRequest": {
+      "title": "Betaalverzoek",
+      "cardEnding": "Kaart eindigend op {lastFourDigits}",
+      "status": "WhatsApp meldt geen betaling. Controleer dit bij je betaalprovider.",
+      "cardStatus": "De bevestiging van de klant schrijft niets af van de kaart. Schrijf af via je betaalprovider.",
+      "sentFromTemplate": "Sjabloon: {name}"
+    },
+    "paymentConfirmation": {
+      "title": "Klant heeft de betaling bevestigd",
+      "cardTitle": "Klant heeft de kaartbetaling bevestigd",
+      "cardEnding": "Kaart eindigend op {lastFourDigits}",
+      "notCharged": "Nog niet afgeschreven. Schrijf af via je betaalprovider.",
+      "reference": "Referentie {referenceId}"
+    }
   },
   "instagram": {
     "description": "Met deze integratie kun je Instagram-bots maken.",
@@ -3928,6 +4676,7 @@
         "buttonText": "Knoptekst",
         "buttonType": "Knoptype",
         "visitWebsite": "Website bezoeken",
+        "openMiniApp": "Mini-app openen",
         "callPhoneNumber": "Telefoonnummer bellen",
         "postback": "Knop"
       },
@@ -3989,6 +4738,18 @@
       "label": "DeepSeek"
     },
     "title": "DeepSeek"
+  },
+  "muse": {
+    "autoReply": {
+      "description": "Schakel automatische AI-antwoorden in om gebruikers op natuurlijke wijze te antwoorden met AI op basis van je bedrijfsgegevens.",
+      "label": "Automatisch AI-antwoord"
+    },
+    "connect": {
+      "description": "Reageer op natuurlijke wijze op gebruikers met AI op basis van je bedrijfsgegevens.",
+      "embeddingHint": "Muse biedt geen embeddingmodellen. Kennisbank en AI-bestanden hebben nog steeds een OpenAI- of Gemini-integratie nodig.",
+      "label": "Muse"
+    },
+    "title": "Muse"
   },
   "decision": {
     "addConnection": "Add AI Router connection",
@@ -4125,12 +4886,17 @@
     "deepseek": {
       "description": "Beschrijving van de DeepSeek-integratie",
       "title": "DeepSeek-integratie"
+    },
+    "muse": {
+      "description": "Beschrijving van de Muse-integratie",
+      "title": "Muse-integratie"
     }
   },
   "auth": {
     "orContinueWith": "Of ga verder met",
     "continueWithFacebook": "Doorgaan met Facebook",
     "continueWithGoogle": "Doorgaan met Google",
+    "continueWithProvider": "Doorgaan met {name}",
     "continueWithEmail": "Doorgaan met e-mail",
     "continueWithMagicLink": "Doorgaan met magische link",
     "dontHaveAnAccount": "Heb je nog geen account?",
@@ -4161,11 +4927,15 @@
     "changePasswordTitle": "Je wachtwoord wijzigen",
     "changePasswordDescription": "Stel een nieuw wachtwoord in voordat je verdergaat.",
     "passwordChangeSuccess": "Wachtwoord gewijzigd",
+    "signUpDisabledTitle": "Aanmelden is uitgeschakeld",
+    "signUpDisabledDescription": "Nieuwe accounts kunnen alleen door een beheerder of via een uitnodigingslink worden aangemaakt.",
     "oauthError": {
       "accountNotLinked": "Er bestaat al een account met dit e-mailadres en het kon niet worden gekoppeld. Log in zoals je eerder deed of neem contact op met support.",
       "unableToLinkAccount": "We konden deze aanmelding niet aan het bestaande account koppelen. Meld je aan zoals je eerder deed, of neem contact op met support.",
       "sessionExpired": "De aanmeldpoging is verlopen. Probeer het opnieuw.",
       "accessDenied": "Aanmelden is geannuleerd.",
+      "signUpDisabled": "Dit account bestaat nog niet en aanmelden is uitgeschakeld. Vraag een beheerder om het voor je aan te maken.",
+      "invalidInvitation": "Deze uitnodiging is ongeldig of verlopen.",
       "generic": "Aanmelden mislukt. Probeer het opnieuw."
     }
   },
@@ -4189,6 +4959,9 @@
     "maxCharacters": "Maximaal {max} tekens.",
     "invalidApiKey": "Ongeldige API-sleutel",
     "maxMustBeGreaterThanMin": "{maxField} moet groter zijn dan of gelijk zijn aan {minField}",
+    "trigger": {
+      "actionReferenceNotFound": "An action refers to a record that no longer exists. Re-select it in the action and save again."
+    },
     "inboundWebhook": {
       "inboxRequired": "Kies een inbox.",
       "inboxNotFound": "De geselecteerde inbox is niet gevonden.",
@@ -4198,11 +4971,31 @@
       "unknownFieldTarget": "Een gekoppeld contactveld bestaat niet meer.",
       "actionReferenceNotFound": "Een actie verwijst naar een flow, tag of veld dat niet meer bestaat.",
       "fieldMappingRequired": "Voeg minstens één veldkoppeling toe."
+    },
+    "form": {
+      "required": "Dit veld is verplicht.",
+      "minLength": "Vul minstens {minimum} tekens in.",
+      "maxLength": "Vul hoogstens {maximum} tekens in.",
+      "minNumber": "Vul een getal van minstens {minimum} in.",
+      "moreThan": "Vul een getal groter dan {minimum} in.",
+      "maxNumber": "Vul een getal van hoogstens {maximum} in.",
+      "lessThan": "Vul een getal kleiner dan {maximum} in.",
+      "number": "Vul een getal in.",
+      "wholeNumber": "Vul een heel getal in.",
+      "minItems": "Kies minstens {minimum}.",
+      "maxItems": "Kies hoogstens {maximum}.",
+      "email": "Vul een geldig e-mailadres in.",
+      "url": "Vul een geldige link in die begint met https://.",
+      "format": "Deze waarde heeft niet het juiste formaat.",
+      "option": "Kies een van de opties.",
+      "invalid": "Deze waarde is ongeldig.",
+      "checkFields": "Sommige velden moeten worden verbeterd. Bekijk de rood gemarkeerde."
     }
   },
   "webchat": {
     "chatUnavailable": "Deze chat is momenteel niet beschikbaar.",
     "description": "Laat je klanten rechtstreeks vanaf je website direct geautomatiseerde antwoorden van je bedrijf ontvangen",
+    "loadMessagesError": "Berichten konden niet worden geladen. Controleer je verbinding en probeer het opnieuw.",
     "rateLimitExceeded": "Te veel verzoeken. Probeer het zo meteen opnieuw.",
     "title": "Webchat",
     "workspaceUnavailable": "Deze workspace is niet meer beschikbaar.",
@@ -4358,7 +5151,28 @@
         "mpmSectionLimitReached": "Maximum van 10 secties bereikt.",
         "mpmProductLimitReached": "Maximum van 30 producten bereikt.",
         "mpmProductsSummary": "{productCount} producten in {sectionCount} secties",
-        "unsupportedButtonParam": "Dit knoptype wordt nog niet ondersteund."
+        "unsupportedButtonParam": "Dit knoptype wordt nog niet ondersteund.",
+        "payment": {
+          "method": {
+            "pix": "Pix",
+            "boleto": "Boleto",
+            "payment_link": "Betaallink",
+            "card_on_file": "Kaartbetaling met één klik"
+          },
+          "field": {
+            "code": "Pix-code",
+            "digitableLine": "Boleto-regel",
+            "url": "URL van de betaallink",
+            "lastFourDigits": "Laatste 4 cijfers van de kaart",
+            "credentialId": "Kaart-credential-ID (optioneel)",
+            "amount": "Bedrag in BRL, bijv. 12.34"
+          },
+          "notice": {
+            "general": "Gebruik een variabele zodat elke klant zijn eigen betaalgegevens krijgt.",
+            "cardOnFile": "Kaartbetaling met één klik werkt alleen voor bedrijven die Meta daarvoor heeft ingeschakeld."
+          },
+          "unsupportedButton": "Deze sjabloon heeft een betaalknop die niet kan worden verstuurd: het betaaltype kon niet worden bepaald. Synchroniseer de sjablonen opnieuw of kies een andere."
+        }
       }
     },
     "sampleBodyCardContent": {
@@ -4515,7 +5329,6 @@
     "templateHeader": {
       "label": "Koptekst van sjabloon"
     },
-    "transferPhoneNumber": "Telefoonnummer van een andere WhatsApp-provider overdragen",
     "selectPage": {
       "tryAgain": "Probeer opnieuw te koppelen"
     },
@@ -4772,7 +5585,18 @@
         "callInformation": "Oproepinformatie"
       }
     },
-    "credentialSecretsRequired": "Voer het app-geheim en het systeemgebruikerstoken in. Ze zijn nog niet opgeslagen."
+    "credentialSecretsRequired": "Voer het app-geheim en het systeemgebruikerstoken in. Ze zijn nog niet opgeslagen.",
+    "embeddedSignupCancelled": "De registratie is geannuleerd — je kunt dit tabblad sluiten.",
+    "embeddedSignupFailed": "De registratie is niet voltooid — sluit dit tabblad en probeer het opnieuw.",
+    "payment": {
+      "settings": {
+        "title": "Betalingen",
+        "description": "Hoe dit nummer betaalverzoekknoppen verstuurt.",
+        "pixRedirectLabel": "Pix met doorverwijzing versturen",
+        "pixRedirectDescription": "Kopers openen hun bank-app om te betalen en keren terug naar WhatsApp. Zet dit pas aan nadat Meta je bedrijf heeft aangemeld; kopers die niet kunnen worden doorverwezen krijgen nog steeds kopiëren en plakken.",
+        "adminOnly": "Alleen workspacebeheerders kunnen de betaalinstellingen wijzigen."
+      }
+    }
   },
   "zalo": {
     "title": "Zalo OA",
@@ -4795,7 +5619,8 @@
     "chatbotInvitationDescription1": "Word lid van {chatbotName}",
     "chatbotInvitationDescription2": "{userName} heeft je uitgenodigd om lid te worden van {chatbotName}.",
     "invalidInvitation": "Deze uitnodiging is ongeldig of verlopen.",
-    "workspaceUnavailable": "Deze workspace is niet meer beschikbaar."
+    "workspaceUnavailable": "Deze workspace is niet meer beschikbaar.",
+    "signUpToJoin": "Maak een account aan om deel te nemen"
   },
   "inboxes": {
     "markReadOnOutbound": {
@@ -5160,11 +5985,11 @@
       "incomingCall": "Inkomende oproep",
       "missedAudioCall": "Gemiste audio-oproep",
       "callEnded": "Oproep beëindigd",
-      "ticketCreated": "Ticket aangemaakt",
-      "ticketMovedToStage": "Ticket naar fase verplaatst",
-      "ticketValueChanged": "Ticketwaarde gewijzigd",
-      "ticketStatusChanged": "Ticketstatus gewijzigd",
-      "ticketPriorityChanged": "Ticketprioriteit gewijzigd",
+      "pipelineItemCreated": "Ticket aangemaakt",
+      "pipelineItemMovedToStage": "Ticket naar fase verplaatst",
+      "pipelineItemValueChanged": "Ticketwaarde gewijzigd",
+      "pipelineItemStatusChanged": "Ticketstatus gewijzigd",
+      "pipelineItemPriorityChanged": "Ticketprioriteit gewijzigd",
       "subscribedToSequence": "Ingeschreven voor reeks",
       "unsubscribedFromSequence": "Uitgeschreven uit reeks",
       "shoppingCartSent": "Contact heeft winkelwagen verzonden",
@@ -5175,15 +6000,24 @@
       "orderShipped": "Bestelling verzonden",
       "orderConcluded": "Bestelling afgerond",
       "orderCancelled": "Bestelling geannuleerd",
+      "orderPaid": "Bestelling betaald",
+      "orderRefunded": "Bestelling terugbetaald",
       "categoryAddedToCart": "Categorie aan winkelwagen toegevoegd",
       "productAddedToCart": "Product aan winkelwagen toegevoegd",
       "productRemovedFromCart": "Product uit winkelwagen verwijderd",
       "productOrdered": "Product besteld",
       "contactReferredANewContact": "Contact heeft een nieuw contact doorverwezen",
       "contactReferredExistingContact": "Contact heeft een bestaand contact doorverwezen",
+      "contactBlockedBot": "Contact heeft de bot geblokkeerd",
+      "contactUnblockedBot": "Contact heeft de bot gedeblokkeerd",
       "callRecorded": "Oproep opgenomen",
       "callTranscribed": "Oproep getranscribeerd",
-      "anyProduct": "Elk product"
+      "anyProduct": "Elk product",
+      "anyCategory": "Elke categorie",
+      "anyPipeline": "Elke pipeline",
+      "anyStage": "Elke fase",
+      "unavailablePipeline": "Verwijderde of niet-beschikbare pipeline",
+      "unavailableStage": "Verwijderde of niet-beschikbare fase"
     },
     "actions": {
       "addTag": "Tag toevoegen",
@@ -5191,6 +6025,7 @@
       "setCustomField": "Aangepast veld instellen",
       "clearCustomField": "Aangepast veld wissen",
       "startAnotherFlow": "Andere flow starten",
+      "startExternalStep": "Start External Step",
       "notifyAdmins": "Beheerders informeren",
       "transferConversationToHuman": "Gesprek overdragen aan een medewerker",
       "sendMetaCapiEvent": "Meta CAPI-gebeurtenis verzenden",
@@ -5232,7 +6067,26 @@
     "countCapped": "{count}+ contacten",
     "exportAllNotice": "Alle contacten die overeenkomen met het huidige filter worden geëxporteerd.",
     "exportTakingLong": "Het exporteren duurt langer dan verwacht",
-    "exportTakingLongDescription": "De export wordt nog verwerkt. Je kunt dit dialoogvenster sluiten en over enkele minuten de exportgeschiedenis bekijken."
+    "exportTakingLongDescription": "De export wordt nog verwerkt. Je kunt dit dialoogvenster sluiten en over enkele minuten de exportgeschiedenis bekijken.",
+    "search": {
+      "placeholder": "Zoeken (naam, e-mail, telefoon, contact-ID)",
+      "searching": "Zoeken…",
+      "error": "Contacten zoeken is mislukt",
+      "empty": "Geen contacten gevonden"
+    },
+    "exportHistory": {
+      "title": "Exportgeschiedenis",
+      "description": "Contactexports van de afgelopen {days} dagen. Daarna worden de bestanden verwijderd.",
+      "empty": "Nog geen exports.",
+      "requestedBy": "Door {name}",
+      "deletesOn": "Wordt verwijderd op {date}",
+      "rows": "{count, plural, one {# contact} other {# contacten}}",
+      "status": {
+        "pending": "Bezig",
+        "uploaded": "Klaar",
+        "failed": "Mislukt"
+      }
+    }
   },
   "contactScan": {
     "menu": {
@@ -5304,7 +6158,8 @@
       "userPlaceholder": "Gebruikers-ID",
       "keyword": "Trefwoord",
       "keywordPlaceholder": "Actie of detail",
-      "allAdmins": "Alle admins"
+      "allAdmins": "Alle admins",
+      "allWorkspaces": "Alle werkruimtes"
     }
   },
   "customFields": {
@@ -5325,7 +6180,36 @@
       "pageTitle": "Pagina-trefwoorden",
       "page": "Reageer automatisch wanneer je een bericht met een trefwoord naar een contact stuurt."
     },
-    "pageWarning": "Berichtinhoud met een Pagina-trefwoord kan ertoe leiden dat er berichten in een oneindige lus naar de klant worden verzonden. Schakel het Pagina-trefwoord onmiddellijk uit als dit gebeurt!"
+    "pageWarning": "Berichtinhoud met een Pagina-trefwoord kan ertoe leiden dat er berichten in een oneindige lus naar de klant worden verzonden. Schakel het Pagina-trefwoord onmiddellijk uit als dit gebeurt!",
+    "conditions": {
+      "operators": {
+        "is": "Bericht is",
+        "similarTo": "Bericht lijkt op",
+        "contains": "Bericht bevat",
+        "containsPhone": "Bericht bevat telefoonnummer",
+        "containsEmail": "Bericht bevat e-mail",
+        "containsImage": "Bericht bevat afbeelding",
+        "containsVideo": "Bericht bevat video",
+        "containsLink": "Bericht bevat link",
+        "containsWholeWord": "Bericht bevat heel woord",
+        "beginsWith": "Bericht begint met",
+        "endsWith": "Bericht eindigt met",
+        "isThumbsUp": "Bericht is 👍",
+        "notContains": "Bericht bevat niet",
+        "matchesRegex": "Bericht komt overeen met regex"
+      },
+      "and": "en",
+      "addCondition": "Berichtvoorwaarde",
+      "removeCondition": "Voorwaarde verwijderen",
+      "note": "Trefwoorden zijn niet hoofdlettergevoelig en negeren accenten, bijv. \"Tư vấn\" en \"tu van\" worden als hetzelfde herkend.",
+      "keywordPlaceholder": "+ Trefwoord",
+      "regexPlaceholder": "+ Regex",
+      "errors": {
+        "keywordConditionValuesRequired": "Voeg minstens één trefwoord toe.",
+        "keywordConditionTakesNoValues": "Deze voorwaarde gebruikt geen trefwoorden.",
+        "invalidKeywordRegex": "Ongeldige reguliere expressie."
+      }
+    }
   },
   "triggers": {
     "title": "Triggers"
@@ -5428,6 +6312,7 @@
     "gemini": "Gemini",
     "claude": "Claude",
     "deepseek": "DeepSeek",
+    "muse": "Muse",
     "openrouter": "OpenRouter",
     "openaiCompatible": "OpenAI-compatibel"
   },
@@ -5465,11 +6350,99 @@
   },
   "pollManager": {
     "title": "Pollbeheer",
-    "description": "Maak en beheer polls voor je contacten."
+    "description": "Voer peilings- of stemsystemen uit. Je kunt het ook gebruiken om de meningen van klanten te verzamelen.",
+    "feature": "Poll",
+    "deleteDescription": "Deleting a poll also deletes its candidates and votes. This cannot be undone.",
+    "list": {
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "votes": "Votes",
+      "getLink": "Get Link"
+    },
+    "getLink": {
+      "title": "Get Link",
+      "description": "Share a link that opens a chat and starts the poll.",
+      "omnichannel": "Omnichannel",
+      "noInboxes": "No connected channels can open this poll yet.",
+      "loadError": "Could not load the links."
+    },
+    "form": {
+      "createTitle": "Create poll",
+      "editTitle": "Edit poll",
+      "votingPeriod": "Voting period",
+      "imageRequired": "An image is required.",
+      "dateRangeInvalid": "De einddatum moet na de startdatum liggen.",
+      "candidatesTitle": "Candidates or Options",
+      "candidateNumber": "Candidate {number}",
+      "moreOptions": "More Options",
+      "afterVoteFlow": "Flow to be sent after the user votes",
+      "afterVoteFlowNone": "None",
+      "removeVotesTitle": "Remove candidates?",
+      "removeVotesDescription": "Deleting candidates also deletes their votes."
+    },
+    "analytics": {
+      "title": "Analytics",
+      "results": "Results",
+      "votesPerGender": "Votes per gender",
+      "totalVotes": "Total votes",
+      "noVotes": "No votes yet",
+      "other": "Other",
+      "male": "Male",
+      "female": "Female",
+      "unknown": "Unknown",
+      "loadError": "Could not load the analytics.",
+      "columns": {
+        "name": "Name",
+        "totalVotes": "Total votes",
+        "totalPercent": "T%",
+        "maleVotes": "Male votes",
+        "malePercent": "M%",
+        "femaleVotes": "Female votes",
+        "femalePercent": "F%"
+      }
+    }
   },
   "placesNearMe": {
     "title": "Plaatsen in de buurt",
-    "description": "Vind plaatsen in de buurt van je contacten."
+    "description": "Laat je klanten eenvoudig je bedrijfslocaties bij hen in de buurt vinden.",
+    "tabs": {
+      "locations": "Locaties",
+      "categories": "Categorieën"
+    },
+    "categories": {
+      "columns": {
+        "locations": "Locaties"
+      },
+      "add": "Categorie toevoegen",
+      "edit": "Categorie bewerken",
+      "empty": "Nog geen categorieën.",
+      "created": "Categorie toegevoegd",
+      "updated": "Categorie bijgewerkt",
+      "deleted": "Categorie verwijderd",
+      "saveError": "Categorie kon niet worden opgeslagen",
+      "deleteError": "Categorie kon niet worden verwijderd",
+      "deleteTitle": "{name} verwijderen?",
+      "deleteDescription": "{count, plural, =0 {Geen locaties gebruiken deze categorie.} one {# locatie wordt ongecategoriseerd.} other {# locaties worden ongecategoriseerd.}}"
+    },
+    "locations": {
+      "columns": {
+        "coordinates": "Coördinaten"
+      },
+      "preview": "Voorbeeld",
+      "add": "Locatie toevoegen",
+      "edit": "Locatie bewerken",
+      "empty": "Nog geen locaties.",
+      "created": "Locatie toegevoegd",
+      "updated": "Locatie bijgewerkt",
+      "deleted": "Locatie verwijderd",
+      "saveError": "Locatie kon niet worden opgeslagen",
+      "deleteError": "Locatie kon niet worden verwijderd",
+      "deleteTitle": "{name} verwijderen?",
+      "deleteDescription": "Deze locatie wordt permanent verwijderd.",
+      "noCategory": "Geen categorie",
+      "latitude": "Breedtegraad",
+      "longitude": "Lengtegraad"
+    }
   },
   "questionnaires": {
     "title": "Vragenlijsten",
@@ -6086,6 +7059,9 @@
   "templates": {
     "title": "Sjablonen",
     "description": "Maak en beheer je sjablonen.",
+    "createDialog": {
+      "title": "Nieuw sjabloon"
+    },
     "share": {
       "label": "Delen",
       "enabled": "Gedeeld",
@@ -6094,14 +7070,135 @@
       "dialogDescription": "Iedereen met deze link kan een kopie van dit sjabloon installeren in een werkruimte binnen jouw tenant.",
       "enableLabel": "Deellink inschakelen",
       "linkLabel": "Deellink",
-      "description": "Iedereen met de link kan dit sjabloon in zijn eigen werkruimte installeren."
+      "rotateLabel": "Link vernieuwen",
+      "rotateTitle": "Deellink vernieuwen?",
+      "rotateDescription": "De huidige link werkt direct niet meer. Iedereen die dit sjabloon nog moet installeren, heeft de nieuwe link nodig.",
+      "rotated": "Deellink vernieuwd",
+      "expiryLabel": "Link verloopt",
+      "expiryHint": "Laat leeg voor een link die nooit verloopt.",
+      "clearExpiry": "Vervaldatum verwijderen",
+      "expiredNotice": "Deze link is verlopen. Stel een latere datum in of verwijder de vervaldatum om hem opnieuw te delen.",
+      "templateId": "Sjabloon-ID",
+      "templateKey": "Sjabloonsleutel",
+      "showKey": "Sleutel tonen",
+      "hideKey": "Sleutel verbergen",
+      "copyField": "Kopieer {field}"
+    },
+    "sync": {
+      "title": "Updates",
+      "updateAvailable": "Update beschikbaar",
+      "upToDate": "Up-to-date",
+      "sourceDeleted": "Sjabloon verwijderd",
+      "sourceDeletedHint": "De uitgever heeft dit sjabloon verwijderd. Je kopie blijft werken, maar kan niet meer worden bijgewerkt.",
+      "updateNow": "Nu bijwerken",
+      "updating": "Bijwerken…",
+      "version": "Sjabloonversie {version}",
+      "lastSynced": "laatst bijgewerkt op {date}",
+      "autoUpdateLabel": "Automatisch bijwerken wanneer het sjabloon verandert",
+      "noHistory": "Nog geen updates.",
+      "countAdded": "{count} toegevoegd",
+      "countUpdated": "{count} bijgewerkt",
+      "countDetached": "{count} volgen de template niet meer",
+      "notUpdatable": "{count} nog niet bij te werken",
+      "overwritten": "{name} was bewerkt en is vervangen door de update",
+      "restore": "Mijn versie herstellen",
+      "restored": "Je versie is hersteld",
+      "status": {
+        "pending": "In wachtrij",
+        "running": "Bezig",
+        "completed": "Voltooid",
+        "partial": "Gedeeltelijk",
+        "failed": "Mislukt",
+        "skipped": "Overgeslagen",
+        "cancelled": "Geannuleerd"
+      },
+      "trigger": {
+        "autoUpdate": "Automatisch",
+        "manual": "Handmatig",
+        "reinstall": "Opnieuw installeren"
+      },
+      "requestedVersion": "aangevraagd v{version}",
+      "errors": {
+        "unknown": "De update is mislukt. Probeer het opnieuw of neem contact op met support als het blijft mislukken.",
+        "templateSyncFailed": "De update is mislukt. Probeer het opnieuw.",
+        "templateSyncSuperseded": "Een nieuwere update heeft deze vervangen.",
+        "templateSyncAbandoned": "De update is niet op tijd afgerond en is gesloten.",
+        "templateInstallationInactive": "Deze installatie is niet meer actief.",
+        "workspaceOwnerBlocked": "Het account van de eigenaar van de werkruimte is geblokkeerd.",
+        "templateUninstallInProgress": "De sjabloon wordt gedeïnstalleerd.",
+        "templateAutoUpdateOff": "Automatische updates staan uit.",
+        "templateUpToDate": "De kopie is al up-to-date.",
+        "templateInstallerAccessLost": "Degene die de sjabloon heeft geïnstalleerd mag deze kopie niet meer bijwerken.",
+        "templateInstallationSourceMissing": "De sjabloon is verwijderd voordat de update draaide.",
+        "templateCategoryPermissionDenied": "Je hebt niet langer toestemming om alles in deze sjabloon bij te werken.",
+        "templatePayloadIncompatible": "Dit sjabloon is opgeslagen in een nieuwer formaat dan deze server kan installeren.",
+        "templateCrossTenantInstall": "Dit sjabloon is niet beschikbaar voor jouw werkruimte.",
+        "templateInvalidInboxBinding": "Een geselecteerde inbox komt niet overeen met het sjabloon."
+      }
+    },
+    "versions": {
+      "detailsTab": "Details",
+      "tab": "Versies",
+      "versionNumber": "Versie {version}",
+      "current": "Huidig",
+      "first": "Eerste versie",
+      "noDetail": "Voor deze versie zijn geen details vastgelegd.",
+      "added": "Toegevoegd",
+      "changed": "Gewijzigd",
+      "removed": "Verwijderd"
+    },
+    "installers": {
+      "title": "Analyses bekijken",
+      "workspace": "Werkruimte",
+      "lastInstalled": "Laatst geïnstalleerd",
+      "version": "Versie",
+      "autoUpdate": "Automatisch bijwerken",
+      "uninstalled": "Verwijderd",
+      "hidden": "Werkruimte niet gedeeld",
+      "uninstallNotAllowed": "De installateur heeft uitgevers niet toegestaan deze kopie te verwijderen.",
+      "loadError": "De installateurs konden niet worden geladen. Probeer het opnieuw.",
+      "automatic": "Automatisch",
+      "details": "Details",
+      "noIssues": "Geen waarschuwingen of fouten."
     },
     "installs": {
       "title": "Installaties",
       "resources": "Bronnen",
       "warnings": "Waarschuwingen",
       "completedAt": "Voltooid op",
-      "autoUpdate": "Automatische update"
+      "autoUpdate": "Automatische update",
+      "installedBy": "Geïnstalleerd door",
+      "viaApi": "API-token",
+      "attempts": "Pogingen",
+      "autoUpdateOn": "Aan",
+      "autoUpdateOff": "Uit",
+      "retry": "Installatie opnieuw proberen",
+      "resourcesTitle": "Geïnstalleerde resources",
+      "noResources": "Er is nog niets aangemaakt.",
+      "deletedResource": "Verwijderde resource",
+      "viewOnly": "Alleen bekijken",
+      "created": "Aangemaakt",
+      "reused": "Hergebruikt",
+      "loadMore": "Meer laden",
+      "statusFilter": "Status",
+      "allStatuses": "Alle statussen",
+      "errors": {
+        "unknown": "De installatie is mislukt. Probeer het opnieuw of neem contact op met support als het blijft mislukken.",
+        "templatePayloadIncompatible": "Dit sjabloon is opgeslagen in een nieuwer formaat dan deze server kan installeren.",
+        "templateInstallationSourceMissing": "Het sjabloon is verwijderd voordat de installatie startte.",
+        "templateCrossTenantInstall": "Dit sjabloon is niet beschikbaar voor jouw werkruimte.",
+        "templateCategoryPermissionDenied": "Je hebt niet langer toestemming om alles in dit sjabloon te installeren.",
+        "templateInvalidInboxBinding": "Een geselecteerde inbox komt niet overeen met het sjabloon.",
+        "templateInstallEnqueueFailed": "De installatie kon niet in de wachtrij worden geplaatst.",
+        "templateInstallFailed": "De installatie is mislukt. Probeer het opnieuw.",
+        "templateInstallAbandoned": "De installatie is niet op tijd voltooid en is afgesloten.",
+        "templateInstallSuperseded": "Een nieuwere installatie van dit sjabloon heeft deze vervangen.",
+        "workspaceOwnerBlocked": "Het account van de eigenaar van de werkruimte is geblokkeerd."
+      },
+      "uninstalledBy": "{by, select, publisher {De uitgever heeft dit sjabloon verwijderd.} installer {Dit sjabloon is uit deze werkruimte verwijderd.} other {Dit sjabloon is verwijderd.}}",
+      "uninstalledSummary": "{deleted} verwijderd, {kept} behouden.",
+      "lastAttemptAt": "Laatste poging",
+      "installedAutomatically": "Automatisch geïnstalleerd (white-label-standaard)"
     },
     "form": {
       "contents": "Sjabloon-inhoud",
@@ -6114,14 +7211,26 @@
       "allowDelete": "Verwijderen na installatie toestaan",
       "publisherName": "Naam uitgever",
       "youtubeVideoId": "YouTube-video-ID",
-      "youtubeVideoIdDescription": "De 11-tekens-ID uit de video-URL, bijv. \"dQw4w9WgXcQ\" in youtube.com/watch?v=dQw4w9WgXcQ",
+      "youtubeVideoIdDescription": "De 11-tekens-ID uit de video-URL, bijv. \"xxxxxxxxxxx\" in youtube.com/watch?v=xxxxxxxxxxx",
       "testLink": "Testlink",
       "imageUrl": "Omslagafbeelding",
       "installBehavior": "Installatiegedrag",
-      "createInstallFolder": "Installeren in een aparte map",
+      "createInstallFolder": "Maak een map aan op het geïnstalleerde account en installeer de resources.",
       "createInstallFolderDescription": "Plaatst elke geïnstalleerde bron in één nieuwe map die naar dit sjabloon is vernoemd.",
-      "defaultAutoUpdate": "Installaties standaard markeren voor updates",
-      "defaultAutoUpdateDescription": "Nieuwe installaties tonen een melding over een beschikbare update zodra je dit sjabloon opnieuw publiceert."
+      "defaultAutoUpdate": "Geïnstalleerde sjablonen automatisch bijwerken",
+      "defaultAutoUpdateDescription": "Telkens wanneer je dit sjabloon met gewijzigde inhoud opslaat, worden installaties die automatisch bijwerken overschreven met de nieuwe inhoud (kopieën die de installateur heeft bewerkt worden eerst geback-upt). Installateurs kunnen dit uitschakelen.",
+      "viewOnly": "Alleen bekijken",
+      "viewOnlyAll": "Alles geselecteerd alleen-lezen maken",
+      "includedAutomatically": {
+        "title": "Automatisch meegenomen",
+        "hint": "Meegenomen omdat iets wat je hebt geselecteerd het nodig heeft. Alleen-lezen.",
+        "rows": "{count, plural, one {# extra item} other {# extra items}}",
+        "kind": {
+          "folders": "Mappen",
+          "placeCategories": "Plaatscategorieën"
+        }
+      },
+      "viewOnlyCopyIncluded": "Iets dat je hebt geselecteerd (of iets dat het nodig heeft) is geïnstalleerd vanuit een alleen-lezen-sjabloon en kan niet in een nieuw sjabloon worden gedeeld."
     },
     "categories": {
       "flows": "Flows",
@@ -6136,8 +7245,116 @@
       "keywords": "Trefwoorden",
       "entryPointLinks": "Toegangspuntlinks",
       "triggers": "Triggers",
-      "fbCommentAutomations": "Facebook-reactieautomatiseringen",
-      "settings": "Instellingen"
+      "fbCommentAutomations": "Reactieautomatiseringen",
+      "settings": "Botvelden en opgeslagen antwoorden",
+      "sequences": "Reeksen",
+      "aiMcpServers": "MCP-servers",
+      "aiFiles": "AI-kennisbestanden",
+      "questionnaires": "Vragenlijsten",
+      "couponTopics": "Coupononderwerpen",
+      "pipelines": "Pipelines"
+    },
+    "locked": {
+      "flowBanner": "Deze flow is geïnstalleerd vanuit een alleen-lezen sjabloon. Je kunt hem bekijken maar niet bewerken.",
+      "badge": "Alleen weergave",
+      "editorBanner": "Dit is geïnstalleerd vanuit een sjabloon met alleen-lezentoegang. Je kunt het bekijken, maar niet bewerken.",
+      "badgeHint": "Geïnstalleerd vanuit een sjabloon met alleen-lezentoegang"
+    },
+    "channels": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "instagramFacebook": "Instagram (Facebook-login)",
+      "threads": "Threads",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "zalo": "Zalo",
+      "webchat": "Webchat",
+      "line": "LINE",
+      "email": "E-mail"
+    },
+    "uninstall": {
+      "title": "Sjabloon verwijderen",
+      "description": "Het sjabloon verwijdert alles wat het in deze werkruimte heeft aangemaakt, inclusief bewerkte kopieën. Gedeelde tags, velden en mappen, items die er al waren en alles wat je bovenop een kopie hebt gebouwd blijven behouden.",
+      "loading": "Controleren wat er gaat gebeuren…",
+      "previewFailed": "Kon niet controleren wat een verwijdering zou doen.",
+      "failed": "Kon het sjabloon niet verwijderen.",
+      "confirm": "Verwijderen",
+      "action": "Verwijderen",
+      "deleted": "{count, plural, one {# item wordt verwijderd} other {# items worden verwijderd}}",
+      "deletedDone": "{count, plural, one {# item is verwijderd} other {# items zijn verwijderd}}",
+      "keptModified": "{count, plural, one {# bewerkte of niet-geverifieerde kopie blijft behouden} other {# bewerkte of niet-geverifieerde kopieën blijven behouden}}",
+      "keptShared": "{count, plural, one {# gedeelde tag of gedeeld veld blijft behouden} other {# gedeelde tags en velden blijven behouden}}",
+      "keptByPolicy": "{count, plural, one {# ander item blijft behouden} other {# andere items blijven behouden}}",
+      "keptHasDependents": "{count, plural, one {# kopie blijft behouden omdat iets het nog gebruikt} other {# kopieën blijven behouden omdat iets ze nog gebruikt}}",
+      "deletedModified": "{count, plural, one {# daarvan is door jou bewerkt: die bewerkingen gaan verloren en kunnen niet worden hersteld} other {# daarvan zijn door jou bewerkt: die bewerkingen gaan verloren en kunnen niet worden hersteld}}",
+      "keptLockedByOther": "{count, plural, one {# item blijft behouden omdat een andere sjablooninstallatie het nog beschermt} other {# items blijven behouden omdat een andere sjablooninstallatie ze nog beschermt}}",
+      "confirmCheckbox": "Ik begrijp dat dit de bovenstaande items verwijdert en niet ongedaan kan worden gemaakt",
+      "started": "Verwijdering gestart",
+      "inProgress": "Verwijderen…",
+      "retry": "Verwijdering opnieuw proberen",
+      "state": {
+        "pending": "Verwijdering in wachtrij",
+        "running": "Verwijderen…",
+        "partial": "Verwijdering onvolledig, probeer opnieuw",
+        "failed": "Verwijdering mislukt, probeer opnieuw",
+        "skipped": "Verwijdering overgeslagen: de werkruimte is geblokkeerd"
+      },
+      "deletedUnverified": "{count, plural, one {# daarvan kan niet op bewerkingen worden gecontroleerd: als je hem hebt gewijzigd, gaan die wijzigingen verloren} other {# daarvan kunnen niet op bewerkingen worden gecontroleerd: als je ze hebt gewijzigd, gaan die wijzigingen verloren}}",
+      "cancelAction": "Verwijdering annuleren",
+      "cancelled": "Verwijdering geannuleerd: de overige items kun je weer gebruiken",
+      "blockedByReference": "{count, plural, one {# item is niet verwijderd omdat iets wat je hebt gemaakt er nog naar verwijst: verwijder die verwijzing en probeer de verwijdering opnieuw} other {# items zijn niet verwijderd omdat iets wat je hebt gemaakt er nog naar verwijst: verwijder die verwijzingen en probeer de verwijdering opnieuw}}",
+      "keptPartlyRemoved": "{count, plural, one {# kopie is behouden na een geblokkeerde verwijdering; geschiedenis en gegevens voor duplicaatbeveiliging zijn mogelijk verwijderd, controleer hem dus voordat je hem inschakelt} other {# kopieën zijn behouden na een geblokkeerde verwijdering; geschiedenis en gegevens voor duplicaatbeveiliging zijn mogelijk verwijderd, controleer ze dus voordat je ze inschakelt}}",
+      "keptInactiveForReview": "{count, plural, one {# kopie is inactief gelaten: de geschiedenis en gegevens voor duplicaatbeveiliging zijn verwijderd, controleer hem dus voordat je hem inschakelt} other {# kopieën zijn inactief gelaten: hun geschiedenis en gegevens voor duplicaatbeveiliging zijn verwijderd, controleer ze dus voordat je ze inschakelt}}",
+      "keptHistoryRemoved": "{count, plural, one {# kopie is behouden, maar de geschiedenis is verwijderd (er valt niets in te schakelen): controleer hem voordat je erop vertrouwt} other {# kopieën zijn behouden, maar hun geschiedenis is verwijderd (er valt niets in te schakelen): controleer ze voordat je erop vertrouwt}}",
+      "cancelledPartial": "{count, plural, one {# item wordt al verwijderd en wordt afgerond; de rest is teruggegeven} other {# items worden al verwijderd en worden afgerond; de rest is teruggegeven}}"
+    },
+    "warningCodes": {
+      "aiFileTooLarge": "Dit kennisbestand is groter dan een sjablooninstallatie kan kopiëren en is daarom overgeslagen.",
+      "aiFileUnavailable": "Dit kennisbestand kon niet worden gekopieerd en is daarom overgeslagen.",
+      "assigneeRequired": "Kies aan wie deze stap het gesprek toewijst.",
+      "ambiguousSourceFieldToken": "Meerdere bronvelden hebben deze naam, dus de variabelen die ze gebruiken zijn ongewijzigd gelaten.",
+      "backupTooLarge": "Een lokaal bewerkt item was te groot om een back-up van te maken en is dus niet overschreven.",
+      "backupUnavailable": "De back-up van dit item is niet meer beschikbaar.",
+      "botFieldRenamed": "Er bestaat al een botveld met deze naam en een ander type, dus er is een hernoemd veld aangemaakt.",
+      "categoryPermissionDenied": "Je hebt geen toestemming voor deze categorie, dus deze is overgeslagen.",
+      "couponTopicExpired": "Dit coupononderwerp is al verlopen.",
+      "credentialRequired": "Voeg de inloggegevens voor dit item toe voordat je het gebruikt.",
+      "custom": "Een gerefereerd item is niet gevonden in deze werkruimte, dus de koppeling is verwijderd.",
+      "customField": "Een gerefereerd item is niet gevonden in deze werkruimte, dus de koppeling is verwijderd.",
+      "customFieldRenamed": "Er bestaat al een veld met deze naam en een ander type, dus er is een hernoemd veld aangemaakt.",
+      "enqueueFailed": "De achtergrondverwerking voor dit item kon niet in de wachtrij worden geplaatst.",
+      "flow": "Een gerefereerd item is niet gevonden in deze werkruimte, dus de koppeling is verwijderd.",
+      "flowInvalidStructure": "De structuur van de flow is ongeldig, dus deze is overgeslagen.",
+      "flowNotPublished": "De flow is als concept geïnstalleerd en is niet gepubliceerd.",
+      "flowSkippedRequiredReference": "De flow is overgeslagen omdat een vereiste verwijzing niet kon worden opgelost.",
+      "folder": "Een gerefereerd item is niet gevonden in deze werkruimte, dus de koppeling is verwijderd.",
+      "inboxBindingRequired": "Kies een inbox voor dit kanaal; tot die tijd blijft het item inactief.",
+      "integration": "Een gerefereerd item is niet gevonden in deze werkruimte, dus de koppeling is verwijderd.",
+      "localModifiedOverwritten": "Een lokaal bewerkt item is overschreven. Er is een back-up opgeslagen die kan worden hersteld.",
+      "name": "Er is geen vrije naam gevonden voor dit item, dus het is overgeslagen.",
+      "noEmbeddingProvider": "Er is geen embeddingprovider ingesteld in deze werkruimte, dus kennisbestanden zijn overgeslagen. Koppel OpenAI of Gemini en installeer opnieuw.",
+      "notUpdatable": "Dit soort item wordt nog niet automatisch bijgewerkt.",
+      "pipeline": "Gebruikt een pipeline die niet meer bestaat.",
+      "pipelineField": "Gebruikt een pipelineveld dat niet meer bestaat.",
+      "pipelineStage": "Gebruikt een pipelinefase die niet meer bestaat.",
+      "postSelectionRequired": "Selecteer het bericht opnieuw: het oorspronkelijke bericht kon niet worden overgenomen.",
+      "product": "Een gerefereerd item is niet gevonden in deze werkruimte, dus de koppeling is verwijderd.",
+      "productCategory": "Een gerefereerd item is niet gevonden in deze werkruimte, dus de koppeling is verwijderd.",
+      "questionImage": "Een afbeelding kon niet worden gekopieerd.",
+      "quota": "Een abonnementslimiet is bereikt, dus het item is overgeslagen.",
+      "referenceRemoved": "Een verwijzing die niet kon worden opgelost, is verwijderd.",
+      "savedReply": "Een gerefereerd item is niet gevonden in deze werkruimte, dus de koppeling is verwijderd.",
+      "savedReplyImage": "Een afbeelding kon niet worden gekopieerd.",
+      "tag": "Een gerefereerd item is niet gevonden in deze werkruimte, dus de koppeling is verwijderd.",
+      "unlisted": "Item niet volledig overgenomen: {code}",
+      "workspaceMember": "Toegewezen aan een lid dat niet in deze workspace zit.",
+      "workspaceUnavailable": "Deze werkruimte is niet meer beschikbaar, dus het item is overgeslagen."
+    },
+    "tabs": {
+      "mine": "Mijn sjablonen",
+      "installed": "Geïnstalleerd",
+      "installedEmpty": "Nog geen geïnstalleerde sjablonen. Sjablonen die je uit een andere werkruimte installeert, verschijnen hier."
     }
   },
   "qrCodeGenerator": {
@@ -6167,7 +7384,31 @@
       "supportOff": "Uit",
       "searchPlaceholder": "Zoeken op naam, e-mailadres eigenaar of ID",
       "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
-      "supportAccessible": "Accessible"
+      "supportAccessible": "Accessible",
+      "periodStart": "Period start",
+      "periodEnd": "Period end",
+      "requestedBy": "Requested by",
+      "workspaceId": "Workspace ID",
+      "language": "Language",
+      "planSnapshot": "Plan at deletion",
+      "ownerQuota": "Owner quota",
+      "usagePeriods": "Usage periods",
+      "deletedTitle": "Deleted workspaces",
+      "deletedDescription": "Purge evidence for deleted workspaces.",
+      "purgedAt": "Purged at",
+      "deletionRequestedAt": "Deletion requested at",
+      "scheduledDeletionAt": "Scheduled deletion at",
+      "evidence": "Evidence",
+      "usage": "Usage snapshot",
+      "members": "Members",
+      "notAvailable": "Not available",
+      "createButton": "Create workspace",
+      "createTitle": "Create workspace for an owner",
+      "createDescription": "Creates a workspace for the owner's email, adding any member emails you list. A new email gets a mailed temporary password.",
+      "ownerEmail": "Owner email",
+      "memberEmails": "Member emails",
+      "membersHint": "Every member gets the permissions selected below. New emails get a mailed temporary password.",
+      "createdSummary": "Workspace created for {ownerEmail} — {memberCount} member(s) added, {newAccountCount} new account(s) emailed a temporary password."
     },
     "admins": {
       "title": "Platform administrators",
@@ -6177,12 +7418,29 @@
       "addButton": "Add administrator",
       "role": "Role",
       "bootstrap": "Environment bootstrap administrator",
+      "roles": {
+        "superAdmin": "Super admin",
+        "support": "Support"
+      },
       "remove": "Remove administrator",
       "empty": "No platform administrators are configured.",
       "added": "Platform administrator added.",
       "removed": "Platform administrator removed.",
       "addError": "Could not add the platform administrator.",
       "removeError": "Could not remove the platform administrator."
+    },
+    "auditLogs": {
+      "title": "Platform-auditlogboeken",
+      "description": "Auditactiviteit in alle werkruimtes op dit platform."
+    },
+    "smtp": {
+      "title": "SMTP-instellingen",
+      "description": "E-mailtransport van het platform. Laat dit leeg om de omgevingsvariabelen SMTP_SERVER en SMTP_FROM te blijven gebruiken.",
+      "usingEnv": "Geen SMTP-instellingen opgeslagen — platform-e-mail gebruikt de omgevingsvariabele SMTP_SERVER.",
+      "remove": "SMTP-instellingen verwijderen",
+      "errors": {
+        "passwordRequired": "Voer het SMTP-wachtwoord in."
+      }
     }
   },
   "platformCredentials": {
@@ -6218,6 +7476,23 @@
     "description": "Vink een kanaal aan om te voorkomen dat werkruimten in deze tenant het kunnen maken.",
     "hint": "Laat alle kanalen uitgevinkt om alle kanalen toe te staan.",
     "hiddenByPlatform": "Verborgen door de platformbeheerder — je kunt dit kanaal niet opnieuw inschakelen."
+  },
+  "platformDefaultTemplate": {
+    "title": "Standaardsjabloon",
+    "description": "Installeer dit sjabloon in elke nieuwe werkruimte die onder deze white-label wordt aangemaakt. Bestaande werkruimtes blijven ongewijzigd.",
+    "clearTitle": "Standaardsjabloon verwijderen?",
+    "clearDescription": "Nieuwe werkruimtes krijgen niet langer automatisch een sjabloon. Werkruimtes die het al hebben, behouden het.",
+    "status": {
+      "notConfigured": "Niet ingesteld",
+      "ready": "Actief",
+      "templateUnavailable": "Sjabloon niet beschikbaar",
+      "shareDisabled": "Deellink uit",
+      "keyRotated": "Sleutel ongeldig"
+    },
+    "errors": {
+      "unavailable": "Het sjabloon-ID of de sleutel is ongeldig.",
+      "shareDisabled": "Zet eerst de deellink van het sjabloon aan."
+    }
   },
   "platformEmailTemplates": {
     "title": "E-mailsjablonen",
@@ -6261,6 +7536,7 @@
     }
   },
   "manageSidebar": {
+    "administrationGroup": "Beheer",
     "platformGroup": "Platform",
     "toolsGroup": "Hulpmiddelen",
     "saasGroup": "SaaS",
@@ -6301,14 +7577,39 @@
     "invalidTitle": "Deze link is niet meer beschikbaar.",
     "invalidDescription": "Deze sjabloon-deellink is ongeldig, uitgeschakeld of verlopen.",
     "byPublisher": "Door {publisherName}",
-    "includes": "Dit sjabloon bevat",
     "videoTitle": "Sjabloon-voorbeeldvideo",
-    "tryItOut": "Probeer het",
-    "signInToInstall": "Log in om te installeren",
+    "preview": "Voorbeeld",
+    "aboutTemplate": "Over deze sjabloon",
     "selectWorkspace": "Selecteer een werkruimte",
     "install": "Installeren",
     "installStarted": "Installatie gestart",
-    "noEligibleWorkspaces": "Je hebt geen werkruimte die geschikt is om dit sjabloon te installeren."
+    "noEligibleWorkspaces": "Je hebt geen werkruimte die geschikt is om dit sjabloon te installeren.",
+    "alreadyInstalled": "Dit sjabloon is al geïnstalleerd in deze werkruimte.",
+    "viewInstall": "Installatie bekijken",
+    "installAnotherCopy": "Nog een kopie installeren",
+    "inboxesTitle": "Inboxen",
+    "inboxesHint": "Dit sjabloon is gebouwd rond deze inboxen. Kies welke van je eigen inboxen je wilt gebruiken; alles wat je weglaat, wordt uitgeschakeld geïnstalleerd.",
+    "noInbox": "Niet koppelen — uitgeschakeld installeren",
+    "noInboxAvailable": "Geen verbonden inbox op dit kanaal",
+    "updateExisting": "Geïnstalleerde kopie bijwerken",
+    "updateStarted": "Update gestart",
+    "autoUpdateLabel": "Automatisch bijwerken wanneer het sjabloon verandert",
+    "collisions": {
+      "title": "Wat de installatie hier gaat doen",
+      "loading": "Deze werkruimte controleren…",
+      "action": {
+        "create": "Aangemaakt",
+        "reuse": "Hergebruikt",
+        "rename": "Hernoemd",
+        "bind": "Gekoppeld",
+        "unbound": "Niet gekoppeld gelaten"
+      },
+      "detail": {
+        "rename": "“{name}” bestaat al met een ander type, dus die van het sjabloon wordt onder een nieuwe naam toegevoegd.",
+        "unbound": "“{name}” blijft niet gekoppeld totdat je een inbox kiest."
+      }
+    },
+    "createWorkspace": "Nieuwe werkruimte maken"
   },
   "extensionsMe": {
     "actions": {
@@ -6337,7 +7638,144 @@
     "unknown": "Onbekend"
   },
   "orders": {
-    "title": "Bestellingen"
+    "title": "Bestellingen",
+    "empty": "Nog geen bestellingen.",
+    "searchPlaceholder": "Zoek op naam, telefoon, e-mail of bestelnummer",
+    "orderNumber": "Bestelling #{number}",
+    "print": "Afdrukken",
+    "inbox": "Inbox",
+    "statusUpdated": "Bestelstatus bijgewerkt",
+    "statusUpdateError": "Kan de bestelstatus niet bijwerken",
+    "updateStatusTitle": "Bestelstatus bijwerken",
+    "message": "Bericht",
+    "messagePlaceholder": "Optioneel",
+    "messageDescription": "Wordt naar de klant gestuurd in hun gesprek.",
+    "cancel": "Annuleren",
+    "continue": "Doorgaan",
+    "delete": "Verwijderen",
+    "deleted": "Bestelling verwijderd",
+    "deleteError": "Kan de bestelling niet verwijderen",
+    "deleteTitle": "Bestelling #{number} verwijderen?",
+    "deleteDescription": "De bestelling, de bijbehorende artikelen en de geschiedenis worden verwijderd. Voorraad die nog is gereserveerd, wordt teruggezet.",
+    "columns": {
+      "name": "Naam",
+      "total": "Totaal",
+      "status": "Status",
+      "date": "Datum",
+      "rating": "Beoordeling",
+      "quantity": "Aantal",
+      "price": "Prijs",
+      "vendor": "Leverancier",
+      "orderStatus": "Bestelstatus",
+      "payment": "Betaling"
+    },
+    "fields": {
+      "name": "Naam",
+      "email": "E-mail",
+      "phone": "Telefoon",
+      "country": "Land",
+      "state": "Provincie",
+      "city": "Plaats",
+      "street": "Straat",
+      "zip": "Postcode",
+      "shippingType": "Verzending",
+      "orderId": "Bestel-ID",
+      "date": "Datum",
+      "subtotal": "Subtotaal",
+      "discount": "Korting",
+      "deliveryCost": "Bezorgkosten",
+      "otherTaxes": "Overige belastingen",
+      "total": "Totaal",
+      "paymentMethod": "Betaalmethode",
+      "status": "Status",
+      "note": "Opmerking",
+      "cancelReason": "Reden van annulering",
+      "rating": "Beoordeling",
+      "ratingComment": "Opmerking van de klant",
+      "coupon": "Kortingscode ({code})",
+      "paymentStatus": "Betalingsstatus",
+      "payments": "Online betalingen"
+    },
+    "statuses": {
+      "pending": "Niet verwerkt",
+      "accepted": "Geaccepteerd",
+      "shipped": "Verzonden",
+      "concluded": "Voltooid",
+      "cancelled": "Geannuleerd"
+    },
+    "transitions": {
+      "accepted": "Accepteren",
+      "shipped": "Verzenden",
+      "concluded": "Voltooien",
+      "cancelled": "Annuleren"
+    },
+    "paymentMethods": {
+      "cod": "Rembours",
+      "stripe": "Kaart",
+      "paypal": "PayPal"
+    },
+    "shippingTypes": {
+      "delivery": "Bezorgen bij de klant",
+      "pickup": "Afhalen in de winkel"
+    },
+    "description": "Bestellingen geplaatst door je klanten.",
+    "ratingValue": "{rating}/5 ★",
+    "paymentStatuses": {
+      "unpaid": "Onbetaald",
+      "paid": "Betaald",
+      "refunded": "Terugbetaald"
+    },
+    "attemptStatuses": {
+      "open": "Wacht",
+      "paid": "Betaald",
+      "expired": "Verlopen",
+      "refunded": "Terugbetaald"
+    },
+    "testPayment": "test",
+    "awaitingPaymentHint": "Wacht op de online betaling van de klant. De bestelling kan worden geaccepteerd zodra deze is betaald.",
+    "refundWarning": "{amount} wordt terugbetaald aan de klant.",
+    "paymentStates": {
+      "paid": "Betaald",
+      "refunded": "Terugbetaald",
+      "awaitingPayment": "Wacht op betaling",
+      "payOnDelivery": "Betalen bij levering",
+      "notPaid": "Niet betaald"
+    },
+    "paymentUntil": "tot {time}",
+    "paymentExpiredCancelReason": "Betaling niet op tijd ontvangen.",
+    "exportTruncated": "De export is beperkt tot de eerste {count} bestellingen",
+    "exportError": "Kan de bestellingen niet exporteren",
+    "shopify": {
+      "syncOrders": "Bestellingen synchroniseren",
+      "orderColumn": "Bestelling",
+      "customerColumn": "Klant",
+      "paymentPending": "In behandeling",
+      "paymentFilter": "Betaling",
+      "paymentFilterAll": "Betaling: Alle",
+      "fulfillmentFilter": "Verzending",
+      "fulfillmentFilterAll": "Verzending: Alle",
+      "fulfillmentStatuses": {
+        "fulfilled": "Verzonden",
+        "unfulfilled": "Niet verzonden",
+        "partial": "Gedeeltelijk"
+      },
+      "viewDetails": "Details bekijken",
+      "viewOnStore": "Bekijken in {store}",
+      "detailsTitle": "Bestelling {name}",
+      "placedOn": "Geplaatst in {store}-winkel • {date}",
+      "customerDetails": "Klantgegevens",
+      "shippingAddress": "Verzendadres",
+      "noShippingAddress": "Geen verzendadres",
+      "tracking": "Tracking: {company} #{number}",
+      "lineItems": "Bestelregels",
+      "itemColumn": "Artikel",
+      "skuColumn": "SKU",
+      "shipping": "Verzending",
+      "free": "Gratis",
+      "loading": "Laden...",
+      "loadError": "Kan de bestelgegevens niet laden",
+      "close": "Sluiten"
+    }
   },
   "products": {
     "title": "Producten",
@@ -6394,7 +7832,8 @@
         "label": "Klanten toestaan dit product te kopen wanneer het niet op voorraad is"
       },
       "vendor": {
-        "label": "Leverancier"
+        "label": "Leverancier",
+        "none": "Geen"
       },
       "rank": {
         "label": "Rang"
@@ -6446,17 +7885,67 @@
       "variantsDescription": "Voeg varianten toe als dit product in meerdere uitvoeringen beschikbaar is, zoals verschillende maten of kleuren",
       "metaCatalogId": {
         "label": "Meta-catalogus-ID"
+      },
+      "status": {
+        "label": "Status",
+        "values": {
+          "active": "Actief",
+          "draft": "Concept",
+          "unlisted": "Niet vermeld"
+        }
       }
     },
     "inventoryPolicy": {
       "dont_track": "Voorraad niet bijhouden",
       "track": "Voorraad bijhouden"
+    },
+    "shopify": {
+      "openStore": "{store} openen",
+      "syncProducts": "Producten synchroniseren",
+      "syncStarted": "Synchronisatie gestart",
+      "syncError": "Kan de synchronisatie niet starten",
+      "viewDetails": "Details bekijken",
+      "editOnStore": "Bewerken in {store}",
+      "copyProductLink": "Productlink kopiëren",
+      "linkCopied": "Productlink gekopieerd",
+      "noProductLink": "Dit product heeft geen winkellink",
+      "inStock": "{count} op voorraad",
+      "inStockWithVariants": "{count} op voorraad ({variants} varianten)",
+      "detailsTitle": "Productdetails — {name}",
+      "detailsSubtitle": "Gesynchroniseerd vanuit {store}-winkel {shop}",
+      "summaryLine": "Categorie: {category} • Totale voorraad: {units} stuks in {variants, plural, one {# variant} other {# varianten}}",
+      "uncategorized": "Zonder categorie",
+      "variantsTitle": "Varianten ({count})",
+      "variantColumn": "Variant",
+      "skuColumn": "SKU",
+      "priceColumn": "Prijs",
+      "inventoryColumn": "Voorraad",
+      "defaultVariant": "Standaard",
+      "loading": "Laden...",
+      "loadError": "Kan de productdetails niet laden",
+      "close": "Sluiten"
     }
   },
   "tiktok": {
     "title": "TikTok",
     "description": "Koppel je TikTok-account om privéberichten te beantwoorden.",
     "refreshToken": "Vernieuwingstoken"
+  },
+  "contactAdReferrals": {
+    "title": "Advertentiegeschiedenis",
+    "empty": "Voor dit contact zijn nog geen advertentieklikken geregistreerd."
+  },
+  "adsReferralStats": {
+    "title": "Contacten per advertentie",
+    "description": "Contacten die elke advertentie bereikte en de conversies die aan de klikken worden toegeschreven. Klikken worden geteld sinds het begin van de tracking.",
+    "ad": "Advertentie",
+    "contacts": "Contacten",
+    "firstTouch": "Eerste aanraking",
+    "leads": "Leads",
+    "purchases": "Aankopen",
+    "revenue": "Omzet",
+    "empty": "Geen advertentieklikken in deze periode.",
+    "timeout": "Dit rapport duurde te lang. Kies een kortere periode."
   },
   "coupons": {
     "title": "Coupons",
@@ -6527,8 +8016,8 @@
     "loadError": "Productcategorieën kunnen niet worden geladen.",
     "all": "Alle producten",
     "create": "Categorie maken",
-    "edit": "Categorie hernoemen",
-    "name": "Categorienaam",
+    "edit": "Bewerken",
+    "name": "Naam",
     "namePlaceholder": "bijv. Zomercollectie",
     "parent": "Bovenliggende categorie",
     "noParent": "Geen (hoogste niveau)",
@@ -6548,12 +8037,25 @@
     "columns": {
       "name": "Naam",
       "products": "Producten",
-      "subcategories": "Subcategorieën"
+      "subcategories": "Subcategorieën",
+      "visible": "Zichtbaar"
     },
     "expand": "Subcategorieën weergeven",
     "collapse": "Subcategorieën verbergen",
     "productCount": "{count, plural, =0 {Geen producten} one {# product} other {# producten}}",
-    "deleteChildrenWarning": "{count, plural, one {De # subcategorie wordt ook verwijderd.} other {De # subcategorieën worden ook verwijderd.}}"
+    "deleteChildrenWarning": "{count, plural, one {De # subcategorie wordt ook verwijderd.} other {De # subcategorieën worden ook verwijderd.}}",
+    "add": "Toevoegen",
+    "dialogTitle": "Categorie",
+    "image": "Afbeelding",
+    "continue": "Doorgaan",
+    "subcategories": "Subcategorieën",
+    "subcategoriesOf": "Subcategorieën van {name}",
+    "emptySub": "Nog geen subcategorieën.",
+    "back": "Terug naar categorieën",
+    "getId": "ID ophalen",
+    "idCopied": "Categorie-ID {id} gekopieerd",
+    "idCopyError": "Kan het ID niet kopiëren",
+    "description": "Groepeer je producten in categorieën en subcategorieën."
   },
   "productImport": {
     "title": "Importeren",
@@ -6758,6 +8260,7 @@
       "invalidTokenTitle": "Deze boekingslink is niet beschikbaar.",
       "invalidTokenDescription": "De link is mogelijk ongeldig of verlopen. Vraag om een nieuwe boekingslink.",
       "staleSlot": "Deze tijd is niet meer beschikbaar. Kies een andere tijd.",
+      "alreadyScheduled": "Dit contact heeft al een afspraak op dit tijdstip in deze agenda. Kies een andere tijd.",
       "availabilityChanged": "De beschikbaarheid is gewijzigd terwijl je een tijd koos. Kies opnieuw.",
       "submitFailed": "We konden dit verzoek niet voltooien. Probeer het opnieuw."
     },
@@ -6847,6 +8350,15 @@
     },
     "messages": {
       "empty": "Nog geen afspraken."
+    },
+    "actions": {
+      "create": "Afspraak maken"
+    },
+    "create": {
+      "title": "Afspraak maken",
+      "description": "Kies een agenda en een beschikbare tijd om voor dit contact te boeken.",
+      "noConversationHint": "Er is geen gesprek geopend, dus het contact ontvangt geen bevestigingsbericht.",
+      "success": "Afspraak gemaakt."
     }
   },
   "appointmentManagement": {
@@ -8093,7 +9605,9 @@
       "customer_service": "Klantenservice",
       "escalation": "Escalatie",
       "marketing": "Marketing",
-      "utility": "Utility"
+      "utility": "Utility",
+      "calls": "Oproepen",
+      "other": "Overig"
     },
     "pill": {
       "standby": "Standby ({owner})",
@@ -8103,14 +9617,18 @@
     "release": {
       "label": "Vrijgeven",
       "tooltip": "Geef dit gesprek vrij zodat andere apps kunnen antwoorden",
-      "success": "Gesprek vrijgegeven"
+      "success": "Gesprek vrijgegeven",
+      "menu": "Vrijgeven of overdragen"
     },
     "pass": {
-      "menuItem": "Doorgeven aan escalatie",
-      "title": "Doorgeven aan de escalatiepartner?",
-      "description": "Dit gesprek overdragen aan je escalatiepartner? Je antwoorden worden gepauzeerd totdat het gesprek terugkomt.",
+      "menuItem": "Overdragen aan een partner",
+      "title": "Overdragen aan een partner?",
+      "description": "Kies wie dit gesprek overneemt. Je antwoorden worden gepauzeerd tot het gesprek terugkomt.",
       "confirm": "Doorgeven",
-      "success": "Gesprek doorgegeven aan de escalatiepartner"
+      "success": "Gesprek doorgegeven aan de escalatiepartner",
+      "targetLabel": "Overdragen aan",
+      "noteLabel": "Notitie voor de ontvangende partner",
+      "successTargeted": "Gesprek overgedragen aan {role}"
     },
     "aiHandover": {
       "label": "BizAI",
@@ -8129,7 +9647,10 @@
       "notEscalation": "Alleen de escalatiepartner kan overnemen. Routing wordt ingesteld in Meta Business Suite.",
       "notPrimaryReceiver": "Deze app moet de primaire ontvanger van de pagina zijn om over te nemen. Stel dit in bij de Handover Protocol-instellingen van de pagina.",
       "learnMore": "Meer informatie",
-      "dismiss": "Toch verzenden"
+      "dismiss": "Toch verzenden",
+      "takeOverTitle": "Dit gesprek overnemen?",
+      "takeOverDescription": "De partner stopt met de afhandeling en jij neemt de controle over. Je kunt een notitie voor hen achterlaten.",
+      "takeOverNoteLabel": "Notitie voor de huidige partner"
     },
     "divider": {
       "ownerHandling": "{owner} behandelt dit gesprek nu",
@@ -8182,7 +9703,17 @@
       "adminOnly": "Alleen workspacebeheerders kunnen de routering wijzigen",
       "flowNotFound": "De geselecteerde flow is niet gevonden of niet actief",
       "integrationNotFound": "WhatsApp-nummer niet gevonden",
-      "messengerIntegrationNotFound": "Messenger-pagina niet gevonden"
+      "messengerIntegrationNotFound": "Messenger-pagina niet gevonden",
+      "rolesTitle": "Jouw routeringsrollen op dit nummer",
+      "rolesDescription": "Toegewezen door het bedrijf in Meta Business Suite.",
+      "rolesNone": "Je hebt geen routeringsrol op dit nummer.",
+      "rolesNeverChecked": "Nog niet gecontroleerd.",
+      "rolesNotEnabled": "Gespreksroutering is niet ingeschakeld voor dit nummer.",
+      "rolesStandbyOn": "Standby-toegang: aan (je ziet gesprekken die niet van jou zijn)",
+      "rolesStandbyOff": "Standby-toegang: uit",
+      "rolesCheckedAt": "Gecontroleerd {time}",
+      "rolesRefresh": "Opnieuw controleren",
+      "rolesSyncFailed": "De routeringsrollen konden niet bij Meta worden opgehaald. Probeer het opnieuw."
     },
     "errors": {
       "unsupported": "Gespreksroutering is niet beschikbaar op dit kanaal",
@@ -8192,8 +9723,12 @@
     "step": {
       "action": "Actie",
       "release": "Het gesprek vrijgeven",
-      "pass": "Doorgeven aan de escalatiepartner",
-      "helper": "Alleen WhatsApp. Op andere kanalen, of wanneer het gesprek hier niet wordt beheerd, volgt de stap het foutpad."
+      "pass": "Overdragen aan een partner",
+      "helper": "Alleen WhatsApp. Op andere kanalen, of wanneer het gesprek hier niet wordt beheerd, volgt de stap het foutpad.",
+      "targetRole": "Overdragen aan",
+      "targetRoleDefault": "Escalatiepartner (standaard)",
+      "metadata": "Overdrachtsnotitie",
+      "metadataHelper": "Optioneel. Ongewijzigd verzonden naar de app die het gesprek ontvangt. Variabelen worden ondersteund. Maximaal {max} tekens."
     },
     "template": {
       "sent": "Sjabloon verzonden"
@@ -8527,7 +10062,7 @@
       "too_many_components": "Een scherm kan maximaal {max} componenten bevatten.",
       "component_limit": "Een scherm kan maximaal {max} × {type} bevatten.",
       "picker_conflict": "Een scherm kan niet tegelijk een foto-upload en een document-upload hebben.",
-      "picker_multiple_in_complete": "Stel {property} in op 1: WhatsApp verstuurt bij het afronden van de flow slechts één bestand.",
+      "picker_multiple_in_complete": "WhatsApp verstuurt maximaal {max} bestanden wanneer de flow is voltooid. Verlaag het maximum aantal bestanden van de bestandsvelden die naar dit scherm leiden.",
       "footer_not_last": "De Footer moet het laatste component op het scherm zijn.",
       "footer_in_nested_branch": "Een Footer kan alleen direct in een Als-tak op het eerste niveau staan.",
       "footer_missing_in_branch": "Als de ene tak een Footer heeft, heeft de andere tak er ook een nodig.",
@@ -9033,6 +10568,720 @@
       "closed": "Gesloten"
     }
   },
+  "productVendors": {
+    "title": "Leveranciers",
+    "add": "Toevoegen",
+    "edit": "Bewerken",
+    "delete": "Verwijderen",
+    "actions": "Acties",
+    "save": "Opslaan",
+    "cancel": "Annuleren",
+    "moreOptions": "Meer opties",
+    "empty": "Nog geen leveranciers.",
+    "created": "Leverancier toegevoegd",
+    "updated": "Leverancier bijgewerkt",
+    "deleted": "Leverancier verwijderd",
+    "saveError": "Kan de leverancier niet opslaan",
+    "deleteError": "Kan de leverancier niet verwijderen",
+    "deleteTitle": "{name} verwijderen?",
+    "deleteDescription": "{count, plural, =0 {Geen product gebruikt deze leverancier.} one {# product blijft zonder leverancier achter.} other {# producten blijven zonder leverancier achter.}}",
+    "fields": {
+      "name": "Naam",
+      "shortDescription": "Korte beschrijving",
+      "phone": "Telefoon",
+      "storeAddress": "Winkeladres",
+      "image": "Afbeelding",
+      "optional": "Optioneel",
+      "discountPercent": "Korting (0-100%)",
+      "minimumOrderValue": "Minimaal bestelbedrag",
+      "openHours": "Openingstijden",
+      "category": "Categorie",
+      "subcategory": "Subcategorie",
+      "none": "Geen"
+    },
+    "columns": {
+      "name": "Naam",
+      "products": "Totaal aantal producten",
+      "active": "Actief"
+    },
+    "description": "Verkopers en merken waartoe je producten behoren."
+  },
+  "ecommerceSettings": {
+    "save": "Opslaan",
+    "saved": "Instellingen opgeslagen",
+    "saveError": "Kan de instellingen niet opslaan",
+    "rank": {
+      "label": "Rang",
+      "default": "Standaard"
+    },
+    "tabs": {
+      "general": "Algemeen",
+      "payments": "Betalingen",
+      "shipping": "Verzending",
+      "checkout": "Afrekenen",
+      "shopify": "Shopify",
+      "woocommerce": "WooCommerce"
+    },
+    "general": {
+      "orderingAvailable": {
+        "label": "Bestellen is beschikbaar",
+        "description": "Gebruik dit veld om te voorkomen dat klanten bestellingen plaatsen zonder je openingstijden te wijzigen. Openingstijden bepalen ook je beschikbaarheid."
+      },
+      "webshopProductView": {
+        "label": "Productweergave in de webshop",
+        "description": "Bepaalt hoe producten in je webshop worden weergegeven.",
+        "options": {
+          "list": "Lijst",
+          "listWithoutImage": "Lijst zonder afbeelding",
+          "card": "Kaart",
+          "cardSquare": "Kaart met vierkante afbeelding",
+          "image": "Afbeelding",
+          "imageSquare": "Afbeelding (vierkant)"
+        }
+      },
+      "openHours": {
+        "label": "Openingstijden",
+        "description": "De tijdsintervallen waarin je klanten een bestelling kunnen plaatsen."
+      },
+      "searchProducts": {
+        "label": "Producten zoeken",
+        "description": "Sta klanten toe berichten te sturen om producten te vinden."
+      },
+      "facebookPixelId": {
+        "label": "Facebook Pixel",
+        "description": "Volg conversies met de Facebook Pixel en meet de resultaten van je advertenties. De volgende events worden bijgehouden: ADD_TO_CART, INITIATE_CHECKOUT, PURCHASE, VIEW_CONTENT"
+      },
+      "abandonedCart": {
+        "label": "Bericht bij verlaten winkelwagen",
+        "description": "De wachttijd voordat een bericht over een verlaten winkelwagen wordt verstuurd, nadat de gebruiker je bot verlaat met een artikel in de winkelwagen.",
+        "disabled": "Uitgeschakeld",
+        "afterMinutes": "Na {count} minuten",
+        "afterHours": "{count, plural, one {Na # uur} other {Na # uur}}"
+      },
+      "productButtons": {
+        "label": "Knoppen bij producten",
+        "description": "Deze instelling bepaalt welke knoppen bij producten in je bot worden getoond.",
+        "options": {
+          "addToCart": "In winkelwagen",
+          "share": "Delen",
+          "similar": "Vergelijkbaar",
+          "save": "Opslaan"
+        }
+      },
+      "productImageSize": {
+        "label": "Afbeeldingsgrootte van producten",
+        "description": "Deze instelling bepaalt de grootte van de afbeelding van producten in je bot",
+        "options": {
+          "bigSquare": "Groot (vierkant)",
+          "mediumRectangle": "Middel (rechthoek)"
+        }
+      },
+      "allowRateOrders": {
+        "label": "Bestellingen laten beoordelen",
+        "description": "Sta klanten toe een bestelling te beoordelen en een review te schrijven als ze niet tevreden zijn. Alleen beheerders van de bot kunnen de reviews zien"
+      },
+      "notifyOnCartStatusChange": {
+        "label": "Melding sturen bij wijziging van winkelwagenstatus",
+        "description": "De klant ontvangt een melding wanneer je de bestelstatus wijzigt. Je kunt de melding bij annulering en voltooiing van een bestelling niet uitschakelen."
+      },
+      "abandonedCartFlow": {
+        "label": "Flow voor verlaten winkelwagen",
+        "description": "De flow die de bot voor de klant start als de winkelwagen zo lang blijft liggen. Gebruik '{{shop_token}}' in de knoppen om de winkelwagen te openen. Triggers kunnen ook de gebeurtenis \"Cart abandoned\" gebruiken.",
+        "none": "Geen flow (alleen trigger-gebeurtenis)"
+      },
+      "storeSource": {
+        "label": "Winkelbron",
+        "description": "Selecteer de winkelbron waarmee je producten, voorraad en bestellingen beheert. Bij Shopify / WooCommerce worden alle producten en bestellingen rechtstreeks vanuit je Shopify / WooCommerce-winkel beheerd.",
+        "options": {
+          "chatbotx": "ChatbotX",
+          "shopify": "Shopify",
+          "woocommerce": "WooCommerce"
+        }
+      }
+    },
+    "payments": {
+      "currencyMismatch": "{count, plural, one {# product heeft} other {# producten hebben}} een prijs in een andere valuta dan {currency}. Bestellingen rekenen hun prijs af in {currency}.",
+      "paymentMethods": {
+        "label": "Betaalmethoden",
+        "description": "De betaalmethoden die op de afrekenpagina zijn ingeschakeld. De eerste betaalmethode in de lijst is de geselecteerde betaalmethode op de afrekenpagina.",
+        "options": {
+          "cod": "Rembours",
+          "stripe": "Kaart",
+          "paypal": "PayPal"
+        },
+        "connectHint": "Om {provider} aan te bieden, verbind je het in <link>Instellingen → Integraties</link>."
+      },
+      "currency": {
+        "label": "Valuta",
+        "description": "Dit is de valuta waarin je de productprijzen instelt. Klanten betalen in deze valuta."
+      },
+      "currencyPosition": {
+        "label": "Positie van de valuta",
+        "description": "Met deze optie bepaal je de positie van de valuta.",
+        "options": {
+          "left": "Links",
+          "leftSpace": "Links met spatie",
+          "right": "Rechts",
+          "rightSpace": "Rechts met spatie"
+        }
+      },
+      "currencySymbol": {
+        "label": "Valutasymbool",
+        "description": "Het valutasymbool wordt voor de prijzen getoond. Wil je een spatie tussen het symbool en de prijzen, voeg dan een spatie toe aan het einde van het symbool."
+      },
+      "serviceFeePercent": {
+        "label": "Overige kosten / Servicekosten (0 - 100%)",
+        "description": "Overige kosten die met de verkoop te maken hebben."
+      }
+    },
+    "shipping": {
+      "shippingType": {
+        "label": "Verzendtype",
+        "description": "Met deze optie bepaal je hoe de klant zijn bestelling ontvangt.",
+        "options": {
+          "none": "Geen",
+          "delivery": "Bezorgen bij de klant",
+          "pickup": "Afhalen in de winkel",
+          "deliveryAndPickup": "Bezorgen bij de klant, Afhalen in de winkel"
+        }
+      },
+      "storeAddress": {
+        "label": "Winkeladres",
+        "description": "Dit adres wordt aan de klant getoond op de afrekenpagina als je afhalen in de winkel toestaat."
+      },
+      "shippingCountries": {
+        "label": "Verzendlanden",
+        "description": "De landen waarnaar je bestellingen verzendt."
+      },
+      "defaultShippingCountry": {
+        "label": "Standaard verzendland",
+        "description": "Het land dat standaard wordt geselecteerd op de afrekenpagina.",
+        "none": "Geen"
+      },
+      "deliveryCost": {
+        "label": "Bezorgkosten",
+        "description": "Een vast tarief om de bestelling op het adres van de klant te bezorgen."
+      },
+      "defaultCountryNotShipped": "Kies een van de verzendlanden."
+    },
+    "checkout": {
+      "checkoutMode": {
+        "label": "Afrekenen",
+        "description": "Deze instelling bepaalt waar je klanten hun bestelling afronden. Wil je dat de gebruiker de bestelling buiten je bot afrondt, zoals op je website, Amazon, enz., gebruik dan niet onze standaard afrekenpagina.",
+        "options": {
+          "default": "Standaard afrekenpagina",
+          "externalLink": "Aangepaste externe afrekenpagina",
+          "flow": "Flow",
+          "productPage": "Externe productpagina bezoeken"
+        }
+      },
+      "checkoutLink": {
+        "label": "Link naar afrekenpagina",
+        "description": "De externe pagina waar klanten hun bestelling afronden."
+      },
+      "checkoutFlowId": {
+        "label": "Checkout-flow",
+        "description": "De flow die wordt uitgevoerd wanneer een klant afrekent.",
+        "placeholder": "Selecteer een flow"
+      },
+      "minimumOrderValue": {
+        "label": "Minimaal bestelbedrag",
+        "description": "Het minimale bedrag van de bestelling die een klant kan plaatsen. Deze voorwaarde wordt gecontroleerd nadat alle kortingen zijn toegepast."
+      },
+      "requiredFields": {
+        "requireName": {
+          "label": "Naam van koper verplicht",
+          "description": "De naam van de koper wordt tijdens het afrekenen opgevraagd."
+        },
+        "requireEmail": {
+          "label": "E-mailadres verplicht",
+          "description": "Het e-mailadres van de koper wordt tijdens het afrekenen opgevraagd."
+        },
+        "requirePhone": {
+          "label": "Telefoonnummer verplicht",
+          "description": "Het telefoonnummer van de koper wordt tijdens het afrekenen opgevraagd."
+        },
+        "requireState": {
+          "label": "Provincie/staat verplicht",
+          "description": "De provincie of staat van de koper wordt tijdens het afrekenen opgevraagd."
+        },
+        "requireZip": {
+          "label": "Postcode verplicht",
+          "description": "De postcode van de koper wordt tijdens het afrekenen opgevraagd."
+        }
+      },
+      "orderConfirmationMode": {
+        "label": "Orderbevestiging",
+        "description": "Wat de klant in de chat krijgt zodra de bestelling is geplaatst. Het standaardbericht toont de bestelgegevens in de taal van de werkruimte.",
+        "options": {
+          "default": "Standaardbericht",
+          "flow": "Een flow uitvoeren",
+          "none": "Niets versturen"
+        }
+      },
+      "orderConfirmationFlowId": {
+        "label": "Flow voor orderbevestiging",
+        "description": "De flow die de klant krijgt in plaats van het standaardbericht zodra de bestelling is geplaatst."
+      },
+      "shopifyCheckoutMethod": {
+        "label": "Afrekenmethode",
+        "description": "Kies of klanten de betaling afronden op je Shopify-afrekenpagina of de bestelling direct in de webshop plaatsen.",
+        "options": {
+          "webCheckout": "Shopify-webafrekening",
+          "inApp": "Afrekenen in de app"
+        }
+      },
+      "shopifyAutoApplyDiscounts": {
+        "label": "Kortingscodes automatisch toepassen",
+        "description": "Sta klanten toe Shopify-kortingscodes rechtstreeks op hun winkelwagen toe te passen voordat ze naar het afrekenen worden doorgestuurd."
+      },
+      "wooCommerceCheckoutMethod": {
+        "description": "Kies of klanten betalen op de betaalpagina van je WooCommerce-winkel of de bestelling direct in de webshop plaatsen (betalen bij levering).",
+        "options": {
+          "webCheckout": "WooCommerce-betaalpagina",
+          "inApp": "Afrekenen in de app"
+        }
+      },
+      "wooCommerceAutoApplyDiscounts": {
+        "description": "Sta klanten toe WooCommerce-kortingscodes rechtstreeks op hun winkelwagen toe te passen voordat ze naar het afrekenen worden doorgestuurd."
+      },
+      "inAppDeliveryCost": {
+        "label": "Bezorgkosten",
+        "description": "Bezorgkosten die worden toegevoegd aan bestellingen via afrekenen in de app."
+      },
+      "wooCommerceDeliveryCost": {
+        "description": "Bezorgkosten die worden toegevoegd aan bestellingen die naar WooCommerce gaan, bij beide afrekenmethoden."
+      }
+    },
+    "shopify": {
+      "shopDomain": {
+        "label": "Winkeldomein",
+        "placeholder": "your-store.myshopify.com",
+        "hint": "Voer het .myshopify.com-domein van je Shopify-winkel in.",
+        "connectedHint": "Het domein van je gekoppelde Shopify-winkel."
+      },
+      "authKind": {
+        "label": "Authenticatie",
+        "description": "Hoe ChatbotX inlogt bij je winkel: met de Admin API-toegangstoken van een aangepaste app, of met de Client ID en het secret van een app die in het Shopify Dev Dashboard is gemaakt.",
+        "options": {
+          "token": "Admin API-toegangstoken",
+          "clientCredentials": "Client ID en secret (Dev Dashboard-app)"
+        }
+      },
+      "accessToken": {
+        "label": "Admin API-toegangstoken",
+        "hint": "De Admin API-toegangstoken van je aangepaste app. Geef deze de volgende scopes: {scopes}.",
+        "connectedHint": "Je Shopify Admin API-toegangstoken wordt versleuteld opgeslagen."
+      },
+      "apiSecret": {
+        "label": "API-geheime sleutel",
+        "hint": "De geheime API-sleutel van de app, gebruikt om webhooks van Shopify te verifiëren."
+      },
+      "clientId": {
+        "label": "Client ID",
+        "hint": "De Client ID van je Dev Dashboard-app. Geef deze de volgende scopes: {scopes}."
+      },
+      "clientSecret": {
+        "label": "Client Secret",
+        "hint": "Het Client Secret van de app. Het wordt versleuteld opgeslagen."
+      },
+      "webhookUrl": {
+        "label": "Webhook-URL",
+        "description": "Wordt bij het koppelen automatisch bij Shopify geregistreerd om realtime updates over producten, voorraad en bestellingen te ontvangen."
+      },
+      "syncNow": "Nu synchroniseren",
+      "syncStarted": "Synchronisatie gestart",
+      "syncError": "Kan de synchronisatie niet starten",
+      "syncStatus": {
+        "label": "Synchronisatiestatus",
+        "description": "Producten, kortingscodes en bestellingen worden gespiegeld vanuit je Shopify-winkel.",
+        "connectedTo": "Verbonden met {shopDomain}",
+        "lastSynced": "Laatst gesynchroniseerd: {time} ({productCount} producten, {orderCount} bestellingen)",
+        "neverSynced": "Nog niet gesynchroniseerd",
+        "noReason": "Koppel je winkel opnieuw om door te gaan.",
+        "invalid": "De verbinding is niet meer geldig: {reason}",
+        "state": {
+          "idle": "Inactief",
+          "queued": "Synchronisatie in wachtrij...",
+          "running": "Synchroniseren...",
+          "succeeded": "Laatste synchronisatie geslaagd",
+          "failed": "Laatste synchronisatie mislukt"
+        }
+      }
+    },
+    "woocommerce": {
+      "siteUrl": {
+        "label": "Winkel-URL",
+        "placeholder": "https://example.com",
+        "hint": "Het adres van je WordPress-site, beginnend met https://. In WordPress mag Settings → Permalinks niet op Plain staan.",
+        "connectedHint": "Je gekoppelde WooCommerce-winkel."
+      },
+      "consumerKey": {
+        "label": "Consumer key",
+        "hint": "Maak een sleutel aan via WooCommerce → Settings → Advanced → REST API → Add key met Read/Write-rechten en plak de Consumer key (ck_…).",
+        "connectedHint": "Het begin van de gekoppelde sleutel. Sleutels worden versleuteld opgeslagen."
+      },
+      "consumerSecret": {
+        "label": "Consumer secret",
+        "hint": "Het Consumer secret van de sleutel (cs_…). Het wordt versleuteld opgeslagen."
+      },
+      "webhookUrl": {
+        "label": "Webhook-URL",
+        "description": "Wordt bij het koppelen automatisch bij WooCommerce geregistreerd om realtime updates over producten, voorraad en bestellingen te ontvangen."
+      },
+      "syncNow": "Nu synchroniseren",
+      "syncStarted": "Synchronisatie gestart",
+      "syncError": "Kan de synchronisatie niet starten",
+      "syncStatus": {
+        "label": "Synchronisatiestatus",
+        "description": "Producten, kortingscodes en bestellingen worden gespiegeld vanuit je WooCommerce-winkel.",
+        "connectedTo": "Verbonden met {store}",
+        "lastSynced": "Laatst gesynchroniseerd: {time} ({productCount} producten, {orderCount} bestellingen)",
+        "neverSynced": "Nog niet gesynchroniseerd",
+        "noReason": "Koppel je winkel opnieuw om door te gaan.",
+        "invalid": "De verbinding is niet meer geldig: {reason}",
+        "state": {
+          "idle": "Inactief",
+          "queued": "Synchronisatie in wachtrij...",
+          "running": "Synchroniseren...",
+          "succeeded": "Laatste synchronisatie geslaagd",
+          "failed": "Laatste synchronisatie mislukt"
+        }
+      }
+    }
+  },
+  "openHours": {
+    "alwaysOpen": "Altijd open",
+    "addNew": "Nieuw toevoegen",
+    "dialogTitle": "Openingstijden",
+    "name": "Naam",
+    "namePlaceholder": "bijv. Werkdagen",
+    "day": "Dag",
+    "from": "Opent",
+    "to": "Sluit",
+    "add": "Tijden toevoegen",
+    "remove": "Verwijderen",
+    "cancel": "Annuleren",
+    "continue": "Doorgaan",
+    "created": "Openingstijden aangemaakt",
+    "saveError": "Kan de openingstijden niet opslaan",
+    "days": {
+      "0": "Zondag",
+      "1": "Maandag",
+      "2": "Dinsdag",
+      "3": "Woensdag",
+      "4": "Donderdag",
+      "5": "Vrijdag",
+      "6": "Zaterdag"
+    },
+    "sameTimes": "Openings- en sluitingstijd moeten verschillen."
+  },
+  "webshop": {
+    "metadataTitle": "Winkel",
+    "metadataOrderTitle": "Je bestelling",
+    "invalidLinkTitle": "Deze link werkt niet",
+    "invalidLinkDescription": "Hij is misschien verlopen. Vraag de winkel in de chat om een nieuwe link.",
+    "previewBanner": "Voorbeeld: zo zien klanten het. Vanuit een voorbeeld kun je niet bestellen.",
+    "previewOrderingOff": "Voorbeeld: bestellen staat uit",
+    "closed": {
+      "orderingUnavailable": "De winkel neemt nu geen bestellingen aan.",
+      "outsideOpenHours": "De winkel is nu gesloten. Je kunt nog wel rondkijken."
+    },
+    "searchPlaceholder": "Producten zoeken",
+    "categories": "Categorieën",
+    "allCategories": "Alle categorieën",
+    "vendors": "Leveranciers",
+    "allVendors": "Alle leveranciers",
+    "noProducts": "Geen producten gevonden.",
+    "productNotFound": "Dit product is niet meer beschikbaar.",
+    "outOfStock": "Uitverkocht",
+    "addToCart": "In winkelwagen",
+    "added": "Toegevoegd aan winkelwagen",
+    "chooseOptions": "Opties kiezen",
+    "chooseOption": "Kies {name}",
+    "variantUnavailable": "Deze combinatie is niet beschikbaar.",
+    "buy": "Kopen",
+    "share": "Delen",
+    "linkCopied": "Gekopieerd",
+    "similar": "Vergelijkbaar",
+    "save": "Bewaren",
+    "saved": "Bewaard",
+    "showImage": "Afbeelding {number} tonen",
+    "increase": "Aantal verhogen",
+    "decrease": "Aantal verlagen",
+    "remove": "Verwijderen",
+    "cart": "Winkelwagen",
+    "cartEmpty": "Je winkelwagen is leeg.",
+    "continueShopping": "Verder winkelen",
+    "unavailableItems": "{count, plural, one {# artikel kan nu niet besteld worden} other {# artikelen kunnen nu niet besteld worden}}",
+    "unavailableNotOrdered": "Ze worden niet meebesteld en blijven in je winkelwagen.",
+    "unavailable": "Niet meer beschikbaar",
+    "unavailableHint": "Kies de opties opnieuw",
+    "deletedProduct": "Verwijderd product",
+    "summary": {
+      "subtotal": "Subtotaal",
+      "discount": "Korting",
+      "delivery": "Bezorging",
+      "otherFees": "Overige kosten",
+      "total": "Totaal",
+      "coupon": "Kortingscode ({code})",
+      "title": "Besteloverzicht",
+      "saved": "Je bespaart {amount}",
+      "deliveryAtCheckout": "Berekend bij het afrekenen"
+    },
+    "belowMinimum": "De minimale bestelling is {amount}.",
+    "checkOut": "Afrekenen",
+    "contactDetails": "Je gegevens",
+    "optional": "(optioneel)",
+    "fields": {
+      "name": "Naam",
+      "email": "E-mail",
+      "phone": "Telefoon",
+      "country": "Land",
+      "state": "Provincie",
+      "city": "Plaats",
+      "address1": "Adres",
+      "address2": "Appartement, gebouw, enz.",
+      "zip": "Postcode",
+      "note": "Opmerking voor de winkel"
+    },
+    "shipping": {
+      "title": "Bezorging",
+      "delivery": "Bezorgen op mijn adres",
+      "pickup": "Afhalen in de winkel",
+      "storeAddress": "Adres van de winkel: {address}"
+    },
+    "payment": {
+      "title": "Betaling",
+      "cod": "Betalen bij levering",
+      "stripe": "Kaart",
+      "paypal": "PayPal",
+      "paid": "Betaald",
+      "refunded": "Terugbetaald",
+      "awaiting": "Wacht op je betaling",
+      "payBefore": "Betaal vóór {time}, anders wordt de bestelling geannuleerd.",
+      "payNow": "Nu betalen",
+      "onlineHint": "Je betaalt op de volgende pagina. Je bestelling wordt 30 minuten vastgehouden.",
+      "continueToPayment": "Doorgaan naar betaling",
+      "notYet": "We hebben je betaling nog niet ontvangen. Als je net hebt betaald, wacht even en vernieuw deze pagina.",
+      "leftPaymentPage": "Je hebt de betaalpagina verlaten. Je kunt hieronder nog steeds betalen.",
+      "paidThanks": "Betaling ontvangen. Bedankt voor je bestelling!"
+    },
+    "placeOrder": "Bestelling plaatsen",
+    "orderPlaced": "Bedankt! Je bestelling is geplaatst. We houden je op de hoogte in de chat.",
+    "orderTitle": "Bestelling #{number}",
+    "orderNotFound": "Deze bestelling is niet gevonden.",
+    "placedAt": "Geplaatst op {date}",
+    "status": {
+      "pending": "Niet verwerkt",
+      "accepted": "In behandeling",
+      "shipped": "Verzonden",
+      "concluded": "Voltooid",
+      "cancelled": "Geannuleerd"
+    },
+    "rateTitle": "Beoordeel je bestelling",
+    "rateComment": "Vertel de winkel wat je ervan vindt (optioneel)",
+    "rateSubmit": "Beoordeling versturen",
+    "rateThanks": "Bedankt voor je beoordeling!",
+    "yourRating": "Jouw beoordeling",
+    "ratingValue": "{rating} van de 5 sterren",
+    "previous": "Vorige",
+    "next": "Volgende",
+    "pageOf": "Pagina {page} van {pageCount}",
+    "errors": {
+      "generic": "Er ging iets mis. Probeer het opnieuw.",
+      "checkFields": "Controleer de velden.",
+      "fieldRequired": "{field} is verplicht.",
+      "countryUnavailable": "De winkel bezorgt niet in dit land.",
+      "invalidLink": "Deze link werkt niet meer. Vraag de winkel om een nieuwe.",
+      "webshopPreviewOnly": "Dit is een voorbeeld. Bestellen kan alleen via de link van een klant.",
+      "rateLimited": "Te veel pogingen. Wacht even en probeer het opnieuw.",
+      "orderingUnavailable": "De winkel neemt nu geen bestellingen aan.",
+      "orderBelowMinimum": "De minimale bestelling is {minimum}.",
+      "orderBelowVendorMinimum": "Artikelen van {vendorName} moeten samen minstens {minimum} zijn.",
+      "orderOutOfStock": "{productName} is uitverkocht.",
+      "orderProductUnavailable": "Sommige artikelen kunnen niet meer besteld worden. Controleer je winkelwagen.",
+      "orderEmpty": "Je winkelwagen is leeg.",
+      "orderShippingTypeUnavailable": "Deze bezorgoptie is niet beschikbaar.",
+      "webshopRatingNotAllowed": "Deze bestelling kan niet beoordeeld worden.",
+      "webshopCartFull": "Je winkelwagen kan maximaal {maximum} verschillende artikelen bevatten.",
+      "notFound": "Dit product is niet meer beschikbaar.",
+      "discountCodeNotFound": "Deze kortingscode bestaat niet.",
+      "discountCodeInactive": "Deze kortingscode is niet actief.",
+      "discountCodeNotStarted": "Deze kortingscode geldt nog niet.",
+      "discountCodeExpired": "Deze kortingscode is verlopen.",
+      "discountCodeUsageLimitReached": "Deze kortingscode is op.",
+      "discountCodeAlreadyUsed": "Je hebt deze kortingscode al gebruikt.",
+      "discountCodeNotEligible": "Deze kortingscode is niet voor jou.",
+      "discountCodeNotApplicable": "Deze kortingscode geldt niet voor je winkelwagen.",
+      "discountCodeMinimumAmount": "Deze code vraagt een aankoop van minstens {minimum}. Nog {missing}.",
+      "discountCodeMinimumQuantity": "Deze code vraagt minstens {minimum} artikelen. Nog {missing}.",
+      "paymentMethodUnavailable": "Deze betaalmethode is niet beschikbaar.",
+      "paymentProviderNotConnected": "Deze betaalmethode is niet beschikbaar.",
+      "paymentProviderUnavailable": "De betaaldienst reageert niet. Probeer het zo meteen opnieuw.",
+      "paymentProviderRejected": "De betaling kon niet worden gestart. Kies een andere betaalmethode.",
+      "paymentProviderCredentialsRejected": "De betaling kon niet worden gestart. Kies een andere betaalmethode.",
+      "paymentAmountUnsupported": "Deze bestelling kan niet online worden betaald. Kies een andere betaalmethode.",
+      "orderPaymentNotOpen": "Deze bestelling kan niet meer online worden betaald."
+    },
+    "discount": {
+      "label": "Kortingscode",
+      "placeholder": "Kortingscode",
+      "apply": "Toepassen",
+      "applied": "Kortingscode toegepast",
+      "automatic": "automatisch toegepast",
+      "remove": "Kortingscode verwijderen",
+      "available": "Codes die je kunt gebruiken",
+      "freeShipping": "Gratis verzending",
+      "bestChoice": "Beste keuze",
+      "expiresOn": "Geldig tot {date}",
+      "noExpiry": "Verloopt niet",
+      "inUse": "In gebruik",
+      "saves": "Bespaart {amount}",
+      "showMore": "{count, plural, one {Nog # code tonen} other {Nog # codes tonen}}",
+      "showLess": "Minder tonen",
+      "removeShort": "Verwijderen",
+      "expired": "Verlopen",
+      "usedUp": "Opgebruikt",
+      "notEligible": "Nog niet in aanmerking"
+    },
+    "itemCount": "{count, plural, one {# artikel} other {# artikelen}}",
+    "relatedProducts": "Misschien vind je dit ook leuk",
+    "soldOut": "Uitverkocht",
+    "sku": "SKU: {sku}",
+    "allProducts": "Alle producten",
+    "noCategories": "Deze winkel heeft nog geen categorieën."
+  },
+  "webshopLinks": {
+    "preview": "Voorbeeld",
+    "getLink": "Link ophalen",
+    "copied": "Link gekopieerd. Zet hem op een botknop: elk contact opent zijn eigen winkel.",
+    "error": "De link kon niet worden opgehaald.",
+    "copyError": "De link kon niet worden gekopieerd.",
+    "shopLink": {
+      "label": "Winkel-URL",
+      "hint": "Plak deze link in een knop in een flow, broadcast of reeks. Elk contact dat hem ontvangt, opent zijn eigen winkel en kan bestellen."
+    },
+    "productLink": {
+      "label": "Openbare URL",
+      "hint": "Kopieer en plak de URL in je flow, broadcast of reeks. Elk contact dat hem ontvangt, opent dit product en kan bestellen."
+    },
+    "bar": "Deel de winkel: haal links op naar de winkel, de winkelwagen en de categorieën voor knoppen in flows, broadcasts en sequenties.",
+    "dialog": {
+      "title": "Winkellinks",
+      "description": "Plak een link in een knop in een flow, broadcast of sequentie. Elk contact dat hem krijgt, opent zijn eigen winkel.",
+      "shopHint": "Opent de voorpagina van de winkel met alle producten."
+    },
+    "cartLink": {
+      "label": "Winkelwagen",
+      "hint": "Opent de winkelwagen van het contact, klaar om af te rekenen."
+    },
+    "categoriesLink": {
+      "label": "Categorieën",
+      "hint": "Opent de lijst met categorieën van de winkel."
+    }
+  },
+  "discountCodes": {
+    "title": "Kortingscodes",
+    "description": "Kortingscodes die klanten bij het afrekenen gebruiken of die vanzelf gelden.",
+    "add": "Toevoegen",
+    "edit": "Kortingscode bewerken",
+    "automatic": "Automatisch",
+    "never": "Nooit",
+    "searchPlaceholder": "Codes zoeken…",
+    "saveError": "De kortingscode kon niet worden opgeslagen.",
+    "created": "Kortingscode aangemaakt",
+    "updated": "Kortingscode opgeslagen",
+    "deleted": "Kortingscode verwijderd",
+    "deleteError": "De kortingscode kon niet worden verwijderd.",
+    "deleteTitle": "Kortingscode {code} verwijderen?",
+    "deleteDescription": "Klanten kunnen hem niet meer gebruiken. Bestellingen die hem gebruikten houden hun korting.",
+    "cancel": "Annuleren",
+    "delete": "Verwijderen",
+    "save": "Opslaan",
+    "columns": {
+      "name": "Naam",
+      "discount": "Korting",
+      "used": "Gebruikt",
+      "end": "Einde",
+      "active": "Actief"
+    },
+    "discountTypes": {
+      "percentage": "Percentage",
+      "fixedAmount": "Vast bedrag",
+      "freeShipping": "Gratis verzending"
+    },
+    "appliesTo": {
+      "entireOrder": "Hele bestelling",
+      "category": "Specifieke categorie",
+      "products": "Specifieke producten"
+    },
+    "minimumTypes": {
+      "none": "Geen",
+      "amount": "Minimaal aankoopbedrag",
+      "quantity": "Minimaal aantal artikelen"
+    },
+    "eligibilities": {
+      "everyone": "Iedereen",
+      "specificCustomers": "Specifieke klanten"
+    },
+    "form": {
+      "discountCode": "Kortingscode",
+      "code": "Code",
+      "generate": "Genereren",
+      "autoApply": "Deze kortingscode automatisch op winkelwagens toepassen",
+      "autoApplyHint": "Winkelwagens krijgen hem zonder dat de klant hem typt. Bij meerdere automatische codes wint de grootste korting.",
+      "typedHint": "Klanten voeren deze code in bij het afrekenen.",
+      "options": "Opties",
+      "discountType": "Soort korting",
+      "discountValuePercent": "Kortingswaarde (%)",
+      "discountValueAmount": "Kortingswaarde ({currency})",
+      "freeShippingHint": "Haalt de bezorgkosten van bezorgde bestellingen af.",
+      "appliesTo": "Geldt voor",
+      "category": "Categorie",
+      "products": "Producten",
+      "productsPlaceholder": "Kies producten",
+      "minimumRequirement": "Minimale voorwaarde",
+      "minimumAmount": "Minimumbedrag ({currency})",
+      "minimumQuantity": "Minimaal aantal artikelen",
+      "usageLimits": "Gebruikslimieten",
+      "limitTotal": "Beperk hoe vaak deze korting in totaal gebruikt kan worden",
+      "usedSoFar": "{count, plural, one {Tot nu toe # keer gebruikt} other {Tot nu toe # keer gebruikt}}",
+      "oncePerCustomer": "Eén keer per klant",
+      "customerEligibility": "Welke klanten",
+      "specificCustomersHint": "Alleen contacten die bij het bestellen aan het filter hieronder voldoen.",
+      "activeDates": "Geldigheidsperiode",
+      "startDate": "Startdatum",
+      "endDate": "Einddatum",
+      "isActive": "Actief"
+    },
+    "rules": {
+      "codeCharacters": "Gebruik alleen letters zonder accenten, cijfers, - en _.",
+      "usageBelowUsed": "Deze code is al {count} keer gebruikt; de limiet kan niet lager zijn.",
+      "customerConditionRequired": "Voeg minstens één voorwaarde toe.",
+      "endAfterStart": "De einddatum moet na de startdatum liggen."
+    }
+  },
+  "ecommerceAnalytics": {
+    "title": "Analyse",
+    "lifetime": "Totaal",
+    "sales": "Omzet",
+    "orders": "Bestellingen",
+    "products": "Producten",
+    "salesByDate": "Omzet per datum",
+    "ordersByDate": "Bestellingen per datum",
+    "topProducts": "Topproducten",
+    "topVendors": "Topleveranciers",
+    "columns": {
+      "name": "Naam",
+      "sales": "Omzet"
+    },
+    "noData": "Geen gegevens in deze periode",
+    "refresh": "Vernieuwen",
+    "change": "{value}%",
+    "noPrevious": "nieuw",
+    "otherCurrencyOrders": "{count} bestellingen in andere valuta's zijn niet opgenomen in deze cijfers"
+  },
   "responseSla": {
     "label": "Reactie-SLA",
     "title": "Reactie-SLA",
@@ -9052,5 +11301,611 @@
     "metHelp": "Aandeel reacties met SLA dat die haalde.",
     "eligibleCount": "{count} reacties hadden een SLA",
     "enable": "Reactie-SLA inschakelen"
+  },
+  "stripe": {
+    "title": "Stripe",
+    "setting": {
+      "label": "Stripe",
+      "description": "Ontvang kaartbetalingen in je webshop met je eigen Stripe-account. Het geld gaat rechtstreeks naar je Stripe-account."
+    },
+    "connectWithStripe": "Verbinden met Stripe",
+    "connectWithKey": "Geheime sleutel gebruiken",
+    "connectionType": {
+      "oauth": "Stripe Connect",
+      "apiKey": "Geheime sleutel"
+    },
+    "fields": {
+      "secretKey": "Geheime sleutel",
+      "secretKeyHint": "Begint met sk_live_ (of sk_test_ voor testmodus). Een beperkte sleutel (rk_…) werkt ook als die het account kan lezen en Checkout Sessions, Refunds en Webhook Endpoints kan schrijven."
+    },
+    "dialog": {
+      "description": "Kopieer je geheime sleutel uit <link>Stripe Dashboard → Developers → API keys</link> en plak hem hier. We controleren hem, stellen betalingsmeldingen in op je Stripe-account en slaan de sleutel versleuteld op."
+    },
+    "testMode": "Testmodus",
+    "liveMode": "Live",
+    "chargesDisabled": "Je Stripe-account kan nog geen betalingen ontvangen. Rond de configuratie af in je Stripe-dashboard.",
+    "outcome": {
+      "expired": "De Stripe-verbindingslink is verlopen. Probeer het opnieuw.",
+      "access_denied": "De verbinding is niet toegestaan op Stripe.",
+      "stripeAccountAlreadyConnected": "Dit Stripe-account is al verbonden met een andere workspace.",
+      "stripePlatformNotConfigured": "Stripe is nog niet ingesteld op dit platform.",
+      "superAdminRequired": "Alleen een workspace-beheerder kan Stripe verbinden.",
+      "signInRequired": "Log in en probeer het opnieuw.",
+      "paymentProviderCredentialsRejected": "Stripe heeft de verbinding geweigerd. Probeer het opnieuw.",
+      "startedByAnotherUser": "Alleen degene die op Verbinden klikte, kan dit afronden. Klik nogmaals op Verbinden.",
+      "paymentProviderInUse": "Openstaande bestellingen hebben dit Stripe-account nog nodig. Rond ze eerst af of annuleer ze."
+    },
+    "platform": {
+      "connectClientId": "Connect client ID",
+      "connectClientIdHint": "Uit Stripe Dashboard → Settings → Connect → Onboarding options → OAuth (begint met ca_). Winkels verbinden hiermee hun eigen Stripe-account.",
+      "redirectUri": "Redirect URI",
+      "webhookReady": "Winkels kunnen Stripe verbinden en hun betalingen worden automatisch bevestigd.",
+      "webhookMissing": "De betalingswebhook ontbreekt. Sla deze instellingen opnieuw op om hem aan te maken.",
+      "connectMissing": "Voeg de Connect client ID toe zodat winkels hun Stripe-account kunnen verbinden."
+    }
+  },
+  "paypal": {
+    "title": "PayPal",
+    "setting": {
+      "label": "PayPal",
+      "description": "Ontvang PayPal-betalingen in je webshop met je eigen PayPal-account."
+    },
+    "sandbox": "Sandbox",
+    "liveMode": "Live",
+    "fields": {
+      "clientId": "Client ID",
+      "clientSecret": "Secret"
+    },
+    "dialog": {
+      "description": "Maak een REST-app aan in <link>PayPal Developer → Apps & Credentials</link> en plak de Client ID en Secret. Live of sandbox wordt herkend aan de sleutels."
+    }
+  },
+  "pipelines": {
+    "title": "Pipelines",
+    "retry": "Opnieuw proberen",
+    "save": "Opslaan",
+    "saveFailed": "Je wijzigingen konden niet worden opgeslagen. Probeer het opnieuw.",
+    "list": {
+      "name": "Naam",
+      "type": "Type",
+      "items": "Items",
+      "add": "Pipeline toevoegen",
+      "empty": "Nog geen pipelines",
+      "emptyHint": "Maak een pipeline om deals, tickets of een ander proces bij te houden als kaarten op een bord.",
+      "error": "Pipelines laden is mislukt",
+      "contacts": "Contacten",
+      "addShort": "Toevoegen",
+      "description": "Volg deals, tickets of elk proces als kaarten die door fasen bewegen."
+    },
+    "types": {
+      "opportunity": {
+        "label": "Verkoopkansencentrum",
+        "description": "Volg verkoopdeals per fase. Eerste fase: Lead."
+      },
+      "ticket": {
+        "label": "Supportcentrum",
+        "description": "Behandel supportverzoeken. Eerste fase: Nieuw probleem."
+      },
+      "custom": {
+        "label": "Eigen bord",
+        "description": "Bouw je eigen proces. Eerste fase: Intake."
+      }
+    },
+    "noun": {
+      "opportunity": {
+        "one": "Verkoopkans",
+        "many": "Verkoopkansen",
+        "add": "Verkoopkans toevoegen"
+      },
+      "ticket": {
+        "one": "Ticket",
+        "many": "Tickets",
+        "add": "Ticket toevoegen"
+      },
+      "card": {
+        "one": "Kaart",
+        "many": "Kaarten",
+        "add": "Kaart toevoegen"
+      }
+    },
+    "create": {
+      "title": "Nieuwe pipeline",
+      "description": "Kies waarvoor het bord dient en geef het een naam.",
+      "type": "Type",
+      "name": "Pipelinenaam",
+      "namePlaceholder": "bijv. Verkoop",
+      "submit": "Pipeline maken",
+      "success": "Pipeline gemaakt"
+    },
+    "menu": {
+      "open": "Pipeline-acties",
+      "rename": "Hernoemen",
+      "duplicate": "Dupliceren",
+      "delete": "Verwijderen"
+    },
+    "rename": {
+      "title": "Pipeline hernoemen",
+      "submit": "Hernoemen",
+      "success": "Pipeline hernoemd"
+    },
+    "duplicate": {
+      "success": "Pipeline gedupliceerd"
+    },
+    "delete": {
+      "title": "Pipeline verwijderen",
+      "description": "{name} en alle bijbehorende fases en items worden verwijderd. Dit kan niet ongedaan worden gemaakt.",
+      "success": "Pipeline verwijderd"
+    },
+    "board": {
+      "title": "Bord",
+      "count": "{count, plural, one {# item} other {# items}}",
+      "total": "Totaal {value}",
+      "search": "Zoeken op titel, nummer of contact",
+      "sort": "Sorteren",
+      "filter": "Filteren",
+      "analytics": "Analyses",
+      "settings": "Instellingen",
+      "emptyStage": "Sleep een kaart hierheen om deze naar deze fase te verplaatsen.",
+      "loadMore": "Meer laden",
+      "loadMoreFailed": "Meer items laden is mislukt",
+      "error": "Het bord laden is mislukt",
+      "processing": "Deze fase wordt verwerkt…",
+      "moveFailed": "De kaart verplaatsen is mislukt",
+      "sortOptions": {
+        "createdAtDesc": "Aanmaakdatum (Nieuw naar Oud)",
+        "createdAtAsc": "Aanmaakdatum (Oud naar Nieuw)",
+        "updatedAtDesc": "Bijwerkdatum (Nieuw naar Oud)",
+        "valueDesc": "Waarde van de kans (Hoog naar Laag)",
+        "valueAsc": "Waarde van de kans (Laag naar Hoog)",
+        "dueDateAsc": "Vervaldatum (Vroegste naar Laatste)",
+        "dueDateDesc": "Vervaldatum (Laatste naar Vroegste)",
+        "priorityDesc": "Prioriteit (Hoog naar Laag)",
+        "priorityAsc": "Prioriteit (Laag naar Hoog)",
+        "updatedAtAsc": "Bijwerkdatum (Oud naar Nieuw)"
+      },
+      "searchAction": "Zoeken",
+      "closeSearch": "Zoeken sluiten",
+      "cardMenu": "Kaartacties",
+      "moveTo": "Verplaatsen naar",
+      "unknownContact": "Onbekend contact",
+      "staleError": "Het bord kon niet worden vernieuwd. Wat je ziet is mogelijk verouderd."
+    },
+    "stage": {
+      "add": "Fase toevoegen",
+      "name": "Fasenaam",
+      "namePlaceholder": "Fasenaam",
+      "menu": "Faseacties",
+      "edit": "Fase bewerken",
+      "delete": "Fase verwijderen",
+      "deleteTitle": "Fase verwijderen",
+      "deleteDescription": "{name} en alle items erin worden verwijderd. Deze actie kan niet ongedaan worden gemaakt.",
+      "moveItemsTo": "Items verplaatsen naar",
+      "deleteItemsToo": "Items ook verwijderen",
+      "description": "Beschrijving",
+      "textColor": "Tekstkleur",
+      "backgroundColor": "Achtergrondkleur",
+      "saved": "Fase opgeslagen",
+      "deleted": "Fase verwijderd",
+      "queued": "De fase wordt op de achtergrond leeggemaakt.",
+      "resetColor": "Standaard",
+      "deleteMoveDescription": "{name} wordt verwijderd. De items worden verplaatst naar {target}.",
+      "rename": "Hernoemen",
+      "settings": "Instellingen",
+      "general": "Algemeen",
+      "color": "Kleur",
+      "cancel": "Annuleren"
+    },
+    "priority": {
+      "low": "Laag",
+      "medium": "Gemiddeld",
+      "high": "Hoog"
+    },
+    "item": {
+      "loading": "Laden…",
+      "error": "Dit item laden is mislukt",
+      "title": "Titel",
+      "status": "Status",
+      "stage": "Fase",
+      "priority": "Prioriteit",
+      "value": "Waarde",
+      "dueDate": "Vervaldatum",
+      "assignees": "Toegewezen beheerders",
+      "description": "Beschrijving",
+      "attachments": "Bijlagen",
+      "attach": "Bestanden bijvoegen",
+      "noAttachments": "Geen bijlagen",
+      "removeAttachment": "Bijlage verwijderen",
+      "removeAttachmentDescription": "Het bestand wordt van dit item verwijderd, maar blijft in de mediabibliotheek.",
+      "comments": "Opmerkingen",
+      "addComment": "Opmerking toevoegen",
+      "commentPlaceholder": "Schrijf een opmerking…",
+      "noComments": "Nog geen opmerkingen",
+      "deleteComment": "Opmerking verwijderen",
+      "deleteCommentDescription": "Deze opmerking wordt verwijderd. Dit kan niet ongedaan worden gemaakt.",
+      "activity": "Activiteit",
+      "noActivity": "Nog geen activiteit",
+      "transfer": "Overdragen aan pipeline",
+      "transferTitle": "Naar een andere pipeline overdragen",
+      "transferDescription": "Het item behoudt zijn nummer en aanmaakdatum. Aangepaste velden worden meegenomen als de andere pipeline een veld met dezelfde referentienaam en hetzelfde type heeft.",
+      "destinationPipeline": "Doelpipeline",
+      "destinationStage": "Doelfase",
+      "firstStage": "Eerste fase",
+      "choose": "Kies…",
+      "transferred": "Item overgedragen",
+      "delete": "Verwijderen",
+      "deleteDescription": "Eén item wordt verwijderd. Dit kan niet ongedaan worden gemaakt.",
+      "deleted": "Item verwijderd",
+      "number": "Nummer",
+      "createdBy": "Gemaakt door",
+      "createdByValue": "{name} op {date}",
+      "inbox": "Inbox",
+      "moreActions": "Meer acties",
+      "noDescription": "Geen beschrijving",
+      "yes": "Ja",
+      "no": "Nee",
+      "assigneesMembers": "Medewerkers",
+      "assigneesTeams": "Inboxteams",
+      "assigneesSearch": "Zoek beheerders of teams…",
+      "assigneesEmpty": "Geen resultaten",
+      "assigneesPlaceholder": "Selecteer beheerders of teams",
+      "olderComments": "Oudere reacties tonen",
+      "olderActivity": "Oudere activiteit tonen",
+      "activityFilter": "Filteren",
+      "activityFilterCount": "{count, plural, one {# filter} other {# filters}}",
+      "activityFilterClear": "Alles tonen",
+      "noFilteredActivity": "Geen activiteit komt overeen met dit filter.",
+      "activityGroup": {
+        "lifecycle": "Aangemaakt & overgezet",
+        "stage": "Fase",
+        "status": "Status",
+        "value": "Waarde",
+        "priority": "Prioriteit",
+        "dueDate": "Vervaldatum",
+        "details": "Titel, beschrijving & velden",
+        "assignees": "Toegewezenen",
+        "comments": "Opmerkingen",
+        "attachments": "Bijlagen"
+      }
+    },
+    "activity": {
+      "created": "Gemaakt",
+      "stageChanged": "Naar een andere fase verplaatst",
+      "statusChanged": "Status gewijzigd",
+      "valueChanged": "Waarde gewijzigd",
+      "priorityChanged": "Prioriteit gewijzigd",
+      "dueDateChanged": "Vervaldatum gewijzigd",
+      "titleChanged": "Titel gewijzigd",
+      "descriptionChanged": "Beschrijving gewijzigd",
+      "fieldValuesChanged": "Aangepaste velden gewijzigd",
+      "assigneesChanged": "Toegewezen personen gewijzigd",
+      "attachmentAdded": "Bijlage toegevoegd",
+      "attachmentRemoved": "Bijlage verwijderd",
+      "commentAdded": "Opmerking toegevoegd",
+      "commentDeleted": "Opmerking verwijderd",
+      "transferred": "Overgedragen vanuit een andere pipeline",
+      "deleted": "Verwijderd"
+    },
+    "activityActor": {
+      "flow": "Flow",
+      "trigger": "Trigger",
+      "workspaceToken": "API",
+      "system": "Systeem",
+      "formerMember": "Voormalig lid"
+    },
+    "add": {
+      "changeContact": "Kies een ander contact",
+      "success": "Gemaakt",
+      "stepContact": "Selecteer een contact",
+      "stepDetails": "Details van {noun}",
+      "contact": "Contact",
+      "addNewContact": "Nieuw toevoegen"
+    },
+    "filter": {
+      "title": "Filteren",
+      "status": "Status",
+      "statusLabels": {
+        "open": "Open",
+        "won": "Gewonnen",
+        "lost": "Verloren"
+      },
+      "priority": "Prioriteit",
+      "assignee": "Toegewezen beheerders",
+      "value": "Waarde van {noun}",
+      "min": "Min",
+      "max": "Max",
+      "dueDate": "Vervaldatum",
+      "createdAt": "Aanmaakdatum",
+      "from": "Van",
+      "to": "Tot",
+      "clear": "Filters wissen",
+      "apply": "Toepassen",
+      "back": "Terug",
+      "updatedAt": "Wijzigingsdatum",
+      "resolvedOn": "{noun} opgelost op",
+      "statusChangedOn": "Status gewijzigd op",
+      "stageChangedOn": "Fase gewijzigd op",
+      "lastCommentOn": "Laatste opmerking op",
+      "customFields": "Aangepaste velden",
+      "any": "Alle",
+      "yes": "Ja",
+      "no": "Nee",
+      "notResolvedOn": "{noun} niet opgelost op",
+      "equal": "Gelijk aan",
+      "different": "Anders dan",
+      "reset": "Resetten",
+      "presets": {
+        "thisWeek": "Deze week",
+        "lastWeek": "Vorige week",
+        "last14": "Laatste 14 dagen",
+        "thisYear": "Dit jaar",
+        "lastYear": "Vorig jaar",
+        "tomorrow": "Morgen",
+        "next7": "Over 7 dagen",
+        "next14": "Over 14 dagen",
+        "next30": "Over 30 dagen",
+        "allTime": "Altijd"
+      },
+      "pickDate": "Kies een datum",
+      "activity": "Activiteit",
+      "activityKinds": "Type wijziging",
+      "activityActors": "Uitgevoerd door",
+      "activityWhen": "Wanneer",
+      "activityAutomation": "Automatisering"
+    },
+    "analytics": {
+      "title": "Analyses",
+      "loading": "Statistieken laden…",
+      "error": "Statistieken laden is mislukt",
+      "created": "Gemaakt",
+      "won": "Gewonnen",
+      "wonValue": "Gewonnen waarde",
+      "lost": "Verloren",
+      "lostValue": "Verloren waarde",
+      "admin": "Beheerder",
+      "automation": "Automatisering",
+      "back": "Terug",
+      "admins": "Beheerders",
+      "chart": {
+        "created": "Nieuw per dag",
+        "won": "Gewonnen per dag",
+        "lost": "Verloren per dag",
+        "wonValue": "Gewonnen waarde per dag",
+        "lostValue": "Verloren waarde per dag"
+      },
+      "pie": {
+        "created": "Aangemaakt per admin",
+        "won": "Gewonnen per admin",
+        "lost": "Verloren per admin",
+        "other": "Overig",
+        "empty": "Geen gegevens"
+      }
+    },
+    "settings": {
+      "title": "Pipeline-instellingen",
+      "general": "Algemeen",
+      "fields": "Aangepaste velden",
+      "display": "Weergave",
+      "permissions": "Machtigingen",
+      "saved": "Instellingen opgeslagen",
+      "referenceName": "Referentienaam",
+      "referenceNameHint": "Gebruikt in de variabelen pipelines.reference_name.stage_name. Wijzigen breekt berichten die de oude naam gebruiken.",
+      "referenceNameFormat": "Gebruik kleine letters, cijfers en underscores, beginnend met een letter (bijv. close_date).",
+      "currency": "Valuta",
+      "currencyFollowCountry": "Land van de werkruimte · {country} · {currency}",
+      "currencyFollowNoCountry": "Geen land voor de werkruimte · {currency}",
+      "currencyHint": "Volgt het doelland van de werkruimte (Instellingen → Algemeen) en past zich aan als dat verandert. Is er geen land ingesteld, dan geldt USD. Waarden worden nooit omgerekend.",
+      "assignContact": "Wijs het contact aan een beheerder toe wanneer een item wordt toegewezen",
+      "limit": "Open items per contact beperken",
+      "statusLabels": "Statuslabels",
+      "status": {
+        "open": "Open",
+        "won": "Gewonnen",
+        "lost": "Verloren"
+      },
+      "features": "Zichtbare functies",
+      "cardElements": "Kaartelementen",
+      "card": {
+        "contactPhone": "Telefoon van contact",
+        "contactEmail": "E-mail van contact",
+        "createdAt": "Aanmaakdatum",
+        "updatedAt": "Wijzigingsdatum",
+        "assignees": "Toegewezen beheerders",
+        "comments": "Opmerkingen",
+        "cardId": "Itemnummer",
+        "priority": "Prioriteit",
+        "value": "Waarde",
+        "dueDate": "Vervaldatum"
+      },
+      "noFields": "Nog geen aangepaste velden",
+      "fieldName": "Veldnaam",
+      "fieldReference": "Referentienaam",
+      "fieldType": "Veldtype",
+      "required": "Verplicht",
+      "requiredShort": "verplicht",
+      "addField": "Veld toevoegen",
+      "fieldAdded": "Veld toegevoegd",
+      "deleteField": "Veld verwijderen",
+      "permissionsHint": "Workspace-eigenaren en beheerders hebben altijd volledige toegang. Geef andere leden rechten voor wat ze in deze pipeline mogen doen.",
+      "revoke": "Intrekken",
+      "permission": {
+        "view": "Bekijken",
+        "edit": "Bewerken",
+        "delete": "Verwijderen",
+        "settings": "Instellingen"
+      },
+      "noMembers": "Geen andere leden om te configureren",
+      "confirmDeleteField": "Dit veld en alle waarden ervan in elk item verwijderen?",
+      "adminPermissions": "Beheerdersmachtigingen",
+      "cardVisibleElements": "Zichtbare kaartelementen"
+    },
+    "panel": {
+      "empty": "Geen pipeline-items voor dit contact",
+      "error": "Pipeline-items laden is mislukt",
+      "choosePipeline": "Kies een pipeline",
+      "add": "Nieuw toevoegen"
+    },
+    "variables": {
+      "group": "Pipelines",
+      "attributes": {
+        "name": "Itemnaam",
+        "stageName": "Fase",
+        "status": "Status",
+        "priority": "Prioriteit",
+        "value": "Waarde",
+        "assignedAdmins": "Toegewezen beheerders",
+        "createdDate": "Aanmaakdatum",
+        "dueDate": "Vervaldatum",
+        "updatedDate": "Wijzigingsdatum",
+        "id": "Item-ID"
+      }
+    }
+  },
+  "oauthConsent": {
+    "title": "Authorize {clientName}",
+    "description": "This application is requesting access to your workspace.",
+    "permissionsTitle": "Requested permissions",
+    "signedInAs": "Signed in as",
+    "approve": "Approve",
+    "deny": "Deny",
+    "failed": "De autorisatie kon niet worden voltooid. Probeer het opnieuw.",
+    "workspaceLabel": "Werkruimte",
+    "workspacePlaceholder": "Selecteer een werkruimte",
+    "workspaceHint": "{clientName} kan alleen in deze werkruimte handelen. Verbreek de verbinding en maak opnieuw verbinding om later te wisselen.",
+    "noWorkspaces": "Je bent geen beheerder van een werkruimte, dus je kunt deze applicatie niet autoriseren."
+  },
+  "chatbotxMcp": {
+    "title": "ChatbotX MCP",
+    "workspaceId": "Workspace ID",
+    "streamableUrl": "Streamable HTTP URL",
+    "sseUrl": "Legacy SSE URL",
+    "guide": {
+      "title": "Connect an MCP client",
+      "step1": "Copy the configuration for your MCP client.",
+      "step2": "Paste it into the client.",
+      "step3": "The client opens a browser. Sign in and approve access.",
+      "step4": "Your workspace tools appear after approval.",
+      "ownerOnly": "Only workspace owners and superAdmins can authorize MCP access."
+    },
+    "clients": {
+      "claudeCode": "Claude Code",
+      "claudeDesktop": "Claude Desktop",
+      "cursor": "Cursor",
+      "chatgpt": "ChatGPT",
+      "stdio": "stdio fallback",
+      "stdioHint": "Use a workspace token for this fallback."
+    },
+    "grants": {
+      "title": "Authorized applications",
+      "description": "Grants belong to your account and apply to every workspace you administer; revoking disconnects the client everywhere.",
+      "empty": "OAuth grants appear here after you connect an MCP client.",
+      "client": "Client",
+      "scopes": "Scopes",
+      "firstAuthorizedAt": "First authorized",
+      "lastRefreshedAt": "Last refreshed",
+      "activeUntil": "Active until",
+      "noActiveToken": "No active token",
+      "revoke": "Revoke",
+      "revokeConfirmTitle": "Revoke application access?",
+      "revokeConfirmDescription": "Revoke access for {clientName}? This disconnects the client everywhere.",
+      "revokedSuccess": "Application access revoked.",
+      "notFound": "OAuth grant no longer exists"
+    }
+  },
+  "connectionStatus": {
+    "column": "Status",
+    "reconnecting": "The provider is reconnecting this account. Messages are held until it finishes.",
+    "accessRemoved": "The provider removed access to this account. Reconnect to resume.",
+    "needsReconnect": "Reconnect required.",
+    "inactive": "This channel is inactive."
+  },
+  "inbox": {
+    "createAppointment": {
+      "title": "Afspraak maken",
+      "description": "Stuur het contact een boekingslink voor een agenda, of open de link om namens hen te boeken.",
+      "inactive": "Inactief",
+      "sendLink": "Agendalink versturen",
+      "goToLink": "Naar agendalink",
+      "sent": "Boekingslink verstuurd.",
+      "failed": "Kan de boekingslink niet maken.",
+      "noCalendars": "Nog geen afspraakagenda's.",
+      "manageCalendars": "Afspraakagenda's beheren"
+    }
+  },
+  "templateStore": {
+    "title": "Templatewinkel",
+    "description": "Templates die zijn goedgekeurd voor de openbare winkel. Elke template verschijnt in de categorieën die je kiest.",
+    "add": "Toevoegen",
+    "addCategory": "Categorie toevoegen",
+    "renameCategory": "Hernoemen",
+    "editCategories": "Categorieën bewerken",
+    "templateId": "Template-ID",
+    "template": "Template",
+    "categories": "Categorieën",
+    "categoriesPlaceholder": "Geen categorie",
+    "close": "Sluiten",
+    "removeChip": "{name} verwijderen",
+    "categoriesHint": "Optioneel. Zonder categorie verschijnt de template alleen onder “Alle”.",
+    "noCategoriesYet": "Nog geen categorieën.",
+    "added": "Template toegevoegd aan de winkel",
+    "updated": "Categorieën bijgewerkt",
+    "removed": "Template uit de winkel verwijderd",
+    "removeError": "Template kon niet worden verwijderd",
+    "removeTitle": "{name} verwijderen?",
+    "removeDescription": "Verdwijnt uit de winkel. De template zelf en de installaties blijven ongemoeid.",
+    "saveError": "Opslaan mislukt",
+    "deleteError": "Categorie kon niet worden verwijderd",
+    "categoryCreated": "Categorie aangemaakt",
+    "categoryUpdated": "Categorie bijgewerkt",
+    "categoryMoved": "Categorie verplaatst",
+    "categoryDeleted": "Categorie verwijderd",
+    "deleteCategoryTitle": "{name} verwijderen?",
+    "deleteCategoryDescription": "Templates in deze categorie: {count}. Ze blijven in de winkel en staan onder “Alle”.",
+    "moveUp": "Omhoog",
+    "moveDown": "Omlaag",
+    "searchPlaceholder": "Zoeken op naam of template-ID",
+    "emptyListings": "Nog geen goedgekeurde templates.",
+    "noMatches": "Geen templates komen overeen met zoekopdracht of filters.",
+    "allCategories": "Alle categorieën",
+    "allStatuses": "Alle statussen",
+    "installs": "Installaties",
+    "owner": "Eigenaar",
+    "statusLabel": "Status",
+    "openInStore": "Winkel openen",
+    "storeUnavailable": "Je winkel opent op je eigen domein. Stel er een in om hem te openen.",
+    "openTemplatePage": "Templatepagina openen",
+    "remove": "Verwijderen",
+    "status": {
+      "published": "Gepubliceerd",
+      "templateUnavailable": "Template niet beschikbaar",
+      "shareDisabled": "Deellink uit"
+    },
+    "errors": {
+      "templateUnavailable": "Er kan geen template met dit ID aan je winkel worden toegevoegd.",
+      "listingExists": "Deze template staat al in je winkel.",
+      "listingUnavailable": "Dit winkelitem bestaat niet meer.",
+      "listingLimit": "Een winkel kan maximaal {templateLimit} templates bevatten.",
+      "categoryUnavailable": "Deze categorie bestaat niet meer.",
+      "categoryNameTaken": "Er bestaat al een categorie met deze naam.",
+      "categoryLimit": "Een winkel kan maximaal {categoryLimit} categorieën hebben."
+    },
+    "store": {
+      "subtitle": "Kant-en-klare templates die je met één klik installeert.",
+      "pageTitle": "{tenantName} – Templatewinkel",
+      "empty": "Nog geen templates in de winkel.",
+      "search": "Templates zoeken",
+      "all": "Alle",
+      "categories": "Winkelcategorieën",
+      "noResults": "Geen templates komen overeen met je zoekopdracht.",
+      "clearSearch": "Zoekopdracht wissen",
+      "by": "Door {publisherName}"
+    },
+    "picker": {
+      "placeholder": "Kies een template",
+      "search": "Zoeken op naam of template-ID",
+      "empty": "Geen template beschikbaar om toe te voegen.",
+      "error": "Templates konden niet worden geladen.",
+      "retry": "Opnieuw proberen",
+      "meta": "ID {id} · {workspace}"
+    }
   }
 }

@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, test, vi } from "vitest"
+import { installedResourceModelStub } from "./helpers/template-guard-mocks"
 
 const mocks = vi.hoisted(() => ({
   create: vi.fn(),
+  execute: vi.fn(),
   createMissingChildren: vi.fn(),
   createMissingByName: vi.fn(),
   deleteRow: vi.fn(),
@@ -11,16 +13,57 @@ const mocks = vi.hoisted(() => ({
   isUniqueViolationError: vi.fn(),
   listChildren: vi.fn(),
   list: vi.fn(),
+  listWithProductCount: vi.fn(),
   update: vi.fn(),
+  deactivateCodes: vi.fn(),
+  fileUnderParent: vi.fn(),
+  fileAsTopLevel: vi.fn(),
+}))
+
+vi.mock("../src/ecommerce-settings/store-source", () => ({
+  resolveStoreSource: async () => "chatbotx",
+  ecommerceSettingsCacheTag: (workspaceId: string) =>
+    `ecommerce-settings:${workspaceId}`,
+}))
+// The template lock guard has its own suite; these tests cover the service.
+vi.mock("../src/template/installed-resource.service", async () => ({
+  ...(await import("./helpers/template-guard-mocks")).templateGuardMocks({
+    assertDeletable: vi.fn(),
+    assertResourceEditable: vi.fn(),
+  }),
+  changedKeysOf: vi.fn(() => []),
 }))
 
 vi.mock("@chatbotx.io/database/client", () => ({
-  db: { name: "default-db" },
+  // `transaction` is not enumerable so `{ name: "default-db" }` still equals it.
+  db: Object.defineProperty({ name: "default-db" }, "transaction", {
+    // A fresh client per transaction, like a real driver (the lock registry is
+    // keyed by it); `execute` is non-enumerable so `{ name: "tx" }` still equals it.
+    value: (run: (tx: unknown) => unknown) =>
+      run(
+        Object.defineProperties(
+          { name: "tx" },
+          {
+            execute: { value: mocks.execute },
+            // Every category counts as installed, so the lock path runs.
+            query: {
+              value: {
+                templateInstalledResourceModel: installedResourceModelStub(),
+              },
+            },
+          },
+        ),
+      ),
+  }),
   isUniqueViolationError: (...args: unknown[]) =>
     mocks.isUniqueViolationError(...args),
 }))
 
 vi.mock("@chatbotx.io/database/repositories", () => ({
+  discountCodeRepository: {
+    deactivateByCategoryIds: (...args: unknown[]) =>
+      mocks.deactivateCodes(...args),
+  },
   productCategoryRepository: {
     create: (...args: unknown[]) => mocks.create(...args),
     createMissingByName: (...args: unknown[]) =>
@@ -32,7 +75,11 @@ vi.mock("@chatbotx.io/database/repositories", () => ({
     findByNames: (...args: unknown[]) => mocks.findByNames(...args),
     listChildren: (...args: unknown[]) => mocks.listChildren(...args),
     list: (...args: unknown[]) => mocks.list(...args),
+    listWithProductCount: (...args: unknown[]) =>
+      mocks.listWithProductCount(...args),
     update: (...args: unknown[]) => mocks.update(...args),
+    fileUnderParent: (...args: unknown[]) => mocks.fileUnderParent(...args),
+    fileAsTopLevel: (...args: unknown[]) => mocks.fileAsTopLevel(...args),
   },
 }))
 
@@ -43,6 +90,10 @@ vi.mock("@chatbotx.io/redis", () => ({
 
 const { productCategoryService } = await import(
   "../src/product-category/service"
+)
+
+const { assertResourceEditable } = await import(
+  "../src/template/installed-resource.service"
 )
 
 const workspaceId = "workspace-1"
@@ -169,10 +220,12 @@ describe("productCategoryService depth limit", () => {
       name: "Renamed",
     })
 
-    expect(mocks.find).not.toHaveBeenCalled()
+    // The one lookup is the template edit guard's diff against the stored row.
+    expect(mocks.find).toHaveBeenCalledTimes(1)
     expect(mocks.listChildren).not.toHaveBeenCalled()
     expect(mocks.update).toHaveBeenCalledWith(
       expect.objectContaining({ categoryId: "category-1", name: "Renamed" }),
+      expect.anything(),
     )
   })
 
@@ -186,7 +239,172 @@ describe("productCategoryService depth limit", () => {
 
     expect(mocks.update).toHaveBeenCalledWith(
       expect.objectContaining({ parentId: null }),
+      expect.anything(),
     )
+  })
+})
+
+describe("productCategoryService template locks", () => {
+  test("guards first inside the transaction and locks the new parent category", async () => {
+    await productCategoryService.update({
+      workspaceId,
+      categoryId: "category-1",
+      name: "Sneakers",
+      parentId: "parent-1",
+    })
+
+    expect(assertResourceEditable).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resourceKind: "productCategory",
+        resourceIds: ["category-1"],
+        referencedParents: [
+          { kind: "productCategory", resourceId: "parent-1" },
+        ],
+        tx: { name: "tx" },
+      }),
+    )
+    expect(
+      vi.mocked(assertResourceEditable).mock.invocationCallOrder[0],
+    ).toBeLessThan(mocks.update.mock.invocationCallOrder[0] as number)
+  })
+
+  test("locks the category and its new parent before the stored row is read", async () => {
+    mocks.find.mockResolvedValue({ id: "parent-1", parentId: null })
+
+    await productCategoryService.update({
+      workspaceId,
+      categoryId: "category-1",
+      parentId: "parent-1",
+    })
+
+    // One statement takes both keys (the category, then its new parent).
+    expect(mocks.execute).toHaveBeenCalledTimes(1)
+    // find #1 is the parent-adoption check; #2 is the read under the lock.
+    expect(mocks.execute.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.find.mock.invocationCallOrder[1] as number,
+    )
+  })
+
+  test("a rename without a parent locks no parent", async () => {
+    await productCategoryService.update({
+      workspaceId,
+      categoryId: "category-1",
+      name: "Renamed",
+    })
+
+    expect(assertResourceEditable).toHaveBeenCalledWith(
+      expect.objectContaining({ referencedParents: [] }),
+    )
+  })
+
+  test("a blocked edit writes nothing and keeps the cache", async () => {
+    vi.mocked(assertResourceEditable).mockRejectedValueOnce(new Error("locked"))
+
+    await expect(
+      productCategoryService.update({
+        workspaceId,
+        categoryId: "category-1",
+        name: "Renamed",
+      }),
+    ).rejects.toThrow("locked")
+    expect(mocks.update).not.toHaveBeenCalled()
+    expect(mocks.invalidateCacheByTags).not.toHaveBeenCalled()
+  })
+})
+
+describe("productCategoryService re-filing on a level change", () => {
+  test("files products and vendors of a category moved under a parent", async () => {
+    mocks.find.mockResolvedValue({ id: "parent-1", parentId: null })
+    await productCategoryService.update({
+      workspaceId,
+      categoryId: "category-1",
+      parentId: "parent-1",
+    })
+
+    expect(mocks.fileUnderParent).toHaveBeenCalledWith(
+      { workspaceId, categoryId: "category-1", parentId: "parent-1" },
+      { name: "tx" },
+    )
+  })
+
+  test("files them back to the top level on promotion", async () => {
+    mocks.find.mockResolvedValue({ id: "category-1", parentId: "parent-1" })
+    await productCategoryService.update({
+      workspaceId,
+      categoryId: "category-1",
+      parentId: null,
+    })
+
+    expect(mocks.fileAsTopLevel).toHaveBeenCalledWith(
+      { workspaceId, categoryId: "category-1" },
+      { name: "tx" },
+    )
+    expect(mocks.fileUnderParent).not.toHaveBeenCalled()
+  })
+
+  test("leaves references alone when the parent did not change", async () => {
+    // The parent lookup runs first, then the stored row under the lock.
+    mocks.find
+      .mockResolvedValueOnce({ id: "parent-1", parentId: null })
+      .mockResolvedValueOnce({ id: "category-1", parentId: "parent-1" })
+    await productCategoryService.update({
+      workspaceId,
+      categoryId: "category-1",
+      parentId: "parent-1",
+    })
+
+    expect(mocks.fileUnderParent).not.toHaveBeenCalled()
+    expect(mocks.fileAsTopLevel).not.toHaveBeenCalled()
+  })
+})
+
+describe("productCategoryService delete and discount codes", () => {
+  test("deactivates category codes of the category and its children before deleting", async () => {
+    mocks.listChildren.mockResolvedValue([{ id: "child-1" }])
+    await productCategoryService.delete({ workspaceId, categoryId: "cat-1" })
+
+    expect(mocks.deactivateCodes).toHaveBeenCalledWith(
+      { workspaceId, categoryIds: ["cat-1", "child-1"] },
+      { name: "tx" },
+    )
+    expect(mocks.deactivateCodes.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.deleteRow.mock.invocationCallOrder[0] ?? 0,
+    )
+  })
+})
+
+describe("productCategoryService delete guards the whole subtree", () => {
+  test("asks assertDeletable about the root and every child, in the delete transaction", async () => {
+    const { assertDeletable } = await import(
+      "../src/template/installed-resource.service"
+    )
+    mocks.listChildren.mockResolvedValue([{ id: "child-1" }, { id: "child-2" }])
+
+    await productCategoryService.delete({ workspaceId, categoryId: "cat-1" })
+
+    expect(assertDeletable).toHaveBeenCalledWith({
+      workspaceId,
+      resourceKind: "productCategory",
+      resourceIds: ["cat-1", "child-1", "child-2"],
+      tx: { name: "tx" },
+    })
+    expect(mocks.deleteRow).toHaveBeenCalled()
+  })
+
+  test("a locked child blocks the delete before anything is deactivated or removed", async () => {
+    const { assertDeletable } = await import(
+      "../src/template/installed-resource.service"
+    )
+    vi.mocked(assertDeletable).mockRejectedValueOnce(
+      new Error("templateAllowDeleteViolation"),
+    )
+    mocks.listChildren.mockResolvedValue([{ id: "child-1" }])
+
+    await expect(
+      productCategoryService.delete({ workspaceId, categoryId: "cat-1" }),
+    ).rejects.toThrow("templateAllowDeleteViolation")
+    expect(mocks.deactivateCodes).not.toHaveBeenCalled()
+    expect(mocks.deleteRow).not.toHaveBeenCalled()
   })
 })
 
@@ -437,5 +655,56 @@ describe("productCategoryService resolvePaths", () => {
       categoryId: "category-1",
       subcategoryId: "subcategory-1",
     })
+  })
+})
+
+describe("productCategoryService listing", () => {
+  const tree = [
+    { id: "men", parentId: null, name: "Men", productCount: 3 },
+    { id: "women", parentId: null, name: "Women", productCount: 1 },
+    { id: "men-shirts", parentId: "men", name: "Shirts", productCount: 2 },
+    { id: "men-shoes", parentId: "men", name: "Shoes", productCount: 0 },
+    { id: "women-shirts", parentId: "women", name: "Shirts", productCount: 1 },
+  ]
+
+  beforeEach(() => {
+    mocks.listWithProductCount.mockResolvedValue(tree)
+  })
+
+  test("list returns the whole tree without a filter", async () => {
+    await expect(productCategoryService.list(workspaceId)).resolves.toEqual(
+      tree,
+    )
+  })
+
+  test("list keeps one category's children and matches names ignoring case", async () => {
+    await expect(
+      productCategoryService.list(workspaceId, {
+        parentId: "men",
+        name: "SHI",
+      }),
+    ).resolves.toEqual([tree[2]])
+  })
+
+  test("listLevel pages the top level and counts each row's children", async () => {
+    const level = await productCategoryService.listLevel({
+      workspaceId,
+      page: 1,
+      perPage: 1,
+    })
+    expect(level).toEqual({
+      data: [{ ...tree[0], childCount: 2 }],
+      pageCount: 2,
+      parent: null,
+    })
+  })
+
+  test("listLevel lists a parent's children with the parent itself", async () => {
+    const level = await productCategoryService.listLevel({
+      workspaceId,
+      parentId: "women",
+    })
+    expect(level.data).toEqual([{ ...tree[4], childCount: 0 }])
+    expect(level.parent).toEqual(tree[1])
   })
 })

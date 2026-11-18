@@ -2,9 +2,9 @@ import {
   contactInboxService,
   conversationService,
   flowService,
-  publishToWorkspaceParty,
+  messageService,
+  queueMessageCreatedEvent,
 } from "@chatbotx.io/business"
-import { createMessageRepository } from "@chatbotx.io/database/repositories"
 import type { messageModel } from "@chatbotx.io/database/schema"
 import type {
   ContactInboxModel,
@@ -27,7 +27,6 @@ import {
   startExternalFlowStepDefaultFn,
   stepTypes,
 } from "@chatbotx.io/flow-config"
-import { RealtimeEventType } from "@chatbotx.io/partysocket-config"
 import {
   ChannelError,
   ChannelErrorCategory,
@@ -46,6 +45,7 @@ import {
 } from "../../integration/handlers/messenger-template-handler"
 import { logger } from "../../lib/logger"
 import { skipIfBroadcastNotSendable } from "../utils/broadcast-sendable-guard"
+import { applyMiniAppResumeToTemplateParams } from "../utils/messenger-template-mini-app"
 import {
   shouldSuppressRetryableChannelError,
   willSendRetry,
@@ -68,6 +68,8 @@ export interface ProcessMessengerTemplateParams {
   }
   isBulkBroadcast?: boolean
   metadata?: MetadataPayload
+  /** The inbox user who sent the running flow, for `{{admin_name}}` in the params. */
+  sentByUserId?: string
   step?: SendMessengerTemplateMessageStepSchema
   template: SendMessengerTemplateMessageStepSchema["template"]
   trackingContext?: BotResponseTrackingContext
@@ -201,6 +203,7 @@ export async function processMessengerTemplate(
     metadata,
     isBulkBroadcast,
     willRetryOnThrow = false,
+    sentByUserId,
   } = params
   const isBulkOutbound = isBulkOutboundMetadata(
     metadata,
@@ -257,6 +260,7 @@ export async function processMessengerTemplate(
       contactId: conversation.contactId,
       contactInbox,
       conversation,
+      sentByUserId,
     })
     const completeParams = mergeMessengerTemplateButtonParams(
       template.params,
@@ -267,6 +271,24 @@ export async function processMessengerTemplate(
       variables,
       parameterFormat: template.parameterFormat,
     })
+    // Sent only: the stored message keeps the masked params below, so the
+    // resume token never reaches the inbox.
+    const sentParams = flow
+      ? await applyMiniAppResumeToTemplateParams({
+          workspaceId: conversation.workspaceId,
+          contactId: conversation.contactId,
+          conversationId: conversation.id,
+          contactInboxId: contactInbox.id,
+          flowId: flow.id,
+          flowVersionId: flow.versionId,
+          metadata,
+          components:
+            (validated.template.components as MessengerTemplateComponent[]) ||
+            [],
+          params: replacedParams,
+          flowButtons: step?.buttons ?? [],
+        })
+      : replacedParams
 
     const contentAttributes = {
       type: "messenger_template",
@@ -286,8 +308,7 @@ export async function processMessengerTemplate(
       metadata,
     }
 
-    const messageRepository = await createMessageRepository()
-    newMessage = await messageRepository.create({
+    newMessage = await messageService.create({
       id: createId(),
       contactInboxId: contactInbox.id,
       workspaceId: conversation.workspaceId,
@@ -317,10 +338,11 @@ export async function processMessengerTemplate(
     }
 
     if (!isBulkOutbound) {
-      publishToWorkspaceParty(conversation.workspaceId, {
-        eventType: RealtimeEventType.messageCreated,
-        data: newMessage,
-      })
+      queueMessageCreatedEvent(
+        conversation.workspaceId,
+        newMessage,
+        conversation,
+      )
     }
 
     const result = await sendFlowStepToChannel({
@@ -333,7 +355,7 @@ export async function processMessengerTemplate(
         nodeId: step?.nodeId ?? createId(),
         stepType: stepTypes.enum.sendMessengerTemplateMessage,
         buttons: step?.buttons ?? [],
-        template: { ...template, params: replacedParams },
+        template: { ...template, params: sentParams },
       },
       metadata,
       messageId: newMessage.id,
@@ -380,12 +402,12 @@ export async function processMessengerTemplate(
 
     if (providerMessageId) {
       try {
-        await messageRepository.updateSourceId(
-          newMessage.id,
-          providerMessageId,
-          conversation.workspaceId,
-          newMessage.createdAt,
-        )
+        await messageService.updateSourceId({
+          id: newMessage.id,
+          sourceId: providerMessageId,
+          workspaceId: conversation.workspaceId,
+          createdAt: newMessage.createdAt,
+        })
       } catch (err) {
         logger.error(
           err,

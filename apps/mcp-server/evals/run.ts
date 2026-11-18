@@ -13,7 +13,7 @@ import { basename, isAbsolute, join, resolve } from "node:path"
 import { createOpenAI } from "@ai-sdk/openai"
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
-import { generateText, jsonSchema, stepCountIs, type ToolSet, tool } from "ai"
+import { generateText, isStepCount, jsonSchema, type ToolSet, tool } from "ai"
 import { toSnakeCase } from "../src/openapi-loader"
 import {
   corpusHash,
@@ -31,8 +31,12 @@ import {
 } from "./grade"
 import {
   assertComparableManifests,
+  confirmationRequired,
   type EvalManifest,
+  getAggregateUsage,
+  getFinalStepUsage,
   validateCaseCoverage,
+  withConfirmationArgument,
 } from "./run-contract"
 import { createSandbox, fixtureOperationIds, type HttpTrace } from "./sandbox"
 
@@ -94,7 +98,10 @@ type Episode = {
   searchRank: number | null
   stepExhausted: boolean
   unknownToolCount: number
+  // Final-step usage, kept for comparability with v6 baselines.
   usage?: unknown
+  // Usage summed across every step (AI SDK v7 `result.usage`).
+  aggregateUsage?: unknown
 }
 
 type Manifest = EvalManifest
@@ -360,10 +367,20 @@ const buildTools = (
             name: mcpTool.name,
           }
           traces.push(trace)
-          const rawResult = await client.callTool({
+          let rawResult = await client.callTool({
             name: mcpTool.name,
             arguments: argumentsObject,
           })
+          if (confirmationRequired(rawResult)) {
+            trace.confirmationRequired = true
+            rawResult = await client.callTool({
+              name: mcpTool.name,
+              arguments: withConfirmationArgument(
+                mcpTool.name,
+                argumentsObject,
+              ),
+            })
+          }
           trace.isError = rawResult.isError === true
           trace.result = decodeMcp(rawResult)
           return trace.result
@@ -407,6 +424,7 @@ const evaluateCase = async (props: {
   let providerError: string | undefined
   let stepExhausted = false
   let usage: unknown
+  let aggregateUsage: unknown
   let instructionsHash: string | null = null
   try {
     clientHandle = await startMcpClient(props.serverSource, sandbox.baseUrl)
@@ -426,13 +444,14 @@ const evaluateCase = async (props: {
       model: openai(props.modelId),
       prompt: props.evalCase.prompt,
       providerOptions: { openai: { parallelToolCalls: false } },
-      stopWhen: stepCountIs(maxSteps),
-      system: `${instructions}\nCurrent time: ${props.evalCase.now}. Timezone: ${props.evalCase.timezone}.`,
+      stopWhen: isStepCount(maxSteps),
+      instructions: `${instructions}\nCurrent time: ${props.evalCase.now}. Timezone: ${props.evalCase.timezone}.`,
       tools,
     })
     final = result.text
     stepExhausted = result.steps.length >= maxSteps && final.trim().length === 0
-    usage = result.usage
+    usage = await getFinalStepUsage(result)
+    aggregateUsage = getAggregateUsage(result)
   } catch (error) {
     providerError = error instanceof Error ? error.message : String(error)
   } finally {
@@ -466,6 +485,7 @@ const evaluateCase = async (props: {
     stepExhausted,
     unknownToolCount: unknownToolCount(calls),
     usage,
+    aggregateUsage,
   }
 }
 

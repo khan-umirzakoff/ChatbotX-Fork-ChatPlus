@@ -1,9 +1,10 @@
 import {
   contactInboxService,
   conversationService,
-  publishToWorkspaceParty,
+  messageService,
+  messageStatusBranchService,
+  queueMessageCreatedEvent,
 } from "@chatbotx.io/business"
-import { createMessageRepository } from "@chatbotx.io/database/repositories"
 import type { messageModel } from "@chatbotx.io/database/schema"
 import type {
   ContactInboxModel,
@@ -19,8 +20,8 @@ import {
   type SendWaTemplateMessageStepSchema,
   stepTypes,
   type TemplateComponent,
+  type WaTemplateStatusBranch,
 } from "@chatbotx.io/flow-config"
-import { RealtimeEventType } from "@chatbotx.io/partysocket-config"
 import {
   ChannelError,
   ChannelErrorCategory,
@@ -36,6 +37,7 @@ import type {
   ChatJobSendWhatsappTemplateMessage,
   ChatJobSendWhatsappTemplateToConversation,
 } from "@chatbotx.io/worker-config"
+import { assertPaymentRequestsSendable } from "../../integration/handlers/wa-payment-request-guard"
 import {
   replaceWhatsappTemplateVariables,
   validateWhatsappTemplate,
@@ -102,6 +104,13 @@ export interface ProcessWhatsappTemplateParams {
   humanSender?: { adminId: string }
   isBulkBroadcast?: boolean
   metadata?: MetadataPayload
+  /** The inbox user who sent the running flow, for `{{admin_name}}` in the params. */
+  sentByUserId?: string
+  /**
+   * Statuses whose step button leads somewhere; they are recorded against the
+   * provider message id so ingress keeps those statuses on the integration queue.
+   */
+  statusBranches?: readonly WaTemplateStatusBranch[]
   step?: SendWaTemplateMessageStepSchema
   template: SendWaTemplateMessageStepSchema["template"]
   trackingContext?: BotResponseTrackingContext
@@ -195,6 +204,8 @@ export async function processWhatsappTemplate(
     isBulkBroadcast,
     willRetryOnThrow = false,
     humanSender,
+    sentByUserId,
+    statusBranches,
   } = params
   const isBulkOutbound = isBulkOutboundMetadata(
     metadata,
@@ -244,19 +255,28 @@ export async function processWhatsappTemplate(
       contactId: conversation.contactId,
       contactInbox,
       conversation,
+      sentByUserId,
     })
+    const templateComponents =
+      (validated.template.components as TemplateComponent[]) || []
     const replacedParams = await replaceWhatsappTemplateVariables({
       templateParams: template.params,
       variables,
       // Authoritative source for NAMED vs POSITIONAL placeholders, so the send
       // works even for broadcasts/flows saved before named-parameter support.
-      components: (validated.template.components as TemplateComponent[]) || [],
+      components: templateComponents,
+    })
+
+    assertPaymentRequestsSendable({
+      params: replacedParams,
+      components: templateComponents,
     })
 
     const flowButtons = flow?.buttons ?? []
     const flowButtonTemplates =
       flow && flowButtons.length > 0
         ? convertButtonsToTemplate({
+            channel: contactInbox.channel,
             flowId: flow.id,
             flowVersionId: flow.versionId,
             buttons: flowButtons,
@@ -267,7 +287,7 @@ export async function processWhatsappTemplate(
 
     const resolvedParams = withQuickReplyButtonParams({
       params: replacedParams,
-      components: (validated.template.components as TemplateComponent[]) || [],
+      components: templateComponents,
       stepButtons: flowButtons,
       flowButtonTemplates,
     })
@@ -297,8 +317,7 @@ export async function processWhatsappTemplate(
       }
     }
 
-    const repository = await createMessageRepository()
-    newMessage = await repository.create({
+    newMessage = await messageService.create({
       contactInboxId: contactInbox.id,
       workspaceId: conversation.workspaceId,
       conversationId: conversation.id,
@@ -332,10 +351,11 @@ export async function processWhatsappTemplate(
     }
 
     if (!isBulkOutbound) {
-      publishToWorkspaceParty(conversation.workspaceId, {
-        eventType: RealtimeEventType.messageCreated,
-        data: newMessage,
-      })
+      queueMessageCreatedEvent(
+        conversation.workspaceId,
+        newMessage,
+        conversation,
+      )
     }
 
     const result = await sendFlowStepToChannel({
@@ -407,20 +427,34 @@ export async function processWhatsappTemplate(
 
     const providerMessageId = result?.messageIds?.[0]
 
+    let isSourceIdSaved = false
     if (providerMessageId) {
       try {
-        await repository.updateSourceId(
-          newMessage.id,
-          providerMessageId,
-          conversation.workspaceId,
-          newMessage.createdAt,
-        )
+        const updated = await messageService.updateSourceId({
+          id: newMessage.id,
+          sourceId: providerMessageId,
+          workspaceId: conversation.workspaceId,
+          createdAt: newMessage.createdAt,
+        })
+        isSourceIdSaved = updated !== null
       } catch (err) {
         logger.error(
           err,
           "Failed to persist WhatsApp template sourceId after a successful send",
         )
       }
+    }
+
+    if (providerMessageId && isSourceIdSaved && statusBranches?.length) {
+      // Ingress reads this marker to keep those statuses on `integration`.
+      // Written only once the sourceId is saved: a status handled with the
+      // marker must find its message, while one arriving before it goes to
+      // `low` and runs later.
+      await messageStatusBranchService.mark({
+        channel: contactInbox.channel,
+        providerMessageId,
+        statuses: statusBranches,
+      })
     }
 
     return {
