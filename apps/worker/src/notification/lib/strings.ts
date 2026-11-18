@@ -151,6 +151,7 @@ const strings = {
     sentAttachment: "Отправлено вложение",
     sentAttachments: (count: number) => `Вложений: ${count}`,
     assignedConversation: "Вам назначен диалог",
+    newOrder: (number: number) => `Новый заказ #${number}`,
   },
   sv: {
     newMessage: "Nytt meddelande",
@@ -177,6 +178,7 @@ const strings = {
     sentAttachment: "Fayl yubordi",
     sentAttachments: (count: number) => `${count} ta fayl yubordi`,
     assignedConversation: "Sizga suhbat biriktirildi",
+    newOrder: (number: number) => `Yangi buyurtma #${number}`,
   },
   "zh-CN": {
     newMessage: "新消息",
