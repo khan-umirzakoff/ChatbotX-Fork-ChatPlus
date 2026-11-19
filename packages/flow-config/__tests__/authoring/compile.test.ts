@@ -587,6 +587,58 @@ describe("compileFlowSpec — a realistic multi-step flow", () => {
 })
 
 describe("compileFlowSpec — button routing", () => {
+  test("a call button compiles to a callPhoneNumber button with no route or edge", () => {
+    const compiled = compileFlowSpec(
+      spec([
+        {
+          type: "send",
+          text: "Need help?",
+          buttons: [{ text: "Call us", call: "+14155552671" }],
+        },
+      ]),
+      emptyCtx,
+    )
+
+    const sendNode = compiled.nodes[0]
+    if (sendNode?.type !== "sendMessage") {
+      throw new Error("expected sendMessage node")
+    }
+    const [button] = sendNode.data.details.steps[0]?.buttons ?? []
+    expect(button).toMatchObject({
+      label: "Call us",
+      buttonType: "callPhoneNumber",
+      beforeStep: { stepType: "callPhoneNumber", phoneNumber: "+14155552671" },
+      steps: [],
+    })
+    expect(compiled.edges).toHaveLength(0)
+  })
+
+  test("a copy button compiles to a copyText button with no route or edge", () => {
+    const compiled = compileFlowSpec(
+      spec([
+        {
+          type: "send",
+          text: "Pague com PIX",
+          buttons: [{ text: "Copiar PIX", copy: "{{pix_code}}" }],
+        },
+      ]),
+      emptyCtx,
+    )
+
+    const sendNode = compiled.nodes[0]
+    if (sendNode?.type !== "sendMessage") {
+      throw new Error("expected sendMessage node")
+    }
+    const [button] = sendNode.data.details.steps[0]?.buttons ?? []
+    expect(button).toMatchObject({
+      label: "Copiar PIX",
+      buttonType: "copyText",
+      beforeStep: { stepType: "copyText", text: "{{pix_code}}" },
+      steps: [],
+    })
+    expect(compiled.edges).toHaveLength(0)
+  })
+
   test("a routed button writes both the node's beforeStep and a matching edge", () => {
     const compiled = compileFlowSpec(
       spec([
@@ -1022,5 +1074,69 @@ describe("compileFlowSpec — specPathByNodeId", () => {
     expect(nestedNode && compiled.specPathByNodeId.get(nestedNode.id)).toBe(
       "steps[0].cases[0].then[0]",
     )
+  })
+})
+
+describe("compileFlowSpec — setCustomField operations", () => {
+  const typedCtx: FlowAuthoringContext = {
+    ...emptyCtx,
+    customFieldsByName: new Map([
+      ["Points", { id: "2001", type: "number" }],
+      ["Due", { id: "2002", type: "datetime" }],
+      ["Note", { id: "2003", type: "shortText" }],
+    ]),
+  }
+  const compileAction = (
+    customFieldName: string,
+    operation?: string,
+    value?: string,
+  ) =>
+    compileFlowSpec(
+      spec([
+        {
+          type: "action",
+          action: "setCustomField",
+          customFieldName,
+          operation,
+          value,
+        },
+      ]),
+      typedCtx,
+    )
+  const compiledOperation = (compiled: ReturnType<typeof compileFlowSpec>) => {
+    const node = compiled.nodes[0]
+    const step =
+      node?.type === "performAction" ? node.data.details.steps[0] : undefined
+    return (step as { operation?: string } | undefined)?.operation
+  }
+
+  test("an omitted operation still compiles to set", () => {
+    expect(compiledOperation(compileAction("Points", undefined, "5"))).toBe(
+      "O01",
+    )
+  })
+
+  test.each([
+    ["Points", "increase", "O04"],
+    ["Points", "formula", "O07"],
+    ["Due", "addDays", "O12"],
+    ["Due", "dateExpression", "O09"],
+    ["Note", "append", "O02"],
+    ["Note", "clear", "O06"],
+  ])("%s with %s compiles to %s", (field, operation, code) => {
+    expect(compiledOperation(compileAction(field, operation, "1"))).toBe(code)
+  })
+
+  test("an operation the field type does not support is reported with the supported ones", () => {
+    try {
+      compileAction("Points", "addDays", "1")
+      throw new Error("expected compileFlowSpec to throw")
+    } catch (error) {
+      expect(error).toBeInstanceOf(FlowAuthoringException)
+      const authoringError = (error as FlowAuthoringException).errors[0]
+      expect(authoringError?.path).toBe("steps[0].operation")
+      expect(authoringError?.code).toBe("invalidFieldOperation")
+      expect(authoringError?.hint).toContain("increase")
+    }
   })
 })

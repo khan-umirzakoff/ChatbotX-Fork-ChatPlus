@@ -16,7 +16,7 @@ import {
   uploadMultipleFiles,
 } from "@chatbotx.io/filesystem"
 import type { SendProductsContent } from "@chatbotx.io/flow-config"
-import { RealtimeEventType } from "@chatbotx.io/partysocket-config"
+import type { MessageButtonTemplate } from "@chatbotx.io/sdk"
 import { createId } from "@chatbotx.io/utils"
 import { channelTypes } from "@chatbotx.io/utils/channel"
 import {
@@ -40,7 +40,7 @@ import {
   validationException,
 } from "../errors"
 import { logger } from "../logger"
-import { publishToWorkspaceParty } from "../platform/realtime-broadcast"
+import { queueMessageCreatedEvent } from "../platform/realtime-broadcast"
 import { resolveTenantSettings } from "../platform/settings"
 import { productMessageService } from "../product-message/service"
 import { getPublicFileUrl } from "../utils"
@@ -79,6 +79,13 @@ type CreateOutgoingInput = (
    * handler). Overrides the `isPrivateReply`-derived default when set.
    */
   contentAttributes?: Record<string, unknown> | null
+  /**
+   * Buttons sent with the text, the same shape a flow's button message uses.
+   * Pair them with a `contentAttributes` button template so the row (inbox
+   * bubble, Messenger button template) shows them too. Server-side only — not
+   * accepted from `messages.create` input.
+   */
+  quickReplies?: MessageButtonTemplate[]
 }
 
 /**
@@ -224,7 +231,7 @@ export const createOutgoing = async (props: {
   conversation: ConversationModel
   contactInbox: ContactInboxModel
   input: CreateOutgoingInput
-  user?: UserModel
+  user?: Pick<UserModel, "id">
 }) => {
   const { conversation, input: parsedInput, user, contactInbox } = props
   const sender = user
@@ -251,6 +258,7 @@ export const createOutgoing = async (props: {
         flowId: parsedInput.flowId,
         nodeId: parsedInput.nodeId,
         sendFrom: "inbox",
+        sentByUserId: user?.id,
       },
     })
     // Claimed only after a successful enqueue so a failed send keeps the
@@ -407,13 +415,14 @@ export const createOutgoing = async (props: {
     })),
   }
 
-  publishToWorkspaceParty(messageWithAttachments.workspaceId, {
-    eventType: RealtimeEventType.messageCreated,
-    data: {
+  await queueMessageCreatedEvent(
+    messageWithAttachments.workspaceId,
+    {
       ...messageWithAttachments,
       clientId: parsedInput.clientId,
     },
-  })
+    targetConversation,
+  )
 
   const jobs: {
     jobType: (typeof ChatJobAction)[keyof typeof ChatJobAction]
@@ -433,6 +442,7 @@ export const createOutgoing = async (props: {
               clientId: parsedInput.clientId,
               parentCreatedAt: parsedInput.replyToMessageCreatedAt ?? null,
             },
+            quickReplies: parsedInput.quickReplies,
             sendFrom: "inbox",
           },
         },

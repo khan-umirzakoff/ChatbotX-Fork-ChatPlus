@@ -185,9 +185,141 @@
     "name": "エージェント"
   },
   "aiFiles": {
+    "detail": {
+      "title": "Knowledge details",
+      "details": "Details",
+      "noChunkingInfo": "No processing information is available yet."
+    },
+    "chunking": {
+      "title": "Chunking",
+      "strategyLabel": "Strategy",
+      "version": "Chunker version",
+      "chunkSize": "Chunk size",
+      "overlapSize": "Overlap size",
+      "chunkCount": "Chunks",
+      "processedAt": "Processed at",
+      "outdated": "Reindex recommended",
+      "strategy": {
+        "prose": "Prose",
+        "tabular": "Tabular",
+        "markdown": "Markdown"
+      },
+      "configDefault": "Chunking parameters: defaults ({chunkSize} characters, overlap {overlapSize}).",
+      "configCustom": "Chunking parameters: {chunkSize} characters, overlap {overlapSize}."
+    },
+    "processingRun": {
+      "title": "Processing run",
+      "noRun": "No processing run has been tracked for this file yet.",
+      "queuedAt": "Queued at",
+      "startedAt": "Started at",
+      "heartbeatAt": "Last heartbeat",
+      "finishedAt": "Finished at",
+      "stale": "Processing appears stalled",
+      "failedBadge": "Processing failed",
+      "successNote": "Chunking and embedding enqueueing completed. The file is searchable when embedding status is also complete.",
+      "status": {
+        "queued": "Queued",
+        "processing": "Processing",
+        "success": "Prepared",
+        "error": "Failed"
+      },
+      "error": {
+        "fileTooLarge": "The file is too large to process.",
+        "tooManyChunks": "The file produced too many chunks.",
+        "fileUnreadable": "The file could not be read. For CSV files, save as CSV UTF-8 and try again.",
+        "noExtractableContent": "No content could be extracted. Check the spreadsheet header row, or the file may be a scan or empty.",
+        "noEmbeddingProvider": "No embedding provider is configured.",
+        "enqueueFailed": "The file was saved but processing could not be queued. Reindex it to try again.",
+        "unknown": "Processing failed unexpectedly."
+      }
+    },
+    "reindex": {
+      "action": "Reindex",
+      "confirmTitle": "Reindex this file?",
+      "confirmDescription": "The file will be processed with the current chunker.",
+      "downtimeWarning": "Search may be temporarily unavailable while this file is reindexed.",
+      "queued": "Reindex queued",
+      "alreadyRunning": "Processing is already running for this file.",
+      "rateLimited": "Too many requests. Try again shortly.",
+      "parameters": "Chunking parameters",
+      "strategyLabel": "How to split",
+      "strategy": {
+        "auto": "Automatic (by file type)",
+        "prose": "Plain text"
+      },
+      "chunkSize": "Chunk size (characters)",
+      "overlapSize": "Overlap (characters)",
+      "overlapDisabledTabular": "Spreadsheets keep each row whole, so overlap is not used.",
+      "tabularHeaderRow": "Header row (spreadsheets)",
+      "presets": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "custom": "Custom chunk size"
+      },
+      "resetDefaults": "Restore defaults",
+      "estimate": "Estimate: about {estimate} chunks (currently {current})",
+      "reembedWarning": "Changing parameters re-embeds the whole file (about {count} chunks) with your workspace key, and the file cannot be searched until it finishes.",
+      "largeChunkWarning": "Larger chunks make every agent answer read more text and cost more tokens.",
+      "noChangeNote": "Parameters are unchanged: chunks that are already embedded are kept and not embedded again.",
+      "conflict": "This file is being processed, so the new parameters were not applied. Try again when processing finishes."
+    },
+    "chunks": {
+      "indexOutdated": "Some chunks have no position yet. Reindex the file to number them."
+    },
     "description": "エージェントがPDFやドキュメントなどを利用できるようにします",
     "title": "ナレッジ",
-    "noEmbeddingProvider": "埋め込みプロバイダーが設定されていません。AIファイルの埋め込みにはOpenAIまたはGeminiとの連携が必要です。DeepSeekとClaudeは埋め込みモデルに対応していません。"
+    "noEmbeddingProvider": "埋め込みプロバイダーが設定されていません。AIファイルの埋め込みにはOpenAIまたはGeminiとの連携が必要です。DeepSeekとClaudeは埋め込みモデルに対応していません。",
+    "testQuery": {
+      "title": "Test query",
+      "description": "Pick files, ask a question and see which chunk answers it. Only the retrieval step is simulated; no AI answer is generated.",
+      "open": "Test query",
+      "backToKnowledge": "Back to Knowledge",
+      "run": "Run test",
+      "files": "Files",
+      "filterFiles": "Filter files by name",
+      "selectAllReady": "Select all ready files",
+      "selectedCount": "{count}/{max} selected",
+      "fileNotReady": "This file has no chunks ready for search yet.",
+      "question": "Question",
+      "expected": "Expected answer (optional)",
+      "expectedHelp": "Type the answer exactly as it appears in the document, accents included. It is matched against every chunk of the selected files.",
+      "limit": "Result limit",
+      "simulationNote": "This simulates retrieval only; an agent may phrase a question differently. Each run uses one embedding from your workspace key.",
+      "rateLimited": "Too many test requests. Try again shortly.",
+      "byFile": "By file",
+      "matches": "{count} matching chunks",
+      "bestRank": "best rank {rank}",
+      "needsReindex": "Needs reindex",
+      "openDetail": "Open details",
+      "rank": "#{rank}",
+      "chunkNumber": "chunk #{index}",
+      "chunkUnnumbered": "chunk not numbered",
+      "aiWillSee": "AI will see",
+      "belowThreshold": "Below threshold",
+      "containsExpected": "Contains the answer",
+      "thresholdLine": "Threshold {threshold}",
+      "appliedConfig": "Applied configuration",
+      "agentDefaultThreshold": "Agent default threshold",
+      "timings": "Search time",
+      "scoreNotComparable": "Similarity scores are not directly comparable across embedding models.",
+      "answerLocation": "Answer is in {file} · {chunk} · rank {rank}",
+      "splitHint": "The answer may be split between two chunks. Try a larger chunk size or overlap, or check the file was read correctly.",
+      "previousRun": "Previous run ({time}): answer rank {from} → now {to}",
+      "previousRunTop": "Previous run ({time}): {changed} of {total} top chunks changed",
+      "verdict": {
+        "inTopResults": "The AI will see the expected answer.",
+        "foundButLowRank": "The answer is in the documents but ranks too low for the AI to see it. Try a closer question, or reindex with smaller chunks.",
+        "notInAnyChunk": "No chunk of the selected files contains the answer. The document may be read or split wrongly: view the chunks or reindex with other settings."
+      },
+      "diagnosis": {
+        "ok": "Matching chunks found.",
+        "noReadyChunks": "No chunks are ready for search yet. Open the file to check its processing status.",
+        "allBelowThreshold": "Chunks were found but all are below the threshold. Try a lower trial threshold.",
+        "noMatches": "No matching chunks were found.",
+        "agentHasNoFiles": "This agent has no knowledge files."
+      }
+    }
   },
   "aiFunctions": {
     "description": "LLM関数を設定してAIエージェントをより賢くします",
@@ -435,6 +567,8 @@
       "description": "すべての連絡先にフローを送信します。"
     },
     "receiversCount": "受信者：{count}",
+    "receiversCountCapped": "受信者：{count}+",
+    "receiversCountUnknown": "受信者：?",
     "receiversLoading": "受信者：読み込み中...",
     "whatsappTemplateMessage": {
       "title": "テンプレートメッセージ",
@@ -625,6 +759,7 @@
       "clicked": "クリック済み",
       "failed": "失敗",
       "missed": "未対応",
+      "moderated": "モデレート済み",
       "noContacts": "連絡先が見つかりません",
       "noComment": "(テキストなし)",
       "pageInfo": "{pageCount}ページ中{page}ページ",
@@ -644,7 +779,9 @@
       "contactNotNew": "新規の連絡先ではない",
       "alreadyRepliedOnPost": "この投稿では返信済み",
       "engagedOnOtherPost": "他の投稿で既に反応済み",
-      "mentionCountNotMatched": "メンション数が一致しませんでした"
+      "mentionCountNotMatched": "メンション数が一致しませんでした",
+      "noImageAttachment": "写真が添付されていません",
+      "moderated": "モデレーションにより非表示または削除されました"
     },
     "replyTo": {
       "mentions": "十分なメンションがあるコメント",
@@ -664,6 +801,10 @@
       "label": "ユーザーが他のユーザーをタグ付けしたかを記録する",
       "descriptionText": "各コメントでタグ付けされたアカウント数を数え、すべてのコメントを通じてコンタクトの累計に加算します。タグ付けされたすべてのアカウントには'{{total_tagged}}'を、ページにメッセージを送ったこともコンタクトになったこともないアカウントには'{{total_new_tagged}}'を使用します。"
     },
+    "onlyCommentsWithImage": {
+      "label": "写真付きのコメントにのみ返信",
+      "descriptionText": "コメントに写真が含まれている場合のみ自動返信します。GIFとステッカーは対象外です。写真のないコメントはスキップされ、次の自動化が試されます。"
+    },
     "card": {
       "reply": "返信"
     },
@@ -681,10 +822,92 @@
       "column": "アカウント",
       "disconnected": "接続が解除されたアカウント",
       "disconnectedDescription": "この自動化は接続が解除されたアカウントに紐づいているため、コメントに返信しません。アカウントを再接続するか、別のアカウントを選択してください。"
+    },
+    "aiModeration": {
+      "enabled": "AIモデレーション",
+      "description": "ボットが返信する前にAIエージェントがすべてのコメントを読み、以下のカテゴリに該当するものを非表示または削除します。モデレートされたコメントには返信しません。",
+      "aiAgentDescription": "エージェントのAIモデルのみを使用し、プロンプトは使用しません。",
+      "categoriesLabel": "次のコメントをブロック",
+      "categories": {
+        "hate": "ヘイトスピーチ",
+        "offensive": "攻撃的",
+        "harassment": "ハラスメント",
+        "negative": "ブランドへの敵意",
+        "spam": "スパムまたは詐欺"
+      },
+      "categoryDescriptions": {
+        "hate": "人種、宗教、性別、国籍などを理由に特定の集団を攻撃する",
+        "offensive": "侮辱、罵倒、下品な言葉",
+        "harassment": "脅迫、いじめ、個人への攻撃",
+        "negative": "ブランドを傷つける意図があるもの。丁寧な苦情はブロックされません",
+        "spam": "詐欺、フィッシング、無関係な宣伝"
+      },
+      "instruction": "AIへの追加ガイダンス",
+      "instructionDescription": "任意。AIに許可する内容やブロックする内容を伝えます。",
+      "instructionPlaceholder": "例：価格に不満を持つお客様はブロックしない",
+      "action": "コメントをブロックしたとき",
+      "actions": {
+        "hide": "非表示にする",
+        "delete": "削除する"
+      },
+      "deleteWarning": "削除したコメントは完全に失われ、復元できません。AIが誤判定した場合に備えて、非表示のほうが安全です。"
+    },
+    "moderationLog": {
+      "title": "モデレートされたコメント",
+      "description": "この自動化が非表示または削除したコメントと、その理由です。",
+      "allActions": "すべてのアクション",
+      "allSources": "ルールとAI",
+      "actions": {
+        "hide": "非表示",
+        "delete": "削除済み"
+      },
+      "sources": {
+        "rule": "非表示ルールによる",
+        "ai": "AIによる"
+      },
+      "statuses": {
+        "pending": "処理中",
+        "done": "完了",
+        "failed": "失敗"
+      },
+      "rules": {
+        "all": "すべてのコメントを非表示",
+        "phoneNumber": "電話番号を含む",
+        "link": "リンクを含む",
+        "keyword": "キーワードを含む",
+        "image": "画像を含む",
+        "video": "動画を含む",
+        "gif": "GIFを含む",
+        "emoji": "絵文字を含む"
+      },
+      "summary": {
+        "total": "モデレート {count} 件",
+        "hidden": "非表示 {count} 件",
+        "deleted": "削除 {count} 件",
+        "byAI": "AIによる {count} 件",
+        "byRule": "ルールによる {count} 件",
+        "failed": "失敗 {count} 件"
+      },
+      "columns": {
+        "time": "日時",
+        "contact": "コンタクト",
+        "comment": "コメント",
+        "action": "アクション",
+        "reason": "理由",
+        "status": "ステータス"
+      },
+      "loading": "読み込み中…",
+      "empty": "非表示または削除されたコメントはまだありません。",
+      "unknownContact": "不明",
+      "noText": "（テキストなし）",
+      "previous": "前へ",
+      "next": "次へ",
+      "page": "{page} / {pageCount} ページ"
     }
   },
   "condition": {
     "unknownValue": "不明",
+    "deletedValue": "削除済み (#{id})",
     "yes": "はい",
     "no": "いいえ",
     "valuePlaceholder": "...",
@@ -799,6 +1022,7 @@
       "contactCreatedAt": "連絡先の作成日時",
       "fromCtwaAd": "広告経由",
       "fromGoogleAd": "Google 広告経由",
+      "clickedAd": "広告をクリック",
       "ctwaConversion": "広告コンバージョン",
       "lastUserInputTypes": {
         "text": "テキスト",
@@ -814,7 +1038,8 @@
       "ctwaConversionTypes": {
         "lead": "リード",
         "purchase": "購入"
-      }
+      },
+      "pipelineItem": "パイプラインのアイテム"
     },
     "fieldGroups": {
       "opportunity": "商談",
@@ -831,7 +1056,8 @@
       "botFields": "ボットフィールド",
       "email": "メール",
       "sms": "SMS",
-      "ctwaAds": "広告"
+      "ctwaAds": "広告",
+      "pipeline": "パイプライン"
     },
     "languages": {
       "ar": "アラビア語",
@@ -860,6 +1086,7 @@
     "sources": {
       "direct": "直接",
       "comments": "コメント",
+      "liveComments": "ライブ配信コメント",
       "ads": "広告",
       "fbLeadAd": "Facebookリード広告",
       "inboundMessage": "受信メッセージ",
@@ -878,6 +1105,22 @@
       },
       "adPrefix": "広告",
       "allAds": "すべての広告"
+    },
+    "noTopic": "トピックなし",
+    "trackingSince": "{date} から記録されています。それ以前のアクティビティは含まれません。",
+    "pipelineItem": {
+      "anyPipeline": "すべてのパイプライン",
+      "anyStatus": "すべてのステータス",
+      "attributes": {
+        "exists": "アイテム",
+        "status": "アイテムのステータス",
+        "stage": "アイテムのステージ",
+        "priority": "アイテムの優先度"
+      },
+      "operators": {
+        "has": "あり",
+        "hasNo": "なし"
+      }
     }
   },
   "fields": {
@@ -1077,6 +1320,13 @@
     "bot": {
       "label": "ボット"
     },
+    "botCategory": {
+      "options": {
+        "all": "すべて",
+        "human": "人間",
+        "bot": "ボット"
+      }
+    },
     "botResponse": {
       "label": "ボットの応答"
     },
@@ -1095,7 +1345,8 @@
     },
     "button": {
       "label": "ボタン",
-      "whenPressed": "このボタンが押されたとき"
+      "whenPressed": "このボタンが押されたとき",
+      "callToThisNumber": "この番号に発信"
     },
     "buttonLabel": {
       "label": "ボタンラベル"
@@ -1166,6 +1417,15 @@
       "prepend": "先頭に追加",
       "increase": "次の値だけ増やす",
       "decrease": "次の値だけ減らす",
+      "clear": "Clear value",
+      "formula": "Use custom formula",
+      "set_now": "Set to now",
+      "date_expression": "Free-form date (with math)",
+      "add_minutes": "Add minutes",
+      "add_hours": "Add hours",
+      "add_days": "Add days",
+      "formulaHint": "Math where value is the current number, e.g. round(value * 1.1). Functions: abs, ceil, floor, round, min, max, pow, sqrt, log, sin, cos.",
+      "dateExpressionHint": "e.g. now + 2 days - 3 hours. Units: min, h, d, w, mo, y.",
       "groupSystemFields": "システムフィールド",
       "groupCustomFields": "カスタムフィールド",
       "groupAccountFields": "ボットフィールド"
@@ -1281,7 +1541,8 @@
       "label": "フロー",
       "placeholder": "フローを選択",
       "aiGenerateTextAgent": "{aiName}：テキスト生成エージェント",
-      "aiDeleteMessageHistory": "{aiName}：メッセージ履歴を削除"
+      "aiDeleteMessageHistory": "{aiName}：メッセージ履歴を削除",
+      "aiSegmentImage": "{aiName}: 画像セグメンテーション"
     },
     "steps": {
       "label": "ノード",
@@ -1660,7 +1921,8 @@
       "processing": "処理中",
       "installing": "Installing",
       "completed": "完了",
-      "partial": "Partial",
+      "partial": "一部成功",
+      "uninstalled": "Uninstalled",
       "failed": "失敗",
       "success": "成功",
       "error": "エラー"
@@ -1693,6 +1955,7 @@
       "label": "クリック済み（%）"
     },
     "targetCountry": {
+      "currencyHint": "独自の通貨を持たないパイプラインの既定の通貨にもなります。",
       "description": "連絡先の大半が居住している国です。",
       "label": "対象国"
     },
@@ -2092,6 +2355,10 @@
       "label": "送信元アドレス",
       "placeholder": "noreply@example.com"
     },
+    "fromName": {
+      "label": "送信者名",
+      "placeholder": "ChatbotX"
+    },
     "messageTemplate": {
       "label": "メッセージテンプレート"
     },
@@ -2198,7 +2465,13 @@
       "commentToMessage": "Comment-to-Message",
       "commentToMessageDescription": "Lets this account answer high-intent comments with a direct message. Required for TikTok comment automations that use a private reply.",
       "commentToMessageEligibility": "Only available to Business Accounts registered in Vietnam, Indonesia or Thailand, owned by someone over 18, that are registered businesses or have run Messaging Ads, with messaging permissions set to \"Requests\".",
-      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting."
+      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting.",
+      "features": "機能",
+      "featureMessaging": "メッセージ",
+      "featureMessagingDescription": "ダイレクトメッセージを受信・送信します。TikTok は EEA、スイス、英国で登録されたアカウントにメッセージ機能を提供していません。これらのアカウントではオフにしてください。",
+      "featureComments": "コメント",
+      "featureCommentsDescription": "コメント自動化のためにコメントを受信します：公開返信、いいね、非表示。",
+      "featuresReconnectHint": "変更はこれから接続するアカウントに適用されます。既存のアカウントは権限を更新するために再接続してください。"
     },
     "drip": {
       "label": "ドリップ"
@@ -2236,6 +2509,12 @@
     },
     "lastAd": {
       "label": "最後の広告"
+    },
+    "adIds": {
+      "label": "すべての広告ID"
+    },
+    "adId": {
+      "label": "最初の広告ID"
     },
     "lastAdSourcePlatform": {
       "label": "最後の広告ソースプラットフォーム"
@@ -2382,7 +2661,11 @@
       "ads": "広告",
       "settings": "設定",
       "miniApps": "ミニアプリ",
-      "leaderboards": "ランキング"
+      "leaderboards": "ランキング",
+      "pipelines": "パイプライン",
+      "places": "場所",
+      "templates": "テンプレート",
+      "polls": "Polls"
     },
     "adReferral": {
       "label": "Ads",
@@ -2391,7 +2674,8 @@
       "ctid": "CTID",
       "googleAds": "Google Ads",
       "googleAdsWhatsapp": "GA CCWA",
-      "googleAdsMessenger": "GA CCTM"
+      "googleAdsMessenger": "GA CCTM",
+      "googleAdsZalo": "GA Zalo"
     },
     "adSource": {
       "label": "Ad source"
@@ -2439,11 +2723,87 @@
     },
     "miniApp": {
       "label": "ミニアプリ"
+    },
+    "lastOpportunityId": {
+      "label": "最新の商談ID"
+    },
+    "adminName": {
+      "label": "送信した管理者名"
+    },
+    "adminTeamName": {
+      "label": "送信した管理者のチーム"
+    },
+    "bookingId": {
+      "label": "予約ID"
+    },
+    "lastPoints": {
+      "label": "最後のアンケートポイント"
+    },
+    "lastAdHeadline": {
+      "label": "最後の広告見出し"
+    },
+    "lastAdBody": {
+      "label": "最後の広告本文"
+    },
+    "lastStoryId": {
+      "label": "最後のストーリーID"
+    },
+    "lastLeadId": {
+      "label": "最後のリードID"
+    },
+    "lastFormId": {
+      "label": "最後のフォームID"
+    },
+    "lastFormName": {
+      "label": "最後のフォーム名"
+    },
+    "lastAdgroupId": {
+      "label": "最後の広告グループID"
+    },
+    "lastTextInput": {
+      "label": "最後のテキスト入力"
+    },
+    "empty": {
+      "label": "空"
+    },
+    "aiSegmentImage": {
+      "description": "SAM 3.1 で画像内のオブジェクトを見つけ、その部分を切り抜いた画像として保存します。",
+      "inputFieldId": {
+        "label": "元の画像"
+      },
+      "target": {
+        "label": "検出するオブジェクト",
+        "description": "「赤い車」や「商品の箱」のような短い名詞句。質問や命令文は不可です。",
+        "placeholder": "商品の箱"
+      },
+      "matchSelection": {
+        "label": "一致",
+        "options": {
+          "largest": "最大のオブジェクトのみ",
+          "all": "一致するすべてのオブジェクト (すべてを囲む 1 つの切り抜き)"
+        }
+      },
+      "outputFieldId": {
+        "label": "画像の保存先"
+      },
+      "detailsOutputFieldId": {
+        "label": "詳細の保存先",
+        "description": "任意。一致数とボックスを含む JSON を受け取ります。",
+        "sameAsOutput": "出力画像とは別のフィールドを選択してください。",
+        "sameAsInput": "元の画像とは別のフィールドを選択してください。"
+      },
+      "overwriteWarning": "このフィールドの元の画像は結果で置き換えられます。",
+      "states": {
+        "success": "見つかった",
+        "skip": "見つからない",
+        "error": "失敗"
+      }
     }
   },
   "flows": {
     "export": {
       "notPublished": "このフローはまだ公開されていません。エクスポートする前に公開してください。",
+      "viewOnly": "このフローは閲覧専用テンプレートからインストールされたため、エクスポートできません。",
       "failed": "エクスポートに失敗しました。もう一度お試しください。"
     },
     "title": "フロー",
@@ -2613,7 +2973,18 @@
       "sendGoogleAdsConversion": "Google 広告コンバージョンを送信",
       "changeGamificationScore": "ゲーミフィケーションのスコアを変更",
       "sendViewCatalog": "カタログを見る",
-      "sendProducts": "商品を送信"
+      "sendProducts": "商品を送信",
+      "sendCollection": "コレクション",
+      "pipeline": "パイプライン",
+      "moreOptions": "その他のオプション",
+      "findPlacesNearMe": "近くの場所を探す",
+      "callPhoneNumber": "電話番号に発信",
+      "copyText": "テキストをコピー"
+    },
+    "externalRequest": {
+      "errors": {
+        "requestFailed": "外部リクエストをテストできませんでした。リクエストの設定を確認して、もう一度お試しください。"
+      }
     },
     "splitTraffic": {
       "balanceHint": "合計は100%になる必要があります。",
@@ -2644,7 +3015,12 @@
       "customField": "カスタムフィールド",
       "selectCustomFieldPlaceholder": "カスタムフィールドを選択",
       "addMapping": "マッピングを追加",
-      "addCustomField": "新規追加"
+      "addCustomField": "新規追加",
+      "fileBadge": "ファイル",
+      "fileFormat": "ファイルのリンク",
+      "fileFormatAllUrls": "すべてのリンク（カンマ区切り）",
+      "fileFormatFirstUrl": "最初のリンクのみ",
+      "fileFormatHint": "カスタムフィールドには、ここで選んだ形式でアップロードされたファイルのリンクが保存されます。"
     },
     "sendCarousel": {
       "addSlide": "スライドを追加",
@@ -2794,6 +3170,156 @@
       "productsSelected": "{count, plural, one {# 件の商品} other {# 件の商品}}",
       "noneSelected": "商品はまだありません",
       "sendFailed": "商品を送信できませんでした。"
+    },
+    "sendCollection": {
+      "title": "コレクション",
+      "dataType": "データの種類",
+      "dataTypes": {
+        "products": "商品"
+      },
+      "collectionType": "コレクションの種類",
+      "collectionTypes": {
+        "automated": {
+          "label": "自動",
+          "description": "条件に合う既存および今後の商品が自動で追加されます。"
+        },
+        "manual": {
+          "label": "手動",
+          "description": "商品を1つずつ追加します。"
+        }
+      },
+      "condition": "条件",
+      "name": "名前",
+      "optional": "（任意）",
+      "category": "カテゴリー",
+      "subcategory": "サブカテゴリー",
+      "vendor": "ベンダー",
+      "all": "すべて",
+      "items": "商品",
+      "select": "選択",
+      "selectPlaceholder": "1つ以上の商品を選択",
+      "selectAll": "すべて選択",
+      "deselectAll": "すべて解除",
+      "maxProducts": "最大{count}商品。ショップに表示されなくなった商品はスキップされます。",
+      "automatedHint": "条件に合う最大{count}商品を、ウェブショップで商品を開くカードとして送信します。",
+      "summaryAll": "ショップの全商品",
+      "summaryAutomated": "商品: {filters}",
+      "summaryManual": "{count, plural, one {#商品} other {#商品}}",
+      "cancel": "キャンセル",
+      "save": "保存"
+    },
+    "pipelineStep": {
+      "action": "アクション",
+      "pipeline": "パイプライン",
+      "targetHint": "このパイプラインにあるコンタクトの最新のオープン中アイテムが対象です。該当するものがない場合は「スキップ」パスが実行されます。",
+      "noPipelines": "パイプラインが見つかりません",
+      "actions": {
+        "addToPipeline": "コンタクトをパイプラインに追加",
+        "moveToStage": "ステージに移動",
+        "changeValue": "金額を変更",
+        "assign": "管理者に割り当て",
+        "changeStatus": "ステータスを変更",
+        "changePriority": "優先度を変更",
+        "changeDueDate": "期限を変更",
+        "changeTitle": "タイトルを変更",
+        "setCustomField": "カスタムフィールドを設定",
+        "clearCustomField": "カスタムフィールドをクリア",
+        "changeDescription": "説明を変更",
+        "removeFromPipeline": "コンタクトをパイプラインから削除",
+        "addComment": "コメントを追加",
+        "transfer": "別のパイプラインに移管"
+      },
+      "title": "タイトル",
+      "description": "説明",
+      "stage": "ステージ",
+      "firstStage": "最初のステージ",
+      "status": "ステータス",
+      "assigneeMembers": "割り当て済みの管理者",
+      "assigneeTeams": "割り当て済みのチーム",
+      "value": "金額",
+      "priority": "優先度",
+      "dueDate": "期限",
+      "dueNone": "なし",
+      "dueNoneHint": "このアイテムには期限がありません。",
+      "dueCustomField": "日付のカスタムフィールドから設定",
+      "dueFixed": "固定の日時",
+      "dueField": "日付または日時のカスタムフィールド",
+      "fieldValues": "カスタムフィールド",
+      "field": "フィールド",
+      "fieldValue": "値",
+      "fields": "フィールド",
+      "addField": "フィールド値を追加",
+      "removeHint": "このパイプラインにあるコンタクトの最新のオープン中アイテムを削除します。",
+      "comment": "コメント",
+      "destinationPipeline": "移管先のパイプライン",
+      "destinationStage": "移管先のステージ",
+      "missingRequiredFields": "値のない必須フィールド: {names}。すべてに値が入るまでアイテムを作成できません。",
+      "addRequiredFields": "必須フィールドを追加"
+    },
+    "aiSegmentImage": {
+      "label": "{name}: 画像セグメンテーション"
+    },
+    "aiSpeechToText": {
+      "muse": {
+        "formatHint": "WAV ファイルのみ対応しています（PCM 16 ビット、モノラル、16 kHz または 24 kHz、最大 10 分）。それ以外のファイル（ボイスメッセージなど）はエラー分岐に進みます。",
+        "languageBias": {
+          "label": "言語の優先",
+          "description": "音声に含まれる可能性のある言語です。空欄の場合は自動検出します。",
+          "placeholder": "自動検出"
+        },
+        "keywords": {
+          "label": "キーワード",
+          "description": "Muse が単語を正しく表記するための名前や専門用語です。",
+          "placeholder": "キーワードを入力して Enter を押してください"
+        }
+      },
+      "languages": {
+        "Arabic": "アラビア語",
+        "Bengali": "ベンガル語",
+        "Dutch": "オランダ語",
+        "English": "英語",
+        "French": "フランス語",
+        "German": "ドイツ語",
+        "Hebrew": "ヘブライ語",
+        "Hindi": "ヒンディー語",
+        "Indonesian": "インドネシア語",
+        "Italian": "イタリア語",
+        "Japanese": "日本語",
+        "Kannada": "カンナダ語",
+        "Korean": "韓国語",
+        "Malay": "マレー語",
+        "MandarinChinese": "中国語（北京語）",
+        "Marathi": "マラーティー語",
+        "Polish": "ポーランド語",
+        "Portuguese": "ポルトガル語",
+        "Spanish": "スペイン語",
+        "Tagalog": "タガログ語",
+        "Tamil": "タミル語",
+        "Telugu": "テルグ語",
+        "Thai": "タイ語",
+        "Turkish": "トルコ語",
+        "Vietnamese": "ベトナム語"
+      }
+    },
+    "findPlacesNearMe": {
+      "category": "ロケーションカテゴリ",
+      "allLocations": "すべてのロケーション",
+      "whatsappOnly": "WhatsApp の連絡先にのみ送信されます。",
+      "noLocationSource": "位置情報はこのフローで取得する必要があります。このアクションの前に、返信形式が「位置情報」のユーザーデータ取得ステップを追加してください。別のフローで保存された位置情報は使用されません。ない場合、このアクションはスキップされます。"
+    },
+    "callPhoneNumber": {
+      "fallbackHint": "通話を開始できないチャネルでは、代わりにこの番号が返信として相手に届きます。",
+      "countryLabel": "国番号",
+      "noCountry": "国を指定しない",
+      "invalidForCountry": "{country} の電話番号として正しくありません。",
+      "needsCountry": "国を選択するか、+ と国番号から番号を入力してください。",
+      "invalidInternational": "国際電話番号として正しくありません。"
+    },
+    "copyText": {
+      "textLabel": "コピーするテキスト",
+      "limitHint": "変数を埋めた後で最大{max}文字。",
+      "fallbackHint": "テキストをコピーできないチャネルでは、連絡先はこのテキストを返信として受け取ります。",
+      "viewerTitle": "このテキストをコピー"
     }
   },
   "folders": {
@@ -2818,7 +3344,7 @@
     "title": "一般"
   },
   "facebookMarketingMessages": {
-    "deleteWarning": "これはChatbotXからキャンペーンを削除するだけです。Metaのメッセージキャンペーンは実行され続けます — 広告マネージャで一時停止または削除してください。",
+    "deleteWarning": "Metaのメッセージキャンペーンを削除し、ChatbotXからもキャンペーンを削除します。Metaが削除を拒否した場合、キャンペーンは保持されます。",
     "title": "Facebookマーケティングメッセージ",
     "description": "Messengerでパーソナライズされたプロモーションメッセージを送り、エンゲージメントと売上を高めます。",
     "create": "新規作成",
@@ -2843,13 +3369,197 @@
       "generic": "汎用",
       "greeting": "あいさつ",
       "quickReplies": "クイック返信",
-      "elements": "カード"
+      "elements": "カード",
+      "targetMessaging": "メッセージの配信対象",
+      "targetOptIn": "オプトイン",
+      "targetOptInDescription": "マーケティングメッセージの受信に同意したページの顧客",
+      "targetCustomAudience": "カスタムオーディエンス",
+      "targetCustomAudienceDescription": "ファイルからアップロードしたオーディエンスにメッセージを送信",
+      "audience": "カスタムオーディエンス"
     },
+    "noReadyAudiences": "このページと広告アカウントで利用可能なカスタムオーディエンスがありません。",
+    "manageAudiences": "オーディエンスを管理",
     "errors": {
       "notConfigured": "Facebookマーケティングメッセージが構成されていません。管理者にマーケティングメッセージ構成IDの設定を依頼してください。",
       "notGranted": "マーケティングメッセージ機能を使用するにはアクセスを許可してください。",
       "tosNotAccepted": "この機能を使用するには、{url} でカスタムオブジェクトの規約に同意してください",
-      "notFound": "マーケティングメッセージが見つかりません。"
+      "notFound": "マーケティングメッセージが見つかりません。",
+      "audienceNotTargetable": "選択したカスタムオーディエンスは準備ができていないか、このページと広告アカウントに属していません。",
+      "connectFirst": "まずChatbotXアプリでマーケティングメッセージを接続してください。",
+      "mmInvalidState": "この操作はキャンペーンの現在の状態では利用できません。",
+      "mmCampaignEnded": "Metaのメッセージキャンペーンは終了しているため、送信も再開もできません。",
+      "mmPageNotConnected": "このキャンペーンのページはこのワークスペースに接続されていません。",
+      "mmContentLocked": "最初のメッセージを送信した後は、内容を変更できません。",
+      "metaDeleteFailed": "Meta がこのキャンペーンを削除できなかったため、保持されました。{message}",
+      "statisticsUnknownAdAccount": "このワークスペースには、その広告アカウントのマーケティングメッセージキャンペーンがありません。",
+      "statisticsInvalidRange": "過去37か月以内で、終了日以前の開始日を選択してください。"
+    },
+    "tabs": {
+      "campaigns": "キャンペーン",
+      "audiences": "オーディエンス",
+      "statistics": "統計"
+    },
+    "audiences": {
+      "title": "カスタムオーディエンス",
+      "create": "新規作成",
+      "uploadMore": "行を追加アップロード",
+      "empty": "カスタムオーディエンスはまだありません。",
+      "deleteTitle": "カスタムオーディエンスを削除",
+      "deleteWarning": "この操作により、カスタムオーディエンス「{name}」がMetaとChatbotXの両方から削除されます。元に戻すことはできません。",
+      "deleted": "カスタムオーディエンスを削除しました。",
+      "pageDisconnected": "ページの接続が解除されました",
+      "status": {
+        "ready": "準備完了",
+        "missing": "Metaで削除済み"
+      },
+      "fields": {
+        "customAudienceId": "カスタムオーディエンスID",
+        "approximateCount": "おおよその人数",
+        "status": "ステータス",
+        "file": "ファイルをアップロード"
+      },
+      "wizard": {
+        "title": "カスタムオーディエンスを作成",
+        "uploadMoreTitle": "行を追加アップロード",
+        "steps": {
+          "prepare": "リストを準備",
+          "upload": "アップロード",
+          "confirm": "確認"
+        },
+        "prepareDescription": "購読者リストは、マーケティングメッセージ用のオーディエンスを作成するための情報を含むCSVまたはTXTファイルです。購読者をFacebookおよびInstagramのユーザーと照合するために電話番号を使用します。情報が送信される前に、識別子のリストはランダムなコードにハッシュ化されます。",
+        "aboutHashing": "ハッシュ化について",
+        "downloadTemplate": "ファイルテンプレートをダウンロード",
+        "mainIdentifiers": "主な識別子を少なくとも1つ含めてください",
+        "moreIdentifiers": "その他の識別子を含める",
+        "identifiers": {
+          "email": "メールアドレス",
+          "phone": "電話番号",
+          "madid": "モバイル広告ID",
+          "fn": "名",
+          "ln": "姓",
+          "ct": "市区町村",
+          "st": "都道府県/州",
+          "country": "国",
+          "zip": "郵便番号",
+          "dob": "生年月日",
+          "doby": "生年",
+          "gen": "性別"
+        },
+        "uploadNote": "リストをアップロードする前に、識別子が揃っていて正しい形式であることを確認してください。リストは.csv、.txt、または.xlsx形式である必要があります。",
+        "namePlaceholder": "オーディエンス名を入力...",
+        "descriptionPlaceholder": "簡単な説明（任意）",
+        "dropzone": "クリックしてアップロード、またはドラッグ＆ドロップ",
+        "maxFileSize": "最大ファイルサイズ：20MB",
+        "fileRequired": "アップロードするファイルを選択してください。",
+        "fileTooLarge": "ファイルが20MBを超えています。",
+        "fileType": "ファイルは.csv、.txt、または.xlsxである必要があります。",
+        "next": "次へ",
+        "back": "戻る",
+        "upload": "アップロード",
+        "done": "完了",
+        "successTitle": "アップロードが完了しました",
+        "successRows": "Messenger購読者リストをアップロードしました：{count, plural, one {#行} other {#行}}",
+        "skippedRows": "{count, plural, one {#行} other {#行}}をスキップしました（有効なメールアドレスまたは電話番号がありません）。",
+        "invalidRows": "{count, plural, one {#行} other {#行}}がMetaに拒否されました。",
+        "matchingNote": "購読者とFacebook上のユーザーとの照合が完了するまで数分かかる場合があります。ステータスはオーディエンスリストで確認できます。"
+      },
+      "errors": {
+        "audienceInvalidFile": "ファイルを読み取れませんでした。ヘッダー行のある.csv、.txt、または.xlsxファイルを使用してください。",
+        "audienceTooManyRows": "ファイルの行数が{max, number}行を超えています。",
+        "audienceNoIdentifier": "ファイルにはメールまたは電話の列が必要です。",
+        "audienceNoValidRows": "有効なメールアドレスまたは電話番号を持つ行がありません。",
+        "audiencePartialUpload": "オーディエンスは作成されましたが、{received, number}行でアップロードが停止しました。「行を追加アップロード」で再試行してください。",
+        "audienceNotFound": "カスタムオーディエンスが見つかりません。",
+        "audienceCreateRejected": "Metaがオーディエンスを拒否しました：{reason}",
+        "uploadUncertain": "アップロードが完了していない可能性があります。このダイアログを閉じてオーディエンス一覧を確認し、オーディエンスが作成されている場合は「さらに行をアップロード」を使用してください。",
+        "pageNotConnected": "選択したページはこのワークスペースに接続されていません。",
+        "audienceInUse": "このカスタムオーディエンスは{count, plural, one {#件のマーケティングメッセージ} other {#件のマーケティングメッセージ}}で使用されているため削除できません。"
+      }
+    },
+    "delivery": {
+      "title": "配信",
+      "contentLocked": "メッセージがすでに送信されているため、コンテンツはロックされています。",
+      "topicsReturned": "Metaが返したトピック: {topics}",
+      "recipients": "{count}人の受信者",
+      "startsAt": "開始: {date}",
+      "completedAt": "完了: {date}",
+      "errorBreakdown": "失敗",
+      "retrying": "Meta は現在送信を受け付けていません。自動で再試行しています。",
+      "counts": {
+        "sent": "送信済み",
+        "delivered": "配信済み",
+        "unconfirmed": "未確認"
+      },
+      "status": {
+        "notSent": "未送信",
+        "scheduled": "予約済み",
+        "sending": "送信中",
+        "waitingNextDay": "翌日待ち",
+        "paused": "一時停止中",
+        "stopped": "停止済み"
+      },
+      "reason": {
+        "pageNotConnected": "このページはこのワークスペースに接続されていません。",
+        "quotaReached": "一時停止: メッセージ上限に達しました。",
+        "workspaceBlocked": "一時停止: このワークスペースはブロックされています。",
+        "grantInvalid": "一時停止: Facebook接続の有効期限が切れました。Marketing Messagesを再接続してください。",
+        "metaBlocker": "Metaがこのキャンペーンをブロックしています。",
+        "contentRejected": "Metaがメッセージ内容を拒否しました。",
+        "noTokens": "このキャンペーンの受信者が見つかりませんでした。",
+        "noMatchingTopic": "「Updates and promotions」トピックに一致するオプトイン済みの受信者がいません。",
+        "tokenFetchFailed": "Metaから受信者を取得できませんでした。",
+        "campaignEnded": "Metaキャンペーンは終了しました。",
+        "lifetimeBudgetReached": "通算予算を使い切りました。"
+      },
+      "errors": {
+        "grantInvalid": "Facebook接続の有効期限が切れました。",
+        "campaignInactive": "Metaキャンペーンは有効ではありません。",
+        "budgetReached": "予算を使い切りました。",
+        "dailyBudgetReached": "1日の予算に達しました。",
+        "optedOut": "受信者が配信を停止しました。",
+        "frequencyLimit": "受信者の配信頻度の上限に達しました。",
+        "contentRejected": "メッセージ内容がMetaに拒否されました。",
+        "deliveryFailed": "配信に失敗しました。",
+        "outcomeUnknown": "配信結果が不明です。"
+      }
+    },
+    "statistics": {
+      "searchPlaceholder": "ID または名前で検索",
+      "adAccount": "広告アカウント",
+      "dateRange": "期間",
+      "timezoneHint": "日付は {timezone} 基準",
+      "presets": {
+        "last7": "過去7日間",
+        "last30": "過去30日間",
+        "last90": "過去90日間",
+        "thisMonth": "今月",
+        "lastMonth": "先月"
+      },
+      "columns": {
+        "id": "ID",
+        "name": "名前",
+        "page": "Facebookページ",
+        "delivered": "配信済みメッセージ",
+        "readRate": "既読率",
+        "linkClicks": "リンクのクリック",
+        "linkClickRate": "リンククリック率",
+        "costPerClick": "クリック単価",
+        "costPerDelivery": "配信単価",
+        "spend": "消化金額"
+      },
+      "notes": {
+        "delivery": "Meta はヨーロッパまたは日本の受信者についてこの指標を報告しません。該当するキャンペーンは - と表示されます。",
+        "clicks": "Meta はヨーロッパ、アルゼンチン、トルコ、韓国、日本の受信者についてこの指標を報告しません。該当するキャンペーンは - と表示されます。"
+      },
+      "footer": {
+        "label": "合計: {count, plural, one {# 件のキャンペーン} other {# 件のキャンペーン}}",
+        "total": "合計",
+        "average": "平均"
+      },
+      "totalsUnavailable": "現在、合計を取得できません。しばらくしてからもう一度お試しください。",
+      "readOnly": "統計を表示するには、マーケティングメッセージを再接続してください。",
+      "empty": "マーケティングメッセージのキャンペーンはまだありません。キャンペーンタブで作成してください。",
+      "noResults": "検索に一致するキャンペーンはありません。"
     }
   },
   "facebookAds": {
@@ -3530,14 +4240,22 @@
         "inProgress": "接続は既に進行中です。",
         "unknown": "問題が発生しました。",
         "followUpFailed": "設定が未完了です。チャネル設定から完了してください。",
-        "webhookSubscribeFailed": "接続しましたが、Webhookの登録に失敗しました。接続設定から再試行してください。"
+        "webhookSubscribeFailed": "接続しましたが、Webhookの登録に失敗しました。接続設定から再試行してください。",
+        "providerUnavailable": "プロバイダーが一時的に利用できません。数分後にもう一度お試しください。"
       },
       "sessionError": {
         "sessionExpired": "セッションの有効期限が切れました。再接続してください。",
         "notMember": "このワークスペースのメンバーではなくなりました。",
         "trialExpired": "トライアル期間が終了しました。",
         "macLimitReached": "アカウントの上限に達しました。",
-        "credentialMissing": "認証情報がありません。再接続してください。"
+        "credentialMissing": "認証情報がありません。再接続してください。",
+        "noPages": "接続できるFacebookページが見つかりませんでした。もう一度接続し、管理しているページを少なくとも1つ許可してください。",
+        "noInstagramAccounts": "接続できるInstagramアカウントが見つかりませんでした。もう一度接続し、少なくとも1つのアカウントへのアクセスを許可してください。",
+        "exchangeFailed": "サインインを完了できませんでした。もう一度接続してください。",
+        "providerError": "現在アカウントを読み込めません。数分後にもう一度お試しください。",
+        "connectFailed": "接続中にエラーが発生しました。もう一度お試しください。",
+        "tooManyAttempts": "完了していない接続の試行が多すぎます。数分待ってから、もう一度お試しください。",
+        "notAllowed": "現在ここではチャネルを接続できません。理由を確認するにはページを再読み込みしてください。"
       },
       "cancelRemaining": "残りをキャンセル",
       "retryFailed": "再試行 ({count})",
@@ -3603,7 +4321,8 @@
   "workspaces": {
     "list": {
       "title": "ワークスペース一覧"
-    }
+    },
+    "defaultName": "{name}のワークスペース"
   },
   "workspaceToken": {
     "title": "ワークスペーストークン"
@@ -3620,6 +4339,7 @@
       "months": "{count}か月",
       "years": "{count}年"
     },
+    "realtimeRevokeWarning": "アクセスの取り消しをすぐに確認できませんでした。メンバーの次回の再接続時に反映されます。",
     "moveFeature": "{feature}を移動",
     "poweredBy": "{name}を利用",
     "noGiphyApiKey": "GIPHY APIキーが見つかりません。プラットフォーム設定で追加してください。",
@@ -3757,6 +4477,9 @@
     "waTemplateMpmTooManySections": "マルチ商品ボタンには最大10個のセクションを設定できます。公開前にセクションを減らしてください。",
     "waTemplateMpmTooManyProducts": "マルチ商品ボタンには合計最大30個の商品を設定できます。公開前に商品を減らしてください。",
     "waTemplateLtoExpirationRequired": "送信する前に期間限定オファーの有効期限を選択してください。",
+    "waTemplatePaymentRequestIncomplete": "公開する前に、このボタンの支払い情報を入力してください。",
+    "waTemplatePaymentRequestInvalid": "支払い情報の形式が正しくありません。金額、リンク、カード番号の下4桁を確認してください。",
+    "waTemplatePaymentRequestMisplaced": "支払い情報は、通常（カルーセル以外）のテンプレートの支払いボタンにのみ設定できます。",
     "waTemplateMpmIncompleteProducts": "各セクションには選択済みの商品が少なくとも1つ必要です。空の行を削除するか、商品を選択してください。",
     "unsupportedBlock": "このチャネルはこのブロックに対応していません。",
     "constraintExceeded": "このチャネルの上限を超えました。",
@@ -3783,7 +4506,15 @@
       "noAnswer": "未回答",
       "labelsUnavailable": "Flowの質問を読み込めなかったため、項目名を表示しています。",
       "yes": "はい",
-      "no": "いいえ"
+      "no": "いいえ",
+      "fileNotSaved": "ファイルは保存されていません",
+      "filesNotSaved": "{count, plural, one {#件のファイルを保存できませんでした} other {#件のファイルを保存できませんでした}}",
+      "filesAttached": "{count, plural, one {添付ファイル #件} other {添付ファイル #件}}",
+      "fileFailure": {
+        "too_large": "ファイルが大きすぎます",
+        "unsupported_type": "サポートされていないファイル形式",
+        "download_failed": "ダウンロードできませんでした"
+      }
     },
     "sendViewCatalogBodyTooLong": "メッセージ本文がカタログメッセージには長すぎます。短くしてください。",
     "sendViewCatalogFooterTooLong": "フッターがカタログメッセージには長すぎます。短くしてください。",
@@ -3810,7 +4541,24 @@
     "savedReplyImagesRemoved": "ここで送信できない画像を削除しました",
     "onlyImagesAllowed": "追加できるのは画像のみです",
     "tooManySavedReplyImages": "保存済み返信の画像は最大 {max} 枚です",
-    "savedReplyImagesNotSentHere": "ここでは画像は送信されません"
+    "savedReplyImagesNotSentHere": "ここでは画像は送信されません",
+    "invalidPhoneNumber": "電話番号が正しくありません。国番号（例: +1）を含めてください。",
+    "buttonCallPhoneNumberUnsupported": "このボタンではここで電話番号に発信できません。別のアクションを選択してください。",
+    "buttonCopyTextUnsupported": "このボタンではここでテキストをコピーできません。別のアクションを選択してください。",
+    "paymentRequest": {
+      "title": "支払いリクエスト",
+      "cardEnding": "末尾 {lastFourDigits} のカード",
+      "status": "WhatsApp は支払いを通知しません。決済プロバイダーで確認してください。",
+      "cardStatus": "お客様の確認だけではカードに請求されません。決済プロバイダーで請求してください。",
+      "sentFromTemplate": "テンプレート: {name}"
+    },
+    "paymentConfirmation": {
+      "title": "お客様が支払いを確認しました",
+      "cardTitle": "お客様がカード決済を確認しました",
+      "cardEnding": "末尾 {lastFourDigits} のカード",
+      "notCharged": "まだ請求されていません。決済プロバイダーで請求してください。",
+      "reference": "参照番号 {referenceId}"
+    }
   },
   "instagram": {
     "description": "この連携を使用すると、Instagramボットを作成できます。",
@@ -3907,6 +4655,7 @@
         "buttonText": "ボタンテキスト",
         "buttonType": "ボタンの種類",
         "visitWebsite": "ウェブサイトを開く",
+        "openMiniApp": "ミニアプリを開く",
         "callPhoneNumber": "電話をかける",
         "postback": "ボタン"
       },
@@ -3968,6 +4717,18 @@
       "label": "DeepSeek"
     },
     "title": "DeepSeek"
+  },
+  "muse": {
+    "autoReply": {
+      "description": "AI自動返信を有効にし、ビジネスデータを活用したAIでユーザーに自然に応答します。",
+      "label": "AI自動返信"
+    },
+    "connect": {
+      "description": "ビジネスデータを活用したAIで、ユーザーに自然に応答します。",
+      "embeddingHint": "Muse には埋め込みモデルがありません。ナレッジベースと AI ファイルには引き続き OpenAI または Gemini の連携が必要です。",
+      "label": "Muse"
+    },
+    "title": "Muse"
   },
   "decision": {
     "addConnection": "Add AI Router connection",
@@ -4104,12 +4865,17 @@
     "deepseek": {
       "description": "DeepSeek連携の説明",
       "title": "DeepSeek連携"
+    },
+    "muse": {
+      "description": "Muse連携の説明",
+      "title": "Muse連携"
     }
   },
   "auth": {
     "orContinueWith": "または次の方法で続行",
     "continueWithFacebook": "Facebookで続行",
     "continueWithGoogle": "Googleで続行",
+    "continueWithProvider": "{name}で続行",
     "continueWithEmail": "メールで続行",
     "continueWithMagicLink": "マジックリンクで続行",
     "dontHaveAnAccount": "アカウントをお持ちでないですか？",
@@ -4140,11 +4906,15 @@
     "changePasswordTitle": "パスワードを変更",
     "changePasswordDescription": "続行する前に新しいパスワードを設定してください。",
     "passwordChangeSuccess": "パスワードを変更しました",
+    "signUpDisabledTitle": "新規登録は無効です",
+    "signUpDisabledDescription": "新しいアカウントは管理者または招待リンクからのみ作成できます。",
     "oauthError": {
       "accountNotLinked": "このメールアドレスのアカウントは既に存在し、連携できませんでした。以前と同じ方法でログインするか、サポートにお問い合わせください。",
       "unableToLinkAccount": "このログインを既存のアカウントに連携できませんでした。以前と同じ方法でログインするか、サポートにお問い合わせください。",
       "sessionExpired": "ログインの試行の有効期限が切れました。もう一度お試しください。",
       "accessDenied": "ログインがキャンセルされました。",
+      "signUpDisabled": "このアカウントはまだ存在せず、新規登録は無効です。管理者に作成を依頼してください。",
+      "invalidInvitation": "この招待は無効か、有効期限が切れています。",
       "generic": "ログインに失敗しました。もう一度お試しください。"
     }
   },
@@ -4168,6 +4938,9 @@
     "maxCharacters": "最大{max}文字です。",
     "invalidApiKey": "APIキーが無効です",
     "maxMustBeGreaterThanMin": "{maxField}は{minField}以上である必要があります",
+    "trigger": {
+      "actionReferenceNotFound": "An action refers to a record that no longer exists. Re-select it in the action and save again."
+    },
     "inboundWebhook": {
       "inboxRequired": "受信トレイを選択してください。",
       "inboxNotFound": "選択した受信トレイが見つかりません。",
@@ -4177,11 +4950,31 @@
       "unknownFieldTarget": "マッピングされた連絡先フィールドは存在しなくなりました。",
       "actionReferenceNotFound": "アクションが、存在しなくなったフロー、タグ、またはフィールドを参照しています。",
       "fieldMappingRequired": "フィールドマッピングを少なくとも1つ追加してください。"
+    },
+    "form": {
+      "required": "この項目は必須です。",
+      "minLength": "{minimum}文字以上で入力してください。",
+      "maxLength": "{maximum}文字以内で入力してください。",
+      "minNumber": "{minimum}以上の数値を入力してください。",
+      "moreThan": "{minimum}より大きい数値を入力してください。",
+      "maxNumber": "{maximum}以下の数値を入力してください。",
+      "lessThan": "{maximum}未満の数値を入力してください。",
+      "number": "数値を入力してください。",
+      "wholeNumber": "整数を入力してください。",
+      "minItems": "{minimum}件以上選択してください。",
+      "maxItems": "{maximum}件以内で選択してください。",
+      "email": "有効なメールアドレスを入力してください。",
+      "url": "https:// で始まる有効なリンクを入力してください。",
+      "format": "この値の形式が正しくありません。",
+      "option": "選択肢から1つ選んでください。",
+      "invalid": "この値は無効です。",
+      "checkFields": "修正が必要な項目があります。赤く表示された項目を確認してください。"
     }
   },
   "webchat": {
     "chatUnavailable": "このチャットは現在利用できません。",
     "description": "ウェブサイトから直接、顧客にビジネスの即時自動応答を提供します",
+    "loadMessagesError": "メッセージを読み込めませんでした。接続を確認して、もう一度お試しください。",
     "rateLimitExceeded": "リクエストが多すぎます。しばらくしてからもう一度お試しください。",
     "title": "ウェブチャット",
     "workspaceUnavailable": "このワークスペースは利用できなくなりました。",
@@ -4337,7 +5130,28 @@
         "mpmSectionLimitReached": "セクションの上限（10個）に達しました。",
         "mpmProductLimitReached": "商品の上限（30個）に達しました。",
         "mpmProductsSummary": "{sectionCount}個のセクションに{productCount}個の商品",
-        "unsupportedButtonParam": "このボタンタイプはまだサポートされていません。"
+        "unsupportedButtonParam": "このボタンタイプはまだサポートされていません。",
+        "payment": {
+          "method": {
+            "pix": "Pix",
+            "boleto": "Boleto",
+            "payment_link": "支払いリンク",
+            "card_on_file": "ワンクリックカード決済"
+          },
+          "field": {
+            "code": "Pix コード",
+            "digitableLine": "Boleto の入力用番号",
+            "url": "支払いリンクの URL",
+            "lastFourDigits": "カード番号の下4桁",
+            "credentialId": "カード認証情報 ID（任意）",
+            "amount": "BRL での金額（例: 12.34）"
+          },
+          "notice": {
+            "general": "変数を使うと、顧客ごとに異なる支払い情報を送れます。",
+            "cardOnFile": "ワンクリックカード決済は、Meta が有効化した事業者のみ利用できます。"
+          },
+          "unsupportedButton": "このテンプレートには送信できない支払いボタンがあります。支払い種別を判定できませんでした。テンプレートを再同期するか、別のテンプレートを選んでください。"
+        }
       }
     },
     "sampleBodyCardContent": {
@@ -4494,7 +5308,6 @@
     "templateHeader": {
       "label": "テンプレートのヘッダー"
     },
-    "transferPhoneNumber": "別のWhatsAppプロバイダーから電話番号を移行",
     "selectPage": {
       "tryAgain": "再接続を試す"
     },
@@ -4751,7 +5564,18 @@
         "callInformation": "通話情報"
       }
     },
-    "credentialSecretsRequired": "アプリシークレットとシステムユーザートークンを入力してください。まだ保存されていません。"
+    "credentialSecretsRequired": "アプリシークレットとシステムユーザートークンを入力してください。まだ保存されていません。",
+    "embeddedSignupCancelled": "登録はキャンセルされました。このタブを閉じてください。",
+    "embeddedSignupFailed": "登録が完了しませんでした。このタブを閉じて、もう一度お試しください。",
+    "payment": {
+      "settings": {
+        "title": "支払い",
+        "description": "この番号が支払いリクエストボタンを送信する方法です。",
+        "pixRedirectLabel": "リダイレクト付き Pix で送信",
+        "pixRedirectDescription": "購入者は銀行アプリを開いて支払い、WhatsApp に戻ります。Meta があなたのビジネスをオンボードした後にのみ有効にしてください。リダイレクトできない購入者にはコピー＆ペーストが表示されます。",
+        "adminOnly": "支払い設定を変更できるのはワークスペース管理者のみです。"
+      }
+    }
   },
   "zalo": {
     "title": "Zalo OA",
@@ -4774,7 +5598,8 @@
     "chatbotInvitationDescription1": "{chatbotName}に参加",
     "chatbotInvitationDescription2": "{userName}さんから{chatbotName}への招待が届いています。",
     "invalidInvitation": "この招待は無効か、有効期限が切れています。",
-    "workspaceUnavailable": "このワークスペースは利用できなくなりました。"
+    "workspaceUnavailable": "このワークスペースは利用できなくなりました。",
+    "signUpToJoin": "参加するにはアカウントを作成"
   },
   "inboxes": {
     "markReadOnOutbound": {
@@ -5139,11 +5964,11 @@
       "incomingCall": "着信",
       "missedAudioCall": "不在着信",
       "callEnded": "通話が終了した",
-      "ticketCreated": "チケットが作成された",
-      "ticketMovedToStage": "チケットがステージに移動された",
-      "ticketValueChanged": "チケットの値が変更された",
-      "ticketStatusChanged": "チケットのステータスが変更された",
-      "ticketPriorityChanged": "チケットの優先度が変更された",
+      "pipelineItemCreated": "チケットが作成された",
+      "pipelineItemMovedToStage": "チケットがステージに移動された",
+      "pipelineItemValueChanged": "チケットの値が変更された",
+      "pipelineItemStatusChanged": "チケットのステータスが変更された",
+      "pipelineItemPriorityChanged": "チケットの優先度が変更された",
       "subscribedToSequence": "シーケンスに登録された",
       "unsubscribedFromSequence": "シーケンスから登録解除された",
       "shoppingCartSent": "連絡先がショッピングカートを送信",
@@ -5154,15 +5979,24 @@
       "orderShipped": "注文が発送された",
       "orderConcluded": "注文が完了した",
       "orderCancelled": "注文がキャンセルされた",
+      "orderPaid": "注文が支払われた",
+      "orderRefunded": "注文が返金された",
       "categoryAddedToCart": "カテゴリーがカートに追加された",
       "productAddedToCart": "商品がカートに追加された",
       "productRemovedFromCart": "商品がカートから削除された",
       "productOrdered": "商品が注文された",
       "contactReferredANewContact": "連絡先が新しい連絡先を紹介した",
       "contactReferredExistingContact": "連絡先が既存の連絡先を紹介した",
+      "contactBlockedBot": "連絡先がボットをブロックした",
+      "contactUnblockedBot": "連絡先がボットのブロックを解除した",
       "callRecorded": "通話が録音されました",
       "callTranscribed": "通話が文字起こしされました",
-      "anyProduct": "すべての商品"
+      "anyProduct": "すべての商品",
+      "anyCategory": "すべてのカテゴリー",
+      "anyPipeline": "すべてのパイプライン",
+      "anyStage": "すべてのステージ",
+      "unavailablePipeline": "削除済みまたは利用できないパイプライン",
+      "unavailableStage": "削除済みまたは利用できないステージ"
     },
     "actions": {
       "addTag": "タグを追加",
@@ -5170,6 +6004,7 @@
       "setCustomField": "カスタムフィールドを設定",
       "clearCustomField": "カスタムフィールドをクリア",
       "startAnotherFlow": "別のフローを開始",
+      "startExternalStep": "Start External Step",
       "notifyAdmins": "管理者に通知",
       "transferConversationToHuman": "会話を担当者に転送",
       "sendMetaCapiEvent": "Meta CAPI イベントを送信",
@@ -5211,7 +6046,26 @@
     "countCapped": "{count}件以上の連絡先",
     "exportAllNotice": "現在のフィルターに一致するすべての連絡先がエクスポートされます。",
     "exportTakingLong": "エクスポートに予想以上の時間がかかっています",
-    "exportTakingLongDescription": "エクスポートは引き続き処理中です。このダイアログを閉じ、数分後にエクスポート履歴から確認できます。"
+    "exportTakingLongDescription": "エクスポートは引き続き処理中です。このダイアログを閉じ、数分後にエクスポート履歴から確認できます。",
+    "search": {
+      "placeholder": "検索（名前、メール、電話番号、コンタクトID）",
+      "searching": "検索中…",
+      "error": "コンタクトを検索できませんでした",
+      "empty": "コンタクトが見つかりません"
+    },
+    "exportHistory": {
+      "title": "エクスポート履歴",
+      "description": "過去{days}日間の連絡先エクスポートです。その後ファイルは削除されます。",
+      "empty": "エクスポートはまだありません。",
+      "requestedBy": "{name}が作成",
+      "deletesOn": "{date}に削除",
+      "rows": "{count, plural, one {#件の連絡先} other {#件の連絡先}}",
+      "status": {
+        "pending": "処理中",
+        "uploaded": "準備完了",
+        "failed": "失敗"
+      }
+    }
   },
   "contactScan": {
     "menu": {
@@ -5283,7 +6137,8 @@
       "userPlaceholder": "ユーザーID",
       "keyword": "キーワード",
       "keywordPlaceholder": "アクションまたは詳細",
-      "allAdmins": "すべての管理者"
+      "allAdmins": "すべての管理者",
+      "allWorkspaces": "すべてのワークスペース"
     }
   },
   "customFields": {
@@ -5304,7 +6159,36 @@
       "pageTitle": "ページキーワード",
       "page": "あなたが連絡先にキーワードを含むメッセージを送信したときに自動的に返信します。"
     },
-    "pageWarning": "ページキーワードを含むメッセージの内容が、無限ループで顧客にメッセージを送信する原因となる可能性があります。この状況が発生した場合は、直ちにページキーワードを無効にしてください!"
+    "pageWarning": "ページキーワードを含むメッセージの内容が、無限ループで顧客にメッセージを送信する原因となる可能性があります。この状況が発生した場合は、直ちにページキーワードを無効にしてください!",
+    "conditions": {
+      "operators": {
+        "is": "メッセージが次と一致",
+        "similarTo": "メッセージが次に類似",
+        "contains": "メッセージに次を含む",
+        "containsPhone": "メッセージに電話番号を含む",
+        "containsEmail": "メッセージにメールを含む",
+        "containsImage": "メッセージに画像を含む",
+        "containsVideo": "メッセージに動画を含む",
+        "containsLink": "メッセージにリンクを含む",
+        "containsWholeWord": "メッセージに単語として含む",
+        "beginsWith": "メッセージが次で始まる",
+        "endsWith": "メッセージが次で終わる",
+        "isThumbsUp": "メッセージが 👍",
+        "notContains": "メッセージに次を含まない",
+        "matchesRegex": "メッセージが正規表現に一致"
+      },
+      "and": "かつ",
+      "addCondition": "メッセージ条件",
+      "removeCondition": "条件を削除",
+      "note": "キーワードは大文字・小文字やアクセントを区別しません（例：\"Tư vấn\" と \"tu van\" は同じとみなされます）。",
+      "keywordPlaceholder": "+ キーワード",
+      "regexPlaceholder": "+ 正規表現",
+      "errors": {
+        "keywordConditionValuesRequired": "キーワードを1つ以上追加してください。",
+        "keywordConditionTakesNoValues": "この条件にキーワードは不要です。",
+        "invalidKeywordRegex": "正規表現が無効です。"
+      }
+    }
   },
   "triggers": {
     "title": "トリガー"
@@ -5407,6 +6291,7 @@
     "gemini": "Gemini",
     "claude": "Claude",
     "deepseek": "DeepSeek",
+    "muse": "Muse",
     "openrouter": "OpenRouter",
     "openaiCompatible": "OpenAI互換"
   },
@@ -5444,11 +6329,99 @@
   },
   "pollManager": {
     "title": "投票管理",
-    "description": "連絡先向けの投票を作成・管理します。"
+    "description": "投票や世論調査の仕組みを実施します。お客様の意見を集めるためにも使えます。",
+    "feature": "Poll",
+    "deleteDescription": "Deleting a poll also deletes its candidates and votes. This cannot be undone.",
+    "list": {
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "votes": "Votes",
+      "getLink": "Get Link"
+    },
+    "getLink": {
+      "title": "Get Link",
+      "description": "Share a link that opens a chat and starts the poll.",
+      "omnichannel": "Omnichannel",
+      "noInboxes": "No connected channels can open this poll yet.",
+      "loadError": "Could not load the links."
+    },
+    "form": {
+      "createTitle": "Create poll",
+      "editTitle": "Edit poll",
+      "votingPeriod": "Voting period",
+      "imageRequired": "An image is required.",
+      "dateRangeInvalid": "終了日は開始日より後にしてください。",
+      "candidatesTitle": "Candidates or Options",
+      "candidateNumber": "Candidate {number}",
+      "moreOptions": "More Options",
+      "afterVoteFlow": "Flow to be sent after the user votes",
+      "afterVoteFlowNone": "None",
+      "removeVotesTitle": "Remove candidates?",
+      "removeVotesDescription": "Deleting candidates also deletes their votes."
+    },
+    "analytics": {
+      "title": "Analytics",
+      "results": "Results",
+      "votesPerGender": "Votes per gender",
+      "totalVotes": "Total votes",
+      "noVotes": "No votes yet",
+      "other": "Other",
+      "male": "Male",
+      "female": "Female",
+      "unknown": "Unknown",
+      "loadError": "Could not load the analytics.",
+      "columns": {
+        "name": "Name",
+        "totalVotes": "Total votes",
+        "totalPercent": "T%",
+        "maleVotes": "Male votes",
+        "malePercent": "M%",
+        "femaleVotes": "Female votes",
+        "femalePercent": "F%"
+      }
+    }
   },
   "placesNearMe": {
     "title": "近くの場所",
-    "description": "連絡先の近くにある場所を検索します。"
+    "description": "お客様が近くのお店や拠点を簡単に見つけられるようにします。",
+    "tabs": {
+      "locations": "ロケーション",
+      "categories": "カテゴリ"
+    },
+    "categories": {
+      "columns": {
+        "locations": "場所"
+      },
+      "add": "カテゴリを追加",
+      "edit": "カテゴリを編集",
+      "empty": "カテゴリはまだありません。",
+      "created": "カテゴリを追加しました",
+      "updated": "カテゴリを更新しました",
+      "deleted": "カテゴリを削除しました",
+      "saveError": "カテゴリを保存できませんでした",
+      "deleteError": "カテゴリを削除できませんでした",
+      "deleteTitle": "{name}を削除しますか?",
+      "deleteDescription": "{count, plural, =0 {この分類を使用している場所はありません。} one {# 件の場所が未分類になります。} other {# 件の場所が未分類になります。}}"
+    },
+    "locations": {
+      "columns": {
+        "coordinates": "座標"
+      },
+      "preview": "プレビュー",
+      "add": "場所を追加",
+      "edit": "場所を編集",
+      "empty": "場所がまだありません。",
+      "created": "場所を追加しました",
+      "updated": "場所を更新しました",
+      "deleted": "場所を削除しました",
+      "saveError": "場所を保存できませんでした",
+      "deleteError": "場所を削除できませんでした",
+      "deleteTitle": "{name}を削除しますか？",
+      "deleteDescription": "この場所は完全に削除されます。",
+      "noCategory": "カテゴリなし",
+      "latitude": "緯度",
+      "longitude": "経度"
+    }
   },
   "questionnaires": {
     "title": "アンケート",
@@ -6086,6 +7059,9 @@
   "templates": {
     "title": "テンプレート",
     "description": "テンプレートを作成・管理します。",
+    "createDialog": {
+      "title": "新しいテンプレート"
+    },
     "share": {
       "label": "共有",
       "enabled": "共有中",
@@ -6094,14 +7070,135 @@
       "dialogDescription": "このリンクを持つ人は誰でも、あなたのテナント内のワークスペースにこのテンプレートのコピーをインストールできます。",
       "enableLabel": "共有リンクを有効にする",
       "linkLabel": "共有リンク",
-      "description": "リンクを持つ人は誰でも、このテンプレートを自分のワークスペースにインストールできます。"
+      "rotateLabel": "リンクを再発行",
+      "rotateTitle": "共有リンクを再発行しますか?",
+      "rotateDescription": "現在のリンクはすぐに使えなくなります。このテンプレートをまだインストールする必要がある人には、新しいリンクが必要です。",
+      "rotated": "共有リンクを再発行しました",
+      "expiryLabel": "リンクの有効期限",
+      "expiryHint": "有効期限なしにする場合は空欄のままにしてください。",
+      "clearExpiry": "有効期限を解除",
+      "expiredNotice": "このリンクは有効期限が切れています。再度共有するには、より後の日付を設定するか、有効期限を解除してください。",
+      "templateId": "テンプレートID",
+      "templateKey": "テンプレートキー",
+      "showKey": "キーを表示",
+      "hideKey": "キーを隠す",
+      "copyField": "{field}をコピー"
+    },
+    "sync": {
+      "title": "アップデート",
+      "updateAvailable": "アップデートあり",
+      "upToDate": "最新の状態",
+      "sourceDeleted": "テンプレートは削除されました",
+      "sourceDeletedHint": "発行者がこのテンプレートを削除しました。コピーは引き続き動作しますが、今後は更新できません。",
+      "updateNow": "今すぐ更新",
+      "updating": "更新中…",
+      "version": "テンプレートのバージョン {version}",
+      "lastSynced": "最終更新 {date}",
+      "autoUpdateLabel": "テンプレートが変更されたら自動的に更新",
+      "noHistory": "更新履歴はまだありません。",
+      "countAdded": "{count} 件追加",
+      "countUpdated": "{count} 件更新",
+      "countDetached": "{count} 件はテンプレートに追従しなくなりました",
+      "notUpdatable": "{count} 件はまだ更新できません",
+      "overwritten": "{name} は編集されていましたが、更新で置き換えられました",
+      "restore": "自分のバージョンを復元",
+      "restored": "自分のバージョンを復元しました",
+      "status": {
+        "pending": "待機中",
+        "running": "実行中",
+        "completed": "完了",
+        "partial": "一部成功",
+        "failed": "失敗",
+        "skipped": "スキップ",
+        "cancelled": "キャンセル済み"
+      },
+      "trigger": {
+        "autoUpdate": "自動",
+        "manual": "手動",
+        "reinstall": "再インストール"
+      },
+      "requestedVersion": "要求 v{version}",
+      "errors": {
+        "unknown": "更新に失敗しました。もう一度お試しいただくか、失敗が続く場合はサポートにお問い合わせください。",
+        "templateSyncFailed": "更新に失敗しました。もう一度お試しください。",
+        "templateSyncSuperseded": "より新しい更新がこの更新に置き換わりました。",
+        "templateSyncAbandoned": "更新が時間内に完了せず、終了しました。",
+        "templateInstallationInactive": "このインストールは現在有効ではありません。",
+        "workspaceOwnerBlocked": "ワークスペースオーナーのアカウントがブロックされています。",
+        "templateUninstallInProgress": "テンプレートをアンインストールしています。",
+        "templateAutoUpdateOff": "自動更新はオフになっています。",
+        "templateUpToDate": "このコピーはすでに最新です。",
+        "templateInstallerAccessLost": "インストールした人に、このコピーを更新する権限がなくなりました。",
+        "templateInstallationSourceMissing": "更新が実行される前にテンプレートが削除されました。",
+        "templateCategoryPermissionDenied": "このテンプレートのすべてを更新する権限がなくなりました。",
+        "templatePayloadIncompatible": "このテンプレートは、このサーバーがインストールできるより新しい形式で保存されています。",
+        "templateCrossTenantInstall": "このテンプレートはあなたのワークスペースでは利用できません。",
+        "templateInvalidInboxBinding": "選択した受信箱がテンプレートと一致しません。"
+      }
+    },
+    "versions": {
+      "detailsTab": "詳細",
+      "tab": "バージョン",
+      "versionNumber": "バージョン {version}",
+      "current": "現在",
+      "first": "最初のバージョン",
+      "noDetail": "このバージョンの詳細は記録されていません。",
+      "added": "追加",
+      "changed": "変更",
+      "removed": "削除"
+    },
+    "installers": {
+      "title": "分析を表示",
+      "workspace": "ワークスペース",
+      "lastInstalled": "最終インストール",
+      "version": "バージョン",
+      "autoUpdate": "自動更新",
+      "uninstalled": "アンインストール済み",
+      "hidden": "ワークスペースは非公開",
+      "uninstallNotAllowed": "インストールした側が、この複製をパブリッシャーがアンインストールすることを許可していません。",
+      "loadError": "インストール元を読み込めませんでした。もう一度お試しください。",
+      "automatic": "自動",
+      "details": "詳細",
+      "noIssues": "警告やエラーはありません。"
     },
     "installs": {
       "title": "インストール",
       "resources": "リソース",
       "warnings": "警告",
       "completedAt": "完了日時",
-      "autoUpdate": "自動更新"
+      "autoUpdate": "自動更新",
+      "installedBy": "インストールした人",
+      "viaApi": "APIトークン",
+      "attempts": "試行回数",
+      "autoUpdateOn": "オン",
+      "autoUpdateOff": "オフ",
+      "retry": "インストールを再試行",
+      "resourcesTitle": "インストールされたリソース",
+      "noResources": "まだ何も作成されていません。",
+      "deletedResource": "削除されたリソース",
+      "viewOnly": "閲覧のみ",
+      "created": "作成",
+      "reused": "再利用",
+      "loadMore": "さらに読み込む",
+      "statusFilter": "ステータス",
+      "allStatuses": "すべてのステータス",
+      "errors": {
+        "unknown": "インストールに失敗しました。もう一度お試しください。繰り返し失敗する場合はサポートにお問い合わせください。",
+        "templatePayloadIncompatible": "このテンプレートは、このサーバーがインストールできるより新しい形式で保存されています。",
+        "templateInstallationSourceMissing": "インストールが実行される前にテンプレートが削除されました。",
+        "templateCrossTenantInstall": "このテンプレートはあなたのワークスペースでは利用できません。",
+        "templateCategoryPermissionDenied": "このテンプレートのすべてをインストールする権限がなくなりました。",
+        "templateInvalidInboxBinding": "選択した受信箱がテンプレートと一致しません。",
+        "templateInstallEnqueueFailed": "インストールをキューに追加できませんでした。",
+        "templateInstallFailed": "インストールに失敗しました。もう一度お試しください。",
+        "templateInstallAbandoned": "インストールが時間内に完了せず、終了されました。",
+        "templateInstallSuperseded": "このテンプレートの新しいインストールに置き換えられました。",
+        "workspaceOwnerBlocked": "ワークスペースオーナーのアカウントがブロックされています。"
+      },
+      "uninstalledBy": "{by, select, publisher {パブリッシャーがこのテンプレートをアンインストールしました。} installer {このテンプレートはこのワークスペースからアンインストールされました。} other {このテンプレートはアンインストールされました。}}",
+      "uninstalledSummary": "{deleted} 件削除、{kept} 件保持。",
+      "lastAttemptAt": "最新の試行",
+      "installedAutomatically": "自動インストール済み（ホワイトラベルのデフォルト）"
     },
     "form": {
       "contents": "テンプレートの内容",
@@ -6114,14 +7211,26 @@
       "allowDelete": "インストール後の削除を許可",
       "publisherName": "公開者名",
       "youtubeVideoId": "YouTube動画ID",
-      "youtubeVideoIdDescription": "動画URLに含まれる11文字のID（例: youtube.com/watch?v=dQw4w9WgXcQ の \"dQw4w9WgXcQ\"）",
+      "youtubeVideoIdDescription": "動画URLに含まれる11文字のID（例: youtube.com/watch?v=xxxxxxxxxxx の \"xxxxxxxxxxx\"）",
       "testLink": "テストリンク",
       "imageUrl": "カバー画像",
       "installBehavior": "インストール時の動作",
-      "createInstallFolder": "専用フォルダーにインストールする",
+      "createInstallFolder": "インストール先のアカウントにフォルダを作成し、リソースをインストールします。",
       "createInstallFolderDescription": "インストールされたすべてのリソースを、このテンプレートの名前を付けた新しい1つのフォルダーにまとめます。",
-      "defaultAutoUpdate": "インストールをデフォルトで更新対象としてマークする",
-      "defaultAutoUpdateDescription": "このテンプレートを再公開するたびに、新規インストールに更新通知が表示されます。"
+      "defaultAutoUpdate": "インストール済みテンプレートを自動更新",
+      "defaultAutoUpdateDescription": "変更を加えてこのテンプレートを保存するたびに、自動更新に設定されているインストールは新しい内容で上書きされます(インストールした人が編集したコピーは先にバックアップされます)。インストールした人はオフにできます。",
+      "viewOnly": "閲覧のみ",
+      "viewOnlyAll": "選択した項目をすべて閲覧のみにする",
+      "includedAutomatically": {
+        "title": "自動的に含まれるもの",
+        "hint": "選択した項目が必要とするため、一緒に取り込まれます。読み取り専用です。",
+        "rows": "{count, plural, one {他 # 件} other {他 # 件}}",
+        "kind": {
+          "folders": "フォルダー",
+          "placeCategories": "場所カテゴリ"
+        }
+      },
+      "viewOnlyCopyIncluded": "選択した項目（またはそれが必要とする項目）は閲覧専用テンプレートからインストールされたため、新しいテンプレートで共有できません。"
     },
     "categories": {
       "flows": "フロー",
@@ -6136,8 +7245,116 @@
       "keywords": "キーワード",
       "entryPointLinks": "エントリーポイントリンク",
       "triggers": "トリガー",
-      "fbCommentAutomations": "Facebookコメント自動化",
-      "settings": "設定"
+      "fbCommentAutomations": "コメント自動化",
+      "settings": "ボットフィールドと保存済み返信",
+      "sequences": "シーケンス",
+      "aiMcpServers": "MCPサーバー",
+      "aiFiles": "AIナレッジファイル",
+      "questionnaires": "アンケート",
+      "couponTopics": "クーポントピック",
+      "pipelines": "パイプライン"
+    },
+    "locked": {
+      "flowBanner": "このフローは閲覧専用のテンプレートからインストールされました。表示はできますが編集はできません。",
+      "badge": "閲覧専用",
+      "editorBanner": "これは閲覧専用のテンプレートからインストールされました。表示はできますが編集はできません。",
+      "badgeHint": "閲覧専用テンプレートからインストールされました"
+    },
+    "channels": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "instagramFacebook": "Instagram（Facebookログイン）",
+      "threads": "Threads",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "zalo": "Zalo",
+      "webchat": "Webchat",
+      "line": "LINE",
+      "email": "メール"
+    },
+    "uninstall": {
+      "title": "テンプレートをアンインストール",
+      "description": "テンプレートは、このワークスペースで作成したものをすべて削除します。編集されたコピーも含まれます。共有タグ、フィールド、フォルダー、以前から存在していた項目、コピーの上に作成したものは保持されます。",
+      "loading": "処理内容を確認中…",
+      "previewFailed": "アンインストールの内容を確認できませんでした。",
+      "failed": "テンプレートをアンインストールできませんでした。",
+      "confirm": "アンインストール",
+      "action": "アンインストール",
+      "deleted": "{count, plural, one {# 件が削除されます} other {# 件が削除されます}}",
+      "deletedDone": "{count, plural, one {# 件が削除されました} other {# 件が削除されました}}",
+      "keptModified": "{count, plural, one {編集済みまたは未確認のコピー # 件は保持されます} other {編集済みまたは未確認のコピー # 件は保持されます}}",
+      "keptShared": "{count, plural, one {共有タグまたはフィールド # 件は保持されます} other {共有タグおよびフィールド # 件は保持されます}}",
+      "keptByPolicy": "{count, plural, one {その他の項目 # 件は保持されます} other {その他の項目 # 件は保持されます}}",
+      "keptHasDependents": "{count, plural, one {まだ使用されているため、コピー # 件は保持されます} other {まだ使用されているため、コピー # 件は保持されます}}",
+      "deletedModified": "{count, plural, one {そのうち # 件はあなたが編集したもので、編集内容は失われ復元できません} other {そのうち # 件はあなたが編集したもので、編集内容は失われ復元できません}}",
+      "keptLockedByOther": "{count, plural, one {別のテンプレートのインストールがまだ保護しているため、# 件は保持されます} other {別のテンプレートのインストールがまだ保護しているため、# 件は保持されます}}",
+      "confirmCheckbox": "上記の項目が削除され、元に戻せないことを理解しました",
+      "started": "アンインストールを開始しました",
+      "inProgress": "アンインストール中…",
+      "retry": "アンインストールを再試行",
+      "state": {
+        "pending": "アンインストール待機中",
+        "running": "アンインストール中…",
+        "partial": "アンインストールが未完了です。再試行してください",
+        "failed": "アンインストールに失敗しました。再試行してください",
+        "skipped": "アンインストールをスキップしました: ワークスペースがブロックされています"
+      },
+      "deletedUnverified": "{count, plural, one {そのうち # 件は編集の有無を確認できません。変更していた場合、その変更は失われます} other {そのうち # 件は編集の有無を確認できません。変更していた場合、その変更は失われます}}",
+      "cancelAction": "アンインストールをキャンセル",
+      "cancelled": "アンインストールをキャンセルしました: 残りの項目は再び使用できます",
+      "blockedByReference": "{count, plural, one {あなたが作成したものがまだ参照しているため、# 件は削除されませんでした。その参照を削除してから、アンインストールを再試行してください} other {あなたが作成したものがまだ参照しているため、# 件は削除されませんでした。それらの参照を削除してから、アンインストールを再試行してください}}",
+      "keptPartlyRemoved": "{count, plural, one {アンインストールがブロックされた後、コピー # 件が保持されました。履歴や重複防止データが削除された可能性があるため、オンにする前に確認してください} other {アンインストールがブロックされた後、コピー # 件が保持されました。履歴や重複防止データが削除された可能性があるため、オンにする前に確認してください}}",
+      "keptInactiveForReview": "{count, plural, one {コピー # 件は無効のままになっています。履歴と重複防止データが削除されたため、オンにする前に確認してください} other {コピー # 件は無効のままになっています。履歴と重複防止データが削除されたため、オンにする前に確認してください}}",
+      "keptHistoryRemoved": "{count, plural, one {コピー # 件は保持されましたが、履歴が削除されました(オンにするものはありません)。利用する前に確認してください} other {コピー # 件は保持されましたが、履歴が削除されました(オンにするものはありません)。利用する前に確認してください}}",
+      "cancelledPartial": "{count, plural, one {# 件はすでに削除処理中で、完了します。残りは元に戻されました} other {# 件はすでに削除処理中で、完了します。残りは元に戻されました}}"
+    },
+    "warningCodes": {
+      "aiFileTooLarge": "このナレッジファイルはテンプレートのインストールでコピーできるサイズを超えているため、スキップされました。",
+      "aiFileUnavailable": "このナレッジファイルをコピーできなかったため、スキップされました。",
+      "assigneeRequired": "このステップで会話を割り当てる相手を選択してください。",
+      "ambiguousSourceFieldToken": "複数のソースフィールドが同じ名前のため、それを使用する変数は変更されませんでした。",
+      "backupTooLarge": "ローカルで編集された項目がバックアップするには大きすぎたため、上書きされませんでした。",
+      "backupUnavailable": "この項目のバックアップは利用できなくなりました。",
+      "botFieldRenamed": "同じ名前で別のタイプのボットフィールドがすでに存在するため、名前を変更したフィールドが作成されました。",
+      "categoryPermissionDenied": "このカテゴリへの権限がないため、スキップされました。",
+      "couponTopicExpired": "このクーポントピックはすでに期限切れです。",
+      "credentialRequired": "この項目を使用する前に、認証情報を追加してください。",
+      "custom": "参照された項目がこのワークスペースに見つからなかったため、リンクを削除しました。",
+      "customField": "参照された項目がこのワークスペースに見つからなかったため、リンクを削除しました。",
+      "customFieldRenamed": "同じ名前で別のタイプのフィールドがすでに存在するため、名前を変更したフィールドを作成しました。",
+      "enqueueFailed": "この項目のバックグラウンド処理をキューに追加できませんでした。",
+      "flow": "参照された項目がこのワークスペースに見つからなかったため、リンクを削除しました。",
+      "flowInvalidStructure": "Flow の構造が無効なため、スキップされました。",
+      "flowNotPublished": "Flow は下書きとしてインストールされ、公開されていません。",
+      "flowSkippedRequiredReference": "必要な参照を解決できなかったため、Flow はスキップされました。",
+      "folder": "参照された項目がこのワークスペースに見つからなかったため、リンクを削除しました。",
+      "inboxBindingRequired": "このチャネルの受信トレイを選択してください。それまでこの項目は無効のままです。",
+      "integration": "参照された項目がこのワークスペースに見つからなかったため、リンクを削除しました。",
+      "localModifiedOverwritten": "ローカルで編集された項目が上書きされました。バックアップが保存されており、復元できます。",
+      "name": "この項目に使用できる名前が見つからなかったため、スキップされました。",
+      "noEmbeddingProvider": "このワークスペースには埋め込みプロバイダーが設定されていないため、ナレッジファイルはスキップされました。OpenAI または Gemini を接続してから再インストールしてください。",
+      "notUpdatable": "この種類の項目はまだ自動更新されません。",
+      "pipeline": "存在しなくなったパイプラインを使用しています。",
+      "pipelineField": "存在しなくなったパイプラインフィールドを使用しています。",
+      "pipelineStage": "存在しなくなったパイプラインステージを使用しています。",
+      "postSelectionRequired": "投稿を選択し直してください。元の投稿を引き継げませんでした。",
+      "product": "参照された項目がこのワークスペースに見つからなかったため、リンクを削除しました。",
+      "productCategory": "参照された項目がこのワークスペースに見つからなかったため、リンクを削除しました。",
+      "questionImage": "画像をコピーできませんでした。",
+      "quota": "プランの上限に達したため、この項目はスキップされました。",
+      "referenceRemoved": "解決できない参照が削除されました。",
+      "savedReply": "参照された項目がこのワークスペースに見つからなかったため、リンクを削除しました。",
+      "savedReplyImage": "画像をコピーできませんでした。",
+      "tag": "参照された項目がこのワークスペースに見つからなかったため、リンクを削除しました。",
+      "unlisted": "項目を完全には取り込めませんでした: {code}",
+      "workspaceMember": "このワークスペースにいないメンバーに割り当てられています。",
+      "workspaceUnavailable": "このワークスペースは利用できなくなったため、この項目はスキップされました。"
+    },
+    "tabs": {
+      "mine": "マイテンプレート",
+      "installed": "インストール済み",
+      "installedEmpty": "インストール済みのテンプレートはまだありません。他のワークスペースからインストールしたテンプレートがここに表示されます。"
     }
   },
   "qrCodeGenerator": {
@@ -6167,7 +7384,31 @@
       "supportOff": "オフ",
       "searchPlaceholder": "名前、オーナーのメール、IDで検索",
       "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
-      "supportAccessible": "Accessible"
+      "supportAccessible": "Accessible",
+      "periodStart": "Period start",
+      "periodEnd": "Period end",
+      "requestedBy": "Requested by",
+      "workspaceId": "Workspace ID",
+      "language": "Language",
+      "planSnapshot": "Plan at deletion",
+      "ownerQuota": "Owner quota",
+      "usagePeriods": "Usage periods",
+      "deletedTitle": "Deleted workspaces",
+      "deletedDescription": "Purge evidence for deleted workspaces.",
+      "purgedAt": "Purged at",
+      "deletionRequestedAt": "Deletion requested at",
+      "scheduledDeletionAt": "Scheduled deletion at",
+      "evidence": "Evidence",
+      "usage": "Usage snapshot",
+      "members": "Members",
+      "notAvailable": "Not available",
+      "createButton": "Create workspace",
+      "createTitle": "Create workspace for an owner",
+      "createDescription": "Creates a workspace for the owner's email, adding any member emails you list. A new email gets a mailed temporary password.",
+      "ownerEmail": "Owner email",
+      "memberEmails": "Member emails",
+      "membersHint": "Every member gets the permissions selected below. New emails get a mailed temporary password.",
+      "createdSummary": "Workspace created for {ownerEmail} — {memberCount} member(s) added, {newAccountCount} new account(s) emailed a temporary password."
     },
     "admins": {
       "title": "Platform administrators",
@@ -6177,12 +7418,29 @@
       "addButton": "Add administrator",
       "role": "Role",
       "bootstrap": "Environment bootstrap administrator",
+      "roles": {
+        "superAdmin": "Super admin",
+        "support": "Support"
+      },
       "remove": "Remove administrator",
       "empty": "No platform administrators are configured.",
       "added": "Platform administrator added.",
       "removed": "Platform administrator removed.",
       "addError": "Could not add the platform administrator.",
       "removeError": "Could not remove the platform administrator."
+    },
+    "auditLogs": {
+      "title": "プラットフォーム監査ログ",
+      "description": "このプラットフォーム上のすべてのワークスペースにわたる監査アクティビティ。"
+    },
+    "smtp": {
+      "title": "SMTP設定",
+      "description": "プラットフォームのメール送信方式です。SMTP_SERVERおよびSMTP_FROM環境変数を引き続き使用する場合は空のままにしてください。",
+      "usingEnv": "SMTP設定は保存されていません。プラットフォームのメールはSMTP_SERVER環境変数を使用します。",
+      "remove": "SMTP設定を削除",
+      "errors": {
+        "passwordRequired": "SMTPパスワードを入力してください。"
+      }
     }
   },
   "platformCredentials": {
@@ -6218,6 +7476,23 @@
     "description": "チェックを入れると、このテナントのワークスペースはそのチャネルを作成できなくなります。",
     "hint": "すべてのチャネルを許可するには、どのチャネルにもチェックを入れないでください。",
     "hiddenByPlatform": "プラットフォーム管理者によって非表示にされています。このチャネルを再度有効にすることはできません。"
+  },
+  "platformDefaultTemplate": {
+    "title": "デフォルトテンプレート",
+    "description": "このホワイトラベルで作成されるすべての新しいワークスペースにこのテンプレートをインストールします。既存のワークスペースは変更されません。",
+    "clearTitle": "デフォルトテンプレートを削除しますか？",
+    "clearDescription": "新しいワークスペースには自動でテンプレートが適用されなくなります。すでに適用済みのワークスペースはそのままです。",
+    "status": {
+      "notConfigured": "未設定",
+      "ready": "有効",
+      "templateUnavailable": "テンプレートを利用できません",
+      "shareDisabled": "共有リンクがオフ",
+      "keyRotated": "キーが無効です"
+    },
+    "errors": {
+      "unavailable": "テンプレートIDまたはキーが無効です。",
+      "shareDisabled": "先にテンプレートの共有リンクをオンにしてください。"
+    }
   },
   "platformEmailTemplates": {
     "title": "メールテンプレート",
@@ -6261,6 +7536,7 @@
     }
   },
   "manageSidebar": {
+    "administrationGroup": "管理",
     "platformGroup": "プラットフォーム",
     "toolsGroup": "ツール",
     "saasGroup": "SaaS",
@@ -6301,14 +7577,39 @@
     "invalidTitle": "このリンクはご利用いただけません。",
     "invalidDescription": "このテンプレート共有リンクは無効、無効化済み、または期限切れです。",
     "byPublisher": "{publisherName}による",
-    "includes": "このテンプレートに含まれるもの",
     "videoTitle": "テンプレートのプレビュー動画",
-    "tryItOut": "試してみる",
-    "signInToInstall": "サインインしてインストール",
+    "preview": "プレビュー",
+    "aboutTemplate": "このテンプレートについて",
     "selectWorkspace": "ワークスペースを選択",
     "install": "インストール",
     "installStarted": "インストールを開始しました",
-    "noEligibleWorkspaces": "このテンプレートをインストールできるワークスペースがありません。"
+    "noEligibleWorkspaces": "このテンプレートをインストールできるワークスペースがありません。",
+    "alreadyInstalled": "このテンプレートはすでにこのワークスペースにインストールされています。",
+    "viewInstall": "インストールを表示",
+    "installAnotherCopy": "別のコピーをインストール",
+    "inboxesTitle": "受信箱",
+    "inboxesHint": "このテンプレートはこれらの受信箱を前提に作られています。使用する自分の受信箱を選んでください。選択しなかったものはオフの状態でインストールされます。",
+    "noInbox": "接続しない — オフの状態でインストール",
+    "noInboxAvailable": "このチャネルに接続済みの受信箱はありません",
+    "updateExisting": "インストール済みのコピーを更新",
+    "updateStarted": "更新を開始しました",
+    "autoUpdateLabel": "テンプレートが変更されたら自動的に更新",
+    "collisions": {
+      "title": "このインストールで行われること",
+      "loading": "このワークスペースを確認中…",
+      "action": {
+        "create": "作成",
+        "reuse": "再利用",
+        "rename": "名前変更",
+        "bind": "接続",
+        "unbound": "未接続のまま"
+      },
+      "detail": {
+        "rename": "「{name}」は別のタイプですでに存在するため、テンプレートのものは新しい名前で追加されます。",
+        "unbound": "受信箱を選ぶまで、「{name}」は未接続のままです。"
+      }
+    },
+    "createWorkspace": "新しいワークスペースを作成"
   },
   "extensionsMe": {
     "actions": {
@@ -6337,7 +7638,144 @@
     "unknown": "不明"
   },
   "orders": {
-    "title": "注文"
+    "title": "注文",
+    "empty": "注文はまだありません。",
+    "searchPlaceholder": "名前、電話番号、メールアドレス、注文番号で検索",
+    "orderNumber": "注文 #{number}",
+    "print": "印刷",
+    "inbox": "受信トレイ",
+    "statusUpdated": "注文ステータスを更新しました",
+    "statusUpdateError": "注文ステータスを更新できませんでした",
+    "updateStatusTitle": "注文ステータスを更新",
+    "message": "メッセージ",
+    "messagePlaceholder": "任意",
+    "messageDescription": "お客様の会話に送信されます。",
+    "cancel": "キャンセル",
+    "continue": "続行",
+    "delete": "削除",
+    "deleted": "注文を削除しました",
+    "deleteError": "注文を削除できませんでした",
+    "deleteTitle": "注文 #{number} を削除しますか？",
+    "deleteDescription": "注文、その商品、履歴が削除されます。確保されている在庫は元に戻されます。",
+    "columns": {
+      "name": "名前",
+      "total": "合計",
+      "status": "ステータス",
+      "date": "日付",
+      "rating": "評価",
+      "quantity": "数量",
+      "price": "価格",
+      "vendor": "ベンダー",
+      "orderStatus": "注文ステータス",
+      "payment": "支払い"
+    },
+    "fields": {
+      "name": "名前",
+      "email": "メールアドレス",
+      "phone": "電話番号",
+      "country": "国",
+      "state": "都道府県",
+      "city": "市区町村",
+      "street": "番地",
+      "zip": "郵便番号",
+      "shippingType": "配送",
+      "orderId": "注文ID",
+      "date": "日付",
+      "subtotal": "小計",
+      "discount": "割引",
+      "deliveryCost": "配送料",
+      "otherTaxes": "その他の税",
+      "total": "合計",
+      "paymentMethod": "支払い方法",
+      "status": "ステータス",
+      "note": "メモ",
+      "cancelReason": "キャンセル理由",
+      "rating": "評価",
+      "ratingComment": "お客様のコメント",
+      "coupon": "クーポン（{code}）",
+      "paymentStatus": "支払いステータス",
+      "payments": "オンライン決済"
+    },
+    "statuses": {
+      "pending": "未処理",
+      "accepted": "承認済み",
+      "shipped": "発送済み",
+      "concluded": "完了",
+      "cancelled": "キャンセル済み"
+    },
+    "transitions": {
+      "accepted": "承認",
+      "shipped": "発送",
+      "concluded": "完了にする",
+      "cancelled": "キャンセル"
+    },
+    "paymentMethods": {
+      "cod": "代金引換",
+      "stripe": "カード",
+      "paypal": "PayPal"
+    },
+    "shippingTypes": {
+      "delivery": "お客様へ配送",
+      "pickup": "店舗で受け取り"
+    },
+    "description": "顧客からの注文。",
+    "ratingValue": "{rating}/5 ★",
+    "paymentStatuses": {
+      "unpaid": "未払い",
+      "paid": "支払い済み",
+      "refunded": "返金済み"
+    },
+    "attemptStatuses": {
+      "open": "待機中",
+      "paid": "支払い済み",
+      "expired": "期限切れ",
+      "refunded": "返金済み"
+    },
+    "testPayment": "テスト",
+    "awaitingPaymentHint": "お客様のオンライン決済を待っています。支払い完了後に注文を承認できます。",
+    "refundWarning": "{amount} がお客様に返金されます。",
+    "paymentStates": {
+      "paid": "支払い済み",
+      "refunded": "返金済み",
+      "awaitingPayment": "支払い待ち",
+      "payOnDelivery": "代金引換",
+      "notPaid": "未払い"
+    },
+    "paymentUntil": "{time} まで",
+    "paymentExpiredCancelReason": "期限内に支払いが確認できませんでした。",
+    "exportTruncated": "エクスポートは最初の {count} 件の注文に制限されました",
+    "exportError": "注文をエクスポートできませんでした",
+    "shopify": {
+      "syncOrders": "注文を同期",
+      "orderColumn": "注文",
+      "customerColumn": "お客様",
+      "paymentPending": "保留中",
+      "paymentFilter": "支払い",
+      "paymentFilterAll": "支払い：すべて",
+      "fulfillmentFilter": "フルフィルメント",
+      "fulfillmentFilterAll": "フルフィルメント：すべて",
+      "fulfillmentStatuses": {
+        "fulfilled": "発送済み",
+        "unfulfilled": "未発送",
+        "partial": "一部発送"
+      },
+      "viewDetails": "詳細を表示",
+      "viewOnStore": "{store} で表示",
+      "detailsTitle": "注文 {name}",
+      "placedOn": "{store} ストアで注文 • {date}",
+      "customerDetails": "お客様の詳細",
+      "shippingAddress": "配送先住所",
+      "noShippingAddress": "配送先住所がありません",
+      "tracking": "追跡：{company} #{number}",
+      "lineItems": "注文商品",
+      "itemColumn": "商品",
+      "skuColumn": "SKU",
+      "shipping": "配送",
+      "free": "無料",
+      "loading": "読み込み中...",
+      "loadError": "注文の詳細を読み込めませんでした",
+      "close": "閉じる"
+    }
   },
   "products": {
     "title": "商品",
@@ -6394,7 +7832,8 @@
         "label": "在庫切れでもこの商品を購入できるようにする"
       },
       "vendor": {
-        "label": "販売元"
+        "label": "販売元",
+        "none": "なし"
       },
       "rank": {
         "label": "表示順位"
@@ -6446,17 +7885,67 @@
       "variantsDescription": "サイズや色など、この商品に複数の種類がある場合はバリエーションを追加します",
       "metaCatalogId": {
         "label": "MetaカタログID"
+      },
+      "status": {
+        "label": "ステータス",
+        "values": {
+          "active": "販売中",
+          "draft": "下書き",
+          "unlisted": "非公開"
+        }
       }
     },
     "inventoryPolicy": {
       "dont_track": "在庫を追跡しない",
       "track": "在庫を追跡する"
+    },
+    "shopify": {
+      "openStore": "{store} を開く",
+      "syncProducts": "商品を同期",
+      "syncStarted": "同期を開始しました",
+      "syncError": "同期を開始できませんでした",
+      "viewDetails": "詳細を表示",
+      "editOnStore": "{store} で編集",
+      "copyProductLink": "商品リンクをコピー",
+      "linkCopied": "商品リンクをコピーしました",
+      "noProductLink": "この商品にはストアフロントのリンクがありません",
+      "inStock": "在庫 {count}",
+      "inStockWithVariants": "在庫 {count}（{variants} バリエーション）",
+      "detailsTitle": "商品の詳細 — {name}",
+      "detailsSubtitle": "{store} ストア {shop} から同期済み",
+      "summaryLine": "カテゴリ：{category} • 合計在庫：{variants, plural, one {# バリエーション} other {# バリエーション}}で {units} 個",
+      "uncategorized": "未分類",
+      "variantsTitle": "バリエーション（{count}）",
+      "variantColumn": "バリエーション",
+      "skuColumn": "SKU",
+      "priceColumn": "価格",
+      "inventoryColumn": "在庫",
+      "defaultVariant": "デフォルト",
+      "loading": "読み込み中...",
+      "loadError": "商品の詳細を読み込めませんでした",
+      "close": "閉じる"
     }
   },
   "tiktok": {
     "title": "TikTok",
     "description": "TikTokアカウントを接続してダイレクトメッセージに返信します。",
     "refreshToken": "更新トークン"
+  },
+  "contactAdReferrals": {
+    "title": "広告の履歴",
+    "empty": "このコンタクトの広告クリックはまだ記録されていません。"
+  },
+  "adsReferralStats": {
+    "title": "広告別のコンタクト",
+    "description": "各広告が獲得したコンタクトと、そのクリックに帰属するコンバージョン。トラッキング開始以降のクリックを集計します。",
+    "ad": "広告",
+    "contacts": "コンタクト",
+    "firstTouch": "初回接触",
+    "leads": "リード",
+    "purchases": "購入",
+    "revenue": "売上",
+    "empty": "この期間の広告クリックはありません。",
+    "timeout": "このレポートは時間がかかりすぎました。より短い期間を選択してください。"
   },
   "coupons": {
     "title": "クーポン",
@@ -6527,8 +8016,8 @@
     "loadError": "商品カテゴリーを読み込めませんでした。",
     "all": "すべての商品",
     "create": "カテゴリーを作成",
-    "edit": "カテゴリー名を変更",
-    "name": "カテゴリー名",
+    "edit": "編集",
+    "name": "名前",
     "namePlaceholder": "例：夏のコレクション",
     "parent": "親カテゴリー",
     "noParent": "なし（最上位）",
@@ -6548,12 +8037,25 @@
     "columns": {
       "name": "名前",
       "products": "商品",
-      "subcategories": "サブカテゴリー"
+      "subcategories": "サブカテゴリー",
+      "visible": "表示"
     },
     "expand": "サブカテゴリーを表示",
     "collapse": "サブカテゴリーを非表示",
     "productCount": "{count, plural, =0 {商品なし} one {#件の商品} other {#件の商品}}",
-    "deleteChildrenWarning": "{count, plural, one {#件のサブカテゴリーも削除されます。} other {#件のサブカテゴリーも削除されます。}}"
+    "deleteChildrenWarning": "{count, plural, one {#件のサブカテゴリーも削除されます。} other {#件のサブカテゴリーも削除されます。}}",
+    "add": "追加",
+    "dialogTitle": "カテゴリ",
+    "image": "画像",
+    "continue": "続行",
+    "subcategories": "サブカテゴリ",
+    "subcategoriesOf": "{name} のサブカテゴリ",
+    "emptySub": "サブカテゴリはまだありません。",
+    "back": "カテゴリに戻る",
+    "getId": "IDを取得",
+    "idCopied": "カテゴリID {id} をコピーしました",
+    "idCopyError": "IDをコピーできませんでした",
+    "description": "商品をカテゴリとサブカテゴリに分類します。"
   },
   "productImport": {
     "title": "インポート",
@@ -6758,6 +8260,7 @@
       "invalidTokenTitle": "この予約リンクはご利用いただけません。",
       "invalidTokenDescription": "リンクが無効か、有効期限が切れている可能性があります。新しい予約リンクをご請求ください。",
       "staleSlot": "この時間はすでに利用できません。別の時間を選択してください。",
+      "alreadyScheduled": "この連絡先には、このカレンダーのこの時間にすでに予約があります。別の時間を選択してください。",
       "availabilityChanged": "時間を選択している間に空き状況が変わりました。もう一度選択してください。",
       "submitFailed": "リクエストを完了できませんでした。もう一度お試しください。"
     },
@@ -6847,6 +8350,15 @@
     },
     "messages": {
       "empty": "まだ予約がありません。"
+    },
+    "actions": {
+      "create": "予約を作成"
+    },
+    "create": {
+      "title": "予約を作成",
+      "description": "この連絡先の予約に使うカレンダーと空き時間を選択してください。",
+      "noConversationHint": "開いている会話がないため、連絡先に確認メッセージは届きません。",
+      "success": "予約を作成しました。"
     }
   },
   "appointmentManagement": {
@@ -8093,7 +9605,9 @@
       "customer_service": "カスタマーサービス",
       "escalation": "エスカレーション",
       "marketing": "マーケティング",
-      "utility": "ユーティリティ"
+      "utility": "ユーティリティ",
+      "calls": "通話",
+      "other": "その他"
     },
     "pill": {
       "standby": "スタンバイ（{owner}）",
@@ -8103,14 +9617,18 @@
     "release": {
       "label": "解放",
       "tooltip": "他のアプリが返信できるようにこの会話を解放します",
-      "success": "会話を解放しました"
+      "success": "会話を解放しました",
+      "menu": "解放または引き継ぎ"
     },
     "pass": {
-      "menuItem": "エスカレーションへ渡す",
-      "title": "エスカレーションパートナーに渡しますか？",
-      "description": "この会話をエスカレーションパートナーに引き継ぎますか？会話が戻るまで、あなたの返信は一時停止されます。",
+      "menuItem": "パートナーに渡す",
+      "title": "パートナーに渡しますか?",
+      "description": "この会話を引き継ぐ相手を選択してください。会話が戻るまで、あなたの返信は一時停止されます。",
       "confirm": "渡す",
-      "success": "会話をエスカレーションパートナーに渡しました"
+      "success": "会話をエスカレーションパートナーに渡しました",
+      "targetLabel": "引き継ぎ先",
+      "noteLabel": "引き継ぎ先パートナーへのメモ",
+      "successTargeted": "会話を {role} に渡しました"
     },
     "aiHandover": {
       "label": "BizAI",
@@ -8129,7 +9647,10 @@
       "notEscalation": "引き継げるのはエスカレーションパートナーのみです。ルーティングはMeta Business Suiteで設定します。",
       "notPrimaryReceiver": "引き継ぐには、このアプリがページのプライマリ受信者である必要があります。ページのハンドオーバープロトコル設定で指定してください。",
       "learnMore": "詳しく見る",
-      "dismiss": "それでも送信"
+      "dismiss": "それでも送信",
+      "takeOverTitle": "この会話を引き継ぎますか?",
+      "takeOverDescription": "パートナーは対応を終了し、あなたが引き継ぎます。パートナーへのメモを残せます。",
+      "takeOverNoteLabel": "現在のパートナーへのメモ"
     },
     "divider": {
       "ownerHandling": "{owner}がこの会話に対応を開始しました",
@@ -8182,7 +9703,17 @@
       "adminOnly": "ルーティングを変更できるのはワークスペース管理者のみです",
       "flowNotFound": "選択したフローが見つからないか、有効ではありません",
       "integrationNotFound": "WhatsApp番号が見つかりません",
-      "messengerIntegrationNotFound": "Messengerページが見つかりません"
+      "messengerIntegrationNotFound": "Messengerページが見つかりません",
+      "rolesTitle": "この番号でのあなたのルーティングロール",
+      "rolesDescription": "ビジネスが Meta Business Suite で割り当てます。",
+      "rolesNone": "この番号ではルーティングロールが割り当てられていません。",
+      "rolesNeverChecked": "まだ確認していません。",
+      "rolesNotEnabled": "この番号では会話ルーティングが有効になっていません。",
+      "rolesStandbyOn": "スタンバイアクセス: オン（担当外の会話も表示できます）",
+      "rolesStandbyOff": "スタンバイアクセス: オフ",
+      "rolesCheckedAt": "確認 {time}",
+      "rolesRefresh": "再確認",
+      "rolesSyncFailed": "Meta からルーティングロールを取得できませんでした。もう一度お試しください。"
     },
     "errors": {
       "unsupported": "このチャネルでは会話ルーティングは利用できません",
@@ -8192,8 +9723,12 @@
     "step": {
       "action": "アクション",
       "release": "会話を解放",
-      "pass": "エスカレーションパートナーに渡す",
-      "helper": "WhatsApp のみ。他のチャネルや、会話がここで管理されていない場合、このステップはエラーパスに進みます。"
+      "pass": "パートナーに渡す",
+      "helper": "WhatsApp のみ。他のチャネルや、会話がここで管理されていない場合、このステップはエラーパスに進みます。",
+      "targetRole": "引き継ぎ先",
+      "targetRoleDefault": "エスカレーションパートナー(デフォルト)",
+      "metadata": "引き継ぎメモ",
+      "metadataHelper": "任意。会話を受け取るアプリにそのまま送信されます。変数を使用できます。最大 {max} 文字。"
     },
     "template": {
       "sent": "テンプレートを送信しました"
@@ -8527,7 +10062,7 @@
       "too_many_components": "1つの画面に配置できるコンポーネントは最大{max}個です。",
       "component_limit": "1つの画面に配置できる{type}は最大{max}個です。",
       "picker_conflict": "1つの画面に写真アップロードとドキュメントアップロードを同時に配置できません。",
-      "picker_multiple_in_complete": "{property}を1に設定してください。フロー完了時にWhatsAppが送信できるファイルは1つだけです。",
+      "picker_multiple_in_complete": "フロー完了時にWhatsAppが送信できるファイルは最大{max}個です。この画面に至るファイル入力の最大ファイル数を減らしてください。",
       "footer_not_last": "Footerは画面の最後のコンポーネントにしてください。",
       "footer_in_nested_branch": "Footerは第1階層のIf分岐の直下にのみ配置できます。",
       "footer_missing_in_branch": "一方の分岐にFooterがある場合、もう一方にも必要です。",
@@ -9033,6 +10568,720 @@
       "closed": "休業"
     }
   },
+  "productVendors": {
+    "title": "ベンダー",
+    "add": "追加",
+    "edit": "編集",
+    "delete": "削除",
+    "actions": "操作",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "moreOptions": "その他のオプション",
+    "empty": "ベンダーはまだありません。",
+    "created": "ベンダーを追加しました",
+    "updated": "ベンダーを更新しました",
+    "deleted": "ベンダーを削除しました",
+    "saveError": "ベンダーを保存できませんでした",
+    "deleteError": "ベンダーを削除できませんでした",
+    "deleteTitle": "{name} を削除しますか？",
+    "deleteDescription": "{count, plural, =0 {このベンダーを使用している商品はありません。} one {#件の商品がベンダーなしになります。} other {#件の商品がベンダーなしになります。}}",
+    "fields": {
+      "name": "名前",
+      "shortDescription": "簡単な説明",
+      "phone": "電話番号",
+      "storeAddress": "店舗の住所",
+      "image": "画像",
+      "optional": "任意",
+      "discountPercent": "割引（0〜100%）",
+      "minimumOrderValue": "最低注文金額",
+      "openHours": "営業時間",
+      "category": "カテゴリ",
+      "subcategory": "サブカテゴリ",
+      "none": "なし"
+    },
+    "columns": {
+      "name": "名前",
+      "products": "商品の合計数",
+      "active": "有効"
+    },
+    "description": "商品が属する販売者とブランド。"
+  },
+  "ecommerceSettings": {
+    "save": "保存",
+    "saved": "設定を保存しました",
+    "saveError": "設定を保存できませんでした",
+    "rank": {
+      "label": "ランク",
+      "default": "デフォルト"
+    },
+    "tabs": {
+      "general": "一般",
+      "payments": "支払い",
+      "shipping": "配送",
+      "checkout": "チェックアウト",
+      "shopify": "Shopify",
+      "woocommerce": "WooCommerce"
+    },
+    "general": {
+      "orderingAvailable": {
+        "label": "注文受付中",
+        "description": "営業時間を変更せずにお客様の注文を停止したい場合に使用します。営業時間も受付状況に影響します。"
+      },
+      "webshopProductView": {
+        "label": "Webショップの商品表示",
+        "description": "Webショップでの商品の表示方法を設定します。",
+        "options": {
+          "list": "リスト",
+          "listWithoutImage": "画像なしリスト",
+          "card": "カード",
+          "cardSquare": "正方形画像のカード",
+          "image": "画像",
+          "imageSquare": "画像（正方形）"
+        }
+      },
+      "openHours": {
+        "label": "営業時間",
+        "description": "お客様が注文できる時間帯です。"
+      },
+      "searchProducts": {
+        "label": "商品を検索",
+        "description": "お客様がメッセージを送って商品を探せるようにします。"
+      },
+      "facebookPixelId": {
+        "label": "Facebook Pixel",
+        "description": "Facebook Pixelでコンバージョンを追跡し、広告の成果を測定します。次のイベントを追跡します：ADD_TO_CART、INITIATE_CHECKOUT、PURCHASE、VIEW_CONTENT"
+      },
+      "abandonedCart": {
+        "label": "カート放棄メッセージ",
+        "description": "ユーザーがカートに商品を入れたままボットを離れてから、カート放棄メッセージを送信するまでの待ち時間です。",
+        "disabled": "無効",
+        "afterMinutes": "{count}分後",
+        "afterHours": "{count, plural, one {#時間後} other {#時間後}}"
+      },
+      "productButtons": {
+        "label": "商品のボタン",
+        "description": "ボットの商品に表示するボタンを設定します。",
+        "options": {
+          "addToCart": "カートに追加",
+          "share": "シェア",
+          "similar": "類似商品",
+          "save": "保存"
+        }
+      },
+      "productImageSize": {
+        "label": "商品の画像サイズ",
+        "description": "ボットの商品画像のサイズを設定します",
+        "options": {
+          "bigSquare": "大（正方形）",
+          "mediumRectangle": "中（長方形）"
+        }
+      },
+      "allowRateOrders": {
+        "label": "注文の評価を許可",
+        "description": "注文に満足できない場合、お客様が注文を評価してレビューを書けるようにします。レビューはボット管理者のみ閲覧できます"
+      },
+      "notifyOnCartStatusChange": {
+        "label": "カートのステータス変更時に通知を送信",
+        "description": "注文ステータスを変更するたびに、お客様に通知が届きます。注文のキャンセルと完了の通知は無効にできません。"
+      },
+      "abandonedCartFlow": {
+        "label": "カゴ落ちフロー",
+        "description": "カートがこの時間放置されたときにボットがお客様に実行するフロー。ボタンに'{{shop_token}}'を使うとカートを開けます。トリガーでも「Cart abandoned」イベントを使えます。",
+        "none": "フローなし（トリガーイベントのみ）"
+      },
+      "storeSource": {
+        "label": "ストアソース",
+        "description": "商品、在庫、注文の管理に使用するストアソースを選択します。Shopify / WooCommerce を選択すると、すべての商品と注文が Shopify / WooCommerce ストアから直接管理されます。",
+        "options": {
+          "chatbotx": "ChatbotX",
+          "shopify": "Shopify",
+          "woocommerce": "WooCommerce"
+        }
+      }
+    },
+    "payments": {
+      "currencyMismatch": "{count, plural, one {#件の商品が} other {#件の商品が}}{currency}以外の通貨で価格設定されています。注文では{currency}で価格が請求されます。",
+      "paymentMethods": {
+        "label": "支払い方法",
+        "description": "チェックアウトページで有効にする支払い方法です。リストの最初の支払い方法がチェックアウトページで選択されます。",
+        "options": {
+          "cod": "代金引換",
+          "stripe": "カード",
+          "paypal": "PayPal"
+        },
+        "connectHint": "{provider} を利用するには、<link>設定 → 連携</link> で接続してください。"
+      },
+      "currency": {
+        "label": "通貨",
+        "description": "商品の価格を設定する通貨です。お客様にはこの通貨で請求されます。"
+      },
+      "currencyPosition": {
+        "label": "通貨の位置",
+        "description": "通貨の表示位置を設定します。",
+        "options": {
+          "left": "左",
+          "leftSpace": "左（スペースあり）",
+          "right": "右",
+          "rightSpace": "右（スペースあり）"
+        }
+      },
+      "currencySymbol": {
+        "label": "通貨記号",
+        "description": "通貨記号は価格の前に表示されます。記号と価格の間にスペースを入れたい場合は、記号の末尾にスペースを追加してください。"
+      },
+      "serviceFeePercent": {
+        "label": "その他の手数料／サービス料（0〜100%）",
+        "description": "販売に関するその他の手数料です。"
+      }
+    },
+    "shipping": {
+      "shippingType": {
+        "label": "配送タイプ",
+        "description": "お客様が注文品を受け取る方法を設定します。",
+        "options": {
+          "none": "なし",
+          "delivery": "お客様へ配送",
+          "pickup": "店舗で受け取り",
+          "deliveryAndPickup": "お客様へ配送、店舗で受け取り"
+        }
+      },
+      "storeAddress": {
+        "label": "店舗の住所",
+        "description": "店舗受け取りを許可している場合、チェックアウトページでお客様にこの住所が表示されます。"
+      },
+      "shippingCountries": {
+        "label": "配送先の国",
+        "description": "注文を発送する国です。"
+      },
+      "defaultShippingCountry": {
+        "label": "デフォルトの配送先の国",
+        "description": "チェックアウトページでデフォルトで選択される国です。",
+        "none": "なし"
+      },
+      "deliveryCost": {
+        "label": "配送料",
+        "description": "お客様の住所へ配送する際の定額料金です。"
+      },
+      "defaultCountryNotShipped": "配送先の国から1つ選んでください。"
+    },
+    "checkout": {
+      "checkoutMode": {
+        "label": "チェックアウト",
+        "description": "お客様が注文を完了する場所を設定します。ウェブサイトやAmazonなど、ボットの外で注文を完了させたい場合は、デフォルトのチェックアウトページを使用しないでください。",
+        "options": {
+          "default": "デフォルトのチェックアウトページ",
+          "externalLink": "カスタム外部チェックアウトページ",
+          "flow": "フロー",
+          "productPage": "外部の商品ページを開く"
+        }
+      },
+      "checkoutLink": {
+        "label": "チェックアウトページのリンク",
+        "description": "お客様が注文を完了する外部ページです。"
+      },
+      "checkoutFlowId": {
+        "label": "チェックアウトフロー",
+        "description": "お客様がチェックアウトしたときに実行されるフローです。",
+        "placeholder": "フローを選択"
+      },
+      "minimumOrderValue": {
+        "label": "最低注文金額",
+        "description": "お客様が注文できる最低金額です。この条件はすべての割引を適用した後に確認されます。"
+      },
+      "requiredFields": {
+        "requireName": {
+          "label": "購入者名を必須にする",
+          "description": "チェックアウト時に購入者の名前を収集します。"
+        },
+        "requireEmail": {
+          "label": "メールアドレスを必須にする",
+          "description": "チェックアウト時に購入者のメールアドレスを収集します。"
+        },
+        "requirePhone": {
+          "label": "電話番号を必須にする",
+          "description": "チェックアウト時に購入者の電話番号を収集します。"
+        },
+        "requireState": {
+          "label": "都道府県を必須にする",
+          "description": "チェックアウト時に購入者の都道府県を収集します。"
+        },
+        "requireZip": {
+          "label": "郵便番号を必須にする",
+          "description": "チェックアウト時に購入者の郵便番号を収集します。"
+        }
+      },
+      "orderConfirmationMode": {
+        "label": "注文確認メッセージ",
+        "description": "注文が確定したときにお客様がチャットで受け取る内容です。既定のメッセージはワークスペースの言語で注文内容を表示します。",
+        "options": {
+          "default": "既定のメッセージ",
+          "flow": "フローを実行",
+          "none": "何も送信しない"
+        }
+      },
+      "orderConfirmationFlowId": {
+        "label": "注文確認フロー",
+        "description": "注文が確定したときに、既定のメッセージの代わりにお客様へ送るフローです。"
+      },
+      "shopifyCheckoutMethod": {
+        "label": "チェックアウト方法",
+        "description": "お客様が Shopify のチェックアウトページで支払いを完了するか、ウェブショップで直接注文するかを選択します。",
+        "options": {
+          "webCheckout": "Shopify ウェブチェックアウト",
+          "inApp": "アプリ内チェックアウト"
+        }
+      },
+      "shopifyAutoApplyDiscounts": {
+        "label": "割引コードを自動適用",
+        "description": "チェックアウトにリダイレクトする前に、お客様がカートに Shopify の割引コードを直接適用できるようにします。"
+      },
+      "wooCommerceCheckoutMethod": {
+        "description": "顧客が WooCommerce ストアの支払いページで支払うか、Web ショップで直接注文する（代金引換）かを選択します。",
+        "options": {
+          "webCheckout": "WooCommerce 支払いページ",
+          "inApp": "アプリ内チェックアウト"
+        }
+      },
+      "wooCommerceAutoApplyDiscounts": {
+        "description": "チェックアウトにリダイレクトする前に、お客様がカートに WooCommerce の割引コードを直接適用できるようにします。"
+      },
+      "inAppDeliveryCost": {
+        "label": "配送料",
+        "description": "アプリ内チェックアウトの注文に加算される配送料です。"
+      },
+      "wooCommerceDeliveryCost": {
+        "description": "WooCommerce に送信される注文に加算される配送料です（両方のチェックアウト方法に適用）。"
+      }
+    },
+    "shopify": {
+      "shopDomain": {
+        "label": "ショップドメイン",
+        "placeholder": "your-store.myshopify.com",
+        "hint": "Shopify ストアの .myshopify.com ドメインを入力してください。",
+        "connectedHint": "接続済みの Shopify ストアのドメインです。"
+      },
+      "authKind": {
+        "label": "認証",
+        "description": "ChatbotX がストアにサインインする方法です。カスタムアプリの Admin API アクセストークン、または Shopify Dev Dashboard で作成したアプリの Client ID とシークレットを使用します。",
+        "options": {
+          "token": "Admin API アクセストークン",
+          "clientCredentials": "Client ID とシークレット（Dev Dashboard アプリ）"
+        }
+      },
+      "accessToken": {
+        "label": "Admin API アクセストークン",
+        "hint": "カスタムアプリの Admin API アクセストークンです。次のスコープを付与してください：{scopes}。",
+        "connectedHint": "Shopify Admin API アクセストークンは暗号化して保存されます。"
+      },
+      "apiSecret": {
+        "label": "API シークレットキー",
+        "hint": "Shopify から送信される Webhook の検証に使用されるアプリの API シークレットキーです。"
+      },
+      "clientId": {
+        "label": "Client ID",
+        "hint": "Dev Dashboard アプリの Client ID です。次のスコープを付与してください：{scopes}。"
+      },
+      "clientSecret": {
+        "label": "Client Secret",
+        "hint": "アプリの Client Secret です。暗号化して保存されます。"
+      },
+      "webhookUrl": {
+        "label": "Webhook URL",
+        "description": "接続時に Shopify へ自動登録され、商品、在庫、注文の更新をリアルタイムで受信します。"
+      },
+      "syncNow": "今すぐ同期",
+      "syncStarted": "同期を開始しました",
+      "syncError": "同期を開始できませんでした",
+      "syncStatus": {
+        "label": "同期ステータス",
+        "description": "商品、割引コード、注文は Shopify ストアからミラーリングされます。",
+        "connectedTo": "{shopDomain} に接続済み",
+        "lastSynced": "最終同期：{time}（商品 {productCount} 件、注文 {orderCount} 件）",
+        "neverSynced": "まだ同期されていません",
+        "noReason": "続行するにはストアを再接続してください。",
+        "invalid": "接続は無効になりました：{reason}",
+        "state": {
+          "idle": "待機中",
+          "queued": "同期をキューに追加しました...",
+          "running": "同期中...",
+          "succeeded": "前回の同期は成功しました",
+          "failed": "前回の同期に失敗しました"
+        }
+      }
+    },
+    "woocommerce": {
+      "siteUrl": {
+        "label": "ストアURL",
+        "placeholder": "https://example.com",
+        "hint": "https:// で始まる WordPress サイトのアドレスです。WordPress の Settings → Permalinks を Plain にしないでください。",
+        "connectedHint": "接続済みの WooCommerce ストアです。"
+      },
+      "consumerKey": {
+        "label": "Consumer key",
+        "hint": "WooCommerce → Settings → Advanced → REST API → Add key で Read/Write 権限のキーを作成し、その Consumer key (ck_…) を貼り付けてください。",
+        "connectedHint": "接続済みキーの先頭部分です。キーは暗号化して保存されます。"
+      },
+      "consumerSecret": {
+        "label": "Consumer secret",
+        "hint": "キーの Consumer secret (cs_…) です。暗号化して保存されます。"
+      },
+      "webhookUrl": {
+        "label": "Webhook URL",
+        "description": "接続時に WooCommerce へ自動登録され、商品、在庫、注文の更新をリアルタイムで受信します。"
+      },
+      "syncNow": "今すぐ同期",
+      "syncStarted": "同期を開始しました",
+      "syncError": "同期を開始できませんでした",
+      "syncStatus": {
+        "label": "同期ステータス",
+        "description": "商品、割引コード、注文は WooCommerce ストアからミラーリングされます。",
+        "connectedTo": "{store} に接続済み",
+        "lastSynced": "最終同期：{time}（商品 {productCount} 件、注文 {orderCount} 件）",
+        "neverSynced": "まだ同期されていません",
+        "noReason": "続行するにはストアを再接続してください。",
+        "invalid": "接続は無効になりました：{reason}",
+        "state": {
+          "idle": "待機中",
+          "queued": "同期をキューに追加しました...",
+          "running": "同期中...",
+          "succeeded": "前回の同期は成功しました",
+          "failed": "前回の同期に失敗しました"
+        }
+      }
+    }
+  },
+  "openHours": {
+    "alwaysOpen": "常時営業",
+    "addNew": "新規追加",
+    "dialogTitle": "営業時間",
+    "name": "名前",
+    "namePlaceholder": "例：平日",
+    "day": "曜日",
+    "from": "開店",
+    "to": "閉店",
+    "add": "時間を追加",
+    "remove": "削除",
+    "cancel": "キャンセル",
+    "continue": "続行",
+    "created": "営業時間を作成しました",
+    "saveError": "営業時間を保存できませんでした",
+    "days": {
+      "0": "日曜日",
+      "1": "月曜日",
+      "2": "火曜日",
+      "3": "水曜日",
+      "4": "木曜日",
+      "5": "金曜日",
+      "6": "土曜日"
+    },
+    "sameTimes": "開店時刻と閉店時刻は異なる必要があります。"
+  },
+  "webshop": {
+    "metadataTitle": "ショップ",
+    "metadataOrderTitle": "ご注文",
+    "invalidLinkTitle": "このリンクは使用できません",
+    "invalidLinkDescription": "有効期限が切れている可能性があります。チャットでショップに新しいリンクを依頼してください。",
+    "previewBanner": "プレビュー: お客様にはこのように表示されます。プレビューからは注文できません。",
+    "previewOrderingOff": "プレビュー：注文できません",
+    "closed": {
+      "orderingUnavailable": "現在、ショップは注文を受け付けていません。",
+      "outsideOpenHours": "現在は営業時間外です。商品の閲覧はできます。"
+    },
+    "searchPlaceholder": "商品を検索",
+    "categories": "カテゴリー",
+    "allCategories": "すべてのカテゴリー",
+    "vendors": "ベンダー",
+    "allVendors": "すべてのベンダー",
+    "noProducts": "商品が見つかりません。",
+    "productNotFound": "この商品は現在取り扱っていません。",
+    "outOfStock": "在庫切れ",
+    "addToCart": "カートに入れる",
+    "added": "カートに追加しました",
+    "chooseOptions": "オプションを選択",
+    "chooseOption": "{name}を選択",
+    "variantUnavailable": "この組み合わせはご利用いただけません。",
+    "buy": "購入",
+    "share": "共有",
+    "linkCopied": "コピーしました",
+    "similar": "類似商品",
+    "save": "保存",
+    "saved": "保存済み",
+    "showImage": "画像{number}を表示",
+    "increase": "数量を増やす",
+    "decrease": "数量を減らす",
+    "remove": "削除",
+    "cart": "カート",
+    "cartEmpty": "カートは空です。",
+    "continueShopping": "買い物を続ける",
+    "unavailableItems": "{count, plural, one {# 点の商品は現在注文できません} other {# 点の商品は現在注文できません}}",
+    "unavailableNotOrdered": "これらは注文に含まれず、カートに残ります。",
+    "unavailable": "現在取り扱いなし",
+    "unavailableHint": "オプションを選び直してください",
+    "deletedProduct": "削除された商品",
+    "summary": {
+      "subtotal": "小計",
+      "discount": "割引",
+      "delivery": "配送料",
+      "otherFees": "その他の手数料",
+      "total": "合計",
+      "coupon": "クーポン（{code}）",
+      "title": "注文内容",
+      "saved": "{amount}お得",
+      "deliveryAtCheckout": "チェックアウト時に計算されます"
+    },
+    "belowMinimum": "最低注文金額は{amount}です。",
+    "checkOut": "購入手続きへ",
+    "contactDetails": "お客様情報",
+    "optional": "（任意）",
+    "fields": {
+      "name": "お名前",
+      "email": "メールアドレス",
+      "phone": "電話番号",
+      "country": "国",
+      "state": "都道府県",
+      "city": "市区町村",
+      "address1": "住所",
+      "address2": "建物名・部屋番号など",
+      "zip": "郵便番号",
+      "note": "ショップへの備考"
+    },
+    "shipping": {
+      "title": "受け取り方法",
+      "delivery": "住所へ配送",
+      "pickup": "店舗で受け取る",
+      "storeAddress": "店舗住所: {address}"
+    },
+    "payment": {
+      "title": "お支払い",
+      "cod": "代金引換",
+      "stripe": "カード",
+      "paypal": "PayPal",
+      "paid": "支払い済み",
+      "refunded": "返金済み",
+      "awaiting": "お支払いをお待ちしています",
+      "payBefore": "{time} までにお支払いください。過ぎると注文はキャンセルされます。",
+      "payNow": "今すぐ支払う",
+      "onlineHint": "次のページでお支払いいただきます。ご注文は 30 分間確保されます。",
+      "continueToPayment": "支払いに進む",
+      "notYet": "まだお支払いを確認できていません。今お支払いされた場合は、しばらく待ってからこのページを更新してください。",
+      "leftPaymentPage": "支払いページから離れました。下からまだお支払いいただけます。",
+      "paidThanks": "お支払いを受け付けました。ご注文ありがとうございます!"
+    },
+    "placeOrder": "注文を確定する",
+    "orderPlaced": "ありがとうございます！ご注文を承りました。最新情報はチャットでお知らせします。",
+    "orderTitle": "注文 #{number}",
+    "orderNotFound": "この注文は見つかりません。",
+    "placedAt": "注文日時: {date}",
+    "status": {
+      "pending": "未処理",
+      "accepted": "処理中",
+      "shipped": "発送済み",
+      "concluded": "完了",
+      "cancelled": "キャンセル済み"
+    },
+    "rateTitle": "ご注文を評価する",
+    "rateComment": "ショップへのコメント（任意）",
+    "rateSubmit": "評価を送信",
+    "rateThanks": "評価ありがとうございます！",
+    "yourRating": "あなたの評価",
+    "ratingValue": "5つ星中{rating}",
+    "previous": "前へ",
+    "next": "次へ",
+    "pageOf": "{pageCount}ページ中{page}ページ",
+    "errors": {
+      "generic": "問題が発生しました。もう一度お試しください。",
+      "checkFields": "入力内容をご確認ください。",
+      "fieldRequired": "{field}は必須です。",
+      "countryUnavailable": "この国への配送には対応していません。",
+      "invalidLink": "このリンクは使用できなくなりました。ショップに新しいリンクを依頼してください。",
+      "webshopPreviewOnly": "これはプレビューです。注文はお客様用リンクからのみ可能です。",
+      "rateLimited": "試行回数が多すぎます。しばらくしてからもう一度お試しください。",
+      "orderingUnavailable": "現在、ショップは注文を受け付けていません。",
+      "orderBelowMinimum": "最低注文金額は{minimum}です。",
+      "orderBelowVendorMinimum": "{vendorName}の商品は合計{minimum}以上にしてください。",
+      "orderOutOfStock": "{productName}は在庫切れです。",
+      "orderProductUnavailable": "注文できなくなった商品があります。カートをご確認ください。",
+      "orderEmpty": "カートは空です。",
+      "orderShippingTypeUnavailable": "この受け取り方法はご利用いただけません。",
+      "webshopRatingNotAllowed": "この注文は評価できません。",
+      "webshopCartFull": "カートに入れられる商品は最大 {maximum} 種類までです。",
+      "notFound": "この商品は現在取り扱っていません。",
+      "discountCodeNotFound": "この割引コードは存在しません。",
+      "discountCodeInactive": "この割引コードは無効です。",
+      "discountCodeNotStarted": "この割引コードはまだ使用できません。",
+      "discountCodeExpired": "この割引コードは期限切れです。",
+      "discountCodeUsageLimitReached": "この割引コードは利用上限に達しました。",
+      "discountCodeAlreadyUsed": "この割引コードはすでに使用済みです。",
+      "discountCodeNotEligible": "この割引コードはご利用いただけません。",
+      "discountCodeNotApplicable": "この割引コードはカートの商品に適用できません。",
+      "discountCodeMinimumAmount": "このコードは{minimum}以上の購入が必要です。あと{missing}追加してください。",
+      "discountCodeMinimumQuantity": "このコードは{minimum}点以上必要です。あと{missing}点追加してください。",
+      "paymentMethodUnavailable": "この支払い方法はご利用いただけません。",
+      "paymentProviderNotConnected": "この支払い方法はご利用いただけません。",
+      "paymentProviderUnavailable": "決済サービスから応答がありません。しばらくしてからもう一度お試しください。",
+      "paymentProviderRejected": "お支払いを開始できませんでした。別の支払い方法をお選びください。",
+      "paymentProviderCredentialsRejected": "お支払いを開始できませんでした。別の支払い方法をお選びください。",
+      "paymentAmountUnsupported": "この注文はオンラインで支払えません。別の支払い方法をお選びください。",
+      "orderPaymentNotOpen": "この注文はオンラインで支払えなくなりました。"
+    },
+    "discount": {
+      "label": "割引コード",
+      "placeholder": "割引コード",
+      "apply": "適用",
+      "applied": "割引コードを適用しました",
+      "automatic": "自動適用",
+      "remove": "割引コードを外す",
+      "available": "使えるクーポン",
+      "freeShipping": "送料無料",
+      "bestChoice": "いちばんお得",
+      "expiresOn": "有効期限: {date}",
+      "noExpiry": "期限なし",
+      "inUse": "使用中",
+      "saves": "{amount}割引",
+      "showMore": "{count, plural, one {あと#件を表示} other {あと#件を表示}}",
+      "showLess": "閉じる",
+      "removeShort": "外す",
+      "expired": "期限切れ",
+      "usedUp": "上限に達しました",
+      "notEligible": "対象外"
+    },
+    "itemCount": "{count, plural, one {#点} other {#点}}",
+    "relatedProducts": "こちらもおすすめ",
+    "soldOut": "売り切れ",
+    "sku": "SKU：{sku}",
+    "allProducts": "すべての商品",
+    "noCategories": "このショップにはまだカテゴリがありません。"
+  },
+  "webshopLinks": {
+    "preview": "プレビュー",
+    "getLink": "リンクを取得",
+    "copied": "リンクをコピーしました。ボットのボタンに設定すると、連絡先ごとに専用のショップが開きます。",
+    "error": "リンクを取得できませんでした。",
+    "copyError": "リンクをコピーできませんでした。",
+    "shopLink": {
+      "label": "ショップURL",
+      "hint": "このリンクをフロー、ブロードキャスト、シーケンスのボタンに貼り付けてください。受け取った各連絡先が自分専用のショップを開いて注文できます。"
+    },
+    "productLink": {
+      "label": "公開URL",
+      "hint": "URLをコピーして、フロー、ブロードキャスト、シーケンスに貼り付けてください。受け取った各連絡先がこの商品を開いて注文できます。"
+    },
+    "bar": "ショップを共有：フロー、一斉配信、シーケンスのボタン用に、ショップ・カート・カテゴリのリンクを取得します。",
+    "dialog": {
+      "title": "ショップのリンク",
+      "description": "フロー、一斉配信、シーケンスのボタンにリンクを貼り付けます。受け取った各連絡先は自分専用のショップを開きます。",
+      "shopHint": "すべての商品が並ぶショップのトップページを開きます。"
+    },
+    "cartLink": {
+      "label": "カート",
+      "hint": "連絡先のカートを購入手続きできる状態で開きます。"
+    },
+    "categoriesLink": {
+      "label": "カテゴリ",
+      "hint": "ショップのカテゴリ一覧を開きます。"
+    }
+  },
+  "discountCodes": {
+    "title": "クーポン",
+    "description": "お客様が購入時に入力する、または自動で適用される割引コード。",
+    "add": "追加",
+    "edit": "クーポンを編集",
+    "automatic": "自動",
+    "never": "期限なし",
+    "searchPlaceholder": "コードを検索…",
+    "saveError": "クーポンを保存できませんでした。",
+    "created": "クーポンを作成しました",
+    "updated": "クーポンを保存しました",
+    "deleted": "クーポンを削除しました",
+    "deleteError": "クーポンを削除できませんでした。",
+    "deleteTitle": "クーポン{code}を削除しますか？",
+    "deleteDescription": "お客様は今後使用できなくなります。使用済みの注文の割引はそのまま残ります。",
+    "cancel": "キャンセル",
+    "delete": "削除",
+    "save": "保存",
+    "columns": {
+      "name": "名前",
+      "discount": "割引",
+      "used": "使用数",
+      "end": "終了",
+      "active": "有効"
+    },
+    "discountTypes": {
+      "percentage": "パーセント",
+      "fixedAmount": "定額",
+      "freeShipping": "送料無料"
+    },
+    "appliesTo": {
+      "entireOrder": "注文全体",
+      "category": "特定のカテゴリー",
+      "products": "特定の商品"
+    },
+    "minimumTypes": {
+      "none": "なし",
+      "amount": "最低購入金額",
+      "quantity": "最低購入点数"
+    },
+    "eligibilities": {
+      "everyone": "全員",
+      "specificCustomers": "特定のお客様"
+    },
+    "form": {
+      "discountCode": "割引コード",
+      "code": "コード",
+      "generate": "自動生成",
+      "autoApply": "このクーポンをカートに自動適用する",
+      "autoApplyHint": "お客様が入力しなくてもカートに適用されます。自動クーポンが複数ある場合は割引額が最大のものが使われます。",
+      "typedHint": "お客様は購入手続きでこのコードを入力します。",
+      "options": "オプション",
+      "discountType": "割引の種類",
+      "discountValuePercent": "割引率（%）",
+      "discountValueAmount": "割引額（{currency}）",
+      "freeShippingHint": "配送する注文の送料を無料にします。",
+      "appliesTo": "適用対象",
+      "category": "カテゴリー",
+      "products": "商品",
+      "productsPlaceholder": "商品を選択",
+      "minimumRequirement": "最低条件",
+      "minimumAmount": "最低金額（{currency}）",
+      "minimumQuantity": "最低点数",
+      "usageLimits": "利用制限",
+      "limitTotal": "この割引の合計利用回数を制限する",
+      "usedSoFar": "{count, plural, one {これまでに#回使用} other {これまでに#回使用}}",
+      "oncePerCustomer": "お客様1人につき1回まで",
+      "customerEligibility": "対象のお客様",
+      "specificCustomersHint": "注文時に下のフィルターに一致する連絡先のみ。",
+      "activeDates": "有効期間",
+      "startDate": "開始日",
+      "endDate": "終了日",
+      "isActive": "有効"
+    },
+    "rules": {
+      "codeCharacters": "アクセントのない英字、数字、- と _ のみ使用できます。",
+      "usageBelowUsed": "このコードはすでに{count}回使用されています。上限をそれより低くはできません。",
+      "customerConditionRequired": "条件を1つ以上追加してください。",
+      "endAfterStart": "終了日は開始日より後にしてください。"
+    }
+  },
+  "ecommerceAnalytics": {
+    "title": "分析",
+    "lifetime": "累計",
+    "sales": "売上",
+    "orders": "注文",
+    "products": "商品",
+    "salesByDate": "日付別売上",
+    "ordersByDate": "日付別注文",
+    "topProducts": "売れ筋商品",
+    "topVendors": "売れ筋ベンダー",
+    "columns": {
+      "name": "名前",
+      "sales": "売上"
+    },
+    "noData": "この期間のデータはありません",
+    "refresh": "更新",
+    "change": "{value}%",
+    "noPrevious": "新規",
+    "otherCurrencyOrders": "他の通貨の注文 {count} 件はこの数値に含まれていません"
+  },
   "responseSla": {
     "label": "応答SLA",
     "title": "応答SLA",
@@ -9052,5 +11301,611 @@
     "metHelp": "SLAのある返信のうち達成した割合。",
     "eligibleCount": "{count} 件の返信にSLAがありました",
     "enable": "応答SLAを有効にする"
+  },
+  "stripe": {
+    "title": "Stripe",
+    "setting": {
+      "label": "Stripe",
+      "description": "ご自身の Stripe アカウントで、ウェブショップのカード決済を受け付けます。代金は直接あなたの Stripe アカウントに入金されます。"
+    },
+    "connectWithStripe": "Stripe で接続",
+    "connectWithKey": "シークレットキーを使う",
+    "connectionType": {
+      "oauth": "Stripe Connect",
+      "apiKey": "シークレットキー"
+    },
+    "fields": {
+      "secretKey": "シークレットキー",
+      "secretKeyHint": "sk_live_ で始まります(テストモードは sk_test_)。アカウントの読み取りと Checkout Sessions・Refunds・Webhook Endpoints の書き込みができる制限付きキー(rk_…)も使えます。"
+    },
+    "dialog": {
+      "description": "<link>Stripe ダッシュボード → Developers → API keys</link> からシークレットキーをコピーしてここに貼り付けてください。キーを確認し、Stripe アカウントに支払い通知を設定し、キーを暗号化して保存します。"
+    },
+    "testMode": "テストモード",
+    "liveMode": "本番",
+    "chargesDisabled": "お使いの Stripe アカウントはまだ決済を受け付けられません。Stripe ダッシュボードで設定を完了してください。",
+    "outcome": {
+      "expired": "Stripe の接続リンクの有効期限が切れました。もう一度お試しください。",
+      "access_denied": "Stripe で接続が許可されませんでした。",
+      "stripeAccountAlreadyConnected": "この Stripe アカウントは既に別のワークスペースに接続されています。",
+      "stripePlatformNotConfigured": "このプラットフォームでは Stripe がまだ設定されていません。",
+      "superAdminRequired": "Stripe を接続できるのはワークスペース管理者のみです。",
+      "signInRequired": "サインインしてもう一度お試しください。",
+      "paymentProviderCredentialsRejected": "Stripe が接続を拒否しました。もう一度お試しください。",
+      "startedByAnotherUser": "接続を押した本人のみが完了できます。もう一度「接続」を押してください。",
+      "paymentProviderInUse": "この Stripe アカウントを必要とする未完了の注文があります。先に完了するかキャンセルしてください。"
+    },
+    "platform": {
+      "connectClientId": "Connect client ID",
+      "connectClientIdHint": "Stripe Dashboard → Settings → Connect → Onboarding options → OAuth から取得します(ca_ で始まります)。ストアはこれを使って自分の Stripe アカウントを接続します。",
+      "redirectUri": "Redirect URI",
+      "webhookReady": "ストアは Stripe を接続でき、決済は自動的に確認されます。",
+      "webhookMissing": "決済用 Webhook がありません。この設定をもう一度保存すると作成されます。",
+      "connectMissing": "ストアが Stripe アカウントを接続できるように、Connect client ID を追加してください。"
+    }
+  },
+  "paypal": {
+    "title": "PayPal",
+    "setting": {
+      "label": "PayPal",
+      "description": "ご自身の PayPal アカウントで、ウェブショップの PayPal 決済を受け付けます。"
+    },
+    "sandbox": "Sandbox",
+    "liveMode": "本番",
+    "fields": {
+      "clientId": "Client ID",
+      "clientSecret": "Secret"
+    },
+    "dialog": {
+      "description": "<link>PayPal Developer → Apps & Credentials</link> で REST アプリを作成し、その Client ID と Secret を貼り付けてください。本番かサンドボックスかはキーから自動判別されます。"
+    }
+  },
+  "pipelines": {
+    "title": "パイプライン",
+    "retry": "再試行",
+    "save": "保存",
+    "saveFailed": "変更を保存できませんでした。もう一度お試しください。",
+    "list": {
+      "name": "名前",
+      "type": "タイプ",
+      "items": "アイテム",
+      "add": "パイプラインを追加",
+      "empty": "パイプラインはまだありません",
+      "emptyHint": "パイプラインを作成して、商談やチケットなどあらゆるプロセスをボード上のカードで管理しましょう。",
+      "error": "パイプラインを読み込めませんでした",
+      "contacts": "コンタクト",
+      "addShort": "追加",
+      "description": "商談・チケット・任意のプロセスを、ステージ間を移動するカードとして管理します。"
+    },
+    "types": {
+      "opportunity": {
+        "label": "商談センター",
+        "description": "営業案件をステージごとに管理します。最初のステージ：リード。"
+      },
+      "ticket": {
+        "label": "サポートセンター",
+        "description": "サポートリクエストに対応します。最初のステージ：新規課題。"
+      },
+      "custom": {
+        "label": "カスタムボード",
+        "description": "独自のプロセスを構築します。最初のステージ：受付。"
+      }
+    },
+    "noun": {
+      "opportunity": {
+        "one": "商談",
+        "many": "商談",
+        "add": "商談を追加"
+      },
+      "ticket": {
+        "one": "チケット",
+        "many": "チケット",
+        "add": "チケットを追加"
+      },
+      "card": {
+        "one": "カード",
+        "many": "カード",
+        "add": "カードを追加"
+      }
+    },
+    "create": {
+      "title": "新しいパイプライン",
+      "description": "ボードの用途を選び、名前を付けてください。",
+      "type": "種類",
+      "name": "パイプライン名",
+      "namePlaceholder": "例: 営業",
+      "submit": "パイプラインを作成",
+      "success": "パイプラインを作成しました"
+    },
+    "menu": {
+      "open": "パイプラインの操作",
+      "rename": "名前を変更",
+      "duplicate": "複製",
+      "delete": "削除"
+    },
+    "rename": {
+      "title": "パイプライン名を変更",
+      "submit": "名前を変更",
+      "success": "パイプライン名を変更しました"
+    },
+    "duplicate": {
+      "success": "パイプラインを複製しました"
+    },
+    "delete": {
+      "title": "パイプラインを削除",
+      "description": "{name} と、そのすべてのステージおよびアイテムが削除されます。この操作は元に戻せません。",
+      "success": "パイプラインを削除しました"
+    },
+    "board": {
+      "title": "ボード",
+      "count": "{count, plural, one {# 件} other {# 件}}",
+      "total": "合計 {value}",
+      "search": "タイトル、番号、コンタクトで検索",
+      "sort": "並べ替え",
+      "filter": "フィルター",
+      "analytics": "分析",
+      "settings": "設定",
+      "emptyStage": "カードをここにドラッグ＆ドロップすると、このステージに移動します。",
+      "loadMore": "さらに読み込む",
+      "loadMoreFailed": "アイテムをさらに読み込めませんでした",
+      "error": "ボードを読み込めませんでした",
+      "processing": "このステージを処理中…",
+      "moveFailed": "カードを移動できませんでした",
+      "sortOptions": {
+        "createdAtDesc": "作成日 (新しい順)",
+        "createdAtAsc": "作成日 (古い順)",
+        "updatedAtDesc": "更新日 (新しい順)",
+        "valueDesc": "商談金額 (高い順)",
+        "valueAsc": "商談金額 (低い順)",
+        "dueDateAsc": "期限日 (近い順)",
+        "dueDateDesc": "期限日 (遠い順)",
+        "priorityDesc": "優先度 (高い順)",
+        "priorityAsc": "優先度 (低い順)",
+        "updatedAtAsc": "更新日 (古い順)"
+      },
+      "searchAction": "検索",
+      "closeSearch": "検索を閉じる",
+      "cardMenu": "カードの操作",
+      "moveTo": "移動先",
+      "unknownContact": "不明な連絡先",
+      "staleError": "ボードを更新できませんでした。表示内容が古い可能性があります。"
+    },
+    "stage": {
+      "add": "ステージを追加",
+      "name": "ステージ名",
+      "namePlaceholder": "ステージ名",
+      "menu": "ステージの操作",
+      "edit": "ステージを編集",
+      "delete": "ステージを削除",
+      "deleteTitle": "ステージを削除",
+      "deleteDescription": "{name} と、そのステージ内のすべてのアイテムが削除されます。この操作は元に戻せません。",
+      "moveItemsTo": "アイテムの移動先",
+      "deleteItemsToo": "アイテムも削除する",
+      "description": "説明",
+      "textColor": "文字色",
+      "backgroundColor": "背景色",
+      "saved": "ステージを保存しました",
+      "deleted": "ステージを削除しました",
+      "queued": "ステージをバックグラウンドで空にしています。",
+      "resetColor": "デフォルト",
+      "deleteMoveDescription": "{name} は削除されます。そのアイテムは {target} に移動します。",
+      "rename": "名前を変更",
+      "settings": "設定",
+      "general": "一般",
+      "color": "色",
+      "cancel": "キャンセル"
+    },
+    "priority": {
+      "low": "低",
+      "medium": "中",
+      "high": "高"
+    },
+    "item": {
+      "loading": "読み込み中…",
+      "error": "このアイテムを読み込めませんでした",
+      "title": "タイトル",
+      "status": "ステータス",
+      "stage": "ステージ",
+      "priority": "優先度",
+      "value": "金額",
+      "dueDate": "期限",
+      "assignees": "割り当て済みの管理者",
+      "description": "説明",
+      "attachments": "添付ファイル",
+      "attach": "ファイルを添付",
+      "noAttachments": "添付ファイルはありません",
+      "removeAttachment": "添付ファイルを削除",
+      "removeAttachmentDescription": "ファイルはこの項目から外されますが、メディアライブラリには残ります。",
+      "comments": "コメント",
+      "addComment": "コメントを追加",
+      "commentPlaceholder": "コメントを入力…",
+      "noComments": "コメントはまだありません",
+      "deleteComment": "コメントを削除",
+      "deleteCommentDescription": "このコメントは削除されます。元に戻すことはできません。",
+      "activity": "アクティビティ",
+      "noActivity": "アクティビティはまだありません",
+      "transfer": "パイプラインに移管",
+      "transferTitle": "別のパイプラインに移管",
+      "transferDescription": "アイテムの番号と作成日は引き継がれます。移管先のパイプラインに同じ参照名とタイプのフィールドがある場合、カスタムフィールドも引き継がれます。",
+      "destinationPipeline": "移管先のパイプライン",
+      "destinationStage": "移管先のステージ",
+      "firstStage": "最初のステージ",
+      "choose": "選択…",
+      "transferred": "アイテムを移管しました",
+      "delete": "削除",
+      "deleteDescription": "1件のアイテムが削除されます。この操作は元に戻せません。",
+      "deleted": "アイテムを削除しました",
+      "number": "番号",
+      "createdBy": "作成者",
+      "createdByValue": "{name}（{date}）",
+      "inbox": "受信トレイ",
+      "moreActions": "その他の操作",
+      "noDescription": "説明なし",
+      "yes": "はい",
+      "no": "いいえ",
+      "assigneesMembers": "エージェント",
+      "assigneesTeams": "受信トレイのチーム",
+      "assigneesSearch": "管理者またはチームを検索…",
+      "assigneesEmpty": "結果なし",
+      "assigneesPlaceholder": "管理者またはチームを選択",
+      "olderComments": "以前のコメントを表示",
+      "olderActivity": "以前のアクティビティを表示",
+      "activityFilter": "絞り込み",
+      "activityFilterCount": "{count, plural, one {#件のフィルター} other {#件のフィルター}}",
+      "activityFilterClear": "すべて表示",
+      "noFilteredActivity": "このフィルターに一致するアクティビティはありません。",
+      "activityGroup": {
+        "lifecycle": "作成・移動",
+        "stage": "ステージ",
+        "status": "ステータス",
+        "value": "金額",
+        "priority": "優先度",
+        "dueDate": "期限",
+        "details": "タイトル・説明・フィールド",
+        "assignees": "担当者",
+        "comments": "コメント",
+        "attachments": "添付ファイル"
+      }
+    },
+    "activity": {
+      "created": "作成",
+      "stageChanged": "別のステージに移動",
+      "statusChanged": "ステータスを変更",
+      "valueChanged": "金額を変更",
+      "priorityChanged": "優先度を変更",
+      "dueDateChanged": "期限を変更",
+      "titleChanged": "タイトルを変更",
+      "descriptionChanged": "説明を変更",
+      "fieldValuesChanged": "カスタムフィールドを変更",
+      "assigneesChanged": "担当者を変更",
+      "attachmentAdded": "添付ファイルを追加",
+      "attachmentRemoved": "添付ファイルを削除",
+      "commentAdded": "コメントを追加",
+      "commentDeleted": "コメントを削除",
+      "transferred": "別のパイプラインから移管",
+      "deleted": "削除"
+    },
+    "activityActor": {
+      "flow": "フロー",
+      "trigger": "トリガー",
+      "workspaceToken": "API",
+      "system": "システム",
+      "formerMember": "元メンバー"
+    },
+    "add": {
+      "changeContact": "別のコンタクトを選択",
+      "success": "作成しました",
+      "stepContact": "コンタクトを選択",
+      "stepDetails": "{noun}の詳細",
+      "contact": "コンタクト",
+      "addNewContact": "新規追加"
+    },
+    "filter": {
+      "title": "フィルター",
+      "status": "ステータス",
+      "statusLabels": {
+        "open": "オープン",
+        "won": "成約",
+        "lost": "失注"
+      },
+      "priority": "優先度",
+      "assignee": "割り当て済みの管理者",
+      "value": "{noun}の金額",
+      "min": "最小",
+      "max": "最大",
+      "dueDate": "期限",
+      "createdAt": "作成日",
+      "from": "開始",
+      "to": "終了",
+      "clear": "フィルターをクリア",
+      "apply": "適用",
+      "back": "戻る",
+      "updatedAt": "更新日",
+      "resolvedOn": "{noun}の解決日",
+      "statusChangedOn": "ステータス変更日",
+      "stageChangedOn": "ステージ変更日",
+      "lastCommentOn": "最終コメント日",
+      "customFields": "カスタムフィールド",
+      "any": "すべて",
+      "yes": "はい",
+      "no": "いいえ",
+      "notResolvedOn": "{noun}の未解決日",
+      "equal": "等しい",
+      "different": "等しくない",
+      "reset": "リセット",
+      "presets": {
+        "thisWeek": "今週",
+        "lastWeek": "先週",
+        "last14": "過去14日間",
+        "thisYear": "今年",
+        "lastYear": "昨年",
+        "tomorrow": "明日",
+        "next7": "7日以内",
+        "next14": "14日以内",
+        "next30": "30日以内",
+        "allTime": "全期間"
+      },
+      "pickDate": "日付を選択",
+      "activity": "アクティビティ",
+      "activityKinds": "変更の種類",
+      "activityActors": "実行者",
+      "activityWhen": "日時",
+      "activityAutomation": "自動化"
+    },
+    "analytics": {
+      "title": "分析",
+      "loading": "統計を読み込み中…",
+      "error": "統計を読み込めませんでした",
+      "created": "作成",
+      "won": "成約",
+      "wonValue": "成約金額",
+      "lost": "失注",
+      "lostValue": "失注金額",
+      "admin": "管理者",
+      "automation": "自動化",
+      "back": "戻る",
+      "admins": "管理者",
+      "chart": {
+        "created": "日別の新規",
+        "won": "日別の成約",
+        "lost": "日別の失注",
+        "wonValue": "日別の成約金額",
+        "lostValue": "日別の失注金額"
+      },
+      "pie": {
+        "created": "管理者別の作成数",
+        "won": "管理者別の成約数",
+        "lost": "管理者別の失注数",
+        "other": "その他",
+        "empty": "データなし"
+      }
+    },
+    "settings": {
+      "title": "パイプライン設定",
+      "general": "一般",
+      "fields": "カスタムフィールド",
+      "display": "表示",
+      "permissions": "権限",
+      "saved": "設定を保存しました",
+      "referenceName": "参照名",
+      "referenceNameHint": "pipelines.reference_name.stage_name 変数で使用されます。変更すると、旧名称を使っているメッセージが動作しなくなります。",
+      "referenceNameFormat": "小文字の英字・数字・アンダースコアのみ、英字で始めてください（例: close_date）。",
+      "currency": "通貨",
+      "currencyFollowCountry": "ワークスペースの国 · {country} · {currency}",
+      "currencyFollowNoCountry": "ワークスペースの国が未設定 · {currency}",
+      "currencyHint": "ワークスペースの対象国（設定 → 一般）に従い、変更されると自動で更新されます。国が未設定の場合は USD を使います。金額が換算されることはありません。",
+      "assignContact": "アイテムの割り当て時にコンタクトも管理者に割り当てる",
+      "limit": "コンタクトごとのオープン中アイテム数を制限",
+      "statusLabels": "ステータスのラベル",
+      "status": {
+        "open": "オープン",
+        "won": "成約",
+        "lost": "失注"
+      },
+      "features": "表示する機能",
+      "cardElements": "カードの要素",
+      "card": {
+        "contactPhone": "コンタクトの電話番号",
+        "contactEmail": "コンタクトのメール",
+        "createdAt": "作成日",
+        "updatedAt": "更新日",
+        "assignees": "割り当て済みの管理者",
+        "comments": "コメント",
+        "cardId": "アイテム番号",
+        "priority": "優先度",
+        "value": "金額",
+        "dueDate": "期限"
+      },
+      "noFields": "カスタムフィールドはまだありません",
+      "fieldName": "フィールド名",
+      "fieldReference": "参照名",
+      "fieldType": "フィールドタイプ",
+      "required": "必須",
+      "requiredShort": "必須",
+      "addField": "フィールドを追加",
+      "fieldAdded": "フィールドを追加しました",
+      "deleteField": "フィールドを削除",
+      "permissionsHint": "ワークスペースのオーナーと管理者は常にフルアクセスできます。その他のメンバーには、このパイプラインで許可する操作を付与してください。",
+      "revoke": "取り消し",
+      "permission": {
+        "view": "表示",
+        "edit": "編集",
+        "delete": "削除",
+        "settings": "設定"
+      },
+      "noMembers": "設定できる他のメンバーはいません",
+      "confirmDeleteField": "このフィールドと、すべてのアイテムにあるその値を削除しますか？",
+      "adminPermissions": "管理者の権限",
+      "cardVisibleElements": "カードに表示する要素"
+    },
+    "panel": {
+      "empty": "このコンタクトのパイプラインアイテムはありません",
+      "error": "パイプラインアイテムを読み込めませんでした",
+      "choosePipeline": "パイプラインを選択",
+      "add": "新規追加"
+    },
+    "variables": {
+      "group": "パイプライン",
+      "attributes": {
+        "name": "アイテム名",
+        "stageName": "ステージ",
+        "status": "ステータス",
+        "priority": "優先度",
+        "value": "金額",
+        "assignedAdmins": "割り当て済みの管理者",
+        "createdDate": "作成日",
+        "dueDate": "期限",
+        "updatedDate": "更新日",
+        "id": "アイテムID"
+      }
+    }
+  },
+  "oauthConsent": {
+    "title": "Authorize {clientName}",
+    "description": "This application is requesting access to your workspace.",
+    "permissionsTitle": "Requested permissions",
+    "signedInAs": "Signed in as",
+    "approve": "Approve",
+    "deny": "Deny",
+    "failed": "認可を完了できませんでした。もう一度お試しください。",
+    "workspaceLabel": "ワークスペース",
+    "workspacePlaceholder": "ワークスペースを選択",
+    "workspaceHint": "{clientName} はこのワークスペースでのみ操作できます。後で切り替えるには、接続を解除して再接続してください。",
+    "noWorkspaces": "管理者であるワークスペースがないため、このアプリケーションを承認できません。"
+  },
+  "chatbotxMcp": {
+    "title": "ChatbotX MCP",
+    "workspaceId": "Workspace ID",
+    "streamableUrl": "Streamable HTTP URL",
+    "sseUrl": "Legacy SSE URL",
+    "guide": {
+      "title": "Connect an MCP client",
+      "step1": "Copy the configuration for your MCP client.",
+      "step2": "Paste it into the client.",
+      "step3": "The client opens a browser. Sign in and approve access.",
+      "step4": "Your workspace tools appear after approval.",
+      "ownerOnly": "Only workspace owners and superAdmins can authorize MCP access."
+    },
+    "clients": {
+      "claudeCode": "Claude Code",
+      "claudeDesktop": "Claude Desktop",
+      "cursor": "Cursor",
+      "chatgpt": "ChatGPT",
+      "stdio": "stdio fallback",
+      "stdioHint": "Use a workspace token for this fallback."
+    },
+    "grants": {
+      "title": "Authorized applications",
+      "description": "Grants belong to your account and apply to every workspace you administer; revoking disconnects the client everywhere.",
+      "empty": "OAuth grants appear here after you connect an MCP client.",
+      "client": "Client",
+      "scopes": "Scopes",
+      "firstAuthorizedAt": "First authorized",
+      "lastRefreshedAt": "Last refreshed",
+      "activeUntil": "Active until",
+      "noActiveToken": "No active token",
+      "revoke": "Revoke",
+      "revokeConfirmTitle": "Revoke application access?",
+      "revokeConfirmDescription": "Revoke access for {clientName}? This disconnects the client everywhere.",
+      "revokedSuccess": "Application access revoked.",
+      "notFound": "OAuth grant no longer exists"
+    }
+  },
+  "connectionStatus": {
+    "column": "Status",
+    "reconnecting": "The provider is reconnecting this account. Messages are held until it finishes.",
+    "accessRemoved": "The provider removed access to this account. Reconnect to resume.",
+    "needsReconnect": "Reconnect required.",
+    "inactive": "This channel is inactive."
+  },
+  "inbox": {
+    "createAppointment": {
+      "title": "予約を作成",
+      "description": "カレンダーの予約リンクを連絡先に送信するか、リンクを開いて代理で予約します。",
+      "inactive": "無効",
+      "sendLink": "カレンダーリンクを送信",
+      "goToLink": "カレンダーリンクを開く",
+      "sent": "予約リンクを送信しました。",
+      "failed": "予約リンクを作成できませんでした。",
+      "noCalendars": "予約カレンダーはまだありません。",
+      "manageCalendars": "予約カレンダーを管理"
+    }
+  },
+  "templateStore": {
+    "title": "テンプレートストア",
+    "description": "公開ストア用に承認されたテンプレート。各テンプレートは選択したカテゴリに表示されます。",
+    "add": "追加",
+    "addCategory": "カテゴリを追加",
+    "renameCategory": "名前を変更",
+    "editCategories": "カテゴリを編集",
+    "templateId": "テンプレートID",
+    "template": "テンプレート",
+    "categories": "カテゴリ",
+    "categoriesPlaceholder": "カテゴリなし",
+    "close": "閉じる",
+    "removeChip": "{name}を外す",
+    "categoriesHint": "任意です。カテゴリがない場合、テンプレートは「すべて」にのみ表示されます。",
+    "noCategoriesYet": "カテゴリはまだありません。",
+    "added": "テンプレートをストアに追加しました",
+    "updated": "カテゴリを更新しました",
+    "removed": "テンプレートをストアから削除しました",
+    "removeError": "テンプレートを削除できませんでした",
+    "removeTitle": "{name}を削除しますか？",
+    "removeDescription": "ストアから表示されなくなります。テンプレート本体とインストールには影響しません。",
+    "saveError": "保存できませんでした",
+    "deleteError": "カテゴリを削除できませんでした",
+    "categoryCreated": "カテゴリを作成しました",
+    "categoryUpdated": "カテゴリを更新しました",
+    "categoryMoved": "カテゴリを移動しました",
+    "categoryDeleted": "カテゴリを削除しました",
+    "deleteCategoryTitle": "{name}を削除しますか？",
+    "deleteCategoryDescription": "このカテゴリのテンプレート数：{count}。ストアに残り、「すべて」に表示されます。",
+    "moveUp": "上へ移動",
+    "moveDown": "下へ移動",
+    "searchPlaceholder": "名前またはテンプレートIDで検索",
+    "emptyListings": "承認済みのテンプレートはまだありません。",
+    "noMatches": "検索または絞り込みに一致するテンプレートはありません。",
+    "allCategories": "すべてのカテゴリ",
+    "allStatuses": "すべてのステータス",
+    "installs": "インストール数",
+    "owner": "オーナー",
+    "statusLabel": "ステータス",
+    "openInStore": "ストアを開く",
+    "storeUnavailable": "ストアはカスタムドメインで開きます。開くにはドメインを設定してください。",
+    "openTemplatePage": "テンプレートページを開く",
+    "remove": "削除",
+    "status": {
+      "published": "公開中",
+      "templateUnavailable": "テンプレートは利用できません",
+      "shareDisabled": "共有リンクがオフ"
+    },
+    "errors": {
+      "templateUnavailable": "このIDのテンプレートはストアに追加できません。",
+      "listingExists": "このテンプレートはすでにストアにあります。",
+      "listingUnavailable": "このストアの項目は存在しなくなりました。",
+      "listingLimit": "ストアに入れられるテンプレートは最大{templateLimit}件です。",
+      "categoryUnavailable": "このカテゴリは存在しなくなりました。",
+      "categoryNameTaken": "この名前のカテゴリはすでに存在します。",
+      "categoryLimit": "ストアのカテゴリは最大{categoryLimit}個です。"
+    },
+    "store": {
+      "subtitle": "ワンクリックでインストールできる既製のテンプレート。",
+      "pageTitle": "{tenantName} – テンプレートストア",
+      "empty": "ストアにはまだテンプレートがありません。",
+      "search": "テンプレートを検索",
+      "all": "すべて",
+      "categories": "ストアのカテゴリ",
+      "noResults": "検索に一致するテンプレートはありません。",
+      "clearSearch": "検索をクリア",
+      "by": "作成者：{publisherName}"
+    },
+    "picker": {
+      "placeholder": "テンプレートを選択",
+      "search": "名前またはテンプレートIDで検索",
+      "empty": "追加できるテンプレートがありません。",
+      "error": "テンプレートを読み込めませんでした。",
+      "retry": "再試行",
+      "meta": "ID {id} · {workspace}"
+    }
   }
 }

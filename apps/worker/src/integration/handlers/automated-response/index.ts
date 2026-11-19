@@ -5,7 +5,11 @@ import {
 } from "@chatbotx.io/ai"
 import { aiContextService } from "@chatbotx.io/ai/server"
 import { automatedResponseService } from "@chatbotx.io/automated-response"
-import { aiAgentService, workspaceService } from "@chatbotx.io/business"
+import {
+  aiAgentService,
+  getContactInputAttachments,
+  workspaceService,
+} from "@chatbotx.io/business"
 import { isMessageStorageError } from "@chatbotx.io/database/errors"
 import {
   aiAgentProviderModels,
@@ -36,6 +40,7 @@ import {
   shouldRunGlobalRouterAfterAutomatedResponse,
   shouldStopAutomatedResponseAfterGlobalRouter,
 } from "./global-router"
+import { replyWithMatchingProducts } from "./product-search"
 import { runAgentReply } from "./run-agent-reply"
 
 const SUPPORTED_DOCUMENT_MIME_TYPES = new Set<string>([
@@ -107,7 +112,9 @@ export async function processAutomatedResponse(
       "Automated response trigger message was not found",
     )
   }
-  const triggerAttachments = triggerMessage?.attachments ?? []
+  const triggerAttachments = triggerMessage
+    ? getContactInputAttachments(triggerMessage)
+    : []
   const isFileOnlyTrigger =
     triggerMessage?.senderType === "contact" &&
     !triggerMessage.text &&
@@ -127,6 +134,26 @@ export async function processAutomatedResponse(
     contactInbox,
   })
   if (automatedResponseResult.status === "handled") {
+    return
+  }
+
+  // "Search Products": a message naming products is answered with them,
+  // after Keywords and before the global router / AI agent / default reply.
+  // Only once Keywords actually read this message and matched nothing — an
+  // empty debounce queue means another job took the message, possibly to a
+  // Keyword, and a product reply would then be a second answer.
+  if (
+    automatedResponseResult.status === "noMatch" &&
+    triggerMessage?.senderType === "contact" &&
+    triggerMessage.text &&
+    messageId &&
+    (await replyWithMatchingProducts({
+      conversation,
+      contactInbox,
+      messageId,
+      text: triggerMessage.text,
+    }))
+  ) {
     return
   }
 

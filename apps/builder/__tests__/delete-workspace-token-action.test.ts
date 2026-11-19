@@ -11,6 +11,11 @@ vi.mock("@chatbotx.io/business", () => ({
   workspaceApiTokenService: { deleteToken: mocks.deleteToken },
 }))
 
+// ChatPlus: the action also ends a connect link bound to the deleted token.
+vi.mock("@/features/chatplus-connect/lib/link-client", () => ({
+  endConnectLinkForToken: vi.fn(),
+}))
+
 const returnValidationErrors = vi.fn((_schema: unknown, errors: unknown) => ({
   validationErrors: errors,
 }))

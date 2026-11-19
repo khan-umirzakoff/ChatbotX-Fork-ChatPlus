@@ -10,17 +10,19 @@ import {
   messageTypes,
 } from "@chatbotx.io/sdk"
 import { extractInvisibleGoogleClick } from "@chatbotx.io/utils/google-click"
-import type { ServerMessageTypes } from "whatsapp-api-js/types"
+import type { ServerMessage, ServerMessageTypes } from "whatsapp-api-js/types"
 import { z } from "zod"
 import { getWhatsappClient } from "../../client"
 import {
   isStandbyEchoItem,
+  isTemplateEcho,
   parseStandbyEcho,
   readThreadControlReceiveInfo,
 } from "../../lib/conversation-routing"
 import { extractWhatsappUserIdentity } from "../../lib/raw-identity"
 import { asString } from "../../lib/value"
 import type { WhatsappAuthValue, WhatsappWebhookEvent } from "../../schema"
+import { readFlowResponseMedia } from "./incoming-flow-media"
 import {
   parseAudioMessage,
   parseDocumentMessage,
@@ -67,6 +69,7 @@ const getWhatsappReferral = (
     type: asString(referral.source_type),
     adId: asString(referral.source_id),
     adTitle: asString(referral.headline),
+    adBody: asString(referral.body),
     sourceUrl: asString(referral.source_url),
     sourcePlatform: deriveAdSourcePlatform(asString(referral.source_url)),
     ctwaClid: asString(referral.ctwa_clid),
@@ -234,16 +237,34 @@ const readReferredProductCommerce = (
     : undefined
 }
 
-const parseInteractiveMessage: WhatsappMessageParser<"interactive"> = (
+/**
+ * The id of the message a reply answers (`context.id`). Parsers are typed with
+ * their message type's own fields, but they get the whole webhook message, so
+ * `context` is read through `ServerMessage`.
+ */
+const readContextMessageId = (message: object): string | null =>
+  asString((message as Pick<ServerMessage, "context">).context?.id)
+
+const parseInteractiveMessage: WhatsappMessageParser<"interactive"> = async (
   message,
+  deps,
 ) => {
-  const reply = readInteractiveReply(message.interactive)
+  const reply = readInteractiveReply(
+    message.interactive,
+    readContextMessageId(message),
+  )
+  // A Flow answer can carry uploaded files (PhotoPicker / DocumentPicker).
+  const flowMedia = await readFlowResponseMedia(
+    deps.ctx,
+    reply.contentAttributes,
+  )
   return {
     text: reply.text,
     postbackAction: reply.postbackAction,
     templateFlowToken: reply.templateFlowToken,
     buttonTitle: reply.buttonTitle,
     contentAttributes: reply.contentAttributes,
+    ...flowMedia,
   }
 }
 
@@ -296,6 +317,11 @@ export const receiveMessage: MessageHandlers<WhatsappAuthValue>["receiveMessage"
 
     // A standby echo is a partner's outgoing message, not a customer message:
     // its "message" is the Send API body, so it never reaches the type parsers.
+    // Only the owner (or the escalation partner, whose send takes the thread)
+    // can send a Service message, so a Service echo means another app owns the
+    // thread. A template echo means nothing: any partner may send templates and
+    // they never change ownership (Meta thread lifecycle; Testing Guide SC-1
+    // step 3 "It is still the owner", SC-4 step 1 "The thread stays Idle").
     if (
       threadControl?.delivery === "standby" &&
       isStandbyEchoItem(data.message)
@@ -308,7 +334,9 @@ export const receiveMessage: MessageHandlers<WhatsappAuthValue>["receiveMessage"
         quickReplyAction: null,
         ref: null,
         echoOrigin: echoOrigins.enum.thirdParty,
-        threadControl,
+        threadControl: isTemplateEcho(data.message)
+          ? { ...threadControl, signalsOwnership: false }
+          : threadControl,
       }
     }
 

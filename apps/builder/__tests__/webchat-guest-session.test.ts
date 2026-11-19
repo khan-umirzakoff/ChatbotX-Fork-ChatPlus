@@ -1,10 +1,11 @@
 // @vitest-environment node
 
 import type { IntegrationWebchatModel } from "@chatbotx.io/database/types"
-import { beforeEach, describe, expect, test, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest"
 import {
-  getParentOriginFromUrl,
+  getClientEmbeddingOrigin,
   isOriginAuthorized,
+  resolveEmbeddingOrigin,
 } from "@/features/integration-webchat/lib/authorized-domain"
 import { createGuestConversationId } from "@/features/integration-webchat/lib/guest-conversation-id"
 import {
@@ -31,6 +32,14 @@ vi.mock("@chatbotx.io/utils", async (importOriginal) => {
   return { ...actual, createId: vi.fn(() => "generated-id") }
 })
 
+const { kyGet, kyPost } = vi.hoisted(() => ({
+  kyGet: vi.fn(),
+  kyPost: vi.fn(
+    async (_url: string, _options: { json: { postback?: string } }) => ({}),
+  ),
+}))
+vi.mock("ky", () => ({ default: { get: kyGet, post: kyPost } }))
+
 const createLocalStorageMock = (initial: Record<string, string> = {}) => {
   const items = new Map(Object.entries(initial))
 
@@ -52,6 +61,17 @@ const createWebchatConfig = (
     persistentMenus: [],
     ...overrides,
   }) as IntegrationWebchatModel
+
+const makeWebchatMessage = (id: string, clientId = "client-a") =>
+  ({
+    id,
+    clientId,
+    conversationId: "conversation-1",
+    workspaceId: "workspace-1",
+    createdAt: new Date("2026-01-01T00:00:00Z"),
+    updatedAt: new Date("2026-01-01T00:00:00Z"),
+    text: "message",
+  }) as never
 
 const GUEST_ID_UUID_PATTERN =
   /^workspace-1:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -133,7 +153,7 @@ describe("webchat guest session store", () => {
     const scopedKey = buildGuestStorageKey("workspace-1", "webchat-1")
     vi.stubGlobal(
       "localStorage",
-      createLocalStorageMock({ [scopedKey]: "workspace-1:existing-guest" }),
+      createLocalStorageMock({ [scopedKey]: "20260101000000001" }),
     )
 
     const store = createGuestSessionStore(createWebchatConfig())
@@ -141,13 +161,13 @@ describe("webchat guest session store", () => {
     store.getState().initGuestSession("workspace-1:server-guest")
 
     const state = store.getState()
-    expect(state.guestConversationId).toBe("workspace-1:existing-guest")
+    expect(state.guestConversationId).toBe("20260101000000001")
     expect(state.isNewGuestSession).toBe(false)
   })
 
   test("migrates a legacy global session without marking it new", () => {
     const localStorageMock = createLocalStorageMock({
-      [GUEST_CONVERSATION_ID_KEY]: "workspace-1:legacy-guest",
+      [GUEST_CONVERSATION_ID_KEY]: "20260101000000002",
     })
     vi.stubGlobal("localStorage", localStorageMock)
 
@@ -157,10 +177,49 @@ describe("webchat guest session store", () => {
 
     const scopedKey = buildGuestStorageKey("workspace-1", "webchat-1")
     const state = store.getState()
-    expect(state.guestConversationId).toBe("workspace-1:legacy-guest")
+    expect(state.guestConversationId).toBe("20260101000000002")
     expect(state.isNewGuestSession).toBe(false)
+    expect(localStorageMock.items.get(scopedKey)).toBe("20260101000000002")
+  })
+
+  test("discards a corrupted scoped guest id and mints a fresh session", () => {
+    const scopedKey = buildGuestStorageKey("workspace-1", "webchat-1")
+    const localStorageMock = createLocalStorageMock({
+      // Two Snowflake ids joined by `:` — matches neither the digits-only
+      // legacy shape nor the current `<workspaceId>:<uuid>` shape.
+      [scopedKey]: "11588416937148416:11609574568902656",
+    })
+    vi.stubGlobal("localStorage", localStorageMock)
+    vi.spyOn(console, "warn").mockImplementation(() => undefined)
+
+    const store = createGuestSessionStore(createWebchatConfig())
+
+    store.getState().initGuestSession("workspace-1:server-guest")
+
+    const state = store.getState()
+    expect(state.guestConversationId).toBe("workspace-1:server-guest")
+    expect(state.isNewGuestSession).toBe(true)
     expect(localStorageMock.items.get(scopedKey)).toBe(
-      "workspace-1:legacy-guest",
+      "workspace-1:server-guest",
+    )
+  })
+
+  test("discards a corrupted legacy guest id and mints a fresh session", () => {
+    const localStorageMock = createLocalStorageMock({
+      [GUEST_CONVERSATION_ID_KEY]: "not-a-valid-id",
+    })
+    vi.stubGlobal("localStorage", localStorageMock)
+
+    const store = createGuestSessionStore(createWebchatConfig())
+
+    store.getState().initGuestSession("workspace-1:server-guest")
+
+    const scopedKey = buildGuestStorageKey("workspace-1", "webchat-1")
+    const state = store.getState()
+    expect(state.guestConversationId).toBe("workspace-1:server-guest")
+    expect(state.isNewGuestSession).toBe(true)
+    expect(localStorageMock.items.get(scopedKey)).toBe(
+      "workspace-1:server-guest",
     )
   })
 
@@ -189,9 +248,128 @@ describe("webchat guest session store", () => {
       ),
     ).toBe(true)
   })
+
+  test("reconciles an optimistic message with its server echo by client id", () => {
+    const store = createGuestSessionStore(createWebchatConfig())
+
+    store.getState().sendMessage("hi", "client-a")
+    store.getState().handleNewMessage(makeWebchatMessage("message-1"))
+
+    expect(store.getState().messages.map((message) => message.id)).toEqual([
+      "message-1",
+    ])
+  })
+
+  test("marks an optimistic message failed by client id", () => {
+    const store = createGuestSessionStore(createWebchatConfig())
+
+    store.getState().sendMessage("hi", "client-a")
+    store.getState().markMessageFailed("client-a", "Network offline")
+
+    expect(store.getState().messages[0]?.sendError).toBe("Network offline")
+  })
+
+  test("keeps distinct server echoes that share a client id", () => {
+    const store = createGuestSessionStore(createWebchatConfig())
+
+    store.getState().sendMessage("hi", "client-a")
+    store.getState().handleNewMessage(makeWebchatMessage("message-1"))
+    store.getState().handleNewMessage(makeWebchatMessage("message-2"))
+
+    expect(store.getState().messages.map((message) => message.id)).toEqual([
+      "message-1",
+      "message-2",
+    ])
+  })
+
+  test("ignores duplicate realtime message ids", () => {
+    const store = createGuestSessionStore(createWebchatConfig())
+
+    store.getState().handleNewMessage(makeWebchatMessage("message-1"))
+    store.getState().handleNewMessage(makeWebchatMessage("message-1"))
+
+    expect(store.getState().messages.map((message) => message.id)).toEqual([
+      "message-1",
+    ])
+  })
+
+  test("preserves realtime messages received while loading earlier messages", async () => {
+    const store = createGuestSessionStore(createWebchatConfig())
+    const deferredPage = Promise.withResolvers<{
+      data: never[]
+      nextCursor: null
+    }>()
+    kyGet.mockReturnValueOnce({ json: () => deferredPage.promise })
+    const olderMessage = makeWebchatMessage("message-older")
+    const realtimeMessage = makeWebchatMessage("message-realtime")
+
+    const loadMore = store.getState().loadMoreMessages("guest-1", 20)
+    store.getState().handleNewMessage(realtimeMessage)
+    deferredPage.resolve({ data: [olderMessage], nextCursor: null })
+    await loadMore
+
+    expect(store.getState().messages.map((message) => message.id)).toEqual([
+      "message-older",
+      "message-realtime",
+    ])
+  })
+})
+
+describe("webchat guest session postback", () => {
+  beforeEach(() => {
+    vi.unstubAllGlobals()
+    vi.clearAllMocks()
+    vi.stubGlobal("localStorage", createLocalStorageMock())
+  })
+
+  const postedPostbacks = () =>
+    kyPost.mock.calls.map(([, options]) => options.json.postback)
+
+  test("replays a reply button's postback", async () => {
+    const store = createGuestSessionStore(createWebchatConfig())
+
+    await store.getState().sendPostback({
+      id: "1",
+      label: "More",
+      buttonType: "postback",
+      postback: "more-payload",
+    })
+
+    expect(postedPostbacks()).toEqual(["more-payload"])
+  })
+
+  test("replays a call button's postback when it is shown as a reply", async () => {
+    const store = createGuestSessionStore(createWebchatConfig())
+
+    await store.getState().sendPostback({
+      id: "1",
+      label: "Call us",
+      buttonType: "phoneNumber",
+      phoneNumber: "+14155552671",
+      postback: "call-payload",
+    })
+
+    expect(postedPostbacks()).toEqual(["call-payload"])
+  })
+
+  test("sends nothing for a link button", async () => {
+    const store = createGuestSessionStore(createWebchatConfig())
+
+    await store.getState().sendPostback({
+      id: "1",
+      label: "Open",
+      buttonType: "url",
+      url: "https://example.com",
+    })
+
+    expect(kyPost).not.toHaveBeenCalled()
+  })
 })
 
 describe("webchat authorized domains", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
   test("rejects origins when no domains are configured (fail closed)", () => {
     expect(isOriginAuthorized("https://example.com", [])).toBe(false)
   })
@@ -220,12 +398,35 @@ describe("webchat authorized domains", () => {
     expect(isOriginAuthorized(undefined, ["example.com"])).toBe(true)
   })
 
-  test("extracts a parent origin from a webchat referer URL", () => {
+  test("prefers parentOrigin, then domain, then referer when resolving the embedding origin", () => {
     expect(
-      getParentOriginFromUrl(
-        "https://builder.test/webchat?parentOrigin=https%3A%2F%2Fexample.com",
-      ),
-    ).toBe("https://example.com")
+      resolveEmbeddingOrigin({
+        domain: "domain.example",
+        parentOrigin: "https://parent.example",
+        referer: "https://referer.example/path",
+      }),
+    ).toBe("https://parent.example")
+    expect(
+      resolveEmbeddingOrigin({
+        domain: "domain.example",
+        referer: "https://referer.example/path",
+      }),
+    ).toBe("domain.example")
+    expect(
+      resolveEmbeddingOrigin({ referer: "https://referer.example/path" }),
+    ).toBe("https://referer.example/path")
+    expect(resolveEmbeddingOrigin({})).toBeNull()
+  })
+
+  test("reads parentOrigin from the webchat URL", () => {
+    vi.stubGlobal("window", {
+      location: {
+        search: "?parentOrigin=https%3A%2F%2Fwww.example.com",
+      },
+    })
+    vi.stubGlobal("document", { referrer: "https://referer.example" })
+
+    expect(getClientEmbeddingOrigin()).toBe("https://www.example.com")
   })
 })
 

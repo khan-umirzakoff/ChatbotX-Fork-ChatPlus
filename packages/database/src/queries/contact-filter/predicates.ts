@@ -6,7 +6,11 @@ import {
   contactInfoTypes,
   operatorTypes,
 } from "../../partials"
-import { contactInboxModel, messageModel } from "../../schema"
+import {
+  contactInboxModel,
+  conversationModel,
+  messageModel,
+} from "../../schema"
 import { escapeLikePattern, likeContains } from "../../utils"
 import { contactInboxExists } from "./exists"
 import { filterValueToUtcInstantWindow } from "./timezone"
@@ -26,6 +30,14 @@ const COLUMN_NEGATION_OPERATORS = new Set<string>([
 
 export const contactInboxInteractedWithin24hSQL = (): SQL =>
   sql`${contactInboxModel.lastIncomingMessageAt} >= NOW() - INTERVAL '24 hours'`
+
+/**
+ * The contact inbox's contact has a DM conversation (`sourceId IS NULL`; a
+ * comment thread is keyed by its post id, so a contact that only commented
+ * has none).
+ */
+export const contactInboxHasDmSQL = (): SQL =>
+  sql`EXISTS (SELECT 1 FROM ${conversationModel} WHERE ${conversationModel.contactId} = ${contactInboxModel.contactId} AND ${conversationModel.sourceId} IS NULL)`
 
 export type ContactInboxScope = {
   /** Contact must have a contact-inbox on one of these inboxes. Omit for any inbox. */
@@ -177,7 +189,7 @@ export function buildColumnWhere(
  * SQL expression), or `undefined` when the value/operator is unusable so the
  * caller can drop the condition instead of emitting a false predicate.
  */
-function resolveTimestamptzComparison(
+export function resolveTimestamptzComparison(
   operator: string,
   value: unknown,
   timezone: string,
@@ -595,7 +607,7 @@ export function buildLastCommentWhere(
   return contactInboxExists(commentPredicate, shouldNegate)
 }
 
-function buildDatetimeAggregateComparison(
+export function buildDatetimeAggregateComparison(
   operator: string,
   value: unknown,
   latestValue: SQL,
@@ -613,7 +625,7 @@ function buildDatetimeAggregateComparison(
   return resolveTimestamptzComparison(operator, value, timezone)?.(latestValue)
 }
 
-function buildNumberAggregateComparison(
+export function buildNumberAggregateComparison(
   operator: string,
   value: unknown,
   latestValue: SQL,

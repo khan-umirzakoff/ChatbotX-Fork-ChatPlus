@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, test, vi } from "vitest"
 
+const authEnv = vi.hoisted(() => ({ AUTH_OAUTH_TRUST_EMAIL: false }))
+
+vi.mock("../src/keys", () => ({ env: authEnv }))
 vi.mock("../src/logger", () => ({
   logger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() },
 }))
@@ -14,6 +17,7 @@ const internalAdapter = {
   findUserById: vi.fn(),
   findAccounts: vi.fn(),
   deleteAccount: vi.fn(async () => undefined),
+  updateUser: vi.fn(async () => ({ id: USER_ID, emailVerified: true })),
 }
 const deleteMany = vi.fn(async () => 2)
 const context = {
@@ -38,9 +42,11 @@ const account = (providerId: string, idToken?: string) =>
   }) as never
 
 beforeEach(() => {
+  authEnv.AUTH_OAUTH_TRUST_EMAIL = false
   vi.clearAllMocks()
   internalAdapter.findUserById.mockResolvedValue({
     id: USER_ID,
+    email: "owner@example.com",
     emailVerified: false,
     createdAt: oldDate(),
   })
@@ -62,6 +68,9 @@ describe("claimUnverifiedAccountBeforeLink", () => {
     expect(internalAdapter.deleteAccount).toHaveBeenCalledWith("acc-pwd")
     expect(internalAdapter.deleteAccount).toHaveBeenCalledWith("acc-fb")
     expect(deleteMany).toHaveBeenCalledWith(SESSION_DELETE)
+    expect(internalAdapter.updateUser).toHaveBeenCalledWith(USER_ID, {
+      emailVerified: true,
+    })
   })
 
   test.each([
@@ -74,6 +83,66 @@ describe("claimUnverifiedAccountBeforeLink", () => {
     ).rejects.toThrow(DID_NOT_ATTEST_ERROR)
     expect(internalAdapter.deleteAccount).not.toHaveBeenCalled()
     expect(deleteMany).not.toHaveBeenCalled()
+  })
+
+  test.each([
+    ["true", idTokenWith({ email_verified: true })],
+    ['"true" (string)', idTokenWith({ email_verified: "true" })],
+  ])("Apple with email_verified %s claims the placeholder and promotes it", async (_label, token) => {
+    await expect(
+      claimUnverifiedAccountBeforeLink(account("apple", token), context),
+    ).resolves.toBeUndefined()
+    expect(internalAdapter.deleteAccount).toHaveBeenCalledTimes(2)
+    expect(deleteMany).toHaveBeenCalledWith(SESSION_DELETE)
+    expect(internalAdapter.updateUser).toHaveBeenCalledWith(USER_ID, {
+      emailVerified: true,
+    })
+  })
+
+  test.each([
+    ["email_verified is false", idTokenWith({ email_verified: false })],
+    ['email_verified is "false"', idTokenWith({ email_verified: "false" })],
+    ["there is no id token", undefined],
+  ])("Apple is refused when %s", async (_label, token) => {
+    await expect(
+      claimUnverifiedAccountBeforeLink(account("apple", token), context),
+    ).rejects.toThrow(DID_NOT_ATTEST_ERROR)
+    expect(internalAdapter.deleteAccount).not.toHaveBeenCalled()
+    expect(deleteMany).not.toHaveBeenCalled()
+  })
+
+  test('Google still refuses the string "true"', async () => {
+    await expect(
+      claimUnverifiedAccountBeforeLink(
+        account("google", idTokenWith({ email_verified: "true" })),
+        context,
+      ),
+    ).rejects.toThrow(DID_NOT_ATTEST_ERROR)
+    expect(deleteMany).not.toHaveBeenCalled()
+  })
+
+  test("OIDC is refused when its id token does not attest the email", async () => {
+    await expect(
+      claimUnverifiedAccountBeforeLink(
+        account("oidc", idTokenWith({ email_verified: false })),
+        context,
+      ),
+    ).rejects.toThrow(DID_NOT_ATTEST_ERROR)
+    expect(internalAdapter.deleteAccount).not.toHaveBeenCalled()
+    expect(deleteMany).not.toHaveBeenCalled()
+  })
+
+  test("OIDC may claim an unverified account when email trust is enabled", async () => {
+    authEnv.AUTH_OAUTH_TRUST_EMAIL = true
+
+    await expect(
+      claimUnverifiedAccountBeforeLink(
+        account("oidc", idTokenWith({ email_verified: false })),
+        context,
+      ),
+    ).resolves.toBeUndefined()
+    expect(internalAdapter.deleteAccount).toHaveBeenCalledTimes(2)
+    expect(deleteMany).toHaveBeenCalledWith(SESSION_DELETE)
   })
 
   test("Facebook into an unverified placeholder claims it", async () => {

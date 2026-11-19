@@ -233,9 +233,141 @@
     "title": "AI-agenter"
   },
   "aiFiles": {
+    "detail": {
+      "title": "Knowledge details",
+      "details": "Details",
+      "noChunkingInfo": "No processing information is available yet."
+    },
+    "chunking": {
+      "title": "Chunking",
+      "strategyLabel": "Strategy",
+      "version": "Chunker version",
+      "chunkSize": "Chunk size",
+      "overlapSize": "Overlap size",
+      "chunkCount": "Chunks",
+      "processedAt": "Processed at",
+      "outdated": "Reindex recommended",
+      "strategy": {
+        "prose": "Prose",
+        "tabular": "Tabular",
+        "markdown": "Markdown"
+      },
+      "configDefault": "Chunking parameters: defaults ({chunkSize} characters, overlap {overlapSize}).",
+      "configCustom": "Chunking parameters: {chunkSize} characters, overlap {overlapSize}."
+    },
+    "processingRun": {
+      "title": "Processing run",
+      "noRun": "No processing run has been tracked for this file yet.",
+      "queuedAt": "Queued at",
+      "startedAt": "Started at",
+      "heartbeatAt": "Last heartbeat",
+      "finishedAt": "Finished at",
+      "stale": "Processing appears stalled",
+      "failedBadge": "Processing failed",
+      "successNote": "Chunking and embedding enqueueing completed. The file is searchable when embedding status is also complete.",
+      "status": {
+        "queued": "Queued",
+        "processing": "Processing",
+        "success": "Prepared",
+        "error": "Failed"
+      },
+      "error": {
+        "fileTooLarge": "The file is too large to process.",
+        "tooManyChunks": "The file produced too many chunks.",
+        "fileUnreadable": "The file could not be read. For CSV files, save as CSV UTF-8 and try again.",
+        "noExtractableContent": "No content could be extracted. Check the spreadsheet header row, or the file may be a scan or empty.",
+        "noEmbeddingProvider": "No embedding provider is configured.",
+        "enqueueFailed": "The file was saved but processing could not be queued. Reindex it to try again.",
+        "unknown": "Processing failed unexpectedly."
+      }
+    },
+    "reindex": {
+      "action": "Reindex",
+      "confirmTitle": "Reindex this file?",
+      "confirmDescription": "The file will be processed with the current chunker.",
+      "downtimeWarning": "Search may be temporarily unavailable while this file is reindexed.",
+      "queued": "Reindex queued",
+      "alreadyRunning": "Processing is already running for this file.",
+      "rateLimited": "Too many requests. Try again shortly.",
+      "parameters": "Chunking parameters",
+      "strategyLabel": "How to split",
+      "strategy": {
+        "auto": "Automatic (by file type)",
+        "prose": "Plain text"
+      },
+      "chunkSize": "Chunk size (characters)",
+      "overlapSize": "Overlap (characters)",
+      "overlapDisabledTabular": "Spreadsheets keep each row whole, so overlap is not used.",
+      "tabularHeaderRow": "Header row (spreadsheets)",
+      "presets": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "custom": "Custom chunk size"
+      },
+      "resetDefaults": "Restore defaults",
+      "estimate": "Estimate: about {estimate} chunks (currently {current})",
+      "reembedWarning": "Changing parameters re-embeds the whole file (about {count} chunks) with your workspace key, and the file cannot be searched until it finishes.",
+      "largeChunkWarning": "Larger chunks make every agent answer read more text and cost more tokens.",
+      "noChangeNote": "Parameters are unchanged: chunks that are already embedded are kept and not embedded again.",
+      "conflict": "This file is being processed, so the new parameters were not applied. Try again when processing finishes."
+    },
+    "chunks": {
+      "indexOutdated": "Some chunks have no position yet. Reindex the file to number them."
+    },
     "description": "Ge dina agenter åtkomst till PDF-filer, dokument och annat",
     "noEmbeddingProvider": "Ingen leverantör för inbäddningar har konfigurerats. AI-filinbäddningar kräver en OpenAI- eller Gemini-integration. DeepSeek och Claude stöder inte inbäddningsmodeller.",
-    "title": "Kunskap"
+    "title": "Kunskap",
+    "testQuery": {
+      "title": "Test query",
+      "description": "Pick files, ask a question and see which chunk answers it. Only the retrieval step is simulated; no AI answer is generated.",
+      "open": "Test query",
+      "backToKnowledge": "Back to Knowledge",
+      "run": "Run test",
+      "files": "Files",
+      "filterFiles": "Filter files by name",
+      "selectAllReady": "Select all ready files",
+      "selectedCount": "{count}/{max} selected",
+      "fileNotReady": "This file has no chunks ready for search yet.",
+      "question": "Question",
+      "expected": "Expected answer (optional)",
+      "expectedHelp": "Type the answer exactly as it appears in the document, accents included. It is matched against every chunk of the selected files.",
+      "limit": "Result limit",
+      "simulationNote": "This simulates retrieval only; an agent may phrase a question differently. Each run uses one embedding from your workspace key.",
+      "rateLimited": "Too many test requests. Try again shortly.",
+      "byFile": "By file",
+      "matches": "{count} matching chunks",
+      "bestRank": "best rank {rank}",
+      "needsReindex": "Needs reindex",
+      "openDetail": "Open details",
+      "rank": "#{rank}",
+      "chunkNumber": "chunk #{index}",
+      "chunkUnnumbered": "chunk not numbered",
+      "aiWillSee": "AI will see",
+      "belowThreshold": "Below threshold",
+      "containsExpected": "Contains the answer",
+      "thresholdLine": "Threshold {threshold}",
+      "appliedConfig": "Applied configuration",
+      "agentDefaultThreshold": "Agent default threshold",
+      "timings": "Search time",
+      "scoreNotComparable": "Similarity scores are not directly comparable across embedding models.",
+      "answerLocation": "Answer is in {file} · {chunk} · rank {rank}",
+      "splitHint": "The answer may be split between two chunks. Try a larger chunk size or overlap, or check the file was read correctly.",
+      "previousRun": "Previous run ({time}): answer rank {from} → now {to}",
+      "previousRunTop": "Previous run ({time}): {changed} of {total} top chunks changed",
+      "verdict": {
+        "inTopResults": "The AI will see the expected answer.",
+        "foundButLowRank": "The answer is in the documents but ranks too low for the AI to see it. Try a closer question, or reindex with smaller chunks.",
+        "notInAnyChunk": "No chunk of the selected files contains the answer. The document may be read or split wrongly: view the chunks or reindex with other settings."
+      },
+      "diagnosis": {
+        "ok": "Matching chunks found.",
+        "noReadyChunks": "No chunks are ready for search yet. Open the file to check its processing status.",
+        "allBelowThreshold": "Chunks were found but all are below the threshold. Try a lower trial threshold.",
+        "noMatches": "No matching chunks were found.",
+        "agentHasNoFiles": "This agent has no knowledge files."
+      }
+    }
   },
   "aiFunctions": {
     "description": "Konfigurera LLM-funktioner för att göra din AI-agent intelligentare",
@@ -251,6 +383,7 @@
   "aiProviders": {
     "claude": "Claude",
     "deepseek": "DeepSeek",
+    "muse": "Muse",
     "gemini": "Gemini",
     "openai": "OpenAI",
     "openaiCompatible": "OpenAI-kompatibel",
@@ -405,7 +538,8 @@
       "userPlaceholder": "Användar-ID",
       "keyword": "Nyckelord",
       "keywordPlaceholder": "Åtgärd eller detalj",
-      "allAdmins": "Alla administratörer"
+      "allAdmins": "Alla administratörer",
+      "allWorkspaces": "Alla arbetsytor"
     }
   },
   "auth": {
@@ -417,6 +551,7 @@
     "checkYourEmail": "Kontrollera din e-post",
     "continueWithFacebook": "Fortsätt med Facebook",
     "continueWithGoogle": "Fortsätt med Google",
+    "continueWithProvider": "Fortsätt med {name}",
     "continueWithEmail": "Fortsätt med e-post",
     "continueWithMagicLink": "Fortsätt med magisk länk",
     "didNotReceiveEmail": "Fick du inget e-postmeddelande? Kontrollera skräppostmappen.",
@@ -442,11 +577,15 @@
     "signUpTitle": "Registrera dig på {name}",
     "termsOfService": "Användarvillkor",
     "trySigningInAgain": "Du kan också försöka logga in igen med en annan e-postadress.",
+    "signUpDisabledTitle": "Registrering är inaktiverad",
+    "signUpDisabledDescription": "Nya konton kan endast skapas av en administratör eller via en inbjudningslänk.",
     "oauthError": {
       "accountNotLinked": "Det finns redan ett konto med den här e-postadressen och det kunde inte kopplas. Logga in på samma sätt som tidigare eller kontakta supporten.",
       "unableToLinkAccount": "Vi kunde inte koppla den här inloggningen till det befintliga kontot. Logga in på samma sätt som tidigare eller kontakta supporten.",
       "sessionExpired": "Inloggningsförsöket har gått ut. Försök igen.",
       "accessDenied": "Inloggningen avbröts.",
+      "signUpDisabled": "Det här kontot finns inte ännu och registrering är inaktiverad. Be en administratör att skapa det åt dig.",
+      "invalidInvitation": "Den här inbjudan är ogiltig eller har löpt ut.",
       "generic": "Inloggningen misslyckades. Försök igen."
     }
   },
@@ -594,6 +733,8 @@
       "title": "Mallmeddelande"
     },
     "receiversCount": "Mottagare: {count}",
+    "receiversCountCapped": "Mottagare: {count}+",
+    "receiversCountUnknown": "Mottagare: ?",
     "receiversLoading": "Mottagare: Läser in...",
     "stats": {
       "clicked": "Klickat",
@@ -784,6 +925,7 @@
       "clicked": "Klickat",
       "failed": "Misslyckades",
       "missed": "Missade",
+      "moderated": "Modererade",
       "noContacts": "Inga kontakter hittades",
       "noComment": "(ingen text)",
       "pageInfo": "Sida {page} av {pageCount}",
@@ -803,7 +945,9 @@
       "contactNotNew": "Kontakten är inte ny",
       "alreadyRepliedOnPost": "Redan besvarad på detta inlägg",
       "engagedOnOtherPost": "Har redan interagerat på ett annat inlägg",
-      "mentionCountNotMatched": "Antalet omnämnanden stämde inte"
+      "mentionCountNotMatched": "Antalet omnämnanden stämde inte",
+      "noImageAttachment": "Ingen bild bifogad",
+      "moderated": "Dold eller borttagen av moderering"
     },
     "replyTo": {
       "mentions": "Kommentarer med tillräckligt många omnämnanden",
@@ -823,6 +967,10 @@
       "label": "Spåra om en användare taggar andra användare",
       "descriptionText": "Räknar kontona som taggas i varje kommentar och lägger till dem i kontaktens totaler över alla kommentarer. Använd '{{total_tagged}}' för alla taggade konton och '{{total_new_tagged}}' för konton som aldrig har skrivit till din sida eller varit kontakter."
     },
+    "onlyCommentsWithImage": {
+      "label": "Svara bara på kommentarer med en bild",
+      "descriptionText": "Svara automatiskt bara när kommentaren innehåller en bild. GIF:ar och klistermärken räknas inte. Kommentarer utan bild hoppas över och nästa automatisering provas."
+    },
     "card": {
       "reply": "Svar"
     },
@@ -840,6 +988,87 @@
       "column": "Konto",
       "disconnected": "Frånkopplat konto",
       "disconnectedDescription": "Den här automatiseringen hör till ett konto som inte längre är anslutet, så den svarar inte på några kommentarer. Anslut kontot igen eller välj ett annat."
+    },
+    "aiModeration": {
+      "enabled": "AI-moderering",
+      "description": "En AI-agent läser varje kommentar innan boten svarar och döljer eller tar bort dem i kategorierna nedan. En modererad kommentar får aldrig något svar.",
+      "aiAgentDescription": "Endast agentens AI-modell används, inte dess prompt.",
+      "categoriesLabel": "Blockera kommentarer som är",
+      "categories": {
+        "hate": "Hatpropaganda",
+        "offensive": "Kränkande",
+        "harassment": "Trakasserier",
+        "negative": "Fientliga mot varumärket",
+        "spam": "Skräppost eller bedrägeri"
+      },
+      "categoryDescriptions": {
+        "hate": "Angriper en grupp på grund av ras, religion, kön, nationalitet och liknande",
+        "offensive": "Förolämpningar, svordomar, vulgärt språk",
+        "harassment": "Hot, mobbning, angrepp på en person",
+        "negative": "Syftar till att skada varumärket. Artiga klagomål blockeras inte",
+        "spam": "Bedrägerier, nätfiske, orelaterad marknadsföring"
+      },
+      "instruction": "Extra vägledning för AI:n",
+      "instructionDescription": "Valfritt. Tala om för AI:n vad som ska tillåtas eller blockeras.",
+      "instructionPlaceholder": "t.ex. Blockera inte kunder som klagar på priset",
+      "action": "När en kommentar blockeras",
+      "actions": {
+        "hide": "Dölj den",
+        "delete": "Ta bort den"
+      },
+      "deleteWarning": "Borttagna kommentarer är borta för alltid och kan inte återställas. Att dölja är säkrare om AI:n gör fel."
+    },
+    "moderationLog": {
+      "title": "Modererade kommentarer",
+      "description": "Kommentarer som den här automatiseringen har dolt eller tagit bort, och varför.",
+      "allActions": "Alla åtgärder",
+      "allSources": "Regler och AI",
+      "actions": {
+        "hide": "Dold",
+        "delete": "Borttagen"
+      },
+      "sources": {
+        "rule": "Av en döljregel",
+        "ai": "Av AI"
+      },
+      "statuses": {
+        "pending": "Pågår",
+        "done": "Klar",
+        "failed": "Misslyckades"
+      },
+      "rules": {
+        "all": "Dölj alla kommentarer",
+        "phoneNumber": "Innehåller telefonnummer",
+        "link": "Innehåller länk",
+        "keyword": "Innehåller nyckelord",
+        "image": "Innehåller bild",
+        "video": "Innehåller video",
+        "gif": "Innehåller GIF",
+        "emoji": "Innehåller emoji"
+      },
+      "summary": {
+        "total": "{count} modererade",
+        "hidden": "{count} dolda",
+        "deleted": "{count} borttagna",
+        "byAI": "{count} av AI",
+        "byRule": "{count} av regler",
+        "failed": "{count} misslyckades"
+      },
+      "columns": {
+        "time": "Tid",
+        "contact": "Kontakt",
+        "comment": "Kommentar",
+        "action": "Åtgärd",
+        "reason": "Orsak",
+        "status": "Status"
+      },
+      "loading": "Laddar…",
+      "empty": "Inga kommentarer har dolts eller tagits bort än.",
+      "unknownContact": "Okänd",
+      "noText": "(ingen text)",
+      "previous": "Föregående",
+      "next": "Nästa",
+      "page": "Sida {page} av {pageCount}"
     }
   },
   "channels": {
@@ -908,14 +1137,22 @@
         "inProgress": "Anslutningen pågår redan.",
         "unknown": "Något gick fel.",
         "followUpFailed": "Konfigurationen är inte klar – slutför den i kanalinställningarna.",
-        "webhookSubscribeFailed": "Ansluten, men webhook-prenumerationen misslyckades – försök igen från anslutningsinställningarna."
+        "webhookSubscribeFailed": "Ansluten, men webhook-prenumerationen misslyckades – försök igen från anslutningsinställningarna.",
+        "providerUnavailable": "Leverantören är tillfälligt otillgänglig. Försök igen om några minuter."
       },
       "sessionError": {
         "sessionExpired": "Din session har gått ut. Anslut igen.",
         "notMember": "Du är inte längre medlem i den här arbetsytan.",
         "trialExpired": "Din provperiod har gått ut.",
         "macLimitReached": "Du har nått ditt kontos gräns.",
-        "credentialMissing": "Autentiseringsuppgifter saknas. Anslut igen."
+        "credentialMissing": "Autentiseringsuppgifter saknas. Anslut igen.",
+        "noPages": "Vi hittade ingen Facebook-sida att ansluta. Anslut igen och ge åtkomst till minst en sida som du hanterar.",
+        "noInstagramAccounts": "Vi hittade inget Instagram-konto att ansluta. Anslut igen och ge åtkomst till minst ett konto.",
+        "exchangeFailed": "Inloggningen kunde inte slutföras. Anslut igen.",
+        "providerError": "Vi kunde inte läsa in dina konton just nu. Försök igen om några minuter.",
+        "connectFailed": "Något gick fel vid anslutningen. Försök igen.",
+        "tooManyAttempts": "Det finns för många oavslutade anslutningsförsök. Vänta några minuter och försök sedan igen.",
+        "notAllowed": "Du kan inte ansluta kanaler här just nu. Läs in sidan igen för att se varför."
       },
       "cancelRemaining": "Avbryt återstående",
       "retryFailed": "Försök igen ({count})",
@@ -972,6 +1209,7 @@
   },
   "condition": {
     "unknownValue": "Okänd",
+    "deletedValue": "Borttagen (#{id})",
     "datePlaceholder": "YYYY-MM-DD",
     "datetimeInvalid": "Ange ett datum som YYYY-MM-DD HH:mm eller en variabel",
     "openPost": "Öppna {post}",
@@ -993,7 +1231,8 @@
       "systemFields": "Systemfält",
       "systemTime": "Systemtid",
       "topicCoupon": "Kupongämne",
-      "leaderboard": "Gamificationpoäng"
+      "leaderboard": "Gamificationpoäng",
+      "pipeline": "Pipelines"
     },
     "fields": {
       "appliedJobs": "Sökta jobb",
@@ -1013,6 +1252,7 @@
       "contactCreatedAt": "Kontakten skapades",
       "fromCtwaAd": "Från annons",
       "fromGoogleAd": "Från Google Ads",
+      "clickedAd": "Klickade på annons",
       "ctwaConversion": "Annonskonvertering",
       "contactCreatedDate": "Datum då kontakten skapades",
       "contactCreatedDateMinutesAgo": "Datum då kontakten skapades (minuter sedan)",
@@ -1111,7 +1351,8 @@
       "unread": "Oläst",
       "unreplied": "Obesvarat",
       "verifiedAccountOnInstagram": "Verifierat konto på Instagram",
-      "votedOnPoll": "Röstat i omröstningen"
+      "votedOnPoll": "Röstat i omröstningen",
+      "pipelineItem": "Pipeline-objekt"
     },
     "languages": {
       "ar": "Arabiska",
@@ -1148,6 +1389,7 @@
       "botLink": "Botlänk",
       "chatPlugin": "C. chattplugin",
       "comments": "Kommentarer",
+      "liveComments": "Livestream-kommentarer",
       "direct": "Direkt",
       "fbLeadAd": "FB-leadannons",
       "imported": "Importerad",
@@ -1165,7 +1407,23 @@
       "allAds": "alla annonser"
     },
     "valuePlaceholder": "...",
-    "yes": "Ja"
+    "yes": "Ja",
+    "noTopic": "Inget ämne",
+    "trackingSince": "Spåras sedan {date}. Tidigare aktivitet ingår inte.",
+    "pipelineItem": {
+      "anyPipeline": "Valfri pipeline",
+      "anyStatus": "Valfri status",
+      "attributes": {
+        "exists": "Objekt",
+        "status": "Objektstatus",
+        "stage": "Objektfas",
+        "priority": "Objektprioritet"
+      },
+      "operators": {
+        "has": "Har",
+        "hasNo": "Har inget"
+      }
+    }
   },
   "contacts": {
     "copyLink": "Kopiera länk",
@@ -1181,7 +1439,26 @@
     "exportTakingLong": "Exporten tar längre tid än väntat",
     "exportTakingLongDescription": "Exporten bearbetas fortfarande. Du kan stänga den här dialogrutan och kontrollera exporthistoriken igen om några minuter.",
     "linkCopied": "Länken har kopierats till urklipp",
-    "title": "Kontakter"
+    "title": "Kontakter",
+    "search": {
+      "placeholder": "Sök (namn, e-post, telefon, kontakt-ID)",
+      "searching": "Söker…",
+      "error": "Det gick inte att söka efter kontakter",
+      "empty": "Inga kontakter hittades"
+    },
+    "exportHistory": {
+      "title": "Exporthistorik",
+      "description": "Kontaktexporter från de senaste {days} dagarna. Därefter raderas filerna.",
+      "empty": "Inga exporter ännu.",
+      "requestedBy": "Av {name}",
+      "deletesOn": "Raderas {date}",
+      "rows": "{count, plural, one {# kontakt} other {# kontakter}}",
+      "status": {
+        "pending": "Bearbetas",
+        "uploaded": "Klar",
+        "failed": "Misslyckades"
+      }
+    }
   },
   "contactScan": {
     "menu": {
@@ -1236,6 +1513,22 @@
       },
       "empty": "No scans have been run yet."
     }
+  },
+  "contactAdReferrals": {
+    "title": "Annonshistorik",
+    "empty": "Inga annonsklick har registrerats för den här kontakten ännu."
+  },
+  "adsReferralStats": {
+    "title": "Kontakter per annons",
+    "description": "Kontakter som varje annons nått och konverteringar som tillskrivs dess klick. Klick räknas sedan spårningen startade.",
+    "ad": "Annons",
+    "contacts": "Kontakter",
+    "firstTouch": "Första kontakt",
+    "leads": "Leads",
+    "purchases": "Köp",
+    "revenue": "Intäkter",
+    "empty": "Inga annonsklick under perioden.",
+    "timeout": "Rapporten tog för lång tid. Välj ett kortare datumintervall."
   },
   "coupons": {
     "actions": {
@@ -1317,6 +1610,18 @@
       "label": "DeepSeek"
     },
     "title": "DeepSeek"
+  },
+  "muse": {
+    "autoReply": {
+      "description": "Aktivera automatiska AI-svar för att svara användare naturligt med AI som drivs av dina företagsdata.",
+      "label": "Automatiskt AI-svar"
+    },
+    "connect": {
+      "description": "Svara användare naturligt med AI som drivs av dina företagsdata.",
+      "embeddingHint": "Muse erbjuder inga embedding-modeller. Kunskapsbas och AI-filer kräver fortfarande en OpenAI- eller Gemini-integration.",
+      "label": "Muse"
+    },
+    "title": "Muse"
   },
   "developerAccessToken": {
     "description": "Generera en token som ger din arbetsyta åtkomst till de offentliga API:erna. Håll denna token hemlig och dela den inte med någon.",
@@ -1404,7 +1709,7 @@
     "unknown": "Okänt"
   },
   "facebookMarketingMessages": {
-    "deleteWarning": "Detta tar bara bort kampanjen från ChatbotX. Meta-meddelandekampanjen fortsätter — pausa eller ta bort den i Annonshanteraren.",
+    "deleteWarning": "Detta tar bort Metas meddelandekampanj och tar bort kampanjen från ChatbotX. Om Meta nekar borttagningen behålls kampanjen.",
     "title": "Facebook Marketing Messages",
     "description": "Öka engagemang och försäljning med personliga kampanjmeddelanden på Messenger.",
     "create": "Skapa ny",
@@ -1429,13 +1734,197 @@
       "generic": "Generisk",
       "greeting": "Hälsning",
       "quickReplies": "Snabbsvar",
-      "elements": "Kort"
+      "elements": "Kort",
+      "targetMessaging": "Målgrupp för meddelanden",
+      "targetOptIn": "Opt-in",
+      "targetOptInDescription": "Kunder på sidan som har samtyckt till att ta emot marknadsföringsmeddelanden",
+      "targetCustomAudience": "Anpassad målgrupp",
+      "targetCustomAudienceDescription": "Skicka meddelanden till målgrupper som laddats upp från en fil",
+      "audience": "Anpassad målgrupp"
     },
+    "noReadyAudiences": "Inga redo anpassade målgrupper för den här sidan och annonskontot.",
+    "manageAudiences": "Hantera målgrupper",
     "errors": {
       "notConfigured": "Facebook Marketing Messages är inte konfigurerat. Be din administratör att ange konfigurations-ID:t för marknadsföringsmeddelanden.",
       "notGranted": "Ge åtkomst för att använda funktionen Marknadsföringsmeddelanden.",
       "tosNotAccepted": "För att använda den här funktionen behöver du godkänna villkoren för anpassade objekt på {url}",
-      "notFound": "Marknadsföringsmeddelandet hittades inte."
+      "notFound": "Marknadsföringsmeddelandet hittades inte.",
+      "audienceNotTargetable": "Den valda anpassade målgruppen är inte redo eller tillhör inte den här sidan och annonskontot.",
+      "connectFirst": "Anslut Marketing Messages i ChatbotX-appen först.",
+      "mmInvalidState": "Den här åtgärden är inte tillgänglig i kampanjens nuvarande tillstånd.",
+      "mmCampaignEnded": "Metas meddelandekampanj har avslutats och kan därför inte skickas eller återupptas.",
+      "mmPageNotConnected": "Kampanjens sida är inte ansluten till den här arbetsytan.",
+      "mmContentLocked": "Innehållet kan inte ändras efter att det första meddelandet har skickats.",
+      "metaDeleteFailed": "Meta kunde inte ta bort den här kampanjen, så den behölls. {message}",
+      "statisticsUnknownAdAccount": "Den här arbetsytan har inga Marketing Messages-kampanjer på det annonskontot.",
+      "statisticsInvalidRange": "Välj ett startdatum på eller före slutdatumet, inom de senaste 37 månaderna."
+    },
+    "tabs": {
+      "campaigns": "Kampanjer",
+      "audiences": "Målgrupper",
+      "statistics": "Statistik"
+    },
+    "audiences": {
+      "title": "Anpassade målgrupper",
+      "create": "Skapa ny",
+      "uploadMore": "Ladda upp fler rader",
+      "empty": "Inga anpassade målgrupper ännu.",
+      "deleteTitle": "Ta bort anpassad målgrupp",
+      "deleteWarning": "Detta tar bort den anpassade målgruppen \"{name}\" på Meta och i ChatbotX. Det går inte att ångra.",
+      "deleted": "Anpassad målgrupp borttagen.",
+      "pageDisconnected": "Sidan är frånkopplad",
+      "status": {
+        "ready": "Redo",
+        "missing": "Borttagen på Meta"
+      },
+      "fields": {
+        "customAudienceId": "ID för anpassad målgrupp",
+        "approximateCount": "Ungefärligt antal",
+        "status": "Status",
+        "file": "Ladda upp fil"
+      },
+      "wizard": {
+        "title": "Skapa anpassad målgrupp",
+        "uploadMoreTitle": "Ladda upp fler rader",
+        "steps": {
+          "prepare": "Förbered lista",
+          "upload": "Ladda upp",
+          "confirm": "Bekräfta"
+        },
+        "prepareDescription": "En prenumerantlista är en CSV- eller TXT-fil med information som används för att bygga din målgrupp för marknadsföringsmeddelanden. Vi använder telefonnumret för att matcha dina prenumeranter med Facebook- och Instagram-användare. Innan informationen skickas till oss omvandlas din lista med identifierare till slumpmässig kod (hashning).",
+        "aboutHashing": "Om hashning",
+        "downloadTemplate": "Ladda ned filmall",
+        "mainIdentifiers": "Ta med minst en huvudidentifierare",
+        "moreIdentifiers": "Ta med fler identifierare",
+        "identifiers": {
+          "email": "E-post",
+          "phone": "Telefonnummer",
+          "madid": "Mobilt annons-ID",
+          "fn": "Förnamn",
+          "ln": "Efternamn",
+          "ct": "Stad",
+          "st": "Delstat/provins",
+          "country": "Land",
+          "zip": "Postnummer",
+          "dob": "Födelsedatum",
+          "doby": "Födelseår",
+          "gen": "Kön"
+        },
+        "uploadNote": "Se till att identifierarna är kompletta och har rätt format innan du laddar upp listan. Listan måste vara i formatet .csv, .txt eller .xlsx.",
+        "namePlaceholder": "Ange målgruppens namn...",
+        "descriptionPlaceholder": "Kort beskrivning (om det finns någon)",
+        "dropzone": "Klicka för att ladda upp eller dra och släpp",
+        "maxFileSize": "Maximal filstorlek: 20 MB",
+        "fileRequired": "Välj en fil att ladda upp.",
+        "fileTooLarge": "Filen är större än 20 MB.",
+        "fileType": "Filen måste vara .csv, .txt eller .xlsx.",
+        "next": "Nästa",
+        "back": "Tillbaka",
+        "upload": "Ladda upp",
+        "done": "Klar",
+        "successTitle": "Uppladdningen lyckades",
+        "successRows": "Din Messenger-prenumerantlista har laddats upp: {count, plural, one {# rad} other {# rader}}",
+        "skippedRows": "{count, plural, one {# rad hoppades} other {# rader hoppades}} över (ingen giltig e-postadress eller telefon).",
+        "invalidRows": "{count, plural, one {# rad avvisades} other {# rader avvisades}} av Meta.",
+        "matchingNote": "Det kan ta några minuter att slutföra matchningen av dina prenumeranter med personer på Facebook. Du kan se status i målgruppslistan."
+      },
+      "errors": {
+        "audienceInvalidFile": "Filen kunde inte läsas. Använd en .csv-, .txt- eller .xlsx-fil med en rubrikrad.",
+        "audienceTooManyRows": "Filen har fler än {max, number} rader.",
+        "audienceNoIdentifier": "Filen måste ha en kolumn för e-post eller telefon.",
+        "audienceNoValidRows": "Ingen rad har en giltig e-postadress eller ett giltigt telefonnummer.",
+        "audiencePartialUpload": "Målgruppen skapades, men uppladdningen stoppades efter {received, number} rader. Använd \"Ladda upp fler rader\" för att försöka igen.",
+        "audienceNotFound": "Anpassad målgrupp hittades inte.",
+        "audienceCreateRejected": "Meta avvisade målgruppen: {reason}",
+        "uploadUncertain": "Uppladdningen kanske inte slutfördes. Stäng dialogrutan och kontrollera målgruppslistan; använd \"Ladda upp fler rader\" om målgruppen skapades.",
+        "pageNotConnected": "Den valda sidan är inte ansluten till den här arbetsytan.",
+        "audienceInUse": "Den här anpassade målgruppen används av {count, plural, one {# marknadsföringsmeddelande} other {# marknadsföringsmeddelanden}} och kan inte tas bort."
+      }
+    },
+    "delivery": {
+      "title": "Leverans",
+      "contentLocked": "Innehållet är låst eftersom meddelanden redan har skickats.",
+      "topicsReturned": "Ämnen som Meta returnerade: {topics}",
+      "recipients": "{count} mottagare",
+      "startsAt": "Start: {date}",
+      "completedAt": "Slutförd: {date}",
+      "errorBreakdown": "Fel",
+      "retrying": "Meta tar inte emot utskick just nu; försöker igen automatiskt.",
+      "counts": {
+        "sent": "Skickade",
+        "delivered": "Levererade",
+        "unconfirmed": "Obekräftade"
+      },
+      "status": {
+        "notSent": "Ej skickad",
+        "scheduled": "Schemalagd",
+        "sending": "Skickar",
+        "waitingNextDay": "Väntar till nästa dag",
+        "paused": "Pausad",
+        "stopped": "Stoppad"
+      },
+      "reason": {
+        "pageNotConnected": "Sidan är inte ansluten till den här arbetsytan.",
+        "quotaReached": "Pausad: din meddelandekvot är nådd.",
+        "workspaceBlocked": "Pausad: den här arbetsytan är blockerad.",
+        "grantInvalid": "Pausad: Facebook-anslutningen har gått ut. Anslut Marketing Messages igen.",
+        "metaBlocker": "Meta blockerar den här kampanjen.",
+        "contentRejected": "Meta avvisade meddelandets innehåll.",
+        "noTokens": "Inga mottagare hittades för den här kampanjen.",
+        "noMatchingTopic": "Ingen mottagare som har samtyckt matchar ämnet \"Updates and promotions\".",
+        "tokenFetchFailed": "Det gick inte att hämta mottagare från Meta.",
+        "campaignEnded": "Meta-kampanjen har avslutats.",
+        "lifetimeBudgetReached": "Livstidsbudgeten är slut."
+      },
+      "errors": {
+        "grantInvalid": "Facebook-anslutningen har gått ut.",
+        "campaignInactive": "Meta-kampanjen är inte aktiv.",
+        "budgetReached": "Budgeten är slut.",
+        "dailyBudgetReached": "Dagsbudgeten är nådd.",
+        "optedOut": "Mottagaren har avregistrerat sig.",
+        "frequencyLimit": "Mottagarens frekvensgräns är nådd.",
+        "contentRejected": "Meddelandeinnehållet avvisades av Meta.",
+        "deliveryFailed": "Leveransen misslyckades.",
+        "outcomeUnknown": "Leveransresultatet är okänt."
+      }
+    },
+    "statistics": {
+      "searchPlaceholder": "Sök på ID eller namn",
+      "adAccount": "Annonskonto",
+      "dateRange": "Datumintervall",
+      "timezoneHint": "Datum i {timezone}",
+      "presets": {
+        "last7": "Senaste 7 dagarna",
+        "last30": "Senaste 30 dagarna",
+        "last90": "Senaste 90 dagarna",
+        "thisMonth": "Den här månaden",
+        "lastMonth": "Förra månaden"
+      },
+      "columns": {
+        "id": "ID",
+        "name": "Namn",
+        "page": "Facebooksida",
+        "delivered": "Levererade meddelanden",
+        "readRate": "Läsfrekvens",
+        "linkClicks": "Länkklick",
+        "linkClickRate": "Länkklickfrekvens",
+        "costPerClick": "Kostnad per klick",
+        "costPerDelivery": "Kostnad per leverans",
+        "spend": "Spenderat belopp"
+      },
+      "notes": {
+        "delivery": "Meta rapporterar inte detta för mottagare i Europa eller Japan; de kampanjerna visar -.",
+        "clicks": "Meta rapporterar inte detta för mottagare i Europa, Argentina, Turkiet, Sydkorea eller Japan; de kampanjerna visar -."
+      },
+      "footer": {
+        "label": "Totalt: {count, plural, one {# kampanj} other {# kampanjer}}",
+        "total": "Totalt",
+        "average": "Genomsnitt"
+      },
+      "totalsUnavailable": "Summor är inte tillgängliga just nu. Försök igen snart.",
+      "readOnly": "Anslut Marketing Messages igen för att se statistik.",
+      "empty": "Inga Marketing Messages-kampanjer ännu. Skapa en på fliken Kampanjer.",
+      "noResults": "Inga kampanjer matchar din sökning."
     }
   },
   "facebookAds": {
@@ -1913,6 +2402,13 @@
     "bot": {
       "label": "Bot"
     },
+    "botCategory": {
+      "options": {
+        "all": "Alla",
+        "human": "Människa",
+        "bot": "Bot"
+      }
+    },
     "botField": {
       "label": "Botfält"
     },
@@ -1941,7 +2437,8 @@
     },
     "button": {
       "label": "Knapp",
-      "whenPressed": "När den här knappen trycks ned"
+      "whenPressed": "När den här knappen trycks ned",
+      "callToThisNumber": "Ring till det här numret"
     },
     "buttonLabel": {
       "label": "Knappetikett"
@@ -2061,6 +2558,15 @@
       "prepend": "Lägg till i början",
       "savePayloadTo": "Spara svar i anpassat fält",
       "set_value": "Ange värde",
+      "clear": "Clear value",
+      "formula": "Use custom formula",
+      "set_now": "Set to now",
+      "date_expression": "Free-form date (with math)",
+      "add_minutes": "Add minutes",
+      "add_hours": "Add hours",
+      "add_days": "Add days",
+      "formulaHint": "Math where value is the current number, e.g. round(value * 1.1). Functions: abs, ceil, floor, round, min, max, pow, sqrt, log, sin, cos.",
+      "dateExpressionHint": "e.g. now + 2 days - 3 hours. Units: min, h, d, w, mo, y.",
       "groupSystemFields": "Systemfält",
       "groupCustomFields": "Anpassade fält",
       "groupAccountFields": "Botfält"
@@ -2217,7 +2723,8 @@
       "aiSpeechToText": "{aiName}: Tal till text",
       "aiTextToSpeech": "{aiName}: Text till tal",
       "label": "Flöden",
-      "placeholder": "Välj flöde"
+      "placeholder": "Välj flöde",
+      "aiSegmentImage": "{aiName}: Segmentera bild"
     },
     "folder": {
       "label": "Mapp"
@@ -2242,6 +2749,10 @@
     "fromAddress": {
       "label": "Från-adress",
       "placeholder": "noreply@example.com"
+    },
+    "fromName": {
+      "label": "Avsändarnamn",
+      "placeholder": "ChatbotX"
     },
     "fullName": {
       "label": "Fullständigt namn"
@@ -2429,6 +2940,12 @@
     },
     "lastAd": {
       "label": "Senaste annons"
+    },
+    "adIds": {
+      "label": "Alla annons-ID:n"
+    },
+    "adId": {
+      "label": "Första annons-ID"
     },
     "lastAdSourcePlatform": {
       "label": "Plattform för senaste annonskälla"
@@ -2964,14 +3481,15 @@
     },
     "status": {
       "completed": "Slutförd",
-      "partial": "Partial",
+      "partial": "Delvis",
       "error": "Fel",
       "failed": "Misslyckades",
       "label": "Status",
       "pending": "Väntande",
       "processing": "Bearbetas",
       "installing": "Installing",
-      "success": "Lyckades"
+      "success": "Lyckades",
+      "uninstalled": "Uninstalled"
     },
     "statusCode": {
       "label": "Statuskod"
@@ -3012,6 +3530,7 @@
       "label": "Taggar"
     },
     "targetCountry": {
+      "currencyHint": "Anger också standardvalutan för pipelines utan egen valuta.",
       "description": "Landet där de flesta av dina kontakter bor.",
       "label": "Målland"
     },
@@ -3070,7 +3589,13 @@
       "commentToMessage": "Comment-to-Message",
       "commentToMessageDescription": "Lets this account answer high-intent comments with a direct message. Required for TikTok comment automations that use a private reply.",
       "commentToMessageEligibility": "Only available to Business Accounts registered in Vietnam, Indonesia or Thailand, owned by someone over 18, that are registered businesses or have run Messaging Ads, with messaging permissions set to \"Requests\".",
-      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting."
+      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting.",
+      "features": "Funktioner",
+      "featureMessaging": "Meddelanden",
+      "featureMessagingDescription": "Ta emot och skicka direktmeddelanden. TikTok erbjuder inte meddelanden för konton registrerade i EES, Schweiz eller Storbritannien — stäng av det för dem.",
+      "featureComments": "Kommentarer",
+      "featureCommentsDescription": "Ta emot kommentarer för kommentarsautomatisering: offentligt svar, gilla och dölj.",
+      "featuresReconnectHint": "Ändringar gäller för konton som ansluts från och med nu. Anslut befintliga konton igen för att uppdatera deras behörigheter."
     },
     "timezone": {
       "description": "Kontakter tilldelas den här tidszonen när kontaktens tidszon är okänd.",
@@ -3292,7 +3817,11 @@
       "ads": "Annonser",
       "settings": "Inställningar",
       "miniApps": "Mini Apps",
-      "leaderboards": "Topplistor"
+      "leaderboards": "Topplistor",
+      "pipelines": "Pipelines",
+      "places": "Platser",
+      "templates": "Mallar",
+      "polls": "Polls"
     },
     "adReferral": {
       "label": "Ads",
@@ -3301,7 +3830,8 @@
       "ctid": "CTID",
       "googleAds": "Google Ads",
       "googleAdsWhatsapp": "GA CCWA",
-      "googleAdsMessenger": "GA CCTM"
+      "googleAdsMessenger": "GA CCTM",
+      "googleAdsZalo": "GA Zalo"
     },
     "adSource": {
       "label": "Ad source"
@@ -3349,6 +3879,81 @@
     },
     "miniApp": {
       "label": "Miniapp"
+    },
+    "lastOpportunityId": {
+      "label": "Senaste affärsmöjlighets-ID"
+    },
+    "adminName": {
+      "label": "Skickande admins namn"
+    },
+    "adminTeamName": {
+      "label": "Skickande admins team"
+    },
+    "bookingId": {
+      "label": "Boknings-ID"
+    },
+    "lastPoints": {
+      "label": "Senaste enkätpoäng"
+    },
+    "lastAdHeadline": {
+      "label": "Senaste annonsrubrik"
+    },
+    "lastAdBody": {
+      "label": "Senaste annonstext"
+    },
+    "lastStoryId": {
+      "label": "Senaste story-ID"
+    },
+    "lastLeadId": {
+      "label": "Senaste lead-ID"
+    },
+    "lastFormId": {
+      "label": "Senaste formulär-ID"
+    },
+    "lastFormName": {
+      "label": "Senaste formulärnamn"
+    },
+    "lastAdgroupId": {
+      "label": "Senaste annonsgrupp-ID"
+    },
+    "lastTextInput": {
+      "label": "Senaste textinmatning"
+    },
+    "empty": {
+      "label": "Tom"
+    },
+    "aiSegmentImage": {
+      "description": "Hittar ett objekt i en bild med SAM 3.1 och sparar en beskuren bild av det.",
+      "inputFieldId": {
+        "label": "Källbild"
+      },
+      "target": {
+        "label": "Objekt att hitta",
+        "description": "En kort substantivfras som \"röd bil\" eller \"produktkartong\". Inte en fråga eller ett kommando.",
+        "placeholder": "produktkartong"
+      },
+      "matchSelection": {
+        "label": "Träffar",
+        "options": {
+          "largest": "Endast största objektet",
+          "all": "Alla matchande objekt (en beskärning runt dem)"
+        }
+      },
+      "outputFieldId": {
+        "label": "Spara bild i"
+      },
+      "detailsOutputFieldId": {
+        "label": "Spara detaljer i",
+        "description": "Valfritt. Tar emot JSON med antal träffar och rutor.",
+        "sameAsOutput": "Välj ett annat fält än utdatabilden.",
+        "sameAsInput": "Välj ett annat fält än källbilden."
+      },
+      "overwriteWarning": "Resultatet ersätter källbilden i det här fältet.",
+      "states": {
+        "success": "Hittad",
+        "skip": "Hittades inte",
+        "error": "Misslyckades"
+      }
     }
   },
   "flowAnalytics": {
@@ -3367,6 +3972,7 @@
   "flows": {
     "export": {
       "notPublished": "Det här flödet har aldrig publicerats. Publicera det innan du exporterar.",
+      "viewOnly": "Det här flödet installerades från en mall som bara kan visas, så det kan inte exporteras.",
       "failed": "Export misslyckades. Försök igen."
     },
     "actions": {
@@ -3488,7 +4094,18 @@
       "sendGoogleAdsConversion": "Skicka Google Ads-konvertering",
       "changeGamificationScore": "Ändra gamificationpoäng",
       "sendViewCatalog": "Visa katalog",
-      "sendProducts": "Skicka produkter"
+      "sendProducts": "Skicka produkter",
+      "sendCollection": "Kollektion",
+      "pipeline": "Pipelines",
+      "moreOptions": "Fler alternativ",
+      "findPlacesNearMe": "Hitta platser nära mig",
+      "callPhoneNumber": "Ring ett telefonnummer",
+      "copyText": "Kopiera text"
+    },
+    "externalRequest": {
+      "errors": {
+        "requestFailed": "Det gick inte att testa den externa begäran. Kontrollera begärandekonfigurationen och försök igen."
+      }
     },
     "sendCarousel": {
       "addSlide": "Lägg till kort",
@@ -3635,7 +4252,12 @@
       "selectFlow": "WhatsApp-flöde",
       "selectFlowPlaceholder": "Välj ett flöde",
       "selectScreenPlaceholder": "Välj en skärm",
-      "startScreen": "Startskärm"
+      "startScreen": "Startskärm",
+      "fileBadge": "Fil",
+      "fileFormat": "Fillänkar",
+      "fileFormatAllUrls": "Alla länkar, kommaseparerade",
+      "fileFormatFirstUrl": "Endast första länken",
+      "fileFormatHint": "Det anpassade fältet sparar länkar till de uppladdade filerna, enligt valet här."
     },
     "whatsappOptionList": {
       "addOption": "Lägg till ny",
@@ -3717,6 +4339,156 @@
       "productsSelected": "{count, plural, one {# produkt} other {# produkter}}",
       "noneSelected": "Inga produkter ännu",
       "sendFailed": "Produkterna kunde inte skickas."
+    },
+    "sendCollection": {
+      "title": "Kollektion",
+      "dataType": "Datatyp",
+      "dataTypes": {
+        "products": "Produkter"
+      },
+      "collectionType": "Kollektionstyp",
+      "collectionTypes": {
+        "automated": {
+          "label": "Automatisk",
+          "description": "Nuvarande och framtida varor som matchar villkoren läggs till automatiskt."
+        },
+        "manual": {
+          "label": "Manuell",
+          "description": "Lägg till varor en i taget."
+        }
+      },
+      "condition": "Villkor",
+      "name": "Namn",
+      "optional": "(Valfritt)",
+      "category": "Kategori",
+      "subcategory": "Underkategori",
+      "vendor": "Leverantör",
+      "all": "Alla",
+      "items": "Varor",
+      "select": "Välj",
+      "selectPlaceholder": "Välj 1 eller flera varor",
+      "selectAll": "Välj alla",
+      "deselectAll": "Avmarkera alla",
+      "maxProducts": "Upp till {count} produkter; en produkt som butiken inte längre visar hoppas över.",
+      "automatedHint": "Skickar upp till {count} matchande produkter som kort som öppnar produkten i webbutiken.",
+      "summaryAll": "Alla produkter i butiken",
+      "summaryAutomated": "Produkter: {filters}",
+      "summaryManual": "{count, plural, one {# produkt} other {# produkter}}",
+      "cancel": "Avbryt",
+      "save": "Spara"
+    },
+    "pipelineStep": {
+      "action": "Åtgärd",
+      "pipeline": "Pipeline",
+      "targetHint": "Åtgärdar kontaktens senaste öppna objekt i den här pipelinen. Hoppa över-vägen körs när det inte finns något.",
+      "noPipelines": "Inga pipelines hittades",
+      "actions": {
+        "addToPipeline": "Lägg till kontakt i pipeline",
+        "moveToStage": "Flytta till en fas",
+        "changeValue": "Ändra värde",
+        "assign": "Tilldela till administratörer",
+        "changeStatus": "Ändra status",
+        "changePriority": "Ändra prioritet",
+        "changeDueDate": "Ändra förfallodatum",
+        "changeTitle": "Ändra titel",
+        "setCustomField": "Ange anpassat fält",
+        "clearCustomField": "Rensa anpassade fält",
+        "changeDescription": "Ändra beskrivning",
+        "removeFromPipeline": "Ta bort kontakt från pipeline",
+        "addComment": "Lägg till kommentar",
+        "transfer": "Överför till en annan pipeline"
+      },
+      "title": "Titel",
+      "description": "Beskrivning",
+      "stage": "Fas",
+      "firstStage": "Första fasen",
+      "status": "Status",
+      "assigneeMembers": "Tilldelade administratörer",
+      "assigneeTeams": "Tilldelade team",
+      "value": "Värde",
+      "priority": "Prioritet",
+      "dueDate": "Förfallodatum",
+      "dueNone": "Ingen",
+      "dueNoneHint": "Objektet har inget förfallodatum.",
+      "dueCustomField": "Från ett anpassat datumfält",
+      "dueFixed": "Fast datum och tid",
+      "dueField": "Anpassat fält för datum eller datum och tid",
+      "fieldValues": "Anpassade fält",
+      "field": "Fält",
+      "fieldValue": "Värde",
+      "fields": "Fält",
+      "addField": "Lägg till fältvärde",
+      "removeHint": "Raderar kontaktens senaste öppna objekt i den här pipelinen.",
+      "comment": "Kommentar",
+      "destinationPipeline": "Målpipeline",
+      "destinationStage": "Målfas",
+      "missingRequiredFields": "Obligatoriska fält utan värde: {names}. Objektet kan inte skapas förrän varje fält har ett värde.",
+      "addRequiredFields": "Lägg till obligatoriska fält"
+    },
+    "aiSegmentImage": {
+      "label": "{name}: Segmentera bild"
+    },
+    "aiSpeechToText": {
+      "muse": {
+        "formatHint": "Endast WAV-filer accepteras: PCM 16-bit, mono, 16 kHz eller 24 kHz, högst 10 minuter. Alla andra filer (till exempel röstmeddelanden) går till felgrenen.",
+        "languageBias": {
+          "label": "Språkpreferens",
+          "description": "Språk som ljudet troligen är på. Lämna tomt för automatisk identifiering.",
+          "placeholder": "Identifiera automatiskt"
+        },
+        "keywords": {
+          "label": "Nyckelord",
+          "description": "Namn eller facktermer som hjälper Muse att stava ord rätt.",
+          "placeholder": "Lägg till ett nyckelord och tryck på Enter"
+        }
+      },
+      "languages": {
+        "Arabic": "Arabiska",
+        "Bengali": "Bengali",
+        "Dutch": "Nederländska",
+        "English": "Engelska",
+        "French": "Franska",
+        "German": "Tyska",
+        "Hebrew": "Hebreiska",
+        "Hindi": "Hindi",
+        "Indonesian": "Indonesiska",
+        "Italian": "Italienska",
+        "Japanese": "Japanska",
+        "Kannada": "Kannada",
+        "Korean": "Koreanska",
+        "Malay": "Malajiska",
+        "MandarinChinese": "Mandarinkinesiska",
+        "Marathi": "Marathi",
+        "Polish": "Polska",
+        "Portuguese": "Portugisiska",
+        "Spanish": "Spanska",
+        "Tagalog": "Tagalog",
+        "Tamil": "Tamil",
+        "Telugu": "Telugu",
+        "Thai": "Thailändska",
+        "Turkish": "Turkiska",
+        "Vietnamese": "Vietnamesiska"
+      }
+    },
+    "findPlacesNearMe": {
+      "category": "Platskategori",
+      "allLocations": "Alla platser",
+      "whatsappOnly": "Skickas endast till WhatsApp-kontakter.",
+      "noLocationSource": "Platsen måste samlas in i det här flödet: lägg till ett steg Hämta användardata med svarsformatet Plats före den här åtgärden. En plats som sparats av ett annat flöde används inte. Utan det hoppas åtgärden över."
+    },
+    "callPhoneNumber": {
+      "fallbackHint": "I kanaler som inte kan starta ett samtal får kontakten i stället numret som ett svar.",
+      "countryLabel": "Landskod",
+      "noCountry": "Inget land",
+      "invalidForCountry": "Det här är inte ett giltigt telefonnummer för {country}.",
+      "needsCountry": "Välj land eller börja numret med + och landskoden.",
+      "invalidInternational": "Det här är inte ett giltigt internationellt telefonnummer."
+    },
+    "copyText": {
+      "textLabel": "Text att kopiera",
+      "limitHint": "Upp till {max} tecken när variablerna har fyllts i.",
+      "fallbackHint": "I kanaler som inte kan kopiera text får kontakten den här texten som svar i stället.",
+      "viewerTitle": "Kopierar den här texten"
     }
   },
   "folders": {
@@ -4366,7 +5138,8 @@
     "chatbotInvitationDescription1": "Gå med i {chatbotName}",
     "chatbotInvitationDescription2": "{userName} har bjudit in dig att gå med i {chatbotName}.",
     "invalidInvitation": "Den här inbjudan är ogiltig eller har löpt ut.",
-    "workspaceUnavailable": "Den här arbetsytan är inte längre tillgänglig."
+    "workspaceUnavailable": "Den här arbetsytan är inte längre tillgänglig.",
+    "signUpToJoin": "Skapa ett konto för att gå med"
   },
   "keywords": {
     "title": "Nyckelord",
@@ -4380,7 +5153,36 @@
       "pageTitle": "Sidnyckelord",
       "page": "Svara automatiskt när du skickar ett meddelande som innehåller ett nyckelord till en kontakt."
     },
-    "pageWarning": "Meddelandeinnehåll som innehåller ett sidnyckelord kan leda till att meddelanden skickas till kunden i en oändlig loop. Inaktivera sidnyckelordet omedelbart om du stöter på detta!"
+    "pageWarning": "Meddelandeinnehåll som innehåller ett sidnyckelord kan leda till att meddelanden skickas till kunden i en oändlig loop. Inaktivera sidnyckelordet omedelbart om du stöter på detta!",
+    "conditions": {
+      "operators": {
+        "is": "Meddelandet är",
+        "similarTo": "Meddelandet liknar",
+        "contains": "Meddelandet innehåller",
+        "containsPhone": "Meddelandet innehåller telefonnummer",
+        "containsEmail": "Meddelandet innehåller e-post",
+        "containsImage": "Meddelandet innehåller bild",
+        "containsVideo": "Meddelandet innehåller video",
+        "containsLink": "Meddelandet innehåller länk",
+        "containsWholeWord": "Meddelandet innehåller hela ordet",
+        "beginsWith": "Meddelandet börjar med",
+        "endsWith": "Meddelandet slutar med",
+        "isThumbsUp": "Meddelandet är 👍",
+        "notContains": "Meddelandet innehåller inte",
+        "matchesRegex": "Meddelandet matchar regex"
+      },
+      "and": "och",
+      "addCondition": "Meddelandevillkor",
+      "removeCondition": "Ta bort villkor",
+      "note": "Nyckelord skiljer inte på stora och små bokstäver och ignorerar accenter, t.ex. tolkas \"Tư vấn\" och \"tu van\" som samma.",
+      "keywordPlaceholder": "+ Nyckelord",
+      "regexPlaceholder": "+ Regex",
+      "errors": {
+        "keywordConditionValuesRequired": "Lägg till minst ett nyckelord.",
+        "keywordConditionTakesNoValues": "Det här villkoret använder inga nyckelord.",
+        "invalidKeywordRegex": "Ogiltigt reguljärt uttryck."
+      }
+    }
   },
   "klaviyo": {
     "errors": {
@@ -4676,6 +5478,7 @@
     "title": "Make"
   },
   "manageSidebar": {
+    "administrationGroup": "Administration",
     "platformGroup": "Plattform",
     "portalCustomDomain": "Anpassad domän",
     "portalPaymentProcessor": "Betalningsleverantör",
@@ -4698,6 +5501,7 @@
       "months": "{count} mån",
       "years": "{count} år"
     },
+    "realtimeRevokeWarning": "Åtkomståterkallelsen kunde inte bekräftas direkt – den börjar gälla vid medlemmens nästa återanslutning.",
     "addFeature": "Lägg till {feature}",
     "archiveFeature": "Arkivera {feature}",
     "archiveFeatureDescription": "Är du säker på att du vill arkivera {feature}?",
@@ -4835,6 +5639,9 @@
     "waTemplateMpmTooManySections": "En flerproduktsknapp kan ha högst 10 sektioner. Ta bort några sektioner innan publicering.",
     "waTemplateMpmTooManyProducts": "En flerproduktsknapp kan ha högst 30 produkter totalt. Ta bort några produkter innan publicering.",
     "waTemplateLtoExpirationRequired": "Välj ett utgångsdatum för det tidsbegränsade erbjudandet innan du skickar.",
+    "waTemplatePaymentRequestIncomplete": "Fyll i betalningsuppgifterna för den här knappen innan du publicerar.",
+    "waTemplatePaymentRequestInvalid": "En betalningsuppgift har ogiltigt format. Kontrollera belopp, länk och kortsiffror.",
+    "waTemplatePaymentRequestMisplaced": "Betalningsuppgifter kan bara anges på en betalningsknapp i en vanlig mall (inte karusell).",
     "waTemplateMpmIncompleteProducts": "Varje sektion behöver minst en vald produkt — ta bort tomma rader eller välj en produkt.",
     "unsupportedBlock": "Den här kanalen har inte stöd för det här blocket.",
     "constraintExceeded": "Den här kanalens gräns har överskridits.",
@@ -4861,7 +5668,15 @@
       "noAnswer": "Inget svar",
       "labelsUnavailable": "Flowets frågor kunde inte läsas in, så fältnamnen visas i stället.",
       "yes": "Ja",
-      "no": "Nej"
+      "no": "Nej",
+      "fileNotSaved": "Filen sparades inte",
+      "filesNotSaved": "{count, plural, one {# fil sparades inte} other {# filer sparades inte}}",
+      "filesAttached": "{count, plural, one {# bifogad fil} other {# bifogade filer}}",
+      "fileFailure": {
+        "too_large": "Filen är för stor",
+        "unsupported_type": "Filtypen stöds inte",
+        "download_failed": "Kunde inte laddas ner"
+      }
     },
     "sendViewCatalogBodyTooLong": "Meddelandetexten är för lång för ett katalogmeddelande. Korta ned den.",
     "sendViewCatalogFooterTooLong": "Sidfoten är för lång för ett katalogmeddelande. Korta ned den.",
@@ -4888,7 +5703,24 @@
     "savedReplyImagesRemoved": "Bilder som inte kan skickas här har tagits bort",
     "onlyImagesAllowed": "Endast bilder kan läggas till",
     "tooManySavedReplyImages": "Ett sparat svar kan ha högst {max} bilder",
-    "savedReplyImagesNotSentHere": "Bilder skickas inte här"
+    "savedReplyImagesNotSentHere": "Bilder skickas inte här",
+    "invalidPhoneNumber": "Det här är inte ett giltigt telefonnummer. Ange landskoden, till exempel +1.",
+    "buttonCallPhoneNumberUnsupported": "Den här knappen kan inte ringa ett telefonnummer här. Välj en annan åtgärd.",
+    "buttonCopyTextUnsupported": "Den här knappen kan inte kopiera text här. Välj en annan åtgärd.",
+    "paymentRequest": {
+      "title": "Betalningsbegäran",
+      "cardEnding": "Kort som slutar på {lastFourDigits}",
+      "status": "WhatsApp rapporterar inte betalning. Kontrollera hos din betalleverantör.",
+      "cardStatus": "Kundens bekräftelse debiterar inte kortet. Debitera via din betalleverantör.",
+      "sentFromTemplate": "Mall: {name}"
+    },
+    "paymentConfirmation": {
+      "title": "Kunden bekräftade betalningen",
+      "cardTitle": "Kunden bekräftade kortbetalningen",
+      "cardEnding": "Kort som slutar på {lastFourDigits}",
+      "notCharged": "Inte debiterat än. Debitera via din betalleverantör.",
+      "reference": "Referens {referenceId}"
+    }
   },
   "messenger": {
     "botProfile": "Botprofil",
@@ -4933,7 +5765,8 @@
         "text": "Text",
         "textAndImage": "Text + bild",
         "trigger": "Skapa ny mall",
-        "visitWebsite": "Besök webbplats"
+        "visitWebsite": "Besök webbplats",
+        "openMiniApp": "Öppna miniapp"
       },
       "params": {
         "postbackPayload": "Knappens nyttolast",
@@ -5239,11 +6072,186 @@
     "title": "OpenRouter"
   },
   "orders": {
-    "title": "Beställningar"
+    "title": "Beställningar",
+    "empty": "Inga beställningar ännu.",
+    "searchPlaceholder": "Sök på namn, telefon, e-post eller beställningsnummer",
+    "orderNumber": "Beställning #{number}",
+    "print": "Skriv ut",
+    "inbox": "Inkorg",
+    "statusUpdated": "Beställningens status uppdaterad",
+    "statusUpdateError": "Kunde inte uppdatera beställningens status",
+    "updateStatusTitle": "Uppdatera beställningsstatus",
+    "message": "Meddelande",
+    "messagePlaceholder": "Valfritt",
+    "messageDescription": "Skickas till kunden i dennes konversation.",
+    "cancel": "Avbryt",
+    "continue": "Fortsätt",
+    "delete": "Ta bort",
+    "deleted": "Beställning borttagen",
+    "deleteError": "Kunde inte ta bort beställningen",
+    "deleteTitle": "Ta bort beställning #{number}?",
+    "deleteDescription": "Beställningen, dess artiklar och dess historik tas bort. Lagersaldo som den fortfarande håller återförs.",
+    "columns": {
+      "name": "Namn",
+      "total": "Totalt",
+      "status": "Status",
+      "date": "Datum",
+      "rating": "Betyg",
+      "quantity": "Antal",
+      "price": "Pris",
+      "vendor": "Leverantör",
+      "orderStatus": "Orderstatus",
+      "payment": "Betalning"
+    },
+    "fields": {
+      "name": "Namn",
+      "email": "E-post",
+      "phone": "Telefon",
+      "country": "Land",
+      "state": "Län",
+      "city": "Stad",
+      "street": "Gata",
+      "zip": "Postnummer",
+      "shippingType": "Frakt",
+      "orderId": "Beställnings-ID",
+      "date": "Datum",
+      "subtotal": "Delsumma",
+      "discount": "Rabatt",
+      "deliveryCost": "Leveranskostnad",
+      "otherTaxes": "Övriga skatter",
+      "total": "Totalt",
+      "paymentMethod": "Betalningsmetod",
+      "status": "Status",
+      "note": "Anteckning",
+      "cancelReason": "Orsak till avbokning",
+      "rating": "Betyg",
+      "ratingComment": "Kundens kommentar",
+      "coupon": "Rabattkod ({code})",
+      "paymentStatus": "Betalningsstatus",
+      "payments": "Onlinebetalningar"
+    },
+    "statuses": {
+      "pending": "Ej behandlad",
+      "accepted": "Godkänd",
+      "shipped": "Skickad",
+      "concluded": "Slutförd",
+      "cancelled": "Avbruten"
+    },
+    "transitions": {
+      "accepted": "Godkänn",
+      "shipped": "Skicka",
+      "concluded": "Slutför",
+      "cancelled": "Avbryt"
+    },
+    "paymentMethods": {
+      "cod": "Postförskott",
+      "stripe": "Kort",
+      "paypal": "PayPal"
+    },
+    "shippingTypes": {
+      "delivery": "Leverans till kunden",
+      "pickup": "Avhämtning i butiken"
+    },
+    "description": "Beställningar från dina kunder.",
+    "ratingValue": "{rating}/5 ★",
+    "paymentStatuses": {
+      "unpaid": "Obetald",
+      "paid": "Betald",
+      "refunded": "Återbetald"
+    },
+    "attemptStatuses": {
+      "open": "Väntar",
+      "paid": "Betald",
+      "expired": "Utgången",
+      "refunded": "Återbetald"
+    },
+    "testPayment": "test",
+    "awaitingPaymentHint": "Väntar på kundens onlinebetalning. Ordern kan godkännas när den är betald.",
+    "refundWarning": "{amount} kommer att återbetalas till kunden.",
+    "paymentStates": {
+      "paid": "Betald",
+      "refunded": "Återbetald",
+      "awaitingPayment": "Väntar på betalning",
+      "payOnDelivery": "Betalning vid leverans",
+      "notPaid": "Ej betald"
+    },
+    "paymentUntil": "till {time}",
+    "paymentExpiredCancelReason": "Betalningen togs inte emot i tid.",
+    "exportTruncated": "Exporten begränsades till de första {count} beställningarna",
+    "exportError": "Det gick inte att exportera beställningarna",
+    "shopify": {
+      "syncOrders": "Synkronisera beställningar",
+      "orderColumn": "Beställning",
+      "customerColumn": "Kund",
+      "paymentPending": "Väntande",
+      "paymentFilter": "Betalning",
+      "paymentFilterAll": "Betalning: Alla",
+      "fulfillmentFilter": "Leverans",
+      "fulfillmentFilterAll": "Leverans: Alla",
+      "fulfillmentStatuses": {
+        "fulfilled": "Levererad",
+        "unfulfilled": "Ej levererad",
+        "partial": "Delvis"
+      },
+      "viewDetails": "Visa detaljer",
+      "viewOnStore": "Visa i {store}",
+      "detailsTitle": "Beställning {name}",
+      "placedOn": "Lagd i {store}-butiken • {date}",
+      "customerDetails": "Kunduppgifter",
+      "shippingAddress": "Leveransadress",
+      "noShippingAddress": "Ingen leveransadress",
+      "tracking": "Spårning: {company} #{number}",
+      "lineItems": "Orderrader",
+      "itemColumn": "Artikel",
+      "skuColumn": "SKU",
+      "shipping": "Frakt",
+      "free": "Gratis",
+      "loading": "Läser in...",
+      "loadError": "Det gick inte att läsa in beställningsdetaljerna",
+      "close": "Stäng"
+    }
   },
   "placesNearMe": {
-    "description": "Hitta platser nära dina kontakter.",
-    "title": "Platser nära mig"
+    "description": "Låt dina kunder enkelt hitta dina verksamhetsplatser nära dem.",
+    "title": "Platser nära mig",
+    "tabs": {
+      "locations": "Platser",
+      "categories": "Kategorier"
+    },
+    "categories": {
+      "columns": {
+        "locations": "Platser"
+      },
+      "add": "Lägg till kategori",
+      "edit": "Redigera kategori",
+      "empty": "Inga kategorier ännu.",
+      "created": "Kategori tillagd",
+      "updated": "Kategori uppdaterad",
+      "deleted": "Kategori borttagen",
+      "saveError": "Kategorin kunde inte sparas",
+      "deleteError": "Kategorin kunde inte tas bort",
+      "deleteTitle": "Ta bort {name}?",
+      "deleteDescription": "{count, plural, =0 {Inga platser använder den här kategorin.} one {# plats blir okategoriserad.} other {# platser blir okategoriserade.}}"
+    },
+    "locations": {
+      "columns": {
+        "coordinates": "Koordinater"
+      },
+      "preview": "Förhandsgranska",
+      "add": "Lägg till plats",
+      "edit": "Redigera plats",
+      "empty": "Inga platser ännu.",
+      "created": "Plats tillagd",
+      "updated": "Plats uppdaterad",
+      "deleted": "Plats borttagen",
+      "saveError": "Det gick inte att spara platsen",
+      "deleteError": "Det gick inte att ta bort platsen",
+      "deleteTitle": "Ta bort {name}?",
+      "deleteDescription": "Den här platsen raderas permanent.",
+      "noCategory": "Ingen kategori",
+      "latitude": "Latitud",
+      "longitude": "Longitud"
+    }
   },
   "platformAdmin": {
     "helpItems": {
@@ -5268,7 +6276,31 @@
       "supportOff": "Av",
       "searchPlaceholder": "Sök efter namn, ägarens e-post eller ID",
       "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
-      "supportAccessible": "Accessible"
+      "supportAccessible": "Accessible",
+      "periodStart": "Period start",
+      "periodEnd": "Period end",
+      "requestedBy": "Requested by",
+      "workspaceId": "Workspace ID",
+      "language": "Language",
+      "planSnapshot": "Plan at deletion",
+      "ownerQuota": "Owner quota",
+      "usagePeriods": "Usage periods",
+      "deletedTitle": "Deleted workspaces",
+      "deletedDescription": "Purge evidence for deleted workspaces.",
+      "purgedAt": "Purged at",
+      "deletionRequestedAt": "Deletion requested at",
+      "scheduledDeletionAt": "Scheduled deletion at",
+      "evidence": "Evidence",
+      "usage": "Usage snapshot",
+      "members": "Members",
+      "notAvailable": "Not available",
+      "createButton": "Create workspace",
+      "createTitle": "Create workspace for an owner",
+      "createDescription": "Creates a workspace for the owner's email, adding any member emails you list. A new email gets a mailed temporary password.",
+      "ownerEmail": "Owner email",
+      "memberEmails": "Member emails",
+      "membersHint": "Every member gets the permissions selected below. New emails get a mailed temporary password.",
+      "createdSummary": "Workspace created for {ownerEmail} — {memberCount} member(s) added, {newAccountCount} new account(s) emailed a temporary password."
     },
     "admins": {
       "title": "Platform administrators",
@@ -5278,12 +6310,29 @@
       "addButton": "Add administrator",
       "role": "Role",
       "bootstrap": "Environment bootstrap administrator",
+      "roles": {
+        "superAdmin": "Super admin",
+        "support": "Support"
+      },
       "remove": "Remove administrator",
       "empty": "No platform administrators are configured.",
       "added": "Platform administrator added.",
       "removed": "Platform administrator removed.",
       "addError": "Could not add the platform administrator.",
       "removeError": "Could not remove the platform administrator."
+    },
+    "auditLogs": {
+      "title": "Plattformens granskningsloggar",
+      "description": "Granskningsaktivitet i alla arbetsytor på den här plattformen."
+    },
+    "smtp": {
+      "title": "SMTP-inställningar",
+      "description": "Plattformens e-posttransport. Lämna detta tomt för att fortsätta använda miljövariablerna SMTP_SERVER och SMTP_FROM.",
+      "usingEnv": "Inga SMTP-inställningar sparade — plattformens e-post använder miljövariabeln SMTP_SERVER.",
+      "remove": "Ta bort SMTP-inställningar",
+      "errors": {
+        "passwordRequired": "Ange SMTP-lösenordet."
+      }
     }
   },
   "platformBranding": {
@@ -5312,6 +6361,23 @@
     "hint": "Lämna alla kanaler omarkerade för att tillåta samtliga kanaler.",
     "title": "Dolda kanaler",
     "hiddenByPlatform": "Dold av plattformsadministratören — du kan inte återaktivera den här kanalen."
+  },
+  "platformDefaultTemplate": {
+    "title": "Standardmall",
+    "description": "Installera den här mallen i varje ny arbetsyta som skapas under denna white-label. Befintliga arbetsytor ändras inte.",
+    "clearTitle": "Ta bort standardmallen?",
+    "clearDescription": "Nya arbetsytor får inte längre en mall automatiskt. Arbetsytor som redan har den behåller den.",
+    "status": {
+      "notConfigured": "Inte angiven",
+      "ready": "Aktiv",
+      "templateUnavailable": "Mallen är inte tillgänglig",
+      "shareDisabled": "Delningslänk avstängd",
+      "keyRotated": "Nyckeln ogiltig"
+    },
+    "errors": {
+      "unavailable": "Mall-ID eller nyckel är ogiltig.",
+      "shareDisabled": "Aktivera mallens delningslänk först."
+    }
   },
   "platformCredentials": {
     "notConfigured": "Inte konfigurerad ännu",
@@ -5369,8 +6435,58 @@
     "title": "Plattformsinställningar"
   },
   "pollManager": {
-    "description": "Skapa och hantera omröstningar för dina kontakter.",
-    "title": "Omröstningshanterare"
+    "description": "Genomför omröstnings- eller röstningssystem. Du kan också använda det för att samla in kunders åsikter.",
+    "title": "Omröstningshanterare",
+    "feature": "Poll",
+    "deleteDescription": "Deleting a poll also deletes its candidates and votes. This cannot be undone.",
+    "list": {
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "votes": "Votes",
+      "getLink": "Get Link"
+    },
+    "getLink": {
+      "title": "Get Link",
+      "description": "Share a link that opens a chat and starts the poll.",
+      "omnichannel": "Omnichannel",
+      "noInboxes": "No connected channels can open this poll yet.",
+      "loadError": "Could not load the links."
+    },
+    "form": {
+      "createTitle": "Create poll",
+      "editTitle": "Edit poll",
+      "votingPeriod": "Voting period",
+      "imageRequired": "An image is required.",
+      "dateRangeInvalid": "Slutdatumet måste vara efter startdatumet.",
+      "candidatesTitle": "Candidates or Options",
+      "candidateNumber": "Candidate {number}",
+      "moreOptions": "More Options",
+      "afterVoteFlow": "Flow to be sent after the user votes",
+      "afterVoteFlowNone": "None",
+      "removeVotesTitle": "Remove candidates?",
+      "removeVotesDescription": "Deleting candidates also deletes their votes."
+    },
+    "analytics": {
+      "title": "Analytics",
+      "results": "Results",
+      "votesPerGender": "Votes per gender",
+      "totalVotes": "Total votes",
+      "noVotes": "No votes yet",
+      "other": "Other",
+      "male": "Male",
+      "female": "Female",
+      "unknown": "Unknown",
+      "loadError": "Could not load the analytics.",
+      "columns": {
+        "name": "Name",
+        "totalVotes": "Total votes",
+        "totalPercent": "T%",
+        "maleVotes": "Male votes",
+        "malePercent": "M%",
+        "femaleVotes": "Female votes",
+        "femalePercent": "F%"
+      }
+    }
   },
   "productCategories": {
     "actions": "Kategoriåtgärder",
@@ -5380,7 +6496,8 @@
     "columns": {
       "name": "Namn",
       "products": "Produkter",
-      "subcategories": "Underkategorier"
+      "subcategories": "Underkategorier",
+      "visible": "Synlig"
     },
     "create": "Skapa kategori",
     "createSub": "Skapa underkategori",
@@ -5391,11 +6508,11 @@
     "deleteError": "Det går inte att ta bort denna kategori.",
     "deleteTitle": "Ta bort “{name}”?",
     "deleted": "Kategori borttagen.",
-    "edit": "Byt namn på kategori",
+    "edit": "Redigera",
     "empty": "Inga kategorier ännu. Skapa en för att gruppera dina produkter.",
     "expand": "Visa underkategorier",
     "loadError": "Det går inte att läsa in produktkategorier.",
-    "name": "Kategorinamn",
+    "name": "Namn",
     "namePlaceholder": "t.ex. Sommarkollektion",
     "noParent": "Ingen (toppnivå)",
     "parent": "Överordnad kategori",
@@ -5403,7 +6520,19 @@
     "save": "Spara",
     "saveError": "Det går inte att spara denna kategori.",
     "title": "Kategorier",
-    "updated": "Kategori uppdaterad."
+    "updated": "Kategori uppdaterad.",
+    "add": "Lägg till",
+    "dialogTitle": "Kategori",
+    "image": "Bild",
+    "continue": "Fortsätt",
+    "subcategories": "Underkategorier",
+    "subcategoriesOf": "Underkategorier till {name}",
+    "emptySub": "Inga underkategorier ännu.",
+    "back": "Tillbaka till kategorier",
+    "getId": "Hämta ID",
+    "idCopied": "Kategori-ID {id} kopierat",
+    "idCopyError": "Kunde inte kopiera ID:t",
+    "description": "Gruppera dina produkter i kategorier och underkategorier."
   },
   "productImport": {
     "confirm": "Starta import",
@@ -5550,7 +6679,16 @@
       },
       "variantsDescription": "Lägg till varianter om produkten finns i flera versioner, till exempel olika storlekar eller färger",
       "vendor": {
-        "label": "Leverantör"
+        "label": "Leverantör",
+        "none": "Ingen"
+      },
+      "status": {
+        "label": "Status",
+        "values": {
+          "active": "Aktiv",
+          "draft": "Utkast",
+          "unlisted": "Olistad"
+        }
       }
     },
     "inventoryPolicy": {
@@ -5566,7 +6704,33 @@
       "tags": "Taggar",
       "variants": "Varianter"
     },
-    "title": "Produkter"
+    "title": "Produkter",
+    "shopify": {
+      "openStore": "Öppna {store}",
+      "syncProducts": "Synkronisera produkter",
+      "syncStarted": "Synkroniseringen startade",
+      "syncError": "Det gick inte att starta synkroniseringen",
+      "viewDetails": "Visa detaljer",
+      "editOnStore": "Redigera i {store}",
+      "copyProductLink": "Kopiera produktlänk",
+      "linkCopied": "Produktlänk kopierad",
+      "noProductLink": "Den här produkten har ingen butikslänk",
+      "inStock": "{count} i lager",
+      "inStockWithVariants": "{count} i lager ({variants} varianter)",
+      "detailsTitle": "Produktdetaljer — {name}",
+      "detailsSubtitle": "Synkroniserad från {store}-butiken {shop}",
+      "summaryLine": "Kategori: {category} • Totalt lager: {units} enheter fördelade på {variants, plural, one {# variant} other {# varianter}}",
+      "uncategorized": "Okategoriserad",
+      "variantsTitle": "Varianter ({count})",
+      "variantColumn": "Variant",
+      "skuColumn": "SKU",
+      "priceColumn": "Pris",
+      "inventoryColumn": "Lager",
+      "defaultVariant": "Standard",
+      "loading": "Läser in...",
+      "loadError": "Det gick inte att läsa in produktdetaljerna",
+      "close": "Stäng"
+    }
   },
   "qrCodeGenerator": {
     "description": "Skapa och hantera dina QR-koder.",
@@ -5874,6 +7038,10 @@
       "description": "Beskrivning av DeepSeek-integrationen",
       "title": "DeepSeek-integration"
     },
+    "muse": {
+      "description": "Beskrivning av Muse-integrationen",
+      "title": "Muse-integration"
+    },
     "openai": {
       "description": "Beskrivning av OpenAI-integrationen",
       "title": "OpenAI-integration"
@@ -5903,6 +7071,9 @@
   },
   "templates": {
     "description": "Skapa och hantera dina mallar.",
+    "createDialog": {
+      "title": "Ny mall"
+    },
     "title": "Mallar",
     "share": {
       "label": "Dela",
@@ -5912,14 +7083,135 @@
       "dialogDescription": "Alla med den här länken kan installera en kopia av den här mallen i en arbetsyta i din organisation.",
       "enableLabel": "Aktivera dellänk",
       "linkLabel": "Dellänk",
-      "description": "Alla med länken kan installera den här mallen i sin egen arbetsyta."
+      "rotateLabel": "Byt ut länk",
+      "rotateTitle": "Byta ut dellänken?",
+      "rotateDescription": "Den nuvarande länken slutar fungera direkt. Alla som fortfarande behöver installera den här mallen behöver den nya länken.",
+      "rotated": "Dellänken har bytts ut",
+      "expiryLabel": "Länken upphör att gälla",
+      "expiryHint": "Lämna tomt för en länk som aldrig upphör att gälla.",
+      "clearExpiry": "Ta bort utgångsdatum",
+      "expiredNotice": "Den här länken har upphört att gälla. Ange ett senare datum eller ta bort utgångsdatumet för att dela den igen.",
+      "templateId": "Mall-ID",
+      "templateKey": "Mallnyckel",
+      "showKey": "Visa nyckel",
+      "hideKey": "Dölj nyckel",
+      "copyField": "Kopiera {field}"
+    },
+    "sync": {
+      "title": "Uppdateringar",
+      "updateAvailable": "Uppdatering tillgänglig",
+      "upToDate": "Uppdaterad",
+      "sourceDeleted": "Mallen har tagits bort",
+      "sourceDeletedHint": "Utgivaren har tagit bort den här mallen. Din kopia fungerar fortfarande men kan inte längre uppdateras.",
+      "updateNow": "Uppdatera nu",
+      "updating": "Uppdaterar…",
+      "version": "Mallversion {version}",
+      "lastSynced": "senast uppdaterad {date}",
+      "autoUpdateLabel": "Uppdatera automatiskt när mallen ändras",
+      "noHistory": "Inga uppdateringar än.",
+      "countAdded": "{count} tillagda",
+      "countUpdated": "{count} uppdaterade",
+      "countDetached": "{count} följer inte längre mallen",
+      "notUpdatable": "{count} kan inte uppdateras än",
+      "overwritten": "{name} redigerades och ersattes av uppdateringen",
+      "restore": "Återställ min version",
+      "restored": "Din version har återställts",
+      "status": {
+        "pending": "Köad",
+        "running": "Pågår",
+        "completed": "Slutförd",
+        "partial": "Delvis",
+        "failed": "Misslyckades",
+        "skipped": "Hoppades över",
+        "cancelled": "Avbruten"
+      },
+      "trigger": {
+        "autoUpdate": "Automatisk",
+        "manual": "Manuell",
+        "reinstall": "Ominstallation"
+      },
+      "requestedVersion": "begärd v{version}",
+      "errors": {
+        "unknown": "Uppdateringen misslyckades. Försök igen, eller kontakta supporten om det fortsätter.",
+        "templateSyncFailed": "Uppdateringen misslyckades. Försök igen.",
+        "templateSyncSuperseded": "En nyare uppdatering ersatte den här.",
+        "templateSyncAbandoned": "Uppdateringen blev inte klar i tid och stängdes.",
+        "templateInstallationInactive": "Den här installationen är inte längre aktiv.",
+        "workspaceOwnerBlocked": "Arbetsytans ägarkonto är blockerat.",
+        "templateUninstallInProgress": "Mallen avinstalleras.",
+        "templateAutoUpdateOff": "Automatiska uppdateringar är avstängda.",
+        "templateUpToDate": "Kopian är redan uppdaterad.",
+        "templateInstallerAccessLost": "Den som installerade har inte längre behörighet att uppdatera den här kopian.",
+        "templateInstallationSourceMissing": "Mallen raderades innan uppdateringen kördes.",
+        "templateCategoryPermissionDenied": "Du har inte längre behörighet att uppdatera allt i den här mallen.",
+        "templatePayloadIncompatible": "Den här mallen sparades i ett nyare format än den här servern kan installera.",
+        "templateCrossTenantInstall": "Den här mallen är inte tillgänglig för din arbetsyta.",
+        "templateInvalidInboxBinding": "En vald inkorg matchar inte mallen."
+      }
+    },
+    "versions": {
+      "detailsTab": "Detaljer",
+      "tab": "Versioner",
+      "versionNumber": "Version {version}",
+      "current": "Aktuell",
+      "first": "Första versionen",
+      "noDetail": "Inga detaljer registrerades för den här versionen.",
+      "added": "Tillagt",
+      "changed": "Ändrat",
+      "removed": "Borttaget"
+    },
+    "installers": {
+      "title": "Visa analys",
+      "workspace": "Arbetsyta",
+      "lastInstalled": "Senast installerad",
+      "version": "Version",
+      "autoUpdate": "Automatisk uppdatering",
+      "uninstalled": "Avinstallerad",
+      "hidden": "Arbetsytan delas inte",
+      "uninstallNotAllowed": "Installatören har inte tillåtit utgivare att avinstallera den här kopian.",
+      "loadError": "Kunde inte läsa in installatörerna. Försök igen.",
+      "automatic": "Automatisk",
+      "details": "Detaljer",
+      "noIssues": "Inga varningar eller fel."
     },
     "installs": {
       "title": "Installationer",
       "resources": "Resurser",
       "warnings": "Varningar",
       "completedAt": "Slutförd",
-      "autoUpdate": "Automatisk uppdatering"
+      "autoUpdate": "Automatisk uppdatering",
+      "installedBy": "Installerad av",
+      "viaApi": "API-token",
+      "attempts": "Försök",
+      "autoUpdateOn": "På",
+      "autoUpdateOff": "Av",
+      "retry": "Försök installera igen",
+      "resourcesTitle": "Installerade resurser",
+      "noResources": "Inget har skapats än.",
+      "deletedResource": "Borttagen resurs",
+      "viewOnly": "Endast visning",
+      "created": "Skapad",
+      "reused": "Återanvänd",
+      "loadMore": "Visa fler",
+      "statusFilter": "Status",
+      "allStatuses": "Alla statusar",
+      "errors": {
+        "unknown": "Installationen misslyckades. Försök igen eller kontakta supporten om det fortsätter att misslyckas.",
+        "templatePayloadIncompatible": "Den här mallen sparades i ett nyare format än den här servern kan installera.",
+        "templateInstallationSourceMissing": "Mallen raderades innan installationen kördes.",
+        "templateCrossTenantInstall": "Den här mallen är inte tillgänglig för din arbetsyta.",
+        "templateCategoryPermissionDenied": "Du har inte längre behörighet att installera allt i den här mallen.",
+        "templateInvalidInboxBinding": "En vald inkorg matchar inte mallen.",
+        "templateInstallEnqueueFailed": "Installationen kunde inte köas.",
+        "templateInstallFailed": "Installationen misslyckades. Försök igen.",
+        "templateInstallAbandoned": "Installationen blev inte klar i tid och stängdes.",
+        "templateInstallSuperseded": "En nyare installation av den här mallen ersatte den här.",
+        "workspaceOwnerBlocked": "Arbetsytans ägarkonto är blockerat."
+      },
+      "uninstalledBy": "{by, select, publisher {Utgivaren avinstallerade den här mallen.} installer {Den här mallen avinstallerades från den här arbetsytan.} other {Den här mallen avinstallerades.}}",
+      "uninstalledSummary": "{deleted} borttagna, {kept} behållna.",
+      "lastAttemptAt": "Senaste försök",
+      "installedAutomatically": "Installerad automatiskt (white-label-standard)"
     },
     "form": {
       "contents": "Mallens innehåll",
@@ -5932,14 +7224,26 @@
       "allowDelete": "Tillåt borttagning efter installation",
       "publisherName": "Utgivarens namn",
       "youtubeVideoId": "YouTube-video-id",
-      "youtubeVideoIdDescription": "Det 11-teckens id från videons URL, t.ex. \"dQw4w9WgXcQ\" i youtube.com/watch?v=dQw4w9WgXcQ",
+      "youtubeVideoIdDescription": "Det 11-teckens id från videons URL, t.ex. \"xxxxxxxxxxx\" i youtube.com/watch?v=xxxxxxxxxxx",
       "testLink": "Testlänk",
       "imageUrl": "Omslagsbild",
       "installBehavior": "Installationsbeteende",
-      "createInstallFolder": "Installera i en dedikerad mapp",
+      "createInstallFolder": "Skapa en mapp på det installerade kontot och installera resurser.",
       "createInstallFolderDescription": "Placerar varje installerad resurs i en ny mapp uppkallad efter den här mallen.",
-      "defaultAutoUpdate": "Markera installationer för uppdatering som standard",
-      "defaultAutoUpdateDescription": "Nya installationer visar ett meddelande om tillgänglig uppdatering varje gång du publicerar om den här mallen."
+      "defaultAutoUpdate": "Uppdatera installerade mallar automatiskt",
+      "defaultAutoUpdateDescription": "Varje gång du sparar den här mallen med ändrat innehåll skrivs installationer som följer automatisk uppdatering över med det nya innehållet (kopior som installatören redigerat säkerhetskopieras först). Installatörer kan stänga av det.",
+      "viewOnly": "Endast visning",
+      "viewOnlyAll": "Gör alla valda skrivskyddade",
+      "includedAutomatically": {
+        "title": "Ingår automatiskt",
+        "hint": "Medföljer eftersom något du valde behöver det. Skrivskyddat.",
+        "rows": "{count, plural, one {# objekt till} other {# objekt till}}",
+        "kind": {
+          "folders": "Mappar",
+          "placeCategories": "Platskategorier"
+        }
+      },
+      "viewOnlyCopyIncluded": "Något du valt (eller något det behöver) installerades från en mall som bara kan visas och kan inte delas i en ny mall."
     },
     "categories": {
       "flows": "Flöden",
@@ -5954,8 +7258,116 @@
       "keywords": "Nyckelord",
       "entryPointLinks": "Länkar till startpunkter",
       "triggers": "Utlösare",
-      "fbCommentAutomations": "Facebook-kommentarautomatiseringar",
-      "settings": "Inställningar"
+      "fbCommentAutomations": "Kommentarautomatiseringar",
+      "settings": "Botfält och sparade svar",
+      "sequences": "Sekvenser",
+      "aiMcpServers": "MCP-servrar",
+      "aiFiles": "AI-kunskapsfiler",
+      "questionnaires": "Frågeformulär",
+      "couponTopics": "Kupongämnen",
+      "pipelines": "Pipelines"
+    },
+    "locked": {
+      "flowBanner": "Det här flödet installerades från en skrivskyddad mall. Du kan titta på det men inte redigera det.",
+      "badge": "Endast visning",
+      "editorBanner": "Den här installerades från en mall med endast visning. Du kan titta på den men inte redigera den.",
+      "badgeHint": "Installerad från en mall med endast visning"
+    },
+    "channels": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "instagramFacebook": "Instagram (Facebook-inloggning)",
+      "threads": "Threads",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "zalo": "Zalo",
+      "webchat": "Webbchatt",
+      "line": "LINE",
+      "email": "E-post"
+    },
+    "uninstall": {
+      "title": "Avinstallera mall",
+      "description": "Mallen tar bort allt den skapade i den här arbetsytan, inklusive kopior som redigerats. Delade taggar, fält och mappar, objekt som fanns tidigare och allt du byggt ovanpå en kopia behålls.",
+      "loading": "Kontrollerar vad som kommer att hända…",
+      "previewFailed": "Det gick inte att kontrollera vad en avinstallation skulle göra.",
+      "failed": "Det gick inte att avinstallera mallen.",
+      "confirm": "Avinstallera",
+      "action": "Avinstallera",
+      "deleted": "{count, plural, one {# objekt kommer att raderas} other {# objekt kommer att raderas}}",
+      "deletedDone": "{count, plural, one {# objekt raderades} other {# objekt raderades}}",
+      "keptModified": "{count, plural, one {# redigerad eller overifierad kopia behålls} other {# redigerade eller overifierade kopior behålls}}",
+      "keptShared": "{count, plural, one {# delad tagg eller fält behålls} other {# delade taggar och fält behålls}}",
+      "keptByPolicy": "{count, plural, one {# annat objekt behålls} other {# andra objekt behålls}}",
+      "keptHasDependents": "{count, plural, one {# kopia behålls eftersom något fortfarande använder den} other {# kopior behålls eftersom något fortfarande använder dem}}",
+      "deletedModified": "{count, plural, one {# av dem redigerades av dig: dessa ändringar går förlorade och kan inte återställas} other {# av dem redigerades av dig: dessa ändringar går förlorade och kan inte återställas}}",
+      "keptLockedByOther": "{count, plural, one {# objekt behålls eftersom en annan mallinstallation fortfarande skyddar det} other {# objekt behålls eftersom en annan mallinstallation fortfarande skyddar dem}}",
+      "confirmCheckbox": "Jag förstår att detta raderar objekten ovan och inte kan ångras",
+      "started": "Avinstallationen har startat",
+      "inProgress": "Avinstallerar…",
+      "retry": "Försök avinstallera igen",
+      "state": {
+        "pending": "Avinstallation köad",
+        "running": "Avinstallerar…",
+        "partial": "Avinstallationen är ofullständig, försök igen",
+        "failed": "Avinstallationen misslyckades, försök igen",
+        "skipped": "Avinstallationen hoppades över: arbetsytan är blockerad"
+      },
+      "deletedUnverified": "{count, plural, one {# av dem kan inte kontrolleras för redigeringar: om du ändrade den går ändringarna förlorade} other {# av dem kan inte kontrolleras för redigeringar: om du ändrade dem går ändringarna förlorade}}",
+      "cancelAction": "Avbryt avinstallation",
+      "cancelled": "Avinstallationen avbröts: de återstående objekten kan du använda igen",
+      "blockedByReference": "{count, plural, one {# objekt raderades inte eftersom något du skapat fortfarande pekar på det: ta bort den referensen och försök sedan avinstallera igen} other {# objekt raderades inte eftersom något du skapat fortfarande pekar på dem: ta bort de referenserna och försök sedan avinstallera igen}}",
+      "keptPartlyRemoved": "{count, plural, one {# kopia behölls efter en blockerad avinstallation; historik och data för dubblettskydd kan ha tagits bort, så granska den innan du aktiverar den} other {# kopior behölls efter en blockerad avinstallation; historik och data för dubblettskydd kan ha tagits bort, så granska dem innan du aktiverar dem}}",
+      "keptInactiveForReview": "{count, plural, one {# kopia lämnades inaktiv: dess historik och data för dubblettskydd togs bort, så granska den innan du aktiverar den} other {# kopior lämnades inaktiva: deras historik och data för dubblettskydd togs bort, så granska dem innan du aktiverar dem}}",
+      "keptHistoryRemoved": "{count, plural, one {# kopia behölls, men dess historik togs bort (det finns inget att aktivera): granska den innan du förlitar dig på den} other {# kopior behölls, men deras historik togs bort (det finns inget att aktivera): granska dem innan du förlitar dig på dem}}",
+      "cancelledPartial": "{count, plural, one {# objekt håller redan på att raderas och slutförs; resten gavs tillbaka} other {# objekt håller redan på att raderas och slutförs; resten gavs tillbaka}}"
+    },
+    "warningCodes": {
+      "aiFileTooLarge": "Den här kunskapsfilen är större än en mallinstallation kan kopiera, så den hoppades över.",
+      "aiFileUnavailable": "Den här kunskapsfilen kunde inte kopieras, så den hoppades över.",
+      "assigneeRequired": "Välj vem det här steget tilldelar konversationen.",
+      "ambiguousSourceFieldToken": "Flera källfält har detta namn, så variablerna som använder det lämnades oförändrade.",
+      "backupTooLarge": "Ett lokalt redigerat objekt var för stort för att säkerhetskopieras, så det skrevs inte över.",
+      "backupUnavailable": "Säkerhetskopian för detta objekt är inte längre tillgänglig.",
+      "botFieldRenamed": "Ett botfält med det här namnet och en annan typ finns redan, så ett omdöpt fält skapades.",
+      "categoryPermissionDenied": "Du har inte behörighet för denna kategori, så den hoppades över.",
+      "couponTopicExpired": "Detta kupongämne har redan gått ut.",
+      "credentialRequired": "Lägg till inloggningsuppgifterna för detta objekt innan du använder det.",
+      "custom": "Ett refererat objekt hittades inte i denna arbetsyta, så länken togs bort.",
+      "customField": "Ett refererat objekt hittades inte i denna arbetsyta, så länken togs bort.",
+      "customFieldRenamed": "Ett fält med detta namn och en annan typ finns redan, så ett omdöpt fält skapades.",
+      "enqueueFailed": "Bakgrundsbearbetningen kunde inte köas för detta objekt.",
+      "flow": "Ett refererat objekt hittades inte i denna arbetsyta, så länken togs bort.",
+      "flowInvalidStructure": "Flowets struktur är ogiltig, så det hoppades över.",
+      "flowNotPublished": "Flowet installerades som utkast och är inte publicerat.",
+      "flowSkippedRequiredReference": "Flowet hoppades över eftersom en obligatorisk referens inte kunde lösas.",
+      "folder": "Ett refererat objekt hittades inte i denna arbetsyta, så länken togs bort.",
+      "inboxBindingRequired": "Välj en inkorg för denna kanal; tills dess förblir objektet inaktivt.",
+      "integration": "Ett refererat objekt hittades inte i denna arbetsyta, så länken togs bort.",
+      "localModifiedOverwritten": "Ett lokalt redigerat objekt skrevs över. En säkerhetskopia sparades och kan återställas.",
+      "name": "Inget ledigt namn hittades för detta objekt, så det hoppades över.",
+      "noEmbeddingProvider": "Ingen embedding-leverantör är konfigurerad i den här arbetsytan, så kunskapsfilerna hoppades över. Anslut OpenAI eller Gemini och installera igen.",
+      "notUpdatable": "Den här typen av objekt uppdateras inte automatiskt ännu.",
+      "pipeline": "Använder en pipeline som inte längre finns.",
+      "pipelineField": "Använder ett pipelinefält som inte längre finns.",
+      "pipelineStage": "Använder ett pipelinesteg som inte längre finns.",
+      "postSelectionRequired": "Välj inlägget igen: det ursprungliga inlägget kunde inte föras över.",
+      "product": "Ett refererat objekt hittades inte i denna arbetsyta, så länken togs bort.",
+      "productCategory": "Ett refererat objekt hittades inte i denna arbetsyta, så länken togs bort.",
+      "questionImage": "En bild kunde inte kopieras.",
+      "quota": "En plangräns nåddes, så objektet hoppades över.",
+      "referenceRemoved": "En referens som inte kunde lösas togs bort.",
+      "savedReply": "Ett refererat objekt hittades inte i denna arbetsyta, så länken togs bort.",
+      "savedReplyImage": "En bild kunde inte kopieras.",
+      "tag": "Ett refererat objekt hittades inte i denna arbetsyta, så länken togs bort.",
+      "unlisted": "Objektet fördes inte över helt: {code}",
+      "workspaceMember": "Tilldelad en medlem som inte finns i den här arbetsytan.",
+      "workspaceUnavailable": "Den här arbetsytan är inte längre tillgänglig, så objektet hoppades över."
+    },
+    "tabs": {
+      "mine": "Mina mallar",
+      "installed": "Installerade",
+      "installedEmpty": "Inga installerade mallar än. Mallar du installerar från en annan arbetsyta visas här."
     }
   },
   "texts": {
@@ -5983,6 +7395,7 @@
       "removeTag": "Ta bort tagg",
       "setCustomField": "Ange anpassat fält",
       "startAnotherFlow": "Starta ett annat flöde",
+      "startExternalStep": "Start External Step",
       "transferConversationToHuman": "Överför konversationen till en människa",
       "sendMetaCapiEvent": "Skicka Meta CAPI-händelse",
       "sendGoogleAdsConversion": "Skicka Google Ads-konvertering"
@@ -6000,6 +7413,8 @@
       "contactInfoUpdated": "Telefonnummer eller e-postadress har uppdaterats",
       "contactReferredANewContact": "Kontakt hänvisade en ny kontakt",
       "contactReferredExistingContact": "Kontakt hänvisade en befintlig kontakt",
+      "contactBlockedBot": "Kontakt blockerade boten",
+      "contactUnblockedBot": "Kontakt avblockerade boten",
       "contactUnsubscribedFormBroadcast": "Kontakt har avregistrerat sig från utskick",
       "conversationAssigned": "Konversation har tilldelats",
       "conversationTransferredToBot": "Konversation har överförts till en bot",
@@ -6014,6 +7429,8 @@
       "newOrder": "Ny beställning",
       "orderAccepted": "Beställning har godkänts",
       "orderCancelled": "Beställning har avbrutits",
+      "orderPaid": "Beställning har betalats",
+      "orderRefunded": "Beställning har återbetalats",
       "orderConcluded": "Beställning har slutförts",
       "orderShipped": "Beställning har skickats",
       "productAddedToCart": "Produkt har lagts till i kundvagnen",
@@ -6022,16 +7439,21 @@
       "subscribedToSequence": "Har registrerats i en sekvens",
       "tagApplied": "Tagg har lagts till",
       "tagRemoved": "Tagg har tagits bort",
-      "ticketCreated": "Ärende har skapats",
-      "ticketMovedToStage": "Ärende har flyttats till ett steg",
-      "ticketPriorityChanged": "Ärendets prioritet har ändrats",
-      "ticketStatusChanged": "Ärendets status har ändrats",
-      "ticketValueChanged": "Ärendets värde har ändrats",
+      "pipelineItemCreated": "Ärende har skapats",
+      "pipelineItemMovedToStage": "Ärende har flyttats till ett steg",
+      "pipelineItemPriorityChanged": "Ärendets prioritet har ändrats",
+      "pipelineItemStatusChanged": "Ärendets status har ändrats",
+      "pipelineItemValueChanged": "Ärendets värde har ändrats",
       "unsubscribedFromSequence": "Har avregistrerats från en sekvens",
       "userAskedAboutProduct": "Kontakt frågade om en produkt",
       "callRecorded": "Samtal inspelat",
       "callTranscribed": "Samtal transkriberat",
-      "anyProduct": "Valfri produkt"
+      "anyProduct": "Valfri produkt",
+      "anyCategory": "Valfri kategori",
+      "anyPipeline": "Valfri pipeline",
+      "anyStage": "Valfri fas",
+      "unavailablePipeline": "Borttagen eller otillgänglig pipeline",
+      "unavailableStage": "Borttaget eller otillgängligt steg"
     },
     "day": "Dag",
     "hour": "Timme",
@@ -6069,14 +7491,39 @@
     "invalidTitle": "Den här länken är inte längre tillgänglig.",
     "invalidDescription": "Den här mallens dellänk är ogiltig, inaktiverad eller har gått ut.",
     "byPublisher": "Av {publisherName}",
-    "includes": "Den här mallen innehåller",
     "videoTitle": "Förhandsgranskningsvideo för mall",
-    "tryItOut": "Prova den",
-    "signInToInstall": "Logga in för att installera",
+    "preview": "Förhandsgranska",
+    "aboutTemplate": "Om den här mallen",
     "selectWorkspace": "Välj en arbetsyta",
     "install": "Installera",
     "installStarted": "Installationen har startat",
-    "noEligibleWorkspaces": "Du har ingen arbetsyta som är berättigad att installera den här mallen."
+    "noEligibleWorkspaces": "Du har ingen arbetsyta som är berättigad att installera den här mallen.",
+    "alreadyInstalled": "Den här mallen är redan installerad i den här arbetsytan.",
+    "viewInstall": "Visa installation",
+    "installAnotherCopy": "Installera en kopia till",
+    "inboxesTitle": "Inkorgar",
+    "inboxesHint": "Den här mallen byggdes kring dessa inkorgar. Välj vilka av dina egna inkorgar som ska användas; allt som utelämnas installeras avstängt.",
+    "noInbox": "Anslut inte – installera avstängd",
+    "noInboxAvailable": "Ingen ansluten inkorg i den här kanalen",
+    "updateExisting": "Uppdatera installerad kopia",
+    "updateStarted": "Uppdateringen har startat",
+    "autoUpdateLabel": "Uppdatera automatiskt när mallen ändras",
+    "collisions": {
+      "title": "Vad installationen kommer att göra här",
+      "loading": "Kontrollerar den här arbetsytan…",
+      "action": {
+        "create": "Skapas",
+        "reuse": "Återanvänds",
+        "rename": "Döps om",
+        "bind": "Kopplas",
+        "unbound": "Lämnas okopplad"
+      },
+      "detail": {
+        "rename": "”{name}” finns redan med en annan typ, så mallens version läggs till under ett nytt namn.",
+        "unbound": "”{name}” lämnas okopplad tills du väljer en inkorg."
+      }
+    },
+    "createWorkspace": "Skapa en ny arbetsyta"
   },
   "userPersistentMenus": {
     "title": "Beständiga användarmenyer"
@@ -6090,6 +7537,9 @@
     "maxCharacters": "Högst {max} tecken.",
     "maxMustBeGreaterThanMin": "{maxField} måste vara större än eller lika med {minField}",
     "maxSize": "Filstorleken överskrider maxgränsen",
+    "trigger": {
+      "actionReferenceNotFound": "An action refers to a record that no longer exists. Re-select it in the action and save again."
+    },
     "inboundWebhook": {
       "inboxRequired": "Välj en inkorg.",
       "inboxNotFound": "Den valda inkorgen hittades inte.",
@@ -6099,11 +7549,31 @@
       "unknownFieldTarget": "Ett mappat kontaktfält finns inte längre.",
       "actionReferenceNotFound": "En åtgärd refererar till ett flöde, en tagg eller ett fält som inte längre finns.",
       "fieldMappingRequired": "Lägg till minst en fältmappning."
+    },
+    "form": {
+      "required": "Det här fältet är obligatoriskt.",
+      "minLength": "Ange minst {minimum} tecken.",
+      "maxLength": "Ange högst {maximum} tecken.",
+      "minNumber": "Ange ett tal på minst {minimum}.",
+      "moreThan": "Ange ett tal större än {minimum}.",
+      "maxNumber": "Ange ett tal på högst {maximum}.",
+      "lessThan": "Ange ett tal mindre än {maximum}.",
+      "number": "Ange ett tal.",
+      "wholeNumber": "Ange ett heltal.",
+      "minItems": "Välj minst {minimum}.",
+      "maxItems": "Välj högst {maximum}.",
+      "email": "Ange en giltig e-postadress.",
+      "url": "Ange en giltig länk som börjar med https://.",
+      "format": "Värdet har inte rätt format.",
+      "option": "Välj ett av alternativen.",
+      "invalid": "Värdet är ogiltigt.",
+      "checkFields": "Några fält behöver rättas. Se de som är rödmarkerade."
     }
   },
   "webchat": {
     "chatUnavailable": "Den här chatten är inte tillgänglig just nu.",
     "description": "Låt dina kunder få omedelbara automatiska svar från ditt företag direkt på din webbplats",
+    "loadMessagesError": "Det gick inte att läsa in meddelanden. Kontrollera din anslutning och försök igen.",
     "rateLimitExceeded": "För många förfrågningar. Försök igen om en stund.",
     "title": "Webbchatt",
     "unauthorizedDomain": {
@@ -6338,7 +7808,28 @@
         "mpmSectionLimitReached": "Max 10 sektioner uppnått.",
         "mpmProductLimitReached": "Max 30 produkter uppnått.",
         "mpmProductsSummary": "{productCount} produkter i {sectionCount} sektioner",
-        "unsupportedButtonParam": "Den här knapptypen stöds inte än."
+        "unsupportedButtonParam": "Den här knapptypen stöds inte än.",
+        "payment": {
+          "method": {
+            "pix": "Pix",
+            "boleto": "Boleto",
+            "payment_link": "Betalningslänk",
+            "card_on_file": "Kortbetalning med ett klick"
+          },
+          "field": {
+            "code": "Pix-kod",
+            "digitableLine": "Boleto-rad",
+            "url": "URL till betalningslänk",
+            "lastFourDigits": "Kortets sista 4 siffror",
+            "credentialId": "Kortets credential-ID (valfritt)",
+            "amount": "Belopp i BRL, t.ex. 12.34"
+          },
+          "notice": {
+            "general": "Använd en variabel så att varje kund får sina egna betalningsuppgifter.",
+            "cardOnFile": "Kortbetalning med ett klick fungerar bara för företag som Meta har aktiverat det för."
+          },
+          "unsupportedButton": "Den här mallen har en betalningsknapp som inte kan skickas: betalningstypen kunde inte fastställas. Synkronisera mallarna igen eller välj en annan."
+        }
       },
       "text": {
         "label": "Text"
@@ -6419,7 +7910,6 @@
     "templateHeader": {
       "label": "Mallens sidhuvud"
     },
-    "transferPhoneNumber": "Överför telefonnummer från en annan WhatsApp-leverantör",
     "selectPage": {
       "tryAgain": "Försök återansluta"
     },
@@ -6676,7 +8166,18 @@
         "callInformation": "Samtalsinformation"
       }
     },
-    "credentialSecretsRequired": "Ange apphemligheten och systemanvändartoken. De är inte sparade än."
+    "credentialSecretsRequired": "Ange apphemligheten och systemanvändartoken. De är inte sparade än.",
+    "embeddedSignupCancelled": "Registreringen avbröts – du kan stänga den här fliken.",
+    "embeddedSignupFailed": "Registreringen slutfördes inte – stäng den här fliken och försök igen.",
+    "payment": {
+      "settings": {
+        "title": "Betalningar",
+        "description": "Hur det här numret skickar knappar för betalningsförfrågan.",
+        "pixRedirectLabel": "Skicka Pix med omdirigering",
+        "pixRedirectDescription": "Köparen öppnar sin bankapp för att betala och återvänder till WhatsApp. Aktivera först när Meta har anslutit ditt företag; köpare som inte kan omdirigeras får fortfarande kopiera och klistra in.",
+        "adminOnly": "Bara arbetsytans administratörer kan ändra betalningsinställningar."
+      }
+    }
   },
   "workspace": {
     "deletion": {
@@ -6729,7 +8230,8 @@
   "workspaces": {
     "list": {
       "title": "Lista över arbetsytor"
-    }
+    },
+    "defaultName": "{name}s arbetsyta"
   },
   "zalo": {
     "duplicated": "Det här Zalo OA-kontot är redan anslutet till en annan arbetsyta.",
@@ -6758,6 +8260,7 @@
       "invalidTokenTitle": "Den här bokningslänken är inte tillgänglig.",
       "invalidTokenDescription": "Länken kan vara ogiltig eller ha upphört att gälla. Be om en ny bokningslänk.",
       "staleSlot": "Den här tiden är inte längre tillgänglig. Välj en annan tid.",
+      "alreadyScheduled": "Den här kontakten har redan en bokning vid den här tiden i den här kalendern. Välj en annan tid.",
       "availabilityChanged": "Tillgängligheten ändrades medan du valde tid. Välj igen.",
       "submitFailed": "Vi kunde inte slutföra begäran. Försök igen."
     },
@@ -6847,6 +8350,15 @@
     },
     "messages": {
       "empty": "Inga bokningar än."
+    },
+    "actions": {
+      "create": "Skapa bokning"
+    },
+    "create": {
+      "title": "Skapa bokning",
+      "description": "Välj en kalender och en ledig tid för att boka åt den här kontakten.",
+      "noConversationHint": "Ingen konversation är öppen, så kontakten får inget bekräftelsemeddelande.",
+      "success": "Bokning skapad."
     }
   },
   "appointmentManagement": {
@@ -8093,7 +9605,9 @@
       "customer_service": "Kundtjänst",
       "escalation": "Eskalering",
       "marketing": "Marknadsföring",
-      "utility": "Tjänst"
+      "utility": "Tjänst",
+      "calls": "Samtal",
+      "other": "Övrigt"
     },
     "pill": {
       "standby": "Standby ({owner})",
@@ -8103,14 +9617,18 @@
     "release": {
       "label": "Släpp",
       "tooltip": "Släpp konversationen så att andra appar kan svara",
-      "success": "Konversationen släppt"
+      "success": "Konversationen släppt",
+      "menu": "Släpp eller överlämna"
     },
     "pass": {
-      "menuItem": "Skicka vidare till eskalering",
-      "title": "Skicka vidare till eskaleringspartnern?",
-      "description": "Lämna över den här konversationen till din eskaleringspartner? Dina svar pausas tills konversationen kommer tillbaka.",
+      "menuItem": "Överlämna till en partner",
+      "title": "Överlämna till en partner?",
+      "description": "Välj vem som tar över konversationen. Dina svar pausas tills konversationen kommer tillbaka.",
       "confirm": "Skicka vidare",
-      "success": "Konversationen skickades vidare till eskaleringspartnern"
+      "success": "Konversationen skickades vidare till eskaleringspartnern",
+      "targetLabel": "Överlämna till",
+      "noteLabel": "Anteckning till mottagande partner",
+      "successTargeted": "Konversationen överlämnad till {role}"
     },
     "aiHandover": {
       "label": "BizAI",
@@ -8129,7 +9647,10 @@
       "notEscalation": "Bara eskaleringspartnern kan ta över. Routing konfigureras i Meta Business Suite.",
       "notPrimaryReceiver": "Den här appen måste vara sidans primära mottagare för att kunna ta över. Ställ in det i sidans inställningar för Handover Protocol.",
       "learnMore": "Läs mer",
-      "dismiss": "Skicka ändå"
+      "dismiss": "Skicka ändå",
+      "takeOverTitle": "Ta över konversationen?",
+      "takeOverDescription": "Partnern slutar hantera den och du tar över. Du kan lämna en anteckning till dem.",
+      "takeOverNoteLabel": "Anteckning till nuvarande partner"
     },
     "divider": {
       "ownerHandling": "{owner} hanterar nu den här konversationen",
@@ -8182,7 +9703,17 @@
       "adminOnly": "Bara arbetsyteadministratörer kan ändra routning",
       "flowNotFound": "Det valda flödet hittades inte eller är inte aktivt",
       "integrationNotFound": "WhatsApp-numret hittades inte",
-      "messengerIntegrationNotFound": "Messenger-sidan hittades inte"
+      "messengerIntegrationNotFound": "Messenger-sidan hittades inte",
+      "rolesTitle": "Dina routningsroller på det här numret",
+      "rolesDescription": "Tilldelas av företaget i Meta Business Suite.",
+      "rolesNone": "Du har ingen routningsroll på det här numret.",
+      "rolesNeverChecked": "Inte kontrollerat ännu.",
+      "rolesNotEnabled": "Konversationsroutning är inte aktiverad för det här numret.",
+      "rolesStandbyOn": "Standby-åtkomst: på (du ser konversationer du inte äger)",
+      "rolesStandbyOff": "Standby-åtkomst: av",
+      "rolesCheckedAt": "Kontrollerad {time}",
+      "rolesRefresh": "Kontrollera igen",
+      "rolesSyncFailed": "Det gick inte att hämta routningsrollerna från Meta. Försök igen."
     },
     "errors": {
       "unsupported": "Konversationsroutning är inte tillgänglig i den här kanalen",
@@ -8192,8 +9723,12 @@
     "step": {
       "action": "Åtgärd",
       "release": "Släpp konversationen",
-      "pass": "Skicka vidare till eskaleringspartnern",
-      "helper": "Endast WhatsApp. På andra kanaler, eller när konversationen inte ägs här, följer steget felvägen."
+      "pass": "Överlämna till en partner",
+      "helper": "Endast WhatsApp. På andra kanaler, eller när konversationen inte ägs här, följer steget felvägen.",
+      "targetRole": "Överlämna till",
+      "targetRoleDefault": "Eskaleringspartner (standard)",
+      "metadata": "Överlämningsanteckning",
+      "metadataHelper": "Valfritt. Skickas oförändrad till appen som tar emot konversationen. Variabler stöds. Upp till {max} tecken."
     },
     "template": {
       "sent": "Mall skickad"
@@ -8527,7 +10062,7 @@
       "too_many_components": "En skärm kan innehålla högst {max} komponenter.",
       "component_limit": "En skärm kan innehålla högst {max} × {type}.",
       "picker_conflict": "En skärm kan inte ha både fotouppladdning och dokumentuppladdning.",
-      "picker_multiple_in_complete": "Ställ in {property} på 1: WhatsApp skickar bara en enda fil när flödet slutförs.",
+      "picker_multiple_in_complete": "WhatsApp skickar högst {max} filer när flödet slutförs. Sänk maxantalet filer för filfälten som leder till den här skärmen.",
       "footer_not_last": "Footern måste vara den sista komponenten på skärmen.",
       "footer_in_nested_branch": "En Footer kan bara placeras direkt i en Om-gren på första nivån.",
       "footer_missing_in_branch": "Om en gren har en Footer måste den andra grenen också ha en.",
@@ -9033,6 +10568,720 @@
       "closed": "Stängt"
     }
   },
+  "productVendors": {
+    "title": "Leverantörer",
+    "add": "Lägg till",
+    "edit": "Redigera",
+    "delete": "Ta bort",
+    "actions": "Åtgärder",
+    "save": "Spara",
+    "cancel": "Avbryt",
+    "moreOptions": "Fler alternativ",
+    "empty": "Inga leverantörer ännu.",
+    "created": "Leverantör tillagd",
+    "updated": "Leverantör uppdaterad",
+    "deleted": "Leverantör borttagen",
+    "saveError": "Kunde inte spara leverantören",
+    "deleteError": "Kunde inte ta bort leverantören",
+    "deleteTitle": "Ta bort {name}?",
+    "deleteDescription": "{count, plural, =0 {Ingen produkt använder denna leverantör.} one {# produkt blir utan leverantör.} other {# produkter blir utan leverantör.}}",
+    "fields": {
+      "name": "Namn",
+      "shortDescription": "Kort beskrivning",
+      "phone": "Telefon",
+      "storeAddress": "Butiksadress",
+      "image": "Bild",
+      "optional": "Valfritt",
+      "discountPercent": "Rabatt (0-100%)",
+      "minimumOrderValue": "Minsta ordervärde",
+      "openHours": "Öppettider",
+      "category": "Kategori",
+      "subcategory": "Underkategori",
+      "none": "Ingen"
+    },
+    "columns": {
+      "name": "Namn",
+      "products": "Totalt antal produkter",
+      "active": "Aktiv"
+    },
+    "description": "Säljare och varumärken som dina produkter tillhör."
+  },
+  "ecommerceSettings": {
+    "save": "Spara",
+    "saved": "Inställningar sparade",
+    "saveError": "Kunde inte spara inställningarna",
+    "rank": {
+      "label": "Rang",
+      "default": "Standard"
+    },
+    "tabs": {
+      "general": "Allmänt",
+      "payments": "Betalningar",
+      "shipping": "Frakt",
+      "checkout": "Kassa",
+      "shopify": "Shopify",
+      "woocommerce": "WooCommerce"
+    },
+    "general": {
+      "orderingAvailable": {
+        "label": "Beställning är tillgänglig",
+        "description": "Använd det här fältet för att hindra kunder från att lägga beställningar utan att ändra dina öppettider. Öppettiderna styr också din tillgänglighet."
+      },
+      "webshopProductView": {
+        "label": "Produktvy i webbutiken",
+        "description": "Styr hur produkter visas i din webbutik.",
+        "options": {
+          "list": "Lista",
+          "listWithoutImage": "Lista utan bild",
+          "card": "Kort",
+          "cardSquare": "Kort med kvadratisk bild",
+          "image": "Bild",
+          "imageSquare": "Bild (kvadratisk)"
+        }
+      },
+      "openHours": {
+        "label": "Öppettider",
+        "description": "De tidsintervall då dina kunder kan lägga en beställning."
+      },
+      "searchProducts": {
+        "label": "Sök produkter",
+        "description": "Låt kunder skicka meddelanden för att hitta produkter."
+      },
+      "facebookPixelId": {
+        "label": "Facebook Pixel",
+        "description": "Spåra konverteringar med Facebook Pixel och mät resultaten av dina annonser. Följande händelser spåras: ADD_TO_CART, INITIATE_CHECKOUT, PURCHASE, VIEW_CONTENT"
+      },
+      "abandonedCart": {
+        "label": "Meddelande om övergiven varukorg",
+        "description": "Hur länge man ska vänta innan ett meddelande om övergiven varukorg skickas, efter att användaren lämnat din bot med en artikel i varukorgen.",
+        "disabled": "Inaktiverad",
+        "afterMinutes": "Efter {count} minuter",
+        "afterHours": "{count, plural, one {Efter # timme} other {Efter # timmar}}"
+      },
+      "productButtons": {
+        "label": "Knappar på produkter",
+        "description": "Den här inställningen styr vilka knappar som visas för produkter i din bot.",
+        "options": {
+          "addToCart": "Lägg i varukorg",
+          "share": "Dela",
+          "similar": "Liknande",
+          "save": "Spara"
+        }
+      },
+      "productImageSize": {
+        "label": "Bildstorlek för produkter",
+        "description": "Den här inställningen styr storleken på produktbilder i din bot",
+        "options": {
+          "bigSquare": "Stor (kvadratisk)",
+          "mediumRectangle": "Medel (rektangulär)"
+        }
+      },
+      "allowRateOrders": {
+        "label": "Tillåt betygsättning av beställningar",
+        "description": "Låt kunder betygsätta en beställning och skriva ett omdöme om de inte är nöjda. Endast botens administratörer kan se omdömena"
+      },
+      "notifyOnCartStatusChange": {
+        "label": "Skicka avisering när varukorgens status ändras",
+        "description": "Kunden får aviseringar varje gång du ändrar beställningens status. Du kan inte inaktivera aviseringen för avbeställning och slutförd beställning."
+      },
+      "abandonedCartFlow": {
+        "label": "Flöde för övergiven varukorg",
+        "description": "Flödet som boten kör för kunden när varukorgen lämnats så länge. Använd '{{shop_token}}' i knapparna för att öppna varukorgen. Triggers kan också använda händelsen \"Cart abandoned\".",
+        "none": "Inget flöde (endast trigger-händelse)"
+      },
+      "storeSource": {
+        "label": "Butikskälla",
+        "description": "Välj den butikskälla som används för att hantera dina produkter, lager och beställningar. När Shopify / WooCommerce är valt hanteras alla produkter och beställningar direkt från din Shopify / WooCommerce-butik.",
+        "options": {
+          "chatbotx": "ChatbotX",
+          "shopify": "Shopify",
+          "woocommerce": "WooCommerce"
+        }
+      }
+    },
+    "payments": {
+      "currencyMismatch": "{count, plural, one {# produkt är prissatt} other {# produkter är prissatta}} i en annan valuta än {currency}. Beställningar debiteras priset i {currency}.",
+      "paymentMethods": {
+        "label": "Betalningsmetoder",
+        "description": "Betalningsmetoderna som är aktiverade på kassasidan. Den första metoden i listan blir förvald på kassasidan.",
+        "options": {
+          "cod": "Postförskott",
+          "stripe": "Kort",
+          "paypal": "PayPal"
+        },
+        "connectHint": "För att erbjuda {provider}, anslut det under <link>Inställningar → Integrationer</link>."
+      },
+      "currency": {
+        "label": "Valuta",
+        "description": "Det här är valutan du anger produktpriser i. Kunderna debiteras i denna valuta."
+      },
+      "currencyPosition": {
+        "label": "Valutans placering",
+        "description": "Med det här alternativet styr du valutans placering.",
+        "options": {
+          "left": "Vänster",
+          "leftSpace": "Vänster med mellanrum",
+          "right": "Höger",
+          "rightSpace": "Höger med mellanrum"
+        }
+      },
+      "currencySymbol": {
+        "label": "Valutasymbol",
+        "description": "Valutasymbolen visas före priserna. Vill du ha ett mellanrum mellan symbolen och priserna, lägg till ett mellanslag efter symbolen."
+      },
+      "serviceFeePercent": {
+        "label": "Övriga avgifter / serviceavgifter (0 - 100%)",
+        "description": "Övriga avgifter som hör till försäljningen."
+      }
+    },
+    "shipping": {
+      "shippingType": {
+        "label": "Fraktsätt",
+        "description": "Med det här alternativet styr du hur kunden får sin beställning.",
+        "options": {
+          "none": "Ingen",
+          "delivery": "Leverans till kunden",
+          "pickup": "Avhämtning i butiken",
+          "deliveryAndPickup": "Leverans till kunden, Avhämtning i butiken"
+        }
+      },
+      "storeAddress": {
+        "label": "Butiksadress",
+        "description": "Den här adressen visas för kunden på kassasidan om du tillåter avhämtning i butiken."
+      },
+      "shippingCountries": {
+        "label": "Fraktländer",
+        "description": "De länder dit du skickar beställningar."
+      },
+      "defaultShippingCountry": {
+        "label": "Standardland för frakt",
+        "description": "Landet som väljs som standard på kassasidan.",
+        "none": "Ingen"
+      },
+      "deliveryCost": {
+        "label": "Leveranskostnad",
+        "description": "En fast avgift för att leverera beställningen till kundens adress."
+      },
+      "defaultCountryNotShipped": "Välj ett av leveransländerna."
+    },
+    "checkout": {
+      "checkoutMode": {
+        "label": "Kassa",
+        "description": "Den här inställningen styr var dina kunder slutför sina beställningar. Om du vill att användaren ska slutföra beställningen utanför din bot, till exempel på din webbplats eller Amazon,.. använd inte vår standardkassa.",
+        "options": {
+          "default": "Standardkassa",
+          "externalLink": "Egen extern kassasida",
+          "flow": "Flöde",
+          "productPage": "Besök den externa produktsidan"
+        }
+      },
+      "checkoutLink": {
+        "label": "Länk till kassasidan",
+        "description": "Den externa sidan där kunder slutför sina beställningar."
+      },
+      "checkoutFlowId": {
+        "label": "Kassaflöde",
+        "description": "Flödet som körs när en kund går till kassan.",
+        "placeholder": "Välj ett flöde"
+      },
+      "minimumOrderValue": {
+        "label": "Minsta ordervärde",
+        "description": "Det lägsta värde en kund kan beställa för. Villkoret kontrolleras när alla rabatter har tillämpats."
+      },
+      "requiredFields": {
+        "requireName": {
+          "label": "Kräv köparens namn",
+          "description": "Köparens namn samlas in i kassan."
+        },
+        "requireEmail": {
+          "label": "Kräv e-postadress",
+          "description": "Köparens e-post samlas in i kassan."
+        },
+        "requirePhone": {
+          "label": "Kräv telefonnummer",
+          "description": "Köparens telefon samlas in i kassan."
+        },
+        "requireState": {
+          "label": "Kräv län/region",
+          "description": "Köparens län samlas in i kassan."
+        },
+        "requireZip": {
+          "label": "Kräv postnummer",
+          "description": "Köparens postnummer samlas in i kassan."
+        }
+      },
+      "orderConfirmationMode": {
+        "label": "Orderbekräftelse",
+        "description": "Det kunden får i chatten när beställningen är lagd. Standardmeddelandet visar orderuppgifterna på arbetsytans språk.",
+        "options": {
+          "default": "Standardmeddelande",
+          "flow": "Kör ett flöde",
+          "none": "Skicka ingenting"
+        }
+      },
+      "orderConfirmationFlowId": {
+        "label": "Flöde för orderbekräftelse",
+        "description": "Flödet som skickas till kunden i stället för standardmeddelandet när beställningen är lagd."
+      },
+      "shopifyCheckoutMethod": {
+        "label": "Betalningsmetod",
+        "description": "Välj om kunder slutför betalningen på din Shopify-kassasida eller lägger beställningen direkt i webbutiken.",
+        "options": {
+          "webCheckout": "Shopify-webbkassa",
+          "inApp": "Kassa i appen"
+        }
+      },
+      "shopifyAutoApplyDiscounts": {
+        "label": "Tillämpa rabattkoder automatiskt",
+        "description": "Låt kunder tillämpa Shopify-rabattkoder direkt på sin varukorg innan de skickas vidare till kassan."
+      },
+      "wooCommerceCheckoutMethod": {
+        "description": "Välj om kunderna betalar på din WooCommerce-butiks betalningssida eller lägger ordern direkt i webbshoppen (betalning vid leverans).",
+        "options": {
+          "webCheckout": "WooCommerce-betalningssida",
+          "inApp": "Kassa i appen"
+        }
+      },
+      "wooCommerceAutoApplyDiscounts": {
+        "description": "Låt kunder tillämpa WooCommerce-rabattkoder direkt på sin varukorg innan de skickas vidare till kassan."
+      },
+      "inAppDeliveryCost": {
+        "label": "Leveranskostnad",
+        "description": "Leveransavgift som läggs till i beställningar via kassan i appen."
+      },
+      "wooCommerceDeliveryCost": {
+        "description": "Leveransavgift som läggs till ordrar som skickas till WooCommerce, med båda kassametoderna."
+      }
+    },
+    "shopify": {
+      "shopDomain": {
+        "label": "Butiksdomän",
+        "placeholder": "your-store.myshopify.com",
+        "hint": "Ange .myshopify.com-domänen för din Shopify-butik.",
+        "connectedHint": "Domänen för din anslutna Shopify-butik."
+      },
+      "authKind": {
+        "label": "Autentisering",
+        "description": "Hur ChatbotX loggar in i din butik: med Admin API-åtkomsttoken från en anpassad app eller med Client ID och secret från en app som skapats i Shopify Dev Dashboard.",
+        "options": {
+          "token": "Admin API-åtkomsttoken",
+          "clientCredentials": "Client ID och secret (Dev Dashboard-app)"
+        }
+      },
+      "accessToken": {
+        "label": "Admin API-åtkomsttoken",
+        "hint": "Admin API-åtkomsttoken för din anpassade app. Ge den dessa behörigheter: {scopes}.",
+        "connectedHint": "Din Shopify Admin API-åtkomsttoken lagras krypterad."
+      },
+      "apiSecret": {
+        "label": "Hemlig API-nyckel",
+        "hint": "Appens hemliga API-nyckel, som används för att verifiera webhooks som skickas av Shopify."
+      },
+      "clientId": {
+        "label": "Client ID",
+        "hint": "Client ID för din Dev Dashboard-app. Ge den dessa behörigheter: {scopes}."
+      },
+      "clientSecret": {
+        "label": "Client Secret",
+        "hint": "Appens Client Secret. Den lagras krypterad."
+      },
+      "webhookUrl": {
+        "label": "Webhook-URL",
+        "description": "Registreras automatiskt hos Shopify vid anslutning för att ta emot uppdateringar om produkter, lager och beställningar i realtid."
+      },
+      "syncNow": "Synkronisera nu",
+      "syncStarted": "Synkroniseringen startade",
+      "syncError": "Det gick inte att starta synkroniseringen",
+      "syncStatus": {
+        "label": "Synkroniseringsstatus",
+        "description": "Produkter, rabattkoder och beställningar speglas från din Shopify-butik.",
+        "connectedTo": "Ansluten till {shopDomain}",
+        "lastSynced": "Senast synkroniserad: {time} ({productCount} produkter, {orderCount} beställningar)",
+        "neverSynced": "Inte synkroniserad ännu",
+        "noReason": "Anslut din butik igen för att fortsätta.",
+        "invalid": "Anslutningen är inte längre giltig: {reason}",
+        "state": {
+          "idle": "Inaktiv",
+          "queued": "Synkronisering köad...",
+          "running": "Synkroniserar...",
+          "succeeded": "Senaste synkroniseringen lyckades",
+          "failed": "Senaste synkroniseringen misslyckades"
+        }
+      }
+    },
+    "woocommerce": {
+      "siteUrl": {
+        "label": "Butikens URL",
+        "placeholder": "https://example.com",
+        "hint": "Adressen till din WordPress-webbplats, som börjar med https://. I WordPress får Settings → Permalinks inte vara inställt på Plain.",
+        "connectedHint": "Din anslutna WooCommerce-butik."
+      },
+      "consumerKey": {
+        "label": "Consumer key",
+        "hint": "Skapa en nyckel under WooCommerce → Settings → Advanced → REST API → Add key med Read/Write-behörighet och klistra in dess Consumer key (ck_…).",
+        "connectedHint": "Början av den anslutna nyckeln. Nycklar lagras krypterade."
+      },
+      "consumerSecret": {
+        "label": "Consumer secret",
+        "hint": "Nyckelns Consumer secret (cs_…). Den lagras krypterad."
+      },
+      "webhookUrl": {
+        "label": "Webhook-URL",
+        "description": "Registreras automatiskt hos WooCommerce vid anslutning för att ta emot uppdateringar om produkter, lager och beställningar i realtid."
+      },
+      "syncNow": "Synkronisera nu",
+      "syncStarted": "Synkroniseringen startade",
+      "syncError": "Det gick inte att starta synkroniseringen",
+      "syncStatus": {
+        "label": "Synkroniseringsstatus",
+        "description": "Produkter, rabattkoder och beställningar speglas från din WooCommerce-butik.",
+        "connectedTo": "Ansluten till {store}",
+        "lastSynced": "Senast synkroniserad: {time} ({productCount} produkter, {orderCount} beställningar)",
+        "neverSynced": "Inte synkroniserad ännu",
+        "noReason": "Anslut din butik igen för att fortsätta.",
+        "invalid": "Anslutningen är inte längre giltig: {reason}",
+        "state": {
+          "idle": "Inaktiv",
+          "queued": "Synkronisering köad...",
+          "running": "Synkroniserar...",
+          "succeeded": "Senaste synkroniseringen lyckades",
+          "failed": "Senaste synkroniseringen misslyckades"
+        }
+      }
+    }
+  },
+  "openHours": {
+    "alwaysOpen": "Alltid öppet",
+    "addNew": "Lägg till ny",
+    "dialogTitle": "Öppettider",
+    "name": "Namn",
+    "namePlaceholder": "t.ex. Vardagar",
+    "day": "Dag",
+    "from": "Öppnar",
+    "to": "Stänger",
+    "add": "Lägg till tider",
+    "remove": "Ta bort",
+    "cancel": "Avbryt",
+    "continue": "Fortsätt",
+    "created": "Öppettider skapade",
+    "saveError": "Kunde inte spara öppettiderna",
+    "days": {
+      "0": "Söndag",
+      "1": "Måndag",
+      "2": "Tisdag",
+      "3": "Onsdag",
+      "4": "Torsdag",
+      "5": "Fredag",
+      "6": "Lördag"
+    },
+    "sameTimes": "Öppnings- och stängningstid måste skilja sig åt."
+  },
+  "webshop": {
+    "metadataTitle": "Butik",
+    "metadataOrderTitle": "Din beställning",
+    "invalidLinkTitle": "Länken fungerar inte",
+    "invalidLinkDescription": "Den kan ha gått ut. Be butiken om en ny länk i chatten.",
+    "previewBanner": "Förhandsvisning: så ser kunderna sidan. Det går inte att beställa från en förhandsvisning.",
+    "previewOrderingOff": "Förhandsvisning: beställning är avstängd",
+    "closed": {
+      "orderingUnavailable": "Butiken tar inte emot beställningar just nu.",
+      "outsideOpenHours": "Butiken är stängd just nu. Du kan fortfarande titta."
+    },
+    "searchPlaceholder": "Sök produkter",
+    "categories": "Kategorier",
+    "allCategories": "Alla kategorier",
+    "vendors": "Leverantörer",
+    "allVendors": "Alla leverantörer",
+    "noProducts": "Inga produkter hittades.",
+    "productNotFound": "Produkten finns inte längre.",
+    "outOfStock": "Slut i lager",
+    "addToCart": "Lägg i varukorgen",
+    "added": "Tillagd i varukorgen",
+    "chooseOptions": "Välj alternativ",
+    "chooseOption": "Välj {name}",
+    "variantUnavailable": "Den här kombinationen finns inte.",
+    "buy": "Köp",
+    "share": "Dela",
+    "linkCopied": "Kopierat",
+    "similar": "Liknande",
+    "save": "Spara",
+    "saved": "Sparad",
+    "showImage": "Visa bild {number}",
+    "increase": "Öka antal",
+    "decrease": "Minska antal",
+    "remove": "Ta bort",
+    "cart": "Varukorg",
+    "cartEmpty": "Din varukorg är tom.",
+    "continueShopping": "Fortsätt handla",
+    "unavailableItems": "{count, plural, one {# vara kan inte beställas just nu} other {# varor kan inte beställas just nu}}",
+    "unavailableNotOrdered": "De ingår inte i beställningen och ligger kvar i varukorgen.",
+    "unavailable": "Finns inte längre",
+    "unavailableHint": "Välj alternativen igen",
+    "deletedProduct": "Borttagen produkt",
+    "summary": {
+      "subtotal": "Delsumma",
+      "discount": "Rabatt",
+      "delivery": "Leverans",
+      "otherFees": "Övriga avgifter",
+      "total": "Totalt",
+      "coupon": "Rabattkod ({code})",
+      "title": "Ordersammanfattning",
+      "saved": "Du sparar {amount}",
+      "deliveryAtCheckout": "Beräknas i kassan"
+    },
+    "belowMinimum": "Minsta beställning är {amount}.",
+    "checkOut": "Till kassan",
+    "contactDetails": "Dina uppgifter",
+    "optional": "(valfritt)",
+    "fields": {
+      "name": "Namn",
+      "email": "E-post",
+      "phone": "Telefon",
+      "country": "Land",
+      "state": "Län",
+      "city": "Stad",
+      "address1": "Adress",
+      "address2": "Lägenhet, byggnad osv.",
+      "zip": "Postnummer",
+      "note": "Meddelande till butiken"
+    },
+    "shipping": {
+      "title": "Leverans",
+      "delivery": "Leverera till min adress",
+      "pickup": "Hämta i butiken",
+      "storeAddress": "Butikens adress: {address}"
+    },
+    "payment": {
+      "title": "Betalning",
+      "cod": "Betala vid leverans",
+      "stripe": "Kort",
+      "paypal": "PayPal",
+      "paid": "Betald",
+      "refunded": "Återbetald",
+      "awaiting": "Väntar på din betalning",
+      "payBefore": "Betala före {time}, annars avbryts ordern.",
+      "payNow": "Betala nu",
+      "onlineHint": "Du betalar på nästa sida. Din order reserveras i 30 minuter.",
+      "continueToPayment": "Fortsätt till betalning",
+      "notYet": "Vi har inte tagit emot din betalning ännu. Om du precis har betalat, vänta en stund och uppdatera sidan.",
+      "leftPaymentPage": "Du lämnade betalningssidan. Du kan fortfarande betala nedan.",
+      "paidThanks": "Betalningen mottagen. Tack för din order!"
+    },
+    "placeOrder": "Lägg beställning",
+    "orderPlaced": "Tack! Din beställning är lagd. Vi skickar uppdateringar i chatten.",
+    "orderTitle": "Beställning #{number}",
+    "orderNotFound": "Beställningen hittades inte.",
+    "placedAt": "Lagd {date}",
+    "status": {
+      "pending": "Ej behandlad",
+      "accepted": "Behandlas",
+      "shipped": "Skickad",
+      "concluded": "Slutförd",
+      "cancelled": "Avbruten"
+    },
+    "rateTitle": "Betygsätt din beställning",
+    "rateComment": "Berätta för butiken vad du tycker (valfritt)",
+    "rateSubmit": "Skicka betyg",
+    "rateThanks": "Tack för ditt betyg!",
+    "yourRating": "Ditt betyg",
+    "ratingValue": "{rating} av 5 stjärnor",
+    "previous": "Föregående",
+    "next": "Nästa",
+    "pageOf": "Sida {page} av {pageCount}",
+    "errors": {
+      "generic": "Något gick fel. Försök igen.",
+      "checkFields": "Kontrollera fälten.",
+      "fieldRequired": "{field} måste fyllas i.",
+      "countryUnavailable": "Butiken levererar inte till det här landet.",
+      "invalidLink": "Länken fungerar inte längre. Be butiken om en ny.",
+      "webshopPreviewOnly": "Det här är en förhandsvisning. Beställningar kan bara göras från en kunds länk.",
+      "rateLimited": "För många försök. Vänta en stund och försök igen.",
+      "orderingUnavailable": "Butiken tar inte emot beställningar just nu.",
+      "orderBelowMinimum": "Minsta beställning är {minimum}.",
+      "orderBelowVendorMinimum": "Varor från {vendorName} måste sammanlagt bli minst {minimum}.",
+      "orderOutOfStock": "{productName} är slut i lager.",
+      "orderProductUnavailable": "Vissa varor kan inte längre beställas. Kontrollera varukorgen.",
+      "orderEmpty": "Din varukorg är tom.",
+      "orderShippingTypeUnavailable": "Det här leveranssättet är inte tillgängligt.",
+      "webshopRatingNotAllowed": "Den här beställningen kan inte betygsättas.",
+      "webshopCartFull": "Din varukorg kan innehålla högst {maximum} olika artiklar.",
+      "notFound": "Produkten finns inte längre.",
+      "discountCodeNotFound": "Rabattkoden finns inte.",
+      "discountCodeInactive": "Rabattkoden är inte aktiv.",
+      "discountCodeNotStarted": "Rabattkoden gäller inte än.",
+      "discountCodeExpired": "Rabattkoden har gått ut.",
+      "discountCodeUsageLimitReached": "Rabattkoden är förbrukad.",
+      "discountCodeAlreadyUsed": "Du har redan använt rabattkoden.",
+      "discountCodeNotEligible": "Rabattkoden gäller inte för dig.",
+      "discountCodeNotApplicable": "Rabattkoden gäller inte för varukorgen.",
+      "discountCodeMinimumAmount": "Koden kräver köp för minst {minimum}. Lägg till {missing} till.",
+      "discountCodeMinimumQuantity": "Koden kräver minst {minimum} varor. Lägg till {missing} till.",
+      "paymentMethodUnavailable": "Den här betalningsmetoden är inte tillgänglig.",
+      "paymentProviderNotConnected": "Den här betalningsmetoden är inte tillgänglig.",
+      "paymentProviderUnavailable": "Betalningstjänsten svarar inte. Försök igen om en stund.",
+      "paymentProviderRejected": "Betalningen kunde inte startas. Välj en annan betalningsmetod.",
+      "paymentProviderCredentialsRejected": "Betalningen kunde inte startas. Välj en annan betalningsmetod.",
+      "paymentAmountUnsupported": "Den här ordern kan inte betalas online. Välj en annan betalningsmetod.",
+      "orderPaymentNotOpen": "Den här ordern kan inte längre betalas online."
+    },
+    "discount": {
+      "label": "Rabattkod",
+      "placeholder": "Rabattkod",
+      "apply": "Använd",
+      "applied": "Rabattkoden används",
+      "automatic": "används automatiskt",
+      "remove": "Ta bort rabattkod",
+      "available": "Koder du kan använda",
+      "freeShipping": "Fri frakt",
+      "bestChoice": "Bästa valet",
+      "expiresOn": "Gäller till {date}",
+      "noExpiry": "Utan slutdatum",
+      "inUse": "Används",
+      "saves": "Sparar {amount}",
+      "showMore": "{count, plural, one {Visa # kod till} other {Visa # koder till}}",
+      "showLess": "Visa färre",
+      "removeShort": "Ta bort",
+      "expired": "Utgången",
+      "usedUp": "Slut",
+      "notEligible": "Inte behörig än"
+    },
+    "itemCount": "{count, plural, one {# vara} other {# varor}}",
+    "relatedProducts": "Du kanske också gillar",
+    "soldOut": "Slutsåld",
+    "sku": "SKU: {sku}",
+    "allProducts": "Alla produkter",
+    "noCategories": "Butiken har inga kategorier än."
+  },
+  "webshopLinks": {
+    "preview": "Förhandsgranska",
+    "getLink": "Hämta länk",
+    "copied": "Länken har kopierats. Lägg den på en botknapp: varje kontakt öppnar sin egen butik.",
+    "error": "Det gick inte att hämta länken.",
+    "copyError": "Det gick inte att kopiera länken.",
+    "shopLink": {
+      "label": "Butikens URL",
+      "hint": "Klistra in den här länken i en knapp i ett flöde, ett utskick eller en sekvens. Varje kontakt som får den öppnar sin egen butik och kan beställa."
+    },
+    "productLink": {
+      "label": "Offentlig URL",
+      "hint": "Kopiera och klistra in URL:en i ditt flöde, utskick eller din sekvens. Varje kontakt som får den öppnar den här produkten och kan beställa."
+    },
+    "bar": "Dela butiken: hämta länkar till butiken, varukorgen och kategorierna för knappar i flöden, utskick och sekvenser.",
+    "dialog": {
+      "title": "Butikslänkar",
+      "description": "Klistra in en länk i en knapp i ett flöde, utskick eller en sekvens. Varje kontakt som får den öppnar sin egen butik.",
+      "shopHint": "Öppnar butikens startsida med alla produkter."
+    },
+    "cartLink": {
+      "label": "Varukorg",
+      "hint": "Öppnar kontaktens varukorg, redo för kassan."
+    },
+    "categoriesLink": {
+      "label": "Kategorier",
+      "hint": "Öppnar listan över butikens kategorier."
+    }
+  },
+  "discountCodes": {
+    "title": "Rabattkoder",
+    "description": "Rabattkoder som kunderna använder i kassan eller som gäller av sig själva.",
+    "add": "Lägg till",
+    "edit": "Redigera rabattkod",
+    "automatic": "Automatisk",
+    "never": "Aldrig",
+    "searchPlaceholder": "Sök koder…",
+    "saveError": "Rabattkoden kunde inte sparas.",
+    "created": "Rabattkod skapad",
+    "updated": "Rabattkod sparad",
+    "deleted": "Rabattkod borttagen",
+    "deleteError": "Rabattkoden kunde inte tas bort.",
+    "deleteTitle": "Ta bort rabattkoden {code}?",
+    "deleteDescription": "Kunderna kan inte längre använda den. Beställningar som använde den behåller rabatten.",
+    "cancel": "Avbryt",
+    "delete": "Ta bort",
+    "save": "Spara",
+    "columns": {
+      "name": "Namn",
+      "discount": "Rabatt",
+      "used": "Använd",
+      "end": "Slutar",
+      "active": "Aktiv"
+    },
+    "discountTypes": {
+      "percentage": "Procent",
+      "fixedAmount": "Fast belopp",
+      "freeShipping": "Fri frakt"
+    },
+    "appliesTo": {
+      "entireOrder": "Hela beställningen",
+      "category": "Viss kategori",
+      "products": "Vissa produkter"
+    },
+    "minimumTypes": {
+      "none": "Inget",
+      "amount": "Minsta köpbelopp",
+      "quantity": "Minsta antal varor"
+    },
+    "eligibilities": {
+      "everyone": "Alla",
+      "specificCustomers": "Vissa kunder"
+    },
+    "form": {
+      "discountCode": "Rabattkod",
+      "code": "Kod",
+      "generate": "Generera",
+      "autoApply": "Använd rabattkoden automatiskt i varukorgar",
+      "autoApplyHint": "Varukorgar får den utan att kunden skriver den. Vid flera automatiska koder vinner den med störst rabatt.",
+      "typedHint": "Kunderna anger rabattkoden i kassan.",
+      "options": "Alternativ",
+      "discountType": "Rabattyp",
+      "discountValuePercent": "Rabattvärde (%)",
+      "discountValueAmount": "Rabattvärde ({currency})",
+      "freeShippingHint": "Tar bort leveranskostnaden för beställningar som levereras.",
+      "appliesTo": "Gäller för",
+      "category": "Kategori",
+      "products": "Produkter",
+      "productsPlaceholder": "Välj produkter",
+      "minimumRequirement": "Minimikrav",
+      "minimumAmount": "Minsta belopp ({currency})",
+      "minimumQuantity": "Minsta antal varor",
+      "usageLimits": "Användningsgränser",
+      "limitTotal": "Begränsa hur många gånger rabatten kan användas totalt",
+      "usedSoFar": "{count, plural, one {Använd # gång hittills} other {Använd # gånger hittills}}",
+      "oncePerCustomer": "En gång per kund",
+      "customerEligibility": "Vilka kunder",
+      "specificCustomersHint": "Endast kontakter som matchar filtret nedan när de beställer.",
+      "activeDates": "Giltighetsperiod",
+      "startDate": "Startdatum",
+      "endDate": "Slutdatum",
+      "isActive": "Aktiv"
+    },
+    "rules": {
+      "codeCharacters": "Använd bara bokstäver utan accenter, siffror, - och _.",
+      "usageBelowUsed": "Koden har redan använts {count} gånger; gränsen kan inte vara lägre.",
+      "customerConditionRequired": "Lägg till minst ett villkor.",
+      "endAfterStart": "Slutdatumet måste vara efter startdatumet."
+    }
+  },
+  "ecommerceAnalytics": {
+    "title": "Analys",
+    "lifetime": "Totalt",
+    "sales": "Försäljning",
+    "orders": "Beställningar",
+    "products": "Produkter",
+    "salesByDate": "Försäljning per datum",
+    "ordersByDate": "Beställningar per datum",
+    "topProducts": "Toppprodukter",
+    "topVendors": "Toppleverantörer",
+    "columns": {
+      "name": "Namn",
+      "sales": "Försäljning"
+    },
+    "noData": "Inga data under perioden",
+    "refresh": "Uppdatera",
+    "change": "{value} %",
+    "noPrevious": "ny",
+    "otherCurrencyOrders": "{count} beställningar i andra valutor ingår inte i dessa siffror"
+  },
   "responseSla": {
     "label": "Svars-SLA",
     "title": "Svars-SLA",
@@ -9052,5 +11301,611 @@
     "metHelp": "Andel svar med SLA som höll den.",
     "eligibleCount": "{count} svar hade SLA",
     "enable": "Aktivera svars-SLA"
+  },
+  "stripe": {
+    "title": "Stripe",
+    "setting": {
+      "label": "Stripe",
+      "description": "Ta emot kortbetalningar i din webbutik med ditt eget Stripe-konto. Pengarna går direkt till ditt Stripe-konto."
+    },
+    "connectWithStripe": "Anslut med Stripe",
+    "connectWithKey": "Använd hemlig nyckel",
+    "connectionType": {
+      "oauth": "Stripe Connect",
+      "apiKey": "Hemlig nyckel"
+    },
+    "fields": {
+      "secretKey": "Hemlig nyckel",
+      "secretKeyHint": "Börjar med sk_live_ (eller sk_test_ för testläge). En begränsad nyckel (rk_…) fungerar också om den kan läsa kontot och skriva Checkout Sessions, Refunds och Webhook Endpoints."
+    },
+    "dialog": {
+      "description": "Kopiera din hemliga nyckel från <link>Stripe Dashboard → Developers → API keys</link> och klistra in den här. Vi kontrollerar den, ställer in betalningsaviseringar på ditt Stripe-konto och sparar nyckeln krypterad."
+    },
+    "testMode": "Testläge",
+    "liveMode": "Live",
+    "chargesDisabled": "Ditt Stripe-konto kan inte ta emot betalningar ännu. Slutför konfigurationen i din Stripe-instrumentpanel.",
+    "outcome": {
+      "expired": "Stripe-anslutningslänken har gått ut. Försök igen.",
+      "access_denied": "Anslutningen tilläts inte på Stripe.",
+      "stripeAccountAlreadyConnected": "Det här Stripe-kontot är redan anslutet till en annan arbetsyta.",
+      "stripePlatformNotConfigured": "Stripe är inte konfigurerat på den här plattformen ännu.",
+      "superAdminRequired": "Bara en arbetsyteadministratör kan ansluta Stripe.",
+      "signInRequired": "Logga in och försök igen.",
+      "paymentProviderCredentialsRejected": "Stripe nekade anslutningen. Försök igen.",
+      "startedByAnotherUser": "Bara den som klickade på Anslut kan slutföra det. Klicka på Anslut igen.",
+      "paymentProviderInUse": "Öppna beställningar behöver fortfarande det här Stripe-kontot. Slutför eller avbryt dem först."
+    },
+    "platform": {
+      "connectClientId": "Connect client ID",
+      "connectClientIdHint": "Från Stripe Dashboard → Settings → Connect → Onboarding options → OAuth (börjar med ca_). Butiker ansluter sitt eget Stripe-konto via den.",
+      "redirectUri": "Redirect URI",
+      "webhookReady": "Butiker kan ansluta Stripe, och deras betalningar bekräftas automatiskt.",
+      "webhookMissing": "Betalningswebhooken saknas. Spara de här inställningarna igen för att skapa den.",
+      "connectMissing": "Lägg till Connect client ID så att butiker kan ansluta sitt Stripe-konto."
+    }
+  },
+  "paypal": {
+    "title": "PayPal",
+    "setting": {
+      "label": "PayPal",
+      "description": "Ta emot PayPal-betalningar i din webbutik med ditt eget PayPal-konto."
+    },
+    "sandbox": "Sandbox",
+    "liveMode": "Live",
+    "fields": {
+      "clientId": "Client ID",
+      "clientSecret": "Secret"
+    },
+    "dialog": {
+      "description": "Skapa en REST-app i <link>PayPal Developer → Apps & Credentials</link> och klistra in dess Client ID och Secret. Live eller sandbox identifieras från nycklarna."
+    }
+  },
+  "pipelines": {
+    "title": "Pipelines",
+    "retry": "Försök igen",
+    "save": "Spara",
+    "saveFailed": "Det gick inte att spara dina ändringar. Försök igen.",
+    "list": {
+      "name": "Namn",
+      "type": "Typ",
+      "items": "Objekt",
+      "add": "Lägg till pipeline",
+      "empty": "Inga pipelines än",
+      "emptyHint": "Skapa en pipeline för att följa affärer, ärenden eller valfri process som kort på en tavla.",
+      "error": "Det gick inte att läsa in pipelines",
+      "contacts": "Kontakter",
+      "addShort": "Lägg till",
+      "description": "Följ affärer, ärenden eller vilken process som helst som kort som flyttas genom steg."
+    },
+    "types": {
+      "opportunity": {
+        "label": "Affärsmöjligheter",
+        "description": "Följ säljaffärer genom faserna. Första fasen: Lead."
+      },
+      "ticket": {
+        "label": "Supportcenter",
+        "description": "Hantera supportförfrågningar. Första fasen: Nytt ärende."
+      },
+      "custom": {
+        "label": "Egen tavla",
+        "description": "Bygg din egen process. Första fasen: Intag."
+      }
+    },
+    "noun": {
+      "opportunity": {
+        "one": "Affärsmöjlighet",
+        "many": "Affärsmöjligheter",
+        "add": "Lägg till affärsmöjlighet"
+      },
+      "ticket": {
+        "one": "Ärende",
+        "many": "Ärenden",
+        "add": "Lägg till ärende"
+      },
+      "card": {
+        "one": "Kort",
+        "many": "Kort",
+        "add": "Lägg till kort"
+      }
+    },
+    "create": {
+      "title": "Ny pipeline",
+      "description": "Välj vad tavlan ska användas till och ge den sedan ett namn.",
+      "type": "Typ",
+      "name": "Pipelinenamn",
+      "namePlaceholder": "t.ex. Försäljning",
+      "submit": "Skapa pipeline",
+      "success": "Pipelinen har skapats"
+    },
+    "menu": {
+      "open": "Pipelineåtgärder",
+      "rename": "Byt namn",
+      "duplicate": "Duplicera",
+      "delete": "Ta bort"
+    },
+    "rename": {
+      "title": "Byt namn på pipeline",
+      "submit": "Byt namn",
+      "success": "Pipelinen har bytt namn"
+    },
+    "duplicate": {
+      "success": "Pipelinen har duplicerats"
+    },
+    "delete": {
+      "title": "Ta bort pipeline",
+      "description": "{name} och alla dess faser och objekt kommer att tas bort. Detta kan inte ångras.",
+      "success": "Pipelinen har tagits bort"
+    },
+    "board": {
+      "title": "Tavla",
+      "count": "{count, plural, one {# objekt} other {# objekt}}",
+      "total": "Totalt {value}",
+      "search": "Sök efter titel, nummer eller kontakt",
+      "sort": "Sortera",
+      "filter": "Filtrera",
+      "analytics": "Analys",
+      "settings": "Inställningar",
+      "emptyStage": "Dra och släpp ett kort här för att flytta det till den här fasen.",
+      "loadMore": "Visa fler",
+      "loadMoreFailed": "Det gick inte att läsa in fler objekt",
+      "error": "Det gick inte att läsa in tavlan",
+      "processing": "Bearbetar den här fasen…",
+      "moveFailed": "Det gick inte att flytta kortet",
+      "sortOptions": {
+        "createdAtDesc": "Skapandedatum (Ny till Gammal)",
+        "createdAtAsc": "Skapandedatum (Gammal till Ny)",
+        "updatedAtDesc": "Uppdateringsdatum (Ny till Gammal)",
+        "valueDesc": "Affärsmöjlighetens värde (Hög till Låg)",
+        "valueAsc": "Affärsmöjlighetens värde (Låg till Hög)",
+        "dueDateAsc": "Förfallodatum (Tidigast till Senast)",
+        "dueDateDesc": "Förfallodatum (Senast till Tidigast)",
+        "priorityDesc": "Prioritet (Hög till Låg)",
+        "priorityAsc": "Prioritet (Låg till Hög)",
+        "updatedAtAsc": "Uppdateringsdatum (Gammal till Ny)"
+      },
+      "searchAction": "Sök",
+      "closeSearch": "Stäng sökning",
+      "cardMenu": "Kortåtgärder",
+      "moveTo": "Flytta till",
+      "unknownContact": "Okänd kontakt",
+      "staleError": "Tavlan kunde inte uppdateras. Det du ser kan vara inaktuellt."
+    },
+    "stage": {
+      "add": "Lägg till fas",
+      "name": "Fasnamn",
+      "namePlaceholder": "Fasnamn",
+      "menu": "Fasåtgärder",
+      "edit": "Redigera fas",
+      "delete": "Ta bort fas",
+      "deleteTitle": "Ta bort fas",
+      "deleteDescription": "{name} och alla objekt i den kommer att tas bort. Åtgärden kan inte ångras.",
+      "moveItemsTo": "Flytta objekt till",
+      "deleteItemsToo": "Ta bort objekten också",
+      "description": "Beskrivning",
+      "textColor": "Textfärg",
+      "backgroundColor": "Bakgrundsfärg",
+      "saved": "Fasen har sparats",
+      "deleted": "Fasen har tagits bort",
+      "queued": "Fasen töms i bakgrunden.",
+      "resetColor": "Standard",
+      "deleteMoveDescription": "{name} kommer att tas bort. Dess objekt flyttas till {target}.",
+      "rename": "Byt namn",
+      "settings": "Inställningar",
+      "general": "Allmänt",
+      "color": "Färg",
+      "cancel": "Avbryt"
+    },
+    "priority": {
+      "low": "Låg",
+      "medium": "Medel",
+      "high": "Hög"
+    },
+    "item": {
+      "loading": "Läser in…",
+      "error": "Det gick inte att läsa in objektet",
+      "title": "Titel",
+      "status": "Status",
+      "stage": "Fas",
+      "priority": "Prioritet",
+      "value": "Värde",
+      "dueDate": "Förfallodatum",
+      "assignees": "Tilldelade administratörer",
+      "description": "Beskrivning",
+      "attachments": "Bilagor",
+      "attach": "Bifoga filer",
+      "noAttachments": "Inga bilagor",
+      "removeAttachment": "Ta bort bilaga",
+      "removeAttachmentDescription": "Filen tas bort från objektet men finns kvar i mediebiblioteket.",
+      "comments": "Kommentarer",
+      "addComment": "Lägg till kommentar",
+      "commentPlaceholder": "Skriv en kommentar…",
+      "noComments": "Inga kommentarer än",
+      "deleteComment": "Ta bort kommentar",
+      "deleteCommentDescription": "Den här kommentaren tas bort. Det går inte att ångra.",
+      "activity": "Aktivitet",
+      "noActivity": "Ingen aktivitet än",
+      "transfer": "Överför till pipeline",
+      "transferTitle": "Överför till en annan pipeline",
+      "transferDescription": "Objektet behåller sitt nummer och skapandedatum. Anpassade fält följer med när den andra pipelinen har ett fält med samma referensnamn och typ.",
+      "destinationPipeline": "Målpipeline",
+      "destinationStage": "Målfas",
+      "firstStage": "Första fasen",
+      "choose": "Välj…",
+      "transferred": "Objektet har överförts",
+      "delete": "Ta bort",
+      "deleteDescription": "Ett objekt kommer att tas bort. Detta kan inte ångras.",
+      "deleted": "Objektet har tagits bort",
+      "number": "Nummer",
+      "createdBy": "Skapad av",
+      "createdByValue": "{name} den {date}",
+      "inbox": "Inkorg",
+      "moreActions": "Fler åtgärder",
+      "noDescription": "Ingen beskrivning",
+      "yes": "Ja",
+      "no": "Nej",
+      "assigneesMembers": "Agenter",
+      "assigneesTeams": "Inkorgsteam",
+      "assigneesSearch": "Sök administratörer eller team…",
+      "assigneesEmpty": "Inga resultat",
+      "assigneesPlaceholder": "Välj administratörer eller team",
+      "olderComments": "Visa äldre kommentarer",
+      "olderActivity": "Visa äldre aktivitet",
+      "activityFilter": "Filtrera",
+      "activityFilterCount": "{count, plural, one {# filter} other {# filter}}",
+      "activityFilterClear": "Visa alla",
+      "noFilteredActivity": "Ingen aktivitet matchar det här filtret.",
+      "activityGroup": {
+        "lifecycle": "Skapad och överförd",
+        "stage": "Steg",
+        "status": "Status",
+        "value": "Värde",
+        "priority": "Prioritet",
+        "dueDate": "Förfallodatum",
+        "details": "Titel, beskrivning och fält",
+        "assignees": "Ansvariga",
+        "comments": "Kommentarer",
+        "attachments": "Bilagor"
+      }
+    },
+    "activity": {
+      "created": "Skapad",
+      "stageChanged": "Flyttad till en annan fas",
+      "statusChanged": "Status ändrad",
+      "valueChanged": "Värde ändrat",
+      "priorityChanged": "Prioritet ändrad",
+      "dueDateChanged": "Förfallodatum ändrat",
+      "titleChanged": "Titel ändrad",
+      "descriptionChanged": "Beskrivning ändrad",
+      "fieldValuesChanged": "Anpassade fält ändrade",
+      "assigneesChanged": "Tilldelade ändrade",
+      "attachmentAdded": "Bilaga tillagd",
+      "attachmentRemoved": "Bilaga borttagen",
+      "commentAdded": "Kommentar tillagd",
+      "commentDeleted": "Kommentar borttagen",
+      "transferred": "Överförd från en annan pipeline",
+      "deleted": "Borttagen"
+    },
+    "activityActor": {
+      "flow": "Flöde",
+      "trigger": "Utlösare",
+      "workspaceToken": "API",
+      "system": "System",
+      "formerMember": "Tidigare medlem"
+    },
+    "add": {
+      "changeContact": "Välj en annan kontakt",
+      "success": "Skapad",
+      "stepContact": "Välj en kontakt",
+      "stepDetails": "Uppgifter om {noun}",
+      "contact": "Kontakt",
+      "addNewContact": "Lägg till ny"
+    },
+    "filter": {
+      "title": "Filtrera",
+      "status": "Status",
+      "statusLabels": {
+        "open": "Öppen",
+        "won": "Vunnen",
+        "lost": "Förlorad"
+      },
+      "priority": "Prioritet",
+      "assignee": "Tilldelade administratörer",
+      "value": "Värde för {noun}",
+      "min": "Min",
+      "max": "Max",
+      "dueDate": "Förfallodatum",
+      "createdAt": "Skapad den",
+      "from": "Från",
+      "to": "Till",
+      "clear": "Rensa filter",
+      "apply": "Tillämpa",
+      "back": "Tillbaka",
+      "updatedAt": "Uppdaterad den",
+      "resolvedOn": "{noun} avslutad den",
+      "statusChangedOn": "Status ändrad den",
+      "stageChangedOn": "Fas ändrad den",
+      "lastCommentOn": "Senaste kommentar den",
+      "customFields": "Anpassade fält",
+      "any": "Valfri",
+      "yes": "Ja",
+      "no": "Nej",
+      "notResolvedOn": "{noun} inte avslutad den",
+      "equal": "Lika med",
+      "different": "Skilt från",
+      "reset": "Återställ",
+      "presets": {
+        "thisWeek": "Denna vecka",
+        "lastWeek": "Förra veckan",
+        "last14": "Senaste 14 dagarna",
+        "thisYear": "Detta år",
+        "lastYear": "Förra året",
+        "tomorrow": "Imorgon",
+        "next7": "Om 7 dagar",
+        "next14": "Om 14 dagar",
+        "next30": "Om 30 dagar",
+        "allTime": "All tid"
+      },
+      "pickDate": "Välj ett datum",
+      "activity": "Aktivitet",
+      "activityKinds": "Typ av ändring",
+      "activityActors": "Utfört av",
+      "activityWhen": "När",
+      "activityAutomation": "Automatisering"
+    },
+    "analytics": {
+      "title": "Analys",
+      "loading": "Läser in statistik…",
+      "error": "Det gick inte att läsa in statistik",
+      "created": "Skapade",
+      "won": "Vunna",
+      "wonValue": "Vunnet värde",
+      "lost": "Förlorade",
+      "lostValue": "Förlorat värde",
+      "admin": "Admin",
+      "automation": "Automatisering",
+      "back": "Tillbaka",
+      "admins": "Administratörer",
+      "chart": {
+        "created": "Nya per dag",
+        "won": "Vunna per dag",
+        "lost": "Förlorade per dag",
+        "wonValue": "Vunnet värde per dag",
+        "lostValue": "Förlorat värde per dag"
+      },
+      "pie": {
+        "created": "Skapade per admin",
+        "won": "Vunna per admin",
+        "lost": "Förlorade per admin",
+        "other": "Övriga",
+        "empty": "Inga data"
+      }
+    },
+    "settings": {
+      "title": "Pipelineinställningar",
+      "general": "Allmänt",
+      "fields": "Anpassade fält",
+      "display": "Visning",
+      "permissions": "Behörigheter",
+      "saved": "Inställningarna har sparats",
+      "referenceName": "Referensnamn",
+      "referenceNameHint": "Används i variablerna pipelines.reference_name.stage_name. Om du ändrar det slutar meddelanden som använder det gamla namnet att fungera.",
+      "referenceNameFormat": "Använd små bokstäver, siffror och understreck, och börja med en bokstav (t.ex. close_date).",
+      "currency": "Valuta",
+      "currencyFollowCountry": "Arbetsytans land · {country} · {currency}",
+      "currencyFollowNoCountry": "Inget land för arbetsytan · {currency}",
+      "currencyHint": "Följer arbetsytans målland (Inställningar → Allmänt) och uppdateras när det ändras. Om inget land är angivet används USD. Värden räknas aldrig om.",
+      "assignContact": "Tilldela kontakten till en administratör när ett objekt tilldelas",
+      "limit": "Begränsa öppna objekt per kontakt",
+      "statusLabels": "Statusetiketter",
+      "status": {
+        "open": "Öppen",
+        "won": "Vunnen",
+        "lost": "Förlorad"
+      },
+      "features": "Synliga funktioner",
+      "cardElements": "Kortelement",
+      "card": {
+        "contactPhone": "Kontaktens telefon",
+        "contactEmail": "Kontaktens e-post",
+        "createdAt": "Skapad den",
+        "updatedAt": "Uppdaterad den",
+        "assignees": "Tilldelade administratörer",
+        "comments": "Kommentarer",
+        "cardId": "Objektnummer",
+        "priority": "Prioritet",
+        "value": "Värde",
+        "dueDate": "Förfallodatum"
+      },
+      "noFields": "Inga anpassade fält än",
+      "fieldName": "Fältnamn",
+      "fieldReference": "Referensnamn",
+      "fieldType": "Fälttyp",
+      "required": "Obligatoriskt",
+      "requiredShort": "obligatoriskt",
+      "addField": "Lägg till fält",
+      "fieldAdded": "Fältet har lagts till",
+      "deleteField": "Ta bort fält",
+      "permissionsHint": "Arbetsytans ägare och administratörer har alltid full åtkomst. Ge andra medlemmar rätt att göra saker i den här pipelinen.",
+      "revoke": "Återkalla",
+      "permission": {
+        "view": "Visa",
+        "edit": "Redigera",
+        "delete": "Ta bort",
+        "settings": "Inställningar"
+      },
+      "noMembers": "Inga andra medlemmar att konfigurera",
+      "confirmDeleteField": "Ta bort det här fältet och alla dess värden på varje objekt?",
+      "adminPermissions": "Administratörsbehörigheter",
+      "cardVisibleElements": "Synliga kortelement"
+    },
+    "panel": {
+      "empty": "Inga pipelineobjekt för den här kontakten",
+      "error": "Det gick inte att läsa in pipelineobjekt",
+      "choosePipeline": "Välj en pipeline",
+      "add": "Lägg till ny"
+    },
+    "variables": {
+      "group": "Pipelines",
+      "attributes": {
+        "name": "Objektnamn",
+        "stageName": "Fas",
+        "status": "Status",
+        "priority": "Prioritet",
+        "value": "Värde",
+        "assignedAdmins": "Tilldelade administratörer",
+        "createdDate": "Skapad",
+        "dueDate": "Förfallodatum",
+        "updatedDate": "Uppdaterad",
+        "id": "Objekt-ID"
+      }
+    }
+  },
+  "oauthConsent": {
+    "title": "Authorize {clientName}",
+    "description": "This application is requesting access to your workspace.",
+    "permissionsTitle": "Requested permissions",
+    "signedInAs": "Signed in as",
+    "approve": "Approve",
+    "deny": "Deny",
+    "failed": "Auktoriseringen kunde inte slutföras. Försök igen.",
+    "workspaceLabel": "Arbetsyta",
+    "workspacePlaceholder": "Välj en arbetsyta",
+    "workspaceHint": "{clientName} kan bara agera i den här arbetsytan. Koppla från och anslut igen för att byta senare.",
+    "noWorkspaces": "Du är inte administratör för någon arbetsyta och kan därför inte auktorisera den här applikationen."
+  },
+  "chatbotxMcp": {
+    "title": "ChatbotX MCP",
+    "workspaceId": "Workspace ID",
+    "streamableUrl": "Streamable HTTP URL",
+    "sseUrl": "Legacy SSE URL",
+    "guide": {
+      "title": "Connect an MCP client",
+      "step1": "Copy the configuration for your MCP client.",
+      "step2": "Paste it into the client.",
+      "step3": "The client opens a browser. Sign in and approve access.",
+      "step4": "Your workspace tools appear after approval.",
+      "ownerOnly": "Only workspace owners and superAdmins can authorize MCP access."
+    },
+    "clients": {
+      "claudeCode": "Claude Code",
+      "claudeDesktop": "Claude Desktop",
+      "cursor": "Cursor",
+      "chatgpt": "ChatGPT",
+      "stdio": "stdio fallback",
+      "stdioHint": "Use a workspace token for this fallback."
+    },
+    "grants": {
+      "title": "Authorized applications",
+      "description": "Grants belong to your account and apply to every workspace you administer; revoking disconnects the client everywhere.",
+      "empty": "OAuth grants appear here after you connect an MCP client.",
+      "client": "Client",
+      "scopes": "Scopes",
+      "firstAuthorizedAt": "First authorized",
+      "lastRefreshedAt": "Last refreshed",
+      "activeUntil": "Active until",
+      "noActiveToken": "No active token",
+      "revoke": "Revoke",
+      "revokeConfirmTitle": "Revoke application access?",
+      "revokeConfirmDescription": "Revoke access for {clientName}? This disconnects the client everywhere.",
+      "revokedSuccess": "Application access revoked.",
+      "notFound": "OAuth grant no longer exists"
+    }
+  },
+  "connectionStatus": {
+    "column": "Status",
+    "reconnecting": "The provider is reconnecting this account. Messages are held until it finishes.",
+    "accessRemoved": "The provider removed access to this account. Reconnect to resume.",
+    "needsReconnect": "Reconnect required.",
+    "inactive": "This channel is inactive."
+  },
+  "inbox": {
+    "createAppointment": {
+      "title": "Skapa bokning",
+      "description": "Skicka kontakten en bokningslänk för en kalender, eller öppna den för att boka åt dem.",
+      "inactive": "Inaktiv",
+      "sendLink": "Skicka kalenderlänk",
+      "goToLink": "Gå till kalenderlänk",
+      "sent": "Bokningslänk skickad.",
+      "failed": "Det gick inte att skapa bokningslänken.",
+      "noCalendars": "Inga bokningskalendrar ännu.",
+      "manageCalendars": "Hantera bokningskalendrar"
+    }
+  },
+  "templateStore": {
+    "title": "Mallbutik",
+    "description": "Mallar som godkänts för den offentliga butiken. Varje mall visas i de kategorier du väljer.",
+    "add": "Lägg till",
+    "addCategory": "Lägg till kategori",
+    "renameCategory": "Byt namn",
+    "editCategories": "Redigera kategorier",
+    "templateId": "Mall-ID",
+    "template": "Mall",
+    "categories": "Kategorier",
+    "categoriesPlaceholder": "Ingen kategori",
+    "close": "Stäng",
+    "removeChip": "Ta bort {name}",
+    "categoriesHint": "Valfritt. Utan kategori visas mallen bara under “Alla”.",
+    "noCategoriesYet": "Inga kategorier ännu.",
+    "added": "Mallen har lagts till i butiken",
+    "updated": "Kategorierna har uppdaterats",
+    "removed": "Mallen har tagits bort från butiken",
+    "removeError": "Det gick inte att ta bort mallen",
+    "removeTitle": "Ta bort {name}?",
+    "removeDescription": "Den försvinner från butiken. Själva mallen och dess installationer påverkas inte.",
+    "saveError": "Det gick inte att spara",
+    "deleteError": "Det gick inte att ta bort kategorin",
+    "categoryCreated": "Kategorin har skapats",
+    "categoryUpdated": "Kategorin har uppdaterats",
+    "categoryMoved": "Kategorin har flyttats",
+    "categoryDeleted": "Kategorin har tagits bort",
+    "deleteCategoryTitle": "Ta bort {name}?",
+    "deleteCategoryDescription": "Mallar i den här kategorin: {count}. De finns kvar i butiken och visas under “Alla”.",
+    "moveUp": "Flytta upp",
+    "moveDown": "Flytta ned",
+    "searchPlaceholder": "Sök efter namn eller mall-ID",
+    "emptyListings": "Inga godkända mallar ännu.",
+    "noMatches": "Inga mallar matchar sökning eller filter.",
+    "allCategories": "Alla kategorier",
+    "allStatuses": "Alla statusar",
+    "installs": "Installationer",
+    "owner": "Ägare",
+    "statusLabel": "Status",
+    "openInStore": "Öppna butiken",
+    "storeUnavailable": "Din butik öppnas på din egen domän. Ställ in en för att öppna den.",
+    "openTemplatePage": "Öppna mallsidan",
+    "remove": "Ta bort",
+    "status": {
+      "published": "Publicerad",
+      "templateUnavailable": "Mallen är inte tillgänglig",
+      "shareDisabled": "Delningslänk av"
+    },
+    "errors": {
+      "templateUnavailable": "Ingen mall med detta ID kan läggas till i din butik.",
+      "listingExists": "Den här mallen finns redan i din butik.",
+      "listingUnavailable": "Den här butiksposten finns inte längre.",
+      "listingLimit": "En butik kan innehålla högst {templateLimit} mallar.",
+      "categoryUnavailable": "Den här kategorin finns inte längre.",
+      "categoryNameTaken": "Det finns redan en kategori med det här namnet.",
+      "categoryLimit": "En butik kan ha högst {categoryLimit} kategorier."
+    },
+    "store": {
+      "subtitle": "Färdiga mallar som du installerar med ett klick.",
+      "pageTitle": "{tenantName} – Mallbutik",
+      "empty": "Inga mallar i butiken ännu.",
+      "search": "Sök mallar",
+      "all": "Alla",
+      "categories": "Butikskategorier",
+      "noResults": "Inga mallar matchar din sökning.",
+      "clearSearch": "Rensa sökningen",
+      "by": "Av {publisherName}"
+    },
+    "picker": {
+      "placeholder": "Välj en mall",
+      "search": "Sök efter namn eller mall-ID",
+      "empty": "Ingen mall att lägga till.",
+      "error": "Det gick inte att läsa in mallar.",
+      "retry": "Försök igen",
+      "meta": "ID {id} · {workspace}"
+    }
   }
 }

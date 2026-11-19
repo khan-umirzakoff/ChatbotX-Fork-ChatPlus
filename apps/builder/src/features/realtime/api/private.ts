@@ -1,8 +1,7 @@
-import { resolveBroadcastSecret } from "@chatbotx.io/business"
-import { signMemberConnectToken } from "@chatbotx.io/partysocket-config/auth"
 import { z } from "zod"
 import { workspaceAuthorizedMidddleware } from "@/middlewares/auth"
 import { authorizedAPI } from "@/orpc"
+import { mintMemberConnectToken } from "../lib/mint-member-connect-token"
 
 const mintWorkspaceConnectTokenInput = z.object({
   workspaceId: z.string(),
@@ -35,9 +34,11 @@ export const realtimeAuthenticatedAPI = {
     .use(workspaceAuthorizedMidddleware, (input) => input.workspaceId)
     .output(mintWorkspaceConnectTokenOutput)
     .handler(async ({ context }) => ({
-      token: await signMemberConnectToken(
-        { workspaceId: context.workspace.id, userId: context.user.id },
-        resolveBroadcastSecret(),
-      ),
+      token: await mintMemberConnectToken({
+        workspaceId: context.workspace.id,
+        userId: context.user.id,
+        permissions: context.workspaceMember.permissions,
+        issuedAtMs: context.requestIssuedAtMs,
+      }),
     })),
 }

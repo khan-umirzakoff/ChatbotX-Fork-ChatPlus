@@ -23,6 +23,7 @@ import {
   contactInboxRepository,
   createMessageRepository,
   getSafeSinceTime,
+  insertDmConversationsIfAbsent,
 } from "@chatbotx.io/database/repositories"
 import { conversationModel, inboxModel } from "@chatbotx.io/database/schema"
 import type {
@@ -49,7 +50,11 @@ import {
   emitConversationTransferredToHuman,
   emitConversationUnassigned,
 } from "@chatbotx.io/events"
-import { RealtimeEventType } from "@chatbotx.io/partysocket-config"
+import {
+  RealtimeEventType,
+  routeForAssignment,
+  routeForConversation,
+} from "@chatbotx.io/realtime-protocol"
 import { withCache } from "@chatbotx.io/redis"
 import { createId } from "@chatbotx.io/utils"
 import {
@@ -67,7 +72,7 @@ import { contactInboxService } from "../contact-inbox/service"
 import { inboxTeamService } from "../enterprise/inbox-team/service"
 import { ChatbotXException, notFoundException } from "../errors"
 import { logger } from "../logger"
-import { publishToWorkspaceParty } from "../platform/realtime-broadcast"
+import { queueWorkspaceRealtimeEvent } from "../platform/realtime-broadcast"
 import { responseSlaService } from "../response-sla/service"
 import { smartDelayService } from "../smart-delay/service"
 import { threadControlService } from "../thread-control/service"
@@ -202,6 +207,19 @@ const botPauseSet = (options: BotPauseOptions) => ({
     ? { awaitingHumanReplySince: reopenIfUnansweredSince() }
     : {}),
 })
+
+/** A conversation's current assignee in the `u_<userId>` / `t_<teamId>` form, or null. */
+export const conversationAssigneeId = (conversation: {
+  assignedUserId: string | null
+  assignedInboxTeamId: string | null
+}): string | null => {
+  if (conversation.assignedUserId) {
+    return `u_${conversation.assignedUserId}`
+  }
+  return conversation.assignedInboxTeamId
+    ? `t_${conversation.assignedInboxTeamId}`
+    : null
+}
 
 class ConversationService extends BaseService {
   /**
@@ -402,6 +420,43 @@ class ConversationService extends BaseService {
           eq(conversationModel.id, props.conversationId),
           eq(conversationModel.workspaceId, props.workspaceId),
           sql`(${conversationModel.additionalAttributes} IS NULL OR NOT jsonb_exists(${conversationModel.additionalAttributes}, 'challenge'))`,
+        ),
+      )
+      .returning({ id: conversationModel.id })
+
+    return rows.length > 0
+  }
+
+  /**
+   * Compare-and-set on a step challenge's attempt counter: of two concurrent
+   * invalid replies reading the same attempt, exactly one advances it, so only
+   * one sends the retry prompt. Matches the step AND challenge id, so a stale
+   * caller cannot touch a newer cycle's challenge. `lastAttemptAt` moves with
+   * the counter; `startedAt` (the deadline origin) is left alone.
+   */
+  async advanceStepChallengeAttempt(props: {
+    workspaceId: string
+    conversationId: string
+    stepId: string
+    challengeId: string
+    fromAttempts: number
+    toAttempts: number
+    lastAttemptAt: Date
+  }): Promise<boolean> {
+    const challenge = sql`${conversationModel.additionalAttributes}->'challenge'`
+    const rows = await db
+      .update(conversationModel)
+      .set({
+        additionalAttributes: sql`jsonb_set(jsonb_set(${conversationModel.additionalAttributes}, '{challenge,data,attempts}', to_jsonb(${props.toAttempts}::int), false), '{challenge,data,lastAttemptAt}', to_jsonb(${props.lastAttemptAt.toISOString()}::text), false)`,
+      })
+      .where(
+        and(
+          eq(conversationModel.id, props.conversationId),
+          eq(conversationModel.workspaceId, props.workspaceId),
+          sql`${challenge}->>'type' = 'step'`,
+          sql`${challenge}->'data'->>'stepId' = ${props.stepId}`,
+          sql`${challenge}->'data'->>'challengeId' = ${props.challengeId}`,
+          sql`(${challenge}->'data'->>'attempts')::int = ${props.fromAttempts}`,
         ),
       )
       .returning({ id: conversationModel.id })
@@ -842,6 +897,41 @@ class ConversationService extends BaseService {
     return updated
   }
 
+  /**
+   * One DM conversation per contact, opening the ones that don't exist yet.
+   * A contact that only ever commented (or was imported) has a `ContactInbox`
+   * but no DM, and a broadcast still has to deliver to it, so the audience
+   * walk resolves its recipients here instead of dropping them.
+   */
+  async findOrCreateDMByContactIds(props: {
+    workspaceId: string
+    contactIds: string[]
+    tx?: DatabaseClient
+  }): Promise<ConversationModel[]> {
+    const { tx = db, workspaceId, contactIds } = props
+    const existing = await this.findDMByContactIds({
+      workspaceId,
+      contactIds,
+      tx,
+    })
+    const hasDm = new Set(
+      existing.map((conversation) => conversation.contactId),
+    )
+    const missing = Array.from(new Set(contactIds)).filter(
+      (contactId) => !hasDm.has(contactId),
+    )
+    if (missing.length === 0) {
+      return existing
+    }
+
+    await insertDmConversationsIfAbsent(
+      { workspaceId, contactIds: missing },
+      tx,
+    )
+    // One re-read covers the rows just inserted and any a concurrent writer won.
+    return await this.findDMByContactIds({ workspaceId, contactIds, tx })
+  }
+
   async findOrCreate(props: {
     workspaceId: string
     contactId: string
@@ -1091,6 +1181,7 @@ class ConversationService extends BaseService {
     workspaceId: string,
     assignedId: string | null | undefined,
     onInvalid: "throw" | "ignore" = "throw",
+    tx?: DatabaseClient,
   ): Promise<{
     assignedUserId: string | null
     assignedInboxTeamId: string | null
@@ -1109,6 +1200,7 @@ class ConversationService extends BaseService {
         await workspaceMemberService.findByWorkspaceIdAndUserId({
           workspaceId,
           userId,
+          tx,
         })
       if (workspaceMember) {
         updatedData.assignedUserId = workspaceMember.userId
@@ -1121,12 +1213,14 @@ class ConversationService extends BaseService {
         const inboxTeam = await inboxTeamService.findByIdOrFail({
           workspaceId,
           inboxTeamId,
+          tx,
         })
         updatedData.assignedInboxTeamId = inboxTeam.id
       } else {
         const teamExists = await inboxTeamService.exists({
           workspaceId,
           id: inboxTeamId,
+          tx,
         })
         if (teamExists) {
           updatedData.assignedInboxTeamId = inboxTeamId
@@ -1151,13 +1245,22 @@ class ConversationService extends BaseService {
     assignedId: string | null | undefined
     assignedBy?: string
     triggerContext: Omit<TriggerContext, "triggerType">
+    /**
+     * Only reassign conversations whose current assignee (`u_<id>`, `t_<id>`,
+     * or null when unassigned) is in this list; the rest keep theirs.
+     */
+    onlyFromAssignees?: ReadonlyArray<string | null>
+    /** Run inside the caller's transaction; notifications go to `afterCommit`. */
     tx?: DatabaseClient
+    afterCommit?: (callback: () => Promise<void>) => void
   }): Promise<void> {
     const { workspaceId, contactIds, assignedId, assignedBy, tx } = props
 
     const updatedData = await this.resolveAssignmentTarget(
       workspaceId,
       assignedId,
+      "throw",
+      tx,
     )
 
     const conversations = await this.findManyByContactIds({
@@ -1172,6 +1275,9 @@ class ConversationService extends BaseService {
     await this.updateAssignment({
       workspaceId,
       conversations,
+      onlyFromAssignees: props.onlyFromAssignees,
+      tx,
+      afterCommit: props.afterCommit,
       assignedUserId: updatedData.assignedUserId,
       assignedInboxTeamId: updatedData.assignedInboxTeamId,
       assignedBy,
@@ -1182,7 +1288,6 @@ class ConversationService extends BaseService {
             ? "conversation_assigned"
             : "conversation_unassigned",
       },
-      tx,
     })
   }
 
@@ -1197,12 +1302,14 @@ class ConversationService extends BaseService {
     assignedBy?: string
     triggerContext: Omit<TriggerContext, "triggerType">
     tx?: DatabaseClient
+    afterCommit?: (callback: () => Promise<void>) => void
   }): Promise<void> {
-    const { workspaceId, conversation, assignedId, assignedBy, tx } = props
-
+    const { workspaceId, conversation, assignedId, assignedBy } = props
     const updatedData = await this.resolveAssignmentTarget(
       workspaceId,
       assignedId,
+      "throw",
+      props.tx,
     )
 
     await this.updateAssignment({
@@ -1218,7 +1325,8 @@ class ConversationService extends BaseService {
             ? "conversation_assigned"
             : "conversation_unassigned",
       },
-      tx,
+      tx: props.tx,
+      afterCommit: props.afterCommit,
     })
   }
 
@@ -1239,10 +1347,11 @@ class ConversationService extends BaseService {
     workspaceId: string
     conversation: { id: string; contactId: string }
     assignedId: string
+    silent?: boolean
     triggerContext: TriggerContext
-    tx?: DatabaseClient
   }): Promise<void> {
-    const { workspaceId, conversation, assignedId, triggerContext, tx } = props
+    const { workspaceId, conversation, assignedId, silent, triggerContext } =
+      props
 
     const updatedData = await this.resolveAssignmentTarget(
       workspaceId,
@@ -1275,8 +1384,8 @@ class ConversationService extends BaseService {
       conversations: [conversation],
       assignedUserId: updatedData.assignedUserId,
       assignedInboxTeamId: updatedData.assignedInboxTeamId,
+      silent,
       triggerContext,
-      tx,
     })
   }
 
@@ -1286,8 +1395,15 @@ class ConversationService extends BaseService {
     assignedUserId: string | null
     assignedInboxTeamId: string | null
     assignedBy?: string
+    silent?: boolean
     triggerContext: TriggerContext
     tx?: DatabaseClient
+    /**
+     * Only rows whose assignee (checked under the row lock) is in this list
+     * change; see `assignByContactIds`.
+     */
+    onlyFromAssignees?: ReadonlyArray<string | null>
+    afterCommit?: (callback: () => Promise<void>) => void
   }): Promise<ConversationModel[]> {
     const {
       workspaceId,
@@ -1295,48 +1411,125 @@ class ConversationService extends BaseService {
       assignedUserId,
       assignedInboxTeamId,
       assignedBy,
+      silent,
       triggerContext,
     } = props
-    const ids = conversations.map((c) => c.id)
+
+    if (props.tx && !props.afterCommit) {
+      throw new Error(
+        "updateAssignment with tx requires an afterCommit callback",
+      )
+    }
+    if (conversations.length === 0) {
+      return []
+    }
+
+    const ids = conversations.map((conversation) => conversation.id)
     const assignedAt = new Date()
-    // The response SLA follows the assignee, so a real change re-targets an
-    // open window (inside the same transaction as the assignment).
-    const updated = await responseSlaService.trackWindow(
-      {
+    const updateInTransaction = async (
+      transaction: DatabaseClient,
+    ): Promise<{
+      previousAssignments: Map<
+        string,
+        { assignedInboxTeamId: string | null; assignedUserId: string | null }
+      >
+      updated: ConversationModel[]
+    }> => {
+      const previous = await transaction
+        .select({
+          assignedInboxTeamId: conversationModel.assignedInboxTeamId,
+          assignedUserId: conversationModel.assignedUserId,
+          id: conversationModel.id,
+        })
+        .from(conversationModel)
+        .where(
+          and(
+            eq(conversationModel.workspaceId, workspaceId),
+            inArray(conversationModel.id, ids),
+          ),
+        )
+        .for("update")
+      const { onlyFromAssignees } = props
+      const eligibleIds = onlyFromAssignees
+        ? previous
+            .filter((conversation) =>
+              onlyFromAssignees.includes(conversationAssigneeId(conversation)),
+            )
+            .map((conversation) => conversation.id)
+        : ids
+      const updated =
+        eligibleIds.length === 0
+          ? []
+          : await transaction
+              .update(conversationModel)
+              .set({
+                assignedUserId,
+                assignedInboxTeamId,
+                assignedUserAt: sql`CASE WHEN ${assignedUserId}::bigint IS NULL THEN NULL WHEN "assignedUserId" IS DISTINCT FROM ${assignedUserId}::bigint THEN ${assignedAt.toISOString()}::timestamptz ELSE "assignedUserAt" END`,
+              })
+              .where(
+                and(
+                  eq(conversationModel.workspaceId, workspaceId),
+                  inArray(conversationModel.id, eligibleIds),
+                ),
+              )
+              .returning()
+      return {
+        previousAssignments: new Map(
+          previous.map((conversation) => [conversation.id, conversation]),
+        ),
+        updated,
+      }
+    }
+    const result = props.tx
+      ? await responseSlaService.trackWindow(
+          {
+            workspaceId,
+            conversationIds: ids,
+            assigneeHints: [assignedUserId],
+            tx: props.tx,
+          },
+          updateInTransaction,
+        )
+      : await db.transaction((tx) =>
+          responseSlaService.trackWindow(
+            {
+              workspaceId,
+              conversationIds: ids,
+              assigneeHints: [assignedUserId],
+              tx,
+            },
+            updateInTransaction,
+          ),
+        )
+    const publish = async () =>
+      await this.publishAssignmentChanges({
         workspaceId,
-        conversationIds: ids,
-        assigneeHints: [assignedUserId],
-        tx: props.tx,
-      },
-      (client) =>
-        client
-          .update(conversationModel)
-          .set({
-            assignedUserId,
-            assignedInboxTeamId,
-            // Instant the assignee last changed to a user: the same user keeps it,
-            // unassigning clears it.
-            assignedUserAt: sql`CASE WHEN ${assignedUserId}::bigint IS NULL THEN NULL WHEN "assignedUserId" IS DISTINCT FROM ${assignedUserId}::bigint THEN ${assignedAt.toISOString()}::timestamptz ELSE "assignedUserAt" END`,
-          })
-          .where(
-            and(
-              eq(conversationModel.workspaceId, workspaceId),
-              inArray(conversationModel.id, ids),
-            ),
+        conversations: result.updated.map((conversation) => {
+          const previousAssignment = result.previousAssignments.get(
+            conversation.id,
           )
-          .returning(),
-    )
+          return {
+            id: conversation.id,
+            contactId: conversation.contactId,
+            previousAssignedInboxTeamId:
+              previousAssignment?.assignedInboxTeamId,
+            previousAssignedUserId: previousAssignment?.assignedUserId,
+          }
+        }),
+        assignedUserId,
+        assignedInboxTeamId,
+        assignedBy,
+        silent,
+        triggerContext,
+      })
+    if (props.tx) {
+      props.afterCommit?.(publish)
+    } else {
+      await publish()
+    }
 
-    await this.publishAssignmentChanges({
-      workspaceId,
-      conversations: updated,
-      assignedUserId,
-      assignedInboxTeamId,
-      assignedBy,
-      triggerContext,
-    })
-
-    return updated
+    return result.updated
   }
 
   /**
@@ -1347,10 +1540,16 @@ class ConversationService extends BaseService {
    */
   private async publishAssignmentChanges(props: {
     workspaceId: string
-    conversations: { id: string; contactId: string }[]
+    conversations: {
+      id: string
+      contactId: string
+      previousAssignedInboxTeamId?: string | null
+      previousAssignedUserId?: string | null
+    }[]
     assignedUserId: string | null
     assignedInboxTeamId: string | null
     assignedBy?: string
+    silent?: boolean
     triggerContext: TriggerContext
   }): Promise<void> {
     const {
@@ -1359,6 +1558,7 @@ class ConversationService extends BaseService {
       assignedUserId,
       assignedInboxTeamId,
       assignedBy,
+      silent,
       triggerContext,
     } = props
     if (conversations.length === 0) {
@@ -1368,10 +1568,22 @@ class ConversationService extends BaseService {
 
     await this.invalidate({ workspaceId, ids })
 
-    publishToWorkspaceParty(workspaceId, {
-      eventType: RealtimeEventType.conversationAssigned,
-      data: { conversationIds: ids, assignedUserId, assignedInboxTeamId },
-    })
+    if (!silent) {
+      await queueWorkspaceRealtimeEvent(workspaceId, {
+        eventType: RealtimeEventType.conversationAssigned,
+        data: { conversationIds: ids, assignedUserId, assignedInboxTeamId },
+        route: routeForAssignment({
+          assignedUserId,
+          assignedInboxTeamId,
+          previousAssignedUserIds: conversations.map(
+            ({ previousAssignedUserId }) => previousAssignedUserId,
+          ),
+          previousAssignedInboxTeamIds: conversations.map(
+            ({ previousAssignedInboxTeamId }) => previousAssignedInboxTeamId,
+          ),
+        }),
+      })
+    }
 
     if (assignedUserId && assignedUserId !== assignedBy) {
       try {
@@ -1694,15 +1906,17 @@ class ConversationService extends BaseService {
   async markUnread(props: {
     workspaceId: string
     id: string
+    silent?: boolean
     tx?: DatabaseClient
+    afterCommit?: (callback: () => Promise<void>) => void
   }): Promise<{ agentLastReadAt: Date | null }> {
-    const { workspaceId, id, tx } = props
+    const { workspaceId, id, silent, tx } = props
     const conversation = await this.findByOrFail({
       where: { id, workspaceId },
       tx,
     })
 
-    const messageRepository = await createMessageRepository()
+    const messageRepository = await createMessageRepository(tx)
     const last2Messages = await messageRepository.findLastByConversation(
       conversation.id,
       {
@@ -1728,7 +1942,14 @@ class ConversationService extends BaseService {
     const agentLastReadAt =
       last2Messages.length >= 2 ? (last2Messages[1]?.createdAt ?? null) : null
 
-    await this.updateReadStatus({ workspaceId, id, agentLastReadAt, tx })
+    await this.updateReadStatus({
+      workspaceId,
+      id,
+      agentLastReadAt,
+      silent,
+      tx,
+      afterCommit: props.afterCommit,
+    })
 
     return { agentLastReadAt }
   }
@@ -1776,10 +1997,18 @@ class ConversationService extends BaseService {
     workspaceId: string
     id: string
     agentLastReadAt: Date | null
+    silent?: boolean
     tx?: DatabaseClient
+    afterCommit?: (callback: () => Promise<void>) => void
   }): Promise<void> {
-    const { workspaceId, id, agentLastReadAt, tx = db } = props
-    await tx
+    const { workspaceId, id, agentLastReadAt, silent, tx = db } = props
+
+    if (props.tx && !props.afterCommit) {
+      throw new Error(
+        "updateReadStatus with tx requires an afterCommit callback",
+      )
+    }
+    const [updated] = await tx
       .update(conversationModel)
       .set({ agentLastReadAt })
       .where(
@@ -1788,14 +2017,34 @@ class ConversationService extends BaseService {
           eq(conversationModel.workspaceId, workspaceId),
         ),
       )
-    await this.invalidate({ workspaceId, ids: [id] })
-    publishToWorkspaceParty(workspaceId, {
-      eventType: RealtimeEventType.conversationUpdated,
-      data: {
-        conversationIds: [id],
-        changes: { agentLastReadAt: agentLastReadAt?.toISOString() ?? null },
-      },
-    })
+      .returning({
+        assignedInboxTeamId: conversationModel.assignedInboxTeamId,
+        assignedUserId: conversationModel.assignedUserId,
+      })
+    if (!updated) {
+      return
+    }
+
+    const publish = async () => {
+      await this.invalidate({ workspaceId, ids: [id] })
+      if (!silent) {
+        await queueWorkspaceRealtimeEvent(workspaceId, {
+          eventType: RealtimeEventType.conversationUpdated,
+          data: {
+            conversationIds: [id],
+            changes: {
+              agentLastReadAt: agentLastReadAt?.toISOString() ?? null,
+            },
+          },
+          route: routeForConversation(updated),
+        })
+      }
+    }
+    if (props.tx) {
+      props.afterCommit?.(publish)
+      return
+    }
+    await publish()
   }
 
   /**
@@ -1837,7 +2086,11 @@ class ConversationService extends BaseService {
           ),
         ),
       )
-      .returning({ id: conversationModel.id })
+      .returning({
+        assignedInboxTeamId: conversationModel.assignedInboxTeamId,
+        assignedUserId: conversationModel.assignedUserId,
+        id: conversationModel.id,
+      })
 
     if (updated.length === 0) {
       return false
@@ -1845,12 +2098,13 @@ class ConversationService extends BaseService {
 
     await this.invalidate({ workspaceId, ids: [conversationId] })
     if (!silent) {
-      publishToWorkspaceParty(workspaceId, {
+      await queueWorkspaceRealtimeEvent(workspaceId, {
         eventType: RealtimeEventType.conversationUpdated,
         data: {
           conversationIds: [conversationId],
           changes: { agentLastReadAt: readAt.toISOString() },
         },
+        route: routeForConversation(updated[0]),
       })
     }
 
@@ -1874,7 +2128,11 @@ class ConversationService extends BaseService {
     const trackingInvalidation = await db.transaction(async (tx) => {
       await tx
         .update(conversationModel)
-        .set({ contactLastReadAt: seenAt })
+        // Advance-only: receipts are processed concurrently, so an older
+        // `read` finishing last must not move the mark backwards.
+        .set({
+          contactLastReadAt: sql`GREATEST(${conversationModel.contactLastReadAt}, ${seenAt})`,
+        })
         .where(
           and(
             eq(conversationModel.id, conversationId),
@@ -1978,8 +2236,8 @@ class ConversationService extends BaseService {
     currentStep?: string | null
     lastActivityAt?: Date
     lastStep?: string | null
-    contactRepliedAt?: Date
     contactLastReadAt?: Date
+    contactRepliedAt?: Date
     /** DM waiting-window transition applied in this same UPDATE. */
     humanReplyWindow?: HumanReplyWindowTransition
     tx?: DatabaseClient
@@ -2004,7 +2262,9 @@ class ConversationService extends BaseService {
       data.lastStep = props.lastStep
     }
     if (props.contactLastReadAt !== undefined) {
-      data.contactLastReadAt = props.contactLastReadAt
+      // Advance-only: receipts run on another queue than inbound messages, so
+      // an older inbound processed late must not move the read mark backwards.
+      data.contactLastReadAt = sql`GREATEST(${conversationModel.contactLastReadAt}, ${props.contactLastReadAt})`
     }
     if (props.humanReplyWindow) {
       Object.assign(data, humanReplyWindowSet(props.humanReplyWindow))
@@ -2233,6 +2493,8 @@ class ConversationService extends BaseService {
     tracking: ContactInboxTrackingData
     contactLocation?: ContactModel["location"] | null
     at: Date
+    /** Contact's own inbox read cursor, advanced with an inbound message. */
+    contactLastReadAt?: Date
     /** Set only for contact-authored messages; drives the "No admin reply" filter. */
     contactRepliedAt?: Date
     /**
@@ -2240,6 +2502,8 @@ class ConversationService extends BaseService {
      * the DM waiting window without emitting a response event.
      */
     isExternalHumanEcho?: boolean
+    /** Id of the message carrying `tracking.referral`; keys the ad touch it logs. */
+    referralEventKey?: string
   }): Promise<ContactInboxTrackingInvalidation | null> {
     const {
       workspaceId,
@@ -2248,7 +2512,9 @@ class ConversationService extends BaseService {
       contactId,
       tracking,
       contactLocation,
+      referralEventKey,
       at,
+      contactLastReadAt,
       contactRepliedAt,
       isExternalHumanEcho,
     } = props
@@ -2265,6 +2531,9 @@ class ConversationService extends BaseService {
         contactId,
         workspaceId,
         data: tracking,
+        referralOccurrence: referralEventKey
+          ? { occurredAt: at, eventKey: referralEventKey }
+          : undefined,
       })
 
       if (contactLocation) {
@@ -2280,6 +2549,7 @@ class ConversationService extends BaseService {
         workspaceId,
         conversationId,
         lastActivityAt: at,
+        ...(contactLastReadAt ? { contactLastReadAt } : {}),
         ...(contactRepliedAt ? { contactRepliedAt } : {}),
         ...(humanReplyWindow ? { humanReplyWindow } : {}),
       })

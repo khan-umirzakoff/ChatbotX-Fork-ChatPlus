@@ -5,8 +5,10 @@ const mocks = vi.hoisted(() => ({
   findByImportIdentifiers: vi.fn(),
   findByRetailerIds: vi.fn(),
   linkImported: vi.fn(),
+  listLockedIds: vi.fn(),
   lockCatalogAssignments: vi.fn(),
   resolveCategoryPaths: vi.fn(),
+  resolveVendorNames: vi.fn(),
   transaction: vi.fn(),
   updateProduct: vi.fn(),
 }))
@@ -34,6 +36,10 @@ vi.mock("@chatbotx.io/database/repositories", () => ({
   },
 }))
 
+vi.mock("../src/template/installed-resource.service", () => ({
+  listLockedIds: (...args: unknown[]) => mocks.listLockedIds(...args),
+}))
+
 vi.mock("../src/product-category", () => ({
   getProductCategoryPathKey: (path: {
     categoryName: string
@@ -42,6 +48,12 @@ vi.mock("../src/product-category", () => ({
     `${path.categoryName.trim().toLowerCase()}\u0000${path.subcategoryName?.trim().toLowerCase() ?? ""}`,
   productCategoryService: {
     resolvePaths: (...args: unknown[]) => mocks.resolveCategoryPaths(...args),
+  },
+}))
+
+vi.mock("../src/vendor/service", () => ({
+  vendorService: {
+    resolveByNames: (...args: unknown[]) => mocks.resolveVendorNames(...args),
   },
 }))
 
@@ -63,7 +75,7 @@ const createProduct = (retailerId: string, categoryName?: string) => ({
   inventoryQuantity: 0,
   inventoryPolicy: "dont_track" as const,
   images: undefined,
-  isActive: true,
+  status: "active",
 })
 
 beforeEach(() => {
@@ -72,7 +84,9 @@ beforeEach(() => {
   mocks.findByImportIdentifiers.mockResolvedValue([])
   mocks.lockCatalogAssignments.mockResolvedValue(undefined)
   mocks.resolveCategoryPaths.mockResolvedValue(new Map())
+  mocks.resolveVendorNames.mockResolvedValue(new Map())
   mocks.createFromImport.mockResolvedValue([])
+  mocks.listLockedIds.mockResolvedValue([])
   mocks.updateProduct.mockResolvedValue({ id: "updated-product" })
   mocks.transaction.mockImplementation(
     async (callback: (client: typeof transactionClient) => unknown) =>
@@ -81,6 +95,22 @@ beforeEach(() => {
 })
 
 describe("metaCatalogImportService", () => {
+  test("skips a template-locked product instead of updating it", async () => {
+    mocks.findByRetailerIds.mockResolvedValue([
+      { retailerId: "existing", productId: "product-existing" },
+    ])
+    mocks.listLockedIds.mockResolvedValue(["product-existing"])
+
+    await metaCatalogImportService.importPage({
+      workspaceId: "workspace-1",
+      integrationMetaCatalogId: "connection-1",
+      catalogId: "catalog-1",
+      products: [createProduct("existing")],
+    })
+
+    expect(mocks.updateProduct).not.toHaveBeenCalled()
+  })
+
   test("updates a linked product once when its retailer ID is repeated in a page", async () => {
     mocks.findByRetailerIds.mockResolvedValue([
       { retailerId: "existing", productId: "product-existing" },
@@ -133,6 +163,8 @@ describe("metaCatalogImportService", () => {
       ]),
     )
 
+    mocks.resolveVendorNames.mockResolvedValue(new Map([["test2", "vendor-1"]]))
+
     await metaCatalogImportService.importPage({
       workspaceId: "workspace-1",
       integrationMetaCatalogId: "connection-1",
@@ -154,7 +186,7 @@ describe("metaCatalogImportService", () => {
           inventoryPolicy: "track",
           allowOutOfStockPurchase: true,
           images: [{ url: "https://example.com/komi-298.jpg", type: "link" }],
-          isActive: false,
+          status: "draft",
         },
       ],
     })
@@ -172,14 +204,14 @@ describe("metaCatalogImportService", () => {
           inventoryPolicy: "track",
           inventoryQuantity: 0,
           allowOutOfStockPurchase: true,
-          isActive: false,
+          status: "draft",
           longDescription: "Long description from Meta",
           name: "Robot hút bụi KOMI 298",
           price: 1_025_000,
           productUrl: "https://example.com/komi-298",
           shortDescription: "Updated from Meta",
           tags: ["featured", "robot"],
-          vendor: "Test2",
+          vendorId: "vendor-1",
         },
       },
       transactionClient,
@@ -349,7 +381,7 @@ describe("metaCatalogImportService", () => {
           ...createProduct("existing"),
           price: undefined,
           discount: undefined,
-          isActive: undefined,
+          status: undefined,
         },
       ],
     })
@@ -359,7 +391,7 @@ describe("metaCatalogImportService", () => {
         values: expect.not.objectContaining({
           price: expect.anything(),
           discount: expect.anything(),
-          isActive: expect.anything(),
+          status: expect.anything(),
         }),
       }),
       transactionClient,
@@ -396,7 +428,7 @@ describe("metaCatalogImportService", () => {
           longDescription: null,
           categoryId: null,
           subcategoryId: null,
-          vendor: null,
+          vendorId: null,
         }),
       }),
       transactionClient,

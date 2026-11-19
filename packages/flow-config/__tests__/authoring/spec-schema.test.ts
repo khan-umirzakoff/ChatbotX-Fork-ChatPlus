@@ -361,6 +361,7 @@ describe("flowSpecStepTypes", () => {
         "addNote",
         "branch",
         "goto",
+        "pipeline",
         "send",
         "sendProducts",
         "sendTemplate",
@@ -369,5 +370,58 @@ describe("flowSpecStepTypes", () => {
         "wait",
       ].sort(),
     )
+  })
+})
+
+describe("setCustomField action operation", () => {
+  const parse = (action: Record<string, unknown>) =>
+    flowSpecSchema.safeParse({
+      formatVersion: 1,
+      name: "Flow",
+      steps: [{ type: "action", action: "setCustomField", ...action }],
+    })
+
+  test("clear and setNow need no value", () => {
+    expect(parse({ customFieldName: "F", operation: "clear" }).success).toBe(
+      true,
+    )
+    expect(parse({ customFieldName: "F", operation: "setNow" }).success).toBe(
+      true,
+    )
+  })
+
+  test("an operation that needs an operand rejects a missing one", () => {
+    expect(parse({ customFieldName: "F", operation: "addDays" }).success).toBe(
+      false,
+    )
+  })
+
+  test("new authoring input rejects a blank operand for increase and decrease", () => {
+    for (const operation of ["increase", "decrease"]) {
+      expect(parse({ customFieldName: "F", operation }).success).toBe(false)
+      expect(
+        parse({ customFieldName: "F", operation, value: "2" }).success,
+      ).toBe(true)
+    }
+  })
+
+  test("an explicit set needs a value just like an omitted operation", () => {
+    expect(parse({ customFieldName: "F", operation: "set" }).success).toBe(
+      false,
+    )
+    expect(
+      parse({ customFieldName: "F", operation: "set", value: "x" }).success,
+    ).toBe(true)
+  })
+
+  test("an unknown operation name is rejected", () => {
+    expect(
+      parse({ customFieldName: "F", operation: "multiply", value: "1" })
+        .success,
+    ).toBe(false)
+  })
+
+  test("without an operation the value stays required", () => {
+    expect(parse({ customFieldName: "F" }).success).toBe(false)
   })
 })

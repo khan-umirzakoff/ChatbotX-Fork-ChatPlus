@@ -14,8 +14,12 @@ export const ScheduleJobData = {
   enqueueRecurringBroadcasts: "enqueueRecurringBroadcasts",
   materializeRecurringBroadcasts: "materializeRecurringBroadcasts",
   prepareBroadcast: "prepareBroadcast",
+  purgeDraftBroadcastRecipients: "purgeDraftBroadcastRecipients",
   sendBroadcast: "sendBroadcast",
   reconcileBroadcasts: "reconcileBroadcasts",
+  enqueueMarketingMessages: "enqueueMarketingMessages",
+  dispatchMarketingMessages: "dispatchMarketingMessages",
+  finalizeMarketingMessages: "finalizeMarketingMessages",
   finalizeBroadcasts: "finalizeBroadcasts",
   evaluateTriggers: "evaluateTriggers",
   cleanupTriggers: "cleanupTriggers",
@@ -23,6 +27,8 @@ export const ScheduleJobData = {
   cleanupWebhookExecutions: "cleanupWebhookExecutions",
   scanSmartDelay: "scanSmartDelay",
   scanAppointmentReminders: "scanAppointmentReminders",
+  scanAbandonedCarts: "scanAbandonedCarts",
+  expireUnpaidOrders: "expireUnpaidOrders",
   syncUserQuota: "syncUserQuota",
   reconcileTenants: "reconcileTenants",
   reconcileMac: "reconcileMac",
@@ -41,15 +47,19 @@ export const ScheduleJobData = {
   clearExpiredSupportAccess: "clearExpiredSupportAccess",
   googleAdsHousekeeping: "googleAdsHousekeeping",
   googleAdsSyncSetups: "googleAdsSyncSetups",
+  purgeExpiredOAuthTokens: "purgeExpiredOAuthTokens",
   purgeBroadcasts: "purgeBroadcasts",
   purgeAutomationThrottle: "purgeAutomationThrottle",
   purgeErrorLogs: "purgeErrorLogs",
   redispatchInboundWebhookRequests: "redispatchInboundWebhookRequests",
+  redispatchTemplateJobs: "redispatchTemplateJobs",
   purgeInboundWebhookRequests: "purgeInboundWebhookRequests",
   purgeCommentAutomationEvents: "purgeCommentAutomationEvents",
   refreshChannelTokens: "refreshChannelTokens",
+  refreshLicense: "refreshLicense",
   unsubscribeExpiredTrials: "unsubscribeExpiredTrials",
   teardownExpiredTrial: "teardownExpiredTrial",
+  purgeExpiredContactExports: "purgeExpiredContactExports",
   // WhatsApp calling.
   purgeExpiredCallRecordings: "purgeExpiredCallRecordings",
   sweepStaleWhatsappCalls: "sweepStaleWhatsappCalls",
@@ -91,6 +101,24 @@ export const broadcastSendJobId = (broadcastId: string) =>
 /** Shared by every producer of a `prepareBroadcast` job, so the same broadcast is never prepared twice. */
 export const broadcastPrepareJobId = (broadcastId: string) =>
   `schedule-prepare-broadcast-${broadcastId}`
+
+/**
+ * Who asks for a draft's leftover-recipient cleanup: the draft transitions
+ * (`moveToDraft`, a refused `scheduleDraft`) or a stale prepare run that wrote
+ * a chunk after `moveToDraft`.
+ */
+export type BroadcastDraftPurgeRequester = "draft" | "stalePrepare"
+
+/**
+ * One cleanup per draft and requester: re-asking while one is queued or
+ * running is a no-op. A stale prepare gets its own id so its request never
+ * folds into a cleanup that is just finishing — that one may have checked
+ * before the prepare's last chunk landed.
+ */
+export const broadcastDraftPurgeJobId = (
+  broadcastId: string,
+  requester: BroadcastDraftPurgeRequester,
+) => `schedule-purge-draft-broadcast-${broadcastId}-${requester}`
 
 /** Series handled by one `materializeRecurringBroadcasts` job. */
 export const MATERIALIZE_BATCH_SIZE = 100
@@ -154,6 +182,14 @@ export type ScheduleJobPrepareBroadcast = {
   }
 }
 
+export type ScheduleJobPurgeDraftBroadcastRecipients = {
+  type: typeof ScheduleJobData.purgeDraftBroadcastRecipients
+  data: {
+    workspaceId: string
+    broadcastId: string
+  }
+}
+
 export type ScheduleJobFinalizeBroadcasts = {
   type: typeof ScheduleJobData.finalizeBroadcasts
   data: Record<string, never>
@@ -195,6 +231,17 @@ export const scheduleJobScanAppointmentRemindersDataSchema = z.object({
 export type ScheduleJobScanAppointmentReminders = {
   type: typeof ScheduleJobData.scanAppointmentReminders
   data: z.infer<typeof scheduleJobScanAppointmentRemindersDataSchema>
+}
+
+export type ScheduleJobScanAbandonedCarts = {
+  type: typeof ScheduleJobData.scanAbandonedCarts
+  data: Record<string, never>
+}
+
+/** Every minute: cancels online orders whose payment never came in time. */
+export type ScheduleJobExpireUnpaidOrders = {
+  type: typeof ScheduleJobData.expireUnpaidOrders
+  data: Record<string, never>
 }
 
 export type ScheduleJobSyncUserQuota = {
@@ -291,6 +338,11 @@ export type ScheduleJobDispatchProfileSnapshots = {
   data: Record<string, never>
 }
 
+export type ScheduleJobPurgeExpiredOAuthTokens = {
+  type: typeof ScheduleJobData.purgeExpiredOAuthTokens
+  data: Record<string, never>
+}
+
 export type ScheduleJobPurgeBroadcasts = {
   type: typeof ScheduleJobData.purgeBroadcasts
   data: Record<string, never>
@@ -311,6 +363,11 @@ export type ScheduleJobRedispatchInboundWebhookRequests = {
   data: Record<string, never>
 }
 
+export type ScheduleJobRedispatchTemplateJobs = {
+  type: typeof ScheduleJobData.redispatchTemplateJobs
+  data: Record<string, never>
+}
+
 export type ScheduleJobPurgeInboundWebhookRequests = {
   type: typeof ScheduleJobData.purgeInboundWebhookRequests
   data: Record<string, never>
@@ -328,6 +385,11 @@ export type ScheduleJobRefreshChannelTokens = {
   data: { channels?: ChannelType[] }
 }
 
+export type ScheduleJobRefreshLicense = {
+  type: typeof ScheduleJobData.refreshLicense
+  data: Record<string, never>
+}
+
 export type ScheduleJobUnsubscribeExpiredTrials = {
   type: typeof ScheduleJobData.unsubscribeExpiredTrials
   data: { cursor?: string }
@@ -336,6 +398,12 @@ export type ScheduleJobUnsubscribeExpiredTrials = {
 export type ScheduleJobTeardownExpiredTrial = {
   type: typeof ScheduleJobData.teardownExpiredTrial
   data: { userId: string }
+}
+
+/** Daily retention sweep: deletes contact exports past their retention (file, then row). */
+export type ScheduleJobPurgeExpiredContactExports = {
+  type: typeof ScheduleJobData.purgeExpiredContactExports
+  data: Record<string, never>
 }
 
 /** Daily retention sweep: deletes expired call recordings' S3 objects and clears the columns. */
@@ -350,12 +418,31 @@ export type ScheduleJobSweepStaleWhatsappCalls = {
   data: Record<string, never>
 }
 
+export type ScheduleJobEnqueueMarketingMessages = {
+  type: typeof ScheduleJobData.enqueueMarketingMessages
+  data: Record<string, never>
+}
+
+export type ScheduleJobDispatchMarketingMessages = {
+  type: typeof ScheduleJobData.dispatchMarketingMessages
+  data: Record<string, never>
+}
+
+export type ScheduleJobFinalizeMarketingMessages = {
+  type: typeof ScheduleJobData.finalizeMarketingMessages
+  data: Record<string, never>
+}
+
 export type ScheduleJobData =
+  | ScheduleJobEnqueueMarketingMessages
+  | ScheduleJobDispatchMarketingMessages
+  | ScheduleJobFinalizeMarketingMessages
   | ScheduleJobBroadcast
   | ScheduleJobEnqueueBroadcast
   | ScheduleJobEnqueueRecurringBroadcasts
   | ScheduleJobMaterializeRecurringBroadcasts
   | ScheduleJobPrepareBroadcast
+  | ScheduleJobPurgeDraftBroadcastRecipients
   | ScheduleJobFinalizeBroadcasts
   | ScheduleJobReconcileBroadcasts
   | ScheduleJobEvaluateTriggers
@@ -364,6 +451,8 @@ export type ScheduleJobData =
   | ScheduleJobCleanupWebhookExecutions
   | ScheduleJobScanSmartDelay
   | ScheduleJobScanAppointmentReminders
+  | ScheduleJobScanAbandonedCarts
+  | ScheduleJobExpireUnpaidOrders
   | ScheduleJobSyncUserQuota
   | ScheduleJobReconcileTenants
   | ScheduleJobReconcileMac
@@ -383,15 +472,19 @@ export type ScheduleJobData =
   | ScheduleJobGoogleAdsHousekeeping
   | ScheduleJobGoogleAdsSyncSetups
   | ScheduleJobDispatchProfileSnapshots
+  | ScheduleJobPurgeExpiredOAuthTokens
   | ScheduleJobPurgeBroadcasts
   | ScheduleJobPurgeAutomationThrottle
   | ScheduleJobPurgeErrorLogs
   | ScheduleJobRedispatchInboundWebhookRequests
+  | ScheduleJobRedispatchTemplateJobs
   | ScheduleJobPurgeInboundWebhookRequests
   | ScheduleJobPurgeCommentAutomationEvents
   | ScheduleJobRefreshChannelTokens
+  | ScheduleJobRefreshLicense
   | ScheduleJobUnsubscribeExpiredTrials
   | ScheduleJobTeardownExpiredTrial
+  | ScheduleJobPurgeExpiredContactExports
   | ScheduleJobPurgeExpiredCallRecordings
   | ScheduleJobSweepStaleWhatsappCalls
 

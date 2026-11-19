@@ -4,6 +4,7 @@ import {
   and,
   asc,
   count,
+  countQueryCapped,
   type DatabaseClient,
   db,
   desc,
@@ -30,7 +31,9 @@ import {
   broadcastSendsTemplate,
   broadcastStatuses,
   type ChannelType,
+  type CountMode,
   clampAudienceCountToRange,
+  clampCappedAudienceCount,
   contactFilterFields,
   findBroadcastChannelCapability,
   hasDuplicateBroadcastTarget,
@@ -47,12 +50,15 @@ import {
   resolveBroadcastTargetMode,
   resolveBroadcastTemplateSend,
   resolveSubmittedSendRatePatch,
+  type TemplateResourceKind,
   usesBroadcastTargets,
   withBroadcastTargets,
 } from "@chatbotx.io/database/partials"
 import {
   buildContactInboxContactFilterSQL,
   type ContactFilterCriteriaInput,
+  contactFilterUsesField,
+  contactInboxHasDmSQL,
   contactInboxInteractedWithin24hSQL,
   pruneEmailPhoneFilterConditions,
 } from "@chatbotx.io/database/queries"
@@ -60,6 +66,9 @@ import {
   type BroadcastListInput,
   broadcastRecurrenceRepository,
   broadcastRepository,
+  contactRepository,
+  hasBroadcastRecipients,
+  purgeBroadcastRecipients,
 } from "@chatbotx.io/database/repositories"
 import {
   broadcastModel,
@@ -90,13 +99,23 @@ import {
   likeContains,
 } from "@chatbotx.io/database/utils"
 import {
+  findPaymentRequestMismatches,
   findTemplateStartStep,
   stepTypes,
+  type TemplateComponent,
   type WaTemplateParams,
+  waTemplateParamsSchema,
 } from "@chatbotx.io/flow-config"
 import { casStore } from "@chatbotx.io/redis"
 import { createId } from "@chatbotx.io/utils"
 import type { RecurrenceRule } from "@chatbotx.io/utils/recurrence"
+import {
+  type BroadcastDraftPurgeRequester,
+  broadcastDraftPurgeJobId,
+  broadcastPrepareJobId,
+  ScheduleJobData,
+  scheduleQueue,
+} from "@chatbotx.io/worker-config"
 import { startOfMinute } from "date-fns"
 import type { PgUpdateSetSource } from "drizzle-orm/pg-core"
 import { BaseService } from "../base.service"
@@ -105,6 +124,7 @@ import {
   type StatsContactRow,
 } from "../contact-inbox/map-stats-contact-row"
 import { contactInboxService } from "../contact-inbox/service"
+import { type CountOutcome, countByMode } from "../count-mode"
 import {
   BroadcastValidationException,
   type BroadcastValidationField,
@@ -114,6 +134,8 @@ import {
 import { inboxService } from "../inbox/service"
 import { logger } from "../logger"
 import { type IdLabel, selectLabelsByIds } from "../select-labels-by-ids"
+import { assertReferencable } from "../template/installed-resource.service"
+import { contactFilterParentsOf } from "../template/uninstall-references"
 import { buildDerivedBroadcastValues, copyBroadcastTargets } from "./derive"
 import {
   broadcastPlanPolicyService,
@@ -130,6 +152,15 @@ const DEFAULT_BROADCAST_NAME = "Broadcast"
 /** Next runs shown on a repeating broadcast's detail. */
 const UPCOMING_RUNS_IN_DETAIL = 3
 const DEFAULT_CHUNK_SIZE = 1000
+/** How an audience query already joins the DM conversation, if it does. */
+type AudienceDmJoin = "inner" | "left"
+// One background pass over a draft's leftover recipients: short, so the shared
+// schedule-worker slot is released and the job is re-run later instead.
+const DRAFT_PURGE_CHUNK_SIZE = 1000
+const DRAFT_PURGE_INTER_CHUNK_DELAY_MS = 50
+const DRAFT_PURGE_MAX_RUN_DURATION_MS = 30_000
+/** `ContactInbox` rows read per scan page when the audience has a contact filter. */
+const AUDIENCE_SCAN_PAGE_SIZE = 5000
 const OPTION_LIST_LIMIT = 500
 const CALENDAR_LIST_LIMIT = 500
 const DEFAULT_PREVIEW_PER_PAGE = 20
@@ -185,6 +216,8 @@ export type BroadcastTemplateSelection = {
   inboxId?: string | null
   integrationWhatsappId?: string | null
   integrationMessengerId?: string | null
+  /** The params submitted for this template, checked against its stored buttons. */
+  templateData?: Record<string, unknown> | null
 }
 
 /** One page of a multi-page broadcast as submitted by the form. */
@@ -195,6 +228,41 @@ export type BroadcastTargetInput = {
   templateId?: string
   templateData?: Record<string, unknown>
   buttons?: BroadcastTemplateButton[]
+}
+
+/**
+ * The copied resources a broadcast payload points at: its own flow, its pages'
+ * and its template buttons' flows, and every id its audience filter names
+ * (sequence, keyword, ref link, flow, ...).
+ */
+const broadcastReferencedParents = (data: {
+  flowId?: string
+  buttons?: BroadcastTemplateButton[]
+  targets?: BroadcastTargetInput[]
+  contactFilter?: unknown
+}): { kind: TemplateResourceKind; resourceId: string }[] => {
+  const parents = new Map<
+    string,
+    { kind: TemplateResourceKind; resourceId: string }
+  >()
+  const add = (parent: { kind: TemplateResourceKind; resourceId: string }) =>
+    parents.set(`${parent.kind}:${parent.resourceId}`, parent)
+  for (const id of [
+    data.flowId,
+    ...(data.buttons ?? []).map((button) => button.flowId),
+    ...(data.targets ?? []).flatMap((target) => [
+      target.flowId,
+      ...(target.buttons ?? []).map((button) => button.flowId),
+    ]),
+  ]) {
+    if (id) {
+      add({ kind: "flow", resourceId: id })
+    }
+  }
+  for (const parent of contactFilterParentsOf(data.contactFilter)) {
+    add(parent)
+  }
+  return [...parents.values()]
 }
 
 /**
@@ -278,11 +346,18 @@ export const broadcastTemplateSelections = (
     | "integrationWhatsappId"
     | "integrationMessengerId"
     | "targets"
+    | "templateData"
   >,
 ): BroadcastTemplateSelection[] => {
   const targetSelections = (data.targets ?? []).flatMap((target) =>
     target.templateId
-      ? [{ templateId: target.templateId, inboxId: target.inboxId }]
+      ? [
+          {
+            templateId: target.templateId,
+            inboxId: target.inboxId,
+            templateData: target.templateData,
+          },
+        ]
       : [],
   )
   if (targetSelections.length > 0 || !data.templateId) {
@@ -293,6 +368,7 @@ export const broadcastTemplateSelections = (
       templateId: data.templateId,
       integrationWhatsappId: data.integrationWhatsappId,
       integrationMessengerId: data.integrationMessengerId,
+      templateData: data.templateData,
     },
   ]
 }
@@ -952,11 +1028,10 @@ class BroadcastService extends BaseService {
     if (input.schedulesType === broadcastScheduleTypes.enum.recurring) {
       return await this.scheduleRecurringDraft(input)
     }
+    const scope = await this.draftActivationScope(input)
     const planContext = await broadcastPlanPolicyService.resolveForWorkspace(
       input.workspaceId,
     )
-
-    const scope = this.draftScope(input.workspaceId, input.broadcastId)
 
     const result = await db.transaction(async (tx) => {
       const write = async (override?: { sendRatePerMinute: number | null }) => {
@@ -1260,8 +1335,103 @@ class BroadcastService extends BaseService {
       "broadcast_moved_to_draft",
       `moved broadcast (#${row.id}) to draft`,
     )
-
     return row
+  }
+
+  /**
+   * The WHERE a one-off draft is scheduled through (`scheduleDraft`, and
+   * `updateDraft` when it sends). Scheduling on top of recipients a prepare
+   * interrupted by `moveToDraft` left behind would send to the old audience,
+   * so the draft is refused (and its cleanup queued again) while its previous
+   * prepare job is still live — its last chunk may not be committed yet — or
+   * leftover rows remain. The scope is pinned to the epoch read before those
+   * checks: a moveToDraft round-trip in between bumps it, so the write then
+   * matches nothing. Runs before the write's transaction so it holds no lock
+   * while waiting on the database or the queue.
+   */
+  private async draftActivationScope(input: {
+    workspaceId: string
+    broadcastId: string
+  }): Promise<SQL | undefined> {
+    const scope = this.draftScope(input.workspaceId, input.broadcastId)
+    const draft = await db.query.broadcastModel.findFirst({
+      where: {
+        id: input.broadcastId,
+        workspaceId: input.workspaceId,
+        status: broadcastStatuses.enum.draft,
+        deletedAt: { isNull: true },
+      },
+      columns: { resumeCount: true },
+    })
+    // Not this workspace's draft: the write reports it, nothing is queued.
+    if (!draft) {
+      return scope
+    }
+
+    if (
+      (await this.isPrepareJobLive(input.broadcastId)) ||
+      (await hasBroadcastRecipients(input.broadcastId))
+    ) {
+      await this.queueDraftRecipientsPurge({ ...input, requester: "draft" })
+      throw new ChatbotXException(
+        "Broadcast is still clearing recipients from its previous schedule. Try again in a moment.",
+      )
+    }
+    return and(scope, eq(broadcastModel.resumeCount, draft.resumeCount))
+  }
+
+  /** Whether the broadcast's prepare job is still queued or running, so it may still write recipients. */
+  private async isPrepareJobLive(broadcastId: string): Promise<boolean> {
+    const job = await scheduleQueue.getJob(broadcastPrepareJobId(broadcastId))
+    if (!job) {
+      return false
+    }
+    const state = await job.getState()
+    return state !== "failed" && state !== "completed"
+  }
+
+  /**
+   * Queues the background cleanup of the recipients a prepare left on a draft.
+   * One job per draft and requester: asking again while it is queued or
+   * running is a no-op, and an empty draft costs one empty pass.
+   */
+  async queueDraftRecipientsPurge(input: {
+    workspaceId: string
+    broadcastId: string
+    requester: BroadcastDraftPurgeRequester
+  }): Promise<void> {
+    const { workspaceId, broadcastId, requester } = input
+    await scheduleQueue.add(
+      ScheduleJobData.purgeDraftBroadcastRecipients,
+      {
+        type: ScheduleJobData.purgeDraftBroadcastRecipients,
+        data: { workspaceId, broadcastId },
+      },
+      {
+        jobId: broadcastDraftPurgeJobId(broadcastId, requester),
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    )
+  }
+
+  /**
+   * One bounded pass of a draft's leftover-recipient cleanup; `done` once a
+   * pass drains. Each chunk deletes only while the broadcast is still a draft,
+   * and anything a pass misses keeps `scheduleDraft` refusing, which queues
+   * the cleanup again.
+   */
+  async purgeDraftRecipients(input: {
+    broadcastId: string
+  }): Promise<{ done: boolean }> {
+    const { stopReason } = await purgeBroadcastRecipients({
+      broadcastId: input.broadcastId,
+      chunkSize: DRAFT_PURGE_CHUNK_SIZE,
+      interChunkDelayMs: DRAFT_PURGE_INTER_CHUNK_DELAY_MS,
+      maxRunDurationMs: DRAFT_PURGE_MAX_RUN_DURATION_MS,
+      onlyWhileDraft: true,
+    })
+    return { done: stopReason === "drained" }
   }
 
   /** A repeating broadcast, running or paused, back to an editable draft; its series is stopped. */
@@ -1715,6 +1885,13 @@ class BroadcastService extends BaseService {
       tx: DatabaseClient,
       override?: { sendRatePerMinute: number },
     ) => {
+      // A broadcast is installer data that cascades away with its flow: an
+      // uninstall of a template that owns the flow must see (or be seen by) it.
+      await assertReferencable({
+        workspaceId,
+        parents: broadcastReferencedParents(resolved),
+        tx,
+      })
       const [inserted] = await tx
         .insert(broadcastModel)
         .values({
@@ -2029,7 +2206,8 @@ class BroadcastService extends BaseService {
   /**
    * Re-applies a validated create payload to an existing draft. `saveAsDraft`
    * decides whether the row stays a draft or becomes `scheduled`, mirroring
-   * `createBroadcastAction`. The conditional WHERE (`draftScope`) is the guard:
+   * `createBroadcastAction`. The conditional WHERE (`draftScope`, or
+   * `draftActivationScope` when it sends) is the guard:
    * a row that is no longer a draft — or belongs to another workspace — matches
    * nothing and the update is rejected rather than silently applied.
    */
@@ -2063,6 +2241,13 @@ class BroadcastService extends BaseService {
     } else if (isRecurring) {
       status = broadcastStatuses.enum.recurring
     }
+    const scope =
+      status === broadcastStatuses.enum.scheduled
+        ? await this.draftActivationScope({
+            workspaceId,
+            broadcastId: input.broadcastId,
+          })
+        : this.draftScope(workspaceId, input.broadcastId)
 
     const planContext =
       !(data.saveAsDraft || isRecurring) &&
@@ -2074,6 +2259,11 @@ class BroadcastService extends BaseService {
       : null
 
     const row = await db.transaction(async (tx) => {
+      await assertReferencable({
+        workspaceId,
+        parents: broadcastReferencedParents(data),
+        tx,
+      })
       if (isRecurring) {
         return await this.updateRecurringDraft(tx, {
           workspaceId,
@@ -2095,7 +2285,7 @@ class BroadcastService extends BaseService {
             ...this.buildBroadcastColumns(data, input.canViewEmailAndPhone),
             ...override,
           })
-          .where(this.draftScope(workspaceId, input.broadcastId))
+          .where(scope)
           .returning({ id: broadcastModel.id })
 
         if (updated) {
@@ -2111,7 +2301,7 @@ class BroadcastService extends BaseService {
       const [draft] = await tx
         .select({ id: broadcastModel.id })
         .from(broadcastModel)
-        .where(this.draftScope(workspaceId, input.broadcastId))
+        .where(scope)
         .for("update")
         .limit(1)
 
@@ -2544,7 +2734,50 @@ class BroadcastService extends BaseService {
         "targets",
       )
     }
+    this.assertPaymentRequestsMatchTemplates({
+      channel: input.channel,
+      selections: input.selections,
+      details,
+    })
     return this.joinTemplateNames(details)
+  }
+
+  /**
+   * A WhatsApp payment request must match its template's payment buttons one
+   * to one (a Pix payload for a Boleto button would only fail at send time,
+   * once per recipient). Checked against the template rows already loaded for
+   * the naming, so no extra query. Params that do not parse are left to the
+   * other payload validators.
+   */
+  private assertPaymentRequestsMatchTemplates(input: {
+    channel: ChannelType
+    selections: BroadcastTemplateSelection[]
+    details: BroadcastTemplateDetail[]
+  }): void {
+    if (input.channel !== "whatsapp") {
+      return
+    }
+    for (const [position, selection] of input.selections.entries()) {
+      // Absent params are an empty set: a template with payment buttons then
+      // reports them as missing instead of failing once per recipient.
+      const parsed = waTemplateParamsSchema.safeParse(
+        selection.templateData ?? {},
+      )
+      if (!parsed.success) {
+        continue
+      }
+      const components = input.details[position]?.components
+      const mismatches = findPaymentRequestMismatches(
+        parsed.data,
+        Array.isArray(components) ? (components as TemplateComponent[]) : [],
+      )
+      if (mismatches.length > 0) {
+        throw new BroadcastValidationException(
+          "Payment request does not match the template's payment buttons",
+          "templateId",
+        )
+      }
+    }
   }
 
   async listForCalendar(input: {
@@ -2589,14 +2822,64 @@ class BroadcastService extends BaseService {
     })
   }
 
-  private buildAudienceWhere(
-    inboxIds: string[],
-    input: BroadcastAudienceInput,
-  ): SQL | undefined {
-    const contactFilter = pruneEmailPhoneFilterConditions(
+  private pruneAudienceContactFilter(input: BroadcastAudienceInput) {
+    return pruneEmailPhoneFilterConditions(
       input.contactFilter,
       input.canViewEmailAndPhone !== false,
     )
+  }
+
+  /** Inbox and 24h-window scope, without the contact filter. */
+  private buildAudienceScopeWhere(
+    inboxIds: string[],
+    input: BroadcastAudienceInput,
+  ): SQL | undefined {
+    return and(
+      inArray(contactInboxModel.inboxId, inboxIds),
+      this.buildDmRequirement(input),
+      requiresRecentInteractionWindow(input.subaction)
+        ? contactInboxInteractedWithin24hSQL()
+        : undefined,
+    )
+  }
+
+  /**
+   * By default a broadcast reaches only contacts that already have a DM, so
+   * it opens no conversations. A filter on chat history (**Last interaction**)
+   * chooses the audience itself — e.g. "has no value" for contacts who never
+   * messaged, including ones with no DM yet — and the send opens their DM.
+   *
+   * A query that already joins the DM (`buildDmConversationJoin`) passes how,
+   * so the requirement reuses that join instead of probing the DM again.
+   */
+  private buildDmRequirement(
+    input: BroadcastAudienceInput,
+    dmJoin?: AudienceDmJoin,
+  ): SQL | undefined {
+    if (
+      contactFilterUsesField(
+        input.contactFilter,
+        contactFilterFields.enum.lastInteraction,
+      )
+    ) {
+      return
+    }
+    switch (dmJoin) {
+      case "inner":
+        return
+      case "left":
+        return isNotNull(conversationModel.id)
+      default:
+        return contactInboxHasDmSQL()
+    }
+  }
+
+  private buildAudienceWhere(
+    inboxIds: string[],
+    input: BroadcastAudienceInput,
+    dmJoin?: AudienceDmJoin,
+  ): SQL | undefined {
+    const contactFilter = this.pruneAudienceContactFilter(input)
 
     return and(
       inArray(contactInboxModel.inboxId, inboxIds),
@@ -2607,6 +2890,7 @@ class BroadcastService extends BaseService {
             contactFilter,
           })
         : undefined,
+      this.buildDmRequirement(input, dmJoin),
       requiresRecentInteractionWindow(input.subaction)
         ? contactInboxInteractedWithin24hSQL()
         : undefined,
@@ -2645,34 +2929,74 @@ class BroadcastService extends BaseService {
       : undefined
   }
 
-  async countAudience(input: BroadcastAudienceInput): Promise<number> {
+  async countAudience(
+    input: BroadcastAudienceInput & { countMode?: CountMode },
+  ): Promise<CountOutcome> {
     const inboxIds = await this.resolveInboxIds(input)
     if (inboxIds.length === 0) {
-      return 0
+      return { total: 0, totalCountCapped: false }
     }
 
     const range = input.audienceRange ?? null
-
-    if (input.restrictToAssignedUserId) {
-      const [result] = await db
-        .select({ count: count() })
-        .from(contactInboxModel)
-        .innerJoin(conversationModel, this.buildDmConversationJoin())
-        .where(
-          and(
-            this.buildAudienceWhere(inboxIds, input),
-            this.buildAssignedConversationWhere(input),
-          ),
+    // Inner-joined to the DM below, so the join itself is the DM requirement.
+    const restricted = input.restrictToAssignedUserId
+      ? and(
+          this.buildAudienceWhere(inboxIds, input, "inner"),
+          this.buildAssignedConversationWhere(input),
         )
+      : undefined
+    const audienceWhere = restricted
+      ? undefined
+      : this.buildAudienceWhere(inboxIds, input)
 
-      return clampAudienceCountToRange(result?.count ?? 0, range)
+    const buildScopedSelect = (client: DatabaseClient) =>
+      restricted
+        ? client
+            .select({ one: sql`1` })
+            .from(contactInboxModel)
+            .innerJoin(conversationModel, this.buildDmConversationJoin())
+            .where(restricted)
+        : client
+            .select({ one: sql`1` })
+            .from(contactInboxModel)
+            .where(audienceWhere)
+
+    const outcome = await countByMode({
+      mode: input.countMode,
+      exact: async (client) => {
+        if (restricted) {
+          const [result] = await client
+            .select({ count: count() })
+            .from(contactInboxModel)
+            .innerJoin(conversationModel, this.buildDmConversationJoin())
+            .where(restricted)
+          return result?.count ?? 0
+        }
+        return await client.$count(contactInboxModel, audienceWhere)
+      },
+      bounded: async (cap, client) =>
+        await countQueryCapped({
+          cap,
+          client,
+          query: buildScopedSelect(client),
+        }),
+    })
+
+    if (!outcome.totalCountCapped) {
+      return {
+        ...outcome,
+        total: clampAudienceCountToRange(outcome.total, range),
+      }
     }
-
-    const total = await db.$count(
-      contactInboxModel,
-      this.buildAudienceWhere(inboxIds, input),
+    const clamped = clampCappedAudienceCount(
+      { total: outcome.total, capped: true },
+      range,
     )
-    return clampAudienceCountToRange(total, range)
+    return {
+      ...outcome,
+      total: clamped.total,
+      totalCountCapped: clamped.capped,
+    }
   }
 
   async listAudiencePreview(
@@ -2717,7 +3041,7 @@ class BroadcastService extends BaseService {
       .leftJoin(conversationModel, this.buildDmConversationJoin())
       .where(
         and(
-          this.buildAudienceWhere(inboxIds, input),
+          this.buildAudienceWhere(inboxIds, input, "left"),
           eq(contactModel.workspaceId, input.workspaceId),
           this.buildAssignedConversationWhere(input),
         ),
@@ -2952,9 +3276,25 @@ class BroadcastService extends BaseService {
       return
     }
 
-    const where = this.buildAudienceWhere(inboxIds, input)
     const chunkSize = input.chunkSize ?? DEFAULT_CHUNK_SIZE
     const range = input.audienceRange ?? null
+
+    const contactFilter = this.pruneAudienceContactFilter(input)
+    if (contactFilter && contactFilter.conditions.length > 0) {
+      await this.forEachFilteredAudienceChunk(
+        {
+          workspaceId: input.workspaceId,
+          scopeWhere: this.buildAudienceScopeWhere(inboxIds, input),
+          contactFilter,
+          chunkSize,
+          range,
+        },
+        onChunk,
+      )
+      return
+    }
+
+    const where = this.buildAudienceWhere(inboxIds, input)
     // Rows still to take inside the window; null = unbounded (no `end`, or
     // no range at all) — the limit is then always `chunkSize`, so the
     // null-range query is byte-identical to before this feature.
@@ -2994,6 +3334,97 @@ class BroadcastService extends BaseService {
           : onChunk,
       },
     )
+  }
+
+  /**
+   * Walks a contact-filtered audience in O(audience) instead of re-running the
+   * whole filter for every chunk: keyset-scan `ContactInbox` by scope only, ask
+   * the contact repository which contacts of each scan page match, and apply
+   * the audience window over the matching rows in `ContactInbox.id` order.
+   * Matching rows are re-chunked to `chunkSize`, so `onChunk` sees the same
+   * contract as the unfiltered walk.
+   */
+  private async forEachFilteredAudienceChunk(
+    scan: {
+      workspaceId: string
+      scopeWhere: SQL | undefined
+      contactFilter: ContactFilterCriteriaInput
+      chunkSize: number
+      range: BroadcastAudienceInput["audienceRange"] | null
+    },
+    onChunk: (rows: ContactInboxRow[]) => Promise<boolean | undefined>,
+  ): Promise<void> {
+    const { range, chunkSize } = scan
+    let toSkip = range?.offset ?? 0
+    let remaining = range?.size ?? null
+    if (remaining != null && remaining <= 0) {
+      return
+    }
+    let buffer: ContactInboxRow[] = []
+    let stopped = false
+
+    const flush = async () => {
+      if (buffer.length === 0) {
+        return
+      }
+      const rows = buffer
+      buffer = []
+      if ((await onChunk(rows)) === false) {
+        stopped = true
+      }
+    }
+
+    await chunkById<ContactInboxRow>(
+      (lastId) =>
+        db
+          .select()
+          .from(contactInboxModel)
+          .where(
+            and(
+              scan.scopeWhere,
+              lastId ? gt(contactInboxModel.id, lastId) : undefined,
+            ),
+          )
+          .orderBy(asc(contactInboxModel.id))
+          .limit(AUDIENCE_SCAN_PAGE_SIZE),
+      {
+        chunkSize: AUDIENCE_SCAN_PAGE_SIZE,
+        callback: async (page) => {
+          const matchingIds = new Set(
+            await contactRepository.findIdsMatchingFilter({
+              workspaceId: scan.workspaceId,
+              contactIds: Array.from(new Set(page.map((row) => row.contactId))),
+              contactFilter: scan.contactFilter,
+            }),
+          )
+
+          for (const row of page) {
+            if (!matchingIds.has(row.contactId)) {
+              continue
+            }
+            if (toSkip > 0) {
+              toSkip -= 1
+              continue
+            }
+
+            buffer.push(row)
+            if (remaining != null) {
+              remaining -= 1
+            }
+            const windowDone = remaining != null && remaining <= 0
+            if (buffer.length >= chunkSize || windowDone) {
+              await flush()
+            }
+            if (stopped || windowDone) {
+              return false
+            }
+          }
+          return true
+        },
+      },
+    )
+
+    await flush()
   }
 
   /**
@@ -3156,6 +3587,27 @@ class BroadcastService extends BaseService {
   }
 
   /**
+   * `prepare-broadcast.ts`: false once the broadcast left the schedule this
+   * prepare run started for (`moveToDraft` bumps `resumeCount`), so a stale
+   * run stops writing recipients instead of leaving more to clean up.
+   */
+  async isStillPreparing(input: {
+    broadcastId: string
+    resumeCount: number
+  }): Promise<boolean> {
+    const row = await db.query.broadcastModel.findFirst({
+      where: {
+        id: input.broadcastId,
+        status: broadcastStatuses.enum.scheduled,
+        resumeCount: input.resumeCount,
+        deletedAt: { isNull: true },
+      },
+      columns: { id: true },
+    })
+    return row !== undefined
+  }
+
+  /**
    * `prepare-broadcast.ts`: resolves the page a Messenger template belongs
    * to, scoped to the workspace via the nested `integrationMessenger`
    * relation filter — that nested filter IS the tenant scope, keep it
@@ -3175,7 +3627,12 @@ class BroadcastService extends BaseService {
     return template?.integrationMessengerId ?? null
   }
 
-  /** `prepare-broadcast.ts`: bulk-insert the resolved audience's recipient rows. */
+  /**
+   * `prepare-broadcast.ts`: bulk-insert the resolved audience's recipient rows
+   * and return how many were written. A contact reached through several
+   * inboxes is one recipient per broadcast (`onConflictDoNothing`), so this is
+   * the count to add up, not the length of the input.
+   */
   async insertRecipients(input: {
     recipients: {
       broadcastId: string
@@ -3183,14 +3640,20 @@ class BroadcastService extends BaseService {
       contactInboxId: string
       conversationId: string
     }[]
-  }): Promise<void> {
+  }): Promise<number> {
     if (input.recipients.length === 0) {
-      return
+      return 0
     }
-    await db
+    const result = await db
       .insert(contactsOnBroadcastsModel)
       .values(input.recipients)
       .onConflictDoNothing()
+    return result.rowCount ?? 0
+  }
+
+  /** `prepare-broadcast.ts`: how many recipients the broadcast already holds. */
+  async countRecipients(input: { broadcastId: string }): Promise<number> {
+    return await broadcastRepository.countAudience(input.broadcastId)
   }
 
   /**

@@ -7,26 +7,28 @@ const {
   mockAutomatedResponseEnqueue,
   mockAutomatedResponseEnqueueFlowAction,
   mockAutomatedResponseEnqueueHandoffReentry,
-  mockBroadcastToWorkspaceParty,
+  mockQueueWorkspaceRealtimeEvent,
   mockChatQueueAdd,
+  mockCheckGuestRateLimit,
   mockContactFindById,
-  mockContactUnblockIfBlocked,
   mockContactInboxFindLatest,
   mockContactInboxUpdateTracking,
+  mockContactUnblockIfBlocked,
   mockConversationEnsureActive,
   mockConversationFindBy,
   mockCreateMessageRepository,
   mockCreateNewContactWithMac,
   mockDbUpdate,
-  mockUpdateFlowStepState,
   mockEmit,
   mockEmitContactCreated,
+  mockFindOrCreateGuestConversation,
   mockFindOrFail,
+  mockFindWebchatByIdForWorkspace,
   mockIntegrationQueueAdd,
   mockQuotaIncrement,
-  mockCheckGuestRateLimit,
-  mockVerifyWebchatAccessToken,
+  mockRecordInboundActivity,
   mockRepositoryCreate,
+  mockVerifyWebchatAccessToken,
   mockWorkspaceFind,
   tx,
   updateBuilder,
@@ -44,7 +46,6 @@ const {
   }
   insertBuilder.values.mockReturnValue(insertBuilder)
 
-  // The transaction handed to the `createNewContactWithMac` create callback.
   const tx = {
     insert: vi.fn().mockReturnValue(insertBuilder),
   }
@@ -60,20 +61,21 @@ const {
     mockAutomatedResponseEnqueueHandoffReentry: vi
       .fn()
       .mockResolvedValue(undefined),
+    mockQueueWorkspaceRealtimeEvent: vi.fn().mockResolvedValue(undefined),
+    mockChatQueueAdd: vi.fn().mockResolvedValue(undefined),
+    mockCheckGuestRateLimit: vi
+      .fn()
+      .mockResolvedValue({ limited: false, retryAfter: 10 }),
     mockContactFindById: vi.fn(),
-    mockContactUnblockIfBlocked: vi.fn().mockResolvedValue(null),
     mockContactInboxFindLatest: vi.fn(),
     mockContactInboxUpdateTracking: vi.fn().mockResolvedValue(null),
-    mockConversationFindBy: vi.fn(),
-    mockBroadcastToWorkspaceParty: vi.fn().mockResolvedValue(undefined),
-    mockChatQueueAdd: vi.fn().mockResolvedValue(undefined),
+    mockContactUnblockIfBlocked: vi.fn().mockResolvedValue(null),
     mockConversationEnsureActive: vi.fn().mockResolvedValue(false),
+    mockConversationFindBy: vi.fn(),
     mockCreateMessageRepository: vi.fn().mockResolvedValue({
       create: mockRepositoryCreate,
       createWithAttachments: vi.fn(),
     }),
-    // Default: behave like an under-limit owner — run the create callback in
-    // the fake transaction and report success.
     mockCreateNewContactWithMac: vi.fn(
       async (args: {
         create: (tx: unknown) => Promise<{ value: unknown }>
@@ -85,20 +87,19 @@ const {
       },
     ),
     mockDbUpdate: vi.fn().mockReturnValue(updateBuilder),
-    mockUpdateFlowStepState: vi.fn().mockResolvedValue(undefined),
     mockEmit: vi.fn(),
     mockEmitContactCreated: vi.fn().mockResolvedValue(undefined),
+    mockFindOrCreateGuestConversation: vi.fn(),
     mockFindOrFail: vi.fn(),
+    mockFindWebchatByIdForWorkspace: vi.fn(),
     mockIntegrationQueueAdd: vi.fn().mockResolvedValue(undefined),
     mockQuotaIncrement: vi.fn().mockResolvedValue(undefined),
-    mockCheckGuestRateLimit: vi
-      .fn()
-      .mockResolvedValue({ limited: false, retryAfter: 10 }),
+    mockRecordInboundActivity: vi.fn().mockResolvedValue(null),
+    mockRepositoryCreate,
     mockVerifyWebchatAccessToken: vi.fn().mockResolvedValue({
       authorized: true,
       guestConversationId: "workspace-1:guest-1",
     }),
-    mockRepositoryCreate,
     mockWorkspaceFind: vi.fn().mockResolvedValue({ ownerId: "owner-1" }),
     tx,
     updateBuilder,
@@ -119,10 +120,34 @@ vi.mock("@chatbotx.io/automated-response", () => ({
     enqueueFlowAction: mockAutomatedResponseEnqueueFlowAction,
     enqueueHandoffReentry: mockAutomatedResponseEnqueueHandoffReentry,
   },
+  isKeywordMediaFileType: (fileType: string) =>
+    ["image", "gif", "video"].includes(fileType),
 }))
 
 vi.mock("@chatbotx.io/business", () => ({
-  broadcastToWorkspaceParty: mockBroadcastToWorkspaceParty,
+  queueWorkspaceRealtimeEvent: mockQueueWorkspaceRealtimeEvent,
+  queueMessageCreatedEvent: (
+    workspaceId: string,
+    data: unknown,
+    conversation: {
+      assignedInboxTeamId?: string | null
+      assignedUserId?: string | null
+      inboxId?: string | null
+    },
+  ) =>
+    mockQueueWorkspaceRealtimeEvent(workspaceId, {
+      eventType: "messageCreated",
+      data,
+      route: {
+        assignedTeamIds: conversation.assignedInboxTeamId
+          ? [conversation.assignedInboxTeamId]
+          : [],
+        assignedUserIds: conversation.assignedUserId
+          ? [conversation.assignedUserId]
+          : [],
+        ...(conversation.inboxId ? { inboxId: conversation.inboxId } : {}),
+      },
+    }),
   isWorkspaceScheduledForDeletion: (
     workspace:
       | { scheduledDeletionAt?: Date | string | null }
@@ -140,7 +165,17 @@ vi.mock("@chatbotx.io/business", () => ({
   conversationService: {
     ensureActive: mockConversationEnsureActive,
     findBy: mockConversationFindBy,
-    updateFlowStepState: mockUpdateFlowStepState,
+    recordInboundActivity: mockRecordInboundActivity,
+  },
+  integrationWebchatService: {
+    findByIdForWorkspace: mockFindWebchatByIdForWorkspace,
+    findOrCreateGuestConversation: mockFindOrCreateGuestConversation,
+  },
+  messageCleanupService: {
+    cancelByInboxSource: vi.fn().mockResolvedValue(undefined),
+  },
+  messageService: {
+    create: mockRepositoryCreate,
   },
   quotaEnforcementService: {
     increment: mockQuotaIncrement,
@@ -150,11 +185,7 @@ vi.mock("@chatbotx.io/business", () => ({
     .fn()
     .mockResolvedValue({ storageUrl: "https://storage.example.com" }),
   workspaceService: { find: mockWorkspaceFind },
-  messageCleanupService: {
-    cancelByInboxSource: vi.fn().mockResolvedValue(undefined),
-  },
 }))
-
 vi.mock("@/lib/log", () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }))
@@ -168,9 +199,6 @@ vi.mock("@/features/integration-webchat/lib/webchat-access-token", () => ({
   verifyWebchatAccessToken: mockVerifyWebchatAccessToken,
 }))
 
-const PROTOCOL_PREFIX_REGEX = /^https?:\/\//
-const HOST_DELIMITER_REGEX = /[/:?#]/
-
 const { mockHeaders } = vi.hoisted(() => ({
   mockHeaders: vi.fn(() => Promise.resolve(new Headers())),
 }))
@@ -179,30 +207,12 @@ vi.mock("next/headers", () => ({
   headers: mockHeaders,
 }))
 
-vi.mock("@/features/integration-webchat/lib/authorized-domain", async () => ({
-  isFirstPartyOrigin: (
-    await vi.importActual<
-      typeof import("@/features/integration-webchat/lib/authorized-domain")
-    >("@/features/integration-webchat/lib/authorized-domain")
-  ).isFirstPartyOrigin,
-  isOriginAuthorized: (
-    origin: string | null | undefined,
-    authorizedDomains: string[],
-  ) => {
-    if (!origin) {
-      return true
-    }
-    if (authorizedDomains.length === 0) {
-      return false
-    }
-    const host = origin
-      .replace(PROTOCOL_PREFIX_REGEX, "")
-      .split(HOST_DELIMITER_REGEX)[0]
-    return authorizedDomains.some(
-      (domain) => host === domain || host?.endsWith(`.${domain}`),
-    )
-  },
-}))
+vi.mock("@/features/integration-webchat/lib/authorized-domain", async () => {
+  const actual = await vi.importActual<
+    typeof import("@/features/integration-webchat/lib/authorized-domain")
+  >("@/features/integration-webchat/lib/authorized-domain")
+  return { isAllowedGuestOrigin: actual.isAllowedGuestOrigin }
+})
 
 vi.mock("next-intl/server", () => ({
   getTranslations: vi.fn((namespace?: string) => {
@@ -284,8 +294,9 @@ vi.mock("@chatbotx.io/flow-config", async (importOriginal) => {
   }
 })
 
-vi.mock("@chatbotx.io/partysocket-config", () => ({
+vi.mock("@chatbotx.io/realtime-protocol", () => ({
   RealtimeEventType: { messageCreated: "messageCreated" },
+  routeForConversation: vi.fn(),
 }))
 
 vi.mock("@chatbotx.io/utils", async (importOriginal) => {
@@ -293,12 +304,16 @@ vi.mock("@chatbotx.io/utils", async (importOriginal) => {
   return { ...actual, createId: vi.fn(() => "generated-id") }
 })
 
-vi.mock("@chatbotx.io/worker-config", () => ({
-  ChatJobAction: { broadcastEvent: "broadcastEvent" },
+vi.mock("@chatbotx.io/worker-config", async (importOriginal) => ({
+  // The real job builder: the tests assert what producers actually enqueue.
+  buildResolveStepInputJob: (
+    await importOriginal<typeof import("@chatbotx.io/worker-config")>()
+  ).buildResolveStepInputJob,
   chatQueue: { add: mockChatQueueAdd },
   IntegrationJobAction: {
     runChallenge: "runChallenge",
     runFlowPostback: "runFlowPostback",
+    resolveStepInput: "resolveStepInput",
     runRef: "runRef",
     sendFlow: "sendFlow",
   },
@@ -354,7 +369,7 @@ const resetCommonMocks = () => {
     createWithAttachments: vi.fn(),
   })
   mockChatQueueAdd.mockResolvedValue(undefined)
-  mockBroadcastToWorkspaceParty.mockResolvedValue(undefined)
+  mockQueueWorkspaceRealtimeEvent.mockResolvedValue(undefined)
   tx.insert.mockReturnValue(insertBuilder)
   insertBuilder.values.mockReturnValue(insertBuilder)
   insertBuilder.returning.mockReset()
@@ -364,6 +379,17 @@ const resetCommonMocks = () => {
     authorized: true,
   })
   mockWorkspaceFind.mockResolvedValue({ ownerId: "owner-1" })
+  mockFindOrFail.mockResolvedValue({
+    inboxId: "inbox-1",
+    authorizedDomains: [],
+    persistentMenus: [],
+  })
+  mockFindWebchatByIdForWorkspace.mockImplementation(() => mockFindOrFail())
+  mockFindOrCreateGuestConversation.mockResolvedValue({
+    conversation,
+    contact,
+    contactInbox,
+  })
   mockCreateNewContactWithMac.mockImplementation(
     async (args: { create: (tx: unknown) => Promise<{ value: unknown }> }) => {
       const created = await args.create(tx)
@@ -378,7 +404,7 @@ describe("handleCreateWebchatMessage", () => {
     mockContactInboxFindLatest.mockResolvedValue(contactInbox)
   })
 
-  test("records the contact message through the conversation service, workspace-scoped, without a direct db write", async () => {
+  test("records inbound activity through the conversation service, workspace-scoped, without a direct db write", async () => {
     await handleCreateWebchatMessage({
       parsedInput: {
         text: "hello",
@@ -391,19 +417,33 @@ describe("handleCreateWebchatMessage", () => {
     const messageInput = mockRepositoryCreate.mock.calls[0]?.[0] as {
       createdAt: Date
     }
-    expect(mockUpdateFlowStepState).toHaveBeenCalledWith({
+    expect(mockRecordInboundActivity).toHaveBeenCalledWith({
       workspaceId: "ws-1",
-      conversationId: expect.any(String),
-      contactLastReadAt: expect.any(Date),
-      lastActivityAt: messageInput.createdAt,
+      conversationId: "conv-1",
+      contactInboxId: "ci-1",
+      contactId: "contact-1",
+      at: messageInput.createdAt,
       contactRepliedAt: messageInput.createdAt,
-      humanReplyWindow: { open: messageInput.createdAt },
+      contactLastReadAt: expect.any(Date),
+      tracking: expect.objectContaining({
+        firstInteractionAt: messageInput.createdAt,
+        lastIncomingMessageAt: messageInput.createdAt,
+        lastMessageAt: messageInput.createdAt,
+      }),
     })
     expect(mockDbUpdate).not.toHaveBeenCalled()
   })
 
-  test("broadcasts the created message with the client's clientId for optimistic reconciliation", async () => {
-    await handleCreateWebchatMessage({
+  test("waits for the created-message event before resolving", async () => {
+    let resolveRealtimeDelivery: () => void = () => undefined
+    mockQueueWorkspaceRealtimeEvent.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveRealtimeDelivery = resolve
+        }),
+    )
+
+    const action = handleCreateWebchatMessage({
       parsedInput: {
         text: "hello",
         workspaceId: "ws-1",
@@ -413,7 +453,21 @@ describe("handleCreateWebchatMessage", () => {
       },
     })
 
-    expect(mockBroadcastToWorkspaceParty).toHaveBeenCalledWith(
+    await vi.waitFor(() => {
+      expect(mockQueueWorkspaceRealtimeEvent).toHaveBeenCalled()
+    })
+
+    let resolved = false
+    const completion = action.then(() => {
+      resolved = true
+    })
+    await Promise.resolve()
+    expect(resolved).toBe(false)
+
+    resolveRealtimeDelivery()
+    await completion
+
+    expect(mockQueueWorkspaceRealtimeEvent).toHaveBeenCalledWith(
       "ws-1",
       expect.objectContaining({
         eventType: "messageCreated",
@@ -446,34 +500,6 @@ describe("handleCreateWebchatMessage", () => {
     })
 
     expect(mockVerifyWebchatAccessToken).not.toHaveBeenCalled()
-  })
-
-  test("updates webchat contact inbox message, incoming message, and read timestamps", async () => {
-    await handleCreateWebchatMessage({
-      parsedInput: {
-        text: "hello",
-        workspaceId: "ws-1",
-        webchatId: "webchat-1",
-        guestConversationId: "guest-1",
-      },
-    })
-
-    const messageInput = mockRepositoryCreate.mock.calls[0]?.[0] as {
-      createdAt: Date
-    }
-    expect(mockContactInboxUpdateTracking).toHaveBeenCalledWith({
-      contactInboxId: "ci-1",
-      contactId: "contact-1",
-      workspaceId: "ws-1",
-      data: {
-        firstInteractionAt: messageInput.createdAt,
-        contactLastReadAt: messageInput.createdAt,
-        lastMessageAt: messageInput.createdAt,
-        lastIncomingMessageAt: messageInput.createdAt,
-        lastUserInput: "hello",
-        lastUserInputType: "text",
-      },
-    })
   })
 
   test("auto-unblocks using the resolved contact row after creating an inbound message", async () => {
@@ -509,6 +535,7 @@ describe("handleCreateWebchatMessage", () => {
       contactInboxId: "ci-1",
       messageId: "msg-1",
       messageText: "hello",
+      attachmentFileTypes: [],
       workspaceId: "ws-1",
     })
     expect(mockAutomatedResponseEnqueueHandoffReentry).not.toHaveBeenCalled()
@@ -557,6 +584,161 @@ describe("handleCreateWebchatMessage", () => {
     expect(mockAutomatedResponseEnqueue).not.toHaveBeenCalled()
   })
 
+  describe("step input Skip tap", () => {
+    const CHALLENGE_ID = "11612473309626368"
+    const skipPostback = `STEP_INPUT_SKIP|${CHALLENGE_ID}`
+    const pendingStepChallenge = {
+      type: "step",
+      data: {
+        flowId: "flow-1",
+        nodeId: "node-1",
+        stepId: "step-1",
+        attempts: 1,
+        lastAttemptAt: new Date(),
+        challengeId: CHALLENGE_ID,
+      },
+    }
+
+    function tap(overrides: Record<string, unknown> = {}) {
+      return handleCreateWebchatMessage({
+        parsedInput: {
+          text: "Skip",
+          postback: skipPostback,
+          workspaceId: "ws-1",
+          webchatId: "webchat-1",
+          guestConversationId: "guest-1",
+          ...overrides,
+        },
+      })
+    }
+
+    beforeEach(() => {
+      mockConversationFindBy.mockResolvedValue({
+        ...conversation,
+        additionalAttributes: { challenge: pendingStepChallenge },
+      })
+    })
+
+    test("is resolved by its own job after the tap's message is saved, never as a flow action", async () => {
+      await tap()
+
+      expect(mockAutomatedResponseEnqueueFlowAction).not.toHaveBeenCalled()
+      expect(mockIntegrationQueueAdd).toHaveBeenCalledWith(
+        "resolveStepInput",
+        {
+          type: "resolveStepInput",
+          data: {
+            conversationId: "conv-1",
+            contactInboxId: "ci-1",
+            challengeId: CHALLENGE_ID,
+            reason: "user_skipped",
+            messageId: "msg-1",
+            messageCreatedAt: expect.any(Date),
+          },
+        },
+        // Active-only dedup, never a fixed jobId: a retained completed job
+        // would silently drop a later tap.
+        { deduplication: { id: `step-input-conv-1-${CHALLENGE_ID}` } },
+      )
+      expect(mockRepositoryCreate.mock.invocationCallOrder[0]).toBeLessThan(
+        mockIntegrationQueueAdd.mock.invocationCallOrder[0] ?? 0,
+      )
+    })
+
+    test("a failed enqueue surfaces instead of being swallowed with the best-effort jobs", async () => {
+      mockIntegrationQueueAdd.mockImplementation((action: string) =>
+        action === "resolveStepInput"
+          ? Promise.reject(new Error("redis down"))
+          : Promise.resolve(undefined),
+      )
+
+      await expect(tap()).rejects.toThrow("redis down")
+
+      mockIntegrationQueueAdd.mockReset()
+      mockIntegrationQueueAdd.mockResolvedValue(undefined)
+    })
+
+    test("is never also run as a typed reply to the pending challenge", async () => {
+      await tap()
+
+      expect(mockIntegrationQueueAdd).not.toHaveBeenCalledWith(
+        "runChallenge",
+        expect.anything(),
+        expect.anything(),
+      )
+      expect(mockAutomatedResponseEnqueue).not.toHaveBeenCalled()
+    })
+
+    test.each([
+      ["a non-numeric id", "STEP_INPUT_SKIP|abc"],
+      ["an oversized id", "STEP_INPUT_SKIP|99999999999999999999"],
+    ])("treats %s as an ordinary postback", async (_label, postback) => {
+      await tap({ postback })
+
+      expect(mockAutomatedResponseEnqueueFlowAction).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: "postback" }),
+      )
+      expect(mockIntegrationQueueAdd).not.toHaveBeenCalledWith(
+        "resolveStepInput",
+        expect.anything(),
+        expect.anything(),
+      )
+    })
+
+    test("an ordinary button tap on a pending step challenge keeps its existing behavior", async () => {
+      await tap({ postback: "button-a", text: "clicked" })
+
+      expect(mockAutomatedResponseEnqueueFlowAction).toHaveBeenCalled()
+      expect(mockIntegrationQueueAdd).toHaveBeenCalledWith(
+        "runChallenge",
+        expect.anything(),
+        expect.anything(),
+      )
+    })
+
+    test("each typed reply gets its own run, so a quick second answer is never dropped", async () => {
+      let created = 0
+      mockRepositoryCreate.mockImplementation((input) => {
+        created += 1
+        return Promise.resolve({
+          id: `msg-${created}`,
+          ...input,
+          sourceId: null,
+          updatedAt: input.createdAt,
+        })
+      })
+
+      await tap({ postback: undefined, text: "abc" })
+      await tap({ postback: undefined, text: "me@x.com" })
+
+      const runs = mockIntegrationQueueAdd.mock.calls.filter(
+        ([action]) => action === "runChallenge",
+      ) as [string, { data: { messageId: string } }, { jobId?: string }][]
+      expect(runs.map(([, job]) => job.data.messageId)).toEqual([
+        "msg-1",
+        "msg-2",
+      ])
+      expect(runs.map(([, , options]) => options.jobId)).toEqual([
+        "webchat-challenge-conv-1-msg-1",
+        "webchat-challenge-conv-1-msg-2",
+      ])
+      // A deduplicated (dropped) run would never process its message.
+      expect(runs[0]?.[2]).not.toHaveProperty("deduplication")
+    })
+
+    test("a typed reply names the message it answers, so it is judged on its own text", async () => {
+      await tap({ postback: undefined, text: "user@example.com" })
+
+      const [, job] = mockIntegrationQueueAdd.mock.calls.find(
+        ([action]) => action === "runChallenge",
+      ) as [string, { data: Record<string, unknown> }]
+      expect(job.data).toMatchObject({
+        messageId: "msg-1",
+        messageCreatedAt: expect.any(Date),
+      })
+    })
+  })
+
   test("rejects unauthorized webchat origins before resolving conversations", async () => {
     mockFindOrFail.mockResolvedValue({
       inboxId: "inbox-1",
@@ -588,7 +770,7 @@ describe("handleCreateWebchatMessage", () => {
       inboxId: "inbox-1",
       authorizedDomains: ["example.com"],
     })
-    mockHeaders.mockResolvedValueOnce(
+    mockHeaders.mockResolvedValue(
       new Headers({ "x-domain": "app.chatbotx.test" }),
     )
 
@@ -610,7 +792,7 @@ describe("handleCreateWebchatMessage", () => {
       inboxId: "inbox-1",
       authorizedDomains: ["example.com"],
     })
-    mockHeaders.mockResolvedValueOnce(
+    mockHeaders.mockResolvedValue(
       new Headers({ "x-domain": "app.chatbotx.test" }),
     )
 
@@ -729,35 +911,6 @@ describe("handleCreateWebchatMessage — MAC quota", () => {
     guestConversationId: "guest-1",
   }
 
-  const seedNewContactInserts = () => {
-    insertBuilder.returning
-      .mockResolvedValueOnce([
-        {
-          id: "contact-new",
-          workspaceId: "ws-1",
-          createdAt: new Date("2026-06-21T00:00:00Z"),
-        },
-      ])
-      .mockResolvedValueOnce([
-        {
-          id: "ci-new",
-          inboxId: "inbox-1",
-          contactId: "contact-new",
-          sourceId: "guest-1",
-          source: "webchat",
-          channel: "webchat",
-        },
-      ])
-      .mockResolvedValueOnce([
-        {
-          id: "conv-new",
-          workspaceId: "ws-1",
-          contactId: "contact-new",
-          additionalAttributes: null,
-        },
-      ])
-  }
-
   test("does not touch quota for an existing contact", async () => {
     mockContactInboxFindLatest.mockResolvedValue(contactInbox)
 
@@ -783,40 +936,51 @@ describe("handleCreateWebchatMessage — MAC quota", () => {
 
   test("gates a new contact through the atomic MAC chokepoint", async () => {
     mockContactInboxFindLatest.mockResolvedValue(undefined)
-    seedNewContactInserts()
+    mockFindWebchatByIdForWorkspace.mockResolvedValue({
+      id: "webchat-1",
+      inboxId: "inbox-1",
+      authorizedDomains: [],
+      persistentMenus: [],
+    })
+    mockFindOrCreateGuestConversation.mockResolvedValue({
+      contact: { ...contact, id: "contact-new" },
+      contactInbox: { ...contactInbox, id: "ci-new", sourceId: "guest-1" },
+      conversation: { ...conversation, id: "conv-new" },
+    })
 
     await handleCreateWebchatMessage({ parsedInput: input })
 
-    expect(mockWorkspaceFind).toHaveBeenCalledWith({ where: { id: "ws-1" } })
     // MAC is the owner-derived billing gate and a soft cap on resetting plans:
-    // Redis admission, transactional create, then commit/revoke. Lifetime /
-    // period-less owners and the env lock switch use the distributed lock. The
-    // info-only `contacts` counter is recorded inside this chokepoint too, so
-    // the action no longer increments it separately (that would double-count).
-    expect(mockCreateNewContactWithMac).toHaveBeenCalledTimes(1)
-    expect(mockCreateNewContactWithMac).toHaveBeenCalledWith(
-      expect.objectContaining({ ownerId: "owner-1", workspaceId: "ws-1" }),
-    )
-    expect(mockCreateNewContactWithMac.mock.calls[0]?.[0]).not.toHaveProperty(
-      "lockWaitSeconds",
-    )
-    expect(insertBuilder.values).toHaveBeenCalledWith(
+    // Redis admission, transactional create, then commit/revoke, all inside
+    // integrationWebchatService.findOrCreateGuestConversation (covered by
+    // integration-webchat-service.test.ts, including the emitContactCreated
+    // call after commit). This action only has to delegate to it and never
+    // increment quota separately (that would double-count).
+    expect(mockFindOrCreateGuestConversation).toHaveBeenCalledWith(
       expect.objectContaining({
-        channel: "webchat",
-        source: "webchat",
+        guestConversationId: "guest-1",
+        integration: expect.objectContaining({ id: "webchat-1" }),
+        workspace: { ownerId: "owner-1" },
+        workspaceId: "ws-1",
       }),
     )
     expect(mockQuotaIncrement).not.toHaveBeenCalled()
   })
 
-  test("emits contact creation and queues the configured welcome flow for a new contact", async () => {
+  test("queues the configured welcome flow for a new contact", async () => {
     mockContactInboxFindLatest.mockResolvedValue(undefined)
-    mockFindOrFail.mockResolvedValue({
+    mockFindWebchatByIdForWorkspace.mockResolvedValue({
+      id: "webchat-1",
       inboxId: "inbox-1",
       authorizedDomains: [],
+      persistentMenus: [],
       welcomeFlowId: "flow-1",
     })
-    seedNewContactInserts()
+    mockFindOrCreateGuestConversation.mockResolvedValue({
+      contact: { ...contact, id: "contact-new" },
+      contactInbox: { ...contactInbox, id: "ci-new", sourceId: "guest-1" },
+      conversation: { ...conversation, id: "conv-new" },
+    })
 
     await handleCreateWebchatMessage({
       parsedInput: {
@@ -825,14 +989,6 @@ describe("handleCreateWebchatMessage — MAC quota", () => {
       },
     })
 
-    expect(mockEmitContactCreated).toHaveBeenCalledWith(
-      "ws-1",
-      "contact-new",
-      undefined,
-      undefined,
-      undefined,
-      "ci-new",
-    )
     expect(mockIntegrationQueueAdd).toHaveBeenCalledWith(
       "sendFlow",
       expect.objectContaining({
@@ -849,7 +1005,17 @@ describe("handleCreateWebchatMessage — MAC quota", () => {
 
   test("does not queue a welcome flow when it is not configured", async () => {
     mockContactInboxFindLatest.mockResolvedValue(undefined)
-    seedNewContactInserts()
+    mockFindWebchatByIdForWorkspace.mockResolvedValue({
+      id: "webchat-1",
+      inboxId: "inbox-1",
+      authorizedDomains: [],
+      persistentMenus: [],
+    })
+    mockFindOrCreateGuestConversation.mockResolvedValue({
+      contact: { ...contact, id: "contact-new" },
+      contactInbox: { ...contactInbox, id: "ci-new", sourceId: "guest-1" },
+      conversation: { ...conversation, id: "conv-new" },
+    })
 
     await handleCreateWebchatMessage({
       parsedInput: {
@@ -858,7 +1024,6 @@ describe("handleCreateWebchatMessage — MAC quota", () => {
       },
     })
 
-    expect(mockEmitContactCreated).toHaveBeenCalledTimes(1)
     expect(mockIntegrationQueueAdd).not.toHaveBeenCalledWith(
       "sendFlow",
       expect.anything(),
@@ -867,10 +1032,7 @@ describe("handleCreateWebchatMessage — MAC quota", () => {
 
   test("rejects and creates nothing when the MAC limit is reached", async () => {
     mockContactInboxFindLatest.mockResolvedValue(undefined)
-    mockCreateNewContactWithMac.mockResolvedValue({
-      ok: false,
-      level: "user",
-    })
+    mockFindOrCreateGuestConversation.mockResolvedValue(null)
 
     await expect(
       handleCreateWebchatMessage({ parsedInput: input }),
@@ -879,56 +1041,7 @@ describe("handleCreateWebchatMessage — MAC quota", () => {
       code: "quotaExceeded",
     })
 
-    expect(tx.insert).not.toHaveBeenCalled()
     expect(mockQuotaIncrement).not.toHaveBeenCalled()
-  })
-
-  test("stores locale and timezone on new webchat contacts", async () => {
-    mockContactInboxFindLatest.mockResolvedValue(undefined)
-    seedNewContactInserts()
-
-    await handleCreateWebchatMessage({
-      parsedInput: {
-        ...input,
-        locale: "vi-VN",
-        timezone: "Asia/Ho_Chi_Minh",
-      },
-    })
-
-    expect(insertBuilder.values).toHaveBeenCalledWith(
-      expect.objectContaining({
-        firstName: "Guest",
-        locale: "vi_VN",
-        timezone: "Asia/Ho_Chi_Minh",
-      }),
-    )
-    expect(insertBuilder.values).toHaveBeenCalledWith(
-      expect.objectContaining({
-        channel: "webchat",
-        language: "vi",
-      }),
-    )
-  })
-
-  test("creates new webchat contacts when locale and timezone are absent", async () => {
-    mockContactInboxFindLatest.mockResolvedValue(undefined)
-    seedNewContactInserts()
-
-    await handleCreateWebchatMessage({ parsedInput: input })
-
-    expect(insertBuilder.values).toHaveBeenCalledWith(
-      expect.objectContaining({
-        firstName: "Guest",
-        locale: undefined,
-        timezone: undefined,
-      }),
-    )
-    expect(insertBuilder.values).toHaveBeenCalledWith(
-      expect.objectContaining({
-        channel: "webchat",
-        language: undefined,
-      }),
-    )
   })
 
   test("does not create a contact for existing webchat inbox even with payload locale and timezone", async () => {

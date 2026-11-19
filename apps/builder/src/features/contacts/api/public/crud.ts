@@ -1,10 +1,11 @@
-import { contactService, UNSCOPED } from "@chatbotx.io/business"
+import { contactService } from "@chatbotx.io/business"
 import { getAuditActor } from "@chatbotx.io/business/audit"
 import { importService } from "@chatbotx.io/business/import"
 import { contactSources, genderTypes } from "@chatbotx.io/database/partials"
 import { z } from "zod"
 import { mcpSpec } from "@/lib/orpc/mcp-annotations"
 import {
+  possibleErrorsOnCounting,
   possibleErrorsOnCreatingContact,
   possibleErrorsOnCreatingResource,
   possibleErrorsOnFindingResource,
@@ -15,6 +16,11 @@ import {
   possibleErrorsOnWritingContactFields,
 } from "@/lib/orpc/orpc-error-helper"
 import { publicContactIdentifier } from "@/lib/public-api/contact-identifier"
+import {
+  contactIdFor,
+  contactScopeForCaller,
+  maskContactForCaller,
+} from "@/lib/public-api/member-scope"
 import { workspaceTokenAuthAPIForScope } from "@/orpc"
 import { resolveContactAvatars } from "../../queries/resolve-contact-avatars"
 import {
@@ -66,7 +72,7 @@ export const contactsCrudPublicRouter = {
       const result = await contactService.list({
         ...rest,
         workspaceId: context.workspace.id,
-        scope: UNSCOPED,
+        scope: await contactScopeForCaller(context),
         include,
         withCount,
       })
@@ -90,6 +96,7 @@ export const contactsCrudPublicRouter = {
       summary: "Search contacts with filter body",
       description:
         "Deprecated — `contacts.list` accepts the identical `contactFilter` shape as a query-string request; this POST-with-body variant is kept only for callers that have not migrated.",
+      spec: mcpSpec({ hitlPolicy: "none", readOnlyHint: true }),
       tags: ["Contacts"],
       deprecated: true,
     })
@@ -101,7 +108,7 @@ export const contactsCrudPublicRouter = {
       const result = await contactService.list({
         ...rest,
         workspaceId: context.workspace.id,
-        scope: UNSCOPED,
+        scope: await contactScopeForCaller(context),
         include,
         withCount,
       })
@@ -121,18 +128,18 @@ export const contactsCrudPublicRouter = {
       path: "/v1/contacts/count",
       summary: "Count contacts matching filter",
       description:
-        "Counts contacts matching the same filter shape as `contacts.list`, without paginating the rows.",
+        'Counts contacts matching the same filter shape as `contacts.list`, without paginating the rows. Pass `countMode: "bounded"` on very large workspaces: the count then stops at `countCap` and `totalCountCapped` says `total` is a lower bound. An exact count that takes too long fails with 503 `countTimeout`.',
       tags: ["Contacts"],
     })
     .input(countContactsPublicRequest)
     .output(countContactsPublicResponse)
-    .errors(possibleErrorsOnListingResource)
+    .errors(possibleErrorsOnCounting)
     .handler(
       async ({ context, input }) =>
         await contactService.count({
           ...input,
           workspaceId: context.workspace.id,
-          scope: UNSCOPED,
+          scope: await contactScopeForCaller(context),
         }),
     ),
 
@@ -154,10 +161,7 @@ export const contactsCrudPublicRouter = {
     .output(contactResponse)
     .errors(possibleErrorsOnFindingResource)
     .handler(async ({ context, input }) => {
-      const contactId = await contactService.resolveIdByIdentifier({
-        identifier: input.identifier,
-        workspaceId: context.workspace.id,
-      })
+      const contactId = await contactIdFor(context, input.identifier)
       const contact = await contactService.findPublicContactOrFail({
         id: contactId,
         workspaceId: context.workspace.id,
@@ -167,7 +171,7 @@ export const contactsCrudPublicRouter = {
         context.workspace.id,
         { publicUrls: true },
       )
-      return resolved
+      return maskContactForCaller(context, resolved)
     }),
 
   create: workspaceTokenAuthAPI
@@ -265,10 +269,7 @@ export const contactsCrudPublicRouter = {
     .errors(possibleErrorsOnWritingContactFields)
     .handler(async ({ context, input }) => {
       const { identifier, ...fields } = input
-      const contactId = await contactService.resolveIdByIdentifier({
-        identifier,
-        workspaceId: context.workspace.id,
-      })
+      const contactId = await contactIdFor(context, identifier)
       await contactService.updateFieldsAndCustomFields(
         { workspaceId: context.workspace.id, id: contactId },
         fields,
@@ -299,10 +300,7 @@ export const contactsCrudPublicRouter = {
     .errors(possibleErrorsOnMutatingResource)
     .handler(async ({ context, input }) => {
       const { identifier, ...fields } = input
-      const contactId = await contactService.resolveIdByIdentifier({
-        identifier,
-        workspaceId: context.workspace.id,
-      })
+      const contactId = await contactIdFor(context, identifier)
       await contactService.updateFieldsAndCustomFields(
         { workspaceId: context.workspace.id, id: contactId },
         fields,
@@ -326,10 +324,7 @@ export const contactsCrudPublicRouter = {
     )
     .errors(possibleErrorsOnMutatingResource)
     .handler(async ({ context, input }) => {
-      const contactId = await contactService.resolveIdByIdentifier({
-        identifier: input.identifier,
-        workspaceId: context.workspace.id,
-      })
+      const contactId = await contactIdFor(context, input.identifier)
       await contactService.deleteAndRecord({
         triggerSource: "api",
         workspaceId: context.workspace.id,
@@ -354,10 +349,7 @@ export const contactsCrudPublicRouter = {
     )
     .errors(possibleErrorsOnMutatingResource)
     .handler(async ({ context, input }) => {
-      const contactId = await contactService.resolveIdByIdentifier({
-        identifier: input.identifier,
-        workspaceId: context.workspace.id,
-      })
+      const contactId = await contactIdFor(context, input.identifier)
       await contactService.blockAndRecord({
         workspaceId: context.workspace.id,
         id: contactId,
@@ -381,10 +373,7 @@ export const contactsCrudPublicRouter = {
     )
     .errors(possibleErrorsOnMutatingResource)
     .handler(async ({ context, input }) => {
-      const contactId = await contactService.resolveIdByIdentifier({
-        identifier: input.identifier,
-        workspaceId: context.workspace.id,
-      })
+      const contactId = await contactIdFor(context, input.identifier)
       await contactService.unblockAndRecord({
         workspaceId: context.workspace.id,
         id: contactId,

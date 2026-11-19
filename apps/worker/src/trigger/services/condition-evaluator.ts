@@ -4,11 +4,15 @@ import {
 } from "@chatbotx.io/business"
 import {
   type OperatorType,
+  pipelineConditionValueSchema,
   type TriggerEventType,
   triggerEventTypes,
 } from "@chatbotx.io/database/partials"
 import type { WorkspaceModel } from "@chatbotx.io/database/types"
 import type {
+  CartItemEventMetadata,
+  OrderEventMetadata,
+  PipelineItemEventMetadata,
   ShoppingCartSentMetadata,
   UserAskedAboutProductMetadata,
 } from "@chatbotx.io/events"
@@ -32,6 +36,23 @@ const referencedProductIdsByEventType: Partial<
     const { product } = eventData as Partial<UserAskedAboutProductMetadata>
     return toProductIds(product ? [product] : [])
   },
+  [triggerEventTypes.enum.productOrdered]: (eventData) => {
+    const { products } = eventData as Partial<OrderEventMetadata>
+    return (products ?? []).flatMap((product) =>
+      product.productId ? [product.productId] : [],
+    )
+  },
+  [triggerEventTypes.enum.productAddedToCart]: cartProductIds,
+  [triggerEventTypes.enum.productRemovedFromCart]: cartProductIds,
+  [triggerEventTypes.enum.categoryAddedToCart]: (eventData) => {
+    const { product } = eventData as Partial<CartItemEventMetadata>
+    return product?.categoryIds ?? []
+  },
+}
+
+function cartProductIds(eventData: Record<string, unknown>): string[] {
+  const { product } = eventData as Partial<CartItemEventMetadata>
+  return product?.productId ? [product.productId] : []
 }
 
 function toProductIds(
@@ -83,6 +104,8 @@ export class ConditionEvaluator {
       case triggerEventTypes.enum.unsubscribedFromSequence:
       case triggerEventTypes.enum.contactReferredANewContact:
       case triggerEventTypes.enum.contactReferredExistingContact:
+      case triggerEventTypes.enum.contactBlockedBot:
+      case triggerEventTypes.enum.contactUnblockedBot:
       // The five WhatsApp call conditions the Triggers screen offers. They
       // carry no source or operator, so the event happening is the whole
       // condition, same as the ones above.
@@ -91,10 +114,38 @@ export class ConditionEvaluator {
       case triggerEventTypes.enum.callEnded:
       case triggerEventTypes.enum.callRecorded:
       case triggerEventTypes.enum.callTranscribed:
+      // Order and abandoned-cart events: the event happening is the condition.
+      case triggerEventTypes.enum.newOrder:
+      case triggerEventTypes.enum.orderAccepted:
+      case triggerEventTypes.enum.orderShipped:
+      case triggerEventTypes.enum.orderConcluded:
+      case triggerEventTypes.enum.orderCancelled:
+      case triggerEventTypes.enum.orderPaid:
+      case triggerEventTypes.enum.orderRefunded:
+      case triggerEventTypes.enum.cartAbandoned:
         return true
+
+      // Pipeline item events: `sourceId` pins one pipeline (null = any), and a
+      // moved-to-stage condition may pin its destination stage in `value`.
+      case triggerEventTypes.enum.pipelineItemCreated:
+      case triggerEventTypes.enum.pipelineItemMovedToStage:
+      case triggerEventTypes.enum.pipelineItemValueChanged:
+      case triggerEventTypes.enum.pipelineItemStatusChanged:
+      case triggerEventTypes.enum.pipelineItemPriorityChanged:
+        return this.evaluatePipelineItem(
+          sourceId,
+          value,
+          eventData.eventData as Partial<PipelineItemEventMetadata>,
+        )
 
       case triggerEventTypes.enum.shoppingCartSent:
       case triggerEventTypes.enum.userAskedAboutProduct:
+      case triggerEventTypes.enum.productOrdered:
+      case triggerEventTypes.enum.productAddedToCart:
+      case triggerEventTypes.enum.productRemovedFromCart:
+      // The category's id is pinned in `sourceId` and matched against the
+      // product's category and sub-category.
+      case triggerEventTypes.enum.categoryAddedToCart:
         return this.evaluateReferencedProduct(
           type,
           sourceId,
@@ -130,6 +181,20 @@ export class ConditionEvaluator {
     const referencedProductIds =
       referencedProductIdsByEventType[type]?.(eventData) ?? []
     return referencedProductIds.includes(pinnedProductId)
+  }
+
+  private evaluatePipelineItem(
+    pinnedPipelineId: string | null,
+    value: unknown,
+    eventData: Partial<PipelineItemEventMetadata>,
+  ): boolean {
+    if (pinnedPipelineId && pinnedPipelineId !== eventData.pipelineId) {
+      return false
+    }
+    // Only a moved-to-stage condition stores `value.stageId`; for the other
+    // pipeline events `value` is empty, so no stage is pinned.
+    const pinned = pipelineConditionValueSchema.safeParse(value)
+    return !pinned.success || pinned.data.stageId === eventData.stageId
   }
 
   /** Conditions pinned to a source (tag id, contact info type, …) match only that exact source. */

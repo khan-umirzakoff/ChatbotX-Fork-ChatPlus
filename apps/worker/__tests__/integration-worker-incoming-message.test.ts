@@ -1,20 +1,12 @@
 import { beforeEach, describe, expect, test, vi } from "vitest"
 
-// ---------------------------------------------------------------------------
 // Job-level ordering proof for the `incomingMessage` case in
-// `src/integration/worker.ts` (fix round 1 of Task 2 of
-// .superpowers/sdd/2026-08-31-messenger-ctm-profile-backfill): the
-// receiveMessage-level assertion in received-message.test.ts is a fine
-// proxy, but the brief's actual bullet asks for the refresh's resolution to
-// be proven ordered before the automated-response dispatch AT THE JOB
-// LEVEL, i.e. through the real `worker.ts` processor. Unlike
-// integration-worker-boot.test.ts, this file does NOT mock
-// `./handlers/received-message` — it boots the REAL `receiveMessage`
-// pipeline (mocking only its DB/Redis/channel-registry dependencies, same
-// convention as received-message.test.ts) so the real post-save
-// `refreshExistingContactProfile` call runs, while `resolveIncomingTextRouting`
-// and `automatedResponseService.enqueue` (the dispatch this bullet cares
-// about) stay mocked and observable.
+// `src/integration/worker.ts`: the receiveMessage-level assertion in
+// received-message.test.ts is a fine proxy, but this proves the profile refresh
+// resolves before automated-response dispatch through the real worker
+// processor. Unlike integration-worker-boot.test.ts, this file does not mock
+// `./handlers/received-message`; it boots the real receiveMessage pipeline
+// while mocking only DB, Redis, and channel-registry dependencies.
 // ---------------------------------------------------------------------------
 
 type CapturedWorker = {
@@ -123,6 +115,12 @@ const {
 // Worker-boot infra (mirrors integration-worker-boot.test.ts)
 // ---------------------------------------------------------------------------
 
+// The gated Google click lookup has its own suite (google-click-lookup.test.ts).
+vi.mock("../src/integration/handlers/google-click-lookup", () => ({
+  lookupAndPersistGoogleClick: vi.fn(async () => null),
+  persistNewContactGoogleClick: vi.fn(async () => undefined),
+}))
+
 vi.mock("bullmq", () => {
   class WorkerMock {
     close = vi.fn()
@@ -160,10 +158,6 @@ vi.mock("../src/integration/job-context", () => ({
 vi.mock("../src/integration/routing", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../src/integration/routing")>()),
   resolveIncomingTextRouting: mockResolveIncomingTextRouting,
-}))
-
-vi.mock("../src/integration/utils/message", () => ({
-  closeChatQueueEvents: vi.fn().mockResolvedValue(undefined),
 }))
 
 // Every OTHER handler module worker.ts wires into its switch — none of them
@@ -251,6 +245,9 @@ vi.mock("../src/integration/handlers/lead-ads", () => ({
 vi.mock("../src/integration/handlers/message-status", () => ({
   handleMessageStatus: vi.fn(),
 }))
+vi.mock("../src/integration/handlers/send-email", () => ({
+  recordEmailTrackingTransition: vi.fn(),
+}))
 vi.mock(
   "../src/integration/handlers/meta-conversions/send-meta-capi-event",
   () => ({ handleSendMetaCapiEvent: vi.fn() }),
@@ -302,6 +299,8 @@ vi.mock("@chatbotx.io/automated-response", () => ({
     enqueueFlowAction: vi.fn().mockResolvedValue(undefined),
     enqueueHandoffReentry: vi.fn().mockResolvedValue(undefined),
   },
+  isKeywordMediaFileType: (fileType: string) =>
+    ["image", "gif", "video"].includes(fileType),
 }))
 
 vi.mock("@chatbotx.io/database/client", () => ({
@@ -359,7 +358,44 @@ const CONTACT_PROFILE_NAME_CAPABILITIES: Record<
 
 vi.mock("@chatbotx.io/business", () => ({
   appointmentService: { cancelAppointmentByToken: vi.fn() },
-  publishToWorkspaceParty: mockPublishToWorkspaceParty,
+  // Mirror of the real pure helper — the module is fully mocked here.
+  getContactInputAttachments: (message: {
+    contentAttributes?: unknown
+    attachments?: unknown[] | null
+  }) =>
+    (message.contentAttributes as { type?: unknown } | null)?.type ===
+    "whatsapp_flow_response"
+      ? []
+      : (message.attachments ?? []),
+  flushAllPendingWorkspaceRealtimeEvents: vi.fn(),
+  // Pass-through: the real resolver signs proxy URLs for the realtime payload.
+  messageService: {
+    withResolvedAttachmentUrls: vi.fn(async (message: unknown) => message),
+  },
+  publishWorkspaceRealtimeEvent: vi.fn(),
+  queueWorkspaceRealtimeEvent: mockPublishToWorkspaceParty,
+  queueMessageCreatedEvent: (
+    workspaceId: string,
+    data: unknown,
+    conversation: {
+      assignedInboxTeamId?: string | null
+      assignedUserId?: string | null
+      inboxId?: string | null
+    },
+  ) =>
+    mockPublishToWorkspaceParty(workspaceId, {
+      eventType: "messageCreated",
+      data,
+      route: {
+        assignedTeamIds: conversation.assignedInboxTeamId
+          ? [conversation.assignedInboxTeamId]
+          : [],
+        assignedUserIds: conversation.assignedUserId
+          ? [conversation.assignedUserId]
+          : [],
+        ...(conversation.inboxId ? { inboxId: conversation.inboxId } : {}),
+      },
+    }),
   buildContext: mockBuildContext,
   resolveTenantSettings: mockresolveTenantSettings,
   updateContactFromMessage: mockUpdateContactFromMessage,
@@ -462,8 +498,9 @@ vi.mock("@chatbotx.io/events", () => ({
   setWebhookExecutionContext: vi.fn(),
 }))
 
-vi.mock("@chatbotx.io/partysocket-config", () => ({
+vi.mock("@chatbotx.io/realtime-protocol", () => ({
   RealtimeEventType: { messageCreated: "messageCreated" },
+  routeForConversation: vi.fn(),
 }))
 
 vi.mock("@chatbotx.io/sdk", async (importOriginal) => ({
@@ -517,7 +554,15 @@ vi.mock("@chatbotx.io/encryption", () => ({
   verifyAppointmentCancelPostback: vi.fn(),
 }))
 
-vi.mock("@chatbotx.io/worker-config", () => ({
+vi.mock("@chatbotx.io/worker-config", async (importOriginal) => ({
+  // The real job builder: the tests assert what producers actually enqueue.
+  buildResolveStepInputJob: (
+    await importOriginal<typeof import("@chatbotx.io/worker-config")>()
+  ).buildResolveStepInputJob,
+  // heavy-step-runner builds its outcome schema from this at import time.
+  heavyStepOutputValueSchema: await import("zod").then(({ z }) =>
+    z.object({ customFieldId: z.string(), value: z.string() }),
+  ),
   isNoRedisEnv: () => true,
   defaultWorkerOptions: {
     concurrency: 5,
@@ -526,17 +571,24 @@ vi.mock("@chatbotx.io/worker-config", () => ({
   },
   getRedisConnection: () => ({}),
   getQueueConnection: () => ({}),
-  closeHeavyQueueEvents: vi.fn().mockResolvedValue(undefined),
-  closeIntegrationQueueEvents: vi.fn().mockResolvedValue(undefined),
+  closeAllQueueEvents: vi.fn().mockResolvedValue(undefined),
   getHeavyJobCompletionWaitTimeoutMs: vi.fn().mockReturnValue(10 * 60 * 1000),
-  queueNames: { enum: { integration: "integration" } },
+  queueNames: {
+    enum: { integration: "integration", chat: "chat", low: "low" },
+  },
   HeavyJobAction: { aiGenerateImage: "aiGenerateImage" },
   ChatJobAction: { sendChatMessage: "sendChatMessage" },
-  chatQueue: { add: vi.fn().mockResolvedValue(undefined) },
+  chatQueue: {
+    add: vi.fn().mockResolvedValue(undefined),
+    getJobCounts: vi.fn().mockResolvedValue({}),
+  },
+  lowQueue: { getJobCounts: vi.fn().mockResolvedValue({}) },
   IntegrationJobAction: {
     incomingMessage: "incomingMessage",
+    incomingMessageEcho: "incomingMessageEcho",
     runFlowPostback: "runFlowPostback",
     runFlowQuickReply: "runFlowQuickReply",
+    resolveStepInput: "resolveStepInput",
     runRef: "runRef",
     threadControlEvent: "threadControlEvent",
     threadControlAction: "threadControlAction",
@@ -544,11 +596,18 @@ vi.mock("@chatbotx.io/worker-config", () => ({
   integrationQueue: {
     add: vi.fn().mockResolvedValue(undefined),
     getJob: vi.fn().mockResolvedValue(undefined),
+    getJobCounts: vi.fn().mockResolvedValue({}),
   },
 }))
 
 vi.mock("../src/lib/logger", () => ({
-  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
+  logger: {
+    debug: vi.fn(),
+    error: vi.fn(),
+    fatal: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+  },
 }))
 
 vi.mock("../src/lib/db", () => ({
@@ -1084,6 +1143,44 @@ describe("integration worker — conversation routing (thread control)", () => {
     expect(mockAutomatedResponseEnqueue).not.toHaveBeenCalled()
   })
 
+  describe("a step's Skip button tap", () => {
+    const skipTap = () => ({
+      ...parsedMessage(),
+      message: { ...parsedMessage().message, text: "Skip" },
+      postbackAction: "STEP_INPUT_SKIP|11612473309626368",
+    })
+
+    test("is resolved by its own job and never routed to the pending challenge as a typed reply", async () => {
+      mockRunChannelHandler.mockResolvedValue(skipTap())
+
+      await runJob(incomingJob)
+
+      expect(mockCreateOrUpdate).toHaveBeenCalled()
+      expect(mockResolveIncomingTextRouting).not.toHaveBeenCalled()
+      expect(mockAutomatedResponseEnqueue).not.toHaveBeenCalled()
+    })
+
+    test("a standby delivery of the tap is stored but resolves nothing", async () => {
+      mockRunChannelHandler.mockResolvedValue({
+        ...skipTap(),
+        threadControl: { delivery: "standby" },
+      })
+
+      await runJob(incomingJob)
+
+      expect(mockResolveIncomingTextRouting).not.toHaveBeenCalled()
+      expect(mockAutomatedResponseEnqueue).not.toHaveBeenCalled()
+    })
+
+    test("an ordinary typed message still routes as before (regression)", async () => {
+      mockRunChannelHandler.mockResolvedValue(parsedMessage())
+
+      await runJob(incomingJob)
+
+      expect(mockResolveIncomingTextRouting).toHaveBeenCalled()
+    })
+  })
+
   test("a standby delivery with no persistable message still records ownership", async () => {
     // e.g. a Messenger standby postback without a message id: message is null,
     // but the standby still proves another app owns the thread.
@@ -1132,6 +1229,15 @@ describe("integration worker — conversation routing (thread control)", () => {
 
     expect(mockResolveIncomingTextRouting).toHaveBeenCalledTimes(1)
     expect(mockAutomatedResponseEnqueue).toHaveBeenCalledTimes(1)
+  })
+
+  test("an incomingMessageEcho still on the integration queue (drain) is ingested like an incoming message", async () => {
+    mockRunChannelHandler.mockResolvedValue(parsedMessage())
+
+    await runJob({ ...incomingJob, type: "incomingMessageEcho" })
+
+    expect(mockCreateOrUpdate).toHaveBeenCalledTimes(1)
+    expect(mockResolveIncomingTextRouting).toHaveBeenCalledTimes(1)
   })
 
   test("no routing info on the parse result: a delivery never touches thread control", async () => {

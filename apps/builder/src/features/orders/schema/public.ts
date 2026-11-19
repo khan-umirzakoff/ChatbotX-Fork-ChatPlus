@@ -1,0 +1,331 @@
+import {
+  fulfillmentStatuses,
+  onlinePaymentProviders,
+  orderActorTypes,
+  orderPaymentStatuses,
+  orderShippingAddressSchema,
+  orderSources,
+  orderStatuses,
+  paymentMethods,
+  paymentStatuses,
+  shippingTypes,
+} from "@chatbotx.io/database/partials"
+import { zodBigintAsString } from "@chatbotx.io/utils"
+import { z } from "zod"
+import { publicContactIdentifier } from "@/lib/public-api/contact-identifier"
+
+export const publicOrderResource = z.object({
+  id: z.string(),
+  number: z.number().describe("Order number, counted per workspace."),
+  status: orderStatuses,
+  source: orderSources,
+  paymentMethod: paymentMethods.describe(
+    "`cod` cash on delivery, `stripe` card or `paypal`, paid online.",
+  ),
+  paymentStatus: paymentStatuses.describe(
+    "`unpaid`, `paid`, or `refunded` once an online payment went back.",
+  ),
+  paymentExpiresAt: z
+    .date()
+    .nullable()
+    .describe(
+      "An online order still unpaid is cancelled at this time. Null for cash on delivery and once paid.",
+    ),
+  paidAt: z.date().nullable(),
+  currency: z.string().describe("ISO 4217 code all amounts are in."),
+  subtotal: z.number().describe("Sum of the lines before discounts and tax."),
+  discountTotal: z.number(),
+  shippingTotal: z.number(),
+  serviceFeeTotal: z.number(),
+  taxTotal: z.number(),
+  couponDiscount: z
+    .number()
+    .describe("Taken off by the discount code (`discountCode`)."),
+  discountCode: z
+    .string()
+    .nullable()
+    .describe("The discount code the order used, kept if the code is deleted."),
+  total: z.number().describe("What the customer pays."),
+  contactId: z.string().nullable(),
+  conversationId: z.string().nullable(),
+  inboxId: z.string().nullable(),
+  channel: z.string().nullable(),
+  customerName: z.string().nullable(),
+  customerEmail: z.string().nullable(),
+  customerPhone: z.string().nullable(),
+  shippingType: shippingTypes.nullable(),
+  shippingAddress: orderShippingAddressSchema.nullable(),
+  note: z.string().nullable(),
+  rating: z
+    .number()
+    .nullable()
+    .describe("1–5 when the customer rated the order."),
+  ratingComment: z.string().nullable(),
+  cancelReason: z.string().nullable(),
+  acceptedAt: z.date().nullable(),
+  shippedAt: z.date().nullable(),
+  concludedAt: z.date().nullable(),
+  cancelledAt: z.date().nullable(),
+  externalId: z
+    .string()
+    .nullable()
+    .describe(
+      "The store's order id, for an order mirrored from a connected store: Shopify's order GID (`source: shopify`) or the WooCommerce site and order id such as `example.com#1234` (`source: woocommerce`).",
+    ),
+  externalName: z
+    .string()
+    .nullable()
+    .describe("The store's order name or number, e.g. `#1004`."),
+  fulfillmentStatus: fulfillmentStatuses
+    .nullable()
+    .describe(
+      "The mirrored store's fulfillment state; null for our own orders.",
+    ),
+  trackingCompany: z.string().nullable(),
+  trackingNumber: z.string().nullable(),
+  trackingUrl: z.string().nullable(),
+  createdAt: z.date(),
+  updatedAt: z.date(),
+})
+
+export const publicOrderListItemResource = publicOrderResource.extend({
+  itemCount: z.number().describe("Total quantity across the order's lines."),
+})
+
+export const publicOrderItemResource = z.object({
+  id: z.string(),
+  productId: z
+    .string()
+    .nullable()
+    .describe("Null once the product is deleted or for an unlinked item."),
+  variantId: z.string().nullable(),
+  vendorId: z.string().nullable(),
+  name: z.string(),
+  variantLabel: z.string().nullable(),
+  sku: z.string().nullable(),
+  retailerId: z.string().nullable(),
+  imageUrl: z.string().nullable(),
+  vendorName: z.string().nullable(),
+  unitPrice: z.number(),
+  quantity: z.number(),
+  discountPercent: z.number(),
+  taxPercent: z.number(),
+  discountTotal: z.number(),
+  taxTotal: z.number(),
+  lineTotal: z.number(),
+})
+
+export const publicOrderHistoryResource = z.object({
+  id: z.string(),
+  fromStatus: orderStatuses.nullable(),
+  toStatus: orderStatuses,
+  actorType: orderActorTypes,
+  actorUser: z
+    .object({ id: z.string(), name: z.string().nullable() })
+    .nullish(),
+  note: z.string().nullable(),
+  createdAt: z.date(),
+})
+
+export const publicOrderPaymentResource = z.object({
+  id: z.string(),
+  provider: onlinePaymentProviders,
+  status: orderPaymentStatuses.describe(
+    "`open` the page can still be paid, `paid`, `expired`, or `refunded`.",
+  ),
+  amount: z.number(),
+  currency: z.string(),
+  livemode: z.boolean().describe("False for a test or sandbox payment."),
+  providerReference: z
+    .string()
+    .describe("The Stripe Checkout Session or PayPal order id."),
+  transactionId: z
+    .string()
+    .nullable()
+    .describe("The Stripe payment intent or PayPal capture id, once paid."),
+  refundId: z.string().nullable(),
+  expiresAt: z.date(),
+  paidAt: z.date().nullable(),
+  refundedAt: z.date().nullable(),
+  createdAt: z.date(),
+})
+
+export const publicOrderDetailResource = publicOrderResource.extend({
+  items: z.array(publicOrderItemResource),
+  history: z.array(publicOrderHistoryResource),
+  payments: z
+    .array(publicOrderPaymentResource)
+    .describe("Each attempt to pay the order online, newest first."),
+})
+export type OrderDetailResource = z.infer<typeof publicOrderDetailResource>
+
+export const listOrdersPublicRequest = z.object({
+  status: z
+    .array(orderStatuses)
+    .optional()
+    .describe("Only orders in these statuses."),
+  source: z
+    .array(orderSources)
+    .optional()
+    .describe(
+      "Only orders from these sources. Left out, the store's current source decides: `shopify` orders while `general.storeSource` is `shopify`, all others otherwise.",
+    ),
+  paymentStatus: z
+    .array(paymentStatuses)
+    .optional()
+    .describe("Only orders in these payment states."),
+  fulfillmentStatus: z
+    .array(fulfillmentStatuses)
+    .optional()
+    .describe(
+      "Only mirrored (Shopify, WooCommerce) orders in these fulfillment states.",
+    ),
+  contactId: zodBigintAsString()
+    .optional()
+    .describe("Only this contact's orders. Get it from `contacts.list`."),
+  from: z.coerce
+    .date()
+    .optional()
+    .describe("Placed at or after this time (ISO 8601)."),
+  to: z.coerce
+    .date()
+    .optional()
+    .describe("Placed before this time (ISO 8601)."),
+  keyword: z
+    .string()
+    .trim()
+    .max(255)
+    .optional()
+    .describe(
+      "An order number (ours, or the store's such as `#1004`), or part of the customer's name, phone or email.",
+    ),
+  page: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .default(1)
+    .describe("Page, from 1; defaults to 1."),
+  // Always paged: each order carries its lines, so "every order" is unbounded.
+  perPage: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .default(20)
+    .describe("Orders per page, up to 100; defaults to 20."),
+})
+
+export const exportOrdersPublicRequest = listOrdersPublicRequest.omit({
+  page: true,
+  perPage: true,
+})
+
+export const exportOrdersPublicResponse = z.object({
+  csv: z
+    .string()
+    .describe(
+      "The orders as CSV (header row first): order, created at, status, payment, fulfillment, customer, email, phone, items, currency, total.",
+    ),
+  rowCount: z.number().int(),
+  truncated: z
+    .boolean()
+    .describe("True when more orders matched than one export returns (5000)."),
+})
+
+export const listOrdersPublicResponse = z.object({
+  data: z.array(publicOrderListItemResource),
+  pageCount: z.number(),
+})
+
+export const createOrderPublicRequest = z.object({
+  paymentMethod: paymentMethods
+    .optional()
+    .describe(
+      "How the customer pays; `cod` (cash on delivery) by default. `stripe` and `paypal` must be enabled in `ecommerceSettings` (`payments.paymentMethods`) and need a `contact`: the order then waits for its payment — get the page to pay on with `orders.getPaymentLink` and send it to the customer.",
+    ),
+  contact: publicContactIdentifier
+    .optional()
+    .describe(
+      "The customer, as id:123, email:… or phone:…. Optional; get ids from `contacts.list`.",
+    ),
+  items: z
+    .array(
+      z.object({
+        productId: zodBigintAsString().describe(
+          "Product id. Get it from `products.list`.",
+        ),
+        variantId: zodBigintAsString()
+          .nullish()
+          .describe(
+            "Required for a product with variants: an enabled variant id from `products.get`.",
+          ),
+        quantity: z.number().int().min(1).max(10_000),
+      }),
+    )
+    .min(1)
+    .max(100)
+    .describe("What is ordered. Prices come from the products."),
+  customerName: z
+    .string()
+    .trim()
+    .max(255)
+    .nullish()
+    .describe("Buyer name shown on the order."),
+  customerEmail: z
+    .string()
+    .trim()
+    .email()
+    .max(255)
+    .nullish()
+    .describe("Buyer email."),
+  customerPhone: z
+    .string()
+    .trim()
+    .max(64)
+    .nullish()
+    .describe("Buyer phone number."),
+  shippingType: shippingTypes
+    .nullish()
+    .describe("Defaults to the store's shipping type."),
+  shippingAddress: orderShippingAddressSchema
+    .nullish()
+    .describe("Where to deliver; ignored for store pickup."),
+  note: z
+    .string()
+    .trim()
+    .max(2000)
+    .nullish()
+    .describe("Customer note shown on the order."),
+  discountCode: z
+    .string()
+    .trim()
+    .max(64)
+    .nullish()
+    .describe(
+      "A discount code to apply (`discountCodes.list`); one that cannot be used refuses the order. Check it first with `discountCodes.validate`.",
+    ),
+})
+
+export const orderPaymentLinkResponse = z.object({
+  url: z
+    .string()
+    .describe("The Stripe or PayPal page the customer pays the order on."),
+  expiresAt: z
+    .date()
+    .describe("The order is cancelled if it is not paid by then."),
+})
+
+export const orderIdRequest = z.object({
+  id: zodBigintAsString().describe("Order id. Get it from `orders.list`."),
+})
+
+export const transitionOrderPublicRequest = orderIdRequest.extend({
+  message: z
+    .string()
+    .trim()
+    .max(1000)
+    .nullish()
+    .describe(
+      "Optional message sent to the customer in the order's conversation and kept on the order's history (as the reason, when cancelling).",
+    ),
+})

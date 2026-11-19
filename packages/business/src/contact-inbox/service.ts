@@ -22,9 +22,9 @@ import {
   type ContactInboxIdentityFields,
   type ContactInboxIdentityGuard,
   contactInboxOperationalColumns,
-  contactInboxPostRepository,
   contactInboxRepository,
   type GoogleClickInboxRow,
+  workspaceRepository,
 } from "@chatbotx.io/database/repositories"
 import type {
   ContactInboxIdentityChangeReason,
@@ -54,6 +54,8 @@ import type {
 import { GOOGLE_CLICK_REFERRAL_KEYS } from "@chatbotx.io/utils/google-click"
 import { BaseService } from "../base.service"
 import { PROFILE_NAME_BLANK_CHARACTERS } from "../contact/profile-refresh/rules"
+import type { ReferralOccurrence } from "../contact-referral-event/ad-touch"
+import { contactReferralEventService } from "../contact-referral-event/service"
 import { logger } from "../logger"
 import {
   type ContactInboxBackfillField,
@@ -111,6 +113,7 @@ export type ContactInboxTrackingData = Partial<
     | "lastOutboundMessageAt"
     | "lastCommentMessageId"
     | "lastCommentMessageAt"
+    | "lastStoryId"
     | "contactLastReadAt"
     | "consecutiveFailedReply"
     | "lastInputFailure"
@@ -178,14 +181,12 @@ export const serializeProfileSnapshotCursor = (row: {
     ? `${row.nextAttemptAt.toISOString()}|${row.contactInboxId}`
     : undefined
 
+// A row comparison, not `a > x OR (a = x AND id > y)`: Postgres only uses the
+// pair as an index bound on `ContactInbox_profileSnapshot_pending_idx` in this
+// form. The cursor lives in Redis and drifts deeper into a long-lived pending
+// backlog each run, so the OR form re-walked the index from its start per page.
 const profileSnapshotCursorWhere = (cursor: ProfileSnapshotCursor) =>
-  or(
-    gt(contactInboxModel.profileSnapshotNextAttemptAt, cursor.at),
-    and(
-      eq(contactInboxModel.profileSnapshotNextAttemptAt, cursor.at),
-      gt(contactInboxModel.id, cursor.id),
-    ),
-  )
+  sql`(${contactInboxModel.profileSnapshotNextAttemptAt}, ${contactInboxModel.id}) > (${cursor.at}, ${cursor.id})`
 
 type FindByProps = {
   id: string
@@ -199,15 +200,27 @@ const GOOGLE_CLICK_KEYS: ReadonlySet<string> = new Set(
   GOOGLE_CLICK_REFERRAL_KEYS,
 )
 
+/**
+ * The ad's own copy. A referral that names a NEW ad replaces it as a whole, so
+ * a headline or body the new ad does not carry must clear the previous ad's
+ * value instead of letting the jsonb merge keep it.
+ */
+const AD_COPY_KEYS: ReadonlySet<string> = new Set(["adTitle", "adBody"])
+
 const compactReferral = (
   referral: ContactInboxReferral,
 ): Partial<ContactInboxReferral> => {
   const nextReferral: Partial<ContactInboxReferral> = {}
+  const startsNewAd = typeof referral.adId === "string" && referral.adId !== ""
 
   for (const [key, value] of Object.entries(referral)) {
     // A newer Google click carries an explicit `null` for the click id it does
-    // not use (gbraid clears gclid and vice-versa); every other null is noise.
-    if (value === null && GOOGLE_CLICK_KEYS.has(key)) {
+    // not use (gbraid clears gclid and vice-versa), and a newer ad clears the
+    // copy it does not carry; every other null is noise.
+    if (
+      value === null &&
+      (GOOGLE_CLICK_KEYS.has(key) || (startsNewAd && AD_COPY_KEYS.has(key)))
+    ) {
       Object.assign(nextReferral, { [key]: null })
       continue
     }
@@ -360,6 +373,16 @@ export const buildContactInboxIdentityWhere = (props: {
   return and(eq(contactInboxModel.inboxId, inboxId), or(...identityPredicates))
 }
 
+type UpdateTrackingProps = {
+  tx?: DatabaseClient
+  contactInboxId: string
+  contactId: string
+  workspaceId: string
+  data: ContactInboxTrackingData
+  /** Logs `data.referral` as an ad touch; without it only the snapshot moves. */
+  referralOccurrence?: ReferralOccurrence
+}
+
 class ContactInboxService extends BaseService {
   async claimProfileSnapshot(props: {
     contactInboxId: string
@@ -379,11 +402,10 @@ class ContactInboxService extends BaseService {
     )
 
     return await db.transaction(async (tx) => {
-      const canWrite =
-        await contactInboxPostRepository.lockWorkspaceForPostWrite(
-          { workspaceId: props.workspaceId },
-          tx,
-        )
+      const canWrite = await workspaceRepository.lockWorkspaceForChildWrite(
+        { workspaceId: props.workspaceId },
+        tx,
+      )
       if (!canWrite) {
         return
       }
@@ -454,11 +476,10 @@ class ContactInboxService extends BaseService {
       PROFILE_SNAPSHOT_MAX_RETRY_MS,
     )
     const updated = await db.transaction(async (tx) => {
-      const canWrite =
-        await contactInboxPostRepository.lockWorkspaceForPostWrite(
-          { workspaceId: props.workspaceId },
-          tx,
-        )
+      const canWrite = await workspaceRepository.lockWorkspaceForChildWrite(
+        { workspaceId: props.workspaceId },
+        tx,
+      )
       if (!canWrite) {
         return
       }
@@ -740,6 +761,17 @@ class ContactInboxService extends BaseService {
         dynamicTags: (result) =>
           result ? this.getTrackingCacheTags(result.contactId) : undefined,
       },
+    )
+  }
+
+  async findByIdForWorkspace(props: {
+    id: string
+    tx?: DatabaseClient
+    workspaceId: string
+  }) {
+    return await contactInboxRepository.findFullByIdForWorkspace(
+      props,
+      props.tx,
     )
   }
 
@@ -1059,17 +1091,83 @@ class ContactInboxService extends BaseService {
     return updated
   }
 
-  async updateTracking(props: {
-    tx?: DatabaseClient
-    contactInboxId: string
-    contactId: string
-    workspaceId: string
-    data: ContactInboxTrackingData
-  }): Promise<ContactInboxTrackingInvalidation | null> {
-    const { tx = db, contactInboxId, contactId, data, workspaceId } = props
+  /**
+   * The touch log is secondary to the snapshot and to the message that carries
+   * the referral, so a failed write must not fail either: a retry would find
+   * the message already stored and skip its side effects, losing the automation.
+   * It runs in its own transaction (a savepoint inside the caller's) so the
+   * touch and its activity land together or not at all, and the caller's
+   * transaction stays usable. Only the error's name is logged: its text embeds
+   * the query parameters, which include the click id.
+   */
+  private async recordAdTouchesContained(
+    input: Parameters<typeof contactReferralEventService.recordAdTouches>[0],
+    tx: DatabaseClient,
+  ): Promise<void> {
+    try {
+      await tx.transaction((savepoint) =>
+        contactReferralEventService.recordAdTouches(input, savepoint),
+      )
+    } catch (error) {
+      logger.error(
+        {
+          errName: error instanceof Error ? error.name : "NonError",
+          workspaceId: input.workspaceId,
+          contactInboxId: input.contactInboxId,
+        },
+        "updateTracking: could not record the ad touch",
+      )
+    }
+  }
+
+  /** Best-effort touch log: a failed touch never fails the update. */
+  async updateTracking(
+    props: UpdateTrackingProps,
+  ): Promise<ContactInboxTrackingInvalidation | null> {
+    const invalidation = await this.applyTracking(props, "contained")
+    if (invalidation && !props.tx) {
+      await this.invalidateTracking(invalidation)
+    }
+    return invalidation
+  }
+
+  /**
+   * The touch must commit with the snapshot: a failed touch fails the update
+   * and leaves the snapshot unchanged, so a later attempt can still record it
+   * (a click already in the snapshot is not offered again). For a caller whose
+   * failure is retried on its own, not one that carries a message or a
+   * user-facing action, which use `updateTracking`.
+   */
+  async updateTrackingAtomic(
+    props: Omit<UpdateTrackingProps, "tx"> & {
+      referralOccurrence: ReferralOccurrence
+    },
+  ): Promise<ContactInboxTrackingInvalidation | null> {
+    const invalidation = await db.transaction((tx) =>
+      this.applyTracking({ ...props, tx }, "atomic"),
+    )
+    if (invalidation) {
+      await this.invalidateTracking(invalidation)
+    }
+    return invalidation
+  }
+
+  private async applyTracking(
+    props: UpdateTrackingProps & { tx?: DatabaseClient },
+    touchLog: "contained" | "atomic",
+  ): Promise<ContactInboxTrackingInvalidation | null> {
+    const {
+      tx = db,
+      contactInboxId,
+      contactId,
+      data,
+      workspaceId,
+      referralOccurrence,
+    } = props
     const {
       firstInteractionAt: explicitFirstInteractionAt,
       lastIncomingMessageAt: explicitLastIncomingMessageAt,
+      contactLastReadAt: explicitContactLastReadAt,
       lastUserInput,
       lastUserInputType,
       referral,
@@ -1080,6 +1178,13 @@ class ContactInboxService extends BaseService {
     if (explicitFirstInteractionAt) {
       Object.assign(updateData, {
         firstInteractionAt: sql`CASE WHEN ${contactInboxModel.firstInteractionAt} IS NULL OR ${contactInboxModel.firstInteractionAt} > ${explicitFirstInteractionAt} THEN ${explicitFirstInteractionAt} ELSE ${contactInboxModel.firstInteractionAt} END`,
+      })
+    }
+    if (explicitContactLastReadAt) {
+      // Advance-only, like lastIncomingMessageAt: concurrent receipts must not
+      // move the read mark backwards.
+      Object.assign(updateData, {
+        contactLastReadAt: sql`GREATEST(${contactInboxModel.contactLastReadAt}, ${explicitContactLastReadAt})`,
       })
     }
     if (explicitLastIncomingMessageAt) {
@@ -1124,9 +1229,13 @@ class ContactInboxService extends BaseService {
           this.workspaceScope(workspaceId),
         ),
       )
-      .returning({ id: contactInboxModel.id })
+      .returning({
+        id: contactInboxModel.id,
+        channel: contactInboxModel.channel,
+      })
 
-    if (updatedRows.length === 0) {
+    const [updatedRow] = updatedRows
+    if (!updatedRow) {
       this.logSkippedTrackingUpdate({
         contactInboxId,
         contactId,
@@ -1136,12 +1245,23 @@ class ContactInboxService extends BaseService {
       return null
     }
 
-    const invalidation = this.createTrackingInvalidation(contactId)
-    if (!props.tx) {
-      await this.invalidateTracking(invalidation)
+    if (referral && referralOccurrence) {
+      const touches = {
+        workspaceId,
+        contactId,
+        contactInboxId,
+        channel: updatedRow.channel,
+        referral,
+        occurrence: referralOccurrence,
+      }
+      if (touchLog === "atomic") {
+        await contactReferralEventService.recordAdTouches(touches, tx)
+      } else {
+        await this.recordAdTouchesContained(touches, tx)
+      }
     }
 
-    return invalidation
+    return this.createTrackingInvalidation(contactId)
   }
 
   /**
@@ -1161,11 +1281,10 @@ class ContactInboxService extends BaseService {
   }): Promise<boolean> {
     const now = new Date()
     const contactId = await db.transaction(async (tx) => {
-      const canWrite =
-        await contactInboxPostRepository.lockWorkspaceForPostWrite(
-          { workspaceId: props.workspaceId },
-          tx,
-        )
+      const canWrite = await workspaceRepository.lockWorkspaceForChildWrite(
+        { workspaceId: props.workspaceId },
+        tx,
+      )
       if (!canWrite) {
         return
       }

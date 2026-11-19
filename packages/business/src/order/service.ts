@@ -1,0 +1,1859 @@
+import {
+  type DatabaseClient,
+  db,
+  isUniqueViolationError,
+} from "@chatbotx.io/database/client"
+import {
+  type EcommerceSettings,
+  type ExternalStoreSource,
+  getOrderStatusesAllowedBefore,
+  isAwaitingOnlinePayment,
+  isExternalStoreSource,
+  isOnlinePaymentMethod,
+  type OrderActorType,
+  type OrderShippingAddress,
+  type OrderSource,
+  type OrderStatus,
+  orderSources,
+  PAYMENT_EXPIRED_CANCEL_REASON,
+  PAYMENT_EXPIRY_MINUTES,
+  type PaymentMethod,
+  SHIPPING_TYPES_BY_MODE,
+  type ShippingType,
+} from "@chatbotx.io/database/partials"
+import {
+  ecommerceSettingsRepository,
+  type OrderInsertValues,
+  type OrderItemInsertValues,
+  type OrderListInput,
+  type OrderUpdateValues,
+  orderRepository,
+  productRepository,
+} from "@chatbotx.io/database/repositories"
+import type { OrderModel } from "@chatbotx.io/database/types"
+import {
+  emitOrderStatus,
+  emitProductOrdered,
+  type OrderEventMetadata,
+  type OrderStatusEventType,
+} from "@chatbotx.io/events"
+import {
+  computeLinePrice,
+  percentOf,
+  roundMoney,
+  stackDiscountPercents,
+  sumMoney,
+} from "@chatbotx.io/utils/money"
+import {
+  getNewOrderNotificationJobId,
+  IntegrationJobAction,
+  integrationQueue,
+  NotificationJobAction,
+  notificationQueue,
+} from "@chatbotx.io/worker-config"
+import { BaseService } from "../base.service"
+import { conversationService } from "../conversation/service"
+import type { CouponLine } from "../discount-code/pricing"
+import {
+  type AppliedDiscount,
+  type AvailableDiscount,
+  type DiscountOrderContext,
+  discountCodeService,
+} from "../discount-code/service"
+import { ecommerceSettingsService } from "../ecommerce-settings/service"
+import { ChatbotXException, notFoundException } from "../errors"
+import { externalStoreManagedException } from "../external-store/errors"
+import { logger } from "../logger"
+import { messageService } from "../message/service"
+import {
+  assertDeletableWithPayments,
+  settlePaymentsForCancel,
+} from "../order-payment/settle"
+import { paymentMethodUnavailableException } from "../payment-provider/errors"
+import { workspaceService } from "../workspace/service"
+import {
+  buildOrderConfirmationText,
+  buildOrderStatusText,
+} from "./customer-messages"
+import {
+  orderAwaitingPaymentException,
+  orderBelowMinimumException,
+  orderBelowVendorMinimumException,
+  orderEmptyException,
+  orderInvalidStatusTransitionException,
+  orderingUnavailableException,
+  orderOutOfStockException,
+  orderPaymentContactRequiredException,
+  orderProductUnavailableException,
+  orderShippingTypeUnavailableException,
+} from "./errors"
+import { resolveCustomerMessageLanguage } from "./message-language"
+
+/** Who placed or moved an order, for its timeline. */
+export type OrderActor = {
+  type: OrderActorType
+  userId?: string | null
+}
+
+/** The conversation an order belongs to, when it has one. */
+export type OrderContactRef = {
+  contactId?: string | null
+  contactInboxId?: string | null
+  inboxId?: string | null
+  conversationId?: string | null
+  channel?: string | null
+}
+
+export type PlaceOrderItem = {
+  productId: string
+  /** Required for a product with variants, forbidden for one without. */
+  variantId?: string | null
+  quantity: number
+}
+
+export type PlaceOrderInput = {
+  workspaceId: string
+  source: OrderSource
+  actor: OrderActor
+  contact?: OrderContactRef
+  items: PlaceOrderItem[]
+  customerName?: string | null
+  customerEmail?: string | null
+  customerPhone?: string | null
+  /**
+   * Delivery or pickup. Must be one the store offers; when the store offers
+   * only one, it is used and this may be left out.
+   */
+  shippingType?: ShippingType | null
+  shippingAddress?: OrderShippingAddress | null
+  note?: string | null
+  /** A code the customer typed; an unusable one refuses the order. */
+  discountCode?: string | null
+  /**
+   * Without a typed code, apply the automatic code that takes off the most
+   * (the web shop does; an API order only gets the code it names).
+   */
+  autoApplyDiscount?: boolean
+  /**
+   * How the customer pays; cash on delivery when left out. Stripe and PayPal
+   * must be offered by the store, and the order waits for its payment
+   * (`paymentExpiresAt`) before anything about it is announced.
+   */
+  paymentMethod?: PaymentMethod
+  /**
+   * Runs inside the order's transaction once the order is written — the web
+   * shop empties the cart here, so a failed order never loses it.
+   */
+  onPlaced?: (order: OrderModel, tx: DatabaseClient) => Promise<void>
+}
+
+type ProductForOrder = Awaited<
+  ReturnType<typeof productRepository.findForOrder>
+>[number]
+
+type PricedLine = OrderItemInsertValues & {
+  gross: number
+  /** Stock is taken from this product. */
+  stockProductId: string
+}
+
+type OrderTotals = Pick<
+  OrderModel,
+  | "subtotal"
+  | "discountTotal"
+  | "shippingTotal"
+  | "serviceFeeTotal"
+  | "taxTotal"
+  | "couponDiscount"
+  | "total"
+>
+
+const STATUS_TIMESTAMP_COLUMNS = {
+  accepted: "acceptedAt",
+  shipped: "shippedAt",
+  concluded: "concludedAt",
+  cancelled: "cancelledAt",
+} as const satisfies Partial<Record<OrderStatus, keyof OrderUpdateValues>>
+
+/** The trigger event of the status an order moved to. */
+const ORDER_STATUS_EVENTS: Record<OrderStatus, OrderStatusEventType> = {
+  pending: "newOrder",
+  accepted: "orderAccepted",
+  shipped: "orderShipped",
+  concluded: "orderConcluded",
+  cancelled: "orderCancelled",
+}
+
+/** Most rows one export returns. */
+export const ORDER_EXPORT_LIMIT = 5000
+
+/** The repository's page cap; the export reads that many orders at a time. */
+const ORDER_EXPORT_PAGE_SIZE = 50
+
+/** One mirrored order per store order: the unique key on `externalId`. */
+const EXTERNAL_ORDER_CONSTRAINT = "Order_workspaceId_externalId_key"
+
+/**
+ * Quoted when it holds a comma, quote or line break; a leading `=`, `+`,
+ * `-` or `@` is prefixed with `'` so a spreadsheet never runs it as a formula.
+ */
+const CSV_FORMULA_START = /^[=+\-@]/
+const CSV_NEEDS_QUOTES = /[",\r\n]/
+
+const toCsvCell = (value: string) => {
+  const safe = CSV_FORMULA_START.test(value) ? `'${value}` : value
+  return CSV_NEEDS_QUOTES.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe
+}
+
+/** An order in one of these still holds the stock it took. */
+const STOCK_HOLDING_STATUSES: readonly OrderStatus[] = [
+  "pending",
+  "accepted",
+  "shipped",
+]
+
+/** "Size: L, Color: Red" — each option named, as the cart and order show it. */
+const variantLabel = (combination: Record<string, string>): string =>
+  Object.entries(combination)
+    .map(([option, value]) => `${option}: ${value}`)
+    .join(", ")
+
+/** Same product and variant on two lines become one line. */
+const mergeItems = (items: PlaceOrderItem[]): PlaceOrderItem[] => {
+  const merged = new Map<string, PlaceOrderItem>()
+  for (const item of items) {
+    const key = `${item.productId}\u0000${item.variantId ?? ""}`
+    const existing = merged.get(key)
+    merged.set(key, {
+      ...item,
+      quantity: (existing?.quantity ?? 0) + item.quantity,
+    })
+  }
+  return Array.from(merged.values())
+}
+
+const assertOrderable = (product: ProductForOrder | undefined, id: string) => {
+  // Draft or unlisted — here, or in the store it is mirrored from.
+  if (product?.status !== "active") {
+    throw orderProductUnavailableException(`Product ${id} is not available.`)
+  }
+  if (product.vendor && !product.vendor.isActive) {
+    throw orderProductUnavailableException(
+      `The vendor of "${product.name}" is not taking orders.`,
+    )
+  }
+  return product
+}
+
+/**
+ * A product's category and sub-category, as the `category_ids` of cart,
+ * order and discount events — the same list everywhere.
+ */
+export const productCategoryIds = (
+  product:
+    | {
+        categoryId: string | null
+        subcategoryId: string | null
+      }
+    | undefined,
+): string[] =>
+  [product?.categoryId, product?.subcategoryId].filter((id): id is string =>
+    Boolean(id),
+  )
+
+const priceLine = (input: {
+  product: ProductForOrder
+  item: PlaceOrderItem
+  currency: string
+}): PricedLine => {
+  const { product, item, currency } = input
+  const enabledVariants = product.variants.filter(
+    (variant) => variant.isEnabled,
+  )
+  const variant = item.variantId
+    ? product.variants.find((candidate) => candidate.id === item.variantId)
+    : undefined
+
+  if (item.variantId && !variant?.isEnabled) {
+    throw orderProductUnavailableException(
+      `The chosen variant of "${product.name}" is not available.`,
+    )
+  }
+  if (!item.variantId && enabledVariants.length > 0) {
+    throw orderProductUnavailableException(
+      `Choose a variant of "${product.name}".`,
+    )
+  }
+
+  const unitPrice = variant?.price ?? product.price
+  const discountPercent = stackDiscountPercents(
+    product.discount,
+    product.vendor?.discountPercent ?? 0,
+  )
+  const line = computeLinePrice({
+    unitPrice,
+    quantity: item.quantity,
+    discountPercent,
+    taxPercent: product.taxes,
+    currency,
+  })
+  return {
+    productId: product.id,
+    variantId: variant?.id ?? null,
+    vendorId: product.vendorId,
+    categoryId: product.categoryId,
+    name: product.name,
+    variantLabel: variant ? variantLabel(variant.combination) : null,
+    combination: variant?.combination ?? null,
+    sku: product.sku,
+    retailerId: null,
+    imageUrl: product.images[0]?.url ?? null,
+    vendorName: product.vendor?.name ?? null,
+    unitPrice,
+    quantity: item.quantity,
+    discountPercent,
+    taxPercent: product.taxes,
+    discountTotal: line.discountTotal,
+    taxTotal: line.taxTotal,
+    lineTotal: line.lineTotal,
+    gross: line.gross,
+    stockProductId: product.id,
+  }
+}
+
+/**
+ * The items that can be ordered right now, and the ones that cannot
+ * (inactive, vendor off, variant gone) — named when the product still
+ * exists, so the customer knows which one.
+ */
+export const splitOrderableItems = (
+  products: Map<string, ProductForOrder>,
+  items: PlaceOrderItem[],
+) => {
+  const orderable: PlaceOrderItem[] = []
+  const unavailable: Array<PlaceOrderItem & { name: string | null }> = []
+  for (const item of items) {
+    try {
+      const product = assertOrderable(
+        products.get(item.productId),
+        item.productId,
+      )
+      priceLine({ product, item, currency: "USD" })
+      orderable.push(item)
+    } catch {
+      unavailable.push({
+        ...item,
+        name: products.get(item.productId)?.name ?? null,
+      })
+    }
+  }
+  return { orderable, unavailable }
+}
+
+/** Order products by id, as `priceDraft` and `splitOrderableItems` take them. */
+export const findProductsForOrder = async (
+  input: { workspaceId: string; productIds: string[] },
+  tx?: DatabaseClient,
+): Promise<Map<string, ProductForOrder>> =>
+  new Map(
+    (await productRepository.findForOrder(input, tx)).map((row) => [
+      row.id,
+      row,
+    ]),
+  )
+
+/** Each vendor's lines, after discounts, against that vendor's minimum. */
+const assertVendorMinimums = (
+  lines: PricedLine[],
+  products: Map<string, ProductForOrder>,
+  currency: string,
+) => {
+  const byVendor = new Map<string, number[]>()
+  for (const line of lines) {
+    if (line.vendorId) {
+      byVendor.set(line.vendorId, [
+        ...(byVendor.get(line.vendorId) ?? []),
+        line.gross - (line.discountTotal ?? 0),
+      ])
+    }
+  }
+  for (const [vendorId, amounts] of byVendor) {
+    const vendor = [...products.values()].find(
+      (product) => product.vendorId === vendorId,
+    )?.vendor
+    const minimum = vendor?.minimumOrderValue ?? 0
+    if (vendor && minimum > 0 && sumMoney(amounts, currency) < minimum) {
+      throw orderBelowVendorMinimumException(vendor.name, minimum)
+    }
+  }
+}
+
+/** The shipping type an order gets under the store's shipping mode. */
+const resolveShippingType = (
+  settings: EcommerceSettings,
+  requested: ShippingType | null | undefined,
+): ShippingType | null => {
+  const allowed: readonly ShippingType[] =
+    SHIPPING_TYPES_BY_MODE[settings.shipping.shippingType]
+  if (allowed.length === 0) {
+    return null
+  }
+  if (!requested) {
+    return allowed[0] ?? null
+  }
+  if (!allowed.includes(requested)) {
+    throw orderShippingTypeUnavailableException(requested)
+  }
+  return requested
+}
+
+/** A line as a discount code sees it: its categories and its price after discounts. */
+const toCouponLine = (
+  line: PricedLine,
+  products: Map<string, ProductForOrder>,
+  currency: string,
+): CouponLine => {
+  const product = products.get(line.stockProductId)
+  return {
+    productId: line.productId ?? null,
+    categoryIds: productCategoryIds(product),
+    amount: roundMoney(line.gross - (line.discountTotal ?? 0), currency),
+    quantity: line.quantity,
+  }
+}
+
+/**
+ * The order's money. The discount code comes off after the line discounts;
+ * the service fee is taken on what is left of the goods (a free-shipping code
+ * does not lower it).
+ */
+const computeTotals = (input: {
+  lines: PricedLine[]
+  currency: string
+  shippingTotal: number
+  serviceFeePercent: number
+  coupon?: { amount: number; freeShipping: boolean } | null
+}): OrderTotals => {
+  const { lines, currency } = input
+  const subtotal = sumMoney(
+    lines.map((line) => line.gross),
+    currency,
+  )
+  const discountTotal = sumMoney(
+    lines.map((line) => line.discountTotal ?? 0),
+    currency,
+  )
+  const taxTotal = sumMoney(
+    lines.map((line) => line.taxTotal ?? 0),
+    currency,
+  )
+  const couponDiscount = input.coupon?.amount ?? 0
+  const goodsCoupon = input.coupon?.freeShipping ? 0 : couponDiscount
+  const serviceFeeTotal = percentOf(
+    sumMoney([subtotal, -discountTotal, -goodsCoupon], currency),
+    input.serviceFeePercent,
+    currency,
+  )
+  return {
+    subtotal,
+    discountTotal,
+    taxTotal,
+    serviceFeeTotal,
+    shippingTotal: roundMoney(input.shippingTotal, currency),
+    couponDiscount,
+    total: sumMoney(
+      [
+        subtotal,
+        -discountTotal,
+        taxTotal,
+        serviceFeeTotal,
+        roundMoney(input.shippingTotal, currency),
+        -couponDiscount,
+      ],
+      currency,
+    ),
+  }
+}
+
+/**
+ * What the goods cost after every discount — the line discounts and the
+ * discount code (a free-shipping code takes nothing off the goods). The
+ * store's minimum order value is checked against this, as its setting says.
+ */
+const goodsAfterDiscounts = (
+  totals: OrderTotals,
+  discount: AppliedDiscount | null,
+  currency: string,
+) =>
+  sumMoney(
+    [
+      totals.subtotal,
+      -totals.discountTotal,
+      -(discount?.discountCode.discountType === "freeShipping"
+        ? 0
+        : totals.couponDiscount),
+    ],
+    currency,
+  )
+
+/**
+ * How a new order is paid and where its payment stands when it is placed.
+ * Cash on delivery stays open to a member or an API caller typing an order
+ * in, as before; the web shop, and every online method, need the store to
+ * offer the method. An online order waits `PAYMENT_EXPIRY_MINUTES` for its
+ * money — one that costs nothing has nothing to wait for.
+ */
+const resolvePayment = (input: {
+  method: PaymentMethod | undefined
+  source: OrderSource
+  settings: EcommerceSettings
+  hasContact: boolean
+  total: number
+  now: Date
+}) => {
+  const paymentMethod = input.method ?? "cod"
+  const online = isOnlinePaymentMethod(paymentMethod)
+  const offered = input.settings.payments.paymentMethods.includes(paymentMethod)
+  if (!offered && (online || input.source === "webshop")) {
+    throw paymentMethodUnavailableException(paymentMethod)
+  }
+  if (!online) {
+    return {
+      paymentMethod,
+      paymentStatus: "unpaid" as const,
+      paymentExpiresAt: null,
+      paidAt: null,
+    }
+  }
+  // The provider sends the customer back to their own order page.
+  if (!input.hasContact) {
+    throw orderPaymentContactRequiredException()
+  }
+  if (input.total <= 0) {
+    return {
+      paymentMethod,
+      paymentStatus: "paid" as const,
+      paymentExpiresAt: null,
+      paidAt: input.now,
+    }
+  }
+  return {
+    paymentMethod,
+    paymentStatus: "unpaid" as const,
+    paymentExpiresAt: new Date(
+      input.now.getTime() + PAYMENT_EXPIRY_MINUTES * 60_000,
+    ),
+    paidAt: null,
+  }
+}
+
+/** Stock each product loses, summed over its lines. */
+const quantitiesByProduct = (
+  lines: Array<{ stockProductId: string | null; quantity: number }>,
+): Map<string, number> => {
+  const quantities = new Map<string, number>()
+  for (const line of lines) {
+    if (line.stockProductId) {
+      quantities.set(
+        line.stockProductId,
+        (quantities.get(line.stockProductId) ?? 0) + line.quantity,
+      )
+    }
+  }
+  return quantities
+}
+
+/**
+ * Spreads what each product really lost over the lines that asked for it, in
+ * order, so every line records the units it got (a line never records more
+ * than it ordered, and the lines of a product add up to what it lost).
+ */
+const allocateStockTaken = (
+  lines: Array<{ stockProductId: string | null; quantity: number }>,
+  takenByProduct: Map<string, number>,
+): number[] => {
+  const remaining = new Map(takenByProduct)
+  return lines.map((line) => {
+    if (!line.stockProductId) {
+      return 0
+    }
+    const available = remaining.get(line.stockProductId) ?? 0
+    const taken = Math.min(line.quantity, available)
+    remaining.set(line.stockProductId, available - taken)
+    return taken
+  })
+}
+
+class OrderService extends BaseService {
+  /**
+   * Orders of the store's current source unless `source` names some: the
+   * Shopify ones while the store mirrors Shopify, all of ours otherwise.
+   */
+  async list(input: OrderListInput) {
+    return await orderRepository.list({
+      ...input,
+      source: input.source?.length
+        ? input.source
+        : await this.defaultSources(input.workspaceId),
+    })
+  }
+
+  private async defaultSources(workspaceId: string): Promise<OrderSource[]> {
+    const storeSource = await ecommerceSettingsService.storeSource(workspaceId)
+    return isExternalStoreSource(storeSource)
+      ? [storeSource]
+      : orderSources.options.filter((source) => !isExternalStoreSource(source))
+  }
+
+  /**
+   * The orders `list` would show, newest first, as CSV rows for a
+   * spreadsheet. Capped at `ORDER_EXPORT_LIMIT` rows.
+   */
+  async exportCsv(input: Omit<OrderListInput, "page" | "perPage">) {
+    const { data, truncated } = await this.listForExport(input)
+    const header = [
+      "Order",
+      "Created at",
+      "Status",
+      "Payment",
+      "Fulfillment",
+      "Customer",
+      "Email",
+      "Phone",
+      "Items",
+      "Currency",
+      "Total",
+    ]
+    const rows = data.map((order) => [
+      order.externalName ?? `#${order.number}`,
+      order.createdAt.toISOString(),
+      order.status,
+      order.paymentStatus,
+      order.fulfillmentStatus ?? "",
+      order.customerName ?? "",
+      order.customerEmail ?? "",
+      order.customerPhone ?? "",
+      String(order.itemCount),
+      order.currency,
+      String(order.total),
+    ])
+    const csv = [header, ...rows]
+      .map((row) => row.map(toCsvCell).join(","))
+      .join("\r\n")
+    return { csv, rowCount: rows.length, truncated }
+  }
+
+  /**
+   * Up to `ORDER_EXPORT_LIMIT` orders of `list`, read page by page: a single
+   * page is capped far lower by the repository's pagination.
+   */
+  private async listForExport(input: Omit<OrderListInput, "page" | "perPage">) {
+    const source = input.source?.length
+      ? input.source
+      : await this.defaultSources(input.workspaceId)
+    const data: Awaited<ReturnType<typeof orderRepository.list>>["data"] = []
+    let page = 1
+    let pageCount: number
+    do {
+      const result = await orderRepository.list({
+        ...input,
+        source,
+        page,
+        perPage: ORDER_EXPORT_PAGE_SIZE,
+      })
+      data.push(...result.data)
+      pageCount = result.pageCount
+      page++
+    } while (page <= pageCount && data.length < ORDER_EXPORT_LIMIT)
+    return {
+      data: data.slice(0, ORDER_EXPORT_LIMIT),
+      truncated: data.length > ORDER_EXPORT_LIMIT || page <= pageCount,
+    }
+  }
+
+  async getDetail(input: { workspaceId: string; orderId: string }) {
+    const order = await orderRepository.findDetail(input)
+    if (!order) {
+      throw notFoundException("Order does not exist.")
+    }
+    return order
+  }
+
+  /**
+   * Places an order from product ids. Prices, stock and the order number are
+   * all settled in one transaction, so a failure leaves no trace: stock is not
+   * taken and the number is handed out again.
+   */
+  async place(input: PlaceOrderInput) {
+    const items = mergeItems(input.items)
+    if (items.length === 0) {
+      throw orderEmptyException()
+    }
+    const contact = await this.resolveConversation(
+      input.workspaceId,
+      input.contact,
+    )
+
+    const order = await db.transaction(async (tx) => {
+      const {
+        settings,
+        currency,
+        products,
+        lines,
+        shippingType,
+        totals,
+        discount,
+      } = await this.priceDraft({
+        workspaceId: input.workspaceId,
+        items,
+        shippingType: input.shippingType,
+        contactId: contact?.contactId ?? null,
+        discountCode: input.discountCode,
+        autoApplyDiscount: input.autoApplyDiscount,
+        tx,
+      })
+      if (input.source === "webshop" && !settings.general.orderingAvailable) {
+        throw orderingUnavailableException()
+      }
+      if (input.source !== "manual") {
+        const minimum = settings.checkout.minimumOrderValue
+        if (
+          minimum > 0 &&
+          goodsAfterDiscounts(totals, discount, currency) < minimum
+        ) {
+          throw orderBelowMinimumException(minimum)
+        }
+        assertVendorMinimums(lines, products, currency)
+      }
+      const payment = resolvePayment({
+        method: input.paymentMethod,
+        source: input.source,
+        settings,
+        hasContact: Boolean(contact?.contactId),
+        total: totals.total,
+        now: new Date(),
+      })
+
+      const stockTakenByProduct = await this.takeStock({
+        workspaceId: input.workspaceId,
+        lines,
+        products,
+        tx,
+      })
+      const stockTakenByLine = allocateStockTaken(lines, stockTakenByProduct)
+
+      const number = await ecommerceSettingsRepository.nextOrderNumber(
+        input.workspaceId,
+        tx,
+      )
+      const created = await orderRepository.insert(
+        {
+          workspaceId: input.workspaceId,
+          number,
+          contactId: contact?.contactId ?? null,
+          contactInboxId: contact?.contactInboxId ?? null,
+          inboxId: contact?.inboxId ?? null,
+          conversationId: contact?.conversationId ?? null,
+          channel: contact?.channel ?? null,
+          source: input.source,
+          ...payment,
+          currency,
+          ...totals,
+          discountCodeId: discount?.discountCode.id ?? null,
+          discountCode: discount?.discountCode.code ?? null,
+          customerName: input.customerName ?? null,
+          customerEmail: input.customerEmail ?? null,
+          customerPhone: input.customerPhone ?? null,
+          shippingType,
+          shippingAddress:
+            shippingType === "delivery"
+              ? (input.shippingAddress ?? null)
+              : null,
+          note: input.note ?? null,
+        },
+        tx,
+      )
+      if (!created) {
+        throw new Error("Failed to create the order")
+      }
+      if (discount) {
+        await discountCodeService.redeem(
+          {
+            workspaceId: input.workspaceId,
+            orderId: created.id,
+            contactId: created.contactId,
+            applied: discount,
+          },
+          tx,
+        )
+      }
+      await orderRepository.insertItems(
+        {
+          workspaceId: input.workspaceId,
+          orderId: created.id,
+          items: lines.map(
+            ({ gross: _gross, stockProductId: _stock, ...line }, index) => ({
+              ...line,
+              stockTaken: stockTakenByLine[index] ?? 0,
+            }),
+          ),
+        },
+        tx,
+      )
+      await orderRepository.insertHistory(
+        {
+          orderId: created.id,
+          workspaceId: input.workspaceId,
+          fromStatus: null,
+          toStatus: created.status,
+          actorType: input.actor.type,
+          actorUserId: input.actor.userId ?? null,
+          note: null,
+        },
+        tx,
+      )
+      await input.onPlaced?.(created, tx)
+      return created
+    })
+
+    await this.afterStatusChange({ order, from: null })
+    return await this.getDetail({
+      workspaceId: input.workspaceId,
+      orderId: order.id,
+    })
+  }
+
+  /**
+   * What the items would cost as an order right now, without taking stock or
+   * writing anything — the web shop's cart and checkout show this. Items that
+   * cannot be ordered (inactive, vendor off, variant gone) are left out and
+   * returned in `unavailable` instead of failing the whole quote.
+   */
+  async quote(input: {
+    workspaceId: string
+    items: PlaceOrderItem[]
+    shippingType?: ShippingType | null
+    contactId?: string | null
+    /** The code the customer typed; one that cannot be used is reported. */
+    discountCode?: string | null
+    autoApplyDiscount?: boolean
+    /** Also price the typed codes the cart can offer (`availableDiscounts`). */
+    listAvailableDiscounts?: boolean
+  }) {
+    const items = mergeItems(input.items)
+    // Read once: the availability check and both pricing attempts below
+    // share them.
+    const [products, settings] = await Promise.all([
+      findProductsForOrder({
+        workspaceId: input.workspaceId,
+        productIds: items.map((item) => item.productId),
+      }),
+      ecommerceSettingsService.getFresh(input.workspaceId),
+    ])
+    const { orderable, unavailable } = splitOrderableItems(products, items)
+    // A typed code that cannot be used does not fail the quote: the cart
+    // shows why and is priced without it.
+    let discountError: {
+      code: string
+      data?: Record<string, string | number>
+    } | null = null
+    let draft: Awaited<ReturnType<typeof this.priceDraft>>
+    try {
+      draft = await this.priceDraft({
+        workspaceId: input.workspaceId,
+        items: orderable,
+        shippingType: input.shippingType,
+        contactId: input.contactId ?? null,
+        discountCode: input.discountCode,
+        autoApplyDiscount: input.autoApplyDiscount,
+        listAvailableDiscounts: input.listAvailableDiscounts,
+        loaded: { products, settings },
+      })
+    } catch (error) {
+      if (
+        !(
+          input.discountCode &&
+          error instanceof ChatbotXException &&
+          error.code.startsWith("discountCode")
+        )
+      ) {
+        throw error
+      }
+      discountError = { code: error.code, data: error.data }
+      draft = await this.priceDraft({
+        workspaceId: input.workspaceId,
+        items: orderable,
+        shippingType: input.shippingType,
+        contactId: input.contactId ?? null,
+        autoApplyDiscount: input.autoApplyDiscount,
+        listAvailableDiscounts: input.listAvailableDiscounts,
+        loaded: { products, settings },
+      })
+    }
+    const minimum = draft.settings.checkout.minimumOrderValue
+    return {
+      currency: draft.currency,
+      shippingType: draft.shippingType,
+      lines: draft.lines.map(
+        ({ gross: _gross, stockProductId: _stock, ...line }) => line,
+      ),
+      totals: draft.totals,
+      discount: draft.discount
+        ? {
+            code: draft.discount.discountCode.code,
+            amount: draft.discount.amount,
+            discountType: draft.discount.discountCode.discountType,
+            discountValue: draft.discount.discountCode.discountValue,
+            automatic: !input.discountCode || discountError !== null,
+          }
+        : null,
+      discountError,
+      availableDiscounts: draft.availableDiscounts,
+      unavailable,
+      belowMinimum:
+        minimum > 0 &&
+        goodsAfterDiscounts(draft.totals, draft.discount, draft.currency) <
+          minimum
+          ? minimum
+          : null,
+    }
+  }
+
+  /** Prices items with the store settings: lines, shipping and totals. */
+  private async priceDraft(input: {
+    workspaceId: string
+    items: PlaceOrderItem[]
+    shippingType?: ShippingType | null
+    contactId?: string | null
+    discountCode?: string | null
+    autoApplyDiscount?: boolean
+    listAvailableDiscounts?: boolean
+    /** Inside an order's transaction: the code is locked to be redeemed. */
+    tx?: DatabaseClient
+    /**
+     * Already read by a quote, which writes nothing; an order reads them
+     * again inside its transaction.
+     */
+    loaded?: {
+      products: Map<string, ProductForOrder>
+      settings: EcommerceSettings
+    }
+  }) {
+    const tx = input.tx ?? db
+    const settings =
+      input.loaded?.settings ??
+      (await ecommerceSettingsService.getFresh(input.workspaceId, tx))
+    const currency = settings.payments.currency
+    const products =
+      input.loaded?.products ??
+      (await findProductsForOrder(
+        {
+          workspaceId: input.workspaceId,
+          productIds: input.items.map((item) => item.productId),
+        },
+        tx,
+      ))
+    const lines = input.items.map((item) =>
+      priceLine({
+        product: assertOrderable(products.get(item.productId), item.productId),
+        item,
+        currency,
+      }),
+    )
+    const shippingType = resolveShippingType(settings, input.shippingType)
+    const shippingTotal =
+      shippingType === "delivery"
+        ? roundMoney(settings.shipping.deliveryCost, currency)
+        : 0
+    const couponContext: DiscountOrderContext = {
+      workspaceId: input.workspaceId,
+      source: settings.general.storeSource,
+      contactId: input.contactId ?? null,
+      lines: lines.map((line) => toCouponLine(line, products, currency)),
+      shippingType,
+      shippingTotal,
+      currency,
+    }
+    const discount: AppliedDiscount | null =
+      lines.length > 0
+        ? await discountCodeService.resolve({
+            ...couponContext,
+            code: input.discountCode,
+            autoApply: input.autoApplyDiscount,
+            tx: input.tx,
+          })
+        : null
+    const availableDiscounts: AvailableDiscount[] =
+      input.listAvailableDiscounts && lines.length > 0
+        ? await discountCodeService.listAvailable(couponContext)
+        : []
+    const totals = computeTotals({
+      lines,
+      currency,
+      shippingTotal,
+      serviceFeePercent: settings.payments.serviceFeePercent,
+      coupon: discount
+        ? {
+            amount: discount.amount,
+            freeShipping: discount.discountCode.discountType === "freeShipping",
+          }
+        : null,
+    })
+    return {
+      settings,
+      currency,
+      products,
+      lines,
+      shippingType,
+      totals,
+      discount,
+      availableDiscounts,
+    }
+  }
+
+  /**
+   * Moves an order along `ORDER_STATUS_TRANSITIONS`. The move is one guarded
+   * update, so of two concurrent moves only one lands and the other gets
+   * `orderInvalidStatusTransition`. Cancelling gives the stock back;
+   * completing a cash-on-delivery order marks it paid. A `message` is kept on
+   * the order's history and sent to the customer in the order's conversation.
+   */
+  async transition(input: {
+    workspaceId: string
+    orderId: string
+    to: Exclude<OrderStatus, "pending">
+    actor: OrderActor
+    message?: string | null
+    /** The expiry scan's cancel: the online payment never came. */
+    reason?: "paymentExpired"
+  }) {
+    const { workspaceId, orderId, to } = input
+    const message = input.message?.trim() || null
+    const paymentExpired = input.reason === "paymentExpired"
+    const result = await db.transaction(async (tx) => {
+      // Locked, so a concurrent move or delete cannot slip in between this
+      // read and the update — the history's `from` is the real one. A
+      // payment landing at the same time waits for this lock too.
+      const current = await orderRepository.findForUpdate(
+        { workspaceId, orderId },
+        tx,
+      )
+      if (!current) {
+        throw notFoundException("Order does not exist.")
+      }
+      // A mirrored order moves on its own store; it follows along here.
+      if (isExternalStoreSource(current.source)) {
+        throw externalStoreManagedException(current.source)
+      }
+      // Refused before any money moves: a refund for a move that cannot
+      // happen would be one too many.
+      if (!getOrderStatusesAllowedBefore(to).includes(current.status)) {
+        throw orderInvalidStatusTransitionException(current.status, to)
+      }
+      if (to === "accepted" && isAwaitingOnlinePayment(current)) {
+        throw orderAwaitingPaymentException()
+      }
+      const values: OrderUpdateValues = {
+        [STATUS_TIMESTAMP_COLUMNS[to]]: new Date(),
+      }
+      if (to === "concluded" && current.paymentMethod === "cod") {
+        values.paymentStatus = "paid"
+      }
+      let refunded = false
+      if (to === "cancelled") {
+        // No money may stay with the store for a cancelled order: a paid
+        // attempt is refunded, an open one closed. A refund that fails
+        // throws, and the order stays as it was. The expiry scan's cancel
+        // stops instead when a page turns out paid: that customer paid in
+        // time, so the order is kept.
+        ;({ refunded } = await settlePaymentsForCancel(current, tx, {
+          keepLatePayment: paymentExpired,
+        }))
+        if (refunded) {
+          values.paymentStatus = "refunded"
+        }
+        values.paymentExpiresAt = null
+        values.cancelReason =
+          message ?? (paymentExpired ? PAYMENT_EXPIRED_CANCEL_REASON : null)
+      }
+
+      const updated = await orderRepository.transitionStatus(
+        {
+          workspaceId,
+          orderId,
+          from: getOrderStatusesAllowedBefore(to),
+          to,
+          values,
+        },
+        tx,
+      )
+      if (!updated) {
+        const latest = await orderRepository.find({ workspaceId, orderId }, tx)
+        throw orderInvalidStatusTransitionException(
+          latest?.status ?? current.status,
+          to,
+        )
+      }
+
+      if (to === "cancelled") {
+        // The code before the products: the same lock order as placing an
+        // order, so a cancel and a new order cannot deadlock.
+        await discountCodeService.release({ workspaceId, orderId }, tx)
+        await this.returnStock({ workspaceId, orderId, tx })
+      }
+      await orderRepository.insertHistory(
+        {
+          orderId,
+          workspaceId,
+          fromStatus: current.status,
+          toStatus: to,
+          actorType: input.actor.type,
+          actorUserId: input.actor.userId ?? null,
+          note: message,
+        },
+        tx,
+      )
+      return { order: updated, from: current.status, refunded }
+    })
+
+    await this.afterStatusChange({ ...result, message, paymentExpired })
+    return await this.getDetail({ workspaceId, orderId })
+  }
+
+  /**
+   * Writes an order mirrored from another store (Shopify), matched by its
+   * `externalId`: created the first time, updated after. Nothing about stock,
+   * discount redemption or payment pages happens here — the other store owns
+   * those. With `announce`, a new order is announced like one placed here
+   * (`newOrder`, `productOrdered`, the confirmation) and a status move fires
+   * its event and status message like any move, so the store's triggers work
+   * the same. Without it (history pulled by a full sync) the order is only
+   * written: nobody is told about orders placed long ago.
+   * Statuses only move forward (`nextStatus`).
+   */
+  async syncExternal(input: {
+    workspaceId: string
+    /** The external store the order is mirrored from. */
+    source: ExternalStoreSource
+    externalId: string
+    announce: boolean
+    values: Omit<
+      OrderInsertValues,
+      "workspaceId" | "number" | "status" | "externalId" | "source"
+    > & {
+      /** When the order was placed on the other store; kept on create only. */
+      createdAt?: Date
+    }
+    items: OrderItemInsertValues[]
+    status: OrderStatus
+    nextStatus: (current: OrderStatus, incoming: OrderStatus) => OrderStatus
+  }): Promise<{ order: OrderModel; created: boolean }> {
+    // Tied to the contact's conversation like an order placed here, so the
+    // order page links to it and status messages reach the customer.
+    const conversation = input.values.contactId
+      ? await this.resolveConversation(input.workspaceId, {
+          contactId: input.values.contactId,
+          contactInboxId: input.values.contactInboxId,
+          conversationId: input.values.conversationId,
+          inboxId: input.values.inboxId,
+          channel: input.values.channel,
+        })
+      : undefined
+    const write = () =>
+      db.transaction(async (tx) => {
+        const current = await orderRepository.findByExternalIdForUpdate(
+          { workspaceId: input.workspaceId, externalId: input.externalId },
+          tx,
+        )
+        const now = new Date()
+
+        const { createdAt, ...mirrored } = input.values
+        const values = {
+          ...mirrored,
+          contactInboxId:
+            conversation?.contactInboxId ?? mirrored.contactInboxId ?? null,
+          conversationId:
+            conversation?.conversationId ?? mirrored.conversationId ?? null,
+          inboxId: conversation?.inboxId ?? mirrored.inboxId ?? null,
+          channel: conversation?.channel ?? mirrored.channel ?? null,
+        }
+        if (!current) {
+          const number = await ecommerceSettingsRepository.nextOrderNumber(
+            input.workspaceId,
+            tx,
+          )
+          const timestamps: OrderUpdateValues =
+            input.status === "pending"
+              ? {}
+              : { [STATUS_TIMESTAMP_COLUMNS[input.status]]: now }
+          const created = await orderRepository.insert(
+            {
+              ...values,
+              ...timestamps,
+              ...(createdAt ? { createdAt } : {}),
+              workspaceId: input.workspaceId,
+              number,
+              source: input.source,
+              externalId: input.externalId,
+              status: input.status,
+            },
+            tx,
+          )
+          if (!created) {
+            throw new Error("Failed to save the mirrored order")
+          }
+          await orderRepository.insertItems(
+            {
+              workspaceId: input.workspaceId,
+              orderId: created.id,
+              items: input.items,
+            },
+            tx,
+          )
+          await orderRepository.insertHistory(
+            {
+              orderId: created.id,
+              workspaceId: input.workspaceId,
+              fromStatus: null,
+              toStatus: created.status,
+              actorType: "system",
+              actorUserId: null,
+              note: null,
+            },
+            tx,
+          )
+          return { order: created, from: null, created: true, wasPaid: false }
+        }
+
+        const next = input.nextStatus(current.status, input.status)
+        const moved = next !== current.status
+        const updated = await orderRepository.update(
+          {
+            workspaceId: input.workspaceId,
+            orderId: current.id,
+            values: {
+              ...values,
+              // The contact found the first time is kept: a later update
+              // carries no shop link to find it again.
+              contactId: current.contactId ?? values.contactId,
+              contactInboxId: current.contactInboxId ?? values.contactInboxId,
+              inboxId: current.inboxId ?? values.inboxId,
+              conversationId: current.conversationId ?? values.conversationId,
+              // First paid, as the order page shows it — not each later sync.
+              paidAt: current.paidAt ?? values.paidAt,
+              channel: current.channel ?? values.channel,
+              status: next,
+              ...(moved && next !== "pending"
+                ? { [STATUS_TIMESTAMP_COLUMNS[next]]: now }
+                : {}),
+            },
+          },
+          tx,
+        )
+        if (!updated) {
+          throw new Error("Failed to update the mirrored order")
+        }
+        await orderRepository.deleteItems(
+          { workspaceId: input.workspaceId, orderId: current.id },
+          tx,
+        )
+        await orderRepository.insertItems(
+          {
+            workspaceId: input.workspaceId,
+            orderId: current.id,
+            items: input.items,
+          },
+          tx,
+        )
+        if (moved) {
+          await orderRepository.insertHistory(
+            {
+              orderId: current.id,
+              workspaceId: input.workspaceId,
+              fromStatus: current.status,
+              toStatus: next,
+              actorType: "system",
+              actorUserId: null,
+              note: null,
+            },
+            tx,
+          )
+        }
+        return {
+          order: updated,
+          from: moved ? current.status : undefined,
+          created: false,
+          wasPaid: current.paymentStatus === "paid",
+        }
+      })
+
+    let result: Awaited<ReturnType<typeof write>>
+    try {
+      result = await write()
+    } catch (error) {
+      if (!isUniqueViolationError(error, EXTERNAL_ORDER_CONSTRAINT)) {
+        throw error
+      }
+      // A row that does not exist yet cannot be locked, so the checkout and
+      // the orders/create webhook can both try to create the same order. The
+      // other one won: write again, which now updates its row.
+      result = await write()
+    }
+
+    const { order } = result
+    if (!input.announce) {
+      await this.invalidateCacheTags(`orders:${order.workspaceId}`)
+      return { order, created: result.created }
+    }
+    if (result.created) {
+      await this.afterStatusChange({
+        order: { ...order, status: "pending" },
+        from: null,
+      })
+      if (order.status !== "pending") {
+        await this.afterStatusChange({ order, from: "pending" })
+      }
+    } else if (result.from) {
+      await this.afterStatusChange({ order, from: result.from })
+    } else {
+      await this.invalidateCacheTags(`orders:${order.workspaceId}`)
+    }
+    if (!result.wasPaid && order.paymentStatus === "paid" && order.contactId) {
+      await this.announceOrderEvents(order, "orderPaid")
+    }
+    return { order, created: result.created }
+  }
+
+  accept(input: TransitionShortcutInput) {
+    return this.transition({ ...input, to: "accepted" })
+  }
+
+  ship(input: TransitionShortcutInput) {
+    return this.transition({ ...input, to: "shipped" })
+  }
+
+  conclude(input: TransitionShortcutInput) {
+    return this.transition({ ...input, to: "concluded" })
+  }
+
+  cancel(input: TransitionShortcutInput) {
+    return this.transition({ ...input, to: "cancelled" })
+  }
+
+  /**
+   * Deletes an order with its lines and history. An order that still holds
+   * stock (not yet completed or cancelled) gives it back first.
+   */
+  async delete(input: { workspaceId: string; orderId: string }) {
+    await db.transaction(async (tx) => {
+      // Locked, so a concurrent cancel cannot also give the stock back.
+      const current = await orderRepository.findForUpdate(input, tx)
+      if (!current) {
+        throw notFoundException("Order does not exist.")
+      }
+      if (isExternalStoreSource(current.source)) {
+        throw externalStoreManagedException(current.source)
+      }
+      // A paid online order is cancelled (and refunded), never deleted with
+      // the money kept; an unpaid one's payment pages are closed first.
+      await assertDeletableWithPayments(current, tx)
+      // The code before the products, as when placing an order.
+      await discountCodeService.release(input, tx)
+      if (STOCK_HOLDING_STATUSES.includes(current.status)) {
+        await this.returnStock({ ...input, tx })
+      }
+      await orderRepository.delete(input, tx)
+    })
+    await this.invalidateCacheTags(`orders:${input.workspaceId}`)
+  }
+
+  /**
+   * The one place an order's side effects hang off — placed (`from` null) or
+   * moved. A placed order is announced (`announcePlaced`) at once, unless it
+   * waits for an online payment: then it is announced when the money comes
+   * in. A move tells the customer the new status when the store sends those,
+   * or always for a cancel or a completion, with the member's message riding
+   * along.
+   */
+  private async afterStatusChange(input: {
+    order: OrderModel
+    from: OrderStatus | null
+    message?: string | null
+    /** The move refunded the order's online payment. */
+    refunded?: boolean
+    paymentExpired?: boolean
+  }) {
+    const { order } = input
+    await this.invalidateCacheTags(`orders:${order.workspaceId}`)
+
+    if (input.from === null) {
+      if (!isAwaitingOnlinePayment(order)) {
+        await this.announcePlaced(order)
+      }
+      return
+    }
+
+    if (!order.contactId) {
+      return
+    }
+    // An online order whose money never came was never announced: its cancel
+    // fires nothing — only the customer who left the payment page is told
+    // why it is gone when its time ran out.
+    if (isOnlinePaymentMethod(order.paymentMethod) && !order.paidAt) {
+      if (input.paymentExpired) {
+        try {
+          const language = await resolveCustomerMessageLanguage(order)
+          await this.messageCustomer(
+            order,
+            buildOrderStatusText(
+              { status: order.status, paymentExpired: true },
+              { language },
+            ),
+          )
+        } catch (err) {
+          logger.warn(
+            { err, orderId: order.id },
+            "[order] could not tell the customer the payment expired",
+          )
+        }
+      }
+      return
+    }
+    await this.announceOrderEvents(order, ORDER_STATUS_EVENTS[order.status])
+    if (input.refunded) {
+      await this.announceOrderEvents(order, "orderRefunded")
+    }
+    try {
+      const settings = await ecommerceSettingsService.get(order.workspaceId)
+      const language = await resolveCustomerMessageLanguage(order)
+      const alwaysNotified =
+        order.status === "cancelled" || order.status === "concluded"
+      if (
+        settings.general.notifyOnCartStatusChange ||
+        alwaysNotified ||
+        input.message
+      ) {
+        await this.messageCustomer(
+          order,
+          buildOrderStatusText(
+            {
+              status: order.status,
+              message: input.message,
+              refunded: input.refunded,
+              paymentExpired: input.paymentExpired,
+            },
+            { language },
+          ),
+        )
+      }
+    } catch (err) {
+      logger.warn(
+        { err, orderId: order.id },
+        "[order] could not tell the customer about the order",
+      )
+    }
+  }
+
+  /**
+   * Everything a new order sets off, once: the push to the members who want
+   * new orders, the `newOrder` / `productOrdered` events, the confirmation to
+   * the customer and the web shop's checkout flow. A cash order runs it when
+   * placed; an online one when its payment comes in (`markPaid`), so nobody
+   * hears about an order that was never paid. Every part is keyed by the
+   * order, so running it again sends nothing twice.
+   */
+  async announcePlaced(order: OrderModel) {
+    await notificationQueue
+      .add(
+        NotificationJobAction.notifyNewOrder,
+        {
+          type: NotificationJobAction.notifyNewOrder,
+          data: { workspaceId: order.workspaceId, orderId: order.id },
+        },
+        { jobId: getNewOrderNotificationJobId(order.id) },
+      )
+      .catch((err: unknown) =>
+        logger.warn(
+          { err, orderId: order.id },
+          "[order] could not queue the new-order notification",
+        ),
+      )
+
+    if (!order.contactId) {
+      return
+    }
+    await this.announceOrderEvents(order, "newOrder", {
+      productOrdered: true,
+    })
+    try {
+      const settings = await ecommerceSettingsService.get(order.workspaceId)
+      await this.confirmToCustomer(order, settings)
+      await this.startCheckoutFlow(order, settings)
+    } catch (err) {
+      logger.warn(
+        { err, orderId: order.id },
+        "[order] could not tell the customer about the order",
+      )
+    }
+  }
+
+  /**
+   * An online order's payment came in (`orderPaymentService.markPaid`): the
+   * `orderPaid` event, then the order is announced as placed.
+   */
+  async afterPaid(order: OrderModel) {
+    await this.invalidateCacheTags(`orders:${order.workspaceId}`)
+    if (order.contactId) {
+      await this.announceOrderEvents(order, "orderPaid")
+    }
+    await this.announcePlaced(order)
+  }
+
+  /**
+   * "Start a flow" checkout: once a web shop order is placed (paid, when
+   * paid online), the chosen flow runs in the customer's conversation. A
+   * customer without one (the link was opened outside a chat) just gets the
+   * order.
+   */
+  private async startCheckoutFlow(
+    order: OrderModel,
+    settings: EcommerceSettings,
+  ) {
+    const flowId = settings.checkout.checkoutFlowId
+    if (
+      order.source !== "webshop" ||
+      settings.checkout.checkoutMode !== "flow" ||
+      !flowId ||
+      !order.conversationId ||
+      !order.contactInboxId
+    ) {
+      return
+    }
+    await integrationQueue
+      .add(
+        IntegrationJobAction.sendFlow,
+        {
+          type: IntegrationJobAction.sendFlow,
+          data: {
+            conversationId: order.conversationId,
+            contactInboxId: order.contactInboxId,
+            flowId,
+          },
+        },
+        { jobId: `webshop-checkout-flow-${order.id}` },
+      )
+      .catch((err: unknown) =>
+        logger.warn(
+          { err, orderId: order.id },
+          "[order] could not start the checkout flow",
+        ),
+      )
+  }
+
+  /**
+   * What the customer gets when their order is placed, as the store chose
+   * (`checkout.orderConfirmationMode`): the built-in confirmation in the
+   * workspace language, the store's own flow instead, or nothing.
+   */
+  private async confirmToCustomer(
+    order: OrderModel,
+    settings: EcommerceSettings,
+  ) {
+    const { orderConfirmationMode, orderConfirmationFlowId } = settings.checkout
+    if (orderConfirmationMode === "none") {
+      return
+    }
+    if (orderConfirmationMode === "flow") {
+      if (orderConfirmationFlowId) {
+        await this.runFlowForCustomer(order, orderConfirmationFlowId)
+      }
+      return
+    }
+    const [detail, workspace, language] = await Promise.all([
+      this.getDetail({ workspaceId: order.workspaceId, orderId: order.id }),
+      workspaceService.findById({ id: order.workspaceId }),
+      resolveCustomerMessageLanguage(order),
+    ])
+    await this.messageCustomer(
+      order,
+      buildOrderConfirmationText(detail, {
+        language,
+        payments: settings.payments,
+        storeAddress: settings.shipping.storeAddress,
+        timeZone: workspace.timezone,
+      }),
+    )
+  }
+
+  /**
+   * Runs a flow in the order's conversation (the inbox it came from). One
+   * job per order, so a retried placement runs it once.
+   */
+  private async runFlowForCustomer(order: OrderModel, flowId: string) {
+    if (!order.contactId) {
+      return
+    }
+    try {
+      const { conversation, contactInbox } =
+        await conversationService.resolveContactInboxForSend({
+          workspaceId: order.workspaceId,
+          contactId: order.contactId,
+          inboxId: order.inboxId ?? undefined,
+        })
+      await integrationQueue.add(
+        IntegrationJobAction.sendFlow,
+        {
+          type: IntegrationJobAction.sendFlow,
+          data: {
+            conversationId: conversation.id,
+            contactInboxId: contactInbox.id,
+            flowId,
+          },
+        },
+        { jobId: `order-confirmation-flow-${order.id}` },
+      )
+    } catch (err) {
+      logger.warn(
+        { err, orderId: order.id, workspaceId: order.workspaceId },
+        "[order] could not run the order confirmation flow",
+      )
+    }
+  }
+
+  /**
+   * One trigger and webhook event of an order (its status, `orderPaid`,
+   * `orderRefunded`), and `productOrdered` once when it is placed. Best
+   * effort: the order already stands.
+   */
+  private async announceOrderEvents(
+    order: OrderModel,
+    event: OrderStatusEventType,
+    options?: { productOrdered?: boolean },
+  ) {
+    if (!order.contactId) {
+      return
+    }
+    try {
+      const detail = await this.getDetail({
+        workspaceId: order.workspaceId,
+        orderId: order.id,
+      })
+      // The line keeps its category; the sub-category is read from the
+      // product, so `category_ids` lists both, as the cart events do.
+      const subcategories = new Map(
+        (
+          await productRepository.findByIds({
+            workspaceId: order.workspaceId,
+            productIds: detail.items.flatMap((item) =>
+              item.productId ? [item.productId] : [],
+            ),
+          })
+        ).map((product) => [product.id, product.subcategoryId]),
+      )
+      const metadata: OrderEventMetadata = {
+        orderId: detail.id,
+        orderNumber: detail.number,
+        // The status this event is about: the order may already have moved
+        // on (accepted then shipped at once) by the time it is read back.
+        status: order.status,
+        source: detail.source,
+        total: detail.total,
+        currency: detail.currency,
+        discountCode: detail.discountCode,
+        channel: detail.channel,
+        conversationId: detail.conversationId,
+        products: detail.items.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId,
+          name: item.name,
+          categoryIds: productCategoryIds({
+            categoryId: item.categoryId,
+            subcategoryId: item.productId
+              ? (subcategories.get(item.productId) ?? null)
+              : null,
+          }),
+          quantity: item.quantity,
+          lineTotal: item.lineTotal,
+        })),
+      }
+      const contactInboxId = order.contactInboxId ?? undefined
+      await emitOrderStatus(
+        event,
+        order.workspaceId,
+        order.contactId,
+        metadata,
+        contactInboxId,
+      )
+      if (options?.productOrdered) {
+        await emitProductOrdered(
+          order.workspaceId,
+          order.contactId,
+          metadata,
+          contactInboxId,
+        )
+      }
+    } catch (err) {
+      logger.warn(
+        { err, orderId: order.id },
+        "[order] could not announce the order events",
+      )
+    }
+  }
+
+  /**
+   * An order placed for a contact (an API call names only the contact) is
+   * tied to that contact's latest conversation, so the order page links to it
+   * and status messages reach it. A contact with no conversation keeps just
+   * its id.
+   */
+  private async resolveConversation(
+    workspaceId: string,
+    contact: OrderContactRef | undefined,
+  ): Promise<OrderContactRef | undefined> {
+    if (!contact?.contactId || contact.conversationId) {
+      return contact
+    }
+    try {
+      const { conversation, contactInbox } =
+        await conversationService.resolveContactInboxForSend({
+          workspaceId,
+          contactId: contact.contactId,
+          inboxId: contact.inboxId ?? undefined,
+        })
+      // A shop link names the channel it was sent on: the order belongs
+      // there, not to whichever channel the contact used last.
+      const linked = contact.contactInboxId
+        ? conversation.contactInboxes.find(
+            (candidate) => candidate.id === contact.contactInboxId,
+          )
+        : undefined
+      const chosen = linked ?? contactInbox
+      return {
+        contactId: contact.contactId,
+        contactInboxId: chosen.id,
+        inboxId: chosen.inboxId,
+        conversationId: conversation.id,
+        channel: chosen.channel,
+      }
+    } catch (err) {
+      if (err instanceof ChatbotXException && err.code === "notFound") {
+        return contact
+      }
+      throw err
+    }
+  }
+
+  /**
+   * Best effort: the status has already changed, so a send that fails (no
+   * conversation, a closed messaging window) is logged, not thrown.
+   */
+  private async messageCustomer(order: OrderModel, text: string) {
+    if (!order.contactId) {
+      return
+    }
+    try {
+      const { conversation, contactInbox } =
+        await conversationService.resolveContactInboxForSend({
+          workspaceId: order.workspaceId,
+          contactId: order.contactId,
+          inboxId: order.inboxId ?? undefined,
+        })
+      await messageService.createOutgoing({
+        conversation,
+        contactInbox,
+        input: { text },
+      })
+    } catch (err) {
+      logger.warn(
+        { err, orderId: order.id, workspaceId: order.workspaceId },
+        "[order] could not message the customer about a status change",
+      )
+    }
+  }
+
+  /**
+   * Takes each line's quantity from its product. A tracked product without
+   * enough stock refuses the order unless it allows out-of-stock purchase.
+   */
+  private async takeStock(input: {
+    workspaceId: string
+    lines: PricedLine[]
+    products: Map<string, ProductForOrder>
+    tx: DatabaseClient
+  }): Promise<Map<string, number>> {
+    const needed = quantitiesByProduct(input.lines)
+    const takenByProduct = new Map<string, number>()
+    const locked = await productRepository.lockForStock(
+      { workspaceId: input.workspaceId, productIds: [...needed.keys()] },
+      input.tx,
+    )
+    for (const product of locked) {
+      const quantity = needed.get(product.id) ?? 0
+      if (product.inventoryPolicy !== "track" || quantity === 0) {
+        continue
+      }
+      if (
+        product.inventoryQuantity < quantity &&
+        !product.allowOutOfStockPurchase
+      ) {
+        throw orderOutOfStockException(
+          input.products.get(product.id)?.name ?? product.id,
+        )
+      }
+      // Stock never goes below zero, so an oversold order takes only what
+      // was there — and only that comes back on a cancel.
+      const taken = await productRepository.takeInventory(
+        { workspaceId: input.workspaceId, productId: product.id, quantity },
+        input.tx,
+      )
+      takenByProduct.set(product.id, taken)
+    }
+    return takenByProduct
+  }
+
+  /**
+   * Gives back what each line recorded as taken, whatever the product's
+   * policy is now. Callers hold the order's row lock, so it runs once.
+   */
+  private async returnStock(input: {
+    workspaceId: string
+    orderId: string
+    tx: DatabaseClient
+  }) {
+    const items = await orderRepository.listItems(
+      { workspaceId: input.workspaceId, orderId: input.orderId },
+      input.tx,
+    )
+    const quantities = quantitiesByProduct(
+      items.map((item) => ({
+        stockProductId: item.productId,
+        quantity: item.stockTaken,
+      })),
+    )
+    // Same lock order as taking stock, so a cancel and a new order on the
+    // same products cannot deadlock.
+    const locked = await productRepository.lockForStock(
+      { workspaceId: input.workspaceId, productIds: [...quantities.keys()] },
+      input.tx,
+    )
+    for (const product of locked) {
+      await productRepository.restoreInventory(
+        {
+          workspaceId: input.workspaceId,
+          productId: product.id,
+          quantity: quantities.get(product.id) ?? 0,
+        },
+        input.tx,
+      )
+    }
+  }
+}
+
+type TransitionShortcutInput = {
+  workspaceId: string
+  orderId: string
+  actor: OrderActor
+  message?: string | null
+}
+
+export const orderService = new OrderService()

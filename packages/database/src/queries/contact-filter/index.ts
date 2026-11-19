@@ -1,4 +1,5 @@
 import { adsEligibleChannelTypes } from "@chatbotx.io/utils/channel"
+import { normalizeForMatch } from "@chatbotx.io/utils/normalize-for-match"
 import {
   type AnyColumn,
   inArray,
@@ -7,17 +8,32 @@ import {
   sql,
 } from "drizzle-orm"
 import { operatorTypes } from "../../partials"
+import { isContactActivityFilterField } from "../../partials/contact-activity"
 import {
   contactInboxModel,
   contactModel,
   conversationModel,
   couponModel,
+  orderItemModel,
   questionnaireModel,
   questionnaireSubmissionModel,
 } from "../../schema"
-import { escapeLikePattern, likeContains } from "../../utils"
+import { escapeLikePattern, isBigintId, likeContains } from "../../utils"
 import { buildBotFieldWhere } from "./bot-field-predicates"
 import { buildCommentedOnPostWhere } from "./commented-on-post"
+import {
+  boughtItemExists,
+  buildCartContainsWhere,
+  buildCartIsEmptyWhere,
+  buildCartValueWhere,
+  buildLastPurchaseWhere,
+  buildOrderNumberWhere,
+} from "./commerce"
+import {
+  buildContactActivityWhere,
+  buildLastDeliveredWhere,
+  buildSentMessageWhere,
+} from "./contact-activity"
 import { buildContinentWhere } from "./continent"
 import { parseConversationAssigneeValues } from "./conversation-assignee"
 import {
@@ -29,6 +45,7 @@ import {
 import { buildCustomFieldWhere } from "./custom-field-predicates"
 import { contactInboxExists, existsWhere, joinTableExists } from "./exists"
 import { buildLeaderboardScoreWhere } from "./leaderboard-score"
+import { buildPipelineItemConditionWhere } from "./pipeline-item"
 import {
   buildBooleanColumn,
   buildBooleanFromTimestamp,
@@ -56,6 +73,7 @@ import type {
 } from "./types"
 import { buildIsWithinWorkingHoursWhere } from "./working-hours-predicates"
 
+export { isContactActivityFiltersEnabled } from "./contact-activity"
 export {
   parseConversationAssigneeValues,
   UNASSIGNED_ASSIGNEE_VALUE,
@@ -69,6 +87,7 @@ export {
   ctwaRetargetSegments,
 } from "./ctwa-retarget"
 export {
+  contactFilterUsesField,
   EMAIL_PHONE_FILTER_FIELDS,
   pruneContactFilterFields,
   pruneEmailPhoneFilterConditions,
@@ -76,6 +95,7 @@ export {
 export {
   buildContactInboxScopeWhere,
   type ContactInboxScope,
+  contactInboxHasDmSQL,
   contactInboxInteractedWithin24hSQL,
 } from "./predicates"
 export {
@@ -306,6 +326,8 @@ export const buildSmartKeywordWhere = (
   if (PURE_DIGITS_KEYWORD_PATTERN.test(trimmedKeyword)) {
     return {
       OR: [
+        // A pasted contact id matches exactly; longer digit runs cannot be ids.
+        ...(isBigintId(trimmedKeyword) ? [{ id: trimmedKeyword }] : []),
         { firstName: { ilike: likeKeyword } },
         { lastName: { ilike: likeKeyword } },
         ...(includeEmailAndPhone
@@ -360,6 +382,44 @@ export function buildContactWhere(input: FilterWhereInput): ContactWhere {
   return where
 }
 
+/**
+ * The filter as a `Contact` predicate: `true` = matches every contact (no
+ * conditions), `false` = matches nobody (fail closed), otherwise the SQL.
+ */
+const resolveContactFilterPredicate = (
+  workspaceId: string,
+  contactFilter: FilterCriteriaInput,
+): SQL | boolean => {
+  if (contactFilter.conditions.length === 0) {
+    return true
+  }
+
+  if (!contactFilterHasPredicate(contactFilter, workspaceId)) {
+    return false
+  }
+
+  const contactWhere = buildContactWhere({
+    workspaceId,
+    contactFilter,
+  })
+  return relationsFilterToSQL(contactModel, contactWhere as never) ?? false
+}
+
+/** Boolean SQL for a `Contact` row matching the filter (`TRUE`/`FALSE` when constant). */
+export const buildContactFilterMatchSQL = ({
+  workspaceId,
+  contactFilter,
+}: {
+  workspaceId: string
+  contactFilter: FilterCriteriaInput
+}): SQL => {
+  const predicate = resolveContactFilterPredicate(workspaceId, contactFilter)
+  if (typeof predicate === "boolean") {
+    return predicate ? sql`TRUE` : sql`FALSE`
+  }
+  return predicate
+}
+
 export const buildContactInboxContactFilterSQL = ({
   contactIdColumn,
   workspaceId,
@@ -369,27 +429,12 @@ export const buildContactInboxContactFilterSQL = ({
   workspaceId: string
   contactFilter: FilterCriteriaInput
 }): SQL => {
-  if (contactFilter.conditions.length === 0) {
-    return sql`TRUE`
+  const predicate = resolveContactFilterPredicate(workspaceId, contactFilter)
+  if (typeof predicate === "boolean") {
+    return predicate ? sql`TRUE` : sql`FALSE`
   }
 
-  if (!contactFilterHasPredicate(contactFilter, workspaceId)) {
-    return sql`FALSE`
-  }
-
-  const contactWhere = buildContactWhere({
-    workspaceId,
-    contactFilter,
-  })
-  const contactWhereSQL = relationsFilterToSQL(
-    contactModel,
-    contactWhere as never,
-  )
-  if (!contactWhereSQL) {
-    return sql`FALSE`
-  }
-
-  return sql`${contactIdColumn} IN (SELECT ${contactModel.id} FROM ${contactModel} WHERE ${contactWhereSQL})`
+  return sql`${contactIdColumn} IN (SELECT ${contactModel.id} FROM ${contactModel} WHERE ${predicate})`
 }
 
 export function applyContactFilter(
@@ -548,6 +593,22 @@ function buildConditionWhere(
     case "commentedOnPost":
       return buildCommentedOnPostWhere(operator, value, context.workspaceId)
 
+    case "sentMessage":
+      return buildSentMessageWhere(
+        operator,
+        value,
+        context.workspaceId,
+        normalizeForMatch,
+      )
+
+    case "lastDelivered":
+      return buildLastDeliveredWhere(
+        operator,
+        value,
+        context.workspaceId,
+        timezone,
+      )
+
     case "emailWasVerified":
       return buildBooleanColumn("emailVerified", operator, value)
 
@@ -675,6 +736,9 @@ function buildConditionWhere(
         value,
       )
 
+    case "pipelineItem":
+      return buildPipelineItemConditionWhere(condition, context.workspaceId)
+
     case "conversationAssigned":
       return buildConversationAssignedWhere(operator, value)
 
@@ -736,7 +800,70 @@ function buildConditionWhere(
         value,
       )
 
+    // Purchases (web shop and API orders, not cancelled) and the web shop cart.
+    case "totalSpent":
+    case "numberOfOrders":
+      return buildOrderNumberWhere(field, operator, value)
+
+    case "bought":
+      return buildLastPurchaseWhere(operator, value, timezone)
+
+    case "boughtItems":
+      return buildBoughtItemsWhere(operator, value)
+
+    case "shoppingCartContainsItems":
+      return buildCartContainsWhere(operator, value)
+
+    case "shoppingCartIsEmpty":
+      return buildCartIsEmptyWhere(operator, value)
+
+    case "shoppingCartTotal":
+      return buildCartValueWhere("total", operator, value)
+
+    case "shoppingCartSubtotal":
+      return buildCartValueWhere("subtotal", operator, value)
+
     default:
-      return {}
+      return isContactActivityFilterField(field)
+        ? buildContactActivityWhere(field, operator, value, context.workspaceId)
+        : {}
   }
 }
+
+/**
+ * Bought a product: `eq` that one, `ne` never that one (contacts who never
+ * bought included), `isEmpty` never bought anything.
+ */
+function buildBoughtItemsWhere(operator: string, value: unknown): ContactWhere {
+  if (operator === operatorTypes.enum.isEmpty) {
+    return boughtItemExists(undefined, true)
+  }
+  const values = (Array.isArray(value) ? value : [value]).filter(
+    (item): item is string => typeof item === "string" && item !== "",
+  )
+  if (values.length === 0) {
+    return {}
+  }
+  const positive =
+    operator === operatorTypes.enum.eq || operator === operatorTypes.enum.in
+  const negative =
+    operator === operatorTypes.enum.ne || operator === operatorTypes.enum.notIn
+  if (!(positive || negative)) {
+    return {}
+  }
+  // Only ids that cast to a bigint: one malformed value must not fail the
+  // whole contact query. With none left, nobody bought "it".
+  const productIds = values.filter((id) => PRODUCT_ID_PATTERN.test(id))
+  return boughtItemExists(
+    productIds.length > 0
+      ? sql`${orderItemModel.productId} IN (${sql.join(
+          productIds.map((id) => sql`${id}::bigint`),
+          sql`, `,
+        )})`
+      : sql`false`,
+    negative,
+  )
+}
+
+/** A product id as stored: a positive bigint, safely within its range. */
+const PRODUCT_ID_PATTERN = /^\d{1,18}$/

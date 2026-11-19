@@ -227,9 +227,141 @@
     }
   },
   "aiFiles": {
+    "detail": {
+      "title": "Knowledge details",
+      "details": "Details",
+      "noChunkingInfo": "No processing information is available yet."
+    },
+    "chunking": {
+      "title": "Chunking",
+      "strategyLabel": "Strategy",
+      "version": "Chunker version",
+      "chunkSize": "Chunk size",
+      "overlapSize": "Overlap size",
+      "chunkCount": "Chunks",
+      "processedAt": "Processed at",
+      "outdated": "Reindex recommended",
+      "strategy": {
+        "prose": "Prose",
+        "tabular": "Tabular",
+        "markdown": "Markdown"
+      },
+      "configDefault": "Chunking parameters: defaults ({chunkSize} characters, overlap {overlapSize}).",
+      "configCustom": "Chunking parameters: {chunkSize} characters, overlap {overlapSize}."
+    },
+    "processingRun": {
+      "title": "Processing run",
+      "noRun": "No processing run has been tracked for this file yet.",
+      "queuedAt": "Queued at",
+      "startedAt": "Started at",
+      "heartbeatAt": "Last heartbeat",
+      "finishedAt": "Finished at",
+      "stale": "Processing appears stalled",
+      "failedBadge": "Processing failed",
+      "successNote": "Chunking and embedding enqueueing completed. The file is searchable when embedding status is also complete.",
+      "status": {
+        "queued": "Queued",
+        "processing": "Processing",
+        "success": "Prepared",
+        "error": "Failed"
+      },
+      "error": {
+        "fileTooLarge": "The file is too large to process.",
+        "tooManyChunks": "The file produced too many chunks.",
+        "fileUnreadable": "The file could not be read. For CSV files, save as CSV UTF-8 and try again.",
+        "noExtractableContent": "No content could be extracted. Check the spreadsheet header row, or the file may be a scan or empty.",
+        "noEmbeddingProvider": "No embedding provider is configured.",
+        "enqueueFailed": "The file was saved but processing could not be queued. Reindex it to try again.",
+        "unknown": "Processing failed unexpectedly."
+      }
+    },
+    "reindex": {
+      "action": "Reindex",
+      "confirmTitle": "Reindex this file?",
+      "confirmDescription": "The file will be processed with the current chunker.",
+      "downtimeWarning": "Search may be temporarily unavailable while this file is reindexed.",
+      "queued": "Reindex queued",
+      "alreadyRunning": "Processing is already running for this file.",
+      "rateLimited": "Too many requests. Try again shortly.",
+      "parameters": "Chunking parameters",
+      "strategyLabel": "How to split",
+      "strategy": {
+        "auto": "Automatic (by file type)",
+        "prose": "Plain text"
+      },
+      "chunkSize": "Chunk size (characters)",
+      "overlapSize": "Overlap (characters)",
+      "overlapDisabledTabular": "Spreadsheets keep each row whole, so overlap is not used.",
+      "tabularHeaderRow": "Header row (spreadsheets)",
+      "presets": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "custom": "Custom chunk size"
+      },
+      "resetDefaults": "Restore defaults",
+      "estimate": "Estimate: about {estimate} chunks (currently {current})",
+      "reembedWarning": "Changing parameters re-embeds the whole file (about {count} chunks) with your workspace key, and the file cannot be searched until it finishes.",
+      "largeChunkWarning": "Larger chunks make every agent answer read more text and cost more tokens.",
+      "noChangeNote": "Parameters are unchanged: chunks that are already embedded are kept and not embedded again.",
+      "conflict": "This file is being processed, so the new parameters were not applied. Try again when processing finishes."
+    },
+    "chunks": {
+      "indexOutdated": "Some chunks have no position yet. Reindex the file to number them."
+    },
     "description": "Give Your Agents Access to PDFs, Docs, and More",
     "title": "Knowledge",
-    "noEmbeddingProvider": "No embedding provider configured. AI file embeddings require OpenAI or Gemini integration. DeepSeek and Claude do not support embedding models."
+    "noEmbeddingProvider": "No embedding provider configured. AI file embeddings require OpenAI or Gemini integration. DeepSeek, Claude and Muse do not support embedding models.",
+    "testQuery": {
+      "title": "Test query",
+      "description": "Pick files, ask a question and see which chunk answers it. Only the retrieval step is simulated; no AI answer is generated.",
+      "open": "Test query",
+      "backToKnowledge": "Back to Knowledge",
+      "run": "Run test",
+      "files": "Files",
+      "filterFiles": "Filter files by name",
+      "selectAllReady": "Select all ready files",
+      "selectedCount": "{count}/{max} selected",
+      "fileNotReady": "This file has no chunks ready for search yet.",
+      "question": "Question",
+      "expected": "Expected answer (optional)",
+      "expectedHelp": "Type the answer exactly as it appears in the document, accents included. It is matched against every chunk of the selected files.",
+      "limit": "Result limit",
+      "simulationNote": "This simulates retrieval only; an agent may phrase a question differently. Each run uses one embedding from your workspace key.",
+      "rateLimited": "Too many test requests. Try again shortly.",
+      "byFile": "By file",
+      "matches": "{count} matching chunks",
+      "bestRank": "best rank {rank}",
+      "needsReindex": "Needs reindex",
+      "openDetail": "Open details",
+      "rank": "#{rank}",
+      "chunkNumber": "chunk #{index}",
+      "chunkUnnumbered": "chunk not numbered",
+      "aiWillSee": "AI will see",
+      "belowThreshold": "Below threshold",
+      "containsExpected": "Contains the answer",
+      "thresholdLine": "Threshold {threshold}",
+      "appliedConfig": "Applied configuration",
+      "agentDefaultThreshold": "Agent default threshold",
+      "timings": "Search time",
+      "scoreNotComparable": "Similarity scores are not directly comparable across embedding models.",
+      "answerLocation": "Answer is in {file} · {chunk} · rank {rank}",
+      "splitHint": "The answer may be split between two chunks. Try a larger chunk size or overlap, or check the file was read correctly.",
+      "previousRun": "Previous run ({time}): answer rank {from} → now {to}",
+      "previousRunTop": "Previous run ({time}): {changed} of {total} top chunks changed",
+      "verdict": {
+        "inTopResults": "The AI will see the expected answer.",
+        "foundButLowRank": "The answer is in the documents but ranks too low for the AI to see it. Try a closer question, or reindex with smaller chunks.",
+        "notInAnyChunk": "No chunk of the selected files contains the answer. The document may be read or split wrongly: view the chunks or reindex with other settings."
+      },
+      "diagnosis": {
+        "ok": "Matching chunks found.",
+        "noReadyChunks": "No chunks are ready for search yet. Open the file to check its processing status.",
+        "allBelowThreshold": "Chunks were found but all are below the threshold. Try a lower trial threshold.",
+        "noMatches": "No matching chunks were found.",
+        "agentHasNoFiles": "This agent has no knowledge files."
+      }
+    }
   },
   "aiFunctions": {
     "description": "Configure LLM functions to make your AI agent more intelligent",
@@ -477,6 +609,8 @@
       "description": "Send a flow to all contacts."
     },
     "receiversCount": "Receivers: {count}",
+    "receiversCountCapped": "Receivers: {count}+",
+    "receiversCountUnknown": "Receivers: ?",
     "receiversLoading": "Receivers: Loading...",
     "whatsappTemplateMessage": {
       "title": "Template Message",
@@ -667,6 +801,7 @@
       "clicked": "Clicked",
       "failed": "Failed",
       "missed": "Misses",
+      "moderated": "Moderated",
       "noContacts": "No contacts found",
       "noComment": "(no text)",
       "pageInfo": "Page {page} of {pageCount}",
@@ -686,7 +821,9 @@
       "contactNotNew": "Contact is not new",
       "alreadyRepliedOnPost": "Already replied on this post",
       "engagedOnOtherPost": "Already engaged on another post",
-      "mentionCountNotMatched": "Mention count did not match"
+      "mentionCountNotMatched": "Mention count did not match",
+      "noImageAttachment": "No photo attached",
+      "moderated": "Hidden or deleted by moderation"
     },
     "replyTo": {
       "mentions": "Comments when enough mentions",
@@ -706,6 +843,10 @@
       "label": "Track if a user tags other users",
       "descriptionText": "Counts the accounts tagged in each comment and adds them to the contact's running totals across all comments. Use '{{total_tagged}}' for every tagged account and '{{total_new_tagged}}' for accounts that have never messaged your page or been a contact."
     },
+    "onlyCommentsWithImage": {
+      "label": "Only reply to comments with a photo",
+      "descriptionText": "Only auto-reply when the comment includes a photo. GIFs and stickers don't count. Comments without a photo are skipped and the next automation is tried."
+    },
     "card": {
       "reply": "Reply"
     },
@@ -723,10 +864,92 @@
       "column": "Account",
       "disconnected": "Disconnected account",
       "disconnectedDescription": "This automation is tied to an account that is no longer connected, so it answers no comments. Reconnect the account or choose another one."
+    },
+    "aiModeration": {
+      "enabled": "AI moderation",
+      "description": "An AI agent reads every comment before the bot replies and hides or deletes the ones in the categories below. A moderated comment is never replied to.",
+      "aiAgentDescription": "Only the agent's AI model is used, not its prompt.",
+      "categoriesLabel": "Block comments that are",
+      "categories": {
+        "hate": "Hate speech",
+        "offensive": "Offensive",
+        "harassment": "Harassment",
+        "negative": "Hostile toward the brand",
+        "spam": "Spam or scam"
+      },
+      "categoryDescriptions": {
+        "hate": "Attacks a group for race, religion, gender, nationality and similar",
+        "offensive": "Insults, swearing, vulgar language",
+        "harassment": "Threats, bullying, attacks on a person",
+        "negative": "Meant to damage the brand. Polite complaints are not blocked",
+        "spam": "Scams, phishing, unrelated promotion"
+      },
+      "instruction": "Extra guidance for the AI",
+      "instructionDescription": "Optional. Tell the AI what to allow or block.",
+      "instructionPlaceholder": "e.g. Do not block customers complaining about price",
+      "action": "When a comment is blocked",
+      "actions": {
+        "hide": "Hide it",
+        "delete": "Delete it"
+      },
+      "deleteWarning": "Deleted comments are gone for good and cannot be restored. Hiding is safer if the AI makes a mistake."
+    },
+    "moderationLog": {
+      "title": "Moderated comments",
+      "description": "Comments this automation hid or deleted, and why.",
+      "allActions": "All actions",
+      "allSources": "Rules and AI",
+      "actions": {
+        "hide": "Hidden",
+        "delete": "Deleted"
+      },
+      "sources": {
+        "rule": "By a hide rule",
+        "ai": "By AI"
+      },
+      "statuses": {
+        "pending": "In progress",
+        "done": "Done",
+        "failed": "Failed"
+      },
+      "rules": {
+        "all": "Hide all comments",
+        "phoneNumber": "Has a phone number",
+        "link": "Has a link",
+        "keyword": "Has a keyword",
+        "image": "Has an image",
+        "video": "Has a video",
+        "gif": "Has a GIF",
+        "emoji": "Has an emoji"
+      },
+      "summary": {
+        "total": "{count} moderated",
+        "hidden": "{count} hidden",
+        "deleted": "{count} deleted",
+        "byAI": "{count} by AI",
+        "byRule": "{count} by rules",
+        "failed": "{count} failed"
+      },
+      "columns": {
+        "time": "Time",
+        "contact": "Contact",
+        "comment": "Comment",
+        "action": "Action",
+        "reason": "Reason",
+        "status": "Status"
+      },
+      "loading": "Loading…",
+      "empty": "No comments have been hidden or deleted yet.",
+      "unknownContact": "Unknown",
+      "noText": "(no text)",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {page} of {pageCount}"
     }
   },
   "condition": {
     "unknownValue": "Unknown",
+    "deletedValue": "Deleted (#{id})",
     "yes": "Yes",
     "no": "No",
     "valuePlaceholder": "...",
@@ -841,6 +1064,7 @@
       "contactCreatedAt": "Contact created at",
       "fromCtwaAd": "From ads",
       "fromGoogleAd": "From Google Ads",
+      "clickedAd": "Clicked ad",
       "ctwaConversion": "Ad conversion",
       "lastUserInputTypes": {
         "text": "Text",
@@ -856,7 +1080,8 @@
       "ctwaConversionTypes": {
         "lead": "Lead",
         "purchase": "Purchase"
-      }
+      },
+      "pipelineItem": "Pipeline item"
     },
     "fieldGroups": {
       "opportunity": "Opportunity",
@@ -873,7 +1098,8 @@
       "botFields": "Bot Fields",
       "email": "Email",
       "sms": "SMS",
-      "ctwaAds": "Ads"
+      "ctwaAds": "Ads",
+      "pipeline": "Pipelines"
     },
     "languages": {
       "ar": "Arabic",
@@ -902,6 +1128,7 @@
     "sources": {
       "direct": "Direct",
       "comments": "Comments",
+      "liveComments": "Livestream comments",
       "ads": "Ads",
       "fbLeadAd": "FB Lead Ad",
       "inboundMessage": "Inbound Message",
@@ -920,6 +1147,22 @@
       },
       "adPrefix": "ad",
       "allAds": "all ads"
+    },
+    "noTopic": "No Topic",
+    "trackingSince": "Tracked since {date}. Earlier activity is not included.",
+    "pipelineItem": {
+      "anyPipeline": "Any pipeline",
+      "anyStatus": "Any status",
+      "attributes": {
+        "exists": "Items",
+        "status": "Item status",
+        "stage": "Item stage",
+        "priority": "Item priority"
+      },
+      "operators": {
+        "has": "Has",
+        "hasNo": "Has no"
+      }
     }
   },
   "channels": {
@@ -988,14 +1231,22 @@
         "inProgress": "Connection already in progress.",
         "unknown": "Something went wrong.",
         "followUpFailed": "Setup incomplete — finish from the channel settings.",
-        "webhookSubscribeFailed": "Connected, but the webhook subscription failed — retry from the connection settings."
+        "webhookSubscribeFailed": "Connected, but the webhook subscription failed — retry from the connection settings.",
+        "providerUnavailable": "The provider is temporarily unavailable. Try again in a few minutes."
       },
       "sessionError": {
         "sessionExpired": "Your session expired. Please reconnect.",
         "notMember": "You are no longer a member of this workspace.",
         "trialExpired": "Your trial has expired.",
         "macLimitReached": "You've reached your account limit.",
-        "credentialMissing": "Missing credentials. Please reconnect."
+        "credentialMissing": "Missing credentials. Please reconnect.",
+        "noPages": "We couldn't find any Facebook Page to connect. Connect again and allow access to at least one Page you manage.",
+        "noInstagramAccounts": "We couldn't find any Instagram account to connect. Connect again and allow access to at least one account.",
+        "exchangeFailed": "The sign-in couldn't be completed. Please connect again.",
+        "providerError": "We couldn't load your accounts right now. Please try again in a few minutes.",
+        "connectFailed": "Something went wrong while connecting. Please try again.",
+        "tooManyAttempts": "There are too many unfinished connection attempts. Wait a few minutes, then try again.",
+        "notAllowed": "You can't connect channels here right now. Reload the page to see why."
       },
       "cancelRemaining": "Cancel remaining",
       "retryFailed": "Retry failed ({count})",
@@ -1061,7 +1312,8 @@
   "workspaces": {
     "list": {
       "title": "Workspaces List"
-    }
+    },
+    "defaultName": "{name}'s workspace"
   },
   "workspaceToken": {
     "title": "Workspace token"
@@ -1266,6 +1518,13 @@
     "bot": {
       "label": "Bot"
     },
+    "botCategory": {
+      "options": {
+        "all": "All",
+        "human": "Human",
+        "bot": "Bot"
+      }
+    },
     "botResponse": {
       "label": "Bot Response"
     },
@@ -1284,7 +1543,8 @@
     },
     "button": {
       "label": "Button",
-      "whenPressed": "When this button is pressed"
+      "whenPressed": "When this button is pressed",
+      "callToThisNumber": "Call to this number"
     },
     "buttonLabel": {
       "label": "Button Label"
@@ -1360,6 +1620,15 @@
       "label": "Custom Field",
       "savePayloadTo": "Save response to Custom Field",
       "set_value": "Set value",
+      "clear": "Clear value",
+      "formula": "Use custom formula",
+      "set_now": "Set to now",
+      "date_expression": "Free-form date (with math)",
+      "add_minutes": "Add minutes",
+      "add_hours": "Add hours",
+      "add_days": "Add days",
+      "formulaHint": "Math where value is the current number, e.g. round(value * 1.1). Functions: abs, ceil, floor, round, min, max, pow, sqrt, log, sin, cos.",
+      "dateExpressionHint": "e.g. now + 2 days - 3 hours. Units: min, h, d, w, mo, y.",
       "append": "Append to the end",
       "prepend": "Prepend to the beginning",
       "increase": "Increase by",
@@ -1479,7 +1748,8 @@
       "label": "Flows",
       "placeholder": "Select flow",
       "aiGenerateTextAgent": "{aiName}: Generate Text Agent",
-      "aiDeleteMessageHistory": "{aiName}: Delete Message History"
+      "aiDeleteMessageHistory": "{aiName}: Delete Message History",
+      "aiSegmentImage": "{aiName}: Segment Image"
     },
     "steps": {
       "label": "Node",
@@ -1861,7 +2131,8 @@
       "partial": "Partial",
       "failed": "Failed",
       "success": "Success",
-      "error": "Error"
+      "error": "Error",
+      "uninstalled": "Uninstalled"
     },
     "subtitle": {
       "placeholder": "Enter subtitle"
@@ -1891,6 +2162,7 @@
       "label": "Clicked(%)"
     },
     "targetCountry": {
+      "currencyHint": "Also sets the default currency of pipelines that have none of their own.",
       "description": "The country where most of your contacts live.",
       "label": "Target Country"
     },
@@ -2290,6 +2562,10 @@
       "label": "From Address",
       "placeholder": "noreply@example.com"
     },
+    "fromName": {
+      "label": "From Name",
+      "placeholder": "ChatbotX"
+    },
     "messageTemplate": {
       "label": "Message Template"
     },
@@ -2396,7 +2672,13 @@
       "commentToMessage": "Comment-to-Message",
       "commentToMessageDescription": "Lets this account answer high-intent comments with a direct message. Required for TikTok comment automations that use a private reply.",
       "commentToMessageEligibility": "Only available to Business Accounts registered in Vietnam, Indonesia or Thailand, owned by someone over 18, that are registered businesses or have run Messaging Ads, with messaging permissions set to \"Requests\".",
-      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting."
+      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting.",
+      "features": "Features",
+      "featureMessaging": "Messaging",
+      "featureMessagingDescription": "Receive and send direct messages. TikTok does not offer messaging to accounts registered in the EEA, Switzerland or the UK — turn it off for those.",
+      "featureComments": "Comments",
+      "featureCommentsDescription": "Receive comments for comment automation: public reply, like and hide.",
+      "featuresReconnectHint": "Changes apply to accounts connected from now on. Reconnect existing accounts to update their permissions."
     },
     "drip": {
       "label": "Drip"
@@ -2434,6 +2716,12 @@
     },
     "lastAd": {
       "label": "Last Ad"
+    },
+    "adIds": {
+      "label": "All Ad IDs"
+    },
+    "adId": {
+      "label": "First Ad ID"
     },
     "lastAdSourcePlatform": {
       "label": "Last Ad Source Platform"
@@ -2571,7 +2859,11 @@
       "ads": "Ads",
       "settings": "Settings",
       "miniApps": "Mini Apps",
-      "leaderboards": "Leaderboards"
+      "leaderboards": "Leaderboards",
+      "pipelines": "Pipelines",
+      "places": "Places",
+      "templates": "Templates",
+      "polls": "Polls"
     },
     "adReferral": {
       "label": "Ads",
@@ -2580,7 +2872,8 @@
       "ctid": "CTID",
       "googleAds": "Google Ads",
       "googleAdsWhatsapp": "GA CCWA",
-      "googleAdsMessenger": "GA CCTM"
+      "googleAdsMessenger": "GA CCTM",
+      "googleAdsZalo": "GA Zalo"
     },
     "adSource": {
       "label": "Ad source"
@@ -2628,6 +2921,81 @@
     },
     "miniApp": {
       "label": "Mini App"
+    },
+    "lastOpportunityId": {
+      "label": "Last Opportunity ID"
+    },
+    "adminName": {
+      "label": "Sending Admin Name"
+    },
+    "adminTeamName": {
+      "label": "Sending Admin Teams"
+    },
+    "bookingId": {
+      "label": "Booking ID"
+    },
+    "lastPoints": {
+      "label": "Last Questionnaire Points"
+    },
+    "lastAdHeadline": {
+      "label": "Last Ad Headline"
+    },
+    "lastAdBody": {
+      "label": "Last Ad Body"
+    },
+    "lastStoryId": {
+      "label": "Last Story ID"
+    },
+    "lastLeadId": {
+      "label": "Last Lead ID"
+    },
+    "lastFormId": {
+      "label": "Last Form ID"
+    },
+    "lastFormName": {
+      "label": "Last Form Name"
+    },
+    "lastAdgroupId": {
+      "label": "Last Ad Group ID"
+    },
+    "lastTextInput": {
+      "label": "Last Text Input"
+    },
+    "empty": {
+      "label": "Empty"
+    },
+    "aiSegmentImage": {
+      "description": "Finds an object in an image with SAM 3.1 and saves a cropped image of it.",
+      "inputFieldId": {
+        "label": "Source image"
+      },
+      "target": {
+        "label": "Object to find",
+        "description": "A short noun phrase such as \"red car\" or \"product box\". Not a question or a command.",
+        "placeholder": "product box"
+      },
+      "matchSelection": {
+        "label": "Matches",
+        "options": {
+          "largest": "Largest object only",
+          "all": "All matching objects (one crop around them)"
+        }
+      },
+      "outputFieldId": {
+        "label": "Save image to"
+      },
+      "detailsOutputFieldId": {
+        "label": "Save details to",
+        "description": "Optional. Receives JSON with the match count and boxes.",
+        "sameAsOutput": "Choose a different field from the output image.",
+        "sameAsInput": "Choose a different field from the source image."
+      },
+      "overwriteWarning": "The result will replace the source image in this field.",
+      "states": {
+        "success": "Found",
+        "skip": "Not found",
+        "error": "Failed"
+      }
     }
   },
   "metaConversions": {
@@ -3274,6 +3642,7 @@
     "title": "Flows",
     "export": {
       "notPublished": "This flow has never been published. Publish it before exporting.",
+      "viewOnly": "This flow was installed from a view-only template, so it can't be exported.",
       "failed": "Export failed. Please try again."
     },
     "quickReplies": {
@@ -3442,7 +3811,18 @@
       "sendGoogleAdsConversion": "Send Google Ads Conversion",
       "changeGamificationScore": "Change gamification scores",
       "sendViewCatalog": "View catalog",
-      "sendProducts": "Send Products"
+      "sendProducts": "Send Products",
+      "sendCollection": "Collection",
+      "pipeline": "Pipelines",
+      "moreOptions": "More options",
+      "findPlacesNearMe": "Find places near me",
+      "callPhoneNumber": "Call Phone Number",
+      "copyText": "Copy Text"
+    },
+    "externalRequest": {
+      "errors": {
+        "requestFailed": "Unable to test the external request. Verify the request configuration and try again."
+      }
     },
     "splitTraffic": {
       "balanceHint": "The total sum must equal 100%.",
@@ -3473,7 +3853,12 @@
       "customField": "Custom Field",
       "selectCustomFieldPlaceholder": "Select custom field",
       "addMapping": "Add Mapping",
-      "addCustomField": "Add New"
+      "addCustomField": "Add New",
+      "fileBadge": "File",
+      "fileFormat": "File links",
+      "fileFormatAllUrls": "All links, comma-separated",
+      "fileFormatFirstUrl": "First link only",
+      "fileFormatHint": "The custom field stores links to the uploaded files, as chosen here."
     },
     "sendCarousel": {
       "addSlide": "Add slide",
@@ -3623,6 +4008,156 @@
       "productsSelected": "{count, plural, one {# product} other {# products}}",
       "noneSelected": "No products yet",
       "sendFailed": "Couldn't send the products."
+    },
+    "sendCollection": {
+      "title": "Collection",
+      "dataType": "Data type",
+      "dataTypes": {
+        "products": "Products"
+      },
+      "collectionType": "Collection type",
+      "collectionTypes": {
+        "automated": {
+          "label": "Automated",
+          "description": "Existing and future items that match the conditions you set will automatically be added to this collection."
+        },
+        "manual": {
+          "label": "Manual",
+          "description": "Add items to this collection one by one."
+        }
+      },
+      "condition": "Condition",
+      "name": "Name",
+      "optional": "(Optional)",
+      "category": "Category",
+      "subcategory": "Subcategory",
+      "vendor": "Vendor",
+      "all": "All",
+      "items": "Items",
+      "select": "Select",
+      "selectPlaceholder": "Select 1 or more items",
+      "selectAll": "Select all",
+      "deselectAll": "Deselect all",
+      "maxProducts": "Up to {count} products; a product the shop no longer shows is skipped.",
+      "automatedHint": "Sends up to {count} matching products the shop shows, as cards opening each product in the web shop.",
+      "summaryAll": "All products the shop shows",
+      "summaryAutomated": "Products: {filters}",
+      "summaryManual": "{count, plural, one {# product} other {# products}}",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "pipelineStep": {
+      "action": "Action",
+      "pipeline": "Pipeline",
+      "targetHint": "Acts on the contact's latest open item in this pipeline. The Skip path runs when there is none.",
+      "noPipelines": "No pipelines found",
+      "actions": {
+        "addToPipeline": "Add contact to pipeline",
+        "moveToStage": "Move to a stage",
+        "changeValue": "Change value",
+        "assign": "Assign to admins",
+        "changeStatus": "Change status",
+        "changePriority": "Change priority",
+        "changeDueDate": "Change due date",
+        "changeTitle": "Change title",
+        "setCustomField": "Set custom field",
+        "clearCustomField": "Clear custom fields",
+        "changeDescription": "Change description",
+        "removeFromPipeline": "Remove contact from pipeline",
+        "addComment": "Add comment",
+        "transfer": "Transfer to another pipeline"
+      },
+      "title": "Title",
+      "description": "Description",
+      "stage": "Stage",
+      "firstStage": "First stage",
+      "status": "Status",
+      "assigneeMembers": "Assigned admins",
+      "assigneeTeams": "Assigned teams",
+      "value": "Value",
+      "priority": "Priority",
+      "dueDate": "Due date",
+      "dueNone": "None",
+      "dueNoneHint": "The item has no due date.",
+      "dueCustomField": "From a date custom field",
+      "dueFixed": "Fixed date and time",
+      "dueField": "Date or datetime custom field",
+      "fieldValues": "Custom fields",
+      "field": "Field",
+      "fieldValue": "Value",
+      "fields": "Fields",
+      "addField": "Add field value",
+      "removeHint": "Deletes the contact's latest open item in this pipeline.",
+      "comment": "Comment",
+      "destinationPipeline": "Destination pipeline",
+      "destinationStage": "Destination stage",
+      "missingRequiredFields": "Required fields without a value: {names}. The item can't be created until each one has a value.",
+      "addRequiredFields": "Add required fields"
+    },
+    "aiSegmentImage": {
+      "label": "{name}: Segment Image"
+    },
+    "aiSpeechToText": {
+      "muse": {
+        "formatHint": "Only WAV files are accepted: PCM 16-bit, mono, 16 kHz or 24 kHz, up to 10 minutes. Any other file (for example voice messages) goes to the Error branch.",
+        "languageBias": {
+          "label": "Language bias",
+          "description": "Languages the audio is likely in. Leave empty to detect automatically.",
+          "placeholder": "Auto-detect"
+        },
+        "keywords": {
+          "label": "Keywords",
+          "description": "Names or domain terms that help Muse spell words correctly.",
+          "placeholder": "Add a keyword and press Enter"
+        }
+      },
+      "languages": {
+        "Arabic": "Arabic",
+        "Bengali": "Bangla",
+        "Dutch": "Dutch",
+        "English": "English",
+        "French": "French",
+        "German": "German",
+        "Hebrew": "Hebrew",
+        "Hindi": "Hindi",
+        "Indonesian": "Indonesian",
+        "Italian": "Italian",
+        "Japanese": "Japanese",
+        "Kannada": "Kannada",
+        "Korean": "Korean",
+        "Malay": "Malay",
+        "MandarinChinese": "Mandarin Chinese",
+        "Marathi": "Marathi",
+        "Polish": "Polish",
+        "Portuguese": "Portuguese",
+        "Spanish": "Spanish",
+        "Tagalog": "Tagalog",
+        "Tamil": "Tamil",
+        "Telugu": "Telugu",
+        "Thai": "Thai",
+        "Turkish": "Turkish",
+        "Vietnamese": "Vietnamese"
+      }
+    },
+    "findPlacesNearMe": {
+      "category": "Location category",
+      "allLocations": "All locations",
+      "whatsappOnly": "Only sent to WhatsApp contacts.",
+      "noLocationSource": "The location must be collected in this flow: add a Get User Data step with reply format Location before this action. A location saved by another flow is not used. Without it, this action is skipped."
+    },
+    "callPhoneNumber": {
+      "fallbackHint": "On channels that cannot place a call, the contact receives this number as a reply instead.",
+      "countryLabel": "Country code",
+      "noCountry": "No country",
+      "invalidForCountry": "This isn't a valid phone number for {country}.",
+      "needsCountry": "Pick the country, or start the number with + and the country code.",
+      "invalidInternational": "This isn't a valid international phone number."
+    },
+    "copyText": {
+      "textLabel": "Text to copy",
+      "limitHint": "Up to {max} characters after variables are filled in.",
+      "fallbackHint": "On channels that cannot copy text, the contact receives this text as a reply instead.",
+      "viewerTitle": "Copies this text"
     }
   },
   "folders": {
@@ -3647,7 +4182,7 @@
     "title": "General"
   },
   "facebookMarketingMessages": {
-    "deleteWarning": "This removes the campaign from ChatbotX only. The Meta message campaign keeps running — pause or delete it in Ads Manager.",
+    "deleteWarning": "This deletes the Meta message campaign and removes the campaign from ChatbotX. If Meta refuses the deletion, the campaign is kept.",
     "title": "Facebook Marketing Messages",
     "description": "Drive engagement and sales with personalized promotional messages on Messenger.",
     "create": "Create New",
@@ -3672,13 +4207,197 @@
       "generic": "Generic",
       "greeting": "Greeting",
       "quickReplies": "Quick replies",
-      "elements": "Cards"
+      "elements": "Cards",
+      "targetMessaging": "Target messaging",
+      "targetOptIn": "Opt-in",
+      "targetOptInDescription": "Customers on page who have agreed to receive marketing messages",
+      "targetCustomAudience": "Custom Audience",
+      "targetCustomAudienceDescription": "Send messages to audiences uploaded from a file",
+      "audience": "Custom audience"
     },
+    "noReadyAudiences": "No ready custom audiences for this Page and ad account.",
+    "manageAudiences": "Manage audiences",
     "errors": {
       "notConfigured": "Facebook Marketing Messages is not configured. Ask your administrator to set the Marketing Messages Config ID.",
       "notGranted": "Please grant access to use the Marketing Messages feature.",
       "tosNotAccepted": "To use this feature, please accept the custom object terms at {url}",
-      "notFound": "Marketing message not found."
+      "notFound": "Marketing message not found.",
+      "audienceNotTargetable": "The selected custom audience is not ready or does not belong to this Page and ad account.",
+      "connectFirst": "Connect Marketing Messages in the ChatbotX app first.",
+      "mmInvalidState": "This action is not available in the campaign's current state.",
+      "mmCampaignEnded": "The Meta message campaign has ended, so it cannot be sent or resumed.",
+      "mmPageNotConnected": "The Page for this campaign is not connected to this workspace.",
+      "mmContentLocked": "The content cannot be changed after the first message has been sent.",
+      "metaDeleteFailed": "Meta could not delete this campaign, so it was kept. {message}",
+      "statisticsUnknownAdAccount": "This workspace has no Marketing Messages campaigns on that ad account.",
+      "statisticsInvalidRange": "Choose a start date on or before the end date, within the last 37 months."
+    },
+    "tabs": {
+      "campaigns": "Campaigns",
+      "audiences": "Audiences",
+      "statistics": "Statistics"
+    },
+    "audiences": {
+      "title": "Custom Audiences",
+      "create": "Create New",
+      "uploadMore": "Upload more rows",
+      "empty": "No custom audiences yet.",
+      "deleteTitle": "Delete custom audience",
+      "deleteWarning": "This deletes the custom audience \"{name}\" on Meta and in ChatbotX. This cannot be undone.",
+      "deleted": "Custom audience deleted.",
+      "pageDisconnected": "Page disconnected",
+      "status": {
+        "ready": "Ready",
+        "missing": "Deleted on Meta"
+      },
+      "fields": {
+        "customAudienceId": "Custom Audience ID",
+        "approximateCount": "Approximate count",
+        "status": "Status",
+        "file": "Upload file"
+      },
+      "wizard": {
+        "title": "Create custom audience",
+        "uploadMoreTitle": "Upload more rows",
+        "steps": {
+          "prepare": "Prepare list",
+          "upload": "Upload",
+          "confirm": "Confirm"
+        },
+        "prepareDescription": "A subscriber list is a CSV or TXT file containing information used to build your audience for marketing messages. We use the phone number to match your subscribers to Facebook and Instagram users. Before the information is sent to us, your list of identifiers gets hashed into random code.",
+        "aboutHashing": "About hashing",
+        "downloadTemplate": "Download file template",
+        "mainIdentifiers": "Include at least one main identifier",
+        "moreIdentifiers": "Include more identifiers",
+        "identifiers": {
+          "email": "Email",
+          "phone": "Phone Number",
+          "madid": "Mobile advertiser ID",
+          "fn": "First name",
+          "ln": "Last name",
+          "ct": "City",
+          "st": "State/Province",
+          "country": "Country",
+          "zip": "ZIP/Postal Code",
+          "dob": "Date of birth",
+          "doby": "Year of birth",
+          "gen": "Gender"
+        },
+        "uploadNote": "Before uploading the list, make sure the identifiers are complete and in the correct format. The list must be in .csv, .txt or .xlsx format.",
+        "namePlaceholder": "Enter audience name...",
+        "descriptionPlaceholder": "Brief description (if any)",
+        "dropzone": "Click to upload or drag and drop",
+        "maxFileSize": "Maximum file size: 20MB",
+        "fileRequired": "Select a file to upload.",
+        "fileTooLarge": "The file is larger than 20MB.",
+        "fileType": "The file must be .csv, .txt or .xlsx.",
+        "next": "Next",
+        "back": "Back",
+        "upload": "Upload",
+        "done": "Done",
+        "successTitle": "Upload successful",
+        "successRows": "Your Messenger subscriber list has been uploaded {count, plural, one {# row} other {# rows}}",
+        "skippedRows": "{count, plural, one {# row was} other {# rows were}} skipped (no valid email or phone).",
+        "invalidRows": "{count, plural, one {# row was} other {# rows were}} rejected by Meta.",
+        "matchingNote": "We may need a few minutes to finish matching your subscribers with people on Facebook. You can check the status in the Audience list."
+      },
+      "errors": {
+        "audienceInvalidFile": "The file could not be read. Use a .csv, .txt or .xlsx file with a header row.",
+        "audienceTooManyRows": "The file has more than {max, number} rows.",
+        "audienceNoIdentifier": "The file needs an email or phone column.",
+        "audienceNoValidRows": "No row has a valid email or phone number.",
+        "audiencePartialUpload": "The audience was created, but the upload stopped after {received, number} rows. Use \"Upload more rows\" to retry.",
+        "audienceNotFound": "Custom audience not found.",
+        "audienceCreateRejected": "Meta rejected the audience: {reason}",
+        "uploadUncertain": "The upload may not have finished. Close this dialog and check the audience list; use \"Upload more rows\" if the audience was created.",
+        "pageNotConnected": "The selected Page is not connected to this workspace.",
+        "audienceInUse": "This custom audience is used by {count, plural, one {# marketing message} other {# marketing messages}} and cannot be deleted."
+      }
+    },
+    "delivery": {
+      "title": "Delivery",
+      "contentLocked": "The content is locked because messages have already been sent.",
+      "topicsReturned": "Topics Meta returned: {topics}",
+      "recipients": "{count} recipients",
+      "startsAt": "Starts: {date}",
+      "completedAt": "Completed: {date}",
+      "errorBreakdown": "Failures",
+      "retrying": "Meta is not accepting sends right now; retrying automatically.",
+      "counts": {
+        "sent": "Sent",
+        "delivered": "Delivered",
+        "unconfirmed": "Unconfirmed"
+      },
+      "status": {
+        "notSent": "Not sent",
+        "scheduled": "Scheduled",
+        "sending": "Sending",
+        "waitingNextDay": "Waiting for next day",
+        "paused": "Paused",
+        "stopped": "Stopped"
+      },
+      "reason": {
+        "pageNotConnected": "The Page is not connected to this workspace.",
+        "quotaReached": "Paused: your message quota is reached.",
+        "workspaceBlocked": "Paused: this workspace is blocked.",
+        "grantInvalid": "Paused: the Facebook connection has expired. Reconnect Marketing Messages.",
+        "metaBlocker": "Meta is blocking this campaign.",
+        "contentRejected": "Meta rejected the message content.",
+        "noTokens": "No recipients were found for this campaign.",
+        "noMatchingTopic": "No opted-in recipients match the \"Updates and promotions\" topic.",
+        "tokenFetchFailed": "Could not fetch recipients from Meta.",
+        "campaignEnded": "The Meta campaign has ended.",
+        "lifetimeBudgetReached": "The lifetime budget is used up."
+      },
+      "errors": {
+        "grantInvalid": "The Facebook connection has expired.",
+        "campaignInactive": "The Meta campaign is not active.",
+        "budgetReached": "Budget exhausted.",
+        "dailyBudgetReached": "Daily budget reached.",
+        "optedOut": "The recipient opted out.",
+        "frequencyLimit": "Recipient frequency limit reached.",
+        "contentRejected": "Message content rejected by Meta.",
+        "deliveryFailed": "Delivery failed.",
+        "outcomeUnknown": "Delivery outcome unknown."
+      }
+    },
+    "statistics": {
+      "searchPlaceholder": "Search by ID or name",
+      "adAccount": "Ad account",
+      "dateRange": "Date range",
+      "timezoneHint": "Dates in {timezone}",
+      "presets": {
+        "last7": "Last 7 days",
+        "last30": "Last 30 days",
+        "last90": "Last 90 days",
+        "thisMonth": "This month",
+        "lastMonth": "Last month"
+      },
+      "columns": {
+        "id": "ID",
+        "name": "Name",
+        "page": "Facebook Page",
+        "delivered": "Messages delivered",
+        "readRate": "Read rate",
+        "linkClicks": "Link clicks",
+        "linkClickRate": "Link click rate",
+        "costPerClick": "Cost per click",
+        "costPerDelivery": "Cost per delivery",
+        "spend": "Amount spent"
+      },
+      "notes": {
+        "delivery": "Meta does not report this for recipients in Europe or Japan; those campaigns show -.",
+        "clicks": "Meta does not report this for recipients in Europe, Argentina, Turkey, South Korea or Japan; those campaigns show -."
+      },
+      "footer": {
+        "label": "Total: {count, plural, one {# campaign} other {# campaigns}}",
+        "total": "Total",
+        "average": "Average"
+      },
+      "totalsUnavailable": "Totals are unavailable right now. Try again shortly.",
+      "readOnly": "Reconnect Marketing Messages to see statistics.",
+      "empty": "No Marketing Messages campaigns yet. Create one in the Campaigns tab.",
+      "noResults": "No campaigns match your search."
     }
   },
   "facebookAds": {
@@ -4323,6 +5042,7 @@
       "months": "{count}mo",
       "years": "{count}y"
     },
+    "realtimeRevokeWarning": "The access revoke couldn't be confirmed right away — it will take effect on the member's next reconnect.",
     "moveFeature": "Move {feature}",
     "poweredBy": "Powered by {name}",
     "noGiphyApiKey": "No GIPHY API key found. Please add one in Platform Settings.",
@@ -4460,6 +5180,9 @@
     "waTemplateMpmTooManySections": "A multi-product button can have at most 10 sections. Remove some sections before publishing.",
     "waTemplateMpmTooManyProducts": "A multi-product button can have at most 30 products in total. Remove some products before publishing.",
     "waTemplateLtoExpirationRequired": "Pick an expiration date for the limited-time offer before sending.",
+    "waTemplatePaymentRequestIncomplete": "Fill in the payment details of this button before publishing.",
+    "waTemplatePaymentRequestInvalid": "A payment detail has an invalid format. Check the amount, link and card digits.",
+    "waTemplatePaymentRequestMisplaced": "Payment details can only be set on a payment button of a regular (non-carousel) template.",
     "waTemplateMpmIncompleteProducts": "Every section needs at least one selected product — remove empty rows or pick a product for them.",
     "unsupportedBlock": "This channel does not support this block.",
     "constraintExceeded": "This channel limit was exceeded.",
@@ -4486,7 +5209,15 @@
       "noAnswer": "No answer",
       "labelsUnavailable": "Couldn't load the Flow's questions, so field names are shown instead.",
       "yes": "Yes",
-      "no": "No"
+      "no": "No",
+      "fileNotSaved": "File not saved",
+      "filesNotSaved": "{count, plural, one {# file wasn't saved} other {# files weren't saved}}",
+      "filesAttached": "{count, plural, one {# file attached} other {# files attached}}",
+      "fileFailure": {
+        "too_large": "File too large",
+        "unsupported_type": "Unsupported file type",
+        "download_failed": "Couldn't download"
+      }
     },
     "sendViewCatalogBodyTooLong": "The message text is too long for a catalog message. Shorten it.",
     "sendViewCatalogFooterTooLong": "The footer is too long for a catalog message. Shorten it.",
@@ -4513,7 +5244,24 @@
     "savedReplyImagesRemoved": "Images that can't be sent here were removed",
     "onlyImagesAllowed": "Only images can be added",
     "tooManySavedReplyImages": "A saved reply can have at most {max} images",
-    "savedReplyImagesNotSentHere": "Images won't be sent here"
+    "savedReplyImagesNotSentHere": "Images won't be sent here",
+    "invalidPhoneNumber": "This isn't a valid phone number. Include the country code, for example +1.",
+    "buttonCallPhoneNumberUnsupported": "This button cannot call a phone number here. Choose another action.",
+    "buttonCopyTextUnsupported": "This button cannot copy text here. Choose another action.",
+    "paymentRequest": {
+      "title": "Payment request",
+      "cardEnding": "Card ending {lastFourDigits}",
+      "status": "WhatsApp doesn't report payment. Check your payment provider.",
+      "cardStatus": "The customer's confirmation doesn't charge the card. Charge it with your payment provider.",
+      "sentFromTemplate": "Template: {name}"
+    },
+    "paymentConfirmation": {
+      "title": "Customer confirmed the payment",
+      "cardTitle": "Customer confirmed the card payment",
+      "cardEnding": "Card ending {lastFourDigits}",
+      "notCharged": "Not charged yet. Charge it with your payment provider.",
+      "reference": "Reference {referenceId}"
+    }
   },
   "instagram": {
     "description": "This integration lets you create Instagram bots.",
@@ -4610,6 +5358,7 @@
         "buttonText": "Button Text",
         "buttonType": "Button Type",
         "visitWebsite": "Visit Website",
+        "openMiniApp": "Open Mini App",
         "callPhoneNumber": "Call Phone Number",
         "postback": "Button"
       },
@@ -4671,6 +5420,18 @@
       "label": "DeepSeek"
     },
     "title": "DeepSeek"
+  },
+  "muse": {
+    "autoReply": {
+      "description": "Enable AI auto reply to respond to users naturally with AI powered by your business data.",
+      "label": "AI Auto Reply"
+    },
+    "connect": {
+      "description": "Respond to users naturally with AI powered by your business data.",
+      "embeddingHint": "Muse does not provide embedding models. Knowledge Base and AI files still need an OpenAI or Gemini integration.",
+      "label": "Muse"
+    },
+    "title": "Muse"
   },
   "decision": {
     "addConnection": "Add AI Router connection",
@@ -4807,12 +5568,17 @@
     "deepseek": {
       "description": "DeepSeek integration description",
       "title": "DeepSeek Integration"
+    },
+    "muse": {
+      "description": "Muse integration description",
+      "title": "Muse Integration"
     }
   },
   "auth": {
     "orContinueWith": "Or continue with",
     "continueWithFacebook": "Continue with Facebook",
     "continueWithGoogle": "Continue with Google",
+    "continueWithProvider": "Continue with {name}",
     "continueWithEmail": "Continue with Email",
     "continueWithMagicLink": "Continue with Magic Link",
     "dontHaveAnAccount": "Don't have an account?",
@@ -4843,11 +5609,15 @@
     "changePasswordTitle": "Change your password",
     "changePasswordDescription": "Set a new password before continuing.",
     "passwordChangeSuccess": "Password changed",
+    "signUpDisabledTitle": "Sign-up is disabled",
+    "signUpDisabledDescription": "New accounts can only be created by an administrator or through an invitation link.",
     "oauthError": {
       "accountNotLinked": "An account with this email already exists and could not be linked. Sign in the way you did before, or contact support.",
       "unableToLinkAccount": "We could not link this sign-in to the existing account. Sign in the way you did before, or contact support.",
       "sessionExpired": "The sign-in attempt expired. Please try again.",
       "accessDenied": "Sign-in was cancelled.",
+      "signUpDisabled": "This account does not exist yet and sign-up is disabled. Ask an administrator to create it for you.",
+      "invalidInvitation": "This invitation is invalid or has expired.",
       "generic": "Sign-in failed. Please try again."
     }
   },
@@ -4871,6 +5641,9 @@
     "maxCharacters": "Maximum {max} characters.",
     "invalidApiKey": "Invalid API key",
     "maxMustBeGreaterThanMin": "{maxField} must be greater than or equal to {minField}",
+    "trigger": {
+      "actionReferenceNotFound": "An action refers to a record that no longer exists. Re-select it in the action and save again."
+    },
     "inboundWebhook": {
       "inboxRequired": "Choose an inbox.",
       "inboxNotFound": "The selected inbox was not found.",
@@ -4880,11 +5653,31 @@
       "unknownFieldTarget": "A mapped contact field no longer exists.",
       "actionReferenceNotFound": "An action refers to a flow, tag or field that no longer exists.",
       "fieldMappingRequired": "Add at least one field mapping."
+    },
+    "form": {
+      "required": "This field is required.",
+      "minLength": "Enter at least {minimum} characters.",
+      "maxLength": "Enter at most {maximum} characters.",
+      "minNumber": "Enter a number of at least {minimum}.",
+      "moreThan": "Enter a number greater than {minimum}.",
+      "maxNumber": "Enter a number of at most {maximum}.",
+      "lessThan": "Enter a number less than {maximum}.",
+      "number": "Enter a number.",
+      "wholeNumber": "Enter a whole number.",
+      "minItems": "Choose at least {minimum}.",
+      "maxItems": "Choose at most {maximum}.",
+      "email": "Enter a valid email address.",
+      "url": "Enter a valid link, starting with https://.",
+      "format": "This value is not in the right format.",
+      "option": "Choose one of the options.",
+      "invalid": "This value is not valid.",
+      "checkFields": "Some fields need fixing. Check the ones marked in red."
     }
   },
   "webchat": {
     "chatUnavailable": "This chat is currently unavailable.",
     "description": "Let your customers get instant automated responses from your business directly from your website",
+    "loadMessagesError": "Couldn't load messages. Check your connection and try again.",
     "rateLimitExceeded": "Too many requests. Please try again in a moment.",
     "title": "Web Chat",
     "workspaceUnavailable": "This workspace is no longer available.",
@@ -5040,7 +5833,28 @@
         "mpmSectionLimitReached": "Maximum of 10 sections reached.",
         "mpmProductLimitReached": "Maximum of 30 products reached.",
         "mpmProductsSummary": "{productCount} products in {sectionCount} sections",
-        "unsupportedButtonParam": "This button type isn't supported yet."
+        "unsupportedButtonParam": "This button type isn't supported yet.",
+        "payment": {
+          "method": {
+            "pix": "Pix",
+            "boleto": "Boleto",
+            "payment_link": "Payment link",
+            "card_on_file": "One-click card payment"
+          },
+          "field": {
+            "code": "Pix code",
+            "digitableLine": "Boleto digitable line",
+            "url": "Payment link URL",
+            "lastFourDigits": "Last 4 digits of the card",
+            "credentialId": "Card credential ID (optional)",
+            "amount": "Amount in BRL, e.g. 12.34"
+          },
+          "notice": {
+            "general": "Use a variable so each customer gets their own payment details.",
+            "cardOnFile": "One-click card payment only works for businesses Meta has enabled for it."
+          },
+          "unsupportedButton": "This template has a payment button that cannot be sent: its payment type could not be determined. Re-sync the templates or pick another template."
+        }
       }
     },
     "sampleBodyCardContent": {
@@ -5197,7 +6011,6 @@
     "templateHeader": {
       "label": "Template Header"
     },
-    "transferPhoneNumber": "Transfer phone from another Whatsapp provider",
     "selectPage": {
       "tryAgain": "Try reconnecting"
     },
@@ -5454,7 +6267,18 @@
       "inboundLabel": "Accept incoming calls",
       "inboundHelper": "Let customers call in. Turn off to keep dialling out without the inbox ringing."
     },
-    "credentialSecretsRequired": "Enter the app secret and system user token. They aren't stored yet."
+    "credentialSecretsRequired": "Enter the app secret and system user token. They aren't stored yet.",
+    "embeddedSignupCancelled": "Signup was cancelled — you can close this tab.",
+    "embeddedSignupFailed": "Signup didn't finish — close this tab and try again.",
+    "payment": {
+      "settings": {
+        "title": "Payments",
+        "description": "How this number sends payment request buttons.",
+        "pixRedirectLabel": "Send Pix with redirect",
+        "pixRedirectDescription": "Buyers open their bank app to pay and return to WhatsApp. Turn this on only after Meta has onboarded your business; buyers whose app cannot redirect still get copy and paste.",
+        "adminOnly": "Only workspace admins can change payment settings."
+      }
+    }
   },
   "zalo": {
     "title": "Zalo OA",
@@ -5477,7 +6301,8 @@
     "chatbotInvitationDescription1": "Join {chatbotName}",
     "chatbotInvitationDescription2": "{userName} has invited you to join {chatbotName}.",
     "invalidInvitation": "This invitation is invalid or has expired.",
-    "workspaceUnavailable": "This workspace is no longer available."
+    "workspaceUnavailable": "This workspace is no longer available.",
+    "signUpToJoin": "Create an account to join"
   },
   "inboxes": {
     "markReadOnOutbound": {
@@ -5842,11 +6667,11 @@
       "incomingCall": "Incoming Call",
       "missedAudioCall": "Missed Audio Call",
       "callEnded": "Call Ended",
-      "ticketCreated": "Ticket Created",
-      "ticketMovedToStage": "Ticket Moved To Stage",
-      "ticketValueChanged": "Ticket Value Changed",
-      "ticketStatusChanged": "Ticket Status Changed",
-      "ticketPriorityChanged": "Ticket Priority Changed",
+      "pipelineItemCreated": "Pipeline Item Created",
+      "pipelineItemMovedToStage": "Pipeline Item Moved To Stage",
+      "pipelineItemValueChanged": "Pipeline Item Value Changed",
+      "pipelineItemStatusChanged": "Pipeline Item Status Changed",
+      "pipelineItemPriorityChanged": "Pipeline Item Priority Changed",
       "subscribedToSequence": "Subscribed To Sequence",
       "unsubscribedFromSequence": "Unsubscribed From Sequence",
       "shoppingCartSent": "Contact Sent Shopping Cart",
@@ -5857,15 +6682,24 @@
       "orderShipped": "Order Shipped",
       "orderConcluded": "Order Concluded",
       "orderCancelled": "Order Cancelled",
+      "orderPaid": "Order Paid",
+      "orderRefunded": "Order Refunded",
       "categoryAddedToCart": "Category Added To Cart",
       "productAddedToCart": "Product Added To Cart",
       "productRemovedFromCart": "Product Removed From Cart",
       "productOrdered": "Product Ordered",
       "contactReferredANewContact": "Contact Referred A New Contact",
       "contactReferredExistingContact": "Contact Referred Existing Contact",
+      "contactBlockedBot": "Contact Blocked The Bot",
+      "contactUnblockedBot": "Contact Unblocked The Bot",
       "callRecorded": "Call Recorded",
       "callTranscribed": "Call Transcribed",
-      "anyProduct": "Any product"
+      "anyProduct": "Any product",
+      "anyCategory": "Any category",
+      "anyPipeline": "Any pipeline",
+      "anyStage": "Any stage",
+      "unavailablePipeline": "Deleted or unavailable pipeline",
+      "unavailableStage": "Deleted or unavailable stage"
     },
     "actions": {
       "addTag": "Add Tag",
@@ -5873,6 +6707,7 @@
       "setCustomField": "Set Custom Field",
       "clearCustomField": "Clear Custom Field",
       "startAnotherFlow": "Start Another Flow",
+      "startExternalStep": "Start External Step",
       "notifyAdmins": "Notify Admins",
       "sendMetaCapiEvent": "Send Meta CAPI Event",
       "transferConversationToHuman": "Transfer Conversation to Human",
@@ -5914,7 +6749,26 @@
     "countCapped": "{count}+ contacts",
     "exportAllNotice": "All contacts matching the current filter will be exported.",
     "exportTakingLong": "Export is taking longer than expected",
-    "exportTakingLongDescription": "The export is still processing. You can close this dialog and check back in a few minutes from the export history."
+    "exportTakingLongDescription": "The export is still processing. You can close this dialog and check back in a few minutes from the export history.",
+    "search": {
+      "placeholder": "Search (name, email, phone, contact id)",
+      "searching": "Searching…",
+      "error": "Could not search contacts",
+      "empty": "No contacts found"
+    },
+    "exportHistory": {
+      "title": "Export history",
+      "description": "Contact exports from the last {days} days. Files are deleted after that.",
+      "empty": "No exports yet.",
+      "requestedBy": "By {name}",
+      "deletesOn": "Deleted on {date}",
+      "rows": "{count, plural, one {# contact} other {# contacts}}",
+      "status": {
+        "pending": "Processing",
+        "uploaded": "Ready",
+        "failed": "Failed"
+      }
+    }
   },
   "contactScan": {
     "menu": {
@@ -5986,7 +6840,8 @@
       "userPlaceholder": "User ID",
       "keyword": "Keyword",
       "keywordPlaceholder": "Action, detail, or IP address",
-      "allAdmins": "All Admin"
+      "allAdmins": "All Admin",
+      "allWorkspaces": "All workspaces"
     }
   },
   "customFields": {
@@ -6007,7 +6862,36 @@
       "pageTitle": "Page keywords",
       "page": "Automatically reply when you send a message containing a keyword to a contact."
     },
-    "pageWarning": "Message content containing a Page keyword can cause messages to be sent to the customer in an infinite loop. Disable the Page keyword immediately if you encounter this situation!"
+    "pageWarning": "Message content containing a Page keyword can cause messages to be sent to the customer in an infinite loop. Disable the Page keyword immediately if you encounter this situation!",
+    "conditions": {
+      "operators": {
+        "is": "Message is",
+        "similarTo": "Message similar to",
+        "contains": "Message contains",
+        "containsPhone": "Message contains phone",
+        "containsEmail": "Message contains email",
+        "containsImage": "Message contains image",
+        "containsVideo": "Message contains video",
+        "containsLink": "Message contains link",
+        "containsWholeWord": "Message contains whole word",
+        "beginsWith": "Message begins with",
+        "endsWith": "Message ends with",
+        "isThumbsUp": "Message is thumbs up",
+        "notContains": "Message doesn't contain",
+        "matchesRegex": "Message matching regex"
+      },
+      "and": "and",
+      "addCondition": "Message condition",
+      "removeCondition": "Remove condition",
+      "note": "Keywords are not case-sensitive and ignore accents, e.g. \"Tư vấn\" and \"tu van\" are recognised as the same.",
+      "keywordPlaceholder": "+ Keyword",
+      "regexPlaceholder": "+ Regex",
+      "errors": {
+        "keywordConditionValuesRequired": "Add at least one keyword.",
+        "keywordConditionTakesNoValues": "This condition takes no keywords.",
+        "invalidKeywordRegex": "Invalid regular expression."
+      }
+    }
   },
   "triggers": {
     "title": "Triggers"
@@ -6020,6 +6904,15 @@
     },
     "messages": {
       "empty": "No appointments yet."
+    },
+    "actions": {
+      "create": "Create appointment"
+    },
+    "create": {
+      "title": "Create appointment",
+      "description": "Pick a calendar and an available time to book for this contact.",
+      "noConversationHint": "No conversation is open, so the contact won't receive a confirmation message.",
+      "success": "Appointment created."
     }
   },
   "appointmentManagement": {
@@ -6153,6 +7046,7 @@
     "gemini": "Gemini",
     "claude": "Claude",
     "deepseek": "DeepSeek",
+    "muse": "Muse",
     "openrouter": "OpenRouter",
     "openaiCompatible": "OpenAI Compatible"
   },
@@ -6190,11 +7084,99 @@
   },
   "pollManager": {
     "title": "Poll Manager",
-    "description": "Create and manage polls for your contacts."
+    "description": "Conduct polling or voting systems. You can use it to collect customers opinions also.",
+    "feature": "Poll",
+    "deleteDescription": "Deleting a poll also deletes its candidates and votes. This cannot be undone.",
+    "list": {
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "votes": "Votes",
+      "getLink": "Get Link"
+    },
+    "getLink": {
+      "title": "Get Link",
+      "description": "Share a link that opens a chat and starts the poll.",
+      "omnichannel": "Omnichannel",
+      "noInboxes": "No connected channels can open this poll yet.",
+      "loadError": "Could not load the links."
+    },
+    "form": {
+      "createTitle": "Create poll",
+      "editTitle": "Edit poll",
+      "votingPeriod": "Voting period",
+      "imageRequired": "An image is required.",
+      "dateRangeInvalid": "The end date must be after the start date.",
+      "candidatesTitle": "Candidates or Options",
+      "candidateNumber": "Candidate {number}",
+      "moreOptions": "More Options",
+      "afterVoteFlow": "Flow to be sent after the user votes",
+      "afterVoteFlowNone": "None",
+      "removeVotesTitle": "Remove candidates?",
+      "removeVotesDescription": "Deleting candidates also deletes their votes."
+    },
+    "analytics": {
+      "title": "Analytics",
+      "results": "Results",
+      "votesPerGender": "Votes per gender",
+      "totalVotes": "Total votes",
+      "noVotes": "No votes yet",
+      "other": "Other",
+      "male": "Male",
+      "female": "Female",
+      "unknown": "Unknown",
+      "loadError": "Could not load the analytics.",
+      "columns": {
+        "name": "Name",
+        "totalVotes": "Total votes",
+        "totalPercent": "T%",
+        "maleVotes": "Male votes",
+        "malePercent": "M%",
+        "femaleVotes": "Female votes",
+        "femalePercent": "F%"
+      }
+    }
   },
   "placesNearMe": {
     "title": "Places Near Me",
-    "description": "Find places near your contacts."
+    "description": "Let your customers easily find your business locations near them.",
+    "tabs": {
+      "locations": "Locations",
+      "categories": "Categories"
+    },
+    "categories": {
+      "columns": {
+        "locations": "Locations"
+      },
+      "add": "Add category",
+      "edit": "Edit category",
+      "empty": "No categories yet.",
+      "created": "Category added",
+      "updated": "Category updated",
+      "deleted": "Category deleted",
+      "saveError": "Could not save the category",
+      "deleteError": "Could not delete the category",
+      "deleteTitle": "Delete {name}?",
+      "deleteDescription": "{count, plural, =0 {No locations use this category.} one {# location will become uncategorized.} other {# locations will become uncategorized.}}"
+    },
+    "locations": {
+      "columns": {
+        "coordinates": "Coordinates"
+      },
+      "preview": "Preview",
+      "add": "Add location",
+      "edit": "Edit location",
+      "empty": "No locations yet.",
+      "created": "Location added",
+      "updated": "Location updated",
+      "deleted": "Location deleted",
+      "saveError": "Could not save the location",
+      "deleteError": "Could not delete the location",
+      "deleteTitle": "Delete {name}?",
+      "deleteDescription": "This location will be permanently deleted.",
+      "noCategory": "No category",
+      "latitude": "Latitude",
+      "longitude": "Longitude"
+    }
   },
   "questionnaires": {
     "title": "Questionnaires",
@@ -6955,6 +7937,9 @@
   "templates": {
     "title": "Templates",
     "description": "Create and manage your templates.",
+    "createDialog": {
+      "title": "New template"
+    },
     "share": {
       "label": "Share",
       "enabled": "Shared",
@@ -6963,14 +7948,135 @@
       "dialogDescription": "Anyone with this link can install a copy of this template into a workspace in your tenant.",
       "enableLabel": "Enable share link",
       "linkLabel": "Share link",
-      "description": "Anyone with the link can install this template into their own workspace."
+      "rotateLabel": "Rotate link",
+      "rotateTitle": "Rotate share link?",
+      "rotateDescription": "The current link stops working immediately. Anyone who still needs to install this template needs the new link.",
+      "rotated": "Share link rotated",
+      "expiryLabel": "Link expires",
+      "expiryHint": "Leave empty for a link that never expires.",
+      "clearExpiry": "Remove expiry",
+      "expiredNotice": "This link has expired. Set a later date or remove the expiry to share it again.",
+      "templateId": "Template ID",
+      "templateKey": "Template Key",
+      "showKey": "Show key",
+      "hideKey": "Hide key",
+      "copyField": "Copy {field}"
+    },
+    "sync": {
+      "title": "Updates",
+      "updateAvailable": "Update available",
+      "upToDate": "Up to date",
+      "sourceDeleted": "Template deleted",
+      "sourceDeletedHint": "The publisher deleted this template. Your copy keeps working but can no longer be updated.",
+      "updateNow": "Update now",
+      "updating": "Updating…",
+      "version": "Template version {version}",
+      "lastSynced": "last updated {date}",
+      "autoUpdateLabel": "Update automatically when the template changes",
+      "noHistory": "No updates yet.",
+      "countAdded": "{count} added",
+      "countUpdated": "{count} updated",
+      "countDetached": "{count} no longer follow the template",
+      "notUpdatable": "{count} not updatable yet",
+      "overwritten": "{name} was edited and replaced by the update",
+      "restore": "Restore my version",
+      "restored": "Your version was restored",
+      "status": {
+        "pending": "Queued",
+        "running": "Running",
+        "completed": "Completed",
+        "partial": "Partial",
+        "failed": "Failed",
+        "skipped": "Skipped",
+        "cancelled": "Cancelled"
+      },
+      "trigger": {
+        "autoUpdate": "Automatic",
+        "manual": "Manual",
+        "reinstall": "Reinstall"
+      },
+      "requestedVersion": "requested v{version}",
+      "errors": {
+        "unknown": "The update failed. Try again, or contact support if it keeps failing.",
+        "templateSyncFailed": "The update failed. Try again.",
+        "templateSyncSuperseded": "A newer update replaced this one.",
+        "templateSyncAbandoned": "The update did not finish in time and was closed.",
+        "templateInstallationInactive": "This install is no longer active.",
+        "workspaceOwnerBlocked": "The workspace owner's account is blocked.",
+        "templateUninstallInProgress": "The template is being uninstalled.",
+        "templateAutoUpdateOff": "Automatic updates are turned off.",
+        "templateUpToDate": "The copy is already up to date.",
+        "templateInstallerAccessLost": "The installer no longer has permission to update this copy.",
+        "templateInstallationSourceMissing": "The template was deleted before the update ran.",
+        "templateCategoryPermissionDenied": "You no longer have permission to update everything in this template.",
+        "templatePayloadIncompatible": "This template was saved in a newer format than this server can install.",
+        "templateCrossTenantInstall": "This template is not available for your workspace.",
+        "templateInvalidInboxBinding": "A selected inbox does not match the template."
+      }
+    },
+    "versions": {
+      "detailsTab": "Details",
+      "tab": "Versions",
+      "versionNumber": "Version {version}",
+      "current": "Current",
+      "first": "First version",
+      "noDetail": "No details were recorded for this version.",
+      "added": "Added",
+      "changed": "Changed",
+      "removed": "Removed"
+    },
+    "installers": {
+      "title": "View Analytics",
+      "workspace": "Workspace",
+      "lastInstalled": "Last installed",
+      "version": "Version",
+      "autoUpdate": "Auto-update",
+      "uninstalled": "Uninstalled",
+      "hidden": "Workspace not shared",
+      "uninstallNotAllowed": "The installer has not allowed publishers to uninstall this copy.",
+      "loadError": "Could not load the installers. Try again.",
+      "automatic": "Automatic",
+      "details": "Details",
+      "noIssues": "No warnings or errors."
     },
     "installs": {
       "title": "Installs",
       "resources": "Resources",
       "warnings": "Warnings",
       "completedAt": "Completed at",
-      "autoUpdate": "Auto-update"
+      "autoUpdate": "Auto-update",
+      "installedBy": "Installed by",
+      "viaApi": "API token",
+      "attempts": "Attempts",
+      "autoUpdateOn": "On",
+      "autoUpdateOff": "Off",
+      "retry": "Retry install",
+      "resourcesTitle": "Installed resources",
+      "noResources": "Nothing was created yet.",
+      "deletedResource": "Deleted resource",
+      "viewOnly": "View only",
+      "created": "Created",
+      "reused": "Reused",
+      "loadMore": "Load more",
+      "statusFilter": "Status",
+      "allStatuses": "All statuses",
+      "errors": {
+        "unknown": "The install failed. Try again, or contact support if it keeps failing.",
+        "templatePayloadIncompatible": "This template was saved in a newer format than this server can install.",
+        "templateInstallationSourceMissing": "The template was deleted before the install ran.",
+        "templateCrossTenantInstall": "This template is not available for your workspace.",
+        "templateCategoryPermissionDenied": "You no longer have permission to install everything in this template.",
+        "templateInvalidInboxBinding": "A selected inbox does not match the template.",
+        "templateInstallEnqueueFailed": "The install could not be queued.",
+        "templateInstallFailed": "The install failed. Try again.",
+        "templateInstallAbandoned": "The install did not finish in time and was closed.",
+        "templateInstallSuperseded": "A newer install of this template replaced this one.",
+        "workspaceOwnerBlocked": "The workspace owner's account is blocked."
+      },
+      "uninstalledBy": "{by, select, publisher {The publisher uninstalled this template.} installer {This template was uninstalled from this workspace.} other {This template was uninstalled.}}",
+      "uninstalledSummary": "{deleted} deleted, {kept} kept.",
+      "lastAttemptAt": "Latest attempt",
+      "installedAutomatically": "Installed automatically (white-label default)"
     },
     "form": {
       "contents": "Template contents",
@@ -6983,14 +8089,26 @@
       "allowDelete": "Allow deleting after install",
       "publisherName": "Publisher name",
       "youtubeVideoId": "YouTube video ID",
-      "youtubeVideoIdDescription": "The 11-character ID from the video's URL, e.g. the \"dQw4w9WgXcQ\" in youtube.com/watch?v=dQw4w9WgXcQ",
+      "youtubeVideoIdDescription": "The 11-character ID from the video's URL, e.g. the \"xxxxxxxxxxx\" in youtube.com/watch?v=xxxxxxxxxxx",
       "testLink": "Test link",
       "imageUrl": "Cover image",
       "installBehavior": "Install behavior",
-      "createInstallFolder": "Install into a dedicated folder",
+      "createInstallFolder": "Create a folder on the installed account and install resources.",
       "createInstallFolderDescription": "Nest every installed resource under one new folder named after this template.",
-      "defaultAutoUpdate": "Flag installs for updates by default",
-      "defaultAutoUpdateDescription": "New installs will show an update available notice whenever you republish this template."
+      "defaultAutoUpdate": "Auto-update installed templates",
+      "defaultAutoUpdateDescription": "Whenever you save this template with changed content, installs that follow auto-update are overwritten with the new content (copies the installer edited are backed up first). Installers can turn it off.",
+      "viewOnly": "View only",
+      "viewOnlyAll": "Make all selected view only",
+      "includedAutomatically": {
+        "title": "Included automatically",
+        "hint": "Taken along because something you selected needs it. Read only.",
+        "rows": "{count, plural, one {# more item} other {# more items}}",
+        "kind": {
+          "folders": "Folders",
+          "placeCategories": "Place categories"
+        }
+      },
+      "viewOnlyCopyIncluded": "Something you selected (or something it needs) was installed from a view-only template, so it can't be shared in a new template."
     },
     "categories": {
       "flows": "Flows",
@@ -7005,8 +8123,116 @@
       "keywords": "Keywords",
       "entryPointLinks": "Entry point links",
       "triggers": "Triggers",
-      "fbCommentAutomations": "Facebook comment automations",
-      "settings": "Settings"
+      "fbCommentAutomations": "Comment automations",
+      "settings": "Bot fields & saved replies",
+      "sequences": "Sequences",
+      "aiMcpServers": "MCP servers",
+      "aiFiles": "AI knowledge files",
+      "questionnaires": "Questionnaires",
+      "couponTopics": "Coupon topics",
+      "pipelines": "Pipelines"
+    },
+    "locked": {
+      "flowBanner": "This flow was installed from a view-only template. You can look at it but not edit it.",
+      "badge": "View only",
+      "editorBanner": "This was installed from a view-only template. You can look at it but not edit it.",
+      "badgeHint": "Installed from a view-only template"
+    },
+    "channels": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "instagramFacebook": "Instagram (Facebook login)",
+      "threads": "Threads",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "zalo": "Zalo",
+      "webchat": "Webchat",
+      "line": "LINE",
+      "email": "Email"
+    },
+    "uninstall": {
+      "title": "Uninstall template",
+      "description": "The template removes everything it created in this workspace, including copies that were edited. Shared tags, fields and folders, items that existed before, and anything you built on top of a copy are kept.",
+      "loading": "Checking what will happen…",
+      "previewFailed": "Could not check what an uninstall would do.",
+      "failed": "Could not uninstall the template.",
+      "confirm": "Uninstall",
+      "action": "Uninstall",
+      "deleted": "{count, plural, one {# item will be deleted} other {# items will be deleted}}",
+      "deletedDone": "{count, plural, one {# item was deleted} other {# items were deleted}}",
+      "keptModified": "{count, plural, one {# edited or unverified copy is kept} other {# edited or unverified copies are kept}}",
+      "keptShared": "{count, plural, one {# shared tag or field is kept} other {# shared tags and fields are kept}}",
+      "keptByPolicy": "{count, plural, one {# other item is kept} other {# other items are kept}}",
+      "keptHasDependents": "{count, plural, one {# copy is kept because something still uses it} other {# copies are kept because something still uses them}}",
+      "deletedModified": "{count, plural, one {# of them was edited by you: those edits are lost and can not be restored} other {# of them were edited by you: those edits are lost and can not be restored}}",
+      "keptLockedByOther": "{count, plural, one {# item is kept because another template installation still protects it} other {# items are kept because another template installation still protects them}}",
+      "confirmCheckbox": "I understand this deletes the items above and can not be undone",
+      "started": "Uninstall started",
+      "inProgress": "Uninstalling…",
+      "retry": "Retry uninstall",
+      "state": {
+        "pending": "Uninstall queued",
+        "running": "Uninstalling…",
+        "partial": "Uninstall incomplete, retry it",
+        "failed": "Uninstall failed, retry it",
+        "skipped": "Uninstall skipped: the workspace is blocked"
+      },
+      "deletedUnverified": "{count, plural, one {# of them can not be checked for edits: if you changed it, those changes are lost} other {# of them can not be checked for edits: if you changed them, those changes are lost}}",
+      "cancelAction": "Cancel uninstall",
+      "cancelled": "Uninstall cancelled: the remaining items are yours to use again",
+      "blockedByReference": "{count, plural, one {# item was not deleted because something you created still points at it: remove that reference, then retry the uninstall} other {# items were not deleted because something you created still points at them: remove those references, then retry the uninstall}}",
+      "keptPartlyRemoved": "{count, plural, one {# copy was kept after a blocked uninstall; history and duplicate-protection data may have been removed, so review it before switching it on} other {# copies were kept after a blocked uninstall; history and duplicate-protection data may have been removed, so review them before switching them on}}",
+      "keptInactiveForReview": "{count, plural, one {# copy was left inactive: its history and duplicate-protection data were removed, so review it before switching it on} other {# copies were left inactive: their history and duplicate-protection data were removed, so review them before switching them on}}",
+      "keptHistoryRemoved": "{count, plural, one {# copy was kept, but its history was removed (it has nothing to switch on): review it before relying on it} other {# copies were kept, but their history was removed (they have nothing to switch on): review them before relying on them}}",
+      "cancelledPartial": "{count, plural, one {# item is already being deleted and will finish; the rest was given back} other {# items are already being deleted and will finish; the rest was given back}}"
+    },
+    "warningCodes": {
+      "aiFileTooLarge": "This knowledge file is larger than a template install can copy, so it was skipped.",
+      "aiFileUnavailable": "This knowledge file could not be copied, so it was skipped.",
+      "assigneeRequired": "Choose who this step assigns the conversation to.",
+      "ambiguousSourceFieldToken": "Several source fields share this name, so the variables using it were left unchanged.",
+      "backupTooLarge": "A locally edited item was too large to back up, so it was not overwritten.",
+      "backupUnavailable": "The backup for this item is no longer available.",
+      "botFieldRenamed": "A bot field with this name and another type already exists, so a renamed field was created.",
+      "categoryPermissionDenied": "You do not have permission for this category, so it was skipped.",
+      "couponTopicExpired": "This coupon topic has already expired.",
+      "credentialRequired": "Add the credentials for this item before using it.",
+      "custom": "A referenced item was not found in this workspace, so the link was dropped.",
+      "customField": "A referenced item was not found in this workspace, so the link was dropped.",
+      "customFieldRenamed": "A field with this name and another type already exists, so a renamed field was created.",
+      "enqueueFailed": "Background processing could not be queued for this item.",
+      "flow": "A referenced item was not found in this workspace, so the link was dropped.",
+      "flowInvalidStructure": "The flow's structure is invalid, so it was skipped.",
+      "flowNotPublished": "The flow was installed as a draft and is not published.",
+      "flowSkippedRequiredReference": "The flow was skipped because a required reference could not be resolved.",
+      "folder": "A referenced item was not found in this workspace, so the link was dropped.",
+      "inboxBindingRequired": "Pick an inbox for this channel; until then the item stays inactive.",
+      "integration": "A referenced item was not found in this workspace, so the link was dropped.",
+      "localModifiedOverwritten": "A locally edited item was overwritten. A backup was saved and can be restored.",
+      "name": "No free name was found for this item, so it was skipped.",
+      "noEmbeddingProvider": "No embedding provider is configured in this workspace, so knowledge files were skipped. Connect OpenAI or Gemini, then reinstall.",
+      "notUpdatable": "This kind of item is not updated automatically yet.",
+      "pipeline": "Uses a pipeline that no longer exists.",
+      "pipelineField": "Uses a pipeline field that no longer exists.",
+      "pipelineStage": "Uses a pipeline stage that no longer exists.",
+      "postSelectionRequired": "Select the post again: the original post could not be carried over.",
+      "product": "A referenced item was not found in this workspace, so the link was dropped.",
+      "productCategory": "A referenced item was not found in this workspace, so the link was dropped.",
+      "questionImage": "An image could not be copied.",
+      "quota": "A plan limit was reached, so the item was skipped.",
+      "referenceRemoved": "A reference that could not be resolved was removed.",
+      "savedReply": "A referenced item was not found in this workspace, so the link was dropped.",
+      "savedReplyImage": "An image could not be copied.",
+      "tag": "A referenced item was not found in this workspace, so the link was dropped.",
+      "unlisted": "Item not fully brought over: {code}",
+      "workspaceMember": "Assigned to a member who is not in this workspace.",
+      "workspaceUnavailable": "This workspace is no longer available, so the item was skipped."
+    },
+    "tabs": {
+      "mine": "My templates",
+      "installed": "Installed",
+      "installedEmpty": "No installed templates yet. Templates you install from another workspace will appear here."
     }
   },
   "qrCodeGenerator": {
@@ -7036,7 +8262,31 @@
       "supportOff": "Off",
       "searchPlaceholder": "Search by name, owner email or ID",
       "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
-      "supportAccessible": "Accessible"
+      "supportAccessible": "Accessible",
+      "periodStart": "Period start",
+      "periodEnd": "Period end",
+      "requestedBy": "Requested by",
+      "workspaceId": "Workspace ID",
+      "language": "Language",
+      "planSnapshot": "Plan at deletion",
+      "ownerQuota": "Owner quota",
+      "usagePeriods": "Usage periods",
+      "deletedTitle": "Deleted workspaces",
+      "deletedDescription": "Purge evidence for deleted workspaces.",
+      "purgedAt": "Purged at",
+      "deletionRequestedAt": "Deletion requested at",
+      "scheduledDeletionAt": "Scheduled deletion at",
+      "evidence": "Evidence",
+      "usage": "Usage snapshot",
+      "members": "Members",
+      "notAvailable": "Not available",
+      "createButton": "Create workspace",
+      "createTitle": "Create workspace for an owner",
+      "createDescription": "Creates a workspace for the owner's email, adding any member emails you list. A new email gets a mailed temporary password.",
+      "ownerEmail": "Owner email",
+      "memberEmails": "Member emails",
+      "membersHint": "Every member gets the permissions selected below. New emails get a mailed temporary password.",
+      "createdSummary": "Workspace created for {ownerEmail} — {memberCount} member(s) added, {newAccountCount} new account(s) emailed a temporary password."
     },
     "admins": {
       "title": "Platform administrators",
@@ -7046,12 +8296,29 @@
       "addButton": "Add administrator",
       "role": "Role",
       "bootstrap": "Environment bootstrap administrator",
+      "roles": {
+        "superAdmin": "Super admin",
+        "support": "Support"
+      },
       "remove": "Remove administrator",
       "empty": "No platform administrators are configured.",
       "added": "Platform administrator added.",
       "removed": "Platform administrator removed.",
       "addError": "Could not add the platform administrator.",
       "removeError": "Could not remove the platform administrator."
+    },
+    "auditLogs": {
+      "title": "Platform audit logs",
+      "description": "Audit activity across every workspace on this platform."
+    },
+    "smtp": {
+      "title": "SMTP settings",
+      "description": "Platform email transport. Leave this empty to keep using the SMTP_SERVER and SMTP_FROM environment variables.",
+      "usingEnv": "No SMTP settings saved — platform email uses the SMTP_SERVER environment variable.",
+      "remove": "Remove SMTP settings",
+      "errors": {
+        "passwordRequired": "Enter the SMTP password."
+      }
     }
   },
   "platformCredentials": {
@@ -7087,6 +8354,23 @@
     "description": "Check a channel to stop workspaces in this tenant from creating it.",
     "hint": "Leave every channel unchecked to allow all channels.",
     "hiddenByPlatform": "Hidden by the platform admin — you can't re-enable this channel."
+  },
+  "platformDefaultTemplate": {
+    "title": "Default Template",
+    "description": "Install this template into every new workspace created under this white-label. Existing workspaces are not changed.",
+    "clearTitle": "Remove the default template?",
+    "clearDescription": "New workspaces will no longer get a template automatically. Workspaces that already have it keep it.",
+    "status": {
+      "notConfigured": "Not set",
+      "ready": "Active",
+      "templateUnavailable": "Template unavailable",
+      "shareDisabled": "Share link off",
+      "keyRotated": "Key invalid"
+    },
+    "errors": {
+      "unavailable": "The template ID or key is not valid.",
+      "shareDisabled": "Turn on the template's share link first."
+    }
   },
   "platformEmailTemplates": {
     "title": "Email Templates",
@@ -7130,6 +8414,7 @@
     }
   },
   "manageSidebar": {
+    "administrationGroup": "Administration",
     "platformGroup": "Platform",
     "toolsGroup": "Tools",
     "saasGroup": "SaaS",
@@ -7170,14 +8455,39 @@
     "invalidTitle": "This link is no longer available.",
     "invalidDescription": "This template share link is invalid, disabled, or has expired.",
     "byPublisher": "By {publisherName}",
-    "includes": "This template includes",
     "videoTitle": "Template preview video",
-    "tryItOut": "Try it out",
-    "signInToInstall": "Sign in to install",
+    "preview": "Preview",
+    "aboutTemplate": "About this template",
     "selectWorkspace": "Select a workspace",
     "install": "Install",
     "installStarted": "Install started",
-    "noEligibleWorkspaces": "You don't have a workspace eligible to install this template."
+    "noEligibleWorkspaces": "You don't have a workspace eligible to install this template.",
+    "alreadyInstalled": "This template is already installed in this workspace.",
+    "viewInstall": "View install",
+    "installAnotherCopy": "Install another copy",
+    "inboxesTitle": "Inboxes",
+    "inboxesHint": "This template was built around these inboxes. Choose which of your own inboxes to use; anything left out is installed switched off.",
+    "noInbox": "Don't connect — install switched off",
+    "noInboxAvailable": "No connected inbox on this channel",
+    "updateExisting": "Update installed copy",
+    "updateStarted": "Update started",
+    "autoUpdateLabel": "Update automatically when the template changes",
+    "collisions": {
+      "title": "What the install will do here",
+      "loading": "Checking this workspace…",
+      "action": {
+        "create": "Created",
+        "reuse": "Reused",
+        "rename": "Renamed",
+        "bind": "Bound",
+        "unbound": "Left unbound"
+      },
+      "detail": {
+        "rename": "“{name}” already exists with another type, so the template’s one is added under a new name.",
+        "unbound": "“{name}” is left unconnected until you pick an inbox."
+      }
+    },
+    "createWorkspace": "Create a new workspace"
   },
   "bookingPage": {
     "metadataTitle": "Booking",
@@ -7217,6 +8527,7 @@
       "invalidTokenTitle": "This booking link is unavailable.",
       "invalidTokenDescription": "The link may be invalid or expired. Please ask for a new booking link.",
       "staleSlot": "This time is no longer available. Please choose another time.",
+      "alreadyScheduled": "This contact already has an appointment at this time on this calendar. Please choose another time.",
       "availabilityChanged": "Availability changed while you were choosing a time. Please choose again.",
       "submitFailed": "We couldn't complete this request. Please try again."
     },
@@ -7306,7 +8617,144 @@
     "unknown": "Unknown"
   },
   "orders": {
-    "title": "Orders"
+    "title": "Orders",
+    "empty": "No orders yet.",
+    "searchPlaceholder": "Search by name, phone, email or order number",
+    "orderNumber": "Order #{number}",
+    "print": "Print",
+    "inbox": "Inbox",
+    "statusUpdated": "Order status updated",
+    "statusUpdateError": "Could not update the order status",
+    "updateStatusTitle": "Update Order Status",
+    "message": "Message",
+    "messagePlaceholder": "Optional",
+    "messageDescription": "Sent to the customer in their conversation.",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "delete": "Delete",
+    "deleted": "Order deleted",
+    "deleteError": "Could not delete the order",
+    "deleteTitle": "Delete order #{number}?",
+    "deleteDescription": "The order, its items and its history are removed. Stock it still holds is put back.",
+    "columns": {
+      "name": "Name",
+      "total": "Total",
+      "status": "Status",
+      "date": "Date",
+      "rating": "Rating",
+      "quantity": "Quantity",
+      "price": "Price",
+      "vendor": "Vendor",
+      "orderStatus": "Order status",
+      "payment": "Payment"
+    },
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "country": "Country",
+      "state": "State",
+      "city": "City",
+      "street": "Street",
+      "zip": "ZIP Code",
+      "shippingType": "Shipping",
+      "orderId": "Order ID",
+      "date": "Date",
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "deliveryCost": "Delivery cost",
+      "otherTaxes": "Other taxes",
+      "total": "Total",
+      "paymentMethod": "Payment method",
+      "status": "Status",
+      "note": "Note",
+      "cancelReason": "Cancel reason",
+      "rating": "Rating",
+      "ratingComment": "Customer comment",
+      "coupon": "Coupon ({code})",
+      "paymentStatus": "Payment status",
+      "payments": "Online payments"
+    },
+    "statuses": {
+      "pending": "Not processed",
+      "accepted": "Accepted",
+      "shipped": "Shipped",
+      "concluded": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "transitions": {
+      "accepted": "Accept",
+      "shipped": "Ship",
+      "concluded": "Complete",
+      "cancelled": "Cancel"
+    },
+    "paymentMethods": {
+      "cod": "Cash on Delivery",
+      "stripe": "Card (Stripe)",
+      "paypal": "PayPal"
+    },
+    "shippingTypes": {
+      "delivery": "Deliver to the customer",
+      "pickup": "Pickup in the Store"
+    },
+    "description": "Orders placed by your customers.",
+    "ratingValue": "{rating}/5 ★",
+    "paymentStatuses": {
+      "unpaid": "Unpaid",
+      "paid": "Paid",
+      "refunded": "Refunded"
+    },
+    "attemptStatuses": {
+      "open": "Waiting",
+      "paid": "Paid",
+      "expired": "Expired",
+      "refunded": "Refunded"
+    },
+    "testPayment": "test",
+    "awaitingPaymentHint": "Waiting for the customer's online payment. The order can be accepted once it is paid.",
+    "refundWarning": "{amount} will be refunded to the customer.",
+    "paymentStates": {
+      "paid": "Paid",
+      "refunded": "Refunded",
+      "awaitingPayment": "Waiting for payment",
+      "payOnDelivery": "Pay on delivery",
+      "notPaid": "Not paid"
+    },
+    "paymentUntil": "until {time}",
+    "paymentExpiredCancelReason": "Payment not received in time.",
+    "exportTruncated": "The export was limited to the first {count} orders",
+    "exportError": "Could not export the orders",
+    "shopify": {
+      "syncOrders": "Sync Orders",
+      "orderColumn": "Order",
+      "customerColumn": "Customer",
+      "paymentPending": "Pending",
+      "paymentFilter": "Payment",
+      "paymentFilterAll": "Payment: All",
+      "fulfillmentFilter": "Fulfillment",
+      "fulfillmentFilterAll": "Fulfillment: All",
+      "fulfillmentStatuses": {
+        "fulfilled": "Fulfilled",
+        "unfulfilled": "Unfulfilled",
+        "partial": "Partial"
+      },
+      "viewDetails": "View Details",
+      "viewOnStore": "View on {store}",
+      "detailsTitle": "Order {name}",
+      "placedOn": "Placed on {store} Store • {date}",
+      "customerDetails": "Customer Details",
+      "shippingAddress": "Shipping Address",
+      "noShippingAddress": "No shipping address",
+      "tracking": "Tracking: {company} #{number}",
+      "lineItems": "Line Items",
+      "itemColumn": "Item",
+      "skuColumn": "SKU",
+      "shipping": "Shipping",
+      "free": "Free",
+      "loading": "Loading...",
+      "loadError": "Could not load the order details",
+      "close": "Close"
+    }
   },
   "products": {
     "title": "Products",
@@ -7363,7 +8811,8 @@
         "label": "Allow customers to purchase this product when it's out of stock"
       },
       "vendor": {
-        "label": "Vendor"
+        "label": "Vendor",
+        "none": "None"
       },
       "rank": {
         "label": "Rank"
@@ -7415,17 +8864,67 @@
       "variantsDescription": "Add variants if this product comes in multiple versions, like different sizes or colors",
       "metaCatalogId": {
         "label": "Meta Catalog ID"
+      },
+      "status": {
+        "label": "Status",
+        "values": {
+          "active": "Active",
+          "draft": "Draft",
+          "unlisted": "Unlisted"
+        }
       }
     },
     "inventoryPolicy": {
       "dont_track": "Don't track inventory",
       "track": "Track inventory"
+    },
+    "shopify": {
+      "openStore": "Open {store}",
+      "syncProducts": "Sync Products",
+      "syncStarted": "Sync started",
+      "syncError": "Could not start the sync",
+      "viewDetails": "View Details",
+      "editOnStore": "Edit on {store}",
+      "copyProductLink": "Copy Product Link",
+      "linkCopied": "Product link copied",
+      "noProductLink": "This product has no storefront link",
+      "inStock": "{count} in stock",
+      "inStockWithVariants": "{count} in stock ({variants} variants)",
+      "detailsTitle": "Product Details — {name}",
+      "detailsSubtitle": "Synced from {store} store {shop}",
+      "summaryLine": "Category: {category} • Total Stock: {units} units across {variants, plural, one {# variant} other {# variants}}",
+      "uncategorized": "Uncategorized",
+      "variantsTitle": "Variants ({count})",
+      "variantColumn": "Variant",
+      "skuColumn": "SKU",
+      "priceColumn": "Price",
+      "inventoryColumn": "Inventory",
+      "defaultVariant": "Default",
+      "loading": "Loading...",
+      "loadError": "Could not load the product details",
+      "close": "Close"
     }
   },
   "tiktok": {
     "title": "TikTok",
     "description": "Connect your TikTok account to reply to direct messages.",
     "refreshToken": "Refresh Token"
+  },
+  "contactAdReferrals": {
+    "title": "Ads history",
+    "empty": "No ad clicks recorded for this contact yet."
+  },
+  "adsReferralStats": {
+    "title": "Contacts by ad",
+    "description": "Contacts each ad reached and the conversions credited to its clicks. Counts clicks since tracking began.",
+    "ad": "Ad",
+    "contacts": "Contacts",
+    "firstTouch": "First touch",
+    "leads": "Leads",
+    "purchases": "Purchases",
+    "revenue": "Revenue",
+    "empty": "No ad clicks in this period.",
+    "timeout": "This report took too long. Choose a shorter date range."
   },
   "coupons": {
     "title": "Coupons",
@@ -7496,8 +8995,8 @@
     "loadError": "Unable to load product categories.",
     "all": "All products",
     "create": "Create category",
-    "edit": "Rename category",
-    "name": "Category name",
+    "edit": "Edit",
+    "name": "Name",
     "namePlaceholder": "e.g. Summer collection",
     "parent": "Parent category",
     "noParent": "None (top level)",
@@ -7517,12 +9016,25 @@
     "columns": {
       "name": "Name",
       "products": "Products",
-      "subcategories": "Subcategories"
+      "subcategories": "Subcategories",
+      "visible": "Visible"
     },
     "expand": "Show subcategories",
     "collapse": "Hide subcategories",
     "productCount": "{count, plural, =0 {No products} one {# product} other {# products}}",
-    "deleteChildrenWarning": "{count, plural, one {Its # subcategory will be deleted too.} other {Its # subcategories will be deleted too.}}"
+    "deleteChildrenWarning": "{count, plural, one {Its # subcategory will be deleted too.} other {Its # subcategories will be deleted too.}}",
+    "add": "Add",
+    "dialogTitle": "Category",
+    "image": "Image",
+    "continue": "Continue",
+    "subcategories": "Subcategories",
+    "subcategoriesOf": "Subcategories of {name}",
+    "emptySub": "No subcategories yet.",
+    "back": "Back to categories",
+    "getId": "Get ID",
+    "idCopied": "Category ID {id} copied",
+    "idCopyError": "Could not copy the ID",
+    "description": "Group your products into categories and subcategories."
   },
   "productImport": {
     "title": "Import",
@@ -8093,7 +9605,9 @@
       "customer_service": "Customer service",
       "escalation": "Escalation",
       "marketing": "Marketing",
-      "utility": "Utility"
+      "utility": "Utility",
+      "calls": "Calls",
+      "other": "Other"
     },
     "pill": {
       "standby": "Standby ({owner})",
@@ -8103,14 +9617,18 @@
     "release": {
       "label": "Release",
       "tooltip": "Release this conversation so other apps can answer",
-      "success": "Conversation released"
+      "success": "Conversation released",
+      "menu": "Release or pass"
     },
     "pass": {
-      "menuItem": "Pass to escalation",
-      "title": "Pass to the escalation partner?",
-      "description": "Hand this conversation to your escalation partner? Your replies will pause until the thread comes back.",
+      "menuItem": "Pass to a partner",
+      "title": "Pass to a partner?",
+      "description": "Choose who takes this conversation over. Your replies pause until the thread comes back.",
       "confirm": "Pass",
-      "success": "Conversation passed to the escalation partner"
+      "success": "Conversation passed to the escalation partner",
+      "targetLabel": "Hand over to",
+      "noteLabel": "Note for the receiving partner",
+      "successTargeted": "Conversation passed to {role}"
     },
     "aiHandover": {
       "label": "BizAI",
@@ -8129,7 +9647,10 @@
       "notEscalation": "Only the escalation partner can take over. Routing is configured in Meta Business Suite.",
       "notPrimaryReceiver": "This app must be the Page's primary receiver to take over. Set it in the Page's Handover Protocol settings.",
       "learnMore": "Learn more",
-      "dismiss": "Send anyway"
+      "dismiss": "Send anyway",
+      "takeOverTitle": "Take over this conversation?",
+      "takeOverDescription": "The partner stops handling it and you take control. You can leave a note for them.",
+      "takeOverNoteLabel": "Note for the current partner"
     },
     "divider": {
       "ownerHandling": "{owner} is now handling this conversation",
@@ -8162,9 +9683,9 @@
       "currentOwner": "Current owner",
       "noOwner": "No owner",
       "roleLabel": "Your role",
-      "selfOwned": "Active — handling the conversation",
-      "selfStandby": "Standby — listening only",
-      "selfIdle": "Idle — waiting",
+      "selfOwned": "Active handling the conversation",
+      "selfStandby": "Standby listening only",
+      "selfIdle": "Idle waiting",
       "hintOwned": "Release when you're done so other apps can answer.",
       "hintStandby": "While a partner is handling this, your messages are held so the customer doesn't get duplicate replies. Take over from the message box to reply.",
       "hintIdle": "The next customer message decides who answers.",
@@ -8182,7 +9703,17 @@
       "adminOnly": "Only workspace admins can change routing",
       "flowNotFound": "The selected flow was not found or is not active",
       "integrationNotFound": "WhatsApp number not found",
-      "messengerIntegrationNotFound": "Messenger page not found"
+      "messengerIntegrationNotFound": "Messenger page not found",
+      "rolesTitle": "Your routing roles on this number",
+      "rolesDescription": "Assigned by the business in Meta Business Suite.",
+      "rolesNone": "No routing role is assigned to you on this number.",
+      "rolesNeverChecked": "Not checked yet.",
+      "rolesNotEnabled": "Conversation routing is not enabled for this number.",
+      "rolesStandbyOn": "Standby access: on (you can see conversations you don't own)",
+      "rolesStandbyOff": "Standby access: off",
+      "rolesCheckedAt": "Checked {time}",
+      "rolesRefresh": "Check again",
+      "rolesSyncFailed": "Couldn't get the routing roles from Meta. Try again."
     },
     "errors": {
       "unsupported": "Conversation routing is not available on this channel",
@@ -8192,8 +9723,12 @@
     "step": {
       "action": "Action",
       "release": "Release the conversation",
-      "pass": "Pass to the escalation partner",
-      "helper": "WhatsApp only. On other channels, or when the conversation isn’t owned here, the step follows the Error path."
+      "pass": "Pass to a partner",
+      "helper": "WhatsApp only. On other channels, or when the conversation isn’t owned here, the step follows the Error path.",
+      "targetRole": "Hand over to",
+      "targetRoleDefault": "Escalation partner (default)",
+      "metadata": "Handover note",
+      "metadataHelper": "Optional. Sent as-is to the app that receives the conversation. Variables are supported. Up to {max} characters."
     },
     "template": {
       "sent": "Template sent"
@@ -8527,7 +10062,7 @@
       "too_many_components": "A screen can hold at most {max} components.",
       "component_limit": "A screen can hold at most {max} × {type}.",
       "picker_conflict": "A screen cannot have both a photo upload and a document upload.",
-      "picker_multiple_in_complete": "Set {property} to 1: WhatsApp only sends a single file when the flow completes.",
+      "picker_multiple_in_complete": "WhatsApp sends at most {max} files when the flow completes. Lower the maximum number of files of the file inputs leading to this screen.",
       "footer_not_last": "The Footer must be the last component on the screen.",
       "footer_in_nested_branch": "A Footer can only sit directly in a first-level If branch.",
       "footer_missing_in_branch": "If one branch has a Footer, the other branch needs one too.",
@@ -9033,6 +10568,720 @@
       "closed": "Closed"
     }
   },
+  "productVendors": {
+    "title": "Vendors",
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "actions": "Actions",
+    "save": "Save",
+    "cancel": "Cancel",
+    "moreOptions": "More Options",
+    "empty": "No vendors yet.",
+    "created": "Vendor added",
+    "updated": "Vendor updated",
+    "deleted": "Vendor deleted",
+    "saveError": "Could not save the vendor",
+    "deleteError": "Could not delete the vendor",
+    "deleteTitle": "Delete {name}?",
+    "deleteDescription": "{count, plural, =0 {No product uses this vendor.} one {# product will be left without a vendor.} other {# products will be left without a vendor.}}",
+    "fields": {
+      "name": "Name",
+      "shortDescription": "Short Description",
+      "phone": "Phone",
+      "storeAddress": "Store address",
+      "image": "Image",
+      "optional": "Optional",
+      "discountPercent": "Discount (0-100%)",
+      "minimumOrderValue": "Minimum order value",
+      "openHours": "Open hours",
+      "category": "Category",
+      "subcategory": "Subcategory",
+      "none": "None"
+    },
+    "columns": {
+      "name": "Name",
+      "products": "Total Products",
+      "active": "Active"
+    },
+    "description": "Sellers and brands your products belong to."
+  },
+  "ecommerceSettings": {
+    "save": "Save",
+    "saved": "Settings saved",
+    "saveError": "Could not save the settings",
+    "rank": {
+      "label": "Rank",
+      "default": "Default"
+    },
+    "tabs": {
+      "general": "General",
+      "payments": "Payments",
+      "shipping": "Shipping",
+      "checkout": "Checkout",
+      "shopify": "Shopify",
+      "woocommerce": "WooCommerce"
+    },
+    "general": {
+      "orderingAvailable": {
+        "label": "Ordering is Available",
+        "description": "Use this field to not allow clients to place orders without changing your Opening hours. Opening hours also control your availability."
+      },
+      "webshopProductView": {
+        "label": "Web shop product view",
+        "description": "Control the way products are displayed on your web shop.",
+        "options": {
+          "list": "List",
+          "listWithoutImage": "List Without Image",
+          "card": "Card",
+          "cardSquare": "Card with square image",
+          "image": "Image",
+          "imageSquare": "Image (square)"
+        }
+      },
+      "openHours": {
+        "label": "Open hours",
+        "description": "The time intervals that your customers can place an order."
+      },
+      "searchProducts": {
+        "label": "Search Products",
+        "description": "Allow customers to send messages to find products."
+      },
+      "facebookPixelId": {
+        "label": "Facebook Pixel",
+        "description": "Track conversion with FB pixel and measure the results of your ads. The following events are tracked ADD_TO_CART, INITIATE_CHECKOUT, PURCHASE, VIEW_CONTENT"
+      },
+      "abandonedCart": {
+        "label": "Abandoned cart message",
+        "description": "The amount of time to wait before to send an abandoned cart message after the user leaves your bot with an item in cart.",
+        "disabled": "Disabled",
+        "afterMinutes": "After {count} minutes",
+        "afterHours": "{count, plural, one {After # hour} other {After # hours}}"
+      },
+      "productButtons": {
+        "label": "Buttons in Products",
+        "description": "This setting controls what buttons are shown for products inside your bot.",
+        "options": {
+          "addToCart": "Add to Cart",
+          "share": "Share",
+          "similar": "Similar",
+          "save": "Save"
+        }
+      },
+      "productImageSize": {
+        "label": "Image size of Products",
+        "description": "This setting controls the size of the image of products inside your bot",
+        "options": {
+          "bigSquare": "Big (Square)",
+          "mediumRectangle": "Medium (Rectangle)"
+        }
+      },
+      "allowRateOrders": {
+        "label": "Allow to rate orders",
+        "description": "Allow customers to rate an order and write a review if they are not satisfied with the order. Only bot admins can see the reviews"
+      },
+      "notifyOnCartStatusChange": {
+        "label": "Send notification when change cart status",
+        "description": "The customer will receive notifications whenever you change the order status. You can't disable notification for order cancelation and for order conclusion."
+      },
+      "abandonedCartFlow": {
+        "label": "Abandoned cart flow",
+        "description": "The flow the bot runs for the customer when the cart is left this long. Use '{{shop_token}}' in its buttons to open the cart. Triggers can also use the \"Cart abandoned\" event.",
+        "none": "No flow (trigger event only)"
+      },
+      "storeSource": {
+        "label": "Store Source",
+        "description": "Select the store source used to manage your products, inventory, and orders. When set to Shopify / WooCommerce, all products and orders are managed directly from your Shopify / WooCommerce store.",
+        "options": {
+          "chatbotx": "ChatbotX",
+          "shopify": "Shopify",
+          "woocommerce": "WooCommerce"
+        }
+      }
+    },
+    "payments": {
+      "currencyMismatch": "{count, plural, one {# product is} other {# products are}} priced in another currency than {currency}. Orders charge their price in {currency}.",
+      "paymentMethods": {
+        "label": "Payment methods",
+        "description": "The payment methods that are enabled in the checkout page. The first payment method in the list will be the selected payment method in the checkout page.",
+        "options": {
+          "cod": "Cash on Delivery",
+          "stripe": "Card (Stripe)",
+          "paypal": "PayPal"
+        },
+        "connectHint": "To offer {provider}, connect it in <link>Settings → Integrations</link>."
+      },
+      "currency": {
+        "label": "Currency",
+        "description": "This is the currency that you set the prices for products. The customers will be charged in this currency."
+      },
+      "currencyPosition": {
+        "label": "Currency position",
+        "description": "This option allows you to control the currency position.",
+        "options": {
+          "left": "Left",
+          "leftSpace": "Left with space",
+          "right": "Right",
+          "rightSpace": "Right with space"
+        }
+      },
+      "currencySymbol": {
+        "label": "Symbol of money",
+        "description": "The symbol of money is shown ahead of prices. If you want a space between the symbol and prices, add a space at the end of the symbol."
+      },
+      "serviceFeePercent": {
+        "label": "Other Fees / Services Fees (0 - 100%)",
+        "description": "Other fees related to the sale."
+      }
+    },
+    "shipping": {
+      "shippingType": {
+        "label": "Shipping type",
+        "description": "This option allows you to control how the customer will get their order.",
+        "options": {
+          "none": "None",
+          "delivery": "Deliver to the customer",
+          "pickup": "Pickup in the Store",
+          "deliveryAndPickup": "Deliver to the customer, Pickup in the Store"
+        }
+      },
+      "storeAddress": {
+        "label": "Store address",
+        "description": "This address is shown to the customer in the checkout page if you allow pick up in the store."
+      },
+      "shippingCountries": {
+        "label": "Shipping countries",
+        "description": "The countries that you ship an order."
+      },
+      "defaultShippingCountry": {
+        "label": "Default Shipping country",
+        "description": "The country that will be selected by default in the checkout page.",
+        "none": "None"
+      },
+      "deliveryCost": {
+        "label": "Delivery cost",
+        "description": "A flat rate cost to deliver the order to the customer address."
+      },
+      "defaultCountryNotShipped": "Choose one of the shipping countries."
+    },
+    "checkout": {
+      "checkoutMode": {
+        "label": "Checkout",
+        "description": "This setting control where your customers will finish their orders. If you want the user to complete the order outside of your bot like on your website, Amazon,.. don't use our default checkout page.",
+        "options": {
+          "default": "Default checkout page",
+          "externalLink": "Custom External checkout page",
+          "flow": "Flow",
+          "productPage": "Visit the external product page"
+        }
+      },
+      "checkoutLink": {
+        "label": "Checkout Page Link",
+        "description": "The external page where customers finish their orders."
+      },
+      "checkoutFlowId": {
+        "label": "Checkout Flow",
+        "description": "The flow that runs when a customer checks out.",
+        "placeholder": "Select a flow"
+      },
+      "minimumOrderValue": {
+        "label": "Minimum order value",
+        "description": "The minimum value of the order that a customer can place. This condition is checked when all discounts are applied."
+      },
+      "requiredFields": {
+        "requireName": {
+          "label": "Require buyer name",
+          "description": "The buyer Name will be collected during the checkout."
+        },
+        "requireEmail": {
+          "label": "Require email address",
+          "description": "The buyer Email will be collected during the checkout."
+        },
+        "requirePhone": {
+          "label": "Require phone number",
+          "description": "The buyer Phone will be collected during the checkout."
+        },
+        "requireState": {
+          "label": "Require state/province",
+          "description": "The buyer State will be collected during the checkout."
+        },
+        "requireZip": {
+          "label": "Require zip code",
+          "description": "The buyer ZIP Code will be collected during the checkout."
+        }
+      },
+      "orderConfirmationMode": {
+        "label": "Order confirmation message",
+        "description": "What the customer gets in the chat when their order is placed. The default message lists the order details in the workspace language.",
+        "options": {
+          "default": "Default message",
+          "flow": "Run a flow",
+          "none": "Don't send anything"
+        }
+      },
+      "orderConfirmationFlowId": {
+        "label": "Order confirmation flow",
+        "description": "The flow sent to the customer instead of the default message when their order is placed."
+      },
+      "shopifyCheckoutMethod": {
+        "label": "Checkout Method",
+        "description": "Choose whether customers complete payment on your Shopify Checkout page or place the order directly on the web shop.",
+        "options": {
+          "webCheckout": "Shopify Web Checkout",
+          "inApp": "In-App Checkout"
+        }
+      },
+      "shopifyAutoApplyDiscounts": {
+        "label": "Auto-apply Discount Codes",
+        "description": "Allow customers to apply Shopify discount codes directly to their cart before redirecting to checkout."
+      },
+      "wooCommerceCheckoutMethod": {
+        "description": "Choose whether customers pay on your WooCommerce store's payment page or place the order directly on the web shop (cash on delivery).",
+        "options": {
+          "webCheckout": "WooCommerce payment page",
+          "inApp": "In-App Checkout"
+        }
+      },
+      "wooCommerceAutoApplyDiscounts": {
+        "description": "Allow customers to apply WooCommerce discount codes directly to their cart before redirecting to checkout."
+      },
+      "inAppDeliveryCost": {
+        "label": "Delivery cost",
+        "description": "Delivery fee added to In-App Checkout orders."
+      },
+      "wooCommerceDeliveryCost": {
+        "description": "Delivery fee added to orders sent to WooCommerce, on both checkout methods."
+      }
+    },
+    "shopify": {
+      "shopDomain": {
+        "label": "Shop Domain",
+        "placeholder": "your-store.myshopify.com",
+        "hint": "Enter your Shopify store's .myshopify.com domain.",
+        "connectedHint": "Your connected Shopify store domain."
+      },
+      "authKind": {
+        "label": "Authentication",
+        "description": "How ChatbotX signs in to your store: with a custom app's Admin API access token, or with the Client ID and secret of an app made in the Shopify Dev Dashboard.",
+        "options": {
+          "token": "Admin API access token",
+          "clientCredentials": "Client ID and secret (Dev Dashboard app)"
+        }
+      },
+      "accessToken": {
+        "label": "Admin API Access Token",
+        "hint": "The Admin API access token of your custom app. Grant it these scopes: {scopes}.",
+        "connectedHint": "Your Shopify Admin API access token is stored encrypted."
+      },
+      "apiSecret": {
+        "label": "API secret key",
+        "hint": "The app's API secret key, used to verify webhooks sent by Shopify."
+      },
+      "clientId": {
+        "label": "Client ID",
+        "hint": "The Client ID of your Dev Dashboard app. Grant it these scopes: {scopes}."
+      },
+      "clientSecret": {
+        "label": "Client Secret",
+        "hint": "The app's Client Secret. It is stored encrypted."
+      },
+      "webhookUrl": {
+        "label": "Webhook URL",
+        "description": "Automatically registered on Shopify upon connection to receive real-time product, inventory, and order updates."
+      },
+      "syncNow": "Sync Now",
+      "syncStarted": "Sync started",
+      "syncError": "Could not start the sync",
+      "syncStatus": {
+        "label": "Sync Status",
+        "description": "Products, discount codes, and orders are mirrored from your Shopify store.",
+        "connectedTo": "Connected to {shopDomain}",
+        "lastSynced": "Last synced: {time} ({productCount} products, {orderCount} orders)",
+        "neverSynced": "Not synced yet",
+        "noReason": "Reconnect your store to continue.",
+        "invalid": "The connection is no longer valid: {reason}",
+        "state": {
+          "idle": "Idle",
+          "queued": "Sync queued...",
+          "running": "Syncing...",
+          "succeeded": "Last sync succeeded",
+          "failed": "Last sync failed"
+        }
+      }
+    },
+    "woocommerce": {
+      "siteUrl": {
+        "label": "Store URL",
+        "placeholder": "https://example.com",
+        "hint": "Your WordPress site's address, starting with https://. In WordPress, Settings → Permalinks must not be set to Plain.",
+        "connectedHint": "Your connected WooCommerce store."
+      },
+      "consumerKey": {
+        "label": "Consumer key",
+        "hint": "Create a key in WooCommerce → Settings → Advanced → REST API → Add key, with Read/Write permission, and paste its Consumer key (ck_…).",
+        "connectedHint": "The start of the connected key. Keys are stored encrypted."
+      },
+      "consumerSecret": {
+        "label": "Consumer secret",
+        "hint": "The key's Consumer secret (cs_…). It is stored encrypted."
+      },
+      "webhookUrl": {
+        "label": "Webhook URL",
+        "description": "Automatically registered on WooCommerce upon connection to receive real-time product, inventory, and order updates."
+      },
+      "syncNow": "Sync Now",
+      "syncStarted": "Sync started",
+      "syncError": "Could not start the sync",
+      "syncStatus": {
+        "label": "Sync Status",
+        "description": "Products, discount codes, and orders are mirrored from your WooCommerce store.",
+        "connectedTo": "Connected to {store}",
+        "lastSynced": "Last synced: {time} ({productCount} products, {orderCount} orders)",
+        "neverSynced": "Not synced yet",
+        "noReason": "Reconnect your store to continue.",
+        "invalid": "The connection is no longer valid: {reason}",
+        "state": {
+          "idle": "Idle",
+          "queued": "Sync queued...",
+          "running": "Syncing...",
+          "succeeded": "Last sync succeeded",
+          "failed": "Last sync failed"
+        }
+      }
+    }
+  },
+  "openHours": {
+    "alwaysOpen": "Always open",
+    "addNew": "Add New",
+    "dialogTitle": "Open hours",
+    "name": "Name",
+    "namePlaceholder": "e.g. Weekdays",
+    "day": "Day",
+    "from": "Opens",
+    "to": "Closes",
+    "add": "Add hours",
+    "remove": "Remove",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "created": "Open hours created",
+    "saveError": "Could not save the open hours",
+    "days": {
+      "0": "Sunday",
+      "1": "Monday",
+      "2": "Tuesday",
+      "3": "Wednesday",
+      "4": "Thursday",
+      "5": "Friday",
+      "6": "Saturday"
+    },
+    "sameTimes": "Opening and closing time must differ."
+  },
+  "webshop": {
+    "metadataTitle": "Shop",
+    "metadataOrderTitle": "Your order",
+    "invalidLinkTitle": "This link does not work",
+    "invalidLinkDescription": "It may have expired. Ask the store in the chat for a new link.",
+    "previewBanner": "Preview: this is what customers see. Orders cannot be placed from a preview.",
+    "previewOrderingOff": "Preview: ordering is off",
+    "closed": {
+      "orderingUnavailable": "The store is not taking orders right now.",
+      "outsideOpenHours": "The store is closed right now. You can still look around."
+    },
+    "searchPlaceholder": "Search products",
+    "categories": "Categories",
+    "allCategories": "All categories",
+    "vendors": "Vendors",
+    "allVendors": "All vendors",
+    "noProducts": "No products found.",
+    "productNotFound": "This product is no longer available.",
+    "outOfStock": "Out of stock",
+    "addToCart": "Add to cart",
+    "added": "Added to cart",
+    "chooseOptions": "Choose options",
+    "chooseOption": "Choose {name}",
+    "variantUnavailable": "This combination is not available.",
+    "buy": "Buy",
+    "share": "Share",
+    "linkCopied": "Copied",
+    "similar": "Similar",
+    "save": "Save",
+    "saved": "Saved",
+    "showImage": "Show image {number}",
+    "increase": "Increase quantity",
+    "decrease": "Decrease quantity",
+    "remove": "Remove",
+    "cart": "Cart",
+    "cartEmpty": "Your cart is empty.",
+    "continueShopping": "Continue shopping",
+    "unavailableItems": "{count, plural, one {# item can't be ordered right now} other {# items can't be ordered right now}}",
+    "unavailableNotOrdered": "They won't be included in your order and will stay in your cart.",
+    "unavailable": "No longer available",
+    "unavailableHint": "Choose its options again",
+    "deletedProduct": "Deleted product",
+    "summary": {
+      "subtotal": "Subtotal",
+      "discount": "Discount",
+      "delivery": "Delivery",
+      "otherFees": "Other fees",
+      "total": "Total",
+      "coupon": "Coupon ({code})",
+      "title": "Order summary",
+      "saved": "You save {amount}",
+      "deliveryAtCheckout": "Calculated at checkout"
+    },
+    "belowMinimum": "The minimum order is {amount}.",
+    "checkOut": "Check out",
+    "contactDetails": "Your details",
+    "optional": "(optional)",
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "phone": "Phone",
+      "country": "Country",
+      "state": "State / province",
+      "city": "City",
+      "address1": "Address",
+      "address2": "Apartment, building, etc.",
+      "zip": "ZIP / postal code",
+      "note": "Note for the store"
+    },
+    "shipping": {
+      "title": "Delivery",
+      "delivery": "Deliver to my address",
+      "pickup": "Pick up in the store",
+      "storeAddress": "Store address: {address}"
+    },
+    "payment": {
+      "title": "Payment",
+      "cod": "Cash on delivery",
+      "stripe": "Card",
+      "paypal": "PayPal",
+      "paid": "Paid",
+      "refunded": "Refunded",
+      "awaiting": "Waiting for your payment",
+      "payBefore": "Pay before {time}, or the order will be cancelled.",
+      "payNow": "Pay now",
+      "onlineHint": "You will pay on the next page. Your order is held for 30 minutes.",
+      "continueToPayment": "Continue to payment",
+      "notYet": "We have not received your payment yet. If you just paid, wait a moment and refresh this page.",
+      "leftPaymentPage": "You left the payment page. You can still pay below.",
+      "paidThanks": "Payment received. Thank you for your order!"
+    },
+    "placeOrder": "Place order",
+    "orderPlaced": "Thank you! Your order has been placed. We will send you updates in the chat.",
+    "orderTitle": "Order #{number}",
+    "orderNotFound": "This order was not found.",
+    "placedAt": "Placed on {date}",
+    "status": {
+      "pending": "Not processed",
+      "accepted": "Processing",
+      "shipped": "Shipped",
+      "concluded": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "rateTitle": "Rate your order",
+    "rateComment": "Tell the store what you think (optional)",
+    "rateSubmit": "Send rating",
+    "rateThanks": "Thank you for your rating!",
+    "yourRating": "Your rating",
+    "ratingValue": "{rating} out of 5 stars",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {pageCount}",
+    "errors": {
+      "generic": "Something went wrong. Please try again.",
+      "checkFields": "Please check the highlighted fields.",
+      "fieldRequired": "{field} is required.",
+      "countryUnavailable": "The store does not deliver to this country.",
+      "invalidLink": "This link does not work any more. Ask the store for a new one.",
+      "webshopPreviewOnly": "This is a preview. Orders can only be placed from a customer's link.",
+      "rateLimited": "Too many tries. Please wait a moment and try again.",
+      "orderingUnavailable": "The store is not taking orders right now.",
+      "orderBelowMinimum": "The minimum order is {minimum}.",
+      "orderBelowVendorMinimum": "Items from {vendorName} must add up to at least {minimum}.",
+      "orderOutOfStock": "{productName} is out of stock.",
+      "orderProductUnavailable": "Some items can no longer be ordered. Check your cart.",
+      "orderEmpty": "Your cart is empty.",
+      "orderShippingTypeUnavailable": "This delivery option is not available.",
+      "webshopRatingNotAllowed": "This order cannot be rated.",
+      "webshopCartFull": "Your cart can hold at most {maximum} different items.",
+      "notFound": "This product is no longer available.",
+      "discountCodeNotFound": "This discount code does not exist.",
+      "discountCodeInactive": "This discount code is not active.",
+      "discountCodeNotStarted": "This discount code is not valid yet.",
+      "discountCodeExpired": "This discount code has expired.",
+      "discountCodeUsageLimitReached": "This discount code has been used up.",
+      "discountCodeAlreadyUsed": "You have already used this discount code.",
+      "discountCodeNotEligible": "This discount code is not available for you.",
+      "discountCodeNotApplicable": "This discount code does not apply to what is in your cart.",
+      "discountCodeMinimumAmount": "This discount code needs a purchase of at least {minimum}. Add {missing} more.",
+      "discountCodeMinimumQuantity": "This discount code needs at least {minimum} items. Add {missing} more.",
+      "paymentMethodUnavailable": "This payment method is not available.",
+      "paymentProviderNotConnected": "This payment method is not available.",
+      "paymentProviderUnavailable": "The payment service is not answering. Please try again in a moment.",
+      "paymentProviderRejected": "The payment could not be started. Please choose another payment method.",
+      "paymentProviderCredentialsRejected": "The payment could not be started. Please choose another payment method.",
+      "paymentAmountUnsupported": "This order cannot be paid online. Please choose another payment method.",
+      "orderPaymentNotOpen": "This order can no longer be paid online."
+    },
+    "discount": {
+      "label": "Discount code",
+      "placeholder": "Discount code",
+      "apply": "Apply",
+      "applied": "Discount code applied",
+      "automatic": "applied automatically",
+      "remove": "Remove discount code",
+      "available": "Codes you can use",
+      "freeShipping": "Free shipping",
+      "bestChoice": "Best choice",
+      "expiresOn": "Expires {date}",
+      "noExpiry": "No expiry",
+      "inUse": "In use",
+      "saves": "Saves {amount}",
+      "showMore": "{count, plural, one {Show # more code} other {Show # more codes}}",
+      "showLess": "Show less",
+      "removeShort": "Remove",
+      "expired": "Expired",
+      "usedUp": "Used up",
+      "notEligible": "Not eligible yet"
+    },
+    "itemCount": "{count, plural, one {# item} other {# items}}",
+    "relatedProducts": "You may also like",
+    "soldOut": "Sold out",
+    "sku": "SKU: {sku}",
+    "allProducts": "All products",
+    "noCategories": "This shop has no categories yet."
+  },
+  "webshopLinks": {
+    "preview": "Preview",
+    "getLink": "Get link",
+    "copied": "Link copied. Put it on a bot button: each contact opens their own shop.",
+    "error": "Could not get the link.",
+    "copyError": "Could not copy the link.",
+    "shopLink": {
+      "label": "Shop URL",
+      "hint": "Paste this link into a button in a flow, broadcast or sequence. Each contact who gets it opens their own shop and can order."
+    },
+    "productLink": {
+      "label": "Public URL",
+      "hint": "Copy and paste the URL into your flow, broadcast, or sequence. Each contact who gets it opens this product and can order."
+    },
+    "bar": "Share the shop: get links to the shop, the cart and the categories for flow, broadcast and sequence buttons.",
+    "dialog": {
+      "title": "Shop links",
+      "description": "Paste a link into a button in a flow, broadcast or sequence. Each contact who gets it opens their own shop.",
+      "shopHint": "Opens the shop's front page with all its products."
+    },
+    "cartLink": {
+      "label": "Cart",
+      "hint": "Opens the contact's cart, ready to check out."
+    },
+    "categoriesLink": {
+      "label": "Categories",
+      "hint": "Opens the list of the shop's categories."
+    }
+  },
+  "discountCodes": {
+    "title": "Coupons",
+    "description": "Discount codes customers use at checkout, or that apply by themselves.",
+    "add": "Add",
+    "edit": "Edit coupon",
+    "automatic": "Automatic",
+    "never": "Never",
+    "searchPlaceholder": "Search codes…",
+    "saveError": "Could not save the coupon.",
+    "created": "Coupon created",
+    "updated": "Coupon saved",
+    "deleted": "Coupon deleted",
+    "deleteError": "Could not delete the coupon.",
+    "deleteTitle": "Delete coupon {code}?",
+    "deleteDescription": "Customers can no longer use it. Orders that used it keep their discount.",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "save": "Save",
+    "columns": {
+      "name": "Name",
+      "discount": "Discount",
+      "used": "Used",
+      "end": "End",
+      "active": "Active"
+    },
+    "discountTypes": {
+      "percentage": "Percentage",
+      "fixedAmount": "Fixed amount",
+      "freeShipping": "Free shipping"
+    },
+    "appliesTo": {
+      "entireOrder": "Entire order",
+      "category": "Specific category",
+      "products": "Specific products"
+    },
+    "minimumTypes": {
+      "none": "None",
+      "amount": "Minimum purchase amount",
+      "quantity": "Minimum quantity of items"
+    },
+    "eligibilities": {
+      "everyone": "Everyone",
+      "specificCustomers": "Specific customers"
+    },
+    "form": {
+      "discountCode": "Discount code",
+      "code": "Code",
+      "generate": "Generate",
+      "autoApply": "Automatically apply this coupon to carts",
+      "autoApplyHint": "Carts get it without the customer typing it. With several automatic coupons, the one taking off the most wins.",
+      "typedHint": "Customers will enter this discount code at checkout.",
+      "options": "Options",
+      "discountType": "Discount type",
+      "discountValuePercent": "Discount value (%)",
+      "discountValueAmount": "Discount value ({currency})",
+      "freeShippingHint": "Takes the delivery cost off orders delivered to the customer.",
+      "appliesTo": "Applies to",
+      "category": "Category",
+      "products": "Products",
+      "productsPlaceholder": "Choose products",
+      "minimumRequirement": "Minimum requirement",
+      "minimumAmount": "Minimum amount ({currency})",
+      "minimumQuantity": "Minimum number of items",
+      "usageLimits": "Usage limits",
+      "limitTotal": "Limit number of times this discount can be used in total",
+      "usedSoFar": "{count, plural, one {Used # time so far} other {Used # times so far}}",
+      "oncePerCustomer": "Limit to one use per customer",
+      "customerEligibility": "Customer eligibility",
+      "specificCustomersHint": "Only contacts matching the filter below, when they order.",
+      "activeDates": "Active dates",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "isActive": "Active"
+    },
+    "rules": {
+      "codeCharacters": "Use only letters without accents, digits, - and _.",
+      "usageBelowUsed": "This code was already used {count} times; the limit can't be lower.",
+      "customerConditionRequired": "Add at least one condition.",
+      "endAfterStart": "The end date must be after the start date."
+    }
+  },
+  "ecommerceAnalytics": {
+    "title": "Analytics",
+    "lifetime": "Lifetime",
+    "sales": "Sales",
+    "orders": "Orders",
+    "products": "Products",
+    "salesByDate": "Sales by date",
+    "ordersByDate": "Orders by date",
+    "topProducts": "Top products",
+    "topVendors": "Top vendors",
+    "columns": {
+      "name": "Name",
+      "sales": "Sales"
+    },
+    "noData": "No data in this period",
+    "refresh": "Refresh",
+    "change": "{value}%",
+    "noPrevious": "new",
+    "otherCurrencyOrders": "{count} orders in other currencies are not included in these figures"
+  },
   "responseSla": {
     "label": "Response SLA",
     "title": "Response SLA",
@@ -9052,5 +11301,611 @@
     "metHelp": "Share of replies with an SLA that met it.",
     "eligibleCount": "{count} replies had an SLA",
     "enable": "Enable response SLA"
+  },
+  "stripe": {
+    "title": "Stripe",
+    "setting": {
+      "label": "Stripe",
+      "description": "Take card payments in your web shop with your own Stripe account. The money goes straight to your Stripe account."
+    },
+    "connectWithStripe": "Connect with Stripe",
+    "connectWithKey": "Use secret key",
+    "connectionType": {
+      "oauth": "Stripe Connect",
+      "apiKey": "Secret key"
+    },
+    "fields": {
+      "secretKey": "Secret key",
+      "secretKeyHint": "Starts with sk_live_ (or sk_test_ for test mode). A restricted key (rk_…) works too if it can read the account and write Checkout Sessions, Refunds and Webhook Endpoints."
+    },
+    "dialog": {
+      "description": "Copy your secret key from <link>Stripe Dashboard → Developers → API keys</link> and paste it here. We check it, set up payment notifications on your Stripe account, and store the key encrypted."
+    },
+    "testMode": "Test mode",
+    "liveMode": "Live",
+    "chargesDisabled": "Your Stripe account cannot take payments yet. Finish setting it up in your Stripe dashboard.",
+    "outcome": {
+      "expired": "The Stripe connection link has expired. Please try again.",
+      "access_denied": "The connection was not allowed on Stripe.",
+      "stripeAccountAlreadyConnected": "This Stripe account is already connected to another workspace.",
+      "stripePlatformNotConfigured": "Stripe is not set up on this platform yet.",
+      "superAdminRequired": "Only a workspace admin can connect Stripe.",
+      "signInRequired": "Please sign in and try again.",
+      "paymentProviderCredentialsRejected": "Stripe refused the connection. Please try again.",
+      "startedByAnotherUser": "Only the person who pressed Connect can finish it. Please press Connect again.",
+      "paymentProviderInUse": "Open orders still need this Stripe account. Complete or cancel them first."
+    },
+    "platform": {
+      "connectClientId": "Connect client ID",
+      "connectClientIdHint": "From the Stripe Dashboard → Settings → Connect → Onboarding options → OAuth (it starts with ca_). Stores connect their own Stripe account through it.",
+      "redirectUri": "Redirect URI",
+      "webhookReady": "Stores can connect Stripe, and their payments are confirmed automatically.",
+      "webhookMissing": "The payment webhook is missing. Save these settings again to create it.",
+      "connectMissing": "Add the Connect client ID so stores can connect their Stripe account."
+    }
+  },
+  "paypal": {
+    "title": "PayPal",
+    "setting": {
+      "label": "PayPal",
+      "description": "Take PayPal payments in your web shop with your own PayPal account."
+    },
+    "sandbox": "Sandbox",
+    "liveMode": "Live",
+    "fields": {
+      "clientId": "Client ID",
+      "clientSecret": "Secret"
+    },
+    "dialog": {
+      "description": "Create a REST app in <link>PayPal Developer → Apps & Credentials</link> and paste its Client ID and Secret. Live or sandbox is detected from the keys."
+    }
+  },
+  "pipelines": {
+    "title": "Pipelines",
+    "retry": "Try again",
+    "save": "Save",
+    "saveFailed": "Could not save your changes. Please try again.",
+    "list": {
+      "name": "Name",
+      "type": "Type",
+      "items": "Items",
+      "add": "Add pipeline",
+      "empty": "No pipelines yet",
+      "emptyHint": "Create a pipeline to track deals, tickets or any process as cards on a board.",
+      "error": "Could not load pipelines",
+      "contacts": "Contacts",
+      "addShort": "Add",
+      "description": "Track deals, tickets or any process as cards moving through stages."
+    },
+    "types": {
+      "opportunity": {
+        "label": "Opportunities Center",
+        "description": "Track sales deals through stages. First stage: Lead."
+      },
+      "ticket": {
+        "label": "Support Center",
+        "description": "Handle support requests. First stage: New Issue."
+      },
+      "custom": {
+        "label": "Custom board",
+        "description": "Build your own process. First stage: Intake."
+      }
+    },
+    "noun": {
+      "opportunity": {
+        "one": "Opportunity",
+        "many": "Opportunities",
+        "add": "Add Opportunity"
+      },
+      "ticket": {
+        "one": "Ticket",
+        "many": "Tickets",
+        "add": "Add Ticket"
+      },
+      "card": {
+        "one": "Card",
+        "many": "Cards",
+        "add": "Add Card"
+      }
+    },
+    "create": {
+      "title": "New pipeline",
+      "description": "Choose what the board is for, then name it.",
+      "type": "Type",
+      "name": "Pipeline name",
+      "namePlaceholder": "e.g. Sales",
+      "submit": "Create pipeline",
+      "success": "Pipeline created"
+    },
+    "menu": {
+      "open": "Pipeline actions",
+      "rename": "Rename",
+      "duplicate": "Duplicate",
+      "delete": "Delete"
+    },
+    "rename": {
+      "title": "Rename pipeline",
+      "submit": "Rename",
+      "success": "Pipeline renamed"
+    },
+    "duplicate": {
+      "success": "Pipeline duplicated"
+    },
+    "delete": {
+      "title": "Delete pipeline",
+      "description": "{name} and all its stages and items will be deleted. This can't be undone.",
+      "success": "Pipeline deleted"
+    },
+    "board": {
+      "title": "Board",
+      "count": "{count, plural, one {# item} other {# items}}",
+      "total": "Total {value}",
+      "search": "Search by title, number or contact",
+      "sort": "Sort",
+      "filter": "Filter",
+      "analytics": "Analytics",
+      "settings": "Settings",
+      "emptyStage": "Drag and drop a card here to move it to this stage.",
+      "loadMore": "Load more",
+      "loadMoreFailed": "Could not load more items",
+      "error": "Could not load the board",
+      "processing": "Processing this stage…",
+      "moveFailed": "Could not move the card",
+      "sortOptions": {
+        "createdAtDesc": "Date created (New to Old)",
+        "createdAtAsc": "Date created (Old to New)",
+        "updatedAtDesc": "Update date (New to Old)",
+        "valueDesc": "Opportunity value (High to Low)",
+        "valueAsc": "Opportunity value (Low to High)",
+        "dueDateAsc": "Due date (Soonest to Latest)",
+        "dueDateDesc": "Due date (Latest to Soonest)",
+        "priorityDesc": "Priority (High to Low)",
+        "priorityAsc": "Priority (Low to High)",
+        "updatedAtAsc": "Update date (Old to New)"
+      },
+      "searchAction": "Search",
+      "closeSearch": "Close search",
+      "cardMenu": "Card actions",
+      "moveTo": "Move to",
+      "unknownContact": "Unknown contact",
+      "staleError": "Could not refresh the board. What you see may be out of date."
+    },
+    "stage": {
+      "add": "Add stage",
+      "name": "Stage name",
+      "namePlaceholder": "Stage name",
+      "menu": "Stage actions",
+      "edit": "Edit stage",
+      "delete": "Delete stage",
+      "deleteTitle": "Delete stage",
+      "deleteDescription": "{name} and all items on it will be deleted. This action can't be undone.",
+      "moveItemsTo": "Move items to",
+      "deleteItemsToo": "Delete the items too",
+      "description": "Description",
+      "textColor": "Text color",
+      "backgroundColor": "Background color",
+      "saved": "Stage saved",
+      "deleted": "Stage deleted",
+      "queued": "The stage is being cleared in the background.",
+      "resetColor": "Default",
+      "deleteMoveDescription": "{name} will be deleted. Its items move to {target}.",
+      "rename": "Rename",
+      "settings": "Settings",
+      "general": "General",
+      "color": "Color",
+      "cancel": "Cancel"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "item": {
+      "loading": "Loading…",
+      "error": "Could not load this item",
+      "title": "Title",
+      "status": "Status",
+      "stage": "Stage",
+      "priority": "Priority",
+      "value": "Value",
+      "dueDate": "Due date",
+      "assignees": "Assigned admins",
+      "description": "Description",
+      "attachments": "Attachments",
+      "attach": "Attach files",
+      "noAttachments": "No attachments",
+      "removeAttachment": "Remove attachment",
+      "removeAttachmentDescription": "The file is removed from this item but stays in the media library.",
+      "comments": "Comments",
+      "addComment": "Add comment",
+      "commentPlaceholder": "Write a comment…",
+      "noComments": "No comments yet",
+      "deleteComment": "Delete comment",
+      "deleteCommentDescription": "This comment will be deleted. This can't be undone.",
+      "activity": "Activity",
+      "noActivity": "No activity yet",
+      "transfer": "Transfer to pipeline",
+      "transferTitle": "Transfer to another pipeline",
+      "transferDescription": "The item keeps its number and creation date. Custom fields carry over when the other pipeline has a field with the same reference name and type.",
+      "destinationPipeline": "Destination pipeline",
+      "destinationStage": "Destination stage",
+      "firstStage": "First stage",
+      "choose": "Choose…",
+      "transferred": "Item transferred",
+      "delete": "Delete",
+      "deleteDescription": "One item will be deleted. This can't be undone.",
+      "deleted": "Item deleted",
+      "number": "Number",
+      "createdBy": "Created by",
+      "createdByValue": "{name} on {date}",
+      "inbox": "Inbox",
+      "moreActions": "More actions",
+      "noDescription": "No description",
+      "yes": "Yes",
+      "no": "No",
+      "assigneesMembers": "Agents",
+      "assigneesTeams": "Inbox teams",
+      "assigneesSearch": "Search admins or teams…",
+      "assigneesEmpty": "No results",
+      "assigneesPlaceholder": "Select admins or teams",
+      "olderComments": "Show older comments",
+      "olderActivity": "Show older activity",
+      "activityFilter": "Filter",
+      "activityFilterCount": "{count, plural, one {# filter} other {# filters}}",
+      "activityFilterClear": "Show all",
+      "noFilteredActivity": "No activity matches this filter.",
+      "activityGroup": {
+        "lifecycle": "Created & transferred",
+        "stage": "Stage",
+        "status": "Status",
+        "value": "Value",
+        "priority": "Priority",
+        "dueDate": "Due date",
+        "details": "Title, description & fields",
+        "assignees": "Assignees",
+        "comments": "Comments",
+        "attachments": "Attachments"
+      }
+    },
+    "activity": {
+      "created": "Created",
+      "stageChanged": "Moved to another stage",
+      "statusChanged": "Status changed",
+      "valueChanged": "Value changed",
+      "priorityChanged": "Priority changed",
+      "dueDateChanged": "Due date changed",
+      "titleChanged": "Title changed",
+      "descriptionChanged": "Description changed",
+      "fieldValuesChanged": "Custom fields changed",
+      "assigneesChanged": "Assignees changed",
+      "attachmentAdded": "Attachment added",
+      "attachmentRemoved": "Attachment removed",
+      "commentAdded": "Comment added",
+      "commentDeleted": "Comment deleted",
+      "transferred": "Transferred from another pipeline",
+      "deleted": "Deleted"
+    },
+    "activityActor": {
+      "flow": "Flow",
+      "trigger": "Trigger",
+      "workspaceToken": "API",
+      "system": "System",
+      "formerMember": "Former member"
+    },
+    "add": {
+      "changeContact": "Choose another contact",
+      "success": "Created",
+      "stepContact": "Select a contact",
+      "stepDetails": "{noun} details",
+      "contact": "Contact",
+      "addNewContact": "Add New"
+    },
+    "filter": {
+      "title": "Filter",
+      "status": "Status",
+      "statusLabels": {
+        "open": "Open",
+        "won": "Won",
+        "lost": "Lost"
+      },
+      "priority": "Priority",
+      "assignee": "Assigned admins",
+      "value": "{noun} value",
+      "min": "Min",
+      "max": "Max",
+      "dueDate": "Due date",
+      "createdAt": "Date created",
+      "from": "From",
+      "to": "To",
+      "clear": "Clear filters",
+      "apply": "Apply",
+      "back": "Back",
+      "updatedAt": "Date updated",
+      "resolvedOn": "{noun} resolved on",
+      "statusChangedOn": "Status changed on",
+      "stageChangedOn": "Stage changed on",
+      "lastCommentOn": "Last comment on",
+      "customFields": "Custom fields",
+      "any": "Any",
+      "yes": "Yes",
+      "no": "No",
+      "notResolvedOn": "{noun} not resolved on",
+      "equal": "Equal",
+      "different": "Different",
+      "reset": "Reset",
+      "presets": {
+        "thisWeek": "This week",
+        "lastWeek": "Last week",
+        "last14": "Last 14 days",
+        "thisYear": "This year",
+        "lastYear": "Last year",
+        "tomorrow": "Tomorrow",
+        "next7": "In 7 days",
+        "next14": "In 14 days",
+        "next30": "In 30 days",
+        "allTime": "All time"
+      },
+      "pickDate": "Pick a date",
+      "activity": "Activity",
+      "activityKinds": "Type of change",
+      "activityActors": "Done by",
+      "activityWhen": "When",
+      "activityAutomation": "Automation"
+    },
+    "analytics": {
+      "title": "Analytics",
+      "loading": "Loading statistics…",
+      "error": "Could not load statistics",
+      "created": "Created",
+      "won": "Won",
+      "wonValue": "Won value",
+      "lost": "Lost",
+      "lostValue": "Lost value",
+      "admin": "Admin",
+      "automation": "Automation",
+      "back": "Back",
+      "admins": "Admins",
+      "chart": {
+        "created": "New per day",
+        "won": "Won per day",
+        "lost": "Lost per day",
+        "wonValue": "Won value per day",
+        "lostValue": "Lost value per day"
+      },
+      "pie": {
+        "created": "Created by admin",
+        "won": "Won by admin",
+        "lost": "Lost by admin",
+        "other": "Other",
+        "empty": "No data"
+      }
+    },
+    "settings": {
+      "title": "Pipeline settings",
+      "general": "General",
+      "fields": "Custom fields",
+      "display": "Display",
+      "permissions": "Permissions",
+      "saved": "Settings saved",
+      "referenceName": "Reference name",
+      "referenceNameHint": "Used in the pipelines.reference_name.stage_name variables. Changing it breaks messages that use the old name.",
+      "referenceNameFormat": "Use lowercase letters, numbers and underscores, starting with a letter (e.g. close_date).",
+      "currency": "Currency",
+      "currencyFollowCountry": "Workspace country · {country} · {currency}",
+      "currencyFollowNoCountry": "No workspace country · {currency}",
+      "currencyHint": "Follows the workspace's Target Country (Settings → General) and updates when it changes. With no country set, USD is used. Values are never converted.",
+      "assignContact": "Assign the contact to an admin when an item is assigned",
+      "limit": "Limit open items per contact",
+      "statusLabels": "Status labels",
+      "status": {
+        "open": "Open",
+        "won": "Won",
+        "lost": "Lost"
+      },
+      "features": "Visible features",
+      "cardElements": "Card elements",
+      "card": {
+        "contactPhone": "Contact phone",
+        "contactEmail": "Contact email",
+        "createdAt": "Date created",
+        "updatedAt": "Date updated",
+        "assignees": "Assigned admins",
+        "comments": "Comments",
+        "cardId": "Item number",
+        "priority": "Priority",
+        "value": "Value",
+        "dueDate": "Due date"
+      },
+      "noFields": "No custom fields yet",
+      "fieldName": "Field name",
+      "fieldReference": "Reference name",
+      "fieldType": "Field type",
+      "required": "Required",
+      "requiredShort": "required",
+      "addField": "Add field",
+      "fieldAdded": "Field added",
+      "deleteField": "Delete field",
+      "permissionsHint": "Workspace owners and admins always have full access. Grant other members what they may do in this pipeline.",
+      "revoke": "Revoke",
+      "permission": {
+        "view": "View",
+        "edit": "Edit",
+        "delete": "Delete",
+        "settings": "Settings"
+      },
+      "noMembers": "No other members to configure",
+      "confirmDeleteField": "Delete this field and all its values on every item?",
+      "adminPermissions": "Admin permissions",
+      "cardVisibleElements": "Card visible elements"
+    },
+    "panel": {
+      "empty": "No pipeline items for this contact",
+      "error": "Could not load pipeline items",
+      "choosePipeline": "Choose a pipeline",
+      "add": "Add New"
+    },
+    "variables": {
+      "group": "Pipelines",
+      "attributes": {
+        "name": "Item name",
+        "stageName": "Stage",
+        "status": "Status",
+        "priority": "Priority",
+        "value": "Value",
+        "assignedAdmins": "Assigned admins",
+        "createdDate": "Created date",
+        "dueDate": "Due date",
+        "updatedDate": "Updated date",
+        "id": "Item ID"
+      }
+    }
+  },
+  "oauthConsent": {
+    "title": "Authorize {clientName}",
+    "description": "This application is requesting access to your workspace.",
+    "permissionsTitle": "Requested permissions",
+    "signedInAs": "Signed in as",
+    "approve": "Approve",
+    "deny": "Deny",
+    "failed": "Authorization could not be completed. Please try again.",
+    "workspaceLabel": "Workspace",
+    "workspacePlaceholder": "Select a workspace",
+    "workspaceHint": "{clientName} can only act on this workspace. To switch later, disconnect and connect again.",
+    "noWorkspaces": "You are not an admin of any workspace, so you cannot authorize this application."
+  },
+  "chatbotxMcp": {
+    "title": "ChatbotX MCP",
+    "workspaceId": "Workspace ID",
+    "streamableUrl": "Streamable HTTP URL",
+    "sseUrl": "Legacy SSE URL",
+    "guide": {
+      "title": "Connect an MCP client",
+      "step1": "Copy the configuration for your MCP client.",
+      "step2": "Paste it into the client.",
+      "step3": "The client opens a browser. Sign in and approve access.",
+      "step4": "Your workspace tools appear after approval.",
+      "ownerOnly": "Only workspace owners and superAdmins can authorize MCP access."
+    },
+    "clients": {
+      "claudeCode": "Claude Code",
+      "claudeDesktop": "Claude Desktop",
+      "cursor": "Cursor",
+      "chatgpt": "ChatGPT",
+      "stdio": "stdio fallback",
+      "stdioHint": "Use a workspace token for this fallback."
+    },
+    "grants": {
+      "title": "Authorized applications",
+      "description": "Grants belong to your account and apply to every workspace you administer; revoking disconnects the client everywhere.",
+      "empty": "OAuth grants appear here after you connect an MCP client.",
+      "client": "Client",
+      "scopes": "Scopes",
+      "firstAuthorizedAt": "First authorized",
+      "lastRefreshedAt": "Last refreshed",
+      "activeUntil": "Active until",
+      "noActiveToken": "No active token",
+      "revoke": "Revoke",
+      "revokeConfirmTitle": "Revoke application access?",
+      "revokeConfirmDescription": "Revoke access for {clientName}? This disconnects the client everywhere.",
+      "revokedSuccess": "Application access revoked.",
+      "notFound": "OAuth grant no longer exists"
+    }
+  },
+  "connectionStatus": {
+    "column": "Status",
+    "reconnecting": "The provider is reconnecting this account. Messages are held until it finishes.",
+    "accessRemoved": "The provider removed access to this account. Reconnect to resume.",
+    "needsReconnect": "Reconnect required.",
+    "inactive": "This channel is inactive."
+  },
+  "inbox": {
+    "createAppointment": {
+      "title": "Create Appointment",
+      "description": "Send the contact a booking link for a calendar, or open it to book on their behalf.",
+      "inactive": "Inactive",
+      "sendLink": "Send Calendar Link",
+      "goToLink": "Go to Calendar Link",
+      "sent": "Booking link sent.",
+      "failed": "Couldn't create the booking link.",
+      "noCalendars": "No appointment calendars yet.",
+      "manageCalendars": "Manage appointment calendars"
+    }
+  },
+  "templateStore": {
+    "title": "Template store",
+    "description": "Templates approved for the public store. Each template appears in the categories you choose.",
+    "add": "Add",
+    "addCategory": "Add category",
+    "renameCategory": "Rename",
+    "editCategories": "Edit categories",
+    "templateId": "Template ID",
+    "template": "Template",
+    "categories": "Categories",
+    "categoriesPlaceholder": "No category",
+    "close": "Close",
+    "removeChip": "Remove {name}",
+    "categoriesHint": "Optional. Without a category the template only shows under “All”.",
+    "noCategoriesYet": "No categories yet.",
+    "added": "Template added to the store",
+    "updated": "Categories updated",
+    "removed": "Template removed from the store",
+    "removeError": "Could not remove the template",
+    "removeTitle": "Remove {name}?",
+    "removeDescription": "It disappears from the store. The template itself and its installs are not affected.",
+    "saveError": "Could not save",
+    "deleteError": "Could not delete the category",
+    "categoryCreated": "Category created",
+    "categoryUpdated": "Category updated",
+    "categoryMoved": "Category moved",
+    "categoryDeleted": "Category deleted",
+    "deleteCategoryTitle": "Delete {name}?",
+    "deleteCategoryDescription": "Templates in this category: {count}. They stay in the store and show under “All”.",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "searchPlaceholder": "Search by name or template ID",
+    "emptyListings": "No approved templates yet.",
+    "noMatches": "No templates match your search or filters.",
+    "allCategories": "All categories",
+    "allStatuses": "All statuses",
+    "installs": "Installs",
+    "owner": "Owner",
+    "statusLabel": "Status",
+    "openInStore": "Open store",
+    "storeUnavailable": "Your store opens on your custom domain. Set one up to open it.",
+    "openTemplatePage": "Open template page",
+    "remove": "Remove",
+    "status": {
+      "published": "Published",
+      "templateUnavailable": "Template unavailable",
+      "shareDisabled": "Share link off"
+    },
+    "errors": {
+      "templateUnavailable": "No template with this ID can be added to your store.",
+      "listingExists": "This template is already in your store.",
+      "listingUnavailable": "This store entry no longer exists.",
+      "listingLimit": "A store can hold at most {templateLimit} templates.",
+      "categoryUnavailable": "This category no longer exists.",
+      "categoryNameTaken": "A category with this name already exists.",
+      "categoryLimit": "A store can have at most {categoryLimit} categories."
+    },
+    "store": {
+      "subtitle": "Ready-made templates you can install in one click.",
+      "pageTitle": "{tenantName} – Template store",
+      "empty": "No templates in the store yet.",
+      "search": "Search templates",
+      "all": "All",
+      "categories": "Store categories",
+      "noResults": "No templates match your search.",
+      "clearSearch": "Clear search",
+      "by": "By {publisherName}"
+    },
+    "picker": {
+      "placeholder": "Select a template",
+      "search": "Search by name or Template ID",
+      "empty": "No template available to add.",
+      "error": "Could not load templates.",
+      "retry": "Retry",
+      "meta": "ID {id} · {workspace}"
+    }
   }
 }

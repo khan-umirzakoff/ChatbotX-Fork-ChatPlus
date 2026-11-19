@@ -16,6 +16,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest"
 //    used otherwise.
 // ---------------------------------------------------------------------------
 
+const { db } = await import("@chatbotx.io/database/client")
 const { contactRepository } = await import("@chatbotx.io/database/repositories")
 const { inboxService } = await import("../src/inbox/service")
 const { count, list, UNSCOPED } = await import("../src/contact/list")
@@ -23,8 +24,16 @@ const { count, list, UNSCOPED } = await import("../src/contact/list")
 const where = { workspaceId: "ws-1" }
 const orderBy = { createdAt: "desc" }
 
+// Counts run inside a short transaction (statement timeout); there is no
+// database here, so hand the callback a stand-in handle.
+const countClient = { execute: vi.fn() }
+
 beforeEach(() => {
   vi.restoreAllMocks()
+  vi.spyOn(db, "transaction").mockImplementation(
+    (async (run: (tx: unknown) => Promise<unknown>) =>
+      await run(countClient)) as never,
+  )
   vi.spyOn(contactRepository, "buildListWhere").mockReturnValue(where as never)
   vi.spyOn(contactRepository, "resolveOrderBy").mockReturnValue(
     orderBy as never,
@@ -129,11 +138,13 @@ describe("contactService.list", () => {
     expect(relationsSpy).not.toHaveBeenCalled()
   })
 
-  test("projection:'table' for a restricted member passes includeEmailAndPhone:false + restrictToAssignedUserId to buildListWhere and returns rows as-is", async () => {
+  test("projection:'table' for a restricted member masks email/phone and passes includeEmailAndPhone:false + restrictToAssignedUserId", async () => {
     const rows = [
       {
         id: "contact-1",
-        fullName: "Ada Lovelace",
+        fullName: null,
+        email: "ada@example.com",
+        phoneNumber: "84349566550",
         avatar: null,
         createdAt: new Date("2024-01-01"),
         contactInboxes: [],
@@ -153,13 +164,42 @@ describe("contactService.list", () => {
       projection: "table",
     })
 
-    expect(result.data).toEqual(rows)
+    // The name fallback must never reveal what the member may not see.
+    expect(result.data).toEqual([
+      { ...rows[0], email: null, phoneNumber: null },
+    ])
     expect(contactRepository.buildListWhere).toHaveBeenCalledWith(
       expect.objectContaining({
         includeEmailAndPhone: false,
         restrictToAssignedUserId: "user-1",
       }),
     )
+  })
+
+  test("projection:'table' keeps email/phone for a caller allowed to see them", async () => {
+    const rows = [
+      {
+        id: "contact-1",
+        fullName: null,
+        email: null,
+        phoneNumber: "84349566550",
+        avatar: null,
+        createdAt: new Date("2024-01-01"),
+        contactInboxes: [],
+        conversation: null,
+      },
+    ]
+    vi.spyOn(contactRepository, "listTableRows").mockResolvedValue(
+      rows as never,
+    )
+
+    const result = await list({
+      workspaceId: "ws-1",
+      scope: UNSCOPED,
+      projection: "table",
+    })
+
+    expect(result.data).toEqual(rows)
   })
 
   test("include omitting both 'tags' and 'customFields' uses listWithInboxesAndConversation", async () => {
@@ -326,6 +366,52 @@ describe("contactService inbox scope keys", () => {
 
     expect(statsSpy).not.toHaveBeenCalled()
     expect(countSpy).toHaveBeenCalledTimes(1)
-    expect(result).toEqual({ total: 3 })
+    expect(countSpy).toHaveBeenCalledWith({ client: countClient, where })
+    expect(result).toEqual({ total: 3, totalCountCapped: false })
+  })
+
+  test("bounded count stops at the server cap and reports a lower bound", async () => {
+    vi.spyOn(contactRepository, "countCapped").mockResolvedValue({
+      total: 100_000,
+      capped: true,
+      cap: 100_000,
+    } as never)
+    const countSpy = vi.spyOn(contactRepository, "count")
+
+    const result = await count({
+      workspaceId: "ws-1",
+      scope: UNSCOPED,
+      keyword: "ada",
+      countMode: "bounded",
+    })
+
+    expect(countSpy).not.toHaveBeenCalled()
+    expect(contactRepository.countCapped).toHaveBeenCalledWith({
+      client: countClient,
+      where,
+      cap: 100_000,
+    })
+    expect(result).toEqual({
+      total: 100_000,
+      totalCountCapped: true,
+      countCap: 100_000,
+    })
+  })
+
+  test("the unfiltered stats shortcut is exact in either mode", async () => {
+    vi.spyOn(inboxService, "resolveBroadcastInboxIds").mockResolvedValue([])
+    vi.spyOn(
+      contactRepository,
+      "sumTotalContactsFromInboxStats",
+    ).mockResolvedValue(42 as never)
+
+    const result = await count({
+      workspaceId: "ws-1",
+      scope: UNSCOPED,
+      countMode: "bounded",
+    })
+
+    expect(result.totalCountCapped).toBe(false)
+    expect(contactRepository.countCapped).not.toHaveBeenCalled()
   })
 })

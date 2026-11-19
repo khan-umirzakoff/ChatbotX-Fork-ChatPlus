@@ -10,6 +10,8 @@ const findAgentMock = vi.hoisted(() => vi.fn())
 const getOrInitContextMock = vi.hoisted(() => vi.fn())
 const runAIAgentRunnerMock = vi.hoisted(() => vi.fn())
 const saveResultToCustomFieldMock = vi.hoisted(() => vi.fn())
+const buildAIAgentMessagesMock = vi.hoisted(() => vi.fn())
+const resolveContactVariablesDeepMock = vi.hoisted(() => vi.fn())
 
 vi.mock("@chatbotx.io/ai", () => ({
   aiTimeouts: { aiTotal: 30_000 },
@@ -38,7 +40,11 @@ vi.mock("../src/integration/handlers/shared/ai-agent-runner", () => ({
 }))
 
 vi.mock("../src/integration/handlers/generate-text-agent/messages", () => ({
-  buildAIAgentMessages: vi.fn(async () => [{ role: "user", content: "Hello" }]),
+  buildAIAgentMessages: buildAIAgentMessagesMock,
+}))
+
+vi.mock("@chatbotx.io/variables", () => ({
+  resolveContactVariablesDeep: resolveContactVariablesDeepMock,
 }))
 
 vi.mock("../src/integration/utils/contact", () => ({
@@ -114,6 +120,12 @@ function makeStep(
 describe("handleAIGenerateTextAgent OpenAI-compatible provider", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    buildAIAgentMessagesMock.mockResolvedValue([
+      { role: "user", content: "Hello" },
+    ])
+    resolveContactVariablesDeepMock.mockImplementation(
+      async (_contactId: string, value: unknown) => value,
+    )
     findAgentMock.mockResolvedValue(makeAgent())
     getOrInitContextMock.mockResolvedValue({ summary: "Summary" })
     runAIAgentRunnerMock.mockResolvedValue({
@@ -158,6 +170,40 @@ describe("handleAIGenerateTextAgent OpenAI-compatible provider", () => {
       workspaceId: "ws-1",
       contactInboxId: "contact-inbox-1",
     })
+  })
+
+  test("hands the inbox sender of the running flow to the AI agent runner", async () => {
+    await handleAIGenerateTextAgent({
+      conversation: makeConversation(),
+      contactInbox: makeContactInbox(),
+      step: makeStep(),
+      sentByUserId: "user-1",
+    } as Parameters<typeof handleAIGenerateTextAgent>[0])
+
+    expect(runAIAgentRunnerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ sentByUserId: "user-1" }),
+    )
+  })
+
+  test("resolves contact variables in the step message", async () => {
+    resolveContactVariablesDeepMock.mockResolvedValueOnce("Hi, I am Lan")
+
+    await handleAIGenerateTextAgent({
+      conversation: makeConversation(),
+      contactInbox: makeContactInbox(),
+      step: makeStep({ message: "Hi, I am {{first_name}}" }),
+    } as Parameters<typeof handleAIGenerateTextAgent>[0])
+
+    expect(resolveContactVariablesDeepMock).toHaveBeenCalledWith(
+      "contact-1",
+      "Hi, I am {{first_name}}",
+      expect.anything(),
+    )
+    expect(buildAIAgentMessagesMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.anything(),
+      expect.objectContaining({ message: "Hi, I am Lan" }),
+    )
   })
 
   test("returns a clear error when OpenAI-compatible integration cannot respond", async () => {

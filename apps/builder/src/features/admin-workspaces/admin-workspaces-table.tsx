@@ -12,9 +12,11 @@ import { format } from "date-fns"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
 import { use, useMemo } from "react"
+import { CreateAdminWorkspaceDialog } from "@/enterprise/features/admin-workspaces/create-admin-workspace-dialog"
 import type { ListAdminWorkspacesResponse } from "./queries"
 
 type AdminWorkspacesTableProps = {
+  canCreateWorkspace: boolean
   consentRequired: boolean
   promises: Promise<[ListAdminWorkspacesResponse]>
 }
@@ -33,15 +35,20 @@ function OwnerCell({
 }: {
   row: ListAdminWorkspacesResponse["data"][number]
 }) {
+  const t = useTranslations()
+
   return (
     <div className="flex flex-col">
-      <span className="font-medium">{row.ownerName ?? "—"}</span>
+      <span className="font-medium">
+        {row.ownerName ?? t("platformAdmin.workspaces.notAvailable")}
+      </span>
       <span className="text-muted-foreground text-xs">{row.ownerEmail}</span>
     </div>
   )
 }
 
 export function AdminWorkspacesTable({
+  canCreateWorkspace,
   consentRequired,
   promises,
 }: AdminWorkspacesTableProps) {
@@ -91,7 +98,8 @@ export function AdminWorkspacesTable({
             title={t("platformAdmin.workspaces.tenant")}
           />
         ),
-        cell: ({ row }) => row.original.tenantName ?? "—",
+        cell: ({ row }) =>
+          row.original.tenantName ?? t("platformAdmin.workspaces.notAvailable"),
         enableSorting: false,
       },
       {
@@ -178,7 +186,9 @@ export function AdminWorkspacesTable({
 
   return (
     <DataTable table={table}>
-      <DataTableToolbar table={table} />
+      <DataTableToolbar table={table}>
+        {canCreateWorkspace && <CreateAdminWorkspaceDialog />}
+      </DataTableToolbar>
     </DataTable>
   )
 }

@@ -33,6 +33,9 @@ vi.mock("better-auth/next-js", () => ({
 vi.mock("better-auth/plugins", () => ({
   anonymous: () => ({ id: "anonymous" }),
   bearer: () => ({ id: "bearer" }),
+  genericOAuth: () => ({ id: "generic-oauth" }),
+  jwt: () => ({ id: "jwt" }),
+  mcp: () => ({ id: "mcp" }),
   magicLink: () => ({ id: "magic-link" }),
   oneTimeToken: () => ({ id: "one-time-token" }),
 }))
@@ -43,6 +46,14 @@ vi.mock("@chatbotx.io/database/client", () => ({
 
 vi.mock("@chatbotx.io/database/schema", () => ({
   accountModel: {},
+  jwkModel: {},
+  oauthAccessTokenModel: {},
+  oauthClientAssertionModel: {},
+  oauthClientModel: {},
+  oauthClientResourceModel: {},
+  oauthConsentModel: {},
+  oauthRefreshTokenModel: {},
+  oauthResourceModel: {},
   sessionModel: {},
   userModel: {},
   verificationModel: {},
@@ -55,6 +66,7 @@ vi.mock("@chatbotx.io/business", () => ({
     findPlatform: vi.fn(),
   },
   resolveTenantSettingsByDomain: vi.fn(),
+  invitationService: { findActiveByCode: vi.fn().mockResolvedValue(null) },
 }))
 
 // @chatbotx.io/utils sets up a process-global Snowflake ID generator at
@@ -63,6 +75,7 @@ vi.mock("@chatbotx.io/business", () => ({
 vi.mock("@chatbotx.io/utils", () => ({
   createId: () => "test-id",
   getPublicOriginFromRequest: vi.fn(),
+  parseEnvBool: (value: unknown) => value === true || value === "true",
 }))
 
 vi.mock("@chatbotx.io/mail", () => ({
@@ -104,9 +117,14 @@ describe("trustedOrigins during next build", () => {
     const origins = await config.trustedOrigins()
 
     expect(origins).toEqual(
-      expect.arrayContaining([BROKER_URL, BUILDER_URL, "chatconnectxapp://"]),
+      expect.arrayContaining([
+        BROKER_URL,
+        BUILDER_URL,
+        "chatconnectxapp://",
+        "chatbotxmobileapp://",
+      ]),
     )
-    expect(origins).toHaveLength(3)
+    expect(origins).toHaveLength(4)
     expect(listActiveDomains).not.toHaveBeenCalled()
   })
 

@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs"
-import { join, relative } from "node:path"
+import { join, relative, sep } from "node:path"
 import { describe, expect, test } from "vitest"
 
 /**
@@ -16,6 +16,10 @@ import { describe, expect, test } from "vitest"
 
 const BUILDER_SRC = join(import.meta.dirname, "..", "src")
 
+/** Path relative to `from`, always "/"-separated (the allowlist is written that way). */
+const posixRelative = (from: string, to: string): string =>
+  relative(from, to).split(sep).join("/")
+
 /** Modules that may hold a raw base, with the reason they are not procedures. */
 const RAW_BASE_ALLOWLIST = new Set([
   // A middleware, not a procedure: it is chained onto the connect routes,
@@ -24,7 +28,7 @@ const RAW_BASE_ALLOWLIST = new Set([
 ])
 
 const AUTHENTICATED_BASE =
-  /\b(authorizedAPI|workspaceTokenAuthAPIForScope|channelApiTokenAPI)\b/
+  /\b(authorizedAPI|workspaceTokenAuthAPIForScope|channelApiTokenAPI|mobileUserAPI|mobileUserPasswordChangeAPI)\b/
 
 const PROCEDURE_HANDLER = /\.handler\(/
 
@@ -61,11 +65,15 @@ describe("/rpc router auth surface", () => {
     )
 
     // Adding an export here means adding a way to mount a procedure. If it is
-    // not one of these three, it must carry its own auth middleware — and this
-    // test is where that decision gets recorded.
+    // not one of these, it must carry its own auth middleware — and this
+    // test is where that decision gets recorded. The two `mobileUser*` bases
+    // sit behind `mobileUserAuthMiddleware` (a verified mobile access JWT) and
+    // are mounted only on `/v1/me/*`, never on `/rpc`.
     expect(exported.sort()).toEqual([
       "authorizedAPI",
       "channelApiTokenAPI",
+      "mobileUserAPI",
+      "mobileUserPasswordChangeAPI",
       "workspaceTokenAuthAPIForScope",
     ])
   })
@@ -74,7 +82,7 @@ describe("/rpc router auth surface", () => {
     const offenders: string[] = []
 
     for (const file of apiModules()) {
-      const relativePath = relative(BUILDER_SRC, file)
+      const relativePath = posixRelative(BUILDER_SRC, file)
       if (RAW_BASE_ALLOWLIST.has(relativePath)) {
         continue
       }
@@ -93,7 +101,7 @@ describe("/rpc router auth surface", () => {
     // Helper modules that define no procedure at all are not a surface.
     const procedureModules = files
       .map((file) => ({
-        path: relative(BUILDER_SRC, file),
+        path: posixRelative(BUILDER_SRC, file),
         source: readFileSync(file, "utf8"),
       }))
       .filter(({ source }) => PROCEDURE_HANDLER.test(source))

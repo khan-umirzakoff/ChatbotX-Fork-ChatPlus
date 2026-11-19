@@ -2,9 +2,9 @@
 
 How the **enterprise** edition of ChatbotX is unlocked and verified.
 
-- **Model:** offline, GitLab-EE style. The license is a signed token verified
-  fully offline against a public key baked into the app — **no phone-home, no
-  API call**, works air-gapped.
+- **Model:** license verification is fully offline against a public key baked
+  into the app. Connected deployments can optionally fetch a renewed token;
+  air-gapped installations disable that refresh and remain fully offline.
 - **Audience:** operators self-hosting the enterprise edition.
 - **License creation (signing) lives in the private `../aha.chat-enterprise`
   repo** and is never shipped here.
@@ -26,10 +26,11 @@ open-source (MIT) codebase. The answer is an **Ed25519-signed JWS token**:
   offline with [`jose`](https://github.com/panva/jose). A public key can only
   *verify* — it can never sign or forge a license — so committing it is safe.
 - **Upgrades need no redeploy** — the vendor re-issues a token with a new
-  payload; the customer swaps `LICENSE_KEY` and restarts.
+  payload. Connected deployments fetch and persist it hourly; air-gapped
+  operators replace `LICENSE_KEY` and restart.
 
-This mirrors GitLab EE: the public key is in the open-source code, verification
-is entirely offline, and the private signing key stays in internal systems.
+This keeps verification offline and the private signing key in internal
+systems.
 
 ## The model: edition sets the ceiling, license unlocks within it
 
@@ -37,31 +38,34 @@ is entirely offline, and the private signing key stays in internal systems.
 | ------------ | -------------------------------------------------------------------- |
 | `cloud`      | Always (billing-driven; license ignored).                            |
 | `community`  | Never.                                                               |
-| `enterprise` | **Only with a valid, non-expired, signature-verified license.** Individual features additionally require their flag in the token's `features[]`. |
+| `enterprise` | **Only with a valid, signature-verified license.** A license still unlocks everything for 7 days after `exp` (a "grace" state); past that it degrades to community. Individual features additionally require their flag in the token's `features[]`. |
 
 The server-side seam is `packages/business/src/user/entitlements.ts`:
 
 ```ts
 export const hasEnterpriseFeatures = async (): Promise<boolean> => {
-  if (isCloud()) return true
-  if (!isEnterprise()) return false
-  return (await getLicenseStatus()).state === "valid"
+  if (!(isCloud() || isEnterprise())) return false
+  const license = await getLicenseStatus()
+  return isLicenseEntitled(license.state) // state is "valid" or "grace"
 }
 ```
 
-On a missing, invalid, or expired key the app **degrades to the community
-feature set** — it never crashes and never destroys data.
+On a missing, invalid, or lapsed (past the grace window) license the app
+**degrades to the community feature set** — it never crashes and never
+destroys data.
 
 > The client-side `hasEnterpriseFeatures` in `apps/builder/src/env.ts` is an
 > **edition-only, cosmetic** check (it hides sidebar items). It is *not* a
 > security boundary — a client can neither read `LICENSE_KEY` nor run the crypto
 > check. Real enforcement is always the server-side seam above.
 
-## The customer sets only LICENSE_KEY
+## License configuration
 
-| Env var (server-only) | Holds                                                    |
-| --------------------- | -------------------------------------------------------- |
-| `LICENSE_KEY`         | The signed compact JWS token issued by the vendor.       |
+| Env var (server-only) | Holds |
+| --------------------- | ----- |
+| `LICENSE_KEY` | The signed compact JWS token issued by the vendor. It anchors the deployment identity. |
+| `LICENSE_REFRESH_URL` | Vendor renewal endpoint. Defaults to `https://chatbotx.io/api/licenses/refresh`. |
+| `LICENSE_REFRESH_ENABLED` | Enables the hourly renewal request. Set to `false` for air-gapped installations. |
 
 The public verification key is **baked into the source**
 (`packages/business/src/enterprise/license/public-keys.ts`) — the customer does
@@ -73,6 +77,10 @@ the client.
 for **key rotation** — each license's JWS header carries a `kid` that selects
 which public key verifies it. Old licenses keep working under their original
 `kid` while new ones are signed with a fresh key.
+
+The database `License` table stores the latest vendor-issued token and its
+`expiresAt`. It is written only by the hourly `refreshLicense` cron;
+`LICENSE_KEY` remains the deployment identity anchor.
 
 ## Token shape
 
@@ -94,7 +102,8 @@ Compact JWS, header `{ alg: "EdDSA", kid, typ: "JWT" }`. Payload
 Verification (`service.ts`) rejects non-`EdDSA` algorithms *before* verifying
 (algorithm-confusion guard), rejects unknown `kid`s, enforces `iss`/`exp`/`nbf`
 via `jose`, and validates the payload shape with zod. An **expired** token still
-surfaces its claims (state `"expired"`) so operators can see what lapsed.
+surfaces its claims — state `"grace"` for the first 7 days past `exp`, then
+`"expired"` — so operators can see what lapsed.
 
 **Tier must match the running edition.** `NEXT_PUBLIC_EDITION=cloud` deployments
 only accept `tier: "cloud"` licenses; `NEXT_PUBLIC_EDITION=enterprise` deployments
@@ -106,18 +115,30 @@ never verifies a license, so this rule doesn't apply there.
 > `LICENSE_ISSUER` in `public-keys.ts` must exactly match the `iss` claim set by
 > the signer in `../aha.chat-enterprise`, or every token fails verification.
 
-## Verifying is memoized per boot
+## Resolution cache and renewals
 
-`loadLicense()` reads `LICENSE_KEY` **once** and memoizes the resulting
-`Promise<LicenseStatus>` at module scope. A restart re-reads env — this is why
-swapping `LICENSE_KEY` requires a restart, not just a reload.
+`loadLicense()` caches a resolved status for 60 seconds. On each refresh after
+the TTL, it verifies `LICENSE_KEY`, reads the stored token for the same
+`licenseId`, and selects the newer usable token:
+
+1. a higher-ranked state wins (`valid` > `grace` > `expired` > `invalid`/`missing`);
+2. otherwise, later `iat` wins;
+3. a later `exp` breaks an `iat` tie.
+
+The hourly `refreshLicense` schedule POSTs the configured `LICENSE_KEY`,
+license id, and edition to `LICENSE_REFRESH_URL`. It verifies the returned
+token before storing it, and accepts plan changes that retain the same expiry
+when their issuance time is newer. Failed refreshes keep the last usable token.
+Set `LICENSE_REFRESH_ENABLED=false` to disable this request in air-gapped
+installations.
 
 Accessors:
 
 - `getLicenseStatus()` / `getLicense()` — the full `LicenseStatus`.
-- `hasFeature(flag)` — `true` only when the license is valid **and** lists the
-  flag.
-- `getLimit(key)` — the numeric limit (`null` = unlimited) when valid.
+- `hasFeature(flag)` — `true` when the license is `"valid"` or `"grace"` **and**
+  lists the flag.
+- `getLimit(key)` — the numeric limit (`null` = unlimited) when `"valid"` or
+  `"grace"`.
 
 ## Issuing a license (vendor)
 
@@ -132,11 +153,18 @@ When the private repo generates its keypair, its **public** key must be added to
 
 ## Installing a license (customer)
 
-Set two env vars and restart — no redeploy:
+Set the bootstrap license and restart:
 
 ```dotenv
 NEXT_PUBLIC_EDITION=enterprise
 LICENSE_KEY=eyJhbGciOiJFZERTQS1...
+```
+
+Connected deployments then receive verified renewals without another restart.
+For an air-gapped installation, also set:
+
+```dotenv
+LICENSE_REFRESH_ENABLED=false
 ```
 
 ## Enforcing features and limits
@@ -176,10 +204,17 @@ if (max !== null && currentCount >= max) {
   roll it back. Acceptable for an explicitly offline/air-gapped model — the
   signature makes `features`/`limits`/`exp` unforgeable, so only date
   manipulation is possible (low value). `nbf` guards pre-dating.
-- **Hard expiry.** Offline enterprise-license `exp` remains a hard cutoff with
-  clear messaging. The cloud trial path now has a degraded grace window instead:
-  an expired workspace is read/delete-only with a persistent banner, and its
-  channels are torn down at trial+7d.
+- **7-day grace, not a hard cutoff.** An expired enterprise license keeps full
+  entitlement for `LICENSE_GRACE_PERIOD_DAYS` (7) past its `exp` (state
+  `"grace"`); only after that window does the deployment degrade to the
+  community feature set. The window is a source constant, not an env var —
+  an operator-tunable grace length would be an unbounded free-enterprise
+  switch in an MIT codebase — and is anchored to the signed `exp` claim, not
+  to "time since last successful refresh", so an unreachable vendor endpoint
+  never disables a license that is still paid for. The cloud trial path has
+  its own, separate degraded grace window: an expired trial workspace is
+  read/delete-only with a persistent banner, and its channels are torn down
+  at trial+7d.
 - **No revocation.** Pure offline verification cannot revoke an issued token
   before its `exp`. If online revocation is ever needed, it would be added in
   `../aha.chat-enterprise` as an optional online check layered on top — the

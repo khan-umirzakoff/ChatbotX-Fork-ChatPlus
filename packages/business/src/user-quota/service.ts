@@ -4,23 +4,21 @@ import {
   countDistinct,
   db,
   eq,
-  gt,
   inArray,
-  lte,
   type SQL,
   sql,
-  sum,
 } from "@chatbotx.io/database/client"
 import {
   ACTIVE_CONNECTION_STATUSES,
   planStatuses,
 } from "@chatbotx.io/database/partials"
+import { tenantRepository } from "@chatbotx.io/database/repositories/tenant"
+import { workspaceMacRepository } from "@chatbotx.io/database/repositories/workspace-mac"
 import {
   connectionModel,
   contactModel,
   ROOT_TENANT_ID,
   userQuotaModel,
-  workspaceMacModel,
   workspaceMemberModel,
   workspaceModel,
 } from "@chatbotx.io/database/schema"
@@ -64,10 +62,27 @@ const BOOTSTRAP_TRIAL_FALLBACK = {
   monthlyBotMessagesLimit: 0,
 } as const
 
+const RAISE_LIVE_MAC_LUA = `
+local storedPeriod = redis.call("HGET", KEYS[1], ARGV[1])
+if storedPeriod ~= ARGV[2] then
+  return 0
+end
+
+local currentValue = tonumber(redis.call("HGET", KEYS[1], ARGV[3]))
+local nextValue = tonumber(ARGV[4])
+if not currentValue or nextValue > currentValue then
+  redis.call("HSET", KEYS[1], ARGV[3], ARGV[4])
+  return 1
+end
+
+return 0
+`
+
 interface DefaultPlanSnapshot {
   botMessagesLimit: number | null
   channelsLimit: number | null
   contactsLimit: number | null
+  customAppCredentials?: boolean
   macLimit: number | null
   monthlyBotMessagesLimit: number | null
   planName: string
@@ -280,6 +295,7 @@ class UserQuotaService extends BaseService {
         whiteLabel: false,
         ssoSaml: false,
         saasMode: false,
+        customAppCredentials: false,
         planName: snapshot.planName,
         planStatus: isTrial
           ? planStatuses.enum.trial
@@ -375,6 +391,7 @@ class UserQuotaService extends BaseService {
       whiteLabel: false,
       ssoSaml: false,
       saasMode: false,
+      customAppCredentials: false,
       planName: null,
       planStatus: null,
       selectedTrialPlanId: null,
@@ -402,6 +419,8 @@ class UserQuotaService extends BaseService {
       whiteLabel: base.whiteLabel || snapshot.whiteLabel,
       ssoSaml: base.ssoSaml || snapshot.ssoSaml,
       saasMode: base.saasMode || snapshot.saasMode,
+      customAppCredentials:
+        base.customAppCredentials || snapshot.customAppCredentials === true,
       planName: base.planName ?? snapshot.planName,
       // Secondary fail-open fallback: normally cloud sign-up stamps a real
       // bootstrap row first. If that stamp failed, or for legacy usage-only rows,
@@ -620,10 +639,13 @@ class UserQuotaService extends BaseService {
   /**
    * Live at-limit check for `teamMembers`; the quota row still supplies the
    * plan limit while the distinct member count comes directly from the DB.
+   * `additionalCount` generalizes a single pending insert (the default) to a
+   * batch — e.g. an owner plus N members created together.
    */
   async isTeamMemberLimitReached(
     scope: { ownerId: string } | { tenantId: string },
     limitUserId: string,
+    additionalCount = 1,
   ): Promise<boolean> {
     const [quota, realCount] = await Promise.all([
       this.getForUser(limitUserId),
@@ -633,7 +655,7 @@ class UserQuotaService extends BaseService {
       return false
     }
     const { limit } = this.readMetricValues(quota, "teamMembers")
-    return limit !== null && realCount >= limit
+    return limit !== null && realCount + additionalCount > limit
   }
 
   async getRemainingSlots(
@@ -834,34 +856,23 @@ class UserQuotaService extends BaseService {
     tenantId: string,
   ): Promise<void> {
     const client = await cacheConnections.useExisting()
+    // Read before calculating the ledger sum. The guarded upsert below then
+    // leaves a row the quota worker rolled over unchanged.
+    const ownerQuota = await db.query.userQuotaModel.findFirst({
+      where: { userId: ownerId },
+      columns: { periodStart: true },
+    })
+    const periodStart = ownerQuota?.periodStart ?? null
 
     const [
       { contactsUsed, workspacesUsed, channelsUsed },
       teamMembersUsed,
-      [macResult],
+      macUsed,
     ] = await Promise.all([
       this.countWorkspaceScopedUsage(eq(workspaceModel.tenantId, tenantId)),
-
       this.countDistinctTeamMembers({ tenantId }),
-
-      db
-        .select({ total: sum(workspaceMacModel.macCount) })
-        .from(workspaceMacModel)
-        .innerJoin(
-          workspaceModel,
-          eq(workspaceMacModel.workspaceId, workspaceModel.id),
-        )
-        .where(
-          and(
-            eq(workspaceModel.tenantId, tenantId),
-            lte(workspaceMacModel.periodStart, sql`now()`),
-            gt(workspaceMacModel.periodEnd, sql`now()`),
-          ),
-        ),
+      workspaceMacRepository.sumForTenant(tenantId),
     ])
-
-    // `sum()` returns a numeric string (or null when no rows match).
-    const macUsed = Number(macResult?.total ?? 0)
 
     await db
       .insert(userQuotaModel)
@@ -872,30 +883,26 @@ class UserQuotaService extends BaseService {
         workspacesUsed,
         channelsUsed,
         macUsed,
+        periodStart,
         syncedAt: new Date(),
       })
       .onConflictDoUpdate({
         target: userQuotaModel.userId,
         set: {
-          // Authoritative current counts — assigned directly, NOT GREATEST — so
-          // deletions across the pool free quota. Only `*Used` is touched; the
-          // owner's limits / plan identity are written by the billing layer.
           contactsUsed,
           teamMembersUsed,
           workspacesUsed,
           channelsUsed,
-          macUsed,
+          macUsed: sql`CASE
+            WHEN ${userQuotaModel.periodStart} IS NOT DISTINCT FROM ${periodStart}
+            THEN GREATEST(${userQuotaModel.macUsed}, ${macUsed})
+            ELSE ${userQuotaModel.macUsed}
+          END`,
           syncedAt: new Date(),
           updatedAt: sql`CURRENT_TIMESTAMP`,
         },
       })
 
-    // Mirror the live counters to the same authoritative current counts.
-    // `macPeriodStart` is intentionally not written here: the DB query already
-    // filters for the current billing period (`periodStart ≤ now() < periodEnd`),
-    // so `macUsed` is period-correct without the stamp. Period resets are owned
-    // by the private quota-worker, which advances `periodStart` and zeroes
-    // `macUsed`; the next reconcile will pick up the new value from DB.
     await client.hset(
       this.store.liveKey(ownerId),
       "contacts",
@@ -906,11 +913,35 @@ class UserQuotaService extends BaseService {
       String(workspacesUsed),
       "channels",
       String(channelsUsed),
-      "mac",
-      String(macUsed),
     )
+    if (periodStart) {
+      await this.raiseLiveMac({
+        userId: ownerId,
+        value: macUsed,
+        periodIso: periodStart.toISOString(),
+      })
+    }
 
     await this.store.invalidate(ownerId)
+  }
+  /**
+   * Reconciles the quota row that owns a workspace teardown. Active reseller
+   * tenants pool usage on their owner; platform users reconcile only their own
+   * workspaces.
+   */
+  async reconcileOwnerAfterTeardown(
+    ownerId: string,
+    tenantId?: string,
+  ): Promise<void> {
+    await this.reconcileUserSelfUsage(ownerId)
+
+    const tenant =
+      tenantId && tenantId !== ROOT_TENANT_ID
+        ? await tenantRepository.findById(tenantId)
+        : await tenantRepository.findByOwner(ownerId)
+    if (tenant?.status === "active" && tenant.ownerId) {
+      await this.reconcileOwnerPoolUsage(tenant.ownerId, tenant.id)
+    }
   }
 
   /**
@@ -965,7 +996,7 @@ class UserQuotaService extends BaseService {
    * shape, same "assigned directly, NOT GREATEST" semantics so deletions
    * free quota). Unlike the pool path, the live-counter `hset` here has NO
    * `mac` field — mac is reconciled separately by the caller via
-   * `persistMacUsed`/the ledger reconcile, using the markers this method
+   * `raiseMacUsed`/the ledger reconcile, using the markers this method
    * returns from one round-trip (`macUsed`, `periodStart`, `periodEnd`,
    * `monthlyBotMessagesPeriodStart`).
    */
@@ -1042,18 +1073,53 @@ class UserQuotaService extends BaseService {
     }
   }
 
-  /** `sync-user-quota.ts` persistMacUsed: upsert `UserQuota.macUsed` to an absolute value. */
-  async persistMacUsed(userId: string, value: number): Promise<void> {
+  /**
+   * Raises `macUsed` without ever overwriting a concurrent billing rollover.
+   * The conflict predicate pins the update to the caller's billing period.
+   */
+  async raiseMacUsed(input: {
+    userId: string
+    value: number
+    periodStart: Date
+  }): Promise<void> {
     await db
       .insert(userQuotaModel)
-      .values({ userId, macUsed: value, syncedAt: new Date() })
+      .values({
+        userId: input.userId,
+        macUsed: input.value,
+        periodStart: input.periodStart,
+        syncedAt: new Date(),
+      })
       .onConflictDoUpdate({
         target: userQuotaModel.userId,
+        setWhere: sql`${userQuotaModel.periodStart} IS NOT DISTINCT FROM ${input.periodStart}`,
         set: {
-          macUsed: value,
+          macUsed: sql`GREATEST(${userQuotaModel.macUsed}, ${input.value})`,
           updatedAt: sql`CURRENT_TIMESTAMP`,
         },
       })
+  }
+
+  /**
+   * Raises the live MAC counter only when it still belongs to the quota period
+   * read by the caller. Lua keeps the period check and monotonic write atomic,
+   * so an increment cannot be lost between a separate HGET and HSET.
+   */
+  async raiseLiveMac(input: {
+    userId: string
+    value: number
+    periodIso: string
+  }): Promise<void> {
+    const client = await cacheConnections.useExisting()
+    await client.eval(
+      RAISE_LIVE_MAC_LUA,
+      1,
+      this.store.liveKey(input.userId),
+      "macPeriodStart",
+      input.periodIso,
+      "mac",
+      String(input.value),
+    )
   }
 
   /**

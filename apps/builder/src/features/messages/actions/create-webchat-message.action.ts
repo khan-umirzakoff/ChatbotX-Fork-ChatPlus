@@ -1,59 +1,49 @@
 "use server"
 
-import { automatedResponseService } from "@chatbotx.io/automated-response"
 import {
-  broadcastToWorkspaceParty,
+  automatedResponseService,
+  isKeywordMediaFileType,
+} from "@chatbotx.io/automated-response"
+import {
   contactInboxService,
   contactService,
   conversationService,
+  integrationWebchatService,
   isWorkspaceScheduledForDeletion,
-  messageCleanupService,
-  quotaEnforcementService,
+  messageService,
+  queueMessageCreatedEvent,
   resolveTenantSettings,
   workspaceService,
 } from "@chatbotx.io/business"
 import { resolveLastUserInputTracking } from "@chatbotx.io/business/contact-inbox"
-import {
-  finalizeContactProfile,
-  normalizeLanguage,
-} from "@chatbotx.io/business/contact-locale"
+import { normalizeLanguage } from "@chatbotx.io/business/contact-locale"
 import { ChatbotXException } from "@chatbotx.io/business/errors"
 import { getPublicFileUrl } from "@chatbotx.io/business/utils"
-import { findOrFail } from "@chatbotx.io/database/client"
+
 import {
   type ConversationAttributes,
   channelTypes,
-  contactSources,
 } from "@chatbotx.io/database/partials"
-import type { MessageWithAttachments } from "@chatbotx.io/database/repositories"
-import { createMessageRepository } from "@chatbotx.io/database/repositories"
-import {
-  contactInboxModel,
-  contactModel,
-  conversationModel,
-  integrationWebchatModel,
-} from "@chatbotx.io/database/schema"
-import type { WorkspaceModel } from "@chatbotx.io/database/types"
+import type { IntegrationWebchatModel } from "@chatbotx.io/database/types"
 import { emit } from "@chatbotx.io/event-bus"
-import { emitContactCreated } from "@chatbotx.io/events"
 import { setWebhookExecutionContext } from "@chatbotx.io/events/context"
 import { type UploadedFile, uploadMultipleFiles } from "@chatbotx.io/filesystem"
-import { messageEventTypeSchema } from "@chatbotx.io/flow-config"
-import { RealtimeEventType } from "@chatbotx.io/partysocket-config"
-import { createId } from "@chatbotx.io/utils"
 import {
+  decodeStepInputSkipPostback,
+  messageEventTypeSchema,
+  stepInputResolutionReasons,
+} from "@chatbotx.io/flow-config"
+import {
+  buildResolveStepInputJob,
   IntegrationJobAction,
   integrationQueue,
 } from "@chatbotx.io/worker-config"
 import { headers } from "next/headers"
 import { getTranslations } from "next-intl/server"
-import { randomString } from "remeda"
-import {
-  isFirstPartyOrigin,
-  isOriginAuthorized,
-} from "@/features/integration-webchat/lib/authorized-domain"
+import { isAllowedGuestOrigin } from "@/features/integration-webchat/lib/authorized-domain"
 import { verifyWebchatAccessToken } from "@/features/integration-webchat/lib/webchat-access-token"
 import { shouldRunWebchatChallenge } from "@/features/messages/lib/should-run-webchat-challenge"
+import { getDomainFromHeader } from "@/lib/domain"
 import { logger } from "@/lib/log"
 import {
   checkGuestRateLimit,
@@ -69,7 +59,7 @@ export const createWebchatMessageAction = actionClient
   .inputSchema(createWebchatMessageRequest)
   .action(handleCreateWebchatMessage)
 
-async function getRequestHeaders() {
+async function _getRequestHeaders() {
   try {
     return await headers()
   } catch {
@@ -87,7 +77,10 @@ export async function handleCreateWebchatMessage({
   const workspace = await workspaceService.find({
     where: { id: parsedInput.workspaceId },
   })
-  if (workspace && isWorkspaceScheduledForDeletion(workspace)) {
+  if (!workspace) {
+    throw new ChatbotXException("Workspace not found")
+  }
+  if (isWorkspaceScheduledForDeletion(workspace)) {
     const t = await getTranslations("webchat")
     throw new ChatbotXException(
       t("workspaceUnavailable"),
@@ -96,14 +89,11 @@ export async function handleCreateWebchatMessage({
     )
   }
 
-  const integrationWebchat = await findOrFail({
-    table: integrationWebchatModel,
-    where: {
+  const integrationWebchat =
+    await integrationWebchatService.findByIdForWorkspace({
       workspaceId: parsedInput.workspaceId,
       id: parsedInput.webchatId,
-    },
-    message: "Channel not found",
-  })
+    })
 
   // Bind-on-first-use: always require a token whose signed origin claim
   // matches the origin the caller is presenting now, regardless of whether
@@ -122,16 +112,13 @@ export async function handleCreateWebchatMessage({
     throw new ChatbotXException(t("description"), "forbidden", 403)
   }
 
-  const requestHeaders = await getRequestHeaders()
+  const requestHeaders = await _getRequestHeaders()
+
   if (
-    integrationWebchat.authorizedDomains.length > 0 &&
-    !isFirstPartyOrigin(
-      parsedInput.parentOrigin,
-      requestHeaders.get("x-domain") ?? "",
-    ) &&
-    !isOriginAuthorized(
+    !isAllowedGuestOrigin(
       parsedInput.parentOrigin,
       integrationWebchat.authorizedDomains,
+      await getDomainFromHeader(),
     )
   ) {
     const t = await getTranslations("webchat.unauthorizedDomain")
@@ -218,7 +205,18 @@ export async function handleCreateWebchatMessage({
     return null
   }
 
-  if ("postback" in parsedInput && parsedInput.postback) {
+  // A Skip tap is resolved by its own job (after the tap's message is saved),
+  // never as a flow action.
+  const stepInputSkipChallengeId =
+    "postback" in parsedInput
+      ? decodeStepInputSkipPostback(parsedInput.postback)
+      : null
+
+  if (
+    "postback" in parsedInput &&
+    parsedInput.postback &&
+    !stepInputSkipChallengeId
+  ) {
     await automatedResponseService.enqueueFlowAction({
       kind: "postback",
       data: {
@@ -239,8 +237,6 @@ export async function handleCreateWebchatMessage({
   }
 
   if ("text" in parsedInput && (parsedInput.text || uploadedFiles.length > 0)) {
-    const repository = await createMessageRepository()
-
     const now = new Date()
     const messageInput = {
       text: parsedInput.text ?? null,
@@ -260,10 +256,13 @@ export async function handleCreateWebchatMessage({
       ...file,
     }))
 
-    const message: MessageWithAttachments =
+    const message =
       attachmentInputs.length > 0
-        ? await repository.createWithAttachments(messageInput, attachmentInputs)
-        : { ...(await repository.create(messageInput)), attachments: [] }
+        ? await messageService.createWithAttachments({
+            message: messageInput,
+            attachments: attachmentInputs,
+          })
+        : { ...(await messageService.create(messageInput)), attachments: [] }
 
     const newMessage = {
       ...message,
@@ -273,35 +272,34 @@ export async function handleCreateWebchatMessage({
       })),
     }
 
-    await conversationService.updateFlowStepState({
-      workspaceId: conversation.workspaceId,
-      conversationId: conversation.id,
-      contactLastReadAt: now,
-      lastActivityAt: message.createdAt,
-      contactRepliedAt: message.createdAt,
-      humanReplyWindow: { open: message.createdAt },
-    })
-
-    await contactInboxService.updateTracking({
-      contactInboxId: contactInbox.id,
-      contactId: contactInbox.contactId,
-      workspaceId: conversation.workspaceId,
-      data: {
-        firstInteractionAt: message.createdAt,
+    const trackingInvalidation =
+      await conversationService.recordInboundActivity({
+        workspaceId: conversation.workspaceId,
+        conversationId: conversation.id,
+        contactInboxId: contactInbox.id,
+        contactId: contactInbox.contactId,
+        at: message.createdAt,
+        contactRepliedAt: message.createdAt,
         contactLastReadAt: now,
-        lastMessageAt: message.createdAt,
-        lastIncomingMessageAt: message.createdAt,
-        ...resolveLastUserInputTracking({
-          contentType: message.contentType,
-          text: message.text,
-          attachments: message.attachments,
-          storageUrl,
-        }),
-        ...(parsedInput.parentUrl && {
-          webchatParentUrl: parsedInput.parentUrl,
-        }),
-      },
-    })
+        tracking: {
+          firstInteractionAt: message.createdAt,
+          contactLastReadAt: now,
+          lastMessageAt: message.createdAt,
+          lastIncomingMessageAt: message.createdAt,
+          ...resolveLastUserInputTracking({
+            contentType: message.contentType,
+            text: message.text,
+            attachments: message.attachments,
+            storageUrl,
+          }),
+          ...(parsedInput.parentUrl && {
+            webchatParentUrl: parsedInput.parentUrl,
+          }),
+        },
+      })
+    if (trackingInvalidation) {
+      await contactInboxService.invalidateTracking(trackingInvalidation)
+    }
 
     try {
       await contactService.unblockIfBlocked(
@@ -310,7 +308,7 @@ export async function handleCreateWebchatMessage({
       )
     } catch (error) {
       logger.warn(
-        { error, contactId: contactInbox.contactId, channel: "webchat" },
+        { err: error, contactId: contactInbox.contactId, channel: "webchat" },
         "Auto-unblock on webchat inbound message failed",
       )
     }
@@ -325,15 +323,22 @@ export async function handleCreateWebchatMessage({
       sourceId: newMessage.sourceId ?? undefined,
     })
 
-    await broadcastToWorkspaceParty(newMessage.workspaceId, {
-      eventType: RealtimeEventType.messageCreated,
-      data: {
+    await queueMessageCreatedEvent(
+      newMessage.workspaceId,
+      {
         ...newMessage,
         clientId: parsedInput.clientId,
       },
-    })
+      conversation,
+    )
 
     const promises: Promise<unknown>[] = []
+    // An image/video without text still reaches Keywords (image/video
+    // conditions); the enqueue only queues it when a keyword rule matches.
+    const attachmentFileTypes = newMessage.attachments.map(
+      (attachment) => attachment.fileType,
+    )
+    const hasKeywordMedia = attachmentFileTypes.some(isKeywordMediaFileType)
 
     const additionalAttributes =
       conversation.additionalAttributes as unknown as ConversationAttributes
@@ -342,7 +347,11 @@ export async function handleCreateWebchatMessage({
       "postback" in parsedInput && parsedInput.postback,
     )
     if (
-      shouldRunWebchatChallenge(additionalAttributes?.challenge, hasPostback)
+      shouldRunWebchatChallenge(
+        additionalAttributes?.challenge,
+        hasPostback,
+        stepInputSkipChallengeId !== null,
+      )
     ) {
       promises.push(
         integrationQueue.add(
@@ -352,38 +361,47 @@ export async function handleCreateWebchatMessage({
             data: {
               conversationId: conversation,
               contactInboxId: contactInbox,
+              // Names the message this run answers, so a reply queued before a
+              // later message (a Skip tap) is judged on its own text.
+              messageId: newMessage.id,
+              messageCreatedAt: newMessage.createdAt,
               challenge: additionalAttributes?.challenge,
             },
           },
-          {
-            deduplication: {
-              id: `conversation-${conversation.id}-challenge`,
-            },
-          },
+          // One run per message, like the webhook channels: each job judges the
+          // message it names, so a deduplicated (dropped) reply would never be
+          // processed. Duplicate or racing runs are settled by the attempt
+          // compare-and-set and the challenge claim.
+          { jobId: `webchat-challenge-${conversation.id}-${newMessage.id}` },
         ),
       )
     } else if (
-      newMessage.text &&
+      (newMessage.text || hasKeywordMedia) &&
       !("postback" in parsedInput && parsedInput.postback)
     ) {
       const isConversationActive =
         await conversationService.ensureActive(conversation)
-      promises.push(
-        isConversationActive
-          ? automatedResponseService.enqueue({
-              conversationId: conversation.id,
-              contactInboxId: contactInbox.id,
-              messageId: newMessage.id,
-              messageText: newMessage.text,
-              workspaceId: conversation.workspaceId,
-            })
-          : automatedResponseService.enqueueHandoffReentry({
-              conversationId: conversation.id,
-              contactInboxId: contactInbox.id,
-              messageId: newMessage.id,
-              workspaceId: conversation.workspaceId,
-            }),
-      )
+      if (isConversationActive) {
+        promises.push(
+          automatedResponseService.enqueue({
+            conversationId: conversation.id,
+            contactInboxId: contactInbox.id,
+            messageId: newMessage.id,
+            messageText: newMessage.text ?? undefined,
+            attachmentFileTypes,
+            workspaceId: conversation.workspaceId,
+          }),
+        )
+      } else if (newMessage.text) {
+        promises.push(
+          automatedResponseService.enqueueHandoffReentry({
+            conversationId: conversation.id,
+            contactInboxId: contactInbox.id,
+            messageId: newMessage.id,
+            workspaceId: conversation.workspaceId,
+          }),
+        )
+      }
     }
 
     if (isNewContact && contactInbox.sourceId) {
@@ -411,22 +429,52 @@ export async function handleCreateWebchatMessage({
       await Promise.allSettled(promises)
     }
 
+    // Not part of the best-effort list above: if this enqueue fails the
+    // contact is waiting on the Skip, so the failure must surface (the widget
+    // can resend, and the resolution is idempotent).
+    if (stepInputSkipChallengeId) {
+      await enqueueStepInputSkip({
+        conversationId: conversation.id,
+        contactInboxId: contactInbox.id,
+        challengeId: stepInputSkipChallengeId,
+        message: newMessage,
+      })
+    }
+
     return newMessage
   }
 
   return null
 }
 
+function enqueueStepInputSkip(props: {
+  conversationId: string
+  contactInboxId: string
+  challengeId: string
+  message: { id: string; createdAt: Date }
+}) {
+  const { conversationId, contactInboxId, challengeId, message } = props
+
+  const job = buildResolveStepInputJob({
+    conversationId,
+    contactInboxId,
+    challengeId,
+    reason: stepInputResolutionReasons.enum.user_skipped,
+    messageId: message.id,
+    messageCreatedAt: message.createdAt,
+  })
+
+  return integrationQueue.add(job.name, job.data, job.opts)
+}
+
 async function getConversationFromInput(
   parsedInput: CreateWebchatMessageRequest,
-  integrationWebchat: typeof integrationWebchatModel.$inferSelect,
-  workspace: WorkspaceModel | undefined,
+  integrationWebchat: IntegrationWebchatModel,
+  workspace: { ownerId: string },
 ) {
-  const sourceId = parsedInput.guestConversationId
-
   const existingContactInbox = await contactInboxService.findLatestBySource({
     inboxId: integrationWebchat.inboxId,
-    sourceId,
+    sourceId: parsedInput.guestConversationId,
     workspaceId: parsedInput.workspaceId,
   })
 
@@ -453,117 +501,28 @@ async function getConversationFromInput(
       contact,
       contactInbox: existingContactInbox,
       isNewContact: false,
-      workspaceOwnerId: null as string | null,
     }
   }
 
-  // New contact. Resolve the owner (owner-derived, never request-derived) and
-  // gate on MAC for billing. It is a soft cap on resetting plans: admit
-  // atomically in Redis, create in a separate transaction, then commit or
-  // revoke the slot. Lifetime / period-less owners and
-  // `QUOTA_MAC_ADMISSION=lock` keep the distributed-lock gate. MAC is consumed
-  // here (not via the async message event) and the
-  // `ContactActiveMonthly` presence row is written inside the same transaction
-  // so the later `message:received` event dedups instead of double-counting.
-  // The info-only `contacts` metric is recorded inside `createNewContactWithMac`.
-  const ws = workspace
-  if (!ws) {
-    throw new ChatbotXException("Workspace not found", "notFound", 404)
-  }
-
-  const result = await quotaEnforcementService.createNewContactWithMac({
-    ownerId: ws.ownerId,
-    workspaceId: parsedInput.workspaceId,
-    create: async (tx) => {
-      const finalizedProfile = finalizeContactProfile({
-        locale: parsedInput.locale,
-        timezone: parsedInput.timezone,
-      })
-      const contact = await tx
-        .insert(contactModel)
-        .values({
-          id: createId(),
-          workspaceId: parsedInput.workspaceId,
-          email: parsedInput.guestConversationId,
-          gender: "unknown",
-          firstName: "Guest",
-          lastName: randomString(10),
-          locale: finalizedProfile.locale,
-          timezone: finalizedProfile.timezone,
-        })
-        .returning()
-        .then((rows) => rows[0])
-      if (!contact) {
-        throw new ChatbotXException("Contact not found")
-      }
-
-      const contactInbox = await tx
-        .insert(contactInboxModel)
-        .values({
-          id: createId(),
-          inboxId: integrationWebchat.inboxId,
-          contactId: contact.id,
-          originalContactId: contact.id,
-          source: contactSources.enum.webchat,
-          sourceId,
-          channel: "webchat",
-          language: finalizedProfile.language,
-          webchatParentUrl: parsedInput.parentUrl,
-        })
-        .returning()
-        .then((rows) => rows[0])
-      if (!contactInbox) {
-        throw new ChatbotXException("Contact inbox not found")
-      }
-
-      // A re-created contact keeps its history: cancel any pending message
-      // cleanup recorded when a contact with this inbox identity was deleted.
-      await messageCleanupService.cancelByInboxSource({
-        inboxId: integrationWebchat.inboxId,
-        sourceIds: [contactInbox.sourceId],
-        tx,
-      })
-
-      const conversation = await tx
-        .insert(conversationModel)
-        .values({
-          id: createId(),
-          workspaceId: parsedInput.workspaceId,
-          contactId: contact.id,
-        })
-        .returning()
-        .then((rows) => rows[0])
-      if (!conversation) {
-        throw new ChatbotXException("Conversation not found")
-      }
-
-      return {
-        value: { contact, contactInbox, conversation },
-        contactId: contact.id,
-        contactInboxId: contactInbox.id,
-        inboxId: integrationWebchat.inboxId,
-      }
+  const created = await integrationWebchatService.findOrCreateGuestConversation(
+    {
+      guestConversationId: parsedInput.guestConversationId,
+      integration: integrationWebchat,
+      locale: parsedInput.locale,
+      parentUrl: parsedInput.parentUrl,
+      timezone: parsedInput.timezone,
+      workspace,
+      workspaceId: parsedInput.workspaceId,
     },
-  })
-
-  if (!result.ok) {
+  )
+  if (!created) {
     throw new ChatbotXException("Contact limit reached", "quotaExceeded", 422)
   }
 
-  await emitContactCreated(
-    parsedInput.workspaceId,
-    result.value.contact.id,
-    result.value.contact.firstName || undefined,
-    result.value.contact.phoneNumber || undefined,
-    result.value.contact.email || undefined,
-    result.value.contactInbox.id,
-  )
-
   return {
-    conversation: result.value.conversation,
-    contact: result.value.contact,
-    contactInbox: result.value.contactInbox,
+    conversation: created.conversation,
+    contact: created.contact,
+    contactInbox: created.contactInbox,
     isNewContact: true,
-    workspaceOwnerId: ws.ownerId as string | null,
   }
 }

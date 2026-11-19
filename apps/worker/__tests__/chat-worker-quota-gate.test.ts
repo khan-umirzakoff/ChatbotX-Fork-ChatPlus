@@ -2,7 +2,8 @@ import { getAuditActor } from "@chatbotx.io/business/audit"
 import { beforeAll, beforeEach, describe, expect, test, vi } from "vitest"
 
 const mocks = vi.hoisted(() => ({
-  ensureBootstrapped: vi.fn(),
+  ensureBootstrapped: vi.fn(async () => undefined),
+  deferSend: vi.fn(),
   isBlockedWorkspace: vi.fn(),
   isBotMessageQuotaReached: vi.fn(),
   processJob: undefined as undefined | ((job: unknown) => Promise<void>),
@@ -17,7 +18,7 @@ vi.mock("@chatbotx.io/automated-response", () => ({
   replyByOutboundAutomatedResponse: vi.fn(),
 }))
 vi.mock("@chatbotx.io/business", () => ({
-  broadcastToWorkspaceParty: vi.fn(),
+  flushAllPendingWorkspaceRealtimeEvents: vi.fn(),
 }))
 vi.mock("@chatbotx.io/sdk", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@chatbotx.io/sdk")>()
@@ -40,10 +41,10 @@ vi.mock("@chatbotx.io/worker-config", async (importOriginal) => {
       sendMessengerTemplateMessage: "sendMessengerTemplateMessage",
       sendTyping: "sendTyping",
       notifyExportResult: "notifyExportResult",
-      broadcastEvent: "broadcastEvent",
       deleteChannelMessage: "deleteChannelMessage",
       editChannelMessage: "editChannelMessage",
       changeChannelMessageState: "changeChannelMessageState",
+      checkOutboundAutomatedResponse: "checkOutboundAutomatedResponse",
     },
     defaultWorkerOptions: {},
     getRedisConnection: vi.fn(),
@@ -72,6 +73,9 @@ vi.mock("bullmq", () => ({
       return Promise.resolve()
     }
   },
+}))
+vi.mock("../src/chat/utils/connection-send-gate", () => ({
+  deferSendWhileAccountReconnecting: mocks.deferSend,
 }))
 vi.mock("../src/lib/bootstrap", () => ({
   ensureBootstrapped: mocks.ensureBootstrapped,
@@ -119,9 +123,58 @@ beforeAll(async () => {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  mocks.deferSend.mockResolvedValue(undefined)
   mocks.isBlockedWorkspace.mockResolvedValue(false)
   mocks.isBotMessageQuotaReached.mockResolvedValue(false)
   mocks.resolveWorkspaceId.mockResolvedValue("workspace-1")
+})
+
+describe("chat worker reconnecting-account gate", () => {
+  test("runs after the quota gate and before the handler, with the lock token", async () => {
+    const order: string[] = []
+    mocks.isBotMessageQuotaReached.mockImplementation(() => {
+      order.push("quota")
+      return Promise.resolve(false)
+    })
+    mocks.deferSend.mockImplementation(() => {
+      order.push("defer")
+      return Promise.resolve()
+    })
+    mocks.sendFlowStep.mockImplementation(() => {
+      order.push("handler")
+    })
+    const job = { id: "job-1", data: { type: "sendFlowMessage", data: {} } }
+
+    await (
+      mocks.processJob as unknown as (j: unknown, t?: string) => Promise<void>
+    )?.(job, "lock-token")
+
+    expect(order).toEqual(["quota", "defer", "handler"])
+    expect(mocks.deferSend).toHaveBeenCalledWith(job, "lock-token")
+  })
+
+  test("a deferred send never reaches the handler", async () => {
+    mocks.deferSend.mockRejectedValue(new Error("DelayedError"))
+
+    await expect(
+      mocks.processJob?.({
+        id: "job-1",
+        data: { type: "sendFlowMessage", data: {} },
+      }),
+    ).rejects.toThrow("DelayedError")
+    expect(mocks.sendFlowStep).not.toHaveBeenCalled()
+  })
+
+  test("a quota-blocked send is dropped before the gate runs", async () => {
+    mocks.isBotMessageQuotaReached.mockResolvedValue(true)
+
+    await mocks.processJob?.({
+      id: "job-1",
+      data: { type: "sendFlowMessage", data: {} },
+    })
+
+    expect(mocks.deferSend).not.toHaveBeenCalled()
+  })
 })
 
 describe("chat worker bot message quota gate", () => {

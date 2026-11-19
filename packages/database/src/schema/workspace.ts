@@ -51,6 +51,8 @@ export const workspaceModel = pgTable(
     endTime: text(),
     logo: text(),
     scheduledDeletionAt: timestamp(timestampConfig),
+    deletionRequestedById: bigintAsString(),
+    deletionRequestedAt: timestamp(timestampConfig),
     purgeStartedAt: timestamp(timestampConfig),
     // Owner opt-in for platform support access. Non-null and in the future
     // means the owner has consented to the super admin opening this
@@ -93,6 +95,7 @@ export const workspaceModel = pgTable(
       }),
   },
   (table) => [
+    index("Workspace_ownerId_idx").on(table.ownerId),
     index("Workspace_tenantId_idx").on(table.tenantId),
     index("Workspace_scheduledDeletionAt_idx").on(table.scheduledDeletionAt),
     index("Workspace_supportAccessUntil_idx").on(table.supportAccessUntil),

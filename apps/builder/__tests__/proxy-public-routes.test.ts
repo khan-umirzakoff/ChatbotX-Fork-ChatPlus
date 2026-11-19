@@ -20,6 +20,16 @@ describe("isPublicRoute", () => {
     // The sender is an external system; the token in the path is the credential.
     expect(isPublicRoute("/api/hooks/iwh_abc")).toBe(true)
   })
+  test("/.well-known exposes OAuth discovery without opening /well-known", () => {
+    expect(isPublicRoute("/.well-known/oauth-authorization-server")).toBe(true)
+    expect(isPublicRoute("/well-known")).toBe(false)
+  })
+
+  test("/mcp is public so the MCP server can run its OAuth challenge", () => {
+    expect(isPublicRoute("/mcp")).toBe(true)
+    expect(isPublicRoute("/mcp/messages")).toBe(true)
+    expect(isPublicRoute("/mcp-client")).toBe(false)
+  })
 
   test("/go is public so a contact can tap a flow button without a session", () => {
     expect(isPublicRoute("/go/ws-1")).toBe(true)
@@ -42,6 +52,25 @@ describe("isPublicRoute", () => {
     expect(isPublicRoute("/mini-appsx")).toBe(false)
     // The builder pages live under /space and stay private.
     expect(isPublicRoute("/space/1/mini-apps")).toBe(false)
+  })
+
+  test("/invitations is public because its code is the enrollment capability", () => {
+    expect(isPublicRoute("/invitations/invite-code")).toBe(true)
+    expect(isPublicRoute("/invitationsx/invite-code")).toBe(false)
+  })
+
+  test("/shop is public so a customer's shop link opens without a session", () => {
+    expect(isPublicRoute("/shop/ws-1")).toBe(true)
+    expect(isPublicRoute("/shop/ws-1/cart")).toBe(true)
+    expect(isPublicRoute("/shopping")).toBe(false)
+  })
+
+  test("/store is public so visitors can browse the template store", () => {
+    expect(isPublicRoute("/store")).toBe(true)
+    expect(isPublicRoute("/store/")).toBe(true)
+    // "/storage" is public on its own entry; "/stores" and "/storefront" are not.
+    expect(isPublicRoute("/stores")).toBe(false)
+    expect(isPublicRoute("/storefront")).toBe(false)
   })
 
   test("an authenticated app path is not public", () => {

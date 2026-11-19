@@ -185,9 +185,141 @@
     "name": "Agenter"
   },
   "aiFiles": {
+    "detail": {
+      "title": "Knowledge details",
+      "details": "Details",
+      "noChunkingInfo": "No processing information is available yet."
+    },
+    "chunking": {
+      "title": "Chunking",
+      "strategyLabel": "Strategy",
+      "version": "Chunker version",
+      "chunkSize": "Chunk size",
+      "overlapSize": "Overlap size",
+      "chunkCount": "Chunks",
+      "processedAt": "Processed at",
+      "outdated": "Reindex recommended",
+      "strategy": {
+        "prose": "Prose",
+        "tabular": "Tabular",
+        "markdown": "Markdown"
+      },
+      "configDefault": "Chunking parameters: defaults ({chunkSize} characters, overlap {overlapSize}).",
+      "configCustom": "Chunking parameters: {chunkSize} characters, overlap {overlapSize}."
+    },
+    "processingRun": {
+      "title": "Processing run",
+      "noRun": "No processing run has been tracked for this file yet.",
+      "queuedAt": "Queued at",
+      "startedAt": "Started at",
+      "heartbeatAt": "Last heartbeat",
+      "finishedAt": "Finished at",
+      "stale": "Processing appears stalled",
+      "failedBadge": "Processing failed",
+      "successNote": "Chunking and embedding enqueueing completed. The file is searchable when embedding status is also complete.",
+      "status": {
+        "queued": "Queued",
+        "processing": "Processing",
+        "success": "Prepared",
+        "error": "Failed"
+      },
+      "error": {
+        "fileTooLarge": "The file is too large to process.",
+        "tooManyChunks": "The file produced too many chunks.",
+        "fileUnreadable": "The file could not be read. For CSV files, save as CSV UTF-8 and try again.",
+        "noExtractableContent": "No content could be extracted. Check the spreadsheet header row, or the file may be a scan or empty.",
+        "noEmbeddingProvider": "No embedding provider is configured.",
+        "enqueueFailed": "The file was saved but processing could not be queued. Reindex it to try again.",
+        "unknown": "Processing failed unexpectedly."
+      }
+    },
+    "reindex": {
+      "action": "Reindex",
+      "confirmTitle": "Reindex this file?",
+      "confirmDescription": "The file will be processed with the current chunker.",
+      "downtimeWarning": "Search may be temporarily unavailable while this file is reindexed.",
+      "queued": "Reindex queued",
+      "alreadyRunning": "Processing is already running for this file.",
+      "rateLimited": "Too many requests. Try again shortly.",
+      "parameters": "Chunking parameters",
+      "strategyLabel": "How to split",
+      "strategy": {
+        "auto": "Automatic (by file type)",
+        "prose": "Plain text"
+      },
+      "chunkSize": "Chunk size (characters)",
+      "overlapSize": "Overlap (characters)",
+      "overlapDisabledTabular": "Spreadsheets keep each row whole, so overlap is not used.",
+      "tabularHeaderRow": "Header row (spreadsheets)",
+      "presets": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "custom": "Custom chunk size"
+      },
+      "resetDefaults": "Restore defaults",
+      "estimate": "Estimate: about {estimate} chunks (currently {current})",
+      "reembedWarning": "Changing parameters re-embeds the whole file (about {count} chunks) with your workspace key, and the file cannot be searched until it finishes.",
+      "largeChunkWarning": "Larger chunks make every agent answer read more text and cost more tokens.",
+      "noChangeNote": "Parameters are unchanged: chunks that are already embedded are kept and not embedded again.",
+      "conflict": "This file is being processed, so the new parameters were not applied. Try again when processing finishes."
+    },
+    "chunks": {
+      "indexOutdated": "Some chunks have no position yet. Reindex the file to number them."
+    },
     "description": "Giv dine agenter adgang til PDF-filer, dokumenter og meget mere",
     "title": "Viden",
-    "noEmbeddingProvider": "Der er ikke konfigureret en embedding-udbyder. Embeddings til AI-filer kræver en OpenAI- eller Gemini-integration. DeepSeek og Claude understøtter ikke embedding-modeller."
+    "noEmbeddingProvider": "Der er ikke konfigureret en embedding-udbyder. Embeddings til AI-filer kræver en OpenAI- eller Gemini-integration. DeepSeek og Claude understøtter ikke embedding-modeller.",
+    "testQuery": {
+      "title": "Test query",
+      "description": "Pick files, ask a question and see which chunk answers it. Only the retrieval step is simulated; no AI answer is generated.",
+      "open": "Test query",
+      "backToKnowledge": "Back to Knowledge",
+      "run": "Run test",
+      "files": "Files",
+      "filterFiles": "Filter files by name",
+      "selectAllReady": "Select all ready files",
+      "selectedCount": "{count}/{max} selected",
+      "fileNotReady": "This file has no chunks ready for search yet.",
+      "question": "Question",
+      "expected": "Expected answer (optional)",
+      "expectedHelp": "Type the answer exactly as it appears in the document, accents included. It is matched against every chunk of the selected files.",
+      "limit": "Result limit",
+      "simulationNote": "This simulates retrieval only; an agent may phrase a question differently. Each run uses one embedding from your workspace key.",
+      "rateLimited": "Too many test requests. Try again shortly.",
+      "byFile": "By file",
+      "matches": "{count} matching chunks",
+      "bestRank": "best rank {rank}",
+      "needsReindex": "Needs reindex",
+      "openDetail": "Open details",
+      "rank": "#{rank}",
+      "chunkNumber": "chunk #{index}",
+      "chunkUnnumbered": "chunk not numbered",
+      "aiWillSee": "AI will see",
+      "belowThreshold": "Below threshold",
+      "containsExpected": "Contains the answer",
+      "thresholdLine": "Threshold {threshold}",
+      "appliedConfig": "Applied configuration",
+      "agentDefaultThreshold": "Agent default threshold",
+      "timings": "Search time",
+      "scoreNotComparable": "Similarity scores are not directly comparable across embedding models.",
+      "answerLocation": "Answer is in {file} · {chunk} · rank {rank}",
+      "splitHint": "The answer may be split between two chunks. Try a larger chunk size or overlap, or check the file was read correctly.",
+      "previousRun": "Previous run ({time}): answer rank {from} → now {to}",
+      "previousRunTop": "Previous run ({time}): {changed} of {total} top chunks changed",
+      "verdict": {
+        "inTopResults": "The AI will see the expected answer.",
+        "foundButLowRank": "The answer is in the documents but ranks too low for the AI to see it. Try a closer question, or reindex with smaller chunks.",
+        "notInAnyChunk": "No chunk of the selected files contains the answer. The document may be read or split wrongly: view the chunks or reindex with other settings."
+      },
+      "diagnosis": {
+        "ok": "Matching chunks found.",
+        "noReadyChunks": "No chunks are ready for search yet. Open the file to check its processing status.",
+        "allBelowThreshold": "Chunks were found but all are below the threshold. Try a lower trial threshold.",
+        "noMatches": "No matching chunks were found.",
+        "agentHasNoFiles": "This agent has no knowledge files."
+      }
+    }
   },
   "aiFunctions": {
     "description": "Konfigurer LLM-funktioner for at gøre din AI-agent mere intelligent",
@@ -435,6 +567,8 @@
       "description": "Send et flow til alle kontakter."
     },
     "receiversCount": "Modtagere: {count}",
+    "receiversCountCapped": "Modtagere: {count}+",
+    "receiversCountUnknown": "Modtagere: ?",
     "receiversLoading": "Modtagere: Indlæser...",
     "whatsappTemplateMessage": {
       "title": "Skabelonbesked",
@@ -625,6 +759,7 @@
       "clicked": "Klikket",
       "failed": "Mislykkedes",
       "missed": "Oversete",
+      "moderated": "Modereret",
       "noContacts": "Ingen kontakter fundet",
       "noComment": "(ingen tekst)",
       "pageInfo": "Side {page} af {pageCount}",
@@ -644,7 +779,9 @@
       "contactNotNew": "Kontakten er ikke ny",
       "alreadyRepliedOnPost": "Allerede besvaret på dette opslag",
       "engagedOnOtherPost": "Har allerede interageret på et andet opslag",
-      "mentionCountNotMatched": "Antal omtaler matchede ikke"
+      "mentionCountNotMatched": "Antal omtaler matchede ikke",
+      "noImageAttachment": "Intet billede vedhæftet",
+      "moderated": "Skjult eller slettet af moderering"
     },
     "replyTo": {
       "mentions": "Kommentarer med nok omtaler",
@@ -664,6 +801,10 @@
       "label": "Spor om en bruger tagger andre brugere",
       "descriptionText": "Tæller de konti, der tagges i hver kommentar, og lægger dem til kontaktens samlede antal på tværs af alle kommentarer. Brug '{{total_tagged}}' for alle taggede konti og '{{total_new_tagged}}' for konti, der aldrig har skrevet til din side eller været kontakt."
     },
+    "onlyCommentsWithImage": {
+      "label": "Svar kun på kommentarer med et billede",
+      "descriptionText": "Svar kun automatisk, når kommentaren indeholder et billede. GIF'er og klistermærker tæller ikke. Kommentarer uden billede springes over, og den næste automatisering prøves."
+    },
     "card": {
       "reply": "Svar"
     },
@@ -681,10 +822,92 @@
       "column": "Konto",
       "disconnected": "Afbrudt konto",
       "disconnectedDescription": "Denne automatisering er knyttet til en konto, der ikke længere er tilsluttet, så den svarer ikke på kommentarer. Tilslut kontoen igen, eller vælg en anden."
+    },
+    "aiModeration": {
+      "enabled": "AI-moderering",
+      "description": "En AI-agent læser hver kommentar, før botten svarer, og skjuler eller sletter dem i kategorierne nedenfor. En modereret kommentar får aldrig svar.",
+      "aiAgentDescription": "Kun agentens AI-model bruges, ikke dens prompt.",
+      "categoriesLabel": "Bloker kommentarer, der er",
+      "categories": {
+        "hate": "Hadefuld tale",
+        "offensive": "Stødende",
+        "harassment": "Chikane",
+        "negative": "Fjendtlige over for brandet",
+        "spam": "Spam eller svindel"
+      },
+      "categoryDescriptions": {
+        "hate": "Angriber en gruppe på grund af race, religion, køn, nationalitet og lignende",
+        "offensive": "Fornærmelser, bandeord, vulgært sprog",
+        "harassment": "Trusler, mobning, angreb på en person",
+        "negative": "Har til formål at skade brandet. Høflige klager blokeres ikke",
+        "spam": "Svindel, phishing, urelateret reklame"
+      },
+      "instruction": "Ekstra vejledning til AI'en",
+      "instructionDescription": "Valgfrit. Fortæl AI'en, hvad der skal tillades eller blokeres.",
+      "instructionPlaceholder": "f.eks. Bloker ikke kunder, der klager over prisen",
+      "action": "Når en kommentar blokeres",
+      "actions": {
+        "hide": "Skjul den",
+        "delete": "Slet den"
+      },
+      "deleteWarning": "Slettede kommentarer er væk for altid og kan ikke gendannes. Skjul er sikrere, hvis AI'en tager fejl."
+    },
+    "moderationLog": {
+      "title": "Modererede kommentarer",
+      "description": "Kommentarer, som denne automatisering har skjult eller slettet, og hvorfor.",
+      "allActions": "Alle handlinger",
+      "allSources": "Regler og AI",
+      "actions": {
+        "hide": "Skjult",
+        "delete": "Slettet"
+      },
+      "sources": {
+        "rule": "Af en skjuleregel",
+        "ai": "Af AI"
+      },
+      "statuses": {
+        "pending": "I gang",
+        "done": "Færdig",
+        "failed": "Mislykkedes"
+      },
+      "rules": {
+        "all": "Skjul alle kommentarer",
+        "phoneNumber": "Har et telefonnummer",
+        "link": "Har et link",
+        "keyword": "Har et nøgleord",
+        "image": "Har et billede",
+        "video": "Har en video",
+        "gif": "Har en GIF",
+        "emoji": "Har en emoji"
+      },
+      "summary": {
+        "total": "{count} modereret",
+        "hidden": "{count} skjult",
+        "deleted": "{count} slettet",
+        "byAI": "{count} af AI",
+        "byRule": "{count} af regler",
+        "failed": "{count} mislykkedes"
+      },
+      "columns": {
+        "time": "Tid",
+        "contact": "Kontakt",
+        "comment": "Kommentar",
+        "action": "Handling",
+        "reason": "Årsag",
+        "status": "Status"
+      },
+      "loading": "Indlæser…",
+      "empty": "Ingen kommentarer er skjult eller slettet endnu.",
+      "unknownContact": "Ukendt",
+      "noText": "(ingen tekst)",
+      "previous": "Forrige",
+      "next": "Næste",
+      "page": "Side {page} af {pageCount}"
     }
   },
   "condition": {
     "unknownValue": "Ukendt",
+    "deletedValue": "Slettet (#{id})",
     "yes": "Ja",
     "no": "Nej",
     "valuePlaceholder": "...",
@@ -799,6 +1022,7 @@
       "contactCreatedAt": "Kontakt oprettet den",
       "fromCtwaAd": "Fra annonce",
       "fromGoogleAd": "Fra Google Ads",
+      "clickedAd": "Klikkede på annonce",
       "ctwaConversion": "Annoncekonvertering",
       "lastUserInputTypes": {
         "text": "Tekst",
@@ -814,7 +1038,8 @@
       "ctwaConversionTypes": {
         "lead": "Lead",
         "purchase": "Køb"
-      }
+      },
+      "pipelineItem": "Pipeline-element"
     },
     "fieldGroups": {
       "opportunity": "Salgsmulighed",
@@ -831,7 +1056,8 @@
       "botFields": "Bot Felter",
       "email": "E-mail",
       "sms": "SMS",
-      "ctwaAds": "Annoncer"
+      "ctwaAds": "Annoncer",
+      "pipeline": "Pipelines"
     },
     "languages": {
       "ar": "Arabisk",
@@ -860,6 +1086,7 @@
     "sources": {
       "direct": "Direkte",
       "comments": "Kommentarer",
+      "liveComments": "Livestream-kommentarer",
       "ads": "Annoncer",
       "fbLeadAd": "FB-leadannonce",
       "inboundMessage": "Indgående besked",
@@ -878,6 +1105,22 @@
       },
       "adPrefix": "annonce",
       "allAds": "alle annoncer"
+    },
+    "noTopic": "Intet emne",
+    "trackingSince": "Registreret siden {date}. Tidligere aktivitet er ikke medregnet.",
+    "pipelineItem": {
+      "anyPipeline": "Alle pipelines",
+      "anyStatus": "Alle statusser",
+      "attributes": {
+        "exists": "Elementer",
+        "status": "Elementstatus",
+        "stage": "Elementfase",
+        "priority": "Elementprioritet"
+      },
+      "operators": {
+        "has": "Har",
+        "hasNo": "Har ingen"
+      }
     }
   },
   "fields": {
@@ -1077,6 +1320,13 @@
     "bot": {
       "label": "Bot"
     },
+    "botCategory": {
+      "options": {
+        "all": "Alle",
+        "human": "Menneskelig",
+        "bot": "Bot"
+      }
+    },
     "botResponse": {
       "label": "Bot Svar"
     },
@@ -1095,7 +1345,8 @@
     },
     "button": {
       "label": "Knap",
-      "whenPressed": "Når denne knap er pressed"
+      "whenPressed": "Når denne knap er pressed",
+      "callToThisNumber": "Ring til dette nummer"
     },
     "buttonLabel": {
       "label": "Knap Etiket"
@@ -1162,6 +1413,15 @@
       "label": "Brugerdefineret Felt",
       "savePayloadTo": "Gem svar til Brugerdefineret Felt",
       "set_value": "Set værdi",
+      "clear": "Clear value",
+      "formula": "Use custom formula",
+      "set_now": "Set to now",
+      "date_expression": "Free-form date (with math)",
+      "add_minutes": "Add minutes",
+      "add_hours": "Add hours",
+      "add_days": "Add days",
+      "formulaHint": "Math where value is the current number, e.g. round(value * 1.1). Functions: abs, ceil, floor, round, min, max, pow, sqrt, log, sin, cos.",
+      "dateExpressionHint": "e.g. now + 2 days - 3 hours. Units: min, h, d, w, mo, y.",
       "append": "Append til den slut",
       "prepend": "Prepend til den beginning",
       "increase": "Increase by",
@@ -1281,7 +1541,8 @@
       "label": "Flows",
       "placeholder": "Vælg flow",
       "aiGenerateTextAgent": "{aiName}: Generér Tekst Agent",
-      "aiDeleteMessageHistory": "{aiName}: Slet Besked Historik"
+      "aiDeleteMessageHistory": "{aiName}: Slet Besked Historik",
+      "aiSegmentImage": "{aiName}: Segmentér billede"
     },
     "steps": {
       "label": "Node",
@@ -1660,10 +1921,11 @@
       "processing": "Processing",
       "installing": "Installing",
       "completed": "Completed",
-      "partial": "Partial",
+      "partial": "Delvis",
       "failed": "Failed",
       "success": "Succes",
-      "error": "Fejl"
+      "error": "Fejl",
+      "uninstalled": "Uninstalled"
     },
     "subtitle": {
       "placeholder": "Indtast subtitle"
@@ -1693,6 +1955,7 @@
       "label": "Clicked(%)"
     },
     "targetCountry": {
+      "currencyHint": "Angiver også standardvalutaen for pipelines uden egen valuta.",
       "description": "Den land where most af din kontakter live.",
       "label": "Target Land"
     },
@@ -2092,6 +2355,10 @@
       "label": "Fra Adresse",
       "placeholder": "noreply@eksempel.com"
     },
+    "fromName": {
+      "label": "Afsendernavn",
+      "placeholder": "ChatbotX"
+    },
     "messageTemplate": {
       "label": "Besked Skabelon"
     },
@@ -2198,7 +2465,13 @@
       "commentToMessage": "Comment-to-Message",
       "commentToMessageDescription": "Lets this account answer high-intent comments with a direct message. Required for TikTok comment automations that use a private reply.",
       "commentToMessageEligibility": "Only available to Business Accounts registered in Vietnam, Indonesia or Thailand, owned by someone over 18, that are registered businesses or have run Messaging Ads, with messaging permissions set to \"Requests\".",
-      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting."
+      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting.",
+      "features": "Funktioner",
+      "featureMessaging": "Beskeder",
+      "featureMessagingDescription": "Modtag og send direkte beskeder. TikTok tilbyder ikke beskeder til konti registreret i EØS, Schweiz eller Storbritannien — slå det fra for dem.",
+      "featureComments": "Kommentarer",
+      "featureCommentsDescription": "Modtag kommentarer til kommentarautomatisering: offentligt svar, synes godt om og skjul.",
+      "featuresReconnectHint": "Ændringer gælder for konti, der tilsluttes fremover. Tilslut eksisterende konti igen for at opdatere deres tilladelser."
     },
     "drip": {
       "label": "Drip"
@@ -2236,6 +2509,12 @@
     },
     "lastAd": {
       "label": "Seneste Ad"
+    },
+    "adIds": {
+      "label": "Alle annonce-ID'er"
+    },
+    "adId": {
+      "label": "Første annonce-ID"
     },
     "lastAdSourcePlatform": {
       "label": "Seneste Ad Kilde Platform"
@@ -2382,7 +2661,11 @@
       "ads": "Annoncer",
       "settings": "Indstillinger",
       "miniApps": "Mini Apps",
-      "leaderboards": "Ranglister"
+      "leaderboards": "Ranglister",
+      "pipelines": "Pipelines",
+      "places": "Steder",
+      "templates": "Skabeloner",
+      "polls": "Polls"
     },
     "adReferral": {
       "label": "Ads",
@@ -2391,7 +2674,8 @@
       "ctid": "CTID",
       "googleAds": "Google Ads",
       "googleAdsWhatsapp": "GA CCWA",
-      "googleAdsMessenger": "GA CCTM"
+      "googleAdsMessenger": "GA CCTM",
+      "googleAdsZalo": "GA Zalo"
     },
     "adSource": {
       "label": "Ad source"
@@ -2439,11 +2723,87 @@
     },
     "miniApp": {
       "label": "Mini App"
+    },
+    "lastOpportunityId": {
+      "label": "ID på seneste mulighed"
+    },
+    "adminName": {
+      "label": "Navn på afsendende admin"
+    },
+    "adminTeamName": {
+      "label": "Teams for afsendende admin"
+    },
+    "bookingId": {
+      "label": "Booking-ID"
+    },
+    "lastPoints": {
+      "label": "Seneste spørgeskemapoint"
+    },
+    "lastAdHeadline": {
+      "label": "Seneste annonceoverskrift"
+    },
+    "lastAdBody": {
+      "label": "Seneste annoncetekst"
+    },
+    "lastStoryId": {
+      "label": "Seneste story-ID"
+    },
+    "lastLeadId": {
+      "label": "Seneste lead-ID"
+    },
+    "lastFormId": {
+      "label": "Seneste formular-ID"
+    },
+    "lastFormName": {
+      "label": "Seneste formularnavn"
+    },
+    "lastAdgroupId": {
+      "label": "Seneste annoncegruppe-ID"
+    },
+    "lastTextInput": {
+      "label": "Seneste tekstinput"
+    },
+    "empty": {
+      "label": "Tom"
+    },
+    "aiSegmentImage": {
+      "description": "Finder et objekt i et billede med SAM 3.1 og gemmer et beskåret billede af det.",
+      "inputFieldId": {
+        "label": "Kildebillede"
+      },
+      "target": {
+        "label": "Objekt at finde",
+        "description": "En kort navneordsfrase som \"rød bil\" eller \"produktæske\". Ikke et spørgsmål eller en kommando.",
+        "placeholder": "produktæske"
+      },
+      "matchSelection": {
+        "label": "Match",
+        "options": {
+          "largest": "Kun største objekt",
+          "all": "Alle matchende objekter (én beskæring omkring dem)"
+        }
+      },
+      "outputFieldId": {
+        "label": "Gem billede i"
+      },
+      "detailsOutputFieldId": {
+        "label": "Gem detaljer i",
+        "description": "Valgfrit. Modtager JSON med antal match og bokse.",
+        "sameAsOutput": "Vælg et andet felt end outputbilledet.",
+        "sameAsInput": "Vælg et andet felt end kildebilledet."
+      },
+      "overwriteWarning": "Resultatet erstatter kildebilledet i dette felt.",
+      "states": {
+        "success": "Fundet",
+        "skip": "Ikke fundet",
+        "error": "Mislykkedes"
+      }
     }
   },
   "flows": {
     "export": {
       "notPublished": "Denne flow er aldrig blevet offentliggjort. Udgiv den, før du eksporterer.",
+      "viewOnly": "Dette flow blev installeret fra en skabelon, der kun kan ses, så det kan ikke eksporteres.",
       "failed": "Eksport mislykkedes. Prøv igen."
     },
     "title": "Flows",
@@ -2613,7 +2973,18 @@
       "sendGoogleAdsConversion": "Send Google Ads-konvertering",
       "changeGamificationScore": "Skift gamification-point",
       "sendViewCatalog": "Se katalog",
-      "sendProducts": "Send produkter"
+      "sendProducts": "Send produkter",
+      "sendCollection": "Kollektion",
+      "pipeline": "Pipelines",
+      "moreOptions": "Flere muligheder",
+      "findPlacesNearMe": "Find steder i nærheden",
+      "callPhoneNumber": "Ring til telefonnummer",
+      "copyText": "Kopiér tekst"
+    },
+    "externalRequest": {
+      "errors": {
+        "requestFailed": "Kunne ikke teste den eksterne anmodning. Kontrollér anmodningskonfigurationen, og prøv igen."
+      }
     },
     "splitTraffic": {
       "balanceHint": "Den i alt sum must equal 100%.",
@@ -2644,7 +3015,12 @@
       "customField": "Brugerdefineret Felt",
       "selectCustomFieldPlaceholder": "Vælg brugerdefineret felt",
       "addMapping": "Tilføj Tilknytning",
-      "addCustomField": "Tilføj Ny"
+      "addCustomField": "Tilføj Ny",
+      "fileBadge": "Fil",
+      "fileFormat": "Fillinks",
+      "fileFormatAllUrls": "Alle links, adskilt af kommaer",
+      "fileFormatFirstUrl": "Kun det første link",
+      "fileFormatHint": "Det brugerdefinerede felt gemmer links til de uploadede filer, som valgt her."
     },
     "sendCarousel": {
       "addSlide": "Tilføj kort",
@@ -2794,6 +3170,156 @@
       "productsSelected": "{count, plural, one {# produkt} other {# produkter}}",
       "noneSelected": "Ingen produkter endnu",
       "sendFailed": "Produkterne kunne ikke sendes."
+    },
+    "sendCollection": {
+      "title": "Kollektion",
+      "dataType": "Datatype",
+      "dataTypes": {
+        "products": "Produkter"
+      },
+      "collectionType": "Kollektionstype",
+      "collectionTypes": {
+        "automated": {
+          "label": "Automatisk",
+          "description": "Nuværende og fremtidige varer, der matcher betingelserne, tilføjes automatisk."
+        },
+        "manual": {
+          "label": "Manuel",
+          "description": "Tilføj varer én ad gangen."
+        }
+      },
+      "condition": "Betingelse",
+      "name": "Navn",
+      "optional": "(Valgfrit)",
+      "category": "Kategori",
+      "subcategory": "Underkategori",
+      "vendor": "Leverandør",
+      "all": "Alle",
+      "items": "Varer",
+      "select": "Vælg",
+      "selectPlaceholder": "Vælg 1 eller flere varer",
+      "selectAll": "Vælg alle",
+      "deselectAll": "Fravælg alle",
+      "maxProducts": "Op til {count} produkter; et produkt, butikken ikke længere viser, springes over.",
+      "automatedHint": "Sender op til {count} matchende produkter som kort, der åbner produktet i webshoppen.",
+      "summaryAll": "Alle produkter, butikken viser",
+      "summaryAutomated": "Produkter: {filters}",
+      "summaryManual": "{count, plural, one {# produkt} other {# produkter}}",
+      "cancel": "Annuller",
+      "save": "Gem"
+    },
+    "pipelineStep": {
+      "action": "Handling",
+      "pipeline": "Pipeline",
+      "targetHint": "Handler på kontaktens seneste åbne element i denne pipeline. Spring over-stien køres, hvis der ikke er nogen.",
+      "noPipelines": "Ingen pipelines fundet",
+      "actions": {
+        "addToPipeline": "Tilføj kontakt til pipeline",
+        "moveToStage": "Flyt til en fase",
+        "changeValue": "Ændr værdi",
+        "assign": "Tildel til administratorer",
+        "changeStatus": "Ændr status",
+        "changePriority": "Ændr prioritet",
+        "changeDueDate": "Ændr forfaldsdato",
+        "changeTitle": "Ændr titel",
+        "setCustomField": "Angiv brugerdefineret felt",
+        "clearCustomField": "Ryd brugerdefinerede felter",
+        "changeDescription": "Ændr beskrivelse",
+        "removeFromPipeline": "Fjern kontakt fra pipeline",
+        "addComment": "Tilføj kommentar",
+        "transfer": "Overfør til en anden pipeline"
+      },
+      "title": "Titel",
+      "description": "Beskrivelse",
+      "stage": "Fase",
+      "firstStage": "Første fase",
+      "status": "Status",
+      "assigneeMembers": "Tildelte administratorer",
+      "assigneeTeams": "Tildelte teams",
+      "value": "Værdi",
+      "priority": "Prioritet",
+      "dueDate": "Forfaldsdato",
+      "dueNone": "Ingen",
+      "dueNoneHint": "Elementet har ingen forfaldsdato.",
+      "dueCustomField": "Fra et brugerdefineret datofelt",
+      "dueFixed": "Fast dato og tidspunkt",
+      "dueField": "Brugerdefineret dato- eller datetime-felt",
+      "fieldValues": "Brugerdefinerede felter",
+      "field": "Felt",
+      "fieldValue": "Værdi",
+      "fields": "Felter",
+      "addField": "Tilføj feltværdi",
+      "removeHint": "Sletter kontaktens seneste åbne element i denne pipeline.",
+      "comment": "Kommentar",
+      "destinationPipeline": "Destinationspipeline",
+      "destinationStage": "Destinationsfase",
+      "missingRequiredFields": "Påkrævede felter uden værdi: {names}. Elementet kan ikke oprettes, før hvert felt har en værdi.",
+      "addRequiredFields": "Tilføj påkrævede felter"
+    },
+    "aiSegmentImage": {
+      "label": "{name}: Segmentér billede"
+    },
+    "aiSpeechToText": {
+      "muse": {
+        "formatHint": "Kun WAV-filer accepteres: PCM 16-bit, mono, 16 kHz eller 24 kHz, op til 10 minutter. Alle andre filer (fx talebeskeder) går til fejlgrenen.",
+        "languageBias": {
+          "label": "Sprogpræference",
+          "description": "Sprog, lyden sandsynligvis er på. Lad feltet være tomt for automatisk registrering.",
+          "placeholder": "Automatisk registrering"
+        },
+        "keywords": {
+          "label": "Nøgleord",
+          "description": "Navne eller fagtermer, der hjælper Muse med at stave ord korrekt.",
+          "placeholder": "Tilføj et nøgleord, og tryk på Enter"
+        }
+      },
+      "languages": {
+        "Arabic": "Arabisk",
+        "Bengali": "Bengali",
+        "Dutch": "Nederlandsk",
+        "English": "Engelsk",
+        "French": "Fransk",
+        "German": "Tysk",
+        "Hebrew": "Hebraisk",
+        "Hindi": "Hindi",
+        "Indonesian": "Indonesisk",
+        "Italian": "Italiensk",
+        "Japanese": "Japansk",
+        "Kannada": "Kannada",
+        "Korean": "Koreansk",
+        "Malay": "Malajisk",
+        "MandarinChinese": "Mandarin-kinesisk",
+        "Marathi": "Marathi",
+        "Polish": "Polsk",
+        "Portuguese": "Portugisisk",
+        "Spanish": "Spansk",
+        "Tagalog": "Tagalog",
+        "Tamil": "Tamil",
+        "Telugu": "Telugu",
+        "Thai": "Thai",
+        "Turkish": "Tyrkisk",
+        "Vietnamese": "Vietnamesisk"
+      }
+    },
+    "findPlacesNearMe": {
+      "category": "Lokationskategori",
+      "allLocations": "Alle lokationer",
+      "whatsappOnly": "Sendes kun til WhatsApp-kontakter.",
+      "noLocationSource": "Lokationen skal indsamles i dette flow: tilføj et Hent brugerdata-trin med svarformatet Lokation før denne handling. En lokation gemt af et andet flow bruges ikke. Uden det springes handlingen over."
+    },
+    "callPhoneNumber": {
+      "fallbackHint": "På kanaler, der ikke kan starte et opkald, modtager kontakten i stedet dette nummer som svar.",
+      "countryLabel": "Landekode",
+      "noCountry": "Intet land",
+      "invalidForCountry": "Dette er ikke et gyldigt telefonnummer for {country}.",
+      "needsCountry": "Vælg landet, eller start nummeret med + og landekoden.",
+      "invalidInternational": "Dette er ikke et gyldigt internationalt telefonnummer."
+    },
+    "copyText": {
+      "textLabel": "Tekst der skal kopieres",
+      "limitHint": "Op til {max} tegn efter variablerne er udfyldt.",
+      "fallbackHint": "På kanaler, der ikke kan kopiere tekst, modtager kontakten i stedet denne tekst som svar.",
+      "viewerTitle": "Kopierer denne tekst"
     }
   },
   "folders": {
@@ -2818,7 +3344,7 @@
     "title": "Generelt"
   },
   "facebookMarketingMessages": {
-    "deleteWarning": "Dette fjerner kun kampagnen fra ChatbotX. Meta-beskedkampagnen kører videre — sæt den på pause eller slet den i Ads Manager.",
+    "deleteWarning": "Dette sletter Meta-beskedkampagnen og fjerner kampagnen fra ChatbotX. Hvis Meta afviser sletningen, beholdes kampagnen.",
     "title": "Facebook Marketing Messages",
     "description": "Øg engagement og salg med personlige kampagnebeskeder på Messenger.",
     "create": "Opret ny",
@@ -2843,13 +3369,197 @@
       "generic": "Generisk",
       "greeting": "Hilsen",
       "quickReplies": "Hurtige svar",
-      "elements": "Kort"
+      "elements": "Kort",
+      "targetMessaging": "Målretning af beskeder",
+      "targetOptIn": "Opt-in",
+      "targetOptInDescription": "Kunder på siden, der har accepteret at modtage marketingbeskeder",
+      "targetCustomAudience": "Brugerdefineret målgruppe",
+      "targetCustomAudienceDescription": "Send beskeder til målgrupper uploadet fra en fil",
+      "audience": "Brugerdefineret målgruppe"
     },
+    "noReadyAudiences": "Ingen klare brugerdefinerede målgrupper for denne side og annoncekonto.",
+    "manageAudiences": "Administrer målgrupper",
     "errors": {
       "notConfigured": "Facebook Marketing Messages er ikke konfigureret. Bed din administrator om at angive konfigurations-id'et for marketingbeskeder.",
       "notGranted": "Giv adgang for at bruge funktionen Marketingbeskeder.",
       "tosNotAccepted": "For at bruge denne funktion skal du acceptere vilkårene for tilpassede objekter på {url}",
-      "notFound": "Marketingbesked blev ikke fundet."
+      "notFound": "Marketingbesked blev ikke fundet.",
+      "audienceNotTargetable": "Den valgte brugerdefinerede målgruppe er ikke klar eller tilhører ikke denne side og annoncekonto.",
+      "connectFirst": "Tilslut først Marketing Messages i ChatbotX-appen.",
+      "mmInvalidState": "Denne handling er ikke tilgængelig i kampagnens nuværende tilstand.",
+      "mmCampaignEnded": "Meta-beskedkampagnen er slut, så den kan ikke sendes eller genoptages.",
+      "mmPageNotConnected": "Kampagnens side er ikke tilsluttet dette arbejdsområde.",
+      "mmContentLocked": "Indholdet kan ikke ændres, efter den første besked er sendt.",
+      "metaDeleteFailed": "Meta kunne ikke slette denne kampagne, så den blev beholdt. {message}",
+      "statisticsUnknownAdAccount": "Dette arbejdsområde har ingen Marketing Messages-kampagner på den annoncekonto.",
+      "statisticsInvalidRange": "Vælg en startdato på eller før slutdatoen inden for de seneste 37 måneder."
+    },
+    "tabs": {
+      "campaigns": "Kampagner",
+      "audiences": "Målgrupper",
+      "statistics": "Statistik"
+    },
+    "audiences": {
+      "title": "Brugerdefinerede målgrupper",
+      "create": "Opret ny",
+      "uploadMore": "Upload flere rækker",
+      "empty": "Ingen brugerdefinerede målgrupper endnu.",
+      "deleteTitle": "Slet brugerdefineret målgruppe",
+      "deleteWarning": "Dette sletter den brugerdefinerede målgruppe \"{name}\" på Meta og i ChatbotX. Det kan ikke fortrydes.",
+      "deleted": "Brugerdefineret målgruppe slettet.",
+      "pageDisconnected": "Side frakoblet",
+      "status": {
+        "ready": "Klar",
+        "missing": "Slettet på Meta"
+      },
+      "fields": {
+        "customAudienceId": "ID for brugerdefineret målgruppe",
+        "approximateCount": "Omtrentligt antal",
+        "status": "Status",
+        "file": "Upload fil"
+      },
+      "wizard": {
+        "title": "Opret brugerdefineret målgruppe",
+        "uploadMoreTitle": "Upload flere rækker",
+        "steps": {
+          "prepare": "Forbered liste",
+          "upload": "Upload",
+          "confirm": "Bekræft"
+        },
+        "prepareDescription": "En abonnentliste er en CSV- eller TXT-fil med oplysninger, der bruges til at opbygge din målgruppe til marketingbeskeder. Vi bruger telefonnummeret til at matche dine abonnenter med Facebook- og Instagram-brugere. Før oplysningerne sendes til os, bliver din liste over identifikatorer hashet til tilfældig kode.",
+        "aboutHashing": "Om hashing",
+        "downloadTemplate": "Download filskabelon",
+        "mainIdentifiers": "Medtag mindst én primær identifikator",
+        "moreIdentifiers": "Medtag flere identifikatorer",
+        "identifiers": {
+          "email": "E-mail",
+          "phone": "Telefonnummer",
+          "madid": "Mobilt annonce-ID",
+          "fn": "Fornavn",
+          "ln": "Efternavn",
+          "ct": "By",
+          "st": "Stat/provins",
+          "country": "Land",
+          "zip": "Postnummer",
+          "dob": "Fødselsdato",
+          "doby": "Fødselsår",
+          "gen": "Køn"
+        },
+        "uploadNote": "Før du uploader listen, skal du sikre dig, at identifikatorerne er fuldstændige og i det rigtige format. Listen skal være i formatet .csv, .txt eller .xlsx.",
+        "namePlaceholder": "Indtast målgruppens navn...",
+        "descriptionPlaceholder": "Kort beskrivelse (hvis relevant)",
+        "dropzone": "Klik for at uploade, eller træk og slip",
+        "maxFileSize": "Maksimal filstørrelse: 20 MB",
+        "fileRequired": "Vælg en fil, der skal uploades.",
+        "fileTooLarge": "Filen er større end 20 MB.",
+        "fileType": "Filen skal være .csv, .txt eller .xlsx.",
+        "next": "Næste",
+        "back": "Tilbage",
+        "upload": "Upload",
+        "done": "Færdig",
+        "successTitle": "Upload lykkedes",
+        "successRows": "Din Messenger-abonnentliste er uploadet: {count, plural, one {# række} other {# rækker}}",
+        "skippedRows": "{count, plural, one {# række blev} other {# rækker blev}} sprunget over (ingen gyldig e-mail eller telefon).",
+        "invalidRows": "{count, plural, one {# række blev} other {# rækker blev}} afvist af Meta.",
+        "matchingNote": "Det kan tage et par minutter at færdiggøre matchningen af dine abonnenter med personer på Facebook. Du kan se status på målgruppelisten."
+      },
+      "errors": {
+        "audienceInvalidFile": "Filen kunne ikke læses. Brug en .csv-, .txt- eller .xlsx-fil med en overskriftsrække.",
+        "audienceTooManyRows": "Filen har mere end {max, number} rækker.",
+        "audienceNoIdentifier": "Filen skal have en kolonne med e-mail eller telefon.",
+        "audienceNoValidRows": "Ingen rækker har en gyldig e-mail eller et gyldigt telefonnummer.",
+        "audiencePartialUpload": "Målgruppen blev oprettet, men uploaden stoppede efter {received, number} rækker. Brug \"Upload flere rækker\" for at prøve igen.",
+        "audienceNotFound": "Brugerdefineret målgruppe blev ikke fundet.",
+        "audienceCreateRejected": "Meta afviste målgruppen: {reason}",
+        "uploadUncertain": "Uploadet er muligvis ikke færdigt. Luk denne dialog, og tjek målgruppelisten; brug \"Upload flere rækker\", hvis målgruppen blev oprettet.",
+        "pageNotConnected": "Den valgte side er ikke forbundet til dette workspace.",
+        "audienceInUse": "Denne brugerdefinerede målgruppe bruges af {count, plural, one {# marketingbesked} other {# marketingbeskeder}} og kan ikke slettes."
+      }
+    },
+    "delivery": {
+      "title": "Levering",
+      "contentLocked": "Indholdet er låst, fordi der allerede er sendt beskeder.",
+      "topicsReturned": "Emner returneret af Meta: {topics}",
+      "recipients": "{count} modtagere",
+      "startsAt": "Start: {date}",
+      "completedAt": "Fuldført: {date}",
+      "errorBreakdown": "Fejl",
+      "retrying": "Meta modtager ikke afsendelser lige nu; prøver automatisk igen.",
+      "counts": {
+        "sent": "Sendt",
+        "delivered": "Leveret",
+        "unconfirmed": "Ubekræftet"
+      },
+      "status": {
+        "notSent": "Ikke sendt",
+        "scheduled": "Planlagt",
+        "sending": "Sender",
+        "waitingNextDay": "Venter til næste dag",
+        "paused": "Sat på pause",
+        "stopped": "Stoppet"
+      },
+      "reason": {
+        "pageNotConnected": "Siden er ikke forbundet til dette workspace.",
+        "quotaReached": "På pause: din beskedkvote er nået.",
+        "workspaceBlocked": "På pause: dette workspace er blokeret.",
+        "grantInvalid": "På pause: Facebook-forbindelsen er udløbet. Forbind Marketing Messages igen.",
+        "metaBlocker": "Meta blokerer denne kampagne.",
+        "contentRejected": "Meta afviste beskedens indhold.",
+        "noTokens": "Der blev ikke fundet nogen modtagere til denne kampagne.",
+        "noMatchingTopic": "Ingen modtagere med samtykke matcher emnet \"Updates and promotions\".",
+        "tokenFetchFailed": "Modtagere kunne ikke hentes fra Meta.",
+        "campaignEnded": "Meta-kampagnen er afsluttet.",
+        "lifetimeBudgetReached": "Livstidsbudgettet er brugt op."
+      },
+      "errors": {
+        "grantInvalid": "Facebook-forbindelsen er udløbet.",
+        "campaignInactive": "Meta-kampagnen er ikke aktiv.",
+        "budgetReached": "Budgettet er brugt op.",
+        "dailyBudgetReached": "Dagsbudgettet er nået.",
+        "optedOut": "Modtageren har afmeldt sig.",
+        "frequencyLimit": "Modtagerens frekvensgrænse er nået.",
+        "contentRejected": "Beskedens indhold blev afvist af Meta.",
+        "deliveryFailed": "Levering mislykkedes.",
+        "outcomeUnknown": "Leveringsresultatet er ukendt."
+      }
+    },
+    "statistics": {
+      "searchPlaceholder": "Søg efter ID eller navn",
+      "adAccount": "Annoncekonto",
+      "dateRange": "Datointerval",
+      "timezoneHint": "Datoer i {timezone}",
+      "presets": {
+        "last7": "Seneste 7 dage",
+        "last30": "Seneste 30 dage",
+        "last90": "Seneste 90 dage",
+        "thisMonth": "Denne måned",
+        "lastMonth": "Sidste måned"
+      },
+      "columns": {
+        "id": "ID",
+        "name": "Navn",
+        "page": "Facebook-side",
+        "delivered": "Leverede beskeder",
+        "readRate": "Læserate",
+        "linkClicks": "Linkklik",
+        "linkClickRate": "Linkklikrate",
+        "costPerClick": "Pris pr. klik",
+        "costPerDelivery": "Pris pr. levering",
+        "spend": "Brugt beløb"
+      },
+      "notes": {
+        "delivery": "Meta rapporterer ikke dette for modtagere i Europa eller Japan; de kampagner viser -.",
+        "clicks": "Meta rapporterer ikke dette for modtagere i Europa, Argentina, Tyrkiet, Sydkorea eller Japan; de kampagner viser -."
+      },
+      "footer": {
+        "label": "I alt: {count, plural, one {# kampagne} other {# kampagner}}",
+        "total": "I alt",
+        "average": "Gennemsnit"
+      },
+      "totalsUnavailable": "Totaler er ikke tilgængelige lige nu. Prøv igen om lidt.",
+      "readOnly": "Forbind Marketing Messages igen for at se statistik.",
+      "empty": "Ingen Marketing Messages-kampagner endnu. Opret en under fanen Kampagner.",
+      "noResults": "Ingen kampagner matcher din søgning."
     }
   },
   "facebookAds": {
@@ -3551,14 +4261,22 @@
         "inProgress": "Forbindelse er allerede i gang.",
         "unknown": "Noget gik galt.",
         "followUpFailed": "Opsætning ufuldstændig – afslut den fra kanalindstillingerne.",
-        "webhookSubscribeFailed": "Forbundet, men webhook-abonnementet mislykkedes — prøv igen fra forbindelsesindstillingerne."
+        "webhookSubscribeFailed": "Forbundet, men webhook-abonnementet mislykkedes — prøv igen fra forbindelsesindstillingerne.",
+        "providerUnavailable": "Udbyderen er midlertidigt utilgængelig. Prøv igen om et par minutter."
       },
       "sessionError": {
         "sessionExpired": "Din session udløb. Opret forbindelse igen.",
         "notMember": "Du er ikke længere medlem af dette workspace.",
         "trialExpired": "Din prøveperiode er udløbet.",
         "macLimitReached": "Du har nået din kontogrænse.",
-        "credentialMissing": "Manglende legitimationsoplysninger. Opret forbindelse igen."
+        "credentialMissing": "Manglende legitimationsoplysninger. Opret forbindelse igen.",
+        "noPages": "Vi kunne ikke finde nogen Facebook-side at forbinde. Forbind igen, og giv adgang til mindst én side, du administrerer.",
+        "noInstagramAccounts": "Vi kunne ikke finde nogen Instagram-konto at forbinde. Forbind igen, og giv adgang til mindst én konto.",
+        "exchangeFailed": "Login kunne ikke gennemføres. Forbind venligst igen.",
+        "providerError": "Vi kunne ikke indlæse dine konti lige nu. Prøv igen om et par minutter.",
+        "connectFailed": "Der opstod en fejl under forbindelsen. Prøv igen.",
+        "tooManyAttempts": "Der er for mange uafsluttede forbindelsesforsøg. Vent et par minutter, og prøv igen.",
+        "notAllowed": "Du kan ikke forbinde kanaler her lige nu. Genindlæs siden for at se hvorfor."
       },
       "cancelRemaining": "Annuller resterende",
       "retryFailed": "Prøv igen ({count})",
@@ -3624,7 +4342,8 @@
   "workspaces": {
     "list": {
       "title": "Arbejdsområder Liste"
-    }
+    },
+    "defaultName": "{name}s arbejdsområde"
   },
   "workspaceToken": {
     "title": "Arbejdsområde token"
@@ -3641,6 +4360,7 @@
       "months": "{count} md.",
       "years": "{count} år"
     },
+    "realtimeRevokeWarning": "Tilbagekaldelsen af adgangen kunne ikke bekræftes med det samme – den træder i kraft ved medlemmets næste genopkobling.",
     "moveFeature": "Flyt {feature}",
     "poweredBy": "Powered af {name}",
     "noGiphyApiKey": "Ingen GIPHY API-nøgle found. Venligst tilføj one i Platform Indstillinger.",
@@ -3778,6 +4498,9 @@
     "waTemplateMpmTooManySections": "En multiprodukt-knap kan højst have 10 sektioner. Fjern nogle sektioner før udgivelse.",
     "waTemplateMpmTooManyProducts": "En multiprodukt-knap kan højst have 30 produkter i alt. Fjern nogle produkter før udgivelse.",
     "waTemplateLtoExpirationRequired": "Vælg en udløbsdato for tilbuddet, før du sender.",
+    "waTemplatePaymentRequestIncomplete": "Udfyld betalingsoplysningerne for denne knap, før du udgiver.",
+    "waTemplatePaymentRequestInvalid": "En betalingsoplysning har et ugyldigt format. Tjek beløb, link og kortcifre.",
+    "waTemplatePaymentRequestMisplaced": "Betalingsoplysninger kan kun angives på en betalingsknap i en almindelig skabelon (ikke karrusel).",
     "waTemplateMpmIncompleteProducts": "Hver sektion skal have mindst ét valgt produkt — fjern tomme rækker, eller vælg et produkt til dem.",
     "unsupportedBlock": "Denne kanal understøtter ikke denne blok.",
     "constraintExceeded": "Denne kanals grænse er overskredet.",
@@ -3804,7 +4527,15 @@
       "noAnswer": "Intet svar",
       "labelsUnavailable": "Flowets spørgsmål kunne ikke indlæses, så feltnavne vises i stedet.",
       "yes": "Ja",
-      "no": "Nej"
+      "no": "Nej",
+      "fileNotSaved": "Filen blev ikke gemt",
+      "filesNotSaved": "{count, plural, one {# fil blev ikke gemt} other {# filer blev ikke gemt}}",
+      "filesAttached": "{count, plural, one {# vedhæftet fil} other {# vedhæftede filer}}",
+      "fileFailure": {
+        "too_large": "Filen er for stor",
+        "unsupported_type": "Filtypen understøttes ikke",
+        "download_failed": "Kunne ikke downloades"
+      }
     },
     "sendViewCatalogBodyTooLong": "Beskedteksten er for lang til en katalogbesked. Gør den kortere.",
     "sendViewCatalogFooterTooLong": "Sidefoden er for lang til en katalogbesked. Gør den kortere.",
@@ -3831,7 +4562,24 @@
     "savedReplyImagesRemoved": "Billeder, der ikke kan sendes her, blev fjernet",
     "onlyImagesAllowed": "Kun billeder kan tilføjes",
     "tooManySavedReplyImages": "Et gemt svar kan højst have {max} billeder",
-    "savedReplyImagesNotSentHere": "Billeder bliver ikke sendt her"
+    "savedReplyImagesNotSentHere": "Billeder bliver ikke sendt her",
+    "invalidPhoneNumber": "Dette er ikke et gyldigt telefonnummer. Medtag landekoden, for eksempel +1.",
+    "buttonCallPhoneNumberUnsupported": "Denne knap kan ikke ringe til et telefonnummer her. Vælg en anden handling.",
+    "buttonCopyTextUnsupported": "Denne knap kan ikke kopiere tekst her. Vælg en anden handling.",
+    "paymentRequest": {
+      "title": "Betalingsanmodning",
+      "cardEnding": "Kort, der ender på {lastFourDigits}",
+      "status": "WhatsApp rapporterer ikke betaling. Tjek hos din betalingsudbyder.",
+      "cardStatus": "Kundens bekræftelse trækker ikke beløbet på kortet. Træk det via din betalingsudbyder.",
+      "sentFromTemplate": "Skabelon: {name}"
+    },
+    "paymentConfirmation": {
+      "title": "Kunden har bekræftet betalingen",
+      "cardTitle": "Kunden har bekræftet kortbetalingen",
+      "cardEnding": "Kort, der ender på {lastFourDigits}",
+      "notCharged": "Ikke trukket endnu. Træk beløbet via din betalingsudbyder.",
+      "reference": "Reference {referenceId}"
+    }
   },
   "instagram": {
     "description": "Denne integration lets du opret Instagram bots.",
@@ -3928,6 +4676,7 @@
         "buttonText": "Knap Tekst",
         "buttonType": "Knap Type",
         "visitWebsite": "Visit Website",
+        "openMiniApp": "Åbn Mini App",
         "callPhoneNumber": "Call Telefon Nummer",
         "postback": "Knap"
       },
@@ -3989,6 +4738,18 @@
       "label": "DeepSeek"
     },
     "title": "DeepSeek"
+  },
+  "muse": {
+    "autoReply": {
+      "description": "Aktivér AI auto svar til respond til brugere naturally med AI powered af din business data.",
+      "label": "AI Auto Svar"
+    },
+    "connect": {
+      "description": "Respond til brugere naturally med AI powered af din business data.",
+      "embeddingHint": "Muse tilbyder ikke embedding-modeller. Vidensbase og AI-filer kræver stadig en OpenAI- eller Gemini-integration.",
+      "label": "Muse"
+    },
+    "title": "Muse"
   },
   "decision": {
     "addConnection": "Add AI Router connection",
@@ -4125,12 +4886,17 @@
     "deepseek": {
       "description": "DeepSeek integration beskrivelse",
       "title": "DeepSeek Integration"
+    },
+    "muse": {
+      "description": "Muse integration beskrivelse",
+      "title": "Muse Integration"
     }
   },
   "auth": {
     "orContinueWith": "Eller fortsæt med",
     "continueWithFacebook": "Fortsæt med Facebook",
     "continueWithGoogle": "Fortsæt med Google",
+    "continueWithProvider": "Fortsæt med {name}",
     "continueWithEmail": "Fortsæt med e-mail",
     "continueWithMagicLink": "Fortsæt med magisk link",
     "dontHaveAnAccount": "Don't har an konto?",
@@ -4161,11 +4927,15 @@
     "changePasswordTitle": "Change din adgangskode",
     "changePasswordDescription": "Set a ny adgangskode før continuing.",
     "passwordChangeSuccess": "Adgangskode changed",
+    "signUpDisabledTitle": "Registrering er deaktiveret",
+    "signUpDisabledDescription": "Nye konti kan kun oprettes af en administrator eller via et invitationslink.",
     "oauthError": {
       "accountNotLinked": "Der findes allerede en konto med denne e-mailadresse, og den kunne ikke kobles. Log ind på samme måde som tidligere, eller kontakt support.",
       "unableToLinkAccount": "Vi kunne ikke koble dette login til den eksisterende konto. Log ind på samme måde som før, eller kontakt support.",
       "sessionExpired": "Loginforsøget er udløbet. Prøv igen.",
       "accessDenied": "Login blev annulleret.",
+      "signUpDisabled": "Denne konto findes ikke endnu, og registrering er deaktiveret. Bed en administrator om at oprette den for dig.",
+      "invalidInvitation": "Denne invitation er ugyldig eller udløbet.",
       "generic": "Login mislykkedes. Prøv igen."
     }
   },
@@ -4189,6 +4959,9 @@
     "maxCharacters": "Maksimalt {max} tegn.",
     "invalidApiKey": "Ugyldig API-nøgle",
     "maxMustBeGreaterThanMin": "{maxField} must være greater than eller equal til {minField}",
+    "trigger": {
+      "actionReferenceNotFound": "An action refers to a record that no longer exists. Re-select it in the action and save again."
+    },
     "inboundWebhook": {
       "inboxRequired": "Vælg en inbox.",
       "inboxNotFound": "Den valgte inbox blev ikke fundet.",
@@ -4198,11 +4971,31 @@
       "unknownFieldTarget": "Et tilknyttet kontaktfelt findes ikke længere.",
       "actionReferenceNotFound": "En handling henviser til et flow, tag eller felt, der ikke længere findes.",
       "fieldMappingRequired": "Tilføj mindst en feltmapping."
+    },
+    "form": {
+      "required": "Dette felt er påkrævet.",
+      "minLength": "Indtast mindst {minimum} tegn.",
+      "maxLength": "Indtast højst {maximum} tegn.",
+      "minNumber": "Indtast et tal på mindst {minimum}.",
+      "moreThan": "Indtast et tal større end {minimum}.",
+      "maxNumber": "Indtast et tal på højst {maximum}.",
+      "lessThan": "Indtast et tal mindre end {maximum}.",
+      "number": "Indtast et tal.",
+      "wholeNumber": "Indtast et helt tal.",
+      "minItems": "Vælg mindst {minimum}.",
+      "maxItems": "Vælg højst {maximum}.",
+      "email": "Indtast en gyldig e-mailadresse.",
+      "url": "Indtast et gyldigt link, der starter med https://.",
+      "format": "Værdien har ikke det rigtige format.",
+      "option": "Vælg en af mulighederne.",
+      "invalid": "Værdien er ikke gyldig.",
+      "checkFields": "Nogle felter skal rettes. Se dem, der er markeret med rødt."
     }
   },
   "webchat": {
     "chatUnavailable": "Denne chat er currently unavailable.",
     "description": "Let din customers get instant automated responses fra din business directly fra din website",
+    "loadMessagesError": "Beskederne kunne ikke indlæses. Tjek din forbindelse, og prøv igen.",
     "rateLimitExceeded": "Too many requests. Prøv igen i a moment.",
     "title": "Web Chat",
     "workspaceUnavailable": "Denne arbejdsområde er ingen longer tilgængelig.",
@@ -4358,7 +5151,28 @@
         "mpmSectionLimitReached": "Maks. 10 sektioner nået.",
         "mpmProductLimitReached": "Maks. 30 produkter nået.",
         "mpmProductsSummary": "{productCount} produkter i {sectionCount} sektioner",
-        "unsupportedButtonParam": "Denne knaptype understøttes endnu ikke."
+        "unsupportedButtonParam": "Denne knaptype understøttes endnu ikke.",
+        "payment": {
+          "method": {
+            "pix": "Pix",
+            "boleto": "Boleto",
+            "payment_link": "Betalingslink",
+            "card_on_file": "Kortbetaling med ét klik"
+          },
+          "field": {
+            "code": "Pix-kode",
+            "digitableLine": "Boleto-linje",
+            "url": "URL til betalingslink",
+            "lastFourDigits": "Kortets sidste 4 cifre",
+            "credentialId": "Kortets credential-ID (valgfrit)",
+            "amount": "Beløb i BRL, f.eks. 12.34"
+          },
+          "notice": {
+            "general": "Brug en variabel, så hver kunde får sine egne betalingsoplysninger.",
+            "cardOnFile": "Kortbetaling med ét klik virker kun for virksomheder, som Meta har aktiveret den for."
+          },
+          "unsupportedButton": "Denne skabelon har en betalingsknap, der ikke kan sendes: betalingstypen kunne ikke bestemmes. Synkroniser skabelonerne igen, eller vælg en anden."
+        }
       }
     },
     "sampleBodyCardContent": {
@@ -4515,7 +5329,6 @@
     "templateHeader": {
       "label": "Skabelon Overskrift"
     },
-    "transferPhoneNumber": "Overfør telefon fra another Whatsapp udbyder",
     "selectPage": {
       "tryAgain": "Try reconnecting"
     },
@@ -4772,7 +5585,18 @@
         "callInformation": "Opkaldsoplysninger"
       }
     },
-    "credentialSecretsRequired": "Indtast app-hemmeligheden og systembruger-tokenet. De er ikke gemt endnu."
+    "credentialSecretsRequired": "Indtast app-hemmeligheden og systembruger-tokenet. De er ikke gemt endnu.",
+    "embeddedSignupCancelled": "Tilmeldingen blev annulleret — du kan lukke denne fane.",
+    "embeddedSignupFailed": "Tilmeldingen blev ikke gennemført — luk denne fane, og prøv igen.",
+    "payment": {
+      "settings": {
+        "title": "Betalinger",
+        "description": "Hvordan dette nummer sender knapper til betalingsanmodning.",
+        "pixRedirectLabel": "Send Pix med omdirigering",
+        "pixRedirectDescription": "Købere åbner deres bankapp for at betale og vender tilbage til WhatsApp. Slå det først til, når Meta har onboardet din virksomhed; købere, der ikke kan omdirigeres, får stadig kopiér og indsæt.",
+        "adminOnly": "Kun workspace-administratorer kan ændre betalingsindstillinger."
+      }
+    }
   },
   "zalo": {
     "title": "Zalo OA",
@@ -4795,7 +5619,8 @@
     "chatbotInvitationDescription1": "Join {chatbotName}",
     "chatbotInvitationDescription2": "{userName} har invited du til join {chatbotName}.",
     "invalidInvitation": "Denne invitation er ugyldig eller har udløbet.",
-    "workspaceUnavailable": "Denne arbejdsområde er ingen longer tilgængelig."
+    "workspaceUnavailable": "Denne arbejdsområde er ingen longer tilgængelig.",
+    "signUpToJoin": "Opret en konto for at deltage"
   },
   "inboxes": {
     "markReadOnOutbound": {
@@ -5160,11 +5985,11 @@
       "incomingCall": "Incoming Call",
       "missedAudioCall": "Missed Lyd Call",
       "callEnded": "Call Ended",
-      "ticketCreated": "Ticket Oprettet",
-      "ticketMovedToStage": "Ticket Moved Til Stage",
-      "ticketValueChanged": "Ticket Værdi Changed",
-      "ticketStatusChanged": "Ticket Status Changed",
-      "ticketPriorityChanged": "Ticket Priority Changed",
+      "pipelineItemCreated": "Ticket Oprettet",
+      "pipelineItemMovedToStage": "Ticket Moved Til Stage",
+      "pipelineItemValueChanged": "Ticket Værdi Changed",
+      "pipelineItemStatusChanged": "Ticket Status Changed",
+      "pipelineItemPriorityChanged": "Ticket Priority Changed",
       "subscribedToSequence": "Subscribed Til Sekvens",
       "unsubscribedFromSequence": "Unsubscribed Fra Sekvens",
       "shoppingCartSent": "Kontakt sendte indkøbskurv",
@@ -5175,15 +6000,24 @@
       "orderShipped": "Order Shipped",
       "orderConcluded": "Order Concluded",
       "orderCancelled": "Order Annulleret",
+      "orderPaid": "Order Betalt",
+      "orderRefunded": "Order Refunderet",
       "categoryAddedToCart": "Kategori Added Til Cart",
       "productAddedToCart": "Product Added Til Cart",
       "productRemovedFromCart": "Product Removed Fra Cart",
       "productOrdered": "Product Ordered",
       "contactReferredANewContact": "Kontakt Referred A Ny Kontakt",
       "contactReferredExistingContact": "Kontakt Referred Existing Kontakt",
+      "contactBlockedBot": "Kontakt blokerede botten",
+      "contactUnblockedBot": "Kontakt fjernede blokeringen af botten",
       "callRecorded": "Opkald optaget",
       "callTranscribed": "Opkald transskriberet",
-      "anyProduct": "Alle produkter"
+      "anyProduct": "Alle produkter",
+      "anyCategory": "Enhver kategori",
+      "anyPipeline": "Alle pipelines",
+      "anyStage": "Alle faser",
+      "unavailablePipeline": "Slettet eller utilgængelig pipeline",
+      "unavailableStage": "Slettet eller utilgængelig fase"
     },
     "actions": {
       "addTag": "Tilføj tag",
@@ -5191,6 +6025,7 @@
       "setCustomField": "Angiv brugerdefineret felt",
       "clearCustomField": "Ryd brugerdefineret felt",
       "startAnotherFlow": "Start Another Flow",
+      "startExternalStep": "Start External Step",
       "notifyAdmins": "Notify Administratorer",
       "transferConversationToHuman": "Transfer Samtale til Menneskelig",
       "sendMetaCapiEvent": "Send Meta CAPI Event",
@@ -5232,7 +6067,26 @@
     "countCapped": "{count}+ kontakter",
     "exportAllNotice": "Alle kontakter matching den current filter vil være exported.",
     "exportTakingLong": "Eksportér er taking longer than expected",
-    "exportTakingLongDescription": "Den eksportér er still processing. Du kan close denne dialog og check tilbage i a few minutter fra den eksportér historik."
+    "exportTakingLongDescription": "Den eksportér er still processing. Du kan close denne dialog og check tilbage i a few minutter fra den eksportér historik.",
+    "search": {
+      "placeholder": "Søg (navn, e-mail, telefon, kontakt-id)",
+      "searching": "Søger…",
+      "error": "Kunne ikke søge efter kontakter",
+      "empty": "Ingen kontakter fundet"
+    },
+    "exportHistory": {
+      "title": "Eksporthistorik",
+      "description": "Kontakteksporter fra de seneste {days} dage. Filerne slettes derefter.",
+      "empty": "Ingen eksporter endnu.",
+      "requestedBy": "Af {name}",
+      "deletesOn": "Slettes {date}",
+      "rows": "{count, plural, one {# kontakt} other {# kontakter}}",
+      "status": {
+        "pending": "Behandles",
+        "uploaded": "Klar",
+        "failed": "Mislykkedes"
+      }
+    }
   },
   "contactScan": {
     "menu": {
@@ -5304,7 +6158,8 @@
       "userPlaceholder": "Bruger-id",
       "keyword": "Nøgleord",
       "keywordPlaceholder": "Handling eller detalje",
-      "allAdmins": "Alle administratorer"
+      "allAdmins": "Alle administratorer",
+      "allWorkspaces": "Alle arbejdsområder"
     }
   },
   "customFields": {
@@ -5325,7 +6180,36 @@
       "pageTitle": "Side-nøgleord",
       "page": "Svar automatisk, når du sender en besked med et nøgleord til en kontakt."
     },
-    "pageWarning": "Beskedindhold med et sidenøgleord kan medføre, at der sendes beskeder til kunden i en uendelig løkke. Deaktiver sidenøgleordet med det samme, hvis du oplever dette!"
+    "pageWarning": "Beskedindhold med et sidenøgleord kan medføre, at der sendes beskeder til kunden i en uendelig løkke. Deaktiver sidenøgleordet med det samme, hvis du oplever dette!",
+    "conditions": {
+      "operators": {
+        "is": "Beskeden er",
+        "similarTo": "Beskeden ligner",
+        "contains": "Beskeden indeholder",
+        "containsPhone": "Beskeden indeholder telefonnummer",
+        "containsEmail": "Beskeden indeholder e-mail",
+        "containsImage": "Beskeden indeholder billede",
+        "containsVideo": "Beskeden indeholder video",
+        "containsLink": "Beskeden indeholder link",
+        "containsWholeWord": "Beskeden indeholder hele ordet",
+        "beginsWith": "Beskeden begynder med",
+        "endsWith": "Beskeden slutter med",
+        "isThumbsUp": "Beskeden er 👍",
+        "notContains": "Beskeden indeholder ikke",
+        "matchesRegex": "Beskeden matcher regex"
+      },
+      "and": "og",
+      "addCondition": "Beskedbetingelse",
+      "removeCondition": "Fjern betingelse",
+      "note": "Nøgleord skelner ikke mellem store og små bogstaver og ignorerer accenter, f.eks. genkendes \"Tư vấn\" og \"tu van\" som det samme.",
+      "keywordPlaceholder": "+ Nøgleord",
+      "regexPlaceholder": "+ Regex",
+      "errors": {
+        "keywordConditionValuesRequired": "Tilføj mindst ét nøgleord.",
+        "keywordConditionTakesNoValues": "Denne betingelse bruger ingen nøgleord.",
+        "invalidKeywordRegex": "Ugyldigt regulært udtryk."
+      }
+    }
   },
   "triggers": {
     "title": "Udløsere"
@@ -5428,6 +6312,7 @@
     "gemini": "Gemini",
     "claude": "Claude",
     "deepseek": "DeepSeek",
+    "muse": "Muse",
     "openrouter": "OpenRouter",
     "openaiCompatible": "OpenAI Compatible"
   },
@@ -5465,11 +6350,99 @@
   },
   "pollManager": {
     "title": "Afstemning Manager",
-    "description": "Opret og administrer afstemninger for din kontakter."
+    "description": "Gennemfør afstemnings- eller stemmesystemer. Du kan også bruge det til at indsamle kundernes meninger.",
+    "feature": "Poll",
+    "deleteDescription": "Deleting a poll also deletes its candidates and votes. This cannot be undone.",
+    "list": {
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "votes": "Votes",
+      "getLink": "Get Link"
+    },
+    "getLink": {
+      "title": "Get Link",
+      "description": "Share a link that opens a chat and starts the poll.",
+      "omnichannel": "Omnichannel",
+      "noInboxes": "No connected channels can open this poll yet.",
+      "loadError": "Could not load the links."
+    },
+    "form": {
+      "createTitle": "Create poll",
+      "editTitle": "Edit poll",
+      "votingPeriod": "Voting period",
+      "imageRequired": "An image is required.",
+      "dateRangeInvalid": "Slutdatoen skal være efter startdatoen.",
+      "candidatesTitle": "Candidates or Options",
+      "candidateNumber": "Candidate {number}",
+      "moreOptions": "More Options",
+      "afterVoteFlow": "Flow to be sent after the user votes",
+      "afterVoteFlowNone": "None",
+      "removeVotesTitle": "Remove candidates?",
+      "removeVotesDescription": "Deleting candidates also deletes their votes."
+    },
+    "analytics": {
+      "title": "Analytics",
+      "results": "Results",
+      "votesPerGender": "Votes per gender",
+      "totalVotes": "Total votes",
+      "noVotes": "No votes yet",
+      "other": "Other",
+      "male": "Male",
+      "female": "Female",
+      "unknown": "Unknown",
+      "loadError": "Could not load the analytics.",
+      "columns": {
+        "name": "Name",
+        "totalVotes": "Total votes",
+        "totalPercent": "T%",
+        "maleVotes": "Male votes",
+        "malePercent": "M%",
+        "femaleVotes": "Female votes",
+        "femalePercent": "F%"
+      }
+    }
   },
   "placesNearMe": {
     "title": "Steder Near Me",
-    "description": "Find steder near din kontakter."
+    "description": "Lad dine kunder nemt finde dine forretningslokationer i nærheden af dem.",
+    "tabs": {
+      "locations": "Lokationer",
+      "categories": "Kategorier"
+    },
+    "categories": {
+      "columns": {
+        "locations": "Lokationer"
+      },
+      "add": "Tilføj kategori",
+      "edit": "Rediger kategori",
+      "empty": "Ingen kategorier endnu.",
+      "created": "Kategori tilføjet",
+      "updated": "Kategori opdateret",
+      "deleted": "Kategori slettet",
+      "saveError": "Kategorien kunne ikke gemmes",
+      "deleteError": "Kategorien kunne ikke slettes",
+      "deleteTitle": "Slet {name}?",
+      "deleteDescription": "{count, plural, =0 {Ingen lokationer bruger denne kategori.} one {# lokation bliver ukategoriseret.} other {# lokationer bliver ukategoriseret.}}"
+    },
+    "locations": {
+      "columns": {
+        "coordinates": "Koordinater"
+      },
+      "preview": "Forhåndsvisning",
+      "add": "Tilføj lokation",
+      "edit": "Rediger lokation",
+      "empty": "Ingen lokationer endnu.",
+      "created": "Lokation tilføjet",
+      "updated": "Lokation opdateret",
+      "deleted": "Lokation slettet",
+      "saveError": "Lokationen kunne ikke gemmes",
+      "deleteError": "Lokationen kunne ikke slettes",
+      "deleteTitle": "Slet {name}?",
+      "deleteDescription": "Denne lokation slettes permanent.",
+      "noCategory": "Ingen kategori",
+      "latitude": "Breddegrad",
+      "longitude": "Længdegrad"
+    }
   },
   "questionnaires": {
     "title": "Spørgeskemaer",
@@ -6086,6 +7059,9 @@
   "templates": {
     "title": "Skabeloner",
     "description": "Opret og administrer dine skabeloner.",
+    "createDialog": {
+      "title": "Ny skabelon"
+    },
     "share": {
       "label": "Del",
       "enabled": "Delt",
@@ -6094,14 +7070,135 @@
       "dialogDescription": "Alle med dette link kan installere en kopi af denne skabelon i et arbejdsområde i din tenant.",
       "enableLabel": "Aktivér dellink",
       "linkLabel": "Dellink",
-      "description": "Alle med linket kan installere denne skabelon i deres eget arbejdsområde."
+      "rotateLabel": "Roter link",
+      "rotateTitle": "Rotér dellink?",
+      "rotateDescription": "Det nuværende link holder op med at virke med det samme. Alle, der stadig skal installere denne skabelon, har brug for det nye link.",
+      "rotated": "Dellink roteret",
+      "expiryLabel": "Linket udløber",
+      "expiryHint": "Lad feltet stå tomt, hvis linket aldrig skal udløbe.",
+      "clearExpiry": "Fjern udløb",
+      "expiredNotice": "Dette link er udløbet. Vælg en senere dato eller fjern udløbet for at dele det igen.",
+      "templateId": "Skabelon-ID",
+      "templateKey": "Skabelonnøgle",
+      "showKey": "Vis nøgle",
+      "hideKey": "Skjul nøgle",
+      "copyField": "Kopiér {field}"
+    },
+    "sync": {
+      "title": "Opdateringer",
+      "updateAvailable": "Opdatering tilgængelig",
+      "upToDate": "Opdateret",
+      "sourceDeleted": "Skabelon slettet",
+      "sourceDeletedHint": "Udgiveren har slettet denne skabelon. Din kopi virker stadig, men kan ikke længere opdateres.",
+      "updateNow": "Opdater nu",
+      "updating": "Opdaterer…",
+      "version": "Skabelonversion {version}",
+      "lastSynced": "sidst opdateret {date}",
+      "autoUpdateLabel": "Opdater automatisk, når skabelonen ændres",
+      "noHistory": "Ingen opdateringer endnu.",
+      "countAdded": "{count} tilføjet",
+      "countUpdated": "{count} opdateret",
+      "countDetached": "{count} følger ikke længere skabelonen",
+      "notUpdatable": "{count} kan endnu ikke opdateres",
+      "overwritten": "{name} blev redigeret og erstattet af opdateringen",
+      "restore": "Gendan min version",
+      "restored": "Din version blev gendannet",
+      "status": {
+        "pending": "I kø",
+        "running": "Kører",
+        "completed": "Gennemført",
+        "partial": "Delvis",
+        "failed": "Mislykkedes",
+        "skipped": "Sprunget over",
+        "cancelled": "Annulleret"
+      },
+      "trigger": {
+        "autoUpdate": "Automatisk",
+        "manual": "Manuel",
+        "reinstall": "Geninstallation"
+      },
+      "requestedVersion": "anmodet v{version}",
+      "errors": {
+        "unknown": "Opdateringen mislykkedes. Prøv igen, eller kontakt support, hvis det bliver ved.",
+        "templateSyncFailed": "Opdateringen mislykkedes. Prøv igen.",
+        "templateSyncSuperseded": "En nyere opdatering erstattede denne.",
+        "templateSyncAbandoned": "Opdateringen blev ikke færdig i tide og blev lukket.",
+        "templateInstallationInactive": "Denne installation er ikke længere aktiv.",
+        "workspaceOwnerBlocked": "Arbejdsområdets ejers konto er blokeret.",
+        "templateUninstallInProgress": "Skabelonen er ved at blive afinstalleret.",
+        "templateAutoUpdateOff": "Automatiske opdateringer er slået fra.",
+        "templateUpToDate": "Kopien er allerede opdateret.",
+        "templateInstallerAccessLost": "Den, der installerede, har ikke længere tilladelse til at opdatere denne kopi.",
+        "templateInstallationSourceMissing": "Skabelonen blev slettet, før opdateringen kørte.",
+        "templateCategoryPermissionDenied": "Du har ikke længere tilladelse til at opdatere alt i denne skabelon.",
+        "templatePayloadIncompatible": "Denne skabelon er gemt i et nyere format, end denne server kan installere.",
+        "templateCrossTenantInstall": "Denne skabelon er ikke tilgængelig for dit arbejdsområde.",
+        "templateInvalidInboxBinding": "En valgt indbakke passer ikke til skabelonen."
+      }
+    },
+    "versions": {
+      "detailsTab": "Detaljer",
+      "tab": "Versioner",
+      "versionNumber": "Version {version}",
+      "current": "Aktuel",
+      "first": "Første version",
+      "noDetail": "Der blev ikke registreret detaljer for denne version.",
+      "added": "Tilføjet",
+      "changed": "Ændret",
+      "removed": "Fjernet"
+    },
+    "installers": {
+      "title": "Se analyser",
+      "workspace": "Arbejdsområde",
+      "lastInstalled": "Sidst installeret",
+      "version": "Version",
+      "autoUpdate": "Automatisk opdatering",
+      "uninstalled": "Afinstalleret",
+      "hidden": "Arbejdsområde ikke delt",
+      "uninstallNotAllowed": "Installatøren har ikke givet udgivere lov til at afinstallere denne kopi.",
+      "loadError": "Installatørerne kunne ikke indlæses. Prøv igen.",
+      "automatic": "Automatisk",
+      "details": "Detaljer",
+      "noIssues": "Ingen advarsler eller fejl."
     },
     "installs": {
       "title": "Installationer",
       "resources": "Ressourcer",
       "warnings": "Advarsler",
       "completedAt": "Afsluttet",
-      "autoUpdate": "Automatisk opdatering"
+      "autoUpdate": "Automatisk opdatering",
+      "installedBy": "Installeret af",
+      "viaApi": "API-token",
+      "attempts": "Forsøg",
+      "autoUpdateOn": "Til",
+      "autoUpdateOff": "Fra",
+      "retry": "Prøv installationen igen",
+      "resourcesTitle": "Installerede ressourcer",
+      "noResources": "Intet er oprettet endnu.",
+      "deletedResource": "Slettet ressource",
+      "viewOnly": "Kun visning",
+      "created": "Oprettet",
+      "reused": "Genbrugt",
+      "loadMore": "Indlæs mere",
+      "statusFilter": "Status",
+      "allStatuses": "Alle statusser",
+      "errors": {
+        "unknown": "Installationen mislykkedes. Prøv igen, eller kontakt support, hvis den bliver ved med at fejle.",
+        "templatePayloadIncompatible": "Denne skabelon er gemt i et nyere format, end denne server kan installere.",
+        "templateInstallationSourceMissing": "Skabelonen blev slettet, før installationen kørte.",
+        "templateCrossTenantInstall": "Denne skabelon er ikke tilgængelig for dit arbejdsområde.",
+        "templateCategoryPermissionDenied": "Du har ikke længere tilladelse til at installere alt i denne skabelon.",
+        "templateInvalidInboxBinding": "En valgt indbakke passer ikke til skabelonen.",
+        "templateInstallEnqueueFailed": "Installationen kunne ikke sættes i kø.",
+        "templateInstallFailed": "Installationen mislykkedes. Prøv igen.",
+        "templateInstallAbandoned": "Installationen blev ikke færdig i tide og er lukket.",
+        "templateInstallSuperseded": "En nyere installation af denne skabelon har erstattet denne.",
+        "workspaceOwnerBlocked": "Arbejdsområdets ejers konto er blokeret."
+      },
+      "uninstalledBy": "{by, select, publisher {Udgiveren afinstallerede denne skabelon.} installer {Denne skabelon blev afinstalleret fra dette arbejdsområde.} other {Denne skabelon blev afinstalleret.}}",
+      "uninstalledSummary": "{deleted} slettet, {kept} beholdt.",
+      "lastAttemptAt": "Seneste forsøg",
+      "installedAutomatically": "Installeret automatisk (white-label-standard)"
     },
     "form": {
       "contents": "Skabelonindhold",
@@ -6114,14 +7211,26 @@
       "allowDelete": "Tillad sletning efter installation",
       "publisherName": "Udgivernavn",
       "youtubeVideoId": "YouTube-video-id",
-      "youtubeVideoIdDescription": "Det 11-tegns id fra videoens URL, f.eks. \"dQw4w9WgXcQ\" i youtube.com/watch?v=dQw4w9WgXcQ",
+      "youtubeVideoIdDescription": "Det 11-tegns id fra videoens URL, f.eks. \"xxxxxxxxxxx\" i youtube.com/watch?v=xxxxxxxxxxx",
       "testLink": "Testlink",
       "imageUrl": "Forsidebillede",
       "installBehavior": "Installationsadfærd",
-      "createInstallFolder": "Installer i en dedikeret mappe",
+      "createInstallFolder": "Opret en mappe på den installerede konto, og installer ressourcer.",
       "createInstallFolderDescription": "Placer alle installerede ressourcer i én ny mappe opkaldt efter denne skabelon.",
-      "defaultAutoUpdate": "Markér installationer til opdatering som standard",
-      "defaultAutoUpdateDescription": "Nye installationer viser en besked om tilgængelig opdatering, hver gang du genudgiver denne skabelon."
+      "defaultAutoUpdate": "Opdater installerede skabeloner automatisk",
+      "defaultAutoUpdateDescription": "Hver gang du gemmer denne skabelon med ændret indhold, overskrives installationer, der følger automatisk opdatering, med det nye indhold (kopier, som installatøren har redigeret, sikkerhedskopieres først). Installatører kan slå det fra.",
+      "viewOnly": "Kun visning",
+      "viewOnlyAll": "Gør alle valgte skrivebeskyttede",
+      "includedAutomatically": {
+        "title": "Inkluderet automatisk",
+        "hint": "Taget med, fordi noget, du har valgt, har brug for det. Skrivebeskyttet.",
+        "rows": "{count, plural, one {# element mere} other {# elementer mere}}",
+        "kind": {
+          "folders": "Mapper",
+          "placeCategories": "Stedkategorier"
+        }
+      },
+      "viewOnlyCopyIncluded": "Noget, du har valgt (eller noget, det kræver), er installeret fra en skabelon med kun visning og kan ikke deles i en ny skabelon."
     },
     "categories": {
       "flows": "Flows",
@@ -6136,8 +7245,116 @@
       "keywords": "Nøgleord",
       "entryPointLinks": "Entry Point Links",
       "triggers": "Triggers",
-      "fbCommentAutomations": "Facebook-kommentarautomatiseringer",
-      "settings": "Indstillinger"
+      "fbCommentAutomations": "Kommentarautomatiseringer",
+      "settings": "Botfelter og gemte svar",
+      "sequences": "Sekvenser",
+      "aiMcpServers": "MCP-servere",
+      "aiFiles": "AI-vidensfiler",
+      "questionnaires": "Questionnaires",
+      "couponTopics": "Kuponemner",
+      "pipelines": "Pipelines"
+    },
+    "locked": {
+      "flowBanner": "Dette flow er installeret fra en skabelon med kun visning. Du kan se det, men ikke redigere det.",
+      "badge": "Kun visning",
+      "editorBanner": "Dette er installeret fra en skabelon med kun visning. Du kan se det, men ikke redigere det.",
+      "badgeHint": "Installeret fra en skabelon med kun visning"
+    },
+    "channels": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "instagramFacebook": "Instagram (Facebook login)",
+      "threads": "Threads",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "zalo": "Zalo",
+      "webchat": "Webchat",
+      "line": "LINE",
+      "email": "E-mail"
+    },
+    "uninstall": {
+      "title": "Afinstaller skabelon",
+      "description": "Skabelonen fjerner alt, den har oprettet i dette arbejdsområde, inklusive kopier, der er blevet redigeret. Delte tags, felter og mapper, elementer der fandtes før, og alt, du har bygget oven på en kopi, beholdes.",
+      "loading": "Tjekker, hvad der vil ske…",
+      "previewFailed": "Kunne ikke kontrollere, hvad en afinstallation ville gøre.",
+      "failed": "Skabelonen kunne ikke afinstalleres.",
+      "confirm": "Afinstaller",
+      "action": "Afinstaller",
+      "deleted": "{count, plural, one {# element bliver slettet} other {# elementer bliver slettet}}",
+      "deletedDone": "{count, plural, one {# element blev slettet} other {# elementer blev slettet}}",
+      "keptModified": "{count, plural, one {# redigeret eller ikke-verificeret kopi beholdes} other {# redigerede eller ikke-verificerede kopier beholdes}}",
+      "keptShared": "{count, plural, one {# delt tag eller felt beholdes} other {# delte tags og felter beholdes}}",
+      "keptByPolicy": "{count, plural, one {# andet element beholdes} other {# andre elementer beholdes}}",
+      "keptHasDependents": "{count, plural, one {# kopi beholdes, fordi noget stadig bruger den} other {# kopier beholdes, fordi noget stadig bruger dem}}",
+      "deletedModified": "{count, plural, one {# af dem blev redigeret af dig: de ændringer går tabt og kan ikke gendannes} other {# af dem blev redigeret af dig: de ændringer går tabt og kan ikke gendannes}}",
+      "keptLockedByOther": "{count, plural, one {# element beholdes, fordi en anden skabelon-installation stadig beskytter det} other {# elementer beholdes, fordi en anden skabelon-installation stadig beskytter dem}}",
+      "confirmCheckbox": "Jeg forstår, at dette sletter ovenstående elementer og ikke kan fortrydes",
+      "started": "Afinstallation startet",
+      "inProgress": "Afinstallerer…",
+      "retry": "Prøv afinstallationen igen",
+      "state": {
+        "pending": "Afinstallation i kø",
+        "running": "Afinstallerer…",
+        "partial": "Afinstallation ufuldstændig, prøv igen",
+        "failed": "Afinstallation mislykkedes, prøv igen",
+        "skipped": "Afinstallation sprunget over: arbejdsområdet er blokeret"
+      },
+      "deletedUnverified": "{count, plural, one {# af dem kan ikke kontrolleres for redigeringer: hvis du har ændret den, går ændringerne tabt} other {# af dem kan ikke kontrolleres for redigeringer: hvis du har ændret dem, går ændringerne tabt}}",
+      "cancelAction": "Annuller afinstallation",
+      "cancelled": "Afinstallation annulleret: de resterende elementer kan du bruge igen",
+      "blockedByReference": "{count, plural, one {# element blev ikke slettet, fordi noget, du har oprettet, stadig peger på det: fjern den henvisning, og prøv derefter afinstallationen igen} other {# elementer blev ikke slettet, fordi noget, du har oprettet, stadig peger på dem: fjern de henvisninger, og prøv derefter afinstallationen igen}}",
+      "keptPartlyRemoved": "{count, plural, one {# kopi blev beholdt efter en blokeret afinstallation; historik og data til dublet-beskyttelse er muligvis fjernet, så gennemgå den, før du slår den til} other {# kopier blev beholdt efter en blokeret afinstallation; historik og data til dublet-beskyttelse er muligvis fjernet, så gennemgå dem, før du slår dem til}}",
+      "keptInactiveForReview": "{count, plural, one {# kopi blev efterladt inaktiv: dens historik og data til dublet-beskyttelse blev fjernet, så gennemgå den, før du slår den til} other {# kopier blev efterladt inaktive: deres historik og data til dublet-beskyttelse blev fjernet, så gennemgå dem, før du slår dem til}}",
+      "keptHistoryRemoved": "{count, plural, one {# kopi blev beholdt, men dens historik blev fjernet (den har intet at slå til): gennemgå den, før du stoler på den} other {# kopier blev beholdt, men deres historik blev fjernet (de har intet at slå til): gennemgå dem, før du stoler på dem}}",
+      "cancelledPartial": "{count, plural, one {# element er allerede ved at blive slettet og bliver færdigt; resten blev givet tilbage} other {# elementer er allerede ved at blive slettet og bliver færdige; resten blev givet tilbage}}"
+    },
+    "warningCodes": {
+      "aiFileTooLarge": "Denne vidensfil er større end en skabeloninstallation kan kopiere, så den blev sprunget over.",
+      "aiFileUnavailable": "Denne vidensfil kunne ikke kopieres, så den blev sprunget over.",
+      "assigneeRequired": "Vælg, hvem dette trin tildeler samtalen til.",
+      "ambiguousSourceFieldToken": "Flere kildefelter har dette navn, så variabler, der bruger det, blev lasket uændrede.",
+      "backupTooLarge": "Et lokalt redigeret element var for stort til at blive sikkerhedskopieret, så det blev ikke overskrevet.",
+      "backupUnavailable": "Sikkerhedskopien af dette element er ikke længere tilgængelig.",
+      "botFieldRenamed": "Et botfelt med dette navn og en anden type findes allerede, så der blev oprettet et omdøbt felt.",
+      "categoryPermissionDenied": "Du har ikke tilladelse til denne kategori, så den blev sprunget over.",
+      "couponTopicExpired": "Dette kuponemne er allerede udløbet.",
+      "credentialRequired": "Tilføj legitimationsoplysningerne til dette element, før du bruger det.",
+      "custom": "Et refereret element blev ikke fundet i dette arbejdsområde, så linket blev fjernet.",
+      "customField": "Et refereret element blev ikke fundet i dette arbejdsområde, så linket blev fjernet.",
+      "customFieldRenamed": "Der findes allerede et felt med dette navn og en anden type, så der blev oprettet et omdøbt felt.",
+      "enqueueFailed": "Baggrundsbehandling kunne ikke sættes i kø for dette element.",
+      "flow": "Et refereret element blev ikke fundet i dette arbejdsområde, så linket blev fjernet.",
+      "flowInvalidStructure": "Flowets struktur er ugyldig, så det blev sprunget over.",
+      "flowNotPublished": "Flowet blev installeret som kladde og er ikke publiceret.",
+      "flowSkippedRequiredReference": "Flowet blev sprunget over, fordi en påkrævet reference ikke kunne løses.",
+      "folder": "Et refereret element blev ikke fundet i dette arbejdsområde, så linket blev fjernet.",
+      "inboxBindingRequired": "Vælg en indbakke til denne kanal; indtil da forbliver elementet inaktivt.",
+      "integration": "Et refereret element blev ikke fundet i dette arbejdsområde, så linket blev fjernet.",
+      "localModifiedOverwritten": "Et lokalt redigeret element blev overskrevet. En sikkerhedskopi blev gemt og kan gendannes.",
+      "name": "Der blev ikke fundet et ledigt navn til dette element, så det blev sprunget over.",
+      "noEmbeddingProvider": "Der er ikke konfigureret nogen embedding-udbyder i dette arbejdsområde, så vidensfiler blev sprunget over. Forbind OpenAI eller Gemini, og installer igen.",
+      "notUpdatable": "Denne type element opdateres endnu ikke automatisk.",
+      "pipeline": "Bruger en pipeline, der ikke længere findes.",
+      "pipelineField": "Bruger et pipelinefelt, der ikke længere findes.",
+      "pipelineStage": "Bruger en pipelinefase, der ikke længere findes.",
+      "postSelectionRequired": "Vælg opslaget igen: det oprindelige opslag kunne ikke overføres.",
+      "product": "Et refereret element blev ikke fundet i dette arbejdsområde, så linket blev fjernet.",
+      "productCategory": "Et refereret element blev ikke fundet i dette arbejdsområde, så linket blev fjernet.",
+      "questionImage": "Et billede kunne ikke kopieres.",
+      "quota": "En plangrænse blev nået, så elementet blev sprunget over.",
+      "referenceRemoved": "En reference, der ikke kunne løses, blev fjernet.",
+      "savedReply": "Et refereret element blev ikke fundet i dette arbejdsområde, så linket blev fjernet.",
+      "savedReplyImage": "Et billede kunne ikke kopieres.",
+      "tag": "Et refereret element blev ikke fundet i dette arbejdsområde, så linket blev fjernet.",
+      "unlisted": "Elementet blev ikke overført fuldt ud: {code}",
+      "workspaceMember": "Tildelt et medlem, der ikke er i dette workspace.",
+      "workspaceUnavailable": "Dette arbejdsområde er ikke længere tilgængeligt, så elementet blev sprunget over."
+    },
+    "tabs": {
+      "mine": "Mine skabeloner",
+      "installed": "Installeret",
+      "installedEmpty": "Ingen installerede skabeloner endnu. Skabeloner, du installerer fra et andet arbejdsområde, vises her."
     }
   },
   "qrCodeGenerator": {
@@ -6167,7 +7384,31 @@
       "supportOff": "Fra",
       "searchPlaceholder": "Søg efter navn, ejerens e-mail eller id",
       "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
-      "supportAccessible": "Accessible"
+      "supportAccessible": "Accessible",
+      "periodStart": "Period start",
+      "periodEnd": "Period end",
+      "requestedBy": "Requested by",
+      "workspaceId": "Workspace ID",
+      "language": "Language",
+      "planSnapshot": "Plan at deletion",
+      "ownerQuota": "Owner quota",
+      "usagePeriods": "Usage periods",
+      "deletedTitle": "Deleted workspaces",
+      "deletedDescription": "Purge evidence for deleted workspaces.",
+      "purgedAt": "Purged at",
+      "deletionRequestedAt": "Deletion requested at",
+      "scheduledDeletionAt": "Scheduled deletion at",
+      "evidence": "Evidence",
+      "usage": "Usage snapshot",
+      "members": "Members",
+      "notAvailable": "Not available",
+      "createButton": "Create workspace",
+      "createTitle": "Create workspace for an owner",
+      "createDescription": "Creates a workspace for the owner's email, adding any member emails you list. A new email gets a mailed temporary password.",
+      "ownerEmail": "Owner email",
+      "memberEmails": "Member emails",
+      "membersHint": "Every member gets the permissions selected below. New emails get a mailed temporary password.",
+      "createdSummary": "Workspace created for {ownerEmail} — {memberCount} member(s) added, {newAccountCount} new account(s) emailed a temporary password."
     },
     "admins": {
       "title": "Platform administrators",
@@ -6177,12 +7418,29 @@
       "addButton": "Add administrator",
       "role": "Role",
       "bootstrap": "Environment bootstrap administrator",
+      "roles": {
+        "superAdmin": "Super admin",
+        "support": "Support"
+      },
       "remove": "Remove administrator",
       "empty": "No platform administrators are configured.",
       "added": "Platform administrator added.",
       "removed": "Platform administrator removed.",
       "addError": "Could not add the platform administrator.",
       "removeError": "Could not remove the platform administrator."
+    },
+    "auditLogs": {
+      "title": "Platformens revisionslogge",
+      "description": "Revisionsaktivitet på tværs af alle arbejdsområder på denne platform."
+    },
+    "smtp": {
+      "title": "SMTP-indstillinger",
+      "description": "Platformens e-mailtransport. Lad dette felt stå tomt for fortsat at bruge miljøvariablerne SMTP_SERVER og SMTP_FROM.",
+      "usingEnv": "Ingen SMTP-indstillinger gemt — platformens e-mail bruger miljøvariablen SMTP_SERVER.",
+      "remove": "Fjern SMTP-indstillinger",
+      "errors": {
+        "passwordRequired": "Indtast SMTP-adgangskoden."
+      }
     }
   },
   "platformCredentials": {
@@ -6218,6 +7476,23 @@
     "description": "Markér en kanal for at forhindre arbejdsområder i denne tenant i at oprette den.",
     "hint": "Lad alle kanaler være umarkerede for at tillade alle kanaler.",
     "hiddenByPlatform": "Skjult af platformadministratoren — du kan ikke genaktivere denne kanal."
+  },
+  "platformDefaultTemplate": {
+    "title": "Standardskabelon",
+    "description": "Installér denne skabelon i hvert nyt arbejdsområde, der oprettes under denne white-label. Eksisterende arbejdsområder ændres ikke.",
+    "clearTitle": "Fjern standardskabelonen?",
+    "clearDescription": "Nye arbejdsområder får ikke længere automatisk en skabelon. Arbejdsområder, der allerede har den, beholder den.",
+    "status": {
+      "notConfigured": "Ikke angivet",
+      "ready": "Aktiv",
+      "templateUnavailable": "Skabelon ikke tilgængelig",
+      "shareDisabled": "Delingslink slået fra",
+      "keyRotated": "Nøglen er ugyldig"
+    },
+    "errors": {
+      "unavailable": "Skabelon-ID eller nøgle er ugyldig.",
+      "shareDisabled": "Slå skabelonens delingslink til først."
+    }
   },
   "platformEmailTemplates": {
     "title": "E-mail Skabeloner",
@@ -6261,6 +7536,7 @@
     }
   },
   "manageSidebar": {
+    "administrationGroup": "Administration",
     "platformGroup": "Platform",
     "toolsGroup": "Værktøjer",
     "saasGroup": "SaaS",
@@ -6301,14 +7577,39 @@
     "invalidTitle": "Dette link er ikke længere tilgængeligt.",
     "invalidDescription": "Dette skabelon-dellink er ugyldigt, deaktiveret eller udløbet.",
     "byPublisher": "Af {publisherName}",
-    "includes": "Denne skabelon indeholder",
     "videoTitle": "Skabelonens forhåndsvisningsvideo",
-    "tryItOut": "Prøv den",
-    "signInToInstall": "Log ind for at installere",
+    "preview": "Forhåndsvisning",
+    "aboutTemplate": "Om denne skabelon",
     "selectWorkspace": "Vælg et arbejdsområde",
     "install": "Installer",
     "installStarted": "Installation startet",
-    "noEligibleWorkspaces": "Du har ikke et arbejdsområde, der er egnet til at installere denne skabelon."
+    "noEligibleWorkspaces": "Du har ikke et arbejdsområde, der er egnet til at installere denne skabelon.",
+    "alreadyInstalled": "Denne skabelon er allerede installeret i dette arbejdsområde.",
+    "viewInstall": "Se installation",
+    "installAnotherCopy": "Installer endnu en kopi",
+    "inboxesTitle": "Indbakker",
+    "inboxesHint": "Denne skabelon er bygget omkring disse indbakker. Vælg, hvilke af dine egne indbakker der skal bruges; alt, der udelades, installeres slået fra.",
+    "noInbox": "Opret ikke forbindelse — installer slået fra",
+    "noInboxAvailable": "Ingen tilsluttet indbakke på denne kanal",
+    "updateExisting": "Opdater installeret kopi",
+    "updateStarted": "Opdatering startet",
+    "autoUpdateLabel": "Opdater automatisk, når skabelonen ændres",
+    "collisions": {
+      "title": "Hvad installationen vil gøre her",
+      "loading": "Tjekker dette arbejdsområde…",
+      "action": {
+        "create": "Oprettet",
+        "reuse": "Genbrugt",
+        "rename": "Omdøbt",
+        "bind": "Bundet",
+        "unbound": "Efterladt ubundet"
+      },
+      "detail": {
+        "rename": "“{name}” findes allerede med en anden type, så skabelonens version tilføjes under et nyt navn.",
+        "unbound": "“{name}” forbliver uden forbindelse, indtil du vælger en indbakke."
+      }
+    },
+    "createWorkspace": "Opret et nyt arbejdsområde"
   },
   "extensionsMe": {
     "actions": {
@@ -6337,7 +7638,144 @@
     "unknown": "Ukendt"
   },
   "orders": {
-    "title": "Ordrer"
+    "title": "Ordrer",
+    "empty": "Ingen ordrer endnu.",
+    "searchPlaceholder": "Søg efter navn, telefon, e-mail eller ordrenummer",
+    "orderNumber": "Ordre #{number}",
+    "print": "Udskriv",
+    "inbox": "Indbakke",
+    "statusUpdated": "Ordrestatus opdateret",
+    "statusUpdateError": "Ordrestatussen kunne ikke opdateres",
+    "updateStatusTitle": "Opdater ordrestatus",
+    "message": "Besked",
+    "messagePlaceholder": "Valgfri",
+    "messageDescription": "Sendes til kunden i deres samtale.",
+    "cancel": "Annuller",
+    "continue": "Fortsæt",
+    "delete": "Slet",
+    "deleted": "Ordre slettet",
+    "deleteError": "Ordren kunne ikke slettes",
+    "deleteTitle": "Slet ordre #{number}?",
+    "deleteDescription": "Ordren, dens varer og dens historik fjernes. Lager, den stadig holder, lægges tilbage.",
+    "columns": {
+      "name": "Navn",
+      "total": "Total",
+      "status": "Status",
+      "date": "Dato",
+      "rating": "Vurdering",
+      "quantity": "Antal",
+      "price": "Pris",
+      "vendor": "Leverandør",
+      "orderStatus": "Ordrestatus",
+      "payment": "Betaling"
+    },
+    "fields": {
+      "name": "Navn",
+      "email": "E-mail",
+      "phone": "Telefon",
+      "country": "Land",
+      "state": "Region",
+      "city": "By",
+      "street": "Vej",
+      "zip": "Postnummer",
+      "shippingType": "Levering",
+      "orderId": "Ordre-ID",
+      "date": "Dato",
+      "subtotal": "Subtotal",
+      "discount": "Rabat",
+      "deliveryCost": "Leveringsomkostninger",
+      "otherTaxes": "Andre afgifter",
+      "total": "Total",
+      "paymentMethod": "Betalingsmetode",
+      "status": "Status",
+      "note": "Note",
+      "cancelReason": "Årsag til annullering",
+      "rating": "Bedømmelse",
+      "ratingComment": "Kundens kommentar",
+      "coupon": "Rabatkode ({code})",
+      "paymentStatus": "Betalingsstatus",
+      "payments": "Onlinebetalinger"
+    },
+    "statuses": {
+      "pending": "Ikke behandlet",
+      "accepted": "Accepteret",
+      "shipped": "Afsendt",
+      "concluded": "Gennemført",
+      "cancelled": "Annulleret"
+    },
+    "transitions": {
+      "accepted": "Accepter",
+      "shipped": "Send",
+      "concluded": "Gennemfør",
+      "cancelled": "Annuller"
+    },
+    "paymentMethods": {
+      "cod": "Efterkrav",
+      "stripe": "Kort",
+      "paypal": "PayPal"
+    },
+    "shippingTypes": {
+      "delivery": "Levering til kunden",
+      "pickup": "Afhentning i butikken"
+    },
+    "description": "Ordrer afgivet af dine kunder.",
+    "ratingValue": "{rating}/5 ★",
+    "paymentStatuses": {
+      "unpaid": "Ubetalt",
+      "paid": "Betalt",
+      "refunded": "Refunderet"
+    },
+    "attemptStatuses": {
+      "open": "Venter",
+      "paid": "Betalt",
+      "expired": "Udløbet",
+      "refunded": "Refunderet"
+    },
+    "testPayment": "test",
+    "awaitingPaymentHint": "Venter på kundens onlinebetaling. Ordren kan accepteres, når den er betalt.",
+    "refundWarning": "{amount} bliver refunderet til kunden.",
+    "paymentStates": {
+      "paid": "Betalt",
+      "refunded": "Refunderet",
+      "awaitingPayment": "Venter på betaling",
+      "payOnDelivery": "Betaling ved levering",
+      "notPaid": "Ikke betalt"
+    },
+    "paymentUntil": "indtil {time}",
+    "paymentExpiredCancelReason": "Betalingen blev ikke modtaget i tide.",
+    "exportTruncated": "Eksporten blev begrænset til de første {count} ordrer",
+    "exportError": "Kunne ikke eksportere ordrerne",
+    "shopify": {
+      "syncOrders": "Synkroniser ordrer",
+      "orderColumn": "Ordre",
+      "customerColumn": "Kunde",
+      "paymentPending": "Afventer",
+      "paymentFilter": "Betaling",
+      "paymentFilterAll": "Betaling: Alle",
+      "fulfillmentFilter": "Opfyldelse",
+      "fulfillmentFilterAll": "Opfyldelse: Alle",
+      "fulfillmentStatuses": {
+        "fulfilled": "Opfyldt",
+        "unfulfilled": "Ikke opfyldt",
+        "partial": "Delvis"
+      },
+      "viewDetails": "Se detaljer",
+      "viewOnStore": "Se på {store}",
+      "detailsTitle": "Ordre {name}",
+      "placedOn": "Afgivet i {store}-butik • {date}",
+      "customerDetails": "Kundeoplysninger",
+      "shippingAddress": "Leveringsadresse",
+      "noShippingAddress": "Ingen leveringsadresse",
+      "tracking": "Sporing: {company} #{number}",
+      "lineItems": "Ordrelinjer",
+      "itemColumn": "Vare",
+      "skuColumn": "SKU",
+      "shipping": "Fragt",
+      "free": "Gratis",
+      "loading": "Indlæser...",
+      "loadError": "Kunne ikke indlæse ordredetaljerne",
+      "close": "Luk"
+    }
   },
   "products": {
     "title": "Produkter",
@@ -6394,7 +7832,8 @@
         "label": "Allow customers til purchase denne produkt når it's out af lager"
       },
       "vendor": {
-        "label": "Vendor"
+        "label": "Vendor",
+        "none": "Ingen"
       },
       "rank": {
         "label": "Rank"
@@ -6446,17 +7885,67 @@
       "variantsDescription": "Tilføj varianter hvis denne produkt comes i multiple versions, like different sizes eller colors",
       "metaCatalogId": {
         "label": "Meta Katalog ID"
+      },
+      "status": {
+        "label": "Status",
+        "values": {
+          "active": "Aktiv",
+          "draft": "Kladde",
+          "unlisted": "Ikke listet"
+        }
       }
     },
     "inventoryPolicy": {
       "dont_track": "Don't track inventory",
       "track": "Track inventory"
+    },
+    "shopify": {
+      "openStore": "Åbn {store}",
+      "syncProducts": "Synkroniser produkter",
+      "syncStarted": "Synkronisering startet",
+      "syncError": "Kunne ikke starte synkroniseringen",
+      "viewDetails": "Se detaljer",
+      "editOnStore": "Rediger på {store}",
+      "copyProductLink": "Kopiér produktlink",
+      "linkCopied": "Produktlink kopieret",
+      "noProductLink": "Dette produkt har intet butikslink",
+      "inStock": "{count} på lager",
+      "inStockWithVariants": "{count} på lager ({variants} varianter)",
+      "detailsTitle": "Produktdetaljer — {name}",
+      "detailsSubtitle": "Synkroniseret fra {store}-butikken {shop}",
+      "summaryLine": "Kategori: {category} • Samlet lager: {units} enheder fordelt på {variants, plural, one {# variant} other {# varianter}}",
+      "uncategorized": "Uden kategori",
+      "variantsTitle": "Varianter ({count})",
+      "variantColumn": "Variant",
+      "skuColumn": "SKU",
+      "priceColumn": "Pris",
+      "inventoryColumn": "Lager",
+      "defaultVariant": "Standard",
+      "loading": "Indlæser...",
+      "loadError": "Kunne ikke indlæse produktdetaljerne",
+      "close": "Luk"
     }
   },
   "tiktok": {
     "title": "TikTok",
     "description": "Forbind din TikTok konto til svar til direkte beskeder.",
     "refreshToken": "Refresh Token"
+  },
+  "contactAdReferrals": {
+    "title": "Annoncehistorik",
+    "empty": "Der er endnu ikke registreret annonceklik for denne kontakt."
+  },
+  "adsReferralStats": {
+    "title": "Kontakter pr. annonce",
+    "description": "Kontakter, som hver annonce har nået, og de konverteringer, der tilskrives dens klik. Klik tælles, siden sporingen begyndte.",
+    "ad": "Annonce",
+    "contacts": "Kontakter",
+    "firstTouch": "Første berøring",
+    "leads": "Leads",
+    "purchases": "Køb",
+    "revenue": "Omsætning",
+    "empty": "Ingen annonceklik i denne periode.",
+    "timeout": "Rapporten tog for lang tid. Vælg et kortere datointerval."
   },
   "coupons": {
     "title": "Kuponer",
@@ -6527,8 +8016,8 @@
     "loadError": "Unable til load produkt kategorier.",
     "all": "Alle produkter",
     "create": "Opret kategori",
-    "edit": "Omdøb kategori",
-    "name": "Kategori navn",
+    "edit": "Rediger",
+    "name": "Navn",
     "namePlaceholder": "e.g. Summer samling",
     "parent": "Parent kategori",
     "noParent": "Ingen (top level)",
@@ -6548,12 +8037,25 @@
     "columns": {
       "name": "Navn",
       "products": "Produkter",
-      "subcategories": "Subcategories"
+      "subcategories": "Subcategories",
+      "visible": "Synlig"
     },
     "expand": "Show subcategories",
     "collapse": "Hide subcategories",
     "productCount": "{count, plural, =0 {Ingen produkter} one {# produkt} other {# produkter}}",
-    "deleteChildrenWarning": "{count, plural, one {Dens # underkategori slettes også.} other {Dens # underkategorier slettes også.}}"
+    "deleteChildrenWarning": "{count, plural, one {Dens # underkategori slettes også.} other {Dens # underkategorier slettes også.}}",
+    "add": "Tilføj",
+    "dialogTitle": "Kategori",
+    "image": "Billede",
+    "continue": "Fortsæt",
+    "subcategories": "Underkategorier",
+    "subcategoriesOf": "Underkategorier til {name}",
+    "emptySub": "Ingen underkategorier endnu.",
+    "back": "Tilbage til kategorier",
+    "getId": "Hent ID",
+    "idCopied": "Kategori-ID {id} kopieret",
+    "idCopyError": "ID'et kunne ikke kopieres",
+    "description": "Gruppér dine produkter i kategorier og underkategorier."
   },
   "productImport": {
     "title": "Importér",
@@ -6758,6 +8260,7 @@
       "invalidTokenTitle": "Dette booking-link er ikke tilgængeligt.",
       "invalidTokenDescription": "Linket kan være ugyldigt eller udløbet. Bed om et nyt booking-link.",
       "staleSlot": "Dette tidspunkt er ikke længere ledigt. Vælg venligst et andet tidspunkt.",
+      "alreadyScheduled": "Denne kontakt har allerede en aftale på dette tidspunkt i denne kalender. Vælg venligst et andet tidspunkt.",
       "availabilityChanged": "Tilgængeligheden ændrede sig, mens du valgte tidspunkt. Vælg venligst igen.",
       "submitFailed": "Vi kunne ikke gennemføre denne anmodning. Prøv venligst igen."
     },
@@ -6847,6 +8350,15 @@
     },
     "messages": {
       "empty": "Ingen aftaler endnu."
+    },
+    "actions": {
+      "create": "Opret aftale"
+    },
+    "create": {
+      "title": "Opret aftale",
+      "description": "Vælg en kalender og et ledigt tidspunkt for at booke til denne kontakt.",
+      "noConversationHint": "Ingen samtale er åben, så kontakten modtager ikke en bekræftelse.",
+      "success": "Aftale oprettet."
     }
   },
   "appointmentManagement": {
@@ -8093,7 +9605,9 @@
       "customer_service": "Kundeservice",
       "escalation": "Eskalering",
       "marketing": "Marketing",
-      "utility": "Service"
+      "utility": "Service",
+      "calls": "Opkald",
+      "other": "Andet"
     },
     "pill": {
       "standby": "Standby ({owner})",
@@ -8103,14 +9617,18 @@
     "release": {
       "label": "Frigiv",
       "tooltip": "Frigiv samtalen, så andre apps kan svare",
-      "success": "Samtalen er frigivet"
+      "success": "Samtalen er frigivet",
+      "menu": "Frigiv eller overdrag"
     },
     "pass": {
-      "menuItem": "Send videre til eskalering",
-      "title": "Send videre til eskaleringspartneren?",
-      "description": "Vil du give denne samtale videre til din eskaleringspartner? Dine svar pauses, indtil tråden kommer tilbage.",
+      "menuItem": "Overdrag til en partner",
+      "title": "Overdrag til en partner?",
+      "description": "Vælg, hvem der overtager samtalen. Dine svar sættes på pause, indtil samtalen kommer tilbage.",
       "confirm": "Send videre",
-      "success": "Samtalen er sendt videre til eskaleringspartneren"
+      "success": "Samtalen er sendt videre til eskaleringspartneren",
+      "targetLabel": "Overdrag til",
+      "noteLabel": "Note til den modtagende partner",
+      "successTargeted": "Samtalen er overdraget til {role}"
     },
     "aiHandover": {
       "label": "BizAI",
@@ -8129,7 +9647,10 @@
       "notEscalation": "Kun eskaleringspartneren kan overtage. Routing konfigureres i Meta Business Suite.",
       "notPrimaryReceiver": "Denne app skal være sidens primære modtager for at kunne overtage. Indstil det i sidens indstillinger for Handover Protocol.",
       "learnMore": "Læs mere",
-      "dismiss": "Send alligevel"
+      "dismiss": "Send alligevel",
+      "takeOverTitle": "Overtag samtalen?",
+      "takeOverDescription": "Partneren holder op med at håndtere den, og du overtager kontrollen. Du kan efterlade en note til dem.",
+      "takeOverNoteLabel": "Note til den nuværende partner"
     },
     "divider": {
       "ownerHandling": "{owner} håndterer nu denne samtale",
@@ -8182,7 +9703,17 @@
       "adminOnly": "Kun workspace-administratorer kan ændre routing",
       "flowNotFound": "Det valgte flow blev ikke fundet eller er ikke aktivt",
       "integrationNotFound": "WhatsApp-nummer blev ikke fundet",
-      "messengerIntegrationNotFound": "Messenger-siden blev ikke fundet"
+      "messengerIntegrationNotFound": "Messenger-siden blev ikke fundet",
+      "rolesTitle": "Dine routingroller på dette nummer",
+      "rolesDescription": "Tildelt af virksomheden i Meta Business Suite.",
+      "rolesNone": "Du har ingen routingrolle på dette nummer.",
+      "rolesNeverChecked": "Ikke kontrolleret endnu.",
+      "rolesNotEnabled": "Samtalerouting er ikke aktiveret for dette nummer.",
+      "rolesStandbyOn": "Standby-adgang: til (du kan se samtaler, du ikke ejer)",
+      "rolesStandbyOff": "Standby-adgang: fra",
+      "rolesCheckedAt": "Kontrolleret {time}",
+      "rolesRefresh": "Kontrollér igen",
+      "rolesSyncFailed": "Kunne ikke hente routingrollerne fra Meta. Prøv igen."
     },
     "errors": {
       "unsupported": "Samtaleroutning er ikke tilgængelig på denne kanal",
@@ -8192,8 +9723,12 @@
     "step": {
       "action": "Handling",
       "release": "Frigiv samtalen",
-      "pass": "Send videre til eskaleringspartneren",
-      "helper": "Kun WhatsApp. På andre kanaler, eller når samtalen ikke ejes her, følger trinnet fejlstien."
+      "pass": "Overdrag til en partner",
+      "helper": "Kun WhatsApp. På andre kanaler, eller når samtalen ikke ejes her, følger trinnet fejlstien.",
+      "targetRole": "Overdrag til",
+      "targetRoleDefault": "Eskaleringspartner (standard)",
+      "metadata": "Overdragelsesnote",
+      "metadataHelper": "Valgfri. Sendes uændret til appen, der modtager samtalen. Variabler understøttes. Op til {max} tegn."
     },
     "template": {
       "sent": "Skabelon sendt"
@@ -8527,7 +10062,7 @@
       "too_many_components": "En skærm kan højst indeholde {max} komponenter.",
       "component_limit": "En skærm kan højst indeholde {max} × {type}.",
       "picker_conflict": "En skærm kan ikke have både et fotoupload og et dokumentupload.",
-      "picker_multiple_in_complete": "Sæt {property} til 1: WhatsApp sender kun én fil, når flowet afsluttes.",
+      "picker_multiple_in_complete": "WhatsApp sender højst {max} filer, når flowet afsluttes. Sænk det maksimale antal filer for filfelterne, der fører til denne skærm.",
       "footer_not_last": "Footeren skal være den sidste komponent på skærmen.",
       "footer_in_nested_branch": "En Footer kan kun sidde direkte i en Hvis-gren på første niveau.",
       "footer_missing_in_branch": "Hvis den ene gren har en Footer, skal den anden også have en.",
@@ -9033,6 +10568,720 @@
       "closed": "Lukket"
     }
   },
+  "productVendors": {
+    "title": "Leverandører",
+    "add": "Tilføj",
+    "edit": "Rediger",
+    "delete": "Slet",
+    "actions": "Handlinger",
+    "save": "Gem",
+    "cancel": "Annuller",
+    "moreOptions": "Flere valgmuligheder",
+    "empty": "Ingen leverandører endnu.",
+    "created": "Leverandør tilføjet",
+    "updated": "Leverandør opdateret",
+    "deleted": "Leverandør slettet",
+    "saveError": "Leverandøren kunne ikke gemmes",
+    "deleteError": "Leverandøren kunne ikke slettes",
+    "deleteTitle": "Slet {name}?",
+    "deleteDescription": "{count, plural, =0 {Ingen produkter bruger denne leverandør.} one {# produkt står uden leverandør.} other {# produkter står uden leverandør.}}",
+    "fields": {
+      "name": "Navn",
+      "shortDescription": "Kort beskrivelse",
+      "phone": "Telefon",
+      "storeAddress": "Butikkens adresse",
+      "image": "Billede",
+      "optional": "Valgfri",
+      "discountPercent": "Rabat (0-100 %)",
+      "minimumOrderValue": "Minimumsordreværdi",
+      "openHours": "Åbningstider",
+      "category": "Kategori",
+      "subcategory": "Underkategori",
+      "none": "Ingen"
+    },
+    "columns": {
+      "name": "Navn",
+      "products": "Produkter i alt",
+      "active": "Aktiv"
+    },
+    "description": "Sælgere og brands, som dine produkter hører til."
+  },
+  "ecommerceSettings": {
+    "save": "Gem",
+    "saved": "Indstillinger gemt",
+    "saveError": "Indstillingerne kunne ikke gemmes",
+    "rank": {
+      "label": "Rang",
+      "default": "Standard"
+    },
+    "tabs": {
+      "general": "Generelt",
+      "payments": "Betalinger",
+      "shipping": "Levering",
+      "checkout": "Kasse",
+      "shopify": "Shopify",
+      "woocommerce": "WooCommerce"
+    },
+    "general": {
+      "orderingAvailable": {
+        "label": "Bestilling er mulig",
+        "description": "Brug dette felt til at forhindre kunder i at afgive ordrer uden at ændre dine åbningstider. Åbningstiderne styrer også din tilgængelighed."
+      },
+      "webshopProductView": {
+        "label": "Produktvisning i webshop",
+        "description": "Styrer, hvordan produkter vises i din webshop.",
+        "options": {
+          "list": "Liste",
+          "listWithoutImage": "Liste uden billede",
+          "card": "Kort",
+          "cardSquare": "Kort med kvadratisk billede",
+          "image": "Billede",
+          "imageSquare": "Billede (kvadratisk)"
+        }
+      },
+      "openHours": {
+        "label": "Åbningstider",
+        "description": "De tidsrum, hvor dine kunder kan afgive en ordre."
+      },
+      "searchProducts": {
+        "label": "Søg efter produkter",
+        "description": "Lad kunder sende beskeder for at finde produkter."
+      },
+      "facebookPixelId": {
+        "label": "Facebook Pixel",
+        "description": "Spor konverteringer med FB-pixel og mål resultaterne af dine annoncer. Følgende hændelser spores: ADD_TO_CART, INITIATE_CHECKOUT, PURCHASE, VIEW_CONTENT"
+      },
+      "abandonedCart": {
+        "label": "Besked om forladt kurv",
+        "description": "Ventetiden, før der sendes en besked om forladt kurv, efter at brugeren har forladt din bot med en vare i kurven.",
+        "disabled": "Deaktiveret",
+        "afterMinutes": "Efter {count} minutter",
+        "afterHours": "{count, plural, one {Efter # time} other {Efter # timer}}"
+      },
+      "productButtons": {
+        "label": "Knapper ved produkter",
+        "description": "Denne indstilling styrer, hvilke knapper der vises ved produkter i din bot.",
+        "options": {
+          "addToCart": "Læg i kurv",
+          "share": "Del",
+          "similar": "Lignende",
+          "save": "Gem"
+        }
+      },
+      "productImageSize": {
+        "label": "Billedstørrelse for produkter",
+        "description": "Denne indstilling styrer størrelsen på produktbilleder i din bot",
+        "options": {
+          "bigSquare": "Stor (kvadratisk)",
+          "mediumRectangle": "Mellem (rektangel)"
+        }
+      },
+      "allowRateOrders": {
+        "label": "Tillad vurdering af ordrer",
+        "description": "Lad kunder vurdere en ordre og skrive en anmeldelse, hvis de ikke er tilfredse. Kun bot-administratorer kan se anmeldelserne"
+      },
+      "notifyOnCartStatusChange": {
+        "label": "Send notifikation, når kurvens status ændres",
+        "description": "Kunden modtager en notifikation, hver gang du ændrer ordrestatussen. Du kan ikke deaktivere notifikation ved annullering og afslutning af en ordre."
+      },
+      "abandonedCartFlow": {
+        "label": "Flow for forladt kurv",
+        "description": "Det flow, botten kører for kunden, når kurven har ligget så længe. Brug '{{shop_token}}' i knapperne for at åbne kurven. Triggere kan også bruge hændelsen \"Cart abandoned\".",
+        "none": "Intet flow (kun trigger-hændelse)"
+      },
+      "storeSource": {
+        "label": "Butikskilde",
+        "description": "Vælg den butikskilde, der bruges til at administrere dine produkter, lager og ordrer. Når Shopify / WooCommerce er valgt, administreres alle produkter og ordrer direkte fra din Shopify / WooCommerce-butik.",
+        "options": {
+          "chatbotx": "ChatbotX",
+          "shopify": "Shopify",
+          "woocommerce": "WooCommerce"
+        }
+      }
+    },
+    "payments": {
+      "currencyMismatch": "{count, plural, one {# produkt har} other {# produkter har}} pris i en anden valuta end {currency}. Ordrer opkræver deres pris i {currency}.",
+      "paymentMethods": {
+        "label": "Betalingsmetoder",
+        "description": "De betalingsmetoder, der er aktiveret på betalingssiden. Den første betalingsmetode på listen er valgt på betalingssiden.",
+        "options": {
+          "cod": "Efterkrav",
+          "stripe": "Kort",
+          "paypal": "PayPal"
+        },
+        "connectHint": "For at tilbyde {provider} skal du forbinde det under <link>Indstillinger → Integrationer</link>."
+      },
+      "currency": {
+        "label": "Valuta",
+        "description": "Det er den valuta, du angiver produktpriser i. Kunderne opkræves i denne valuta."
+      },
+      "currencyPosition": {
+        "label": "Valutaens placering",
+        "description": "Denne indstilling lader dig styre valutaens placering.",
+        "options": {
+          "left": "Venstre",
+          "leftSpace": "Venstre med mellemrum",
+          "right": "Højre",
+          "rightSpace": "Højre med mellemrum"
+        }
+      },
+      "currencySymbol": {
+        "label": "Valutasymbol",
+        "description": "Valutasymbolet vises foran priserne. Vil du have mellemrum mellem symbol og pris, så tilføj et mellemrum i slutningen af symbolet."
+      },
+      "serviceFeePercent": {
+        "label": "Andre gebyrer / Servicegebyrer (0 - 100 %)",
+        "description": "Andre gebyrer i forbindelse med salget."
+      }
+    },
+    "shipping": {
+      "shippingType": {
+        "label": "Leveringstype",
+        "description": "Denne indstilling lader dig styre, hvordan kunden får sin ordre.",
+        "options": {
+          "none": "Ingen",
+          "delivery": "Levering til kunden",
+          "pickup": "Afhentning i butikken",
+          "deliveryAndPickup": "Levering til kunden, afhentning i butikken"
+        }
+      },
+      "storeAddress": {
+        "label": "Butikkens adresse",
+        "description": "Denne adresse vises for kunden på betalingssiden, hvis du tillader afhentning i butikken."
+      },
+      "shippingCountries": {
+        "label": "Leveringslande",
+        "description": "De lande, du sender ordrer til."
+      },
+      "defaultShippingCountry": {
+        "label": "Standardleveringsland",
+        "description": "Det land, der vælges som standard på betalingssiden.",
+        "none": "Ingen"
+      },
+      "deliveryCost": {
+        "label": "Leveringsomkostninger",
+        "description": "En fast pris for at levere ordren til kundens adresse."
+      },
+      "defaultCountryNotShipped": "Vælg et af leveringslandene."
+    },
+    "checkout": {
+      "checkoutMode": {
+        "label": "Kasse",
+        "description": "Denne indstilling styrer, hvor dine kunder gennemfører deres ordrer. Hvis brugeren skal gennemføre ordren uden for din bot, fx på din hjemmeside, Amazon osv., så brug ikke vores standardbetalingsside.",
+        "options": {
+          "default": "Standardbetalingsside",
+          "externalLink": "Brugerdefineret ekstern betalingsside",
+          "flow": "Flow",
+          "productPage": "Besøg den eksterne produktside"
+        }
+      },
+      "checkoutLink": {
+        "label": "Link til betalingsside",
+        "description": "Den eksterne side, hvor kunder gennemfører deres ordrer."
+      },
+      "checkoutFlowId": {
+        "label": "Betalingsflow",
+        "description": "Det flow, der kører, når en kunde går til kassen.",
+        "placeholder": "Vælg et flow"
+      },
+      "minimumOrderValue": {
+        "label": "Minimumsordreværdi",
+        "description": "Den mindste værdi på en ordre, en kunde kan afgive. Betingelsen kontrolleres, når alle rabatter er anvendt."
+      },
+      "requiredFields": {
+        "requireName": {
+          "label": "Kræv køberens navn",
+          "description": "Købers navn indsamles under betalingen."
+        },
+        "requireEmail": {
+          "label": "Kræv e-mailadresse",
+          "description": "Købers e-mail indsamles under betalingen."
+        },
+        "requirePhone": {
+          "label": "Kræv telefonnummer",
+          "description": "Købers telefon indsamles under betalingen."
+        },
+        "requireState": {
+          "label": "Kræv region/provins",
+          "description": "Købers region indsamles under betalingen."
+        },
+        "requireZip": {
+          "label": "Kræv postnummer",
+          "description": "Købers postnummer indsamles under betalingen."
+        }
+      },
+      "orderConfirmationMode": {
+        "label": "Ordrebekræftelse",
+        "description": "Hvad kunden får i chatten, når ordren er afgivet. Standardbeskeden viser ordredetaljerne på arbejdsområdets sprog.",
+        "options": {
+          "default": "Standardbesked",
+          "flow": "Kør et flow",
+          "none": "Send intet"
+        }
+      },
+      "orderConfirmationFlowId": {
+        "label": "Flow til ordrebekræftelse",
+        "description": "Flowet, der sendes til kunden i stedet for standardbeskeden, når ordren er afgivet."
+      },
+      "shopifyCheckoutMethod": {
+        "label": "Betalingsmetode",
+        "description": "Vælg, om kunder gennemfører betalingen på din Shopify-betalingsside eller afgiver ordren direkte i webshoppen.",
+        "options": {
+          "webCheckout": "Shopify-webbetaling",
+          "inApp": "Betaling i appen"
+        }
+      },
+      "shopifyAutoApplyDiscounts": {
+        "label": "Anvend rabatkoder automatisk",
+        "description": "Lad kunder anvende Shopify-rabatkoder direkte på deres kurv, før de sendes videre til betaling."
+      },
+      "wooCommerceCheckoutMethod": {
+        "description": "Vælg, om kunderne betaler på din WooCommerce-butiks betalingsside eller afgiver ordren direkte i webshoppen (betaling ved levering).",
+        "options": {
+          "webCheckout": "WooCommerce-betalingsside",
+          "inApp": "Betaling i appen"
+        }
+      },
+      "wooCommerceAutoApplyDiscounts": {
+        "description": "Lad kunder anvende WooCommerce-rabatkoder direkte på deres kurv, før de sendes videre til betaling."
+      },
+      "inAppDeliveryCost": {
+        "label": "Leveringsomkostning",
+        "description": "Leveringsgebyr, der tilføjes til ordrer betalt i appen."
+      },
+      "wooCommerceDeliveryCost": {
+        "description": "Leveringsgebyr, der lægges til ordrer sendt til WooCommerce, ved begge betalingsmetoder."
+      }
+    },
+    "shopify": {
+      "shopDomain": {
+        "label": "Butiksdomæne",
+        "placeholder": "your-store.myshopify.com",
+        "hint": "Indtast .myshopify.com-domænet for din Shopify-butik.",
+        "connectedHint": "Domænet for din tilsluttede Shopify-butik."
+      },
+      "authKind": {
+        "label": "Godkendelse",
+        "description": "Sådan logger ChatbotX ind i din butik: med Admin API-adgangstokenet fra en tilpasset app eller med Client ID og secret fra en app oprettet i Shopify Dev Dashboard.",
+        "options": {
+          "token": "Admin API-adgangstoken",
+          "clientCredentials": "Client ID og secret (Dev Dashboard-app)"
+        }
+      },
+      "accessToken": {
+        "label": "Admin API-adgangstoken",
+        "hint": "Admin API-adgangstokenet fra din tilpassede app. Giv det disse scopes: {scopes}.",
+        "connectedHint": "Dit Shopify Admin API-adgangstoken gemmes krypteret."
+      },
+      "apiSecret": {
+        "label": "API-hemmelig nøgle",
+        "hint": "Appens hemmelige API-nøgle, som bruges til at verificere webhooks sendt af Shopify."
+      },
+      "clientId": {
+        "label": "Client ID",
+        "hint": "Client ID for din Dev Dashboard-app. Giv den disse scopes: {scopes}."
+      },
+      "clientSecret": {
+        "label": "Client Secret",
+        "hint": "Appens Client Secret. Den gemmes krypteret."
+      },
+      "webhookUrl": {
+        "label": "Webhook-URL",
+        "description": "Registreres automatisk hos Shopify ved tilslutning for at modtage opdateringer om produkter, lager og ordrer i realtid."
+      },
+      "syncNow": "Synkroniser nu",
+      "syncStarted": "Synkronisering startet",
+      "syncError": "Kunne ikke starte synkroniseringen",
+      "syncStatus": {
+        "label": "Synkroniseringsstatus",
+        "description": "Produkter, rabatkoder og ordrer spejles fra din Shopify-butik.",
+        "connectedTo": "Forbundet til {shopDomain}",
+        "lastSynced": "Sidst synkroniseret: {time} ({productCount} produkter, {orderCount} ordrer)",
+        "neverSynced": "Endnu ikke synkroniseret",
+        "noReason": "Tilslut din butik igen for at fortsætte.",
+        "invalid": "Forbindelsen er ikke længere gyldig: {reason}",
+        "state": {
+          "idle": "Inaktiv",
+          "queued": "Synkronisering i kø...",
+          "running": "Synkroniserer...",
+          "succeeded": "Seneste synkronisering lykkedes",
+          "failed": "Seneste synkronisering mislykkedes"
+        }
+      }
+    },
+    "woocommerce": {
+      "siteUrl": {
+        "label": "Butikkens URL",
+        "placeholder": "https://example.com",
+        "hint": "Din WordPress-sides adresse, der starter med https://. I WordPress må Settings → Permalinks ikke stå på Plain.",
+        "connectedHint": "Din forbundne WooCommerce-butik."
+      },
+      "consumerKey": {
+        "label": "Consumer key",
+        "hint": "Opret en nøgle under WooCommerce → Settings → Advanced → REST API → Add key med Read/Write-tilladelse, og indsæt dens Consumer key (ck_…).",
+        "connectedHint": "Starten af den forbundne nøgle. Nøgler gemmes krypteret."
+      },
+      "consumerSecret": {
+        "label": "Consumer secret",
+        "hint": "Nøglens Consumer secret (cs_…). Den gemmes krypteret."
+      },
+      "webhookUrl": {
+        "label": "Webhook-URL",
+        "description": "Registreres automatisk hos WooCommerce ved tilslutning for at modtage opdateringer om produkter, lager og ordrer i realtid."
+      },
+      "syncNow": "Synkroniser nu",
+      "syncStarted": "Synkronisering startet",
+      "syncError": "Kunne ikke starte synkroniseringen",
+      "syncStatus": {
+        "label": "Synkroniseringsstatus",
+        "description": "Produkter, rabatkoder og ordrer spejles fra din WooCommerce-butik.",
+        "connectedTo": "Forbundet til {store}",
+        "lastSynced": "Sidst synkroniseret: {time} ({productCount} produkter, {orderCount} ordrer)",
+        "neverSynced": "Endnu ikke synkroniseret",
+        "noReason": "Tilslut din butik igen for at fortsætte.",
+        "invalid": "Forbindelsen er ikke længere gyldig: {reason}",
+        "state": {
+          "idle": "Inaktiv",
+          "queued": "Synkronisering i kø...",
+          "running": "Synkroniserer...",
+          "succeeded": "Seneste synkronisering lykkedes",
+          "failed": "Seneste synkronisering mislykkedes"
+        }
+      }
+    }
+  },
+  "openHours": {
+    "alwaysOpen": "Altid åben",
+    "addNew": "Tilføj ny",
+    "dialogTitle": "Åbningstider",
+    "name": "Navn",
+    "namePlaceholder": "fx Hverdage",
+    "day": "Dag",
+    "from": "Åbner",
+    "to": "Lukker",
+    "add": "Tilføj tider",
+    "remove": "Fjern",
+    "cancel": "Annuller",
+    "continue": "Fortsæt",
+    "created": "Åbningstider oprettet",
+    "saveError": "Åbningstiderne kunne ikke gemmes",
+    "days": {
+      "0": "Søndag",
+      "1": "Mandag",
+      "2": "Tirsdag",
+      "3": "Onsdag",
+      "4": "Torsdag",
+      "5": "Fredag",
+      "6": "Lørdag"
+    },
+    "sameTimes": "Åbnings- og lukketid skal være forskellige."
+  },
+  "webshop": {
+    "metadataTitle": "Butik",
+    "metadataOrderTitle": "Din ordre",
+    "invalidLinkTitle": "Linket virker ikke",
+    "invalidLinkDescription": "Det er måske udløbet. Bed butikken om et nyt link i chatten.",
+    "previewBanner": "Forhåndsvisning: sådan ser kunderne siden. Der kan ikke bestilles fra en forhåndsvisning.",
+    "previewOrderingOff": "Forhåndsvisning: bestilling er slået fra",
+    "closed": {
+      "orderingUnavailable": "Butikken tager ikke imod bestillinger lige nu.",
+      "outsideOpenHours": "Butikken har lukket lige nu. Du kan stadig kigge."
+    },
+    "searchPlaceholder": "Søg efter produkter",
+    "categories": "Kategorier",
+    "allCategories": "Alle kategorier",
+    "vendors": "Leverandører",
+    "allVendors": "Alle leverandører",
+    "noProducts": "Ingen produkter fundet.",
+    "productNotFound": "Produktet er ikke længere tilgængeligt.",
+    "outOfStock": "Udsolgt",
+    "addToCart": "Læg i kurv",
+    "added": "Lagt i kurven",
+    "chooseOptions": "Vælg varianter",
+    "chooseOption": "Vælg {name}",
+    "variantUnavailable": "Denne kombination findes ikke.",
+    "buy": "Køb",
+    "share": "Del",
+    "linkCopied": "Kopieret",
+    "similar": "Lignende",
+    "save": "Gem",
+    "saved": "Gemt",
+    "showImage": "Vis billede {number}",
+    "increase": "Øg antal",
+    "decrease": "Reducer antal",
+    "remove": "Fjern",
+    "cart": "Kurv",
+    "cartEmpty": "Din kurv er tom.",
+    "continueShopping": "Shop videre",
+    "unavailableItems": "{count, plural, one {# vare kan ikke bestilles lige nu} other {# varer kan ikke bestilles lige nu}}",
+    "unavailableNotOrdered": "De kommer ikke med i ordren og bliver i kurven.",
+    "unavailable": "Ikke længere tilgængelig",
+    "unavailableHint": "Vælg varianterne igen",
+    "deletedProduct": "Slettet produkt",
+    "summary": {
+      "subtotal": "Subtotal",
+      "discount": "Rabat",
+      "delivery": "Levering",
+      "otherFees": "Andre gebyrer",
+      "total": "I alt",
+      "coupon": "Rabatkode ({code})",
+      "title": "Ordreoversigt",
+      "saved": "Du sparer {amount}",
+      "deliveryAtCheckout": "Beregnes ved betaling"
+    },
+    "belowMinimum": "Minimumsordren er {amount}.",
+    "checkOut": "Gå til kassen",
+    "contactDetails": "Dine oplysninger",
+    "optional": "(valgfrit)",
+    "fields": {
+      "name": "Navn",
+      "email": "E-mail",
+      "phone": "Telefon",
+      "country": "Land",
+      "state": "Region",
+      "city": "By",
+      "address1": "Adresse",
+      "address2": "Lejlighed, bygning osv.",
+      "zip": "Postnummer",
+      "note": "Besked til butikken"
+    },
+    "shipping": {
+      "title": "Levering",
+      "delivery": "Lever til min adresse",
+      "pickup": "Afhent i butikken",
+      "storeAddress": "Butikkens adresse: {address}"
+    },
+    "payment": {
+      "title": "Betaling",
+      "cod": "Betaling ved levering",
+      "stripe": "Kort",
+      "paypal": "PayPal",
+      "paid": "Betalt",
+      "refunded": "Refunderet",
+      "awaiting": "Venter på din betaling",
+      "payBefore": "Betal inden {time}, ellers annulleres ordren.",
+      "payNow": "Betal nu",
+      "onlineHint": "Du betaler på næste side. Din ordre reserveres i 30 minutter.",
+      "continueToPayment": "Fortsæt til betaling",
+      "notYet": "Vi har endnu ikke modtaget din betaling. Hvis du lige har betalt, så vent et øjeblik, og opdater siden.",
+      "leftPaymentPage": "Du forlod betalingssiden. Du kan stadig betale nedenfor.",
+      "paidThanks": "Betaling modtaget. Tak for din ordre!"
+    },
+    "placeOrder": "Afgiv bestilling",
+    "orderPlaced": "Tak! Din bestilling er afgivet. Vi sender dig opdateringer i chatten.",
+    "orderTitle": "Ordre #{number}",
+    "orderNotFound": "Ordren blev ikke fundet.",
+    "placedAt": "Afgivet {date}",
+    "status": {
+      "pending": "Ikke behandlet",
+      "accepted": "Behandles",
+      "shipped": "Afsendt",
+      "concluded": "Gennemført",
+      "cancelled": "Annulleret"
+    },
+    "rateTitle": "Bedøm din ordre",
+    "rateComment": "Fortæl butikken, hvad du synes (valgfrit)",
+    "rateSubmit": "Send bedømmelse",
+    "rateThanks": "Tak for din bedømmelse!",
+    "yourRating": "Din bedømmelse",
+    "ratingValue": "{rating} ud af 5 stjerner",
+    "previous": "Forrige",
+    "next": "Næste",
+    "pageOf": "Side {page} af {pageCount}",
+    "errors": {
+      "generic": "Noget gik galt. Prøv igen.",
+      "checkFields": "Tjek venligst felterne.",
+      "fieldRequired": "{field} skal udfyldes.",
+      "countryUnavailable": "Butikken leverer ikke til dette land.",
+      "invalidLink": "Linket virker ikke længere. Bed butikken om et nyt.",
+      "webshopPreviewOnly": "Dette er en forhåndsvisning. Der kan kun bestilles fra en kundes link.",
+      "rateLimited": "For mange forsøg. Vent lidt, og prøv igen.",
+      "orderingUnavailable": "Butikken tager ikke imod bestillinger lige nu.",
+      "orderBelowMinimum": "Minimumsordren er {minimum}.",
+      "orderBelowVendorMinimum": "Varer fra {vendorName} skal samlet være mindst {minimum}.",
+      "orderOutOfStock": "{productName} er udsolgt.",
+      "orderProductUnavailable": "Nogle varer kan ikke længere bestilles. Tjek din kurv.",
+      "orderEmpty": "Din kurv er tom.",
+      "orderShippingTypeUnavailable": "Denne leveringsmåde er ikke tilgængelig.",
+      "webshopRatingNotAllowed": "Denne ordre kan ikke bedømmes.",
+      "webshopCartFull": "Din kurv kan højst indeholde {maximum} forskellige varer.",
+      "notFound": "Produktet er ikke længere tilgængeligt.",
+      "discountCodeNotFound": "Rabatkoden findes ikke.",
+      "discountCodeInactive": "Rabatkoden er ikke aktiv.",
+      "discountCodeNotStarted": "Rabatkoden gælder ikke endnu.",
+      "discountCodeExpired": "Rabatkoden er udløbet.",
+      "discountCodeUsageLimitReached": "Rabatkoden er brugt op.",
+      "discountCodeAlreadyUsed": "Du har allerede brugt rabatkoden.",
+      "discountCodeNotEligible": "Rabatkoden gælder ikke for dig.",
+      "discountCodeNotApplicable": "Rabatkoden gælder ikke for indholdet af din kurv.",
+      "discountCodeMinimumAmount": "Rabatkoden kræver køb for mindst {minimum}. Tilføj {missing} mere.",
+      "discountCodeMinimumQuantity": "Rabatkoden kræver mindst {minimum} varer. Tilføj {missing} mere.",
+      "paymentMethodUnavailable": "Denne betalingsmetode er ikke tilgængelig.",
+      "paymentProviderNotConnected": "Denne betalingsmetode er ikke tilgængelig.",
+      "paymentProviderUnavailable": "Betalingstjenesten svarer ikke. Prøv igen om et øjeblik.",
+      "paymentProviderRejected": "Betalingen kunne ikke startes. Vælg en anden betalingsmetode.",
+      "paymentProviderCredentialsRejected": "Betalingen kunne ikke startes. Vælg en anden betalingsmetode.",
+      "paymentAmountUnsupported": "Denne ordre kan ikke betales online. Vælg en anden betalingsmetode.",
+      "orderPaymentNotOpen": "Denne ordre kan ikke længere betales online."
+    },
+    "discount": {
+      "label": "Rabatkode",
+      "placeholder": "Rabatkode",
+      "apply": "Anvend",
+      "applied": "Rabatkoden er anvendt",
+      "automatic": "anvendt automatisk",
+      "remove": "Fjern rabatkode",
+      "available": "Koder du kan bruge",
+      "freeShipping": "Gratis levering",
+      "bestChoice": "Bedste valg",
+      "expiresOn": "Udløber {date}",
+      "noExpiry": "Udløber ikke",
+      "inUse": "I brug",
+      "saves": "Sparer {amount}",
+      "showMore": "{count, plural, one {Vis # kode mere} other {Vis # koder mere}}",
+      "showLess": "Vis mindre",
+      "removeShort": "Fjern",
+      "expired": "Udløbet",
+      "usedUp": "Opbrugt",
+      "notEligible": "Ikke kvalificeret endnu"
+    },
+    "itemCount": "{count, plural, one {# vare} other {# varer}}",
+    "relatedProducts": "Du kan også lide",
+    "soldOut": "Udsolgt",
+    "sku": "SKU: {sku}",
+    "allProducts": "Alle produkter",
+    "noCategories": "Butikken har ingen kategorier endnu."
+  },
+  "webshopLinks": {
+    "preview": "Forhåndsvis",
+    "getLink": "Hent link",
+    "copied": "Link kopieret. Sæt det på en bot-knap: hver kontakt åbner sin egen butik.",
+    "error": "Linket kunne ikke hentes.",
+    "copyError": "Linket kunne ikke kopieres.",
+    "shopLink": {
+      "label": "Butiks-URL",
+      "hint": "Indsæt dette link i en knap i et flow, en broadcast eller en sekvens. Hver kontakt, der får det, åbner sin egen butik og kan bestille."
+    },
+    "productLink": {
+      "label": "Offentlig URL",
+      "hint": "Kopiér og indsæt linket i dit flow, din broadcast eller sekvens. Hver kontakt, der får det, åbner dette produkt og kan bestille."
+    },
+    "bar": "Del butikken: hent links til butikken, kurven og kategorierne til knapper i flows, broadcasts og sekvenser.",
+    "dialog": {
+      "title": "Butikslinks",
+      "description": "Indsæt et link i en knap i et flow, en broadcast eller en sekvens. Hver kontakt, der får det, åbner sin egen butik.",
+      "shopHint": "Åbner butikkens forside med alle dens produkter."
+    },
+    "cartLink": {
+      "label": "Kurv",
+      "hint": "Åbner kontaktens kurv, klar til betaling."
+    },
+    "categoriesLink": {
+      "label": "Kategorier",
+      "hint": "Åbner listen over butikkens kategorier."
+    }
+  },
+  "discountCodes": {
+    "title": "Rabatkoder",
+    "description": "Rabatkoder, kunderne bruger ved kassen, eller som gælder af sig selv.",
+    "add": "Tilføj",
+    "edit": "Rediger rabatkode",
+    "automatic": "Automatisk",
+    "never": "Aldrig",
+    "searchPlaceholder": "Søg koder…",
+    "saveError": "Rabatkoden kunne ikke gemmes.",
+    "created": "Rabatkode oprettet",
+    "updated": "Rabatkode gemt",
+    "deleted": "Rabatkode slettet",
+    "deleteError": "Rabatkoden kunne ikke slettes.",
+    "deleteTitle": "Slet rabatkoden {code}?",
+    "deleteDescription": "Kunderne kan ikke længere bruge den. Ordrer, der brugte den, beholder rabatten.",
+    "cancel": "Annuller",
+    "delete": "Slet",
+    "save": "Gem",
+    "columns": {
+      "name": "Navn",
+      "discount": "Rabat",
+      "used": "Brugt",
+      "end": "Slutter",
+      "active": "Aktiv"
+    },
+    "discountTypes": {
+      "percentage": "Procent",
+      "fixedAmount": "Fast beløb",
+      "freeShipping": "Gratis levering"
+    },
+    "appliesTo": {
+      "entireOrder": "Hele ordren",
+      "category": "Bestemt kategori",
+      "products": "Bestemte produkter"
+    },
+    "minimumTypes": {
+      "none": "Ingen",
+      "amount": "Minimumsbeløb for køb",
+      "quantity": "Minimum antal varer"
+    },
+    "eligibilities": {
+      "everyone": "Alle",
+      "specificCustomers": "Bestemte kunder"
+    },
+    "form": {
+      "discountCode": "Rabatkode",
+      "code": "Kode",
+      "generate": "Generér",
+      "autoApply": "Anvend automatisk denne rabatkode på kurve",
+      "autoApplyHint": "Kurve får den, uden at kunden skriver den. Ved flere automatiske koder vinder den med størst rabat.",
+      "typedHint": "Kunderne indtaster denne rabatkode ved kassen.",
+      "options": "Indstillinger",
+      "discountType": "Rabattype",
+      "discountValuePercent": "Rabatværdi (%)",
+      "discountValueAmount": "Rabatværdi ({currency})",
+      "freeShippingHint": "Fjerner leveringsprisen på ordrer, der leveres til kunden.",
+      "appliesTo": "Gælder for",
+      "category": "Kategori",
+      "products": "Produkter",
+      "productsPlaceholder": "Vælg produkter",
+      "minimumRequirement": "Minimumskrav",
+      "minimumAmount": "Minimumsbeløb ({currency})",
+      "minimumQuantity": "Minimum antal varer",
+      "usageLimits": "Brugsgrænser",
+      "limitTotal": "Begræns hvor mange gange rabatten kan bruges i alt",
+      "usedSoFar": "{count, plural, one {Brugt # gang indtil nu} other {Brugt # gange indtil nu}}",
+      "oncePerCustomer": "Én gang pr. kunde",
+      "customerEligibility": "Kunder, der kan bruge den",
+      "specificCustomersHint": "Kun kontakter, der matcher filteret nedenfor, når de bestiller.",
+      "activeDates": "Gyldighedsperiode",
+      "startDate": "Startdato",
+      "endDate": "Slutdato",
+      "isActive": "Aktiv"
+    },
+    "rules": {
+      "codeCharacters": "Brug kun bogstaver uden accenter, tal, - og _.",
+      "usageBelowUsed": "Koden er allerede brugt {count} gange; grænsen kan ikke være lavere.",
+      "customerConditionRequired": "Tilføj mindst én betingelse.",
+      "endAfterStart": "Slutdatoen skal ligge efter startdatoen."
+    }
+  },
+  "ecommerceAnalytics": {
+    "title": "Analyse",
+    "lifetime": "Samlet",
+    "sales": "Salg",
+    "orders": "Ordrer",
+    "products": "Produkter",
+    "salesByDate": "Salg pr. dato",
+    "ordersByDate": "Ordrer pr. dato",
+    "topProducts": "Topprodukter",
+    "topVendors": "Topleverandører",
+    "columns": {
+      "name": "Navn",
+      "sales": "Salg"
+    },
+    "noData": "Ingen data i perioden",
+    "refresh": "Opdater",
+    "change": "{value} %",
+    "noPrevious": "ny",
+    "otherCurrencyOrders": "{count} ordrer i andre valutaer er ikke medregnet i disse tal"
+  },
   "responseSla": {
     "label": "Svar-SLA",
     "title": "Svar-SLA",
@@ -9052,5 +11301,611 @@
     "metHelp": "Andel af svar med SLA der overholdt den.",
     "eligibleCount": "{count} svar havde en SLA",
     "enable": "Aktivér svar-SLA"
+  },
+  "stripe": {
+    "title": "Stripe",
+    "setting": {
+      "label": "Stripe",
+      "description": "Modtag kortbetalinger i din webshop med din egen Stripe-konto. Pengene går direkte til din Stripe-konto."
+    },
+    "connectWithStripe": "Forbind med Stripe",
+    "connectWithKey": "Brug hemmelig nøgle",
+    "connectionType": {
+      "oauth": "Stripe Connect",
+      "apiKey": "Hemmelig nøgle"
+    },
+    "fields": {
+      "secretKey": "Hemmelig nøgle",
+      "secretKeyHint": "Starter med sk_live_ (eller sk_test_ til testtilstand). En begrænset nøgle (rk_…) virker også, hvis den kan læse kontoen og skrive Checkout Sessions, Refunds og Webhook Endpoints."
+    },
+    "dialog": {
+      "description": "Kopiér din hemmelige nøgle fra <link>Stripe Dashboard → Developers → API keys</link> og indsæt den her. Vi tjekker den, opsætter betalingsnotifikationer på din Stripe-konto og gemmer nøglen krypteret."
+    },
+    "testMode": "Testtilstand",
+    "liveMode": "Live",
+    "chargesDisabled": "Din Stripe-konto kan ikke modtage betalinger endnu. Gør opsætningen færdig i dit Stripe-dashboard.",
+    "outcome": {
+      "expired": "Linket til Stripe-forbindelsen er udløbet. Prøv igen.",
+      "access_denied": "Forbindelsen blev ikke tilladt på Stripe.",
+      "stripeAccountAlreadyConnected": "Denne Stripe-konto er allerede forbundet til et andet workspace.",
+      "stripePlatformNotConfigured": "Stripe er ikke sat op på denne platform endnu.",
+      "superAdminRequired": "Kun en workspace-administrator kan forbinde Stripe.",
+      "signInRequired": "Log ind, og prøv igen.",
+      "paymentProviderCredentialsRejected": "Stripe afviste forbindelsen. Prøv igen.",
+      "startedByAnotherUser": "Kun den person, der trykkede på Forbind, kan fuldføre det. Tryk på Forbind igen.",
+      "paymentProviderInUse": "Åbne ordrer har stadig brug for denne Stripe-konto. Fuldfør eller annuller dem først."
+    },
+    "platform": {
+      "connectClientId": "Connect client ID",
+      "connectClientIdHint": "Fra Stripe Dashboard → Settings → Connect → Onboarding options → OAuth (starter med ca_). Butikker forbinder deres egen Stripe-konto via den.",
+      "redirectUri": "Redirect URI",
+      "webhookReady": "Butikker kan forbinde Stripe, og deres betalinger bekræftes automatisk.",
+      "webhookMissing": "Betalings-webhooken mangler. Gem disse indstillinger igen for at oprette den.",
+      "connectMissing": "Tilføj Connect client ID, så butikker kan forbinde deres Stripe-konto."
+    }
+  },
+  "paypal": {
+    "title": "PayPal",
+    "setting": {
+      "label": "PayPal",
+      "description": "Modtag PayPal-betalinger i din webshop med din egen PayPal-konto."
+    },
+    "sandbox": "Sandbox",
+    "liveMode": "Live",
+    "fields": {
+      "clientId": "Client ID",
+      "clientSecret": "Secret"
+    },
+    "dialog": {
+      "description": "Opret en REST-app i <link>PayPal Developer → Apps & Credentials</link>, og indsæt dens Client ID og Secret. Live eller sandbox registreres ud fra nøglerne."
+    }
+  },
+  "pipelines": {
+    "title": "Pipelines",
+    "retry": "Prøv igen",
+    "save": "Gem",
+    "saveFailed": "Dine ændringer kunne ikke gemmes. Prøv igen.",
+    "list": {
+      "name": "Navn",
+      "type": "Type",
+      "items": "Elementer",
+      "add": "Tilføj pipeline",
+      "empty": "Ingen pipelines endnu",
+      "emptyHint": "Opret en pipeline for at følge salg, tickets eller en hvilken som helst proces som kort på en tavle.",
+      "error": "Kunne ikke indlæse pipelines",
+      "contacts": "Kontakter",
+      "addShort": "Tilføj",
+      "description": "Følg handler, sager eller enhver proces som kort, der flytter sig gennem faser."
+    },
+    "types": {
+      "opportunity": {
+        "label": "Salgsmuligheder",
+        "description": "Følg salgsaftaler gennem faser. Første fase: Lead."
+      },
+      "ticket": {
+        "label": "Supportcenter",
+        "description": "Håndter supportanmodninger. Første fase: Ny sag."
+      },
+      "custom": {
+        "label": "Brugerdefineret tavle",
+        "description": "Byg din egen proces. Første fase: Modtagelse."
+      }
+    },
+    "noun": {
+      "opportunity": {
+        "one": "Salgsmulighed",
+        "many": "Salgsmuligheder",
+        "add": "Tilføj salgsmulighed"
+      },
+      "ticket": {
+        "one": "Ticket",
+        "many": "Tickets",
+        "add": "Tilføj ticket"
+      },
+      "card": {
+        "one": "Kort",
+        "many": "Kort",
+        "add": "Tilføj kort"
+      }
+    },
+    "create": {
+      "title": "Ny pipeline",
+      "description": "Vælg, hvad tavlen skal bruges til, og giv den et navn.",
+      "type": "Type",
+      "name": "Pipelinenavn",
+      "namePlaceholder": "f.eks. Salg",
+      "submit": "Opret pipeline",
+      "success": "Pipeline oprettet"
+    },
+    "menu": {
+      "open": "Pipelinehandlinger",
+      "rename": "Omdøb",
+      "duplicate": "Dupliker",
+      "delete": "Slet"
+    },
+    "rename": {
+      "title": "Omdøb pipeline",
+      "submit": "Omdøb",
+      "success": "Pipeline omdøbt"
+    },
+    "duplicate": {
+      "success": "Pipeline duplikeret"
+    },
+    "delete": {
+      "title": "Slet pipeline",
+      "description": "{name} og alle dens faser og elementer bliver slettet. Dette kan ikke fortrydes.",
+      "success": "Pipeline slettet"
+    },
+    "board": {
+      "title": "Tavle",
+      "count": "{count, plural, one {# element} other {# elementer}}",
+      "total": "I alt {value}",
+      "search": "Søg efter titel, nummer eller kontakt",
+      "sort": "Sortér",
+      "filter": "Filtrér",
+      "analytics": "Analyse",
+      "settings": "Indstillinger",
+      "emptyStage": "Træk og slip et kort her for at flytte det til denne fase.",
+      "loadMore": "Indlæs flere",
+      "loadMoreFailed": "Kunne ikke indlæse flere elementer",
+      "error": "Kunne ikke indlæse tavlen",
+      "processing": "Behandler denne fase…",
+      "moveFailed": "Kunne ikke flytte kortet",
+      "sortOptions": {
+        "createdAtDesc": "Oprettelsesdato (Ny til Gammel)",
+        "createdAtAsc": "Oprettelsesdato (Gammel til Ny)",
+        "updatedAtDesc": "Opdateringsdato (Ny til Gammel)",
+        "valueDesc": "Mulighedens værdi (Høj til Lav)",
+        "valueAsc": "Mulighedens værdi (Lav til Høj)",
+        "dueDateAsc": "Forfaldsdato (Tidligst til Senest)",
+        "dueDateDesc": "Forfaldsdato (Senest til Tidligst)",
+        "priorityDesc": "Prioritet (Høj til Lav)",
+        "priorityAsc": "Prioritet (Lav til Høj)",
+        "updatedAtAsc": "Opdateringsdato (Gammel til Ny)"
+      },
+      "searchAction": "Søg",
+      "closeSearch": "Luk søgning",
+      "cardMenu": "Korthandlinger",
+      "moveTo": "Flyt til",
+      "unknownContact": "Ukendt kontakt",
+      "staleError": "Tavlen kunne ikke opdateres. Det, du ser, kan være forældet."
+    },
+    "stage": {
+      "add": "Tilføj fase",
+      "name": "Fasenavn",
+      "namePlaceholder": "Fasenavn",
+      "menu": "Fasehandlinger",
+      "edit": "Rediger fase",
+      "delete": "Slet fase",
+      "deleteTitle": "Slet fase",
+      "deleteDescription": "{name} og alle elementer i den bliver slettet. Denne handling kan ikke fortrydes.",
+      "moveItemsTo": "Flyt elementer til",
+      "deleteItemsToo": "Slet også elementerne",
+      "description": "Beskrivelse",
+      "textColor": "Tekstfarve",
+      "backgroundColor": "Baggrundsfarve",
+      "saved": "Fase gemt",
+      "deleted": "Fase slettet",
+      "queued": "Fasen ryddes i baggrunden.",
+      "resetColor": "Standard",
+      "deleteMoveDescription": "{name} bliver slettet. Dens elementer flyttes til {target}.",
+      "rename": "Omdøb",
+      "settings": "Indstillinger",
+      "general": "Generelt",
+      "color": "Farve",
+      "cancel": "Annuller"
+    },
+    "priority": {
+      "low": "Lav",
+      "medium": "Mellem",
+      "high": "Høj"
+    },
+    "item": {
+      "loading": "Indlæser…",
+      "error": "Kunne ikke indlæse dette element",
+      "title": "Titel",
+      "status": "Status",
+      "stage": "Fase",
+      "priority": "Prioritet",
+      "value": "Værdi",
+      "dueDate": "Forfaldsdato",
+      "assignees": "Tildelte administratorer",
+      "description": "Beskrivelse",
+      "attachments": "Vedhæftede filer",
+      "attach": "Vedhæft filer",
+      "noAttachments": "Ingen vedhæftede filer",
+      "removeAttachment": "Fjern vedhæftet fil",
+      "removeAttachmentDescription": "Filen fjernes fra dette element, men bliver i mediebiblioteket.",
+      "comments": "Kommentarer",
+      "addComment": "Tilføj kommentar",
+      "commentPlaceholder": "Skriv en kommentar…",
+      "noComments": "Ingen kommentarer endnu",
+      "deleteComment": "Slet kommentar",
+      "deleteCommentDescription": "Denne kommentar slettes. Det kan ikke fortrydes.",
+      "activity": "Aktivitet",
+      "noActivity": "Ingen aktivitet endnu",
+      "transfer": "Overfør til pipeline",
+      "transferTitle": "Overfør til en anden pipeline",
+      "transferDescription": "Elementet beholder sit nummer og oprettelsesdato. Brugerdefinerede felter overføres, hvis den anden pipeline har et felt med samme referencenavn og type.",
+      "destinationPipeline": "Destinationspipeline",
+      "destinationStage": "Destinationsfase",
+      "firstStage": "Første fase",
+      "choose": "Vælg…",
+      "transferred": "Element overført",
+      "delete": "Slet",
+      "deleteDescription": "Et element bliver slettet. Dette kan ikke fortrydes.",
+      "deleted": "Element slettet",
+      "number": "Nummer",
+      "createdBy": "Oprettet af",
+      "createdByValue": "{name} den {date}",
+      "inbox": "Indbakke",
+      "moreActions": "Flere handlinger",
+      "noDescription": "Ingen beskrivelse",
+      "yes": "Ja",
+      "no": "Nej",
+      "assigneesMembers": "Agenter",
+      "assigneesTeams": "Indbakke-teams",
+      "assigneesSearch": "Søg efter administratorer eller teams…",
+      "assigneesEmpty": "Ingen resultater",
+      "assigneesPlaceholder": "Vælg administratorer eller teams",
+      "olderComments": "Vis ældre kommentarer",
+      "olderActivity": "Vis ældre aktivitet",
+      "activityFilter": "Filtrer",
+      "activityFilterCount": "{count, plural, one {# filter} other {# filtre}}",
+      "activityFilterClear": "Vis alle",
+      "noFilteredActivity": "Ingen aktivitet matcher dette filter.",
+      "activityGroup": {
+        "lifecycle": "Oprettet og overført",
+        "stage": "Fase",
+        "status": "Status",
+        "value": "Værdi",
+        "priority": "Prioritet",
+        "dueDate": "Forfaldsdato",
+        "details": "Titel, beskrivelse og felter",
+        "assignees": "Ansvarlige",
+        "comments": "Kommentarer",
+        "attachments": "Vedhæftninger"
+      }
+    },
+    "activity": {
+      "created": "Oprettet",
+      "stageChanged": "Flyttet til en anden fase",
+      "statusChanged": "Status ændret",
+      "valueChanged": "Værdi ændret",
+      "priorityChanged": "Prioritet ændret",
+      "dueDateChanged": "Forfaldsdato ændret",
+      "titleChanged": "Titel ændret",
+      "descriptionChanged": "Beskrivelse ændret",
+      "fieldValuesChanged": "Brugerdefinerede felter ændret",
+      "assigneesChanged": "Tildelte ændret",
+      "attachmentAdded": "Vedhæftet fil tilføjet",
+      "attachmentRemoved": "Vedhæftet fil fjernet",
+      "commentAdded": "Kommentar tilføjet",
+      "commentDeleted": "Kommentar slettet",
+      "transferred": "Overført fra en anden pipeline",
+      "deleted": "Slettet"
+    },
+    "activityActor": {
+      "flow": "Flow",
+      "trigger": "Trigger",
+      "workspaceToken": "API",
+      "system": "System",
+      "formerMember": "Tidligere medlem"
+    },
+    "add": {
+      "changeContact": "Vælg en anden kontakt",
+      "success": "Oprettet",
+      "stepContact": "Vælg en kontakt",
+      "stepDetails": "Detaljer for {noun}",
+      "contact": "Kontakt",
+      "addNewContact": "Tilføj ny"
+    },
+    "filter": {
+      "title": "Filter",
+      "status": "Status",
+      "statusLabels": {
+        "open": "Åben",
+        "won": "Vundet",
+        "lost": "Tabt"
+      },
+      "priority": "Prioritet",
+      "assignee": "Tildelte administratorer",
+      "value": "Værdi af {noun}",
+      "min": "Min",
+      "max": "Maks",
+      "dueDate": "Forfaldsdato",
+      "createdAt": "Oprettelsesdato",
+      "from": "Fra",
+      "to": "Til",
+      "clear": "Ryd filtre",
+      "apply": "Anvend",
+      "back": "Tilbage",
+      "updatedAt": "Opdateringsdato",
+      "resolvedOn": "{noun} afsluttet den",
+      "statusChangedOn": "Status ændret den",
+      "stageChangedOn": "Fase ændret den",
+      "lastCommentOn": "Seneste kommentar den",
+      "customFields": "Brugerdefinerede felter",
+      "any": "Alle",
+      "yes": "Ja",
+      "no": "Nej",
+      "notResolvedOn": "{noun} ikke afsluttet den",
+      "equal": "Lig med",
+      "different": "Forskellig fra",
+      "reset": "Nulstil",
+      "presets": {
+        "thisWeek": "Denne uge",
+        "lastWeek": "Sidste uge",
+        "last14": "Seneste 14 dage",
+        "thisYear": "I år",
+        "lastYear": "Sidste år",
+        "tomorrow": "I morgen",
+        "next7": "Om 7 dage",
+        "next14": "Om 14 dage",
+        "next30": "Om 30 dage",
+        "allTime": "Alle tider"
+      },
+      "pickDate": "Vælg en dato",
+      "activity": "Aktivitet",
+      "activityKinds": "Type ændring",
+      "activityActors": "Udført af",
+      "activityWhen": "Hvornår",
+      "activityAutomation": "Automatisering"
+    },
+    "analytics": {
+      "title": "Analyse",
+      "loading": "Indlæser statistik…",
+      "error": "Kunne ikke indlæse statistik",
+      "created": "Oprettet",
+      "won": "Vundet",
+      "wonValue": "Vundet værdi",
+      "lost": "Tabt",
+      "lostValue": "Tabt værdi",
+      "admin": "Administrator",
+      "automation": "Automatisering",
+      "back": "Tilbage",
+      "admins": "Administratorer",
+      "chart": {
+        "created": "Nye pr. dag",
+        "won": "Vundet pr. dag",
+        "lost": "Tabt pr. dag",
+        "wonValue": "Vundet værdi pr. dag",
+        "lostValue": "Tabt værdi pr. dag"
+      },
+      "pie": {
+        "created": "Oprettet pr. admin",
+        "won": "Vundet pr. admin",
+        "lost": "Tabt pr. admin",
+        "other": "Andre",
+        "empty": "Ingen data"
+      }
+    },
+    "settings": {
+      "title": "Pipelineindstillinger",
+      "general": "Generelt",
+      "fields": "Brugerdefinerede felter",
+      "display": "Visning",
+      "permissions": "Tilladelser",
+      "saved": "Indstillinger gemt",
+      "referenceName": "Referencenavn",
+      "referenceNameHint": "Bruges i variablerne pipelines.reference_name.stage_name. Hvis du ændrer det, holder beskeder med det gamle navn op med at virke.",
+      "referenceNameFormat": "Brug små bogstaver, tal og understreger, og start med et bogstav (f.eks. close_date).",
+      "currency": "Valuta",
+      "currencyFollowCountry": "Arbejdsområdets land · {country} · {currency}",
+      "currencyFollowNoCountry": "Intet land for arbejdsområdet · {currency}",
+      "currencyHint": "Følger arbejdsområdets målland (Indstillinger → Generelt) og opdateres, når det ændres. Er der intet land, bruges USD. Værdier omregnes aldrig.",
+      "assignContact": "Tildel kontakten til en administrator, når et element tildeles",
+      "limit": "Begræns åbne elementer pr. kontakt",
+      "statusLabels": "Statusetiketter",
+      "status": {
+        "open": "Åben",
+        "won": "Vundet",
+        "lost": "Tabt"
+      },
+      "features": "Synlige funktioner",
+      "cardElements": "Kortelementer",
+      "card": {
+        "contactPhone": "Kontaktens telefon",
+        "contactEmail": "Kontaktens e-mail",
+        "createdAt": "Oprettelsesdato",
+        "updatedAt": "Opdateringsdato",
+        "assignees": "Tildelte administratorer",
+        "comments": "Kommentarer",
+        "cardId": "Elementnummer",
+        "priority": "Prioritet",
+        "value": "Værdi",
+        "dueDate": "Forfaldsdato"
+      },
+      "noFields": "Ingen brugerdefinerede felter endnu",
+      "fieldName": "Feltnavn",
+      "fieldReference": "Referencenavn",
+      "fieldType": "Felttype",
+      "required": "Påkrævet",
+      "requiredShort": "påkrævet",
+      "addField": "Tilføj felt",
+      "fieldAdded": "Felt tilføjet",
+      "deleteField": "Slet felt",
+      "permissionsHint": "Workspace-ejere og administratorer har altid fuld adgang. Giv andre medlemmer tilladelse til det, de må i denne pipeline.",
+      "revoke": "Tilbagekald",
+      "permission": {
+        "view": "Vis",
+        "edit": "Rediger",
+        "delete": "Slet",
+        "settings": "Indstillinger"
+      },
+      "noMembers": "Ingen andre medlemmer at konfigurere",
+      "confirmDeleteField": "Vil du slette dette felt og alle dets værdier på alle elementer?",
+      "adminPermissions": "Administratortilladelser",
+      "cardVisibleElements": "Synlige kortelementer"
+    },
+    "panel": {
+      "empty": "Ingen pipeline-elementer for denne kontakt",
+      "error": "Kunne ikke indlæse pipeline-elementer",
+      "choosePipeline": "Vælg en pipeline",
+      "add": "Tilføj ny"
+    },
+    "variables": {
+      "group": "Pipelines",
+      "attributes": {
+        "name": "Elementnavn",
+        "stageName": "Fase",
+        "status": "Status",
+        "priority": "Prioritet",
+        "value": "Værdi",
+        "assignedAdmins": "Tildelte administratorer",
+        "createdDate": "Oprettelsesdato",
+        "dueDate": "Forfaldsdato",
+        "updatedDate": "Opdateringsdato",
+        "id": "Element-ID"
+      }
+    }
+  },
+  "oauthConsent": {
+    "title": "Authorize {clientName}",
+    "description": "This application is requesting access to your workspace.",
+    "permissionsTitle": "Requested permissions",
+    "signedInAs": "Signed in as",
+    "approve": "Approve",
+    "deny": "Deny",
+    "failed": "Godkendelsen kunne ikke gennemføres. Prøv igen.",
+    "workspaceLabel": "Arbejdsområde",
+    "workspacePlaceholder": "Vælg et arbejdsområde",
+    "workspaceHint": "{clientName} kan kun arbejde i dette arbejdsområde. Afbryd og forbind igen for at skifte senere.",
+    "noWorkspaces": "Du er ikke administrator i noget arbejdsområde og kan derfor ikke godkende denne applikation."
+  },
+  "chatbotxMcp": {
+    "title": "ChatbotX MCP",
+    "workspaceId": "Workspace ID",
+    "streamableUrl": "Streamable HTTP URL",
+    "sseUrl": "Legacy SSE URL",
+    "guide": {
+      "title": "Connect an MCP client",
+      "step1": "Copy the configuration for your MCP client.",
+      "step2": "Paste it into the client.",
+      "step3": "The client opens a browser. Sign in and approve access.",
+      "step4": "Your workspace tools appear after approval.",
+      "ownerOnly": "Only workspace owners and superAdmins can authorize MCP access."
+    },
+    "clients": {
+      "claudeCode": "Claude Code",
+      "claudeDesktop": "Claude Desktop",
+      "cursor": "Cursor",
+      "chatgpt": "ChatGPT",
+      "stdio": "stdio fallback",
+      "stdioHint": "Use a workspace token for this fallback."
+    },
+    "grants": {
+      "title": "Authorized applications",
+      "description": "Grants belong to your account and apply to every workspace you administer; revoking disconnects the client everywhere.",
+      "empty": "OAuth grants appear here after you connect an MCP client.",
+      "client": "Client",
+      "scopes": "Scopes",
+      "firstAuthorizedAt": "First authorized",
+      "lastRefreshedAt": "Last refreshed",
+      "activeUntil": "Active until",
+      "noActiveToken": "No active token",
+      "revoke": "Revoke",
+      "revokeConfirmTitle": "Revoke application access?",
+      "revokeConfirmDescription": "Revoke access for {clientName}? This disconnects the client everywhere.",
+      "revokedSuccess": "Application access revoked.",
+      "notFound": "OAuth grant no longer exists"
+    }
+  },
+  "connectionStatus": {
+    "column": "Status",
+    "reconnecting": "The provider is reconnecting this account. Messages are held until it finishes.",
+    "accessRemoved": "The provider removed access to this account. Reconnect to resume.",
+    "needsReconnect": "Reconnect required.",
+    "inactive": "This channel is inactive."
+  },
+  "inbox": {
+    "createAppointment": {
+      "title": "Opret aftale",
+      "description": "Send kontakten et bookinglink til en kalender, eller åbn det for at booke på deres vegne.",
+      "inactive": "Inaktiv",
+      "sendLink": "Send kalenderlink",
+      "goToLink": "Gå til kalenderlink",
+      "sent": "Bookinglink sendt.",
+      "failed": "Bookinglinket kunne ikke oprettes.",
+      "noCalendars": "Ingen aftalekalendere endnu.",
+      "manageCalendars": "Administrer aftalekalendere"
+    }
+  },
+  "templateStore": {
+    "title": "Skabelonbutik",
+    "description": "Skabeloner godkendt til den offentlige butik. Hver skabelon vises i de kategorier, du vælger.",
+    "add": "Tilføj",
+    "addCategory": "Tilføj kategori",
+    "renameCategory": "Omdøb",
+    "editCategories": "Rediger kategorier",
+    "templateId": "Skabelon-ID",
+    "template": "Skabelon",
+    "categories": "Kategorier",
+    "categoriesPlaceholder": "Ingen kategori",
+    "close": "Luk",
+    "removeChip": "Fjern {name}",
+    "categoriesHint": "Valgfrit. Uden kategori vises skabelonen kun under “Alle”.",
+    "noCategoriesYet": "Ingen kategorier endnu.",
+    "added": "Skabelon tilføjet til butikken",
+    "updated": "Kategorier opdateret",
+    "removed": "Skabelon fjernet fra butikken",
+    "removeError": "Skabelonen kunne ikke fjernes",
+    "removeTitle": "Fjern {name}?",
+    "removeDescription": "Den forsvinder fra butikken. Selve skabelonen og dens installationer berøres ikke.",
+    "saveError": "Kunne ikke gemme",
+    "deleteError": "Kategorien kunne ikke slettes",
+    "categoryCreated": "Kategori oprettet",
+    "categoryUpdated": "Kategori opdateret",
+    "categoryMoved": "Kategori flyttet",
+    "categoryDeleted": "Kategori slettet",
+    "deleteCategoryTitle": "Slet {name}?",
+    "deleteCategoryDescription": "Skabeloner i denne kategori: {count}. De bliver i butikken og vises under “Alle”.",
+    "moveUp": "Flyt op",
+    "moveDown": "Flyt ned",
+    "searchPlaceholder": "Søg efter navn eller skabelon-ID",
+    "emptyListings": "Ingen godkendte skabeloner endnu.",
+    "noMatches": "Ingen skabeloner matcher søgning eller filtre.",
+    "allCategories": "Alle kategorier",
+    "allStatuses": "Alle statusser",
+    "installs": "Installationer",
+    "owner": "Ejer",
+    "statusLabel": "Status",
+    "openInStore": "Åbn butik",
+    "storeUnavailable": "Din butik åbner på dit eget domæne. Opsæt et for at åbne den.",
+    "openTemplatePage": "Åbn skabelonsiden",
+    "remove": "Fjern",
+    "status": {
+      "published": "Udgivet",
+      "templateUnavailable": "Skabelon ikke tilgængelig",
+      "shareDisabled": "Delingslink slået fra"
+    },
+    "errors": {
+      "templateUnavailable": "Ingen skabelon med dette ID kan føjes til din butik.",
+      "listingExists": "Denne skabelon er allerede i din butik.",
+      "listingUnavailable": "Dette butiksopslag findes ikke længere.",
+      "listingLimit": "En butik kan højst indeholde {templateLimit} skabeloner.",
+      "categoryUnavailable": "Denne kategori findes ikke længere.",
+      "categoryNameTaken": "Der findes allerede en kategori med dette navn.",
+      "categoryLimit": "En butik kan højst have {categoryLimit} kategorier."
+    },
+    "store": {
+      "subtitle": "Færdige skabeloner, du installerer med ét klik.",
+      "pageTitle": "{tenantName} – Skabelonbutik",
+      "empty": "Ingen skabeloner i butikken endnu.",
+      "search": "Søg efter skabeloner",
+      "all": "Alle",
+      "categories": "Butikkens kategorier",
+      "noResults": "Ingen skabeloner matcher din søgning.",
+      "clearSearch": "Ryd søgning",
+      "by": "Af {publisherName}"
+    },
+    "picker": {
+      "placeholder": "Vælg en skabelon",
+      "search": "Søg efter navn eller skabelon-ID",
+      "empty": "Ingen skabelon at tilføje.",
+      "error": "Skabeloner kunne ikke indlæses.",
+      "retry": "Prøv igen",
+      "meta": "ID {id} · {workspace}"
+    }
   }
 }

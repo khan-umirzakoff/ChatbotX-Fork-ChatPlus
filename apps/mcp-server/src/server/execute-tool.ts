@@ -1,6 +1,7 @@
 import { env } from "../env"
 import { fetchWithTimeout } from "../http"
-import type { DynamicTool } from "../openapi-loader"
+import { type DynamicTool, getCachedTools } from "../openapi-loader"
+import { enforceHitlGate } from "./hitl-gate"
 
 const NO_BODY_METHODS = new Set(["GET", "HEAD"])
 
@@ -10,6 +11,7 @@ const LOCAL_PHONE_PATTERN = /^0\d{8,}$/u
 const NUMERIC_ID_PATTERN = /^\d+$/u
 const MAX_BARE_ID_LENGTH = 10
 const PREFIXED_IDENTIFIER_PATTERN = /^(id|email|phone):/u
+const TRAILING_COLON_PATTERN = /:$/u
 
 /**
  * Contact-facing tools accept a prefixed identifier (`id:123`,
@@ -158,10 +160,17 @@ const buildQueryString = (params: URLSearchParams): string => {
   return queryString ? `?${queryString}` : ""
 }
 
+export type RequestCredentials = {
+  token: string
+  workspaceId?: string
+}
+
 export type ToolCallResult = {
   content: Array<{ type: "text"; text: string }>
   isError?: boolean
 }
+
+const successfulResponseContentTypes = new WeakMap<ToolCallResult, string>()
 
 export const errorResult = (text: string): ToolCallResult => ({
   content: [{ text, type: "text" }],
@@ -172,6 +181,70 @@ export const jsonResult = (value: unknown): ToolCallResult => ({
   content: [{ text: JSON.stringify(value, null, 2), type: "text" }],
 })
 
+const findCurrentStateTool = (tool: DynamicTool): DynamicTool | undefined => {
+  const getToolsByPath = new Map(
+    getCachedTools()
+      .filter((candidate) => candidate.method === "GET")
+      .map((candidate) => [candidate.pathTemplate, candidate]),
+  )
+  const pathSegments = tool.pathTemplate.split("/")
+  for (
+    let segmentCount = pathSegments.length;
+    segmentCount > 1;
+    segmentCount -= 1
+  ) {
+    const candidate = getToolsByPath.get(
+      pathSegments.slice(0, segmentCount).join("/"),
+    )
+    if (
+      candidate &&
+      candidate.pathParamNames.length > 0 &&
+      candidate.pathParamNames.every((name) =>
+        tool.pathParamNames.includes(name),
+      )
+    ) {
+      return candidate
+    }
+  }
+}
+
+const firstLine = (value: string): string =>
+  value.split("\n")[0]?.replace(TRAILING_COLON_PATTERN, "") ?? "unknown failure"
+
+const getCurrentState = async (props: {
+  args: Record<string, unknown>
+  credentials: RequestCredentials
+  tool: DynamicTool
+}): Promise<{ state: unknown } | { unavailable: string }> => {
+  const stateTool = findCurrentStateTool(props.tool)
+  if (!stateTool) {
+    return { unavailable: "no read operation" }
+  }
+
+  const stateArgs = Object.fromEntries(
+    stateTool.pathParamNames.map((name) => [name, props.args[name]]),
+  )
+  const stateResult = await executeTool(stateTool, stateArgs, props.credentials)
+  if (stateResult.isError) {
+    return {
+      unavailable: firstLine(stateResult.content[0]?.text ?? "unknown failure"),
+    }
+  }
+  if (
+    !successfulResponseContentTypes
+      .get(stateResult)
+      ?.includes("application/json")
+  ) {
+    return { unavailable: "non-JSON body" }
+  }
+
+  try {
+    return { state: JSON.parse(stateResult.content[0]?.text ?? "") }
+  } catch {
+    return { unavailable: "non-JSON body" }
+  }
+}
+
 /**
  * Fires the HTTP request a `DynamicTool` describes. Shared by the normal
  * `tools/call` path (`create-mcp-server.ts`) and `call_tool`
@@ -181,16 +254,37 @@ export const jsonResult = (value: unknown): ToolCallResult => ({
 export async function executeTool(
   tool: DynamicTool,
   rawArgs: Record<string, unknown>,
-  apiKey: string,
+  credentials: RequestCredentials,
 ): Promise<ToolCallResult> {
   const preparedArguments = prepareToolArguments(tool, rawArgs)
   const preflightError = preflightArgumentError(tool, preparedArguments)
   if (preflightError) {
     return errorResult(preflightError)
   }
-  const args = normalizeToolArguments(preparedArguments)
-  let path = tool.pathTemplate
 
+  let args = normalizeToolArguments(preparedArguments)
+  try {
+    const hitlGate = await enforceHitlGate({
+      args,
+      getCurrentState: async () =>
+        await getCurrentState({
+          args,
+          credentials,
+          tool,
+        }),
+      tool,
+    })
+    if (hitlGate.failure) {
+      return errorResult(JSON.stringify(hitlGate.failure, null, 2))
+    }
+    args = hitlGate.args
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown confirmation error"
+    return errorResult(`Confirmation failed: ${message}`)
+  }
+
+  let path = tool.pathTemplate
   for (const paramName of tool.pathParamNames) {
     const value = args[paramName]
     if (value === undefined || value === null) {
@@ -221,8 +315,11 @@ export async function executeTool(
       {
         body: sendBody ? JSON.stringify(body) : undefined,
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${credentials.token}`,
           "Content-Type": "application/json",
+          ...(credentials.workspaceId
+            ? { "x-workspace-id": credentials.workspaceId }
+            : {}),
         },
         method: tool.method,
       },
@@ -243,7 +340,9 @@ export async function executeTool(
       )
     }
 
-    return jsonResult(result)
+    const toolResult = jsonResult(result)
+    successfulResponseContentTypes.set(toolResult, contentType)
+    return toolResult
   } catch (error) {
     if (error instanceof Error && error.name === "TimeoutError") {
       return errorResult(error.message)

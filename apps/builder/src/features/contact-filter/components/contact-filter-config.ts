@@ -4,6 +4,7 @@ import {
   contactTimezoneOptions,
 } from "@chatbotx.io/business/contact-locale"
 import {
+  CONTACT_ACTIVITY_TRACKED_FIELDS,
   type ContactFilterField,
   type ContactInfoFilterValue,
   type ContactInfoType,
@@ -13,12 +14,16 @@ import {
   contactSources,
   type FormFieldType,
   formFieldTypes,
+  isContactActivityFilterField,
   lastUserInputTypes,
+  NO_TOPIC_FIXED_VALUE,
   type OperatorType,
   operatorTypes,
+  type PipelineItemFilterAttribute,
 } from "@chatbotx.io/database/partials"
 import type { SelectOption } from "@chatbotx.io/ui/components/form/select-field"
 import { languageOptions } from "@/features/integration-whatsapp/message-templates/type"
+import type { PipelineOptionsResponse } from "@/features/pipelines/schema/resource"
 import {
   allContinentOptions,
   allCountryOptions,
@@ -36,6 +41,10 @@ import {
   isFieldOnSurface,
 } from "../schema"
 import type { ResolveFilterValueLabelsResponse } from "../schema/value-labels"
+import { buildPipelineItemConfigs } from "./pipeline-item-filter-config"
+
+const isContactActivityTrackedField = (field: string): boolean =>
+  CONTACT_ACTIVITY_TRACKED_FIELDS.some((tracked) => tracked === field)
 
 export type ConditionOption = {
   value: OperatorType
@@ -60,6 +69,13 @@ export type FieldConfig = {
   topicId?: string
   /** Set for dynamic "Gamification scores" configs; identifies the leaderboard. */
   leaderboardId?: string
+  /** Set for dynamic "pipeline item" configs: which attribute of which pipeline (`null` = any). */
+  pipelineItem?: {
+    attribute: PipelineItemFilterAttribute
+    pipelineId: string | null
+  }
+  /** Operator labels that replace the generic ones for this field only. */
+  operatorLabels?: Partial<Record<OperatorType, string>>
   /** Display label override (custom field / coupon topic name); static fields fall back to i18n. */
   label?: string
   formField: FormFieldType
@@ -98,6 +114,7 @@ export type ContactFilterFieldGroup =
   | "systemFields"
   | "topicCoupon"
   | "leaderboard"
+  | "pipeline"
   | "customFields"
   | "botFields"
   | "ctwaAds"
@@ -232,6 +249,8 @@ const resolveContactFilterOptions = (
     assigneeOptions: SelectOption[]
     channelPostOptions: SelectOption[]
     workingHourOptions: SelectOption[]
+    flowNodeOptions: SelectOption[]
+    productOptions: SelectOption[]
   },
 ): SelectOption[] | undefined => {
   switch (optionSource) {
@@ -268,6 +287,18 @@ const resolveContactFilterOptions = (
       return ctx.tagOptions
     case "flows":
       return ctx.flowVersionOptions
+    case "flowNodes":
+      return ctx.flowNodeOptions
+    // Searched on the server by the value field, not listed up front. Email
+    // topics carry the one fixed choice that is not a topic row.
+    case "keywords":
+    case "whatsappFlows":
+    case "ads":
+      return
+    case "emailTopics":
+      return [
+        { label: ctx.t("condition.noTopic"), value: NO_TOPIC_FIXED_VALUE },
+      ]
     case "broadcasts":
       return ctx.broadcastOptions
     case "sequences":
@@ -280,6 +311,8 @@ const resolveContactFilterOptions = (
       return ctx.channelPostOptions
     case "workingHours":
       return ctx.workingHourOptions
+    case "products":
+      return ctx.productOptions
     case "ctwaConversionTypes":
       return [
         {
@@ -362,7 +395,7 @@ const CONTACT_FILTER_GROUP_FIELDS = {
     "emailOpened",
     "emailClicked",
   ],
-  ctwaAds: ["fromCtwaAd", "fromGoogleAd", "ctwaConversion"],
+  ctwaAds: ["fromCtwaAd", "fromGoogleAd", "clickedAd", "ctwaConversion"],
   systemTime: [
     "isWithinWorkingHours",
     "currentDate",
@@ -389,6 +422,9 @@ const CONTACT_FILTER_GROUP_FIELDS = {
   // Populated dynamically — each leaderboard gets its own FieldConfig with
   // group "leaderboard" set directly (see leaderboardConfigs below).
   leaderboard: [],
+  // Populated dynamically — pipeline-item configs set group "pipeline"
+  // directly (see buildPipelineItemConfigs).
+  pipeline: [],
   customFields: ["customFields"],
   // Populated dynamically (opt-in only — see `getFieldConfigs`'s
   // `includeBotFields`) — each workspace bot field gets its own FieldConfig
@@ -430,9 +466,13 @@ export const getFieldConfigs = ({
   reflinkOptions = [],
   assigneeOptions = [],
   channelPostOptions = [],
+  flowNodeOptions = [],
+  activityFiltersEnabled = true,
   workingHourOptions = [],
   couponTopicOptions = [],
   leaderboardOptions = [],
+  pipelineOptions = [],
+  productOptions = [],
   botFields = [],
   includeBotFields = false,
   surface = "contacts",
@@ -448,11 +488,19 @@ export const getFieldConfigs = ({
   reflinkOptions?: SelectOption[]
   assigneeOptions?: SelectOption[]
   channelPostOptions?: SelectOption[]
+  /** `Flow · Node` choices (value `flowId:nodeId`) for the "Executed Step" filter. */
+  flowNodeOptions?: SelectOption[]
+  /** False when the activity-backed filters are switched off server-side. */
+  activityFiltersEnabled?: boolean
   /** Schedules (+ the assigned-agent choice) for the flow-only working-hours field. */
   workingHourOptions?: SelectOption[]
   couponTopicOptions?: SelectOption[]
   /** Workspace leaderboards, each offered as a "Gamification scores" field. */
   leaderboardOptions?: SelectOption[]
+  /** Workspace pipelines with stages, each offered as "pipeline item" fields. */
+  pipelineOptions?: PipelineOptionsResponse["data"]
+  /** Workspace products, for the purchase and cart fields. */
+  productOptions?: SelectOption[]
   /** Workspace bot (account) fields — only read when `includeBotFields` is true. */
   botFields?: CustomFieldFilterOption[]
   /**
@@ -488,7 +536,9 @@ export const getFieldConfigs = ({
   }
 
   const staticConfigs: FieldConfig[] = CONTACT_FILTER_FIELD_DEFINITIONS.filter(
-    (def) => isFieldOnSurface(def, surface),
+    (def) =>
+      isFieldOnSurface(def, surface) &&
+      (activityFiltersEnabled || !isContactActivityTrackedField(def.field)),
   ).map((def: ContactFilterFieldDefinition) => {
     const formField = schemaKindToFormField(def.schemaKind)
     const options =
@@ -504,6 +554,8 @@ export const getFieldConfigs = ({
         assigneeOptions,
         channelPostOptions,
         workingHourOptions,
+        flowNodeOptions,
+        productOptions,
       }) ?? booleanOptionsFor(formField)
     return {
       name: def.field,
@@ -572,6 +624,15 @@ export const getFieldConfigs = ({
     ...botFieldConfigs,
     ...couponTopicConfigs,
     ...leaderboardConfigs,
+    // The flow Condition step's stored schema drops `attribute`/`pipelineId`,
+    // so a pipeline condition could never match there: not offered.
+    ...(surface === "flowCondition"
+      ? []
+      : buildPipelineItemConfigs({
+          t,
+          pipelines: pipelineOptions,
+          stageLabels: filterValueLabels?.pipelineStages,
+        })),
   ]
 }
 
@@ -723,7 +784,7 @@ const findOptionLabel = (
 export const formatConditionValueDisplay = (
   value: string | string[] | undefined,
   options?: SelectOption[],
-  unknownLabel?: string,
+  unknownLabel?: string | ((value: string) => string),
 ): string => {
   if (value === undefined) {
     return ""
@@ -734,8 +795,12 @@ export const formatConditionValueDisplay = (
     return Array.isArray(value) ? value.join(", ") : value
   }
 
+  const resolveUnknown = (optionValue: string) =>
+    typeof unknownLabel === "function"
+      ? unknownLabel(optionValue)
+      : (unknownLabel ?? optionValue)
   const getLabel = (optionValue: string) =>
-    findOptionLabel(options, optionValue) ?? unknownLabel ?? optionValue
+    findOptionLabel(options, optionValue) ?? resolveUnknown(optionValue)
 
   if (Array.isArray(value)) {
     return value.map(getLabel).join(", ")
@@ -746,18 +811,25 @@ export const formatConditionValueDisplay = (
 
 /**
  * Value text for a condition row. Uses the looked-up `valueLabels` when the
- * field has them (a value missing there reads "Unknown"); until they load, or
- * for fields that are not id-backed, falls back to the picker `options`.
+ * field has them (a value missing there reads "Unknown", or "Deleted (#id)" for
+ * activity fields, whose history outlives the flow/keyword/topic it points at);
+ * until they load, or for fields that are not id-backed, falls back to the
+ * picker `options`.
  */
 export const formatFilterConditionValue = (
   value: string | string[] | undefined,
   fieldConfig: FieldConfig | undefined,
-  t: (key: string) => string,
-): string =>
-  fieldConfig?.valueLabels
-    ? formatConditionValueDisplay(
-        value,
-        fieldConfig.valueLabels,
-        t("condition.unknownValue"),
-      )
-    : formatConditionValueDisplay(value, fieldConfig?.options)
+  t: (key: string, params?: Record<string, string>) => string,
+): string => {
+  if (!fieldConfig?.valueLabels) {
+    return formatConditionValueDisplay(value, fieldConfig?.options)
+  }
+  const unknownLabel = isContactActivityFilterField(fieldConfig.name)
+    ? (id: string) => t("condition.deletedValue", { id })
+    : t("condition.unknownValue")
+  return formatConditionValueDisplay(
+    value,
+    fieldConfig.valueLabels,
+    unknownLabel,
+  )
+}

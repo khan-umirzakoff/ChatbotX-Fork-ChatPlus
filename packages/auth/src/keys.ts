@@ -1,7 +1,7 @@
 import { createEnv } from "@t3-oss/env-core"
 import { z } from "zod"
 
-export const keys = () =>
+const keys = () =>
   createEnv({
     server: {
       NEXT_PUBLIC_BUILDER_URL: z.url(),
@@ -12,14 +12,92 @@ export const keys = () =>
       // the originating domain. Optional: falls back to NEXT_PUBLIC_BUILDER_URL so
       // single-domain deploys keep working.
       NEXT_PUBLIC_BROKER_URL: z.url().optional(),
+      MCP_PUBLIC_URL: z.url().optional(),
+      // Comma-separated custom URL schemes the native mobile apps register
+      // (white-label brands each have their own). The social-login relay at
+      // /api/auth/mobile/callback only redirects to one of these.
+      MOBILE_APP_SCHEMES: z.string().optional(),
+      // Comma-separated iOS bundle IDs (white-label brands each have their own)
+      // accepted as the `aud` of a native Sign in with Apple identity token.
+      // Unset disables the Apple `id_token` grant. Native verification needs no
+      // client secret (.p8 key).
+      APPLE_APP_BUNDLE_IDS: z.string().optional(),
+      AUTH_DISABLE_SIGNUP: z.stringbool().default(false),
+      AUTH_OAUTH_ENABLED: z.stringbool().default(false),
+      AUTH_OAUTH_CLIENT_ID: z.string().optional(),
+      AUTH_OAUTH_CLIENT_SECRET: z.string().optional(),
+      AUTH_OAUTH_DISCOVERY_URL: z.url().optional(),
+      AUTH_OAUTH_AUTH_URL: z.url().optional(),
+      AUTH_OAUTH_TOKEN_URL: z.url().optional(),
+      AUTH_OAUTH_USERINFO_URL: z.url().optional(),
+      AUTH_OAUTH_SCOPES: z.string().default("openid,email,profile"),
+      AUTH_OAUTH_TRUST_EMAIL: z.stringbool().default(false),
+      AUTH_OAUTH_DISABLE_NONCE_BINDING: z.stringbool().default(false),
       BETTER_AUTH_SECRET: z.string(),
     },
     runtimeEnv: process.env,
     emptyStringAsUndefined: true,
     skipValidation: process.env.SKIP_ENV_CHECK === "true",
+    // Cross-field: a half-configured provider must fail the deploy loudly
+    // instead of silently disabling SSO at request time (see
+    // `resolveGenericOAuthConfig`'s fallback, kept only for `SKIP_ENV_CHECK`
+    // builds where this validation never runs).
+    createFinalSchema: (shape) =>
+      z.object(shape).superRefine((parsedEnv, ctx) => {
+        if (!parsedEnv.AUTH_OAUTH_ENABLED) {
+          return
+        }
+        if (
+          !(
+            parsedEnv.AUTH_OAUTH_CLIENT_ID && parsedEnv.AUTH_OAUTH_CLIENT_SECRET
+          )
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["AUTH_OAUTH_CLIENT_ID"],
+            message:
+              "AUTH_OAUTH_CLIENT_ID and AUTH_OAUTH_CLIENT_SECRET are required when AUTH_OAUTH_ENABLED is true",
+          })
+        }
+        const hasDiscovery = Boolean(parsedEnv.AUTH_OAUTH_DISCOVERY_URL)
+        const hasAuthorizationPair = Boolean(
+          parsedEnv.AUTH_OAUTH_AUTH_URL && parsedEnv.AUTH_OAUTH_TOKEN_URL,
+        )
+        if (!(hasDiscovery || hasAuthorizationPair)) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["AUTH_OAUTH_DISCOVERY_URL"],
+            message:
+              "AUTH_OAUTH_ENABLED requires AUTH_OAUTH_DISCOVERY_URL, or both AUTH_OAUTH_AUTH_URL and AUTH_OAUTH_TOKEN_URL",
+          })
+        }
+      }),
   })
 
-export const env = keys()
+const rawEnv = keys()
+
+// `z.stringbool()` already parses the field when validation runs; this only
+// has work to do when `SKIP_ENV_CHECK` bypassed that and left a raw string.
+// Reuses the same accepted-values set (`"1"`/`"yes"`/`"true"`, case-insensitive)
+// instead of a narrower hand-rolled check.
+const normalizeBoolean = (value: unknown): boolean =>
+  typeof value === "boolean" ? value : z.stringbool().catch(false).parse(value)
+
+const normalizeScopeList = (value: unknown): string =>
+  typeof value === "string" && value.length > 0 ? value : "openid,email,profile"
+
+// `SKIP_ENV_CHECK` bypasses Zod during build, so normalize the fields that
+// production code reads directly to preserve their declared defaults.
+export const env = {
+  ...rawEnv,
+  AUTH_DISABLE_SIGNUP: normalizeBoolean(rawEnv.AUTH_DISABLE_SIGNUP),
+  AUTH_OAUTH_ENABLED: normalizeBoolean(rawEnv.AUTH_OAUTH_ENABLED),
+  AUTH_OAUTH_SCOPES: normalizeScopeList(rawEnv.AUTH_OAUTH_SCOPES),
+  AUTH_OAUTH_TRUST_EMAIL: normalizeBoolean(rawEnv.AUTH_OAUTH_TRUST_EMAIL),
+  AUTH_OAUTH_DISABLE_NONCE_BINDING: normalizeBoolean(
+    rawEnv.AUTH_OAUTH_DISABLE_NONCE_BINDING,
+  ),
+}
 
 /**
  * The OAuth broker origin — the single host registered with every provider as
@@ -28,3 +106,79 @@ export const env = keys()
  */
 export const getBrokerUrl = (): string =>
   env.NEXT_PUBLIC_BROKER_URL ?? env.NEXT_PUBLIC_BUILDER_URL
+
+const trailingSlashPattern = /\/$/
+
+const LOOPBACK_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]"])
+
+// `SKIP_ENV_CHECK=true` (docker/CI build) leaves NEXT_PUBLIC_BUILDER_URL unset,
+// and `createAuth` runs at module load while Next collects page data. There is
+// no real URL to validate then; the runtime container re-evaluates with the
+// real env, so a loopback placeholder is safe and never reaches production.
+const BUILD_PLACEHOLDER_MCP_URL = "http://localhost:3123/mcp"
+
+const isUnsetBuildUrl = (): boolean =>
+  process.env.SKIP_ENV_CHECK === "true" &&
+  !URL.canParse(env.NEXT_PUBLIC_BUILDER_URL ?? "")
+
+// Origin used as the JWT issuer. Same build-time placeholder rationale as above.
+export const getBuilderOrigin = (): string =>
+  isUnsetBuildUrl()
+    ? new URL(BUILD_PLACEHOLDER_MCP_URL).origin
+    : new URL(env.NEXT_PUBLIC_BUILDER_URL).origin
+
+export const getMcpResourceUrl = (): string => {
+  if (!env.MCP_PUBLIC_URL && isUnsetBuildUrl()) {
+    return BUILD_PLACEHOLDER_MCP_URL
+  }
+  const resource = (
+    env.MCP_PUBLIC_URL ??
+    new URL("/mcp", env.NEXT_PUBLIC_BUILDER_URL).toString()
+  ).replace(trailingSlashPattern, "")
+  const { protocol, hostname } = new URL(resource)
+  if (protocol !== "https:" && !LOOPBACK_HOSTNAMES.has(hostname)) {
+    throw new Error(
+      `MCP resource URL must use HTTPS unless it is a loopback host (got ${resource}). Set NEXT_PUBLIC_BUILDER_URL or MCP_PUBLIC_URL to an https:// URL.`,
+    )
+  }
+  return resource
+}
+
+/** Whether self-service account creation is disabled. */
+export const isSignUpDisabled = (): boolean => env.AUTH_DISABLE_SIGNUP
+
+const trailingColonPattern = /:$/
+
+const DEFAULT_MOBILE_APP_SCHEMES = ["chatconnectxapp", "chatbotxmobileapp"]
+
+/**
+ * Audience of mobile access JWTs: the REST API (`<builder>/api`), kept apart
+ * from the MCP audience (`<builder>/mcp`) so neither token type is accepted by
+ * the other's resource server.
+ */
+export const getMobileApiAudience = (): string => `${getBuilderOrigin()}/api`
+
+/**
+ * iOS bundle IDs whose Sign in with Apple identity tokens are accepted. Empty
+ * when `APPLE_APP_BUNDLE_IDS` is unset, which leaves the Apple grant disabled.
+ */
+export const getAppleAppBundleIds = (): string[] =>
+  Array.from(
+    new Set(
+      (env.APPLE_APP_BUNDLE_IDS ?? "")
+        .split(",")
+        .map((bundleId) => bundleId.trim())
+        .filter(Boolean),
+    ),
+  )
+
+/** Custom URL schemes the mobile apps may be redirected back to, lowercase, no colon. */
+export const getMobileAppSchemes = (): string[] => {
+  const configured = (env.MOBILE_APP_SCHEMES ?? "")
+    .split(",")
+    .map((scheme) =>
+      scheme.trim().toLowerCase().replace(trailingColonPattern, ""),
+    )
+    .filter(Boolean)
+  return Array.from(new Set([...DEFAULT_MOBILE_APP_SCHEMES, ...configured]))
+}

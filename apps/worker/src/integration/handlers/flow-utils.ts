@@ -21,6 +21,7 @@ import {
   ChatJobAction,
   type ChatJobSendFlowStep,
   chatQueue,
+  flowContinuationJobOptions,
   IntegrationJobAction,
   integrationQueue,
   type NodeVisits,
@@ -44,6 +45,7 @@ export type ExecuteMultipleStepsProps = {
   isBulkBroadcast?: boolean
   quickReplies?: ButtonStepProps[]
   sendFrom?: "inbox"
+  sentByUserId?: string
   nodeVisits?: NodeVisits
   triggerMessageId?: string
   triggerMessageCreatedAt?: Date
@@ -138,6 +140,7 @@ export const STEP_PRODUCES_MESSAGE: Record<StepType, boolean> = {
   setUpCoupon: false,
   markCouponUsed: false,
   changeGamificationScore: false,
+  pipeline: false,
   condition: false,
   evaluateDecision: false,
 
@@ -162,6 +165,7 @@ export const STEP_PRODUCES_MESSAGE: Record<StepType, boolean> = {
   aiAnalyzeImage: false,
   aiGenerateImage: false,
   aiEditImage: false,
+  aiSegmentImage: false,
   aiSpeechToText: false,
   aiTextToSpeech: false,
   aiExtractData: false,
@@ -192,6 +196,8 @@ export const STEP_PRODUCES_MESSAGE: Record<StepType, boolean> = {
   // External/Others (X_)
   openWebsite: false,
   openMiniApp: false,
+  callPhoneNumber: true,
+  copyText: true,
   addNotes: false,
 
   // Broadcast Operations (B_)
@@ -229,6 +235,7 @@ export const STEP_PRODUCES_MESSAGE: Record<StepType, boolean> = {
   sendViewCatalog: true,
   whatsappFlow: true,
   sendProducts: true,
+  sendCollection: true,
   whatsappLocation: true,
   sendMessengerTemplateMessage: true,
 
@@ -241,6 +248,9 @@ export const STEP_PRODUCES_MESSAGE: Record<StepType, boolean> = {
   disableMessengerComposer: false,
   setMessengerPersona: false,
   updateMessengerContactData: false,
+
+  // More options — sends a whatsappLocation without the comment anchor.
+  findPlacesNearMe: false,
 }
 
 /**
@@ -302,6 +312,7 @@ export async function sendFlow(
           isBulkBroadcast: props.isBulkBroadcast,
           appointmentId: props.appointmentId,
           sendFrom: props.sendFrom,
+          sentByUserId: props.sentByUserId,
           nodeVisits: props.nodeVisits,
           triggerMessageId: props.triggerMessageId,
           triggerMessageCreatedAt: props.triggerMessageCreatedAt,
@@ -310,16 +321,17 @@ export async function sendFlow(
           origin: webhookChannelOrigin(),
         },
       },
-      ...broadcastPriorityOptions(props.metadata),
+      flowContinuationJobOptions(props.metadata),
     )
   }
 }
 
 /**
  * The trailing job-options argument carrying `BROADCAST_SEND_PRIORITY` for a
- * job that belongs to a broadcast run, so every flow step after the
- * broadcast's first job keeps yielding to live traffic. Empty otherwise — a
- * job without a priority runs first, and its `add` call keeps its old shape.
+ * chat job that belongs to a broadcast run, so its sends keep yielding to live
+ * traffic. Empty otherwise — a job without a priority runs first, and its `add`
+ * call keeps its old shape. Chat jobs have no continuation tier: the ladder for
+ * flow jobs on `integration` is `flowContinuationJobOptions`.
  */
 function broadcastPriorityOptions(
   metadata: MetadataPayload | undefined,
@@ -371,6 +383,7 @@ export const logStepProviderError = (
     contactInbox: Pick<ContactInboxModel, "sourceId">
   },
   error: unknown,
+  httpCode?: string | null,
 ): Promise<void> =>
   logProviderError({
     provider,
@@ -378,4 +391,5 @@ export const logStepProviderError = (
     contactId: props.conversation.contactId,
     sourceId: props.contactInbox.sourceId,
     error,
+    httpCode,
   })

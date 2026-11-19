@@ -10,11 +10,15 @@ import {
   Building2Icon,
   CircleHelpIcon,
   Grid2x2PlusIcon,
+  LayoutTemplateIcon,
   ListTodoIcon,
   MailIcon,
   PaletteIcon,
   RadioTowerIcon,
+  ScrollTextIcon,
+  SendIcon,
   ShieldCheckIcon,
+  StoreIcon,
 } from "lucide-react"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
@@ -55,21 +59,46 @@ export function AdminSidebar({
       icon: Building2Icon,
     },
     {
+      title: t("platformAdmin.workspaces.deletedTitle"),
+      url: "/admin/workspaces/deleted",
+      icon: Building2Icon,
+    },
+    {
       title: t("channels.title"),
       url: "/admin/platform-channels",
       icon: RadioTowerIcon,
     },
-    ...(showEnterpriseItems
-      ? [
+    {
+      title: t("platformDefaultTemplate.title"),
+      url: "/admin/default-template",
+      icon: LayoutTemplateIcon,
+    },
+    {
+      title: t("templateStore.title"),
+      url: "/admin/template-store",
+      icon: StoreIcon,
+    },
+  ]
+
+  const administrationItems = [
+    {
+      title: t("platformAdmin.admins.title"),
+      url: "/admin/admins",
+      icon: ShieldCheckIcon,
+    },
+    {
+      title: t("platformAdmin.auditLogs.title"),
+      url: "/admin/audit-logs",
+      icon: ScrollTextIcon,
+    },
+    ...(isCloud()
+      ? []
+      : [
           {
-            title: t("platformAdmin.admins.title"),
-            url: "/admin/admins",
-            icon: ShieldCheckIcon,
+            title: t("platformAdmin.smtp.title"),
+            url: "/admin/smtp",
+            icon: SendIcon,
           },
-        ]
-      : []),
-    ...(showEnterpriseItems && !isCloud()
-      ? [
           {
             title: t("platformBranding.title"),
             url: "/admin/branding",
@@ -80,17 +109,12 @@ export function AdminSidebar({
             url: "/admin/email-templates",
             icon: MailIcon,
           },
-        ]
-      : []),
-    ...(showEnterpriseItems
-      ? [
-          {
-            title: t("platformAdmin.helpItems.title"),
-            url: "/admin/help-items",
-            icon: CircleHelpIcon,
-          },
-        ]
-      : []),
+        ]),
+    {
+      title: t("platformAdmin.helpItems.title"),
+      url: "/admin/help-items",
+      icon: CircleHelpIcon,
+    },
   ]
 
   const toolsItems = [
@@ -114,6 +138,12 @@ export function AdminSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={platformItems} label={tManage("platformGroup")} />
+        {showEnterpriseItems && (
+          <NavMain
+            items={administrationItems}
+            label={tManage("administrationGroup")}
+          />
+        )}
         <NavMain items={toolsItems} label={tManage("toolsGroup")} />
       </SidebarContent>
       <SidebarFooter>

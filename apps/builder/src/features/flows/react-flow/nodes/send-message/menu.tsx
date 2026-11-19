@@ -8,6 +8,7 @@ import {
 } from "@chatbotx.io/flow-config"
 import {
   CreditCardIcon,
+  GalleryHorizontalIcon,
   ImageIcon,
   ImagePlayIcon,
   ImagesIcon,
@@ -72,6 +73,8 @@ const ALL_MENU_ITEMS = (
     label: t("flows.actions.getUserData"),
     icon: KeyboardIcon,
     stepType: stepTypes.enum.getUserData,
+    // Author copy: a new step starts with the Skip label in the UI language.
+    props: { skipButtonLabel: t("states.skip") },
   },
   sendGif: {
     label: t("flows.actions.sendGif"),
@@ -113,6 +116,11 @@ const ALL_MENU_ITEMS = (
     label: t("flows.actions.sendProducts"),
     icon: ShoppingCartIcon,
     stepType: stepTypes.enum.sendProducts,
+  },
+  sendCollection: {
+    label: t("flows.actions.sendCollection"),
+    icon: GalleryHorizontalIcon,
+    stepType: stepTypes.enum.sendCollection,
   },
   whatsappLocation: {
     label: t("flows.actions.whatsappLocation"),
@@ -160,6 +168,7 @@ const BASE_MENU_ORDER = [
   "sendGif",
   "sendTemplateMessage",
   "sendProducts",
+  "sendCollection",
   "typing",
   "sendFile",
   "actions",

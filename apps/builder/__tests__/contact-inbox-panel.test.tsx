@@ -129,9 +129,27 @@ vi.mock("@/features/contact-notes/contact-notes-manage", () => ({
   ContactNotesManage: () => null,
 }))
 
+vi.mock(
+  "@/features/pipelines/components/inbox/contact-pipelines-section",
+  () => ({ ContactPipelinesSection: () => null }),
+)
+
 vi.mock("@/features/contacts/components/contact-appointments-list", () => ({
   ContactAppointmentsList: () => null,
 }))
+
+const createAppointmentDialogProps = vi.hoisted(() => ({
+  current: null as null | Record<string, unknown>,
+}))
+vi.mock(
+  "@/features/appointment-management/components/inbox/create-contact-appointment-dialog",
+  () => ({
+    CreateContactAppointmentDialog: (props: Record<string, unknown>) => {
+      createAppointmentDialogProps.current = props
+      return props.open ? <div data-testid="create-appointment-dialog" /> : null
+    },
+  }),
+)
 
 vi.mock("@/features/contacts/components/update-contact-tag-field", () => ({
   default: () => null,
@@ -184,6 +202,7 @@ const makeThreadControlView = (
   state: ThreadControlView["state"],
 ): ThreadControlView => ({
   contactInboxId: "ci-1",
+  inboxId: "inbox-1",
   channel: "whatsapp",
   state,
   ownerRole: null,
@@ -525,6 +544,38 @@ describe("ContactInboxPanel", () => {
         contactId: "contact-1",
       })
     })
+  })
+
+  test("opens the create-appointment dialog for the open conversation", async () => {
+    seededContact = makeContact("contact-1", "Jane")
+    latestConversations = [firstConversation, secondConversation]
+
+    render()
+    act(() => {
+      latestAccordionOnValueChange?.(["appointments.title"])
+    })
+
+    const createButton = await vi.waitFor(() => {
+      const button = Array.from(container.querySelectorAll("button")).find(
+        (b) => b.textContent?.includes("appointments.actions.create"),
+      )
+      expect(button).toBeDefined()
+      return button
+    })
+    expect(createAppointmentDialogProps.current).toMatchObject({
+      workspaceId: "ws-1",
+      contactId: "contact-1",
+      conversationId: "conv-1",
+      open: false,
+    })
+
+    act(() => {
+      createButton?.click()
+    })
+
+    expect(
+      container.querySelector('[data-testid="create-appointment-dialog"]'),
+    ).not.toBeNull()
   })
 
   test("mounts and queries the sequences section once its accordion item opens", async () => {

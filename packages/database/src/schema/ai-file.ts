@@ -1,17 +1,37 @@
-import { integer, pgTable, text } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
+import { index, integer, jsonb, pgTable, text } from "drizzle-orm/pg-core"
+import type {
+  AIFileChunking,
+  AIFileChunkingConfig,
+  AIFileProcessingRun,
+} from "../partials/ai"
 import { bigintAsString, sharedColumns } from "../partials/shared"
 import { workspaceModel } from "./workspace"
 
-export const aiFileModel = pgTable("AIFile", {
-  ...sharedColumns,
-  name: text().notNull(),
-  path: text().notNull(),
-  size: integer().notNull(),
-  mimeType: text().notNull(),
-  workspaceId: bigintAsString()
-    .notNull()
-    .references(() => workspaceModel.id, {
-      onDelete: "cascade",
-      onUpdate: "cascade",
-    }),
-})
+export const aiFileModel = pgTable(
+  "AIFile",
+  {
+    ...sharedColumns,
+    name: text().notNull(),
+    path: text().notNull(),
+    size: integer().notNull(),
+    mimeType: text().notNull(),
+    chunking: jsonb().$type<AIFileChunking>(),
+    chunkingConfig: jsonb().$type<AIFileChunkingConfig>(),
+    processingRun: jsonb().$type<AIFileProcessingRun>(),
+    workspaceId: bigintAsString()
+      .notNull()
+      .references(() => workspaceModel.id, {
+        onDelete: "cascade",
+        onUpdate: "cascade",
+      }),
+  },
+  (table) => [
+    index("AIFile_workspaceId_idx").on(table.workspaceId),
+    // The template dispatch sweep looks for runs still `queued`; almost no row
+    // is, so a partial expression index keeps that scan off the whole table.
+    index("AIFile_queuedAt_queued_idx")
+      .using("btree", sql`(${table.processingRun}->>'queuedAt')`)
+      .where(sql`${table.processingRun}->>'status' = 'queued'`),
+  ],
+)

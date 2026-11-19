@@ -44,9 +44,16 @@ const nextConfig: NextConfig = {
     webpackBuildWorker: true,
     webpackMemoryOptimizations: true,
     cpus: 2,
+    // Audience uploads allow a 20 MB file (AUDIENCE_MAX_FILE_BYTES); multipart
+    // framing adds overhead, so both body caps sit at 21mb or a 20 MB file
+    // would be rejected before validation runs. `proxyClientMaxBodySize`
+    // (Next 16, default 10MB) applies because src/proxy.ts matches every
+    // non-static path, server-action POSTs included, so the proxy buffers
+    // those bodies.
     serverActions: {
-      bodySizeLimit: "20mb",
+      bodySizeLimit: "21mb",
     },
+    proxyClientMaxBodySize: "21mb",
     // Additive to Next's built-in default list, which already covers
     // lucide-react. `@chatbotx.io/ui` doesn't belong here: it's imported via
     // per-file subpaths and its root export is not a re-export barrel, so
@@ -63,6 +70,18 @@ const nextConfig: NextConfig = {
       {
         source: "/assets/:path*",
         destination: `${storageUrl}/:path*`,
+      },
+      {
+        // The share link shows the Template ID and Key a default-template
+        // form asks for; the page itself is `/t/{key}`, which older links use.
+        source: "/t/template",
+        has: [{ type: "query" as const, key: "key", value: "(?<key>.+)" }],
+        destination: "/t/:key",
+      },
+      {
+        source: "/t/template/install",
+        has: [{ type: "query" as const, key: "key", value: "(?<key>.+)" }],
+        destination: "/t/:key/install",
       },
       {
         source: "/zalo_verifier:verifier.html",
@@ -88,6 +107,10 @@ const nextConfig: NextConfig = {
       afterFiles: [
         ...alwaysRewrites,
         { source: "/ws/:path*", destination: `${realtimeProxyUrl}/:path*` },
+        {
+          source: "/mcp/:path*",
+          destination: `${env.MCP_PROXY_URL}/:path*`,
+        },
         {
           source: "/storage/:path*",
           destination: `${s3Endpoint}/${s3Bucket}/:path*`,

@@ -22,6 +22,7 @@ import {
 import {
   contactInboxRepository,
   contactRepository,
+  pipelineActivityRepository,
 } from "@chatbotx.io/database/repositories"
 import {
   contactInboxModel,
@@ -32,14 +33,17 @@ import {
 import type {
   ContactInboxModel,
   ContactModel,
+  ConversationModel,
 } from "@chatbotx.io/database/types"
 import { emit } from "@chatbotx.io/event-bus"
 import { emitContactCreated } from "@chatbotx.io/events"
 import { uploadFileFromUrl } from "@chatbotx.io/filesystem"
 import { invalidateCacheByTags, withCache } from "@chatbotx.io/redis"
 import { createId } from "@chatbotx.io/utils"
+import { enqueueStoredImageOptimizations } from "@chatbotx.io/worker-config"
 import { dispatchAuditRecord } from "../audit/dispatcher"
 import { BaseService } from "../base.service"
+import { contactActivityService } from "../contact-activity/service"
 import { getContactInboxSinceTime } from "../contact-inbox/service"
 import { contactInboxPostService } from "../contact-inbox-post/service"
 import { ChatbotXException, notFoundException } from "../errors"
@@ -128,6 +132,7 @@ type ContactWithInboxes = ContactModel & { contactInboxes: ContactInboxModel[] }
 
 export type ContactAccessScope = {
   restrictToAssignedUserId?: string
+  restrictToTeamIds?: string[]
 }
 
 export type ContactListScope = ContactListScopeType
@@ -352,11 +357,7 @@ class ContactService extends BaseService {
       throw notFoundException("Contact not found")
     }
 
-    if (
-      accessScope?.restrictToAssignedUserId &&
-      contact.conversation?.assignedUserId !==
-        accessScope.restrictToAssignedUserId
-    ) {
+    if (!isContactWithinAccessScope(accessScope, contact.conversation)) {
       throw notFoundException("Contact not found")
     }
 
@@ -478,6 +479,13 @@ class ContactService extends BaseService {
       .where(eq(contactModel.id, ctx.id))
       .returning()
     await this.invalidate({ workspaceId: ctx.workspaceId, ids: [ctx.id] })
+    if (data.avatar && data.avatar !== existing.avatar) {
+      await scheduleAvatarOptimization({
+        workspaceId: ctx.workspaceId,
+        contactId: ctx.id,
+        avatar: data.avatar,
+      })
+    }
     if (ownsTransaction) {
       await emitContactInfoChangeEvents(
         ctx.workspaceId,
@@ -538,6 +546,13 @@ class ContactService extends BaseService {
     }
 
     await this.invalidate({ workspaceId: ctx.workspaceId, ids: [ctx.id] })
+    if (data.avatar && data.avatar !== existing.avatar) {
+      await scheduleAvatarOptimization({
+        workspaceId: ctx.workspaceId,
+        contactId: ctx.id,
+        avatar: data.avatar,
+      })
+    }
     if (ownsTransaction) {
       await emitContactInfoChangeEvents(
         ctx.workspaceId,
@@ -806,12 +821,25 @@ class ContactService extends BaseService {
           tx,
           workspaceId,
         })
+        await contactActivityService.deleteForContacts({
+          contactIds: chunk.map((contact) => contact.id),
+          tx,
+          workspaceId,
+        })
         await messageCleanupService.record({ workspaceId, entries, tx })
         await tx.delete(contactModel).where(
           inArray(
             contactModel.id,
             chunk.map((c) => c.id),
           ),
+        )
+        // Pipeline history outlives the contact (it has no FK) for analytics;
+        // only the item titles that may name the contact are cleared. After
+        // the delete: its item cascade waited for any writer holding an item
+        // lock, so history that writer added is cleared too.
+        await pipelineActivityRepository.scrubContactTitles(
+          { workspaceId, contactIds: chunk.map((contact) => contact.id) },
+          tx,
         )
       })
     }
@@ -1230,6 +1258,7 @@ class ContactService extends BaseService {
       .returning({ id: contactModel.id })
     if (updated) {
       await this.invalidate({ workspaceId, ids: [contactId] })
+      await scheduleAvatarOptimization({ workspaceId, contactId, avatar })
     }
   }
 
@@ -1258,6 +1287,7 @@ class ContactService extends BaseService {
       .returning({ id: contactModel.id })
     if (updated) {
       await this.invalidate({ workspaceId, ids: [contactId] })
+      await scheduleAvatarOptimization({ workspaceId, contactId, avatar })
     }
   }
 
@@ -1313,11 +1343,39 @@ export function mergeRichSystemFields(
   )
 }
 
+function isContactWithinAccessScope(
+  accessScope: ContactAccessScope | undefined,
+  conversation:
+    | Pick<ConversationModel, "assignedUserId" | "assignedInboxTeamId">
+    | null
+    | undefined,
+): boolean {
+  if (
+    accessScope?.restrictToAssignedUserId === undefined &&
+    accessScope?.restrictToTeamIds === undefined
+  ) {
+    return true
+  }
+  if (
+    accessScope.restrictToAssignedUserId !== undefined &&
+    conversation?.assignedUserId === accessScope.restrictToAssignedUserId
+  ) {
+    return true
+  }
+  return Boolean(
+    conversation?.assignedInboxTeamId &&
+      accessScope.restrictToTeamIds?.includes(conversation.assignedInboxTeamId),
+  )
+}
+
 function withContactAccessScope<TWhere extends Record<string, unknown>>(
   where: TWhere,
   accessScope?: ContactAccessScope,
 ) {
-  if (!accessScope?.restrictToAssignedUserId) {
+  if (
+    accessScope?.restrictToAssignedUserId === undefined &&
+    accessScope?.restrictToTeamIds === undefined
+  ) {
     return where
   }
 
@@ -1327,14 +1385,40 @@ function withContactAccessScope<TWhere extends Record<string, unknown>>(
     !Array.isArray(where.conversation)
       ? where.conversation
       : {}
+  const assignmentScopes = [
+    ...(accessScope.restrictToAssignedUserId === undefined
+      ? []
+      : [{ assignedUserId: accessScope.restrictToAssignedUserId }]),
+    ...(accessScope.restrictToTeamIds === undefined
+      ? []
+      : [{ assignedInboxTeamId: { in: accessScope.restrictToTeamIds } }]),
+  ]
 
   return {
     ...where,
     conversation: {
       ...conversation,
-      assignedUserId: accessScope.restrictToAssignedUserId,
+      OR: assignmentScopes,
     },
   }
 }
+
+/**
+ * A freshly stored avatar is re-encoded in the background (heavy queue, low
+ * priority) and overwritten under the same key, so the stored value never
+ * changes. External URLs and sentinels are filtered out by the enqueue.
+ */
+const scheduleAvatarOptimization = ({
+  workspaceId,
+  contactId,
+  avatar,
+}: {
+  workspaceId: string
+  contactId: string
+  avatar: string
+}) =>
+  enqueueStoredImageOptimizations([
+    { kind: "avatar", workspaceId, contactId, objectKey: avatar },
+  ])
 
 export const contactService = new ContactService()

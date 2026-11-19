@@ -22,6 +22,7 @@ import {
   createChannelReadRoutes,
   createCoexistRoute,
   createHandoverResumeFlowRoute,
+  createWhatsappRoutingRolesRoutes,
 } from "@/features/channel-integrations/api/public"
 import { channelPostsPublicRouter } from "@/features/channel-posts/api/public"
 import {
@@ -36,12 +37,17 @@ import { couponsPublicRouter } from "@/features/coupons/api/public"
 import { customFieldsPublicRouter } from "@/features/custom-fields/api/public"
 import { decisionConnectionsPublicRouter } from "@/features/decision-connections/api/public"
 import { decisionProfilesPublicRouter } from "@/features/decision-profiles/api/public"
+import { discountCodesPublicRouter } from "@/features/discount-codes/api/public"
 import { dynamicImagesPublicRouter } from "@/features/dynamic-images/api/public"
+import { ecommerceAnalyticsPublicRouter } from "@/features/ecommerce-analytics/api/public"
+import { openHoursPublicRouter } from "@/features/ecommerce-open-hours/api/public"
+import { ecommerceSettingsPublicRouter } from "@/features/ecommerce-settings/api/public"
 import { emailTopicsPublicRouter } from "@/features/email-topics/api/public"
 import { errorLogsPublicRouter } from "@/features/error-logs/api/public"
 import { appointmentExternalCalendarsPublicRouter } from "@/features/external-calendars/api/public"
 import { externalWebhooksPublicRouter } from "@/features/external-webhooks/api/public"
 import { facebookLeadAdsPublicRouter } from "@/features/facebook-lead-ad-automation/api/public"
+import { facebookMarketingMessagesPublicRouter } from "@/features/facebook-marketing-messages/api/public"
 import { fbCommentsPublicRouter } from "@/features/fb-comments/api/public"
 import { flowsPublicRouter } from "@/features/flows/api/public"
 import { foldersPublicRouter } from "@/features/folders/api/public"
@@ -67,33 +73,57 @@ import {
   templateMessagesPublicRouter,
   whatsappTemplatesPublicRouter,
 } from "@/features/integration-whatsapp/message-templates/api/public"
+import { whatsappPaymentPublicRouter } from "@/features/integration-whatsapp/payment/api/public"
 import { zaloChannelsPublicRouter } from "@/features/integration-zalo/api/public"
 import { integrationsPublicRouter } from "@/features/integrations/api/public"
 import { leaderboardsPublicRouter } from "@/features/leaderboards/api/public"
 import { magicLinksPublicRouter } from "@/features/magic-links/api/public"
+import { mePublicRouter } from "@/features/me/api/public"
 import { mediaLibraryPublicRouter } from "@/features/media-library/api/public"
 import { messagesPublicRouter } from "@/features/messages/api/public"
 import { miniAppsPublicRouter } from "@/features/mini-apps/api/public"
 import { minigamesPublicRouter } from "@/features/minigames/api/public"
+import { ordersPublicRouter } from "@/features/orders/api/public"
+import { paymentProvidersPublicRouter } from "@/features/payment-providers/api/public"
 import { messengerPersonasPublicRouter } from "@/features/personas/api/public"
+import { pipelinesPublicRouter } from "@/features/pipelines/api/public"
+import {
+  placeCategoriesPublicRouter,
+  placeLocationsPublicRouter,
+} from "@/features/places-near-me/api/public"
+import { pollsPublicRouter } from "@/features/polls/api/public"
 import { productCategoriesPublicRouter } from "@/features/product-categories/api/public"
+import { productVendorsPublicRouter } from "@/features/product-vendors/api/public"
 import { productsPublicRouter } from "@/features/products/api/public"
 import { qrCodesPublicRouter } from "@/features/qr-codes/api/public"
 import { questionnairesPublicRouter } from "@/features/questionnaires/api/public"
+import { realtimePublicRouter } from "@/features/realtime/api/public"
 import { reflinksPublicRouter } from "@/features/reflinks/api/public"
 import { responseSlaPublicRouter } from "@/features/response-sla/api/public"
 import { savedRepliesPublicRouter } from "@/features/saved-replies/api/public"
 import { sequencesPublicRouter } from "@/features/sequences/api/public"
 import { commentAutomationsPublicRouter } from "@/features/shared/comment-automation/api/public"
+import { shopifyPublicRouter } from "@/features/shopify/api/public"
 import { spreadsheetsPublicRouter } from "@/features/spreadsheets/api/public"
 import { tagsPublicRouter } from "@/features/tags/api/public"
+import {
+  templateInstallationsPublicRouter,
+  templatePreviewsPublicRouter,
+  templateStorePublicRouter,
+  templatesPublicRouter,
+} from "@/features/templates/api/public"
 import { threadsCommentsPublicRouter } from "@/features/threads-comments/api/public"
 import { tiktokCommentsPublicRouter } from "@/features/tiktok-comments/api/public"
 import { tokenPublicRouter } from "@/features/token/api/public"
 import { triggersPublicRouter } from "@/features/triggers/api/public"
 import { userPersistentMenusPublicRouter } from "@/features/user-persistent-menus/api/public"
 import { webhooksPublicRouter } from "@/features/webhooks/api/public"
+import {
+  cartsPublicRouter,
+  webshopPublicRouter,
+} from "@/features/webshop/api/public"
 import { whatsappCallsPublicRouter } from "@/features/whatsapp-calls/api/public"
+import { wooCommercePublicRouter } from "@/features/woocommerce/api/public"
 import { workingHoursPublicRouter } from "@/features/working-hours/api/public"
 import { workspaceMembersPublicRouter } from "@/features/workspace-members/api/public"
 import { workspaceSettingsPublicRouter } from "@/features/workspaces/api/public"
@@ -115,6 +145,7 @@ export const publicRouter = {
   broadcasts: broadcastsPublicRouter,
   capabilities: capabilitiesPublicRouter,
   channelPosts: channelPostsPublicRouter,
+  carts: cartsPublicRouter,
   channels: channelsPublicRouter,
   commentAutomations: commentAutomationsPublicRouter,
   connectionProviders: connectionProvidersPublicRouter,
@@ -127,11 +158,15 @@ export const publicRouter = {
   customFields: customFieldsPublicRouter,
   decisionConnections: decisionConnectionsPublicRouter,
   decisionProfiles: decisionProfilesPublicRouter,
+  discountCodes: discountCodesPublicRouter,
   dynamicImages: dynamicImagesPublicRouter,
+  ecommerceAnalytics: ecommerceAnalyticsPublicRouter,
+  ecommerceSettings: ecommerceSettingsPublicRouter,
   emailTopics: emailTopicsPublicRouter,
   errorLogs: errorLogsPublicRouter,
   externalWebhooks: externalWebhooksPublicRouter,
   facebookLeadAds: facebookLeadAdsPublicRouter,
+  facebookMarketingMessages: facebookMarketingMessagesPublicRouter,
   fbComments: fbCommentsPublicRouter,
   flows: flowsPublicRouter,
   folders: foldersPublicRouter,
@@ -152,6 +187,7 @@ export const publicRouter = {
   integrations: integrationsPublicRouter,
   keywords: keywordsPublicRouter,
   magicLinks: magicLinksPublicRouter,
+  me: mePublicRouter,
   mediaLibrary: mediaLibraryPublicRouter,
   messages: messagesPublicRouter,
   messengerChannels: messengerChannelsPublicRouter,
@@ -160,14 +196,28 @@ export const publicRouter = {
   miniApps: miniAppsPublicRouter,
   minigames: minigamesPublicRouter,
   leaderboards: leaderboardsPublicRouter,
+  pipelines: pipelinesPublicRouter,
+  templateInstallations: templateInstallationsPublicRouter,
+  templatePreviews: templatePreviewsPublicRouter,
+  templateStore: templateStorePublicRouter,
+  templates: templatesPublicRouter,
+  openHours: openHoursPublicRouter,
+  orders: ordersPublicRouter,
+  paymentProviders: paymentProvidersPublicRouter,
+  placeCategories: placeCategoriesPublicRouter,
+  placeLocations: placeLocationsPublicRouter,
+  polls: pollsPublicRouter,
   productCategories: productCategoriesPublicRouter,
   products: productsPublicRouter,
+  productVendors: productVendorsPublicRouter,
   qrCodes: qrCodesPublicRouter,
   questionnaires: questionnairesPublicRouter,
+  realtime: realtimePublicRouter,
   reflinks: reflinksPublicRouter,
   savedReplies: savedRepliesPublicRouter,
   schemas: schemasPublicRouter,
   sequences: sequencesPublicRouter,
+  shopify: shopifyPublicRouter,
   smtpIntegrations: smtpIntegrationsPublicRouter,
   spreadsheets: spreadsheetsPublicRouter,
   tags: tagsPublicRouter,
@@ -182,17 +232,21 @@ export const publicRouter = {
   triggers: triggersPublicRouter,
   userPersistentMenus: userPersistentMenusPublicRouter,
   webchats: webchatsPublicRouter,
+  webshop: webshopPublicRouter,
   webhooks: webhooksPublicRouter,
   whatsappCalls: whatsappCallsPublicRouter,
   whatsappFlows: whatsappFlowsPublicRouter,
   whatsappChannels: {
     ...createChannelReadRoutes("whatsapp"),
     ...createHandoverResumeFlowRoute("whatsapp"),
+    ...createWhatsappRoutingRolesRoutes(),
     ...createCoexistRoute("whatsapp"),
     ...createCapiRoutes("whatsapp"),
     ...whatsappCallingPublicRouter,
+    ...whatsappPaymentPublicRouter,
   },
   whatsappTemplates: whatsappTemplatesPublicRouter,
+  woocommerce: wooCommercePublicRouter,
   responseSla: responseSlaPublicRouter,
   workingHours: workingHoursPublicRouter,
   workspaceMembers: workspaceMembersPublicRouter,

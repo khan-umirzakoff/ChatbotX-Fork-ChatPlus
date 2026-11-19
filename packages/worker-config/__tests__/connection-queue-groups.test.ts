@@ -144,6 +144,8 @@ describe("getRedisConnection queue-group routing", () => {
       low: "hot",
       profileSnapshot: "bulk",
       leaderboard: "bulk",
+      marketingMessage: "bulk",
+      template: "bulk",
     })
   })
 })

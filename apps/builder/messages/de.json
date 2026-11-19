@@ -185,9 +185,141 @@
     "name": "Agenten"
   },
   "aiFiles": {
+    "detail": {
+      "title": "Knowledge details",
+      "details": "Details",
+      "noChunkingInfo": "No processing information is available yet."
+    },
+    "chunking": {
+      "title": "Chunking",
+      "strategyLabel": "Strategy",
+      "version": "Chunker version",
+      "chunkSize": "Chunk size",
+      "overlapSize": "Overlap size",
+      "chunkCount": "Chunks",
+      "processedAt": "Processed at",
+      "outdated": "Reindex recommended",
+      "strategy": {
+        "prose": "Prose",
+        "tabular": "Tabular",
+        "markdown": "Markdown"
+      },
+      "configDefault": "Chunking parameters: defaults ({chunkSize} characters, overlap {overlapSize}).",
+      "configCustom": "Chunking parameters: {chunkSize} characters, overlap {overlapSize}."
+    },
+    "processingRun": {
+      "title": "Processing run",
+      "noRun": "No processing run has been tracked for this file yet.",
+      "queuedAt": "Queued at",
+      "startedAt": "Started at",
+      "heartbeatAt": "Last heartbeat",
+      "finishedAt": "Finished at",
+      "stale": "Processing appears stalled",
+      "failedBadge": "Processing failed",
+      "successNote": "Chunking and embedding enqueueing completed. The file is searchable when embedding status is also complete.",
+      "status": {
+        "queued": "Queued",
+        "processing": "Processing",
+        "success": "Prepared",
+        "error": "Failed"
+      },
+      "error": {
+        "fileTooLarge": "The file is too large to process.",
+        "tooManyChunks": "The file produced too many chunks.",
+        "fileUnreadable": "The file could not be read. For CSV files, save as CSV UTF-8 and try again.",
+        "noExtractableContent": "No content could be extracted. Check the spreadsheet header row, or the file may be a scan or empty.",
+        "noEmbeddingProvider": "No embedding provider is configured.",
+        "enqueueFailed": "The file was saved but processing could not be queued. Reindex it to try again.",
+        "unknown": "Processing failed unexpectedly."
+      }
+    },
+    "reindex": {
+      "action": "Reindex",
+      "confirmTitle": "Reindex this file?",
+      "confirmDescription": "The file will be processed with the current chunker.",
+      "downtimeWarning": "Search may be temporarily unavailable while this file is reindexed.",
+      "queued": "Reindex queued",
+      "alreadyRunning": "Processing is already running for this file.",
+      "rateLimited": "Too many requests. Try again shortly.",
+      "parameters": "Chunking parameters",
+      "strategyLabel": "How to split",
+      "strategy": {
+        "auto": "Automatic (by file type)",
+        "prose": "Plain text"
+      },
+      "chunkSize": "Chunk size (characters)",
+      "overlapSize": "Overlap (characters)",
+      "overlapDisabledTabular": "Spreadsheets keep each row whole, so overlap is not used.",
+      "tabularHeaderRow": "Header row (spreadsheets)",
+      "presets": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "custom": "Custom chunk size"
+      },
+      "resetDefaults": "Restore defaults",
+      "estimate": "Estimate: about {estimate} chunks (currently {current})",
+      "reembedWarning": "Changing parameters re-embeds the whole file (about {count} chunks) with your workspace key, and the file cannot be searched until it finishes.",
+      "largeChunkWarning": "Larger chunks make every agent answer read more text and cost more tokens.",
+      "noChangeNote": "Parameters are unchanged: chunks that are already embedded are kept and not embedded again.",
+      "conflict": "This file is being processed, so the new parameters were not applied. Try again when processing finishes."
+    },
+    "chunks": {
+      "indexOutdated": "Some chunks have no position yet. Reindex the file to number them."
+    },
     "description": "Geben Sie Ihren Agenten Zugriff auf PDFs, Dokumente und mehr",
     "title": "Wissensdatenbank",
-    "noEmbeddingProvider": "Kein Embedding-Anbieter konfiguriert. KI-Datei-Embeddings erfordern eine OpenAI- oder Gemini-Integration. DeepSeek und Claude unterstützen keine Embedding-Modelle."
+    "noEmbeddingProvider": "Kein Embedding-Anbieter konfiguriert. KI-Datei-Embeddings erfordern eine OpenAI- oder Gemini-Integration. DeepSeek und Claude unterstützen keine Embedding-Modelle.",
+    "testQuery": {
+      "title": "Test query",
+      "description": "Pick files, ask a question and see which chunk answers it. Only the retrieval step is simulated; no AI answer is generated.",
+      "open": "Test query",
+      "backToKnowledge": "Back to Knowledge",
+      "run": "Run test",
+      "files": "Files",
+      "filterFiles": "Filter files by name",
+      "selectAllReady": "Select all ready files",
+      "selectedCount": "{count}/{max} selected",
+      "fileNotReady": "This file has no chunks ready for search yet.",
+      "question": "Question",
+      "expected": "Expected answer (optional)",
+      "expectedHelp": "Type the answer exactly as it appears in the document, accents included. It is matched against every chunk of the selected files.",
+      "limit": "Result limit",
+      "simulationNote": "This simulates retrieval only; an agent may phrase a question differently. Each run uses one embedding from your workspace key.",
+      "rateLimited": "Too many test requests. Try again shortly.",
+      "byFile": "By file",
+      "matches": "{count} matching chunks",
+      "bestRank": "best rank {rank}",
+      "needsReindex": "Needs reindex",
+      "openDetail": "Open details",
+      "rank": "#{rank}",
+      "chunkNumber": "chunk #{index}",
+      "chunkUnnumbered": "chunk not numbered",
+      "aiWillSee": "AI will see",
+      "belowThreshold": "Below threshold",
+      "containsExpected": "Contains the answer",
+      "thresholdLine": "Threshold {threshold}",
+      "appliedConfig": "Applied configuration",
+      "agentDefaultThreshold": "Agent default threshold",
+      "timings": "Search time",
+      "scoreNotComparable": "Similarity scores are not directly comparable across embedding models.",
+      "answerLocation": "Answer is in {file} · {chunk} · rank {rank}",
+      "splitHint": "The answer may be split between two chunks. Try a larger chunk size or overlap, or check the file was read correctly.",
+      "previousRun": "Previous run ({time}): answer rank {from} → now {to}",
+      "previousRunTop": "Previous run ({time}): {changed} of {total} top chunks changed",
+      "verdict": {
+        "inTopResults": "The AI will see the expected answer.",
+        "foundButLowRank": "The answer is in the documents but ranks too low for the AI to see it. Try a closer question, or reindex with smaller chunks.",
+        "notInAnyChunk": "No chunk of the selected files contains the answer. The document may be read or split wrongly: view the chunks or reindex with other settings."
+      },
+      "diagnosis": {
+        "ok": "Matching chunks found.",
+        "noReadyChunks": "No chunks are ready for search yet. Open the file to check its processing status.",
+        "allBelowThreshold": "Chunks were found but all are below the threshold. Try a lower trial threshold.",
+        "noMatches": "No matching chunks were found.",
+        "agentHasNoFiles": "This agent has no knowledge files."
+      }
+    }
   },
   "aiFunctions": {
     "description": "Konfigurieren Sie LLM-Funktionen, um Ihren KI-Agenten intelligenter zu machen",
@@ -435,6 +567,8 @@
       "description": "Einen Flow an alle Kontakte senden."
     },
     "receiversCount": "Empfänger: {count}",
+    "receiversCountCapped": "Empfänger: {count}+",
+    "receiversCountUnknown": "Empfänger: ?",
     "receiversLoading": "Empfänger: Wird geladen...",
     "whatsappTemplateMessage": {
       "title": "Vorlagennachricht",
@@ -625,6 +759,7 @@
       "clicked": "Angeklickt",
       "failed": "Fehlgeschlagen",
       "missed": "Verpasst",
+      "moderated": "Moderiert",
       "noContacts": "Keine Kontakte gefunden",
       "noComment": "(kein Text)",
       "pageInfo": "Seite {page} von {pageCount}",
@@ -644,7 +779,9 @@
       "contactNotNew": "Kontakt ist nicht neu",
       "alreadyRepliedOnPost": "Bereits bei diesem Beitrag geantwortet",
       "engagedOnOtherPost": "Bereits bei einem anderen Beitrag interagiert",
-      "mentionCountNotMatched": "Anzahl der Erwähnungen stimmte nicht"
+      "mentionCountNotMatched": "Anzahl der Erwähnungen stimmte nicht",
+      "noImageAttachment": "Kein Foto angehängt",
+      "moderated": "Durch Moderation ausgeblendet oder gelöscht"
     },
     "replyTo": {
       "mentions": "Kommentare mit genügend Erwähnungen",
@@ -664,6 +801,10 @@
       "label": "Erfassen, ob ein Nutzer andere Nutzer markiert",
       "descriptionText": "Zählt die in jedem Kommentar markierten Konten und addiert sie über alle Kommentare zu den Summen des Kontakts. Verwende '{{total_tagged}}' für alle markierten Konten und '{{total_new_tagged}}' für Konten, die deiner Seite nie geschrieben haben oder nie Kontakt waren."
     },
+    "onlyCommentsWithImage": {
+      "label": "Nur auf Kommentare mit Foto antworten",
+      "descriptionText": "Nur automatisch antworten, wenn der Kommentar ein Foto enthält. GIFs und Sticker zählen nicht. Kommentare ohne Foto werden übersprungen und die nächste Automatisierung wird versucht."
+    },
     "card": {
       "reply": "Antwort"
     },
@@ -681,10 +822,92 @@
       "column": "Konto",
       "disconnected": "Getrenntes Konto",
       "disconnectedDescription": "Diese Automatisierung gehört zu einem Konto, das nicht mehr verbunden ist, und beantwortet daher keine Kommentare. Verbinde das Konto erneut oder wähle ein anderes."
+    },
+    "aiModeration": {
+      "enabled": "KI-Moderation",
+      "description": "Ein KI-Agent liest jeden Kommentar, bevor der Bot antwortet, und blendet Kommentare in den unten genannten Kategorien aus oder löscht sie. Auf einen moderierten Kommentar wird nie geantwortet.",
+      "aiAgentDescription": "Es wird nur das KI-Modell des Agenten verwendet, nicht dessen Prompt.",
+      "categoriesLabel": "Kommentare blockieren, die",
+      "categories": {
+        "hate": "Hassrede",
+        "offensive": "Beleidigend",
+        "harassment": "Belästigung",
+        "negative": "Markenfeindlich",
+        "spam": "Spam oder Betrug"
+      },
+      "categoryDescriptions": {
+        "hate": "Greift eine Gruppe wegen Herkunft, Religion, Geschlecht, Nationalität usw. an",
+        "offensive": "Beleidigungen, Schimpfwörter, vulgäre Sprache",
+        "harassment": "Drohungen, Mobbing, Angriffe auf eine Person",
+        "negative": "Soll der Marke schaden. Höfliche Beschwerden werden nicht blockiert",
+        "spam": "Betrug, Phishing, themenfremde Werbung"
+      },
+      "instruction": "Zusätzliche Hinweise für die KI",
+      "instructionDescription": "Optional. Teile der KI mit, was erlaubt oder blockiert werden soll.",
+      "instructionPlaceholder": "z. B. Kunden, die sich über den Preis beschweren, nicht blockieren",
+      "action": "Wenn ein Kommentar blockiert wird",
+      "actions": {
+        "hide": "Ausblenden",
+        "delete": "Löschen"
+      },
+      "deleteWarning": "Gelöschte Kommentare sind endgültig weg und können nicht wiederhergestellt werden. Ausblenden ist sicherer, falls die KI sich irrt."
+    },
+    "moderationLog": {
+      "title": "Moderierte Kommentare",
+      "description": "Kommentare, die diese Automatisierung ausgeblendet oder gelöscht hat, und warum.",
+      "allActions": "Alle Aktionen",
+      "allSources": "Regeln und KI",
+      "actions": {
+        "hide": "Ausgeblendet",
+        "delete": "Gelöscht"
+      },
+      "sources": {
+        "rule": "Durch Ausblenden-Regel",
+        "ai": "Durch KI"
+      },
+      "statuses": {
+        "pending": "In Bearbeitung",
+        "done": "Erledigt",
+        "failed": "Fehlgeschlagen"
+      },
+      "rules": {
+        "all": "Alle Kommentare ausblenden",
+        "phoneNumber": "Enthält Telefonnummer",
+        "link": "Enthält Link",
+        "keyword": "Enthält Schlüsselwort",
+        "image": "Enthält Bild",
+        "video": "Enthält Video",
+        "gif": "Enthält GIF",
+        "emoji": "Enthält Emoji"
+      },
+      "summary": {
+        "total": "{count} moderiert",
+        "hidden": "{count} ausgeblendet",
+        "deleted": "{count} gelöscht",
+        "byAI": "{count} durch KI",
+        "byRule": "{count} durch Regeln",
+        "failed": "{count} fehlgeschlagen"
+      },
+      "columns": {
+        "time": "Zeit",
+        "contact": "Kontakt",
+        "comment": "Kommentar",
+        "action": "Aktion",
+        "reason": "Grund",
+        "status": "Status"
+      },
+      "loading": "Wird geladen…",
+      "empty": "Es wurden noch keine Kommentare ausgeblendet oder gelöscht.",
+      "unknownContact": "Unbekannt",
+      "noText": "(kein Text)",
+      "previous": "Zurück",
+      "next": "Weiter",
+      "page": "Seite {page} von {pageCount}"
     }
   },
   "condition": {
     "unknownValue": "Unbekannt",
+    "deletedValue": "Gelöscht (#{id})",
     "yes": "Ja",
     "no": "Nein",
     "valuePlaceholder": "...",
@@ -799,6 +1022,7 @@
       "contactCreatedAt": "Kontakt erstellt am",
       "fromCtwaAd": "Von Anzeige",
       "fromGoogleAd": "Von Google Ads",
+      "clickedAd": "Anzeige angeklickt",
       "ctwaConversion": "Anzeigenkonversion",
       "lastUserInputTypes": {
         "text": "Text",
@@ -814,7 +1038,8 @@
       "ctwaConversionTypes": {
         "lead": "Lead",
         "purchase": "Kauf"
-      }
+      },
+      "pipelineItem": "Pipeline-Eintrag"
     },
     "fieldGroups": {
       "opportunity": "Verkaufschance",
@@ -831,7 +1056,8 @@
       "botFields": "Bot-Felder",
       "email": "E-Mail",
       "sms": "SMS",
-      "ctwaAds": "Anzeigen"
+      "ctwaAds": "Anzeigen",
+      "pipeline": "Pipelines"
     },
     "languages": {
       "ar": "Arabisch",
@@ -860,6 +1086,7 @@
     "sources": {
       "direct": "Direkt",
       "comments": "Kommentare",
+      "liveComments": "Livestream-Kommentare",
       "ads": "Anzeigen",
       "fbLeadAd": "FB-Lead-Anzeige",
       "inboundMessage": "Eingehende Nachricht",
@@ -878,6 +1105,22 @@
       },
       "adPrefix": "Anzeige",
       "allAds": "alle Anzeigen"
+    },
+    "noTopic": "Kein Thema",
+    "trackingSince": "Erfasst seit {date}. Frühere Aktivität ist nicht enthalten.",
+    "pipelineItem": {
+      "anyPipeline": "Beliebige Pipeline",
+      "anyStatus": "Beliebiger Status",
+      "attributes": {
+        "exists": "Einträge",
+        "status": "Status des Eintrags",
+        "stage": "Phase des Eintrags",
+        "priority": "Priorität des Eintrags"
+      },
+      "operators": {
+        "has": "Hat",
+        "hasNo": "Hat keine"
+      }
     }
   },
   "fields": {
@@ -1077,6 +1320,13 @@
     "bot": {
       "label": "Bot"
     },
+    "botCategory": {
+      "options": {
+        "all": "Alle",
+        "human": "Mensch",
+        "bot": "Bot"
+      }
+    },
     "botResponse": {
       "label": "Bot-Antwort"
     },
@@ -1095,7 +1345,8 @@
     },
     "button": {
       "label": "Schaltfläche",
-      "whenPressed": "Wenn diese Schaltfläche gedrückt wird"
+      "whenPressed": "Wenn diese Schaltfläche gedrückt wird",
+      "callToThisNumber": "Diese Nummer anrufen"
     },
     "buttonLabel": {
       "label": "Schaltflächenbeschriftung"
@@ -1166,6 +1417,15 @@
       "prepend": "Am Anfang voranstellen",
       "increase": "Erhöhen um",
       "decrease": "Verringern um",
+      "clear": "Clear value",
+      "formula": "Use custom formula",
+      "set_now": "Set to now",
+      "date_expression": "Free-form date (with math)",
+      "add_minutes": "Add minutes",
+      "add_hours": "Add hours",
+      "add_days": "Add days",
+      "formulaHint": "Math where value is the current number, e.g. round(value * 1.1). Functions: abs, ceil, floor, round, min, max, pow, sqrt, log, sin, cos.",
+      "dateExpressionHint": "e.g. now + 2 days - 3 hours. Units: min, h, d, w, mo, y.",
       "groupSystemFields": "Systemfelder",
       "groupCustomFields": "Benutzerdefinierte Felder",
       "groupAccountFields": "Bot-Felder"
@@ -1281,7 +1541,8 @@
       "label": "Flows",
       "placeholder": "Flow auswählen",
       "aiGenerateTextAgent": "{aiName}: Text-Agent generieren",
-      "aiDeleteMessageHistory": "{aiName}: Nachrichtenverlauf löschen"
+      "aiDeleteMessageHistory": "{aiName}: Nachrichtenverlauf löschen",
+      "aiSegmentImage": "{aiName}: Bild segmentieren"
     },
     "steps": {
       "label": "Node",
@@ -1660,7 +1921,8 @@
       "processing": "In Verarbeitung",
       "installing": "Installing",
       "completed": "Abgeschlossen",
-      "partial": "Partial",
+      "partial": "Teilweise",
+      "uninstalled": "Uninstalled",
       "failed": "Fehlgeschlagen",
       "success": "Erfolg",
       "error": "Fehler"
@@ -1693,6 +1955,7 @@
       "label": "Angeklickt (%)"
     },
     "targetCountry": {
+      "currencyHint": "Legt außerdem die Standardwährung für Pipelines ohne eigene Währung fest.",
       "description": "Das Land, in dem die meisten Ihrer Kontakte leben.",
       "label": "Zielland"
     },
@@ -2092,6 +2355,10 @@
       "label": "Absenderadresse",
       "placeholder": "noreply@example.com"
     },
+    "fromName": {
+      "label": "Absendername",
+      "placeholder": "ChatbotX"
+    },
     "messageTemplate": {
       "label": "Nachrichtenvorlage"
     },
@@ -2198,7 +2465,13 @@
       "commentToMessage": "Comment-to-Message",
       "commentToMessageDescription": "Lets this account answer high-intent comments with a direct message. Required for TikTok comment automations that use a private reply.",
       "commentToMessageEligibility": "Only available to Business Accounts registered in Vietnam, Indonesia or Thailand, owned by someone over 18, that are registered businesses or have run Messaging Ads, with messaging permissions set to \"Requests\".",
-      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting."
+      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting.",
+      "features": "Funktionen",
+      "featureMessaging": "Nachrichten",
+      "featureMessagingDescription": "Direktnachrichten empfangen und senden. TikTok bietet Nachrichten nicht für Konten an, die im EWR, in der Schweiz oder im Vereinigten Königreich registriert sind — deaktiviere es für diese.",
+      "featureComments": "Kommentare",
+      "featureCommentsDescription": "Kommentare für die Kommentar-Automatisierung empfangen: öffentlich antworten, liken und ausblenden.",
+      "featuresReconnectHint": "Änderungen gelten für ab jetzt verbundene Konten. Verbinde bestehende Konten erneut, um ihre Berechtigungen zu aktualisieren."
     },
     "drip": {
       "label": "Drip"
@@ -2236,6 +2509,12 @@
     },
     "lastAd": {
       "label": "Letzte Anzeige"
+    },
+    "adIds": {
+      "label": "Alle Anzeigen-IDs"
+    },
+    "adId": {
+      "label": "Erste Anzeigen-ID"
     },
     "lastAdSourcePlatform": {
       "label": "Plattform der letzten Anzeigenquelle"
@@ -2382,7 +2661,11 @@
       "ads": "Anzeigen",
       "settings": "Einstellungen",
       "miniApps": "Mini Apps",
-      "leaderboards": "Bestenlisten"
+      "leaderboards": "Bestenlisten",
+      "pipelines": "Pipelines",
+      "places": "Orte",
+      "templates": "Vorlagen",
+      "polls": "Polls"
     },
     "adReferral": {
       "label": "Ads",
@@ -2391,7 +2674,8 @@
       "ctid": "CTID",
       "googleAds": "Google Ads",
       "googleAdsWhatsapp": "GA CCWA",
-      "googleAdsMessenger": "GA CCTM"
+      "googleAdsMessenger": "GA CCTM",
+      "googleAdsZalo": "GA Zalo"
     },
     "adSource": {
       "label": "Ad source"
@@ -2439,11 +2723,87 @@
     },
     "miniApp": {
       "label": "Mini-App"
+    },
+    "lastOpportunityId": {
+      "label": "ID der letzten Opportunity"
+    },
+    "adminName": {
+      "label": "Name des sendenden Admins"
+    },
+    "adminTeamName": {
+      "label": "Teams des sendenden Admins"
+    },
+    "bookingId": {
+      "label": "Buchungs-ID"
+    },
+    "lastPoints": {
+      "label": "Letzte Fragebogen-Punkte"
+    },
+    "lastAdHeadline": {
+      "label": "Letzte Anzeigenüberschrift"
+    },
+    "lastAdBody": {
+      "label": "Letzter Anzeigentext"
+    },
+    "lastStoryId": {
+      "label": "Letzte Story-ID"
+    },
+    "lastLeadId": {
+      "label": "Letzte Lead-ID"
+    },
+    "lastFormId": {
+      "label": "Letzte Formular-ID"
+    },
+    "lastFormName": {
+      "label": "Letzter Formularname"
+    },
+    "lastAdgroupId": {
+      "label": "Letzte Anzeigengruppen-ID"
+    },
+    "lastTextInput": {
+      "label": "Letzte Texteingabe"
+    },
+    "empty": {
+      "label": "Leer"
+    },
+    "aiSegmentImage": {
+      "description": "Findet mit SAM 3.1 ein Objekt im Bild und speichert einen zugeschnittenen Bildausschnitt davon.",
+      "inputFieldId": {
+        "label": "Quellbild"
+      },
+      "target": {
+        "label": "Gesuchtes Objekt",
+        "description": "Eine kurze Nominalphrase wie \"rotes Auto\" oder \"Produktkarton\". Keine Frage und kein Befehl.",
+        "placeholder": "Produktkarton"
+      },
+      "matchSelection": {
+        "label": "Treffer",
+        "options": {
+          "largest": "Nur größtes Objekt",
+          "all": "Alle passenden Objekte (ein Ausschnitt um alle)"
+        }
+      },
+      "outputFieldId": {
+        "label": "Bild speichern in"
+      },
+      "detailsOutputFieldId": {
+        "label": "Details speichern in",
+        "description": "Optional. Erhält JSON mit Trefferanzahl und Rahmen.",
+        "sameAsOutput": "Wähle ein anderes Feld als das Ausgabebild.",
+        "sameAsInput": "Wähle ein anderes Feld als das Quellbild."
+      },
+      "overwriteWarning": "Das Ergebnis ersetzt das Quellbild in diesem Feld.",
+      "states": {
+        "success": "Gefunden",
+        "skip": "Nicht gefunden",
+        "error": "Fehlgeschlagen"
+      }
     }
   },
   "flows": {
     "export": {
       "notPublished": "Dieser Flow wurde noch nie veröffentlicht. Veröffentlichen Sie ihn, bevor Sie ihn exportieren.",
+      "viewOnly": "Dieser Flow wurde aus einer schreibgeschützten Vorlage installiert und kann daher nicht exportiert werden.",
       "failed": "Export fehlgeschlagen. Bitte versuchen Sie es erneut."
     },
     "title": "Flows",
@@ -2613,7 +2973,18 @@
       "sendGoogleAdsConversion": "Google-Ads-Conversion senden",
       "changeGamificationScore": "Gamification-Punkte ändern",
       "sendViewCatalog": "Katalog ansehen",
-      "sendProducts": "Produkte senden"
+      "sendProducts": "Produkte senden",
+      "sendCollection": "Kollektion",
+      "pipeline": "Pipelines",
+      "moreOptions": "Weitere Optionen",
+      "findPlacesNearMe": "Orte in meiner Nähe finden",
+      "callPhoneNumber": "Telefonnummer anrufen",
+      "copyText": "Text kopieren"
+    },
+    "externalRequest": {
+      "errors": {
+        "requestFailed": "Die externe Anfrage konnte nicht getestet werden. Überprüfe die Anfragekonfiguration und versuche es erneut."
+      }
     },
     "splitTraffic": {
       "balanceHint": "Die Gesamtsumme muss 100 % ergeben.",
@@ -2644,7 +3015,12 @@
       "customField": "Benutzerdefiniertes Feld",
       "selectCustomFieldPlaceholder": "Benutzerdefiniertes Feld auswählen",
       "addMapping": "Zuordnung hinzufügen",
-      "addCustomField": "Neu hinzufügen"
+      "addCustomField": "Neu hinzufügen",
+      "fileBadge": "Datei",
+      "fileFormat": "Dateilinks",
+      "fileFormatAllUrls": "Alle Links, durch Kommas getrennt",
+      "fileFormatFirstUrl": "Nur den ersten Link",
+      "fileFormatHint": "Das benutzerdefinierte Feld speichert Links zu den hochgeladenen Dateien, wie hier gewählt."
     },
     "sendCarousel": {
       "addSlide": "Karte hinzufügen",
@@ -2794,6 +3170,156 @@
       "productsSelected": "{count, plural, one {# Produkt} other {# Produkte}}",
       "noneSelected": "Noch keine Produkte",
       "sendFailed": "Die Produkte konnten nicht gesendet werden."
+    },
+    "sendCollection": {
+      "title": "Kollektion",
+      "dataType": "Datentyp",
+      "dataTypes": {
+        "products": "Produkte"
+      },
+      "collectionType": "Kollektionstyp",
+      "collectionTypes": {
+        "automated": {
+          "label": "Automatisch",
+          "description": "Bestehende und künftige Artikel, die den Bedingungen entsprechen, kommen automatisch hinzu."
+        },
+        "manual": {
+          "label": "Manuell",
+          "description": "Artikel einzeln hinzufügen."
+        }
+      },
+      "condition": "Bedingung",
+      "name": "Name",
+      "optional": "(Optional)",
+      "category": "Kategorie",
+      "subcategory": "Unterkategorie",
+      "vendor": "Anbieter",
+      "all": "Alle",
+      "items": "Artikel",
+      "select": "Auswählen",
+      "selectPlaceholder": "1 oder mehr Artikel auswählen",
+      "selectAll": "Alle auswählen",
+      "deselectAll": "Auswahl aufheben",
+      "maxProducts": "Bis zu {count} Produkte; ein Produkt, das der Shop nicht mehr zeigt, wird übersprungen.",
+      "automatedHint": "Sendet bis zu {count} passende Produkte als Karten, die das Produkt im Webshop öffnen.",
+      "summaryAll": "Alle Produkte, die der Shop zeigt",
+      "summaryAutomated": "Produkte: {filters}",
+      "summaryManual": "{count, plural, one {# Produkt} other {# Produkte}}",
+      "cancel": "Abbrechen",
+      "save": "Speichern"
+    },
+    "pipelineStep": {
+      "action": "Aktion",
+      "pipeline": "Pipeline",
+      "targetHint": "Wirkt auf den neuesten offenen Eintrag des Kontakts in dieser Pipeline. Der Pfad „Überspringen“ wird ausgeführt, wenn keiner vorhanden ist.",
+      "noPipelines": "Keine Pipelines gefunden",
+      "actions": {
+        "addToPipeline": "Kontakt zur Pipeline hinzufügen",
+        "moveToStage": "In eine Phase verschieben",
+        "changeValue": "Wert ändern",
+        "assign": "Administratoren zuweisen",
+        "changeStatus": "Status ändern",
+        "changePriority": "Priorität ändern",
+        "changeDueDate": "Fälligkeitsdatum ändern",
+        "changeTitle": "Titel ändern",
+        "setCustomField": "Benutzerdefiniertes Feld setzen",
+        "clearCustomField": "Benutzerdefinierte Felder leeren",
+        "changeDescription": "Beschreibung ändern",
+        "removeFromPipeline": "Kontakt aus Pipeline entfernen",
+        "addComment": "Kommentar hinzufügen",
+        "transfer": "In andere Pipeline übertragen"
+      },
+      "title": "Titel",
+      "description": "Beschreibung",
+      "stage": "Phase",
+      "firstStage": "Erste Phase",
+      "status": "Status",
+      "assigneeMembers": "Zugewiesene Administratoren",
+      "assigneeTeams": "Zugewiesene Teams",
+      "value": "Wert",
+      "priority": "Priorität",
+      "dueDate": "Fälligkeitsdatum",
+      "dueNone": "Keines",
+      "dueNoneHint": "Der Eintrag hat kein Fälligkeitsdatum.",
+      "dueCustomField": "Aus einem benutzerdefinierten Datumsfeld",
+      "dueFixed": "Festes Datum und feste Uhrzeit",
+      "dueField": "Benutzerdefiniertes Datums- oder Datum-Uhrzeit-Feld",
+      "fieldValues": "Benutzerdefinierte Felder",
+      "field": "Feld",
+      "fieldValue": "Wert",
+      "fields": "Felder",
+      "addField": "Feldwert hinzufügen",
+      "removeHint": "Löscht den neuesten offenen Eintrag des Kontakts in dieser Pipeline.",
+      "comment": "Kommentar",
+      "destinationPipeline": "Ziel-Pipeline",
+      "destinationStage": "Zielphase",
+      "missingRequiredFields": "Pflichtfelder ohne Wert: {names}. Das Element kann erst erstellt werden, wenn jedes einen Wert hat.",
+      "addRequiredFields": "Pflichtfelder hinzufügen"
+    },
+    "aiSegmentImage": {
+      "label": "{name}: Bild segmentieren"
+    },
+    "aiSpeechToText": {
+      "muse": {
+        "formatHint": "Es werden nur WAV-Dateien akzeptiert: PCM 16 Bit, Mono, 16 kHz oder 24 kHz, maximal 10 Minuten. Jede andere Datei (z. B. Sprachnachrichten) geht in den Fehlerzweig.",
+        "languageBias": {
+          "label": "Sprachpräferenz",
+          "description": "Sprachen, in denen das Audio wahrscheinlich ist. Leer lassen für automatische Erkennung.",
+          "placeholder": "Automatisch erkennen"
+        },
+        "keywords": {
+          "label": "Schlüsselwörter",
+          "description": "Namen oder Fachbegriffe, mit denen Muse Wörter richtig schreibt.",
+          "placeholder": "Schlüsselwort hinzufügen und Enter drücken"
+        }
+      },
+      "languages": {
+        "Arabic": "Arabisch",
+        "Bengali": "Bengalisch",
+        "Dutch": "Niederländisch",
+        "English": "Englisch",
+        "French": "Französisch",
+        "German": "Deutsch",
+        "Hebrew": "Hebräisch",
+        "Hindi": "Hindi",
+        "Indonesian": "Indonesisch",
+        "Italian": "Italienisch",
+        "Japanese": "Japanisch",
+        "Kannada": "Kannada",
+        "Korean": "Koreanisch",
+        "Malay": "Malaiisch",
+        "MandarinChinese": "Mandarin-Chinesisch",
+        "Marathi": "Marathi",
+        "Polish": "Polnisch",
+        "Portuguese": "Portugiesisch",
+        "Spanish": "Spanisch",
+        "Tagalog": "Tagalog",
+        "Tamil": "Tamil",
+        "Telugu": "Telugu",
+        "Thai": "Thailändisch",
+        "Turkish": "Türkisch",
+        "Vietnamese": "Vietnamesisch"
+      }
+    },
+    "findPlacesNearMe": {
+      "category": "Standortkategorie",
+      "allLocations": "Alle Standorte",
+      "whatsappOnly": "Wird nur an WhatsApp-Kontakte gesendet.",
+      "noLocationSource": "Der Standort muss in diesem Flow erfasst werden: Füge vor dieser Aktion einen Schritt „Benutzerdaten abrufen“ mit dem Antwortformat Standort hinzu. Ein von einem anderen Flow gespeicherter Standort wird nicht verwendet. Ohne ihn wird diese Aktion übersprungen."
+    },
+    "callPhoneNumber": {
+      "fallbackHint": "Auf Kanälen, die keine Anrufe auslösen können, erhält der Kontakt diese Nummer stattdessen als Antwort.",
+      "countryLabel": "Ländervorwahl",
+      "noCountry": "Kein Land",
+      "invalidForCountry": "Das ist keine gültige Telefonnummer für {country}.",
+      "needsCountry": "Wähle das Land oder beginne die Nummer mit + und der Ländervorwahl.",
+      "invalidInternational": "Das ist keine gültige internationale Telefonnummer."
+    },
+    "copyText": {
+      "textLabel": "Zu kopierender Text",
+      "limitHint": "Bis zu {max} Zeichen nach dem Einsetzen der Variablen.",
+      "fallbackHint": "Auf Kanälen, die keinen Text kopieren können, erhält der Kontakt diesen Text stattdessen als Antwort.",
+      "viewerTitle": "Kopiert diesen Text"
     }
   },
   "folders": {
@@ -2818,7 +3344,7 @@
     "title": "Allgemein"
   },
   "facebookMarketingMessages": {
-    "deleteWarning": "Dies entfernt die Kampagne nur aus ChatbotX. Die Meta-Nachrichtenkampagne läuft weiter — pausieren oder löschen Sie sie im Werbeanzeigenmanager.",
+    "deleteWarning": "Dadurch wird die Meta-Nachrichtenkampagne gelöscht und die Kampagne aus ChatbotX entfernt. Lehnt Meta das Löschen ab, bleibt die Kampagne erhalten.",
     "title": "Facebook Marketing Messages",
     "description": "Steigern Sie Engagement und Umsatz mit personalisierten Werbenachrichten auf Messenger.",
     "create": "Neu erstellen",
@@ -2843,13 +3369,197 @@
       "generic": "Generisch",
       "greeting": "Begrüßung",
       "quickReplies": "Schnellantworten",
-      "elements": "Karten"
+      "elements": "Karten",
+      "targetMessaging": "Zielgruppe für Nachrichten",
+      "targetOptIn": "Opt-in",
+      "targetOptInDescription": "Kunden der Seite, die dem Empfang von Marketingnachrichten zugestimmt haben",
+      "targetCustomAudience": "Custom Audience",
+      "targetCustomAudienceDescription": "Nachrichten an aus einer Datei hochgeladene Zielgruppen senden",
+      "audience": "Custom Audience"
     },
+    "noReadyAudiences": "Keine bereiten Custom Audiences für diese Seite und dieses Werbekonto.",
+    "manageAudiences": "Zielgruppen verwalten",
     "errors": {
       "notConfigured": "Facebook Marketing Messages ist nicht konfiguriert. Bitten Sie Ihren Administrator, die Marketing-Messages-Konfigurations-ID festzulegen.",
       "notGranted": "Bitte gewähren Sie Zugriff, um die Marketing-Messages-Funktion zu nutzen.",
       "tosNotAccepted": "Um diese Funktion zu nutzen, akzeptieren Sie bitte die Bedingungen für benutzerdefinierte Objekte unter {url}",
-      "notFound": "Marketing-Nachricht nicht gefunden."
+      "notFound": "Marketing-Nachricht nicht gefunden.",
+      "audienceNotTargetable": "Die ausgewählte Custom Audience ist nicht bereit oder gehört nicht zu dieser Seite und diesem Werbekonto.",
+      "connectFirst": "Verbinde Marketing Messages zuerst in der ChatbotX-App.",
+      "mmInvalidState": "Diese Aktion ist im aktuellen Status der Kampagne nicht verfügbar.",
+      "mmCampaignEnded": "Die Meta-Nachrichtenkampagne ist beendet und kann daher nicht gesendet oder fortgesetzt werden.",
+      "mmPageNotConnected": "Die Seite dieser Kampagne ist nicht mit diesem Workspace verbunden.",
+      "mmContentLocked": "Der Inhalt kann nach dem Versand der ersten Nachricht nicht mehr geändert werden.",
+      "metaDeleteFailed": "Meta konnte diese Kampagne nicht löschen, daher wurde sie behalten. {message}",
+      "statisticsUnknownAdAccount": "Dieser Workspace hat keine Marketing-Messages-Kampagnen in diesem Werbekonto.",
+      "statisticsInvalidRange": "Wähle ein Startdatum am oder vor dem Enddatum innerhalb der letzten 37 Monate."
+    },
+    "tabs": {
+      "campaigns": "Kampagnen",
+      "audiences": "Zielgruppen",
+      "statistics": "Statistiken"
+    },
+    "audiences": {
+      "title": "Custom Audiences",
+      "create": "Neu erstellen",
+      "uploadMore": "Weitere Zeilen hochladen",
+      "empty": "Noch keine Custom Audiences vorhanden.",
+      "deleteTitle": "Custom Audience löschen",
+      "deleteWarning": "Dadurch wird die Custom Audience \"{name}\" bei Meta und in ChatbotX gelöscht. Dies kann nicht rückgängig gemacht werden.",
+      "deleted": "Custom Audience gelöscht.",
+      "pageDisconnected": "Seite getrennt",
+      "status": {
+        "ready": "Bereit",
+        "missing": "Bei Meta gelöscht"
+      },
+      "fields": {
+        "customAudienceId": "Custom-Audience-ID",
+        "approximateCount": "Ungefähre Anzahl",
+        "status": "Status",
+        "file": "Datei hochladen"
+      },
+      "wizard": {
+        "title": "Custom Audience erstellen",
+        "uploadMoreTitle": "Weitere Zeilen hochladen",
+        "steps": {
+          "prepare": "Liste vorbereiten",
+          "upload": "Hochladen",
+          "confirm": "Bestätigen"
+        },
+        "prepareDescription": "Eine Abonnentenliste ist eine CSV- oder TXT-Datei mit Informationen zum Aufbau deiner Zielgruppe für Marketing-Nachrichten. Wir verwenden die Telefonnummer, um deine Abonnenten mit Facebook- und Instagram-Nutzern abzugleichen. Bevor die Informationen an uns gesendet werden, wird deine Liste von Kennungen in zufälligen Code umgewandelt (Hashing).",
+        "aboutHashing": "Über Hashing",
+        "downloadTemplate": "Dateivorlage herunterladen",
+        "mainIdentifiers": "Mindestens eine Hauptkennung angeben",
+        "moreIdentifiers": "Weitere Kennungen angeben",
+        "identifiers": {
+          "email": "E-Mail",
+          "phone": "Telefonnummer",
+          "madid": "Mobile Werbe-ID",
+          "fn": "Vorname",
+          "ln": "Nachname",
+          "ct": "Stadt",
+          "st": "Bundesland/Provinz",
+          "country": "Land",
+          "zip": "PLZ",
+          "dob": "Geburtsdatum",
+          "doby": "Geburtsjahr",
+          "gen": "Geschlecht"
+        },
+        "uploadNote": "Stelle vor dem Hochladen der Liste sicher, dass die Kennungen vollständig und im richtigen Format sind. Die Liste muss im Format .csv, .txt oder .xlsx vorliegen.",
+        "namePlaceholder": "Name der Zielgruppe eingeben...",
+        "descriptionPlaceholder": "Kurze Beschreibung (falls vorhanden)",
+        "dropzone": "Zum Hochladen klicken oder per Drag-and-drop ablegen",
+        "maxFileSize": "Maximale Dateigröße: 20 MB",
+        "fileRequired": "Wähle eine Datei zum Hochladen aus.",
+        "fileTooLarge": "Die Datei ist größer als 20 MB.",
+        "fileType": "Die Datei muss .csv, .txt oder .xlsx sein.",
+        "next": "Weiter",
+        "back": "Zurück",
+        "upload": "Hochladen",
+        "done": "Fertig",
+        "successTitle": "Upload erfolgreich",
+        "successRows": "Deine Messenger-Abonnentenliste wurde hochgeladen: {count, plural, one {# Zeile} other {# Zeilen}}",
+        "skippedRows": "{count, plural, one {# Zeile wurde} other {# Zeilen wurden}} übersprungen (keine gültige E-Mail-Adresse oder Telefonnummer).",
+        "invalidRows": "{count, plural, one {# Zeile wurde} other {# Zeilen wurden}} von Meta abgelehnt.",
+        "matchingNote": "Es kann einige Minuten dauern, bis der Abgleich deiner Abonnenten mit Personen auf Facebook abgeschlossen ist. Den Status findest du in der Zielgruppenliste."
+      },
+      "errors": {
+        "audienceInvalidFile": "Die Datei konnte nicht gelesen werden. Verwende eine .csv-, .txt- oder .xlsx-Datei mit Kopfzeile.",
+        "audienceTooManyRows": "Die Datei enthält mehr als {max, number} Zeilen.",
+        "audienceNoIdentifier": "Die Datei benötigt eine Spalte für E-Mail oder Telefon.",
+        "audienceNoValidRows": "Keine Zeile enthält eine gültige E-Mail-Adresse oder Telefonnummer.",
+        "audiencePartialUpload": "Die Zielgruppe wurde erstellt, aber der Upload wurde nach {received, number} Zeilen abgebrochen. Verwende \"Weitere Zeilen hochladen\", um es erneut zu versuchen.",
+        "audienceNotFound": "Custom Audience nicht gefunden.",
+        "audienceCreateRejected": "Meta hat die Zielgruppe abgelehnt: {reason}",
+        "uploadUncertain": "Der Upload wurde möglicherweise nicht abgeschlossen. Schließen Sie dieses Dialogfeld und prüfen Sie die Zielgruppenliste; verwenden Sie \"Weitere Zeilen hochladen\", falls die Zielgruppe erstellt wurde.",
+        "pageNotConnected": "Die ausgewählte Seite ist nicht mit diesem Workspace verbunden.",
+        "audienceInUse": "Diese Custom Audience wird von {count, plural, one {# Marketingnachricht} other {# Marketingnachrichten}} verwendet und kann nicht gelöscht werden."
+      }
+    },
+    "delivery": {
+      "title": "Zustellung",
+      "contentLocked": "Der Inhalt ist gesperrt, da bereits Nachrichten gesendet wurden.",
+      "topicsReturned": "Von Meta zurückgegebene Themen: {topics}",
+      "recipients": "{count} Empfänger",
+      "startsAt": "Start: {date}",
+      "completedAt": "Abgeschlossen: {date}",
+      "errorBreakdown": "Fehler",
+      "retrying": "Meta nimmt gerade keine Sendungen an; es wird automatisch erneut versucht.",
+      "counts": {
+        "sent": "Gesendet",
+        "delivered": "Zugestellt",
+        "unconfirmed": "Unbestätigt"
+      },
+      "status": {
+        "notSent": "Nicht gesendet",
+        "scheduled": "Geplant",
+        "sending": "Wird gesendet",
+        "waitingNextDay": "Wartet auf den nächsten Tag",
+        "paused": "Pausiert",
+        "stopped": "Gestoppt"
+      },
+      "reason": {
+        "pageNotConnected": "Die Seite ist nicht mit diesem Workspace verbunden.",
+        "quotaReached": "Pausiert: Ihr Nachrichtenkontingent ist erreicht.",
+        "workspaceBlocked": "Pausiert: Dieser Workspace ist gesperrt.",
+        "grantInvalid": "Pausiert: Die Facebook-Verbindung ist abgelaufen. Verbinden Sie Marketing Messages erneut.",
+        "metaBlocker": "Meta blockiert diese Kampagne.",
+        "contentRejected": "Meta hat den Nachrichteninhalt abgelehnt.",
+        "noTokens": "Für diese Kampagne wurden keine Empfänger gefunden.",
+        "noMatchingTopic": "Kein Empfänger mit Einwilligung passt zum Thema „Updates and promotions“.",
+        "tokenFetchFailed": "Empfänger konnten nicht von Meta abgerufen werden.",
+        "campaignEnded": "Die Meta-Kampagne ist beendet.",
+        "lifetimeBudgetReached": "Das Gesamtbudget ist aufgebraucht."
+      },
+      "errors": {
+        "grantInvalid": "Die Facebook-Verbindung ist abgelaufen.",
+        "campaignInactive": "Die Meta-Kampagne ist nicht aktiv.",
+        "budgetReached": "Budget aufgebraucht.",
+        "dailyBudgetReached": "Tagesbudget erreicht.",
+        "optedOut": "Der Empfänger hat sich abgemeldet.",
+        "frequencyLimit": "Häufigkeitslimit des Empfängers erreicht.",
+        "contentRejected": "Nachrichteninhalt von Meta abgelehnt.",
+        "deliveryFailed": "Zustellung fehlgeschlagen.",
+        "outcomeUnknown": "Zustellergebnis unbekannt."
+      }
+    },
+    "statistics": {
+      "searchPlaceholder": "Nach ID oder Name suchen",
+      "adAccount": "Werbekonto",
+      "dateRange": "Zeitraum",
+      "timezoneHint": "Daten in {timezone}",
+      "presets": {
+        "last7": "Letzte 7 Tage",
+        "last30": "Letzte 30 Tage",
+        "last90": "Letzte 90 Tage",
+        "thisMonth": "Dieser Monat",
+        "lastMonth": "Letzter Monat"
+      },
+      "columns": {
+        "id": "ID",
+        "name": "Name",
+        "page": "Facebook-Seite",
+        "delivered": "Zugestellte Nachrichten",
+        "readRate": "Leserate",
+        "linkClicks": "Link-Klicks",
+        "linkClickRate": "Link-Klickrate",
+        "costPerClick": "Kosten pro Klick",
+        "costPerDelivery": "Kosten pro Zustellung",
+        "spend": "Ausgegebener Betrag"
+      },
+      "notes": {
+        "delivery": "Meta meldet diesen Wert nicht für Empfänger in Europa oder Japan; diese Kampagnen zeigen -.",
+        "clicks": "Meta meldet diesen Wert nicht für Empfänger in Europa, Argentinien, der Türkei, Südkorea oder Japan; diese Kampagnen zeigen -."
+      },
+      "footer": {
+        "label": "Gesamt: {count, plural, one {# Kampagne} other {# Kampagnen}}",
+        "total": "Gesamt",
+        "average": "Durchschnitt"
+      },
+      "totalsUnavailable": "Summen sind gerade nicht verfügbar. Versuche es gleich noch einmal.",
+      "readOnly": "Verbinde Marketing Messages erneut, um Statistiken zu sehen.",
+      "empty": "Noch keine Marketing-Messages-Kampagnen. Erstelle eine im Tab Kampagnen.",
+      "noResults": "Keine Kampagnen passen zu deiner Suche."
     }
   },
   "facebookAds": {
@@ -3551,14 +4261,22 @@
         "inProgress": "Verbindung wird bereits hergestellt.",
         "unknown": "Etwas ist schiefgelaufen.",
         "followUpFailed": "Einrichtung unvollständig – bitte in den Kanaleinstellungen abschließen.",
-        "webhookSubscribeFailed": "Verbunden, aber das Webhook-Abonnement ist fehlgeschlagen – versuchen Sie es erneut in den Verbindungseinstellungen."
+        "webhookSubscribeFailed": "Verbunden, aber das Webhook-Abonnement ist fehlgeschlagen – versuchen Sie es erneut in den Verbindungseinstellungen.",
+        "providerUnavailable": "Der Anbieter ist vorübergehend nicht erreichbar. Versuche es in ein paar Minuten erneut."
       },
       "sessionError": {
         "sessionExpired": "Ihre Sitzung ist abgelaufen. Bitte erneut verbinden.",
         "notMember": "Sie sind kein Mitglied dieses Workspace mehr.",
         "trialExpired": "Ihre Testphase ist abgelaufen.",
         "macLimitReached": "Sie haben Ihr Kontolimit erreicht.",
-        "credentialMissing": "Anmeldedaten fehlen. Bitte erneut verbinden."
+        "credentialMissing": "Anmeldedaten fehlen. Bitte erneut verbinden.",
+        "noPages": "Wir konnten keine Facebook-Seite zum Verbinden finden. Verbinde dich erneut und gewähre Zugriff auf mindestens eine Seite, die du verwaltest.",
+        "noInstagramAccounts": "Wir konnten kein Instagram-Konto zum Verbinden finden. Verbinde dich erneut und gewähre Zugriff auf mindestens ein Konto.",
+        "exchangeFailed": "Die Anmeldung konnte nicht abgeschlossen werden. Bitte verbinde dich erneut.",
+        "providerError": "Deine Konten konnten gerade nicht geladen werden. Bitte versuche es in ein paar Minuten erneut.",
+        "connectFailed": "Beim Verbinden ist ein Fehler aufgetreten. Bitte versuche es erneut.",
+        "tooManyAttempts": "Es gibt zu viele unvollständige Verbindungsversuche. Warte ein paar Minuten und versuche es dann erneut.",
+        "notAllowed": "Du kannst hier gerade keine Kanäle verbinden. Lade die Seite neu, um den Grund zu sehen."
       },
       "cancelRemaining": "Verbleibende abbrechen",
       "retryFailed": "Erneut versuchen ({count})",
@@ -3624,7 +4342,8 @@
   "workspaces": {
     "list": {
       "title": "Liste der Arbeitsbereiche"
-    }
+    },
+    "defaultName": "Arbeitsbereich von {name}"
   },
   "workspaceToken": {
     "title": "Arbeitsbereichstoken"
@@ -3641,6 +4360,7 @@
       "months": "{count} Mon.",
       "years": "{count} J."
     },
+    "realtimeRevokeWarning": "Der Zugriffswiderruf konnte nicht sofort bestätigt werden – er wird beim nächsten erneuten Verbinden des Mitglieds wirksam.",
     "moveFeature": "{feature} verschieben",
     "poweredBy": "Bereitgestellt von {name}",
     "noGiphyApiKey": "Kein GIPHY-API-Schlüssel gefunden. Fügen Sie einen in den Plattformeinstellungen hinzu.",
@@ -3778,6 +4498,9 @@
     "waTemplateMpmTooManySections": "Eine Multi-Produkt-Schaltfläche kann höchstens 10 Abschnitte haben. Entferne einige Abschnitte, bevor du veröffentlichst.",
     "waTemplateMpmTooManyProducts": "Eine Multi-Produkt-Schaltfläche kann insgesamt höchstens 30 Produkte haben. Entferne einige Produkte, bevor du veröffentlichst.",
     "waTemplateLtoExpirationRequired": "Wähle ein Ablaufdatum für das zeitlich begrenzte Angebot, bevor du sendest.",
+    "waTemplatePaymentRequestIncomplete": "Füllen Sie die Zahlungsdaten dieser Schaltfläche vor dem Veröffentlichen aus.",
+    "waTemplatePaymentRequestInvalid": "Eine Zahlungsangabe hat ein ungültiges Format. Prüfen Sie Betrag, Link und Kartenziffern.",
+    "waTemplatePaymentRequestMisplaced": "Zahlungsdaten können nur bei einer Zahlungsschaltfläche in einer normalen Vorlage (kein Karussell) gesetzt werden.",
     "waTemplateMpmIncompleteProducts": "Jeder Abschnitt braucht mindestens ein ausgewähltes Produkt — entferne leere Zeilen oder wähle ein Produkt aus.",
     "unsupportedBlock": "Dieser Kanal unterstützt diesen Block nicht.",
     "constraintExceeded": "Das Limit dieses Kanals wurde überschritten.",
@@ -3804,7 +4527,15 @@
       "noAnswer": "Keine Antwort",
       "labelsUnavailable": "Die Fragen des Flows konnten nicht geladen werden, daher werden die Feldnamen angezeigt.",
       "yes": "Ja",
-      "no": "Nein"
+      "no": "Nein",
+      "fileNotSaved": "Datei nicht gespeichert",
+      "filesNotSaved": "{count, plural, one {# Datei wurde nicht gespeichert} other {# Dateien wurden nicht gespeichert}}",
+      "filesAttached": "{count, plural, one {# Datei angehängt} other {# Dateien angehängt}}",
+      "fileFailure": {
+        "too_large": "Datei zu groß",
+        "unsupported_type": "Dateityp nicht unterstützt",
+        "download_failed": "Download fehlgeschlagen"
+      }
     },
     "sendViewCatalogBodyTooLong": "Der Nachrichtentext ist für eine Katalognachricht zu lang. Kürze ihn.",
     "sendViewCatalogFooterTooLong": "Die Fußzeile ist für eine Katalognachricht zu lang. Kürze sie.",
@@ -3831,7 +4562,24 @@
     "savedReplyImagesRemoved": "Bilder, die hier nicht gesendet werden können, wurden entfernt",
     "onlyImagesAllowed": "Es können nur Bilder hinzugefügt werden",
     "tooManySavedReplyImages": "Eine gespeicherte Antwort kann höchstens {max} Bilder enthalten",
-    "savedReplyImagesNotSentHere": "Bilder werden hier nicht gesendet"
+    "savedReplyImagesNotSentHere": "Bilder werden hier nicht gesendet",
+    "invalidPhoneNumber": "Das ist keine gültige Telefonnummer. Gib die Ländervorwahl an, zum Beispiel +1.",
+    "buttonCallPhoneNumberUnsupported": "Diese Schaltfläche kann hier keine Telefonnummer anrufen. Wähle eine andere Aktion.",
+    "buttonCopyTextUnsupported": "Diese Schaltfläche kann hier keinen Text kopieren. Wähle eine andere Aktion.",
+    "paymentRequest": {
+      "title": "Zahlungsanforderung",
+      "cardEnding": "Karte mit Endung {lastFourDigits}",
+      "status": "WhatsApp meldet keine Zahlung. Prüfen Sie dies bei Ihrem Zahlungsanbieter.",
+      "cardStatus": "Die Bestätigung des Kunden belastet die Karte nicht. Belasten Sie sie über Ihren Zahlungsanbieter.",
+      "sentFromTemplate": "Vorlage: {name}"
+    },
+    "paymentConfirmation": {
+      "title": "Kunde hat die Zahlung bestätigt",
+      "cardTitle": "Kunde hat die Kartenzahlung bestätigt",
+      "cardEnding": "Karte mit Endung {lastFourDigits}",
+      "notCharged": "Noch nicht belastet. Belasten Sie sie über Ihren Zahlungsanbieter.",
+      "reference": "Referenz {referenceId}"
+    }
   },
   "instagram": {
     "description": "Mit dieser Integration können Sie Instagram-Bots erstellen.",
@@ -3928,6 +4676,7 @@
         "buttonText": "Schaltflächentext",
         "buttonType": "Schaltflächentyp",
         "visitWebsite": "Website besuchen",
+        "openMiniApp": "Mini-App öffnen",
         "callPhoneNumber": "Telefonnummer anrufen",
         "postback": "Schaltfläche"
       },
@@ -3989,6 +4738,18 @@
       "label": "DeepSeek"
     },
     "title": "DeepSeek"
+  },
+  "muse": {
+    "autoReply": {
+      "description": "Aktivieren Sie automatische KI-Antworten, um Benutzern auf Basis Ihrer Unternehmensdaten natürlich zu antworten.",
+      "label": "Automatische KI-Antwort"
+    },
+    "connect": {
+      "description": "Antworten Sie Benutzern auf Basis Ihrer Unternehmensdaten auf natürliche Weise mit KI.",
+      "embeddingHint": "Muse bietet keine Embedding-Modelle. Wissensdatenbank und KI-Dateien benötigen weiterhin eine OpenAI- oder Gemini-Integration.",
+      "label": "Muse"
+    },
+    "title": "Muse"
   },
   "decision": {
     "addConnection": "Add AI Router connection",
@@ -4125,12 +4886,17 @@
     "deepseek": {
       "description": "Beschreibung der DeepSeek-Integration",
       "title": "DeepSeek-Integration"
+    },
+    "muse": {
+      "description": "Beschreibung der Muse-Integration",
+      "title": "Muse-Integration"
     }
   },
   "auth": {
     "orContinueWith": "Oder fortfahren mit",
     "continueWithFacebook": "Mit Facebook fortfahren",
     "continueWithGoogle": "Mit Google fortfahren",
+    "continueWithProvider": "Mit {name} fortfahren",
     "continueWithEmail": "Mit E-Mail fortfahren",
     "continueWithMagicLink": "Mit Magic Link fortfahren",
     "dontHaveAnAccount": "Noch kein Konto?",
@@ -4161,11 +4927,15 @@
     "changePasswordTitle": "Passwort ändern",
     "changePasswordDescription": "Legen Sie ein neues Passwort fest, bevor Sie fortfahren.",
     "passwordChangeSuccess": "Passwort geändert",
+    "signUpDisabledTitle": "Registrierung ist deaktiviert",
+    "signUpDisabledDescription": "Neue Konten können nur von einem Administrator oder über einen Einladungslink erstellt werden.",
     "oauthError": {
       "accountNotLinked": "Ein Konto mit dieser E-Mail-Adresse existiert bereits und konnte nicht verknüpft werden. Melde dich wie zuvor an oder kontaktiere den Support.",
       "unableToLinkAccount": "Wir konnten diese Anmeldung nicht mit dem bestehenden Konto verknüpfen. Melde dich auf dem Weg an, den du zuvor genutzt hast, oder kontaktiere den Support.",
       "sessionExpired": "Der Anmeldeversuch ist abgelaufen. Bitte versuche es erneut.",
       "accessDenied": "Die Anmeldung wurde abgebrochen.",
+      "signUpDisabled": "Dieses Konto existiert noch nicht und die Registrierung ist deaktiviert. Bitte einen Administrator, es für dich zu erstellen.",
+      "invalidInvitation": "Diese Einladung ist ungültig oder abgelaufen.",
       "generic": "Anmeldung fehlgeschlagen. Bitte versuche es erneut."
     }
   },
@@ -4189,6 +4959,9 @@
     "maxCharacters": "Maximal {max} Zeichen.",
     "invalidApiKey": "Ungültiger API-Schlüssel",
     "maxMustBeGreaterThanMin": "{maxField} muss größer als oder gleich {minField} sein",
+    "trigger": {
+      "actionReferenceNotFound": "An action refers to a record that no longer exists. Re-select it in the action and save again."
+    },
     "inboundWebhook": {
       "inboxRequired": "Wählen Sie einen Posteingang.",
       "inboxNotFound": "Der ausgewählte Posteingang wurde nicht gefunden.",
@@ -4198,11 +4971,31 @@
       "unknownFieldTarget": "Ein zugeordnetes Kontaktfeld existiert nicht mehr.",
       "actionReferenceNotFound": "Eine Aktion verweist auf einen Flow, ein Tag oder ein Feld, das nicht mehr existiert.",
       "fieldMappingRequired": "Fügen Sie mindestens eine Feldzuordnung hinzu."
+    },
+    "form": {
+      "required": "Dieses Feld ist erforderlich.",
+      "minLength": "Gib mindestens {minimum} Zeichen ein.",
+      "maxLength": "Gib höchstens {maximum} Zeichen ein.",
+      "minNumber": "Gib eine Zahl von mindestens {minimum} ein.",
+      "moreThan": "Gib eine Zahl größer als {minimum} ein.",
+      "maxNumber": "Gib eine Zahl von höchstens {maximum} ein.",
+      "lessThan": "Gib eine Zahl kleiner als {maximum} ein.",
+      "number": "Gib eine Zahl ein.",
+      "wholeNumber": "Gib eine ganze Zahl ein.",
+      "minItems": "Wähle mindestens {minimum}.",
+      "maxItems": "Wähle höchstens {maximum}.",
+      "email": "Gib eine gültige E-Mail-Adresse ein.",
+      "url": "Gib einen gültigen Link ein, der mit https:// beginnt.",
+      "format": "Dieser Wert hat nicht das richtige Format.",
+      "option": "Wähle eine der Optionen.",
+      "invalid": "Dieser Wert ist ungültig.",
+      "checkFields": "Einige Felder müssen korrigiert werden. Prüfe die rot markierten."
     }
   },
   "webchat": {
     "chatUnavailable": "Dieser Chat ist derzeit nicht verfügbar.",
     "description": "Bieten Sie Ihren Kunden direkt über Ihre Website sofortige automatisierte Antworten Ihres Unternehmens",
+    "loadMessagesError": "Nachrichten konnten nicht geladen werden. Überprüfe deine Verbindung und versuche es erneut.",
     "rateLimitExceeded": "Zu viele Anfragen. Versuchen Sie es gleich noch einmal.",
     "title": "Webchat",
     "workspaceUnavailable": "Dieser Arbeitsbereich ist nicht mehr verfügbar.",
@@ -4358,7 +5151,28 @@
         "mpmSectionLimitReached": "Maximal 10 Abschnitte erreicht.",
         "mpmProductLimitReached": "Maximal 30 Produkte erreicht.",
         "mpmProductsSummary": "{productCount} Produkte in {sectionCount} Abschnitten",
-        "unsupportedButtonParam": "Dieser Schaltflächentyp wird noch nicht unterstützt."
+        "unsupportedButtonParam": "Dieser Schaltflächentyp wird noch nicht unterstützt.",
+        "payment": {
+          "method": {
+            "pix": "Pix",
+            "boleto": "Boleto",
+            "payment_link": "Zahlungslink",
+            "card_on_file": "Kartenzahlung mit einem Klick"
+          },
+          "field": {
+            "code": "Pix-Code",
+            "digitableLine": "Boleto-Zeile",
+            "url": "URL des Zahlungslinks",
+            "lastFourDigits": "Letzte 4 Ziffern der Karte",
+            "credentialId": "Karten-Credential-ID (optional)",
+            "amount": "Betrag in BRL, z. B. 12.34"
+          },
+          "notice": {
+            "general": "Verwenden Sie eine Variable, damit jeder Kunde eigene Zahlungsdaten erhält.",
+            "cardOnFile": "Kartenzahlung mit einem Klick funktioniert nur für Unternehmen, die Meta dafür freigeschaltet hat."
+          },
+          "unsupportedButton": "Diese Vorlage enthält eine Zahlungsschaltfläche, die nicht gesendet werden kann: Ihre Zahlungsart konnte nicht ermittelt werden. Synchronisieren Sie die Vorlagen erneut oder wählen Sie eine andere."
+        }
       }
     },
     "sampleBodyCardContent": {
@@ -4515,7 +5329,6 @@
     "templateHeader": {
       "label": "Vorlagen-Header"
     },
-    "transferPhoneNumber": "Telefonnummer von einem anderen WhatsApp-Anbieter übertragen",
     "selectPage": {
       "tryAgain": "Erneute Verbindung versuchen"
     },
@@ -4772,7 +5585,18 @@
         "callInformation": "Anrufinformationen"
       }
     },
-    "credentialSecretsRequired": "Gib das App-Geheimnis und das Systembenutzer-Token ein. Sie sind noch nicht gespeichert."
+    "credentialSecretsRequired": "Gib das App-Geheimnis und das Systembenutzer-Token ein. Sie sind noch nicht gespeichert.",
+    "embeddedSignupCancelled": "Die Registrierung wurde abgebrochen – du kannst diesen Tab schließen.",
+    "embeddedSignupFailed": "Die Registrierung wurde nicht abgeschlossen – schließe diesen Tab und versuche es erneut.",
+    "payment": {
+      "settings": {
+        "title": "Zahlungen",
+        "description": "Wie diese Nummer Zahlungsanfrage-Schaltflächen sendet.",
+        "pixRedirectLabel": "Pix mit Weiterleitung senden",
+        "pixRedirectDescription": "Käufer öffnen ihre Bank-App zum Bezahlen und kehren zu WhatsApp zurück. Erst aktivieren, wenn Meta Ihr Unternehmen freigeschaltet hat; Käufer ohne Weiterleitung erhalten weiterhin Kopieren und Einfügen.",
+        "adminOnly": "Nur Workspace-Admins können die Zahlungseinstellungen ändern."
+      }
+    }
   },
   "zalo": {
     "title": "Zalo OA",
@@ -4795,7 +5619,8 @@
     "chatbotInvitationDescription1": "{chatbotName} beitreten",
     "chatbotInvitationDescription2": "{userName} hat Sie eingeladen, {chatbotName} beizutreten.",
     "invalidInvitation": "Diese Einladung ist ungültig oder abgelaufen.",
-    "workspaceUnavailable": "Dieser Arbeitsbereich ist nicht mehr verfügbar."
+    "workspaceUnavailable": "Dieser Arbeitsbereich ist nicht mehr verfügbar.",
+    "signUpToJoin": "Erstelle ein Konto, um beizutreten"
   },
   "inboxes": {
     "markReadOnOutbound": {
@@ -5160,11 +5985,11 @@
       "incomingCall": "Eingehender Anruf",
       "missedAudioCall": "Verpasster Audioanruf",
       "callEnded": "Anruf beendet",
-      "ticketCreated": "Ticket erstellt",
-      "ticketMovedToStage": "Ticket in Phase verschoben",
-      "ticketValueChanged": "Ticketwert geändert",
-      "ticketStatusChanged": "Ticketstatus geändert",
-      "ticketPriorityChanged": "Ticketpriorität geändert",
+      "pipelineItemCreated": "Ticket erstellt",
+      "pipelineItemMovedToStage": "Ticket in Phase verschoben",
+      "pipelineItemValueChanged": "Ticketwert geändert",
+      "pipelineItemStatusChanged": "Ticketstatus geändert",
+      "pipelineItemPriorityChanged": "Ticketpriorität geändert",
       "subscribedToSequence": "Sequenz abonniert",
       "unsubscribedFromSequence": "Sequenz abbestellt",
       "shoppingCartSent": "Kontakt hat Warenkorb gesendet",
@@ -5175,15 +6000,24 @@
       "orderShipped": "Bestellung versandt",
       "orderConcluded": "Bestellung abgeschlossen",
       "orderCancelled": "Bestellung storniert",
+      "orderPaid": "Bestellung bezahlt",
+      "orderRefunded": "Bestellung erstattet",
       "categoryAddedToCart": "Kategorie zum Warenkorb hinzugefügt",
       "productAddedToCart": "Produkt zum Warenkorb hinzugefügt",
       "productRemovedFromCart": "Produkt aus Warenkorb entfernt",
       "productOrdered": "Produkt bestellt",
       "contactReferredANewContact": "Kontakt hat einen neuen Kontakt geworben",
       "contactReferredExistingContact": "Kontakt hat einen bestehenden Kontakt geworben",
+      "contactBlockedBot": "Kontakt hat den Bot blockiert",
+      "contactUnblockedBot": "Kontakt hat den Bot entsperrt",
       "callRecorded": "Anruf aufgezeichnet",
       "callTranscribed": "Anruf transkribiert",
-      "anyProduct": "Beliebiges Produkt"
+      "anyProduct": "Beliebiges Produkt",
+      "anyCategory": "Beliebige Kategorie",
+      "anyPipeline": "Beliebige Pipeline",
+      "anyStage": "Beliebige Phase",
+      "unavailablePipeline": "Gelöschte oder nicht verfügbare Pipeline",
+      "unavailableStage": "Gelöschte oder nicht verfügbare Phase"
     },
     "actions": {
       "addTag": "Tag hinzufügen",
@@ -5191,6 +6025,7 @@
       "setCustomField": "Benutzerdefiniertes Feld festlegen",
       "clearCustomField": "Benutzerdefiniertes Feld leeren",
       "startAnotherFlow": "Anderen Flow starten",
+      "startExternalStep": "Start External Step",
       "notifyAdmins": "Admins benachrichtigen",
       "transferConversationToHuman": "Unterhaltung an Mitarbeiter übergeben",
       "sendMetaCapiEvent": "Meta-CAPI-Ereignis senden",
@@ -5232,7 +6067,26 @@
     "countCapped": "{count}+ Kontakte",
     "exportAllNotice": "Alle Kontakte, die dem aktuellen Filter entsprechen, werden exportiert.",
     "exportTakingLong": "Der Export dauert länger als erwartet",
-    "exportTakingLongDescription": "Der Export wird noch verarbeitet. Sie können diesen Dialog schließen und in einigen Minuten im Exportverlauf erneut nachsehen."
+    "exportTakingLongDescription": "Der Export wird noch verarbeitet. Sie können diesen Dialog schließen und in einigen Minuten im Exportverlauf erneut nachsehen.",
+    "search": {
+      "placeholder": "Suche (Name, E-Mail, Telefon, Kontakt-ID)",
+      "searching": "Suche läuft…",
+      "error": "Kontakte konnten nicht durchsucht werden",
+      "empty": "Keine Kontakte gefunden"
+    },
+    "exportHistory": {
+      "title": "Exportverlauf",
+      "description": "Kontaktexporte der letzten {days} Tage. Danach werden die Dateien gelöscht.",
+      "empty": "Noch keine Exporte.",
+      "requestedBy": "Von {name}",
+      "deletesOn": "Wird am {date} gelöscht",
+      "rows": "{count, plural, one {# Kontakt} other {# Kontakte}}",
+      "status": {
+        "pending": "Wird verarbeitet",
+        "uploaded": "Bereit",
+        "failed": "Fehlgeschlagen"
+      }
+    }
   },
   "contactScan": {
     "menu": {
@@ -5304,7 +6158,8 @@
       "userPlaceholder": "Benutzer-ID",
       "keyword": "Stichwort",
       "keywordPlaceholder": "Aktion oder Detail",
-      "allAdmins": "Alle Admins"
+      "allAdmins": "Alle Admins",
+      "allWorkspaces": "Alle Workspaces"
     }
   },
   "customFields": {
@@ -5325,7 +6180,36 @@
       "pageTitle": "Seiten-Schlüsselwörter",
       "page": "Automatische Antwort, wenn Sie eine Nachricht mit einem Schlüsselwort an einen Kontakt senden."
     },
-    "pageWarning": "Nachrichteninhalte mit einem Seiten-Schlüsselwort können dazu führen, dass Nachrichten in einer Endlosschleife an den Kunden gesendet werden. Deaktivieren Sie das Seiten-Schlüsselwort sofort, wenn dies bei Ihnen auftritt!"
+    "pageWarning": "Nachrichteninhalte mit einem Seiten-Schlüsselwort können dazu führen, dass Nachrichten in einer Endlosschleife an den Kunden gesendet werden. Deaktivieren Sie das Seiten-Schlüsselwort sofort, wenn dies bei Ihnen auftritt!",
+    "conditions": {
+      "operators": {
+        "is": "Nachricht ist",
+        "similarTo": "Nachricht ähnelt",
+        "contains": "Nachricht enthält",
+        "containsPhone": "Nachricht enthält Telefonnummer",
+        "containsEmail": "Nachricht enthält E-Mail",
+        "containsImage": "Nachricht enthält Bild",
+        "containsVideo": "Nachricht enthält Video",
+        "containsLink": "Nachricht enthält Link",
+        "containsWholeWord": "Nachricht enthält ganzes Wort",
+        "beginsWith": "Nachricht beginnt mit",
+        "endsWith": "Nachricht endet mit",
+        "isThumbsUp": "Nachricht ist 👍",
+        "notContains": "Nachricht enthält nicht",
+        "matchesRegex": "Nachricht entspricht Regex"
+      },
+      "and": "und",
+      "addCondition": "Nachrichtenbedingung",
+      "removeCondition": "Bedingung entfernen",
+      "note": "Keywords unterscheiden nicht zwischen Groß- und Kleinschreibung und ignorieren Akzente, z. B. werden \"Tư vấn\" und \"tu van\" gleich erkannt.",
+      "keywordPlaceholder": "+ Keyword",
+      "regexPlaceholder": "+ Regex",
+      "errors": {
+        "keywordConditionValuesRequired": "Füge mindestens ein Keyword hinzu.",
+        "keywordConditionTakesNoValues": "Diese Bedingung braucht keine Keywords.",
+        "invalidKeywordRegex": "Ungültiger regulärer Ausdruck."
+      }
+    }
   },
   "triggers": {
     "title": "Trigger"
@@ -5428,6 +6312,7 @@
     "gemini": "Gemini",
     "claude": "Claude",
     "deepseek": "DeepSeek",
+    "muse": "Muse",
     "openrouter": "OpenRouter",
     "openaiCompatible": "OpenAI-kompatibel"
   },
@@ -5465,11 +6350,99 @@
   },
   "pollManager": {
     "title": "Umfrageverwaltung",
-    "description": "Erstellen und verwalten Sie Umfragen für Ihre Kontakte."
+    "description": "Führen Sie Umfrage- oder Abstimmungssysteme durch. Sie können damit auch die Meinungen Ihrer Kunden sammeln.",
+    "feature": "Poll",
+    "deleteDescription": "Deleting a poll also deletes its candidates and votes. This cannot be undone.",
+    "list": {
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "votes": "Votes",
+      "getLink": "Get Link"
+    },
+    "getLink": {
+      "title": "Get Link",
+      "description": "Share a link that opens a chat and starts the poll.",
+      "omnichannel": "Omnichannel",
+      "noInboxes": "No connected channels can open this poll yet.",
+      "loadError": "Could not load the links."
+    },
+    "form": {
+      "createTitle": "Create poll",
+      "editTitle": "Edit poll",
+      "votingPeriod": "Voting period",
+      "imageRequired": "An image is required.",
+      "dateRangeInvalid": "Das Enddatum muss nach dem Startdatum liegen.",
+      "candidatesTitle": "Candidates or Options",
+      "candidateNumber": "Candidate {number}",
+      "moreOptions": "More Options",
+      "afterVoteFlow": "Flow to be sent after the user votes",
+      "afterVoteFlowNone": "None",
+      "removeVotesTitle": "Remove candidates?",
+      "removeVotesDescription": "Deleting candidates also deletes their votes."
+    },
+    "analytics": {
+      "title": "Analytics",
+      "results": "Results",
+      "votesPerGender": "Votes per gender",
+      "totalVotes": "Total votes",
+      "noVotes": "No votes yet",
+      "other": "Other",
+      "male": "Male",
+      "female": "Female",
+      "unknown": "Unknown",
+      "loadError": "Could not load the analytics.",
+      "columns": {
+        "name": "Name",
+        "totalVotes": "Total votes",
+        "totalPercent": "T%",
+        "maleVotes": "Male votes",
+        "malePercent": "M%",
+        "femaleVotes": "Female votes",
+        "femalePercent": "F%"
+      }
+    }
   },
   "placesNearMe": {
     "title": "Orte in der Nähe",
-    "description": "Finden Sie Orte in der Nähe Ihrer Kontakte."
+    "description": "Ermöglichen Sie Ihren Kunden, Ihre Geschäftsstandorte in ihrer Nähe einfach zu finden.",
+    "tabs": {
+      "locations": "Standorte",
+      "categories": "Kategorien"
+    },
+    "categories": {
+      "columns": {
+        "locations": "Standorte"
+      },
+      "add": "Kategorie hinzufügen",
+      "edit": "Kategorie bearbeiten",
+      "empty": "Noch keine Kategorien.",
+      "created": "Kategorie hinzugefügt",
+      "updated": "Kategorie aktualisiert",
+      "deleted": "Kategorie gelöscht",
+      "saveError": "Kategorie konnte nicht gespeichert werden",
+      "deleteError": "Kategorie konnte nicht gelöscht werden",
+      "deleteTitle": "{name} löschen?",
+      "deleteDescription": "{count, plural, =0 {Keine Standorte verwenden diese Kategorie.} one {# Standort wird unkategorisiert.} other {# Standorte werden unkategorisiert.}}"
+    },
+    "locations": {
+      "columns": {
+        "coordinates": "Koordinaten"
+      },
+      "preview": "Vorschau",
+      "add": "Standort hinzufügen",
+      "edit": "Standort bearbeiten",
+      "empty": "Noch keine Standorte.",
+      "created": "Standort hinzugefügt",
+      "updated": "Standort aktualisiert",
+      "deleted": "Standort gelöscht",
+      "saveError": "Standort konnte nicht gespeichert werden",
+      "deleteError": "Standort konnte nicht gelöscht werden",
+      "deleteTitle": "{name} löschen?",
+      "deleteDescription": "Dieser Standort wird dauerhaft gelöscht.",
+      "noCategory": "Keine Kategorie",
+      "latitude": "Breitengrad",
+      "longitude": "Längengrad"
+    }
   },
   "questionnaires": {
     "title": "Fragebögen",
@@ -6086,6 +7059,9 @@
   "templates": {
     "title": "Vorlagen",
     "description": "Erstellen und verwalten Sie Ihre Vorlagen.",
+    "createDialog": {
+      "title": "Neue Vorlage"
+    },
     "share": {
       "label": "Teilen",
       "enabled": "Geteilt",
@@ -6094,14 +7070,135 @@
       "dialogDescription": "Jeder mit diesem Link kann eine Kopie dieser Vorlage in einem Arbeitsbereich Ihres Mandanten installieren.",
       "enableLabel": "Freigabelink aktivieren",
       "linkLabel": "Freigabelink",
-      "description": "Jeder mit dem Link kann diese Vorlage in seinem eigenen Arbeitsbereich installieren."
+      "rotateLabel": "Link erneuern",
+      "rotateTitle": "Freigabelink erneuern?",
+      "rotateDescription": "Der aktuelle Link funktioniert sofort nicht mehr. Wer diese Vorlage noch installieren muss, benötigt den neuen Link.",
+      "rotated": "Freigabelink erneuert",
+      "expiryLabel": "Link läuft ab am",
+      "expiryHint": "Leer lassen für einen Link, der nie abläuft.",
+      "clearExpiry": "Ablaufdatum entfernen",
+      "expiredNotice": "Dieser Link ist abgelaufen. Legen Sie ein späteres Datum fest oder entfernen Sie das Ablaufdatum, um ihn erneut zu teilen.",
+      "templateId": "Vorlagen-ID",
+      "templateKey": "Vorlagenschlüssel",
+      "showKey": "Schlüssel anzeigen",
+      "hideKey": "Schlüssel verbergen",
+      "copyField": "{field} kopieren"
+    },
+    "sync": {
+      "title": "Aktualisierungen",
+      "updateAvailable": "Aktualisierung verfügbar",
+      "upToDate": "Aktuell",
+      "sourceDeleted": "Vorlage gelöscht",
+      "sourceDeletedHint": "Der Herausgeber hat diese Vorlage gelöscht. Deine Kopie funktioniert weiter, kann aber nicht mehr aktualisiert werden.",
+      "updateNow": "Jetzt aktualisieren",
+      "updating": "Wird aktualisiert…",
+      "version": "Vorlagenversion {version}",
+      "lastSynced": "zuletzt aktualisiert am {date}",
+      "autoUpdateLabel": "Automatisch aktualisieren, wenn sich die Vorlage ändert",
+      "noHistory": "Noch keine Aktualisierungen.",
+      "countAdded": "{count} hinzugefügt",
+      "countUpdated": "{count} aktualisiert",
+      "countDetached": "{count} folgen der Vorlage nicht mehr",
+      "notUpdatable": "{count} noch nicht aktualisierbar",
+      "overwritten": "{name} wurde bearbeitet und durch die Aktualisierung ersetzt",
+      "restore": "Meine Version wiederherstellen",
+      "restored": "Ihre Version wurde wiederhergestellt",
+      "status": {
+        "pending": "In Warteschlange",
+        "running": "Läuft",
+        "completed": "Abgeschlossen",
+        "partial": "Teilweise",
+        "failed": "Fehlgeschlagen",
+        "skipped": "Übersprungen",
+        "cancelled": "Abgebrochen"
+      },
+      "trigger": {
+        "autoUpdate": "Automatisch",
+        "manual": "Manuell",
+        "reinstall": "Neuinstallation"
+      },
+      "requestedVersion": "angefordert v{version}",
+      "errors": {
+        "unknown": "Das Update ist fehlgeschlagen. Versuche es erneut oder wende dich an den Support, falls es weiter fehlschlägt.",
+        "templateSyncFailed": "Das Update ist fehlgeschlagen. Versuche es erneut.",
+        "templateSyncSuperseded": "Ein neueres Update hat dieses ersetzt.",
+        "templateSyncAbandoned": "Das Update wurde nicht rechtzeitig abgeschlossen und beendet.",
+        "templateInstallationInactive": "Diese Installation ist nicht mehr aktiv.",
+        "workspaceOwnerBlocked": "Das Konto des Arbeitsbereich-Eigentümers ist gesperrt.",
+        "templateUninstallInProgress": "Die Vorlage wird gerade deinstalliert.",
+        "templateAutoUpdateOff": "Automatische Updates sind ausgeschaltet.",
+        "templateUpToDate": "Die Kopie ist bereits aktuell.",
+        "templateInstallerAccessLost": "Wer die Vorlage installiert hat, darf diese Kopie nicht mehr aktualisieren.",
+        "templateInstallationSourceMissing": "Die Vorlage wurde gelöscht, bevor das Update lief.",
+        "templateCategoryPermissionDenied": "Du hast nicht mehr die Berechtigung, alles in dieser Vorlage zu aktualisieren.",
+        "templatePayloadIncompatible": "Diese Vorlage wurde in einem neueren Format gespeichert, als dieser Server installieren kann.",
+        "templateCrossTenantInstall": "Diese Vorlage ist für Ihren Arbeitsbereich nicht verfügbar.",
+        "templateInvalidInboxBinding": "Ein ausgewählter Posteingang passt nicht zur Vorlage."
+      }
+    },
+    "versions": {
+      "detailsTab": "Details",
+      "tab": "Versionen",
+      "versionNumber": "Version {version}",
+      "current": "Aktuell",
+      "first": "Erste Version",
+      "noDetail": "Für diese Version wurden keine Details erfasst.",
+      "added": "Hinzugefügt",
+      "changed": "Geändert",
+      "removed": "Entfernt"
+    },
+    "installers": {
+      "title": "Analysen anzeigen",
+      "workspace": "Arbeitsbereich",
+      "lastInstalled": "Zuletzt installiert",
+      "version": "Version",
+      "autoUpdate": "Automatische Aktualisierung",
+      "uninstalled": "Deinstalliert",
+      "hidden": "Arbeitsbereich nicht geteilt",
+      "uninstallNotAllowed": "Der Installierende hat Herausgebern das Deinstallieren dieser Kopie nicht erlaubt.",
+      "loadError": "Die Installierenden konnten nicht geladen werden. Versuche es erneut.",
+      "automatic": "Automatisch",
+      "details": "Details",
+      "noIssues": "Keine Warnungen oder Fehler."
     },
     "installs": {
       "title": "Installationen",
       "resources": "Ressourcen",
       "warnings": "Warnungen",
       "completedAt": "Abgeschlossen am",
-      "autoUpdate": "Automatische Aktualisierung"
+      "autoUpdate": "Automatische Aktualisierung",
+      "installedBy": "Installiert von",
+      "viaApi": "API-Token",
+      "attempts": "Versuche",
+      "autoUpdateOn": "An",
+      "autoUpdateOff": "Aus",
+      "retry": "Installation wiederholen",
+      "resourcesTitle": "Installierte Ressourcen",
+      "noResources": "Es wurde noch nichts erstellt.",
+      "deletedResource": "Gelöschte Ressource",
+      "viewOnly": "Nur Ansicht",
+      "created": "Erstellt",
+      "reused": "Wiederverwendet",
+      "loadMore": "Mehr laden",
+      "statusFilter": "Status",
+      "allStatuses": "Alle Status",
+      "errors": {
+        "unknown": "Die Installation ist fehlgeschlagen. Versuchen Sie es erneut oder wenden Sie sich an den Support, falls der Fehler weiterhin auftritt.",
+        "templatePayloadIncompatible": "Diese Vorlage wurde in einem neueren Format gespeichert, als dieser Server installieren kann.",
+        "templateInstallationSourceMissing": "Die Vorlage wurde gelöscht, bevor die Installation lief.",
+        "templateCrossTenantInstall": "Diese Vorlage ist für Ihren Arbeitsbereich nicht verfügbar.",
+        "templateCategoryPermissionDenied": "Sie haben nicht mehr die Berechtigung, alles in dieser Vorlage zu installieren.",
+        "templateInvalidInboxBinding": "Ein ausgewählter Posteingang passt nicht zur Vorlage.",
+        "templateInstallEnqueueFailed": "Die Installation konnte nicht in die Warteschlange gestellt werden.",
+        "templateInstallFailed": "Die Installation ist fehlgeschlagen. Versuchen Sie es erneut.",
+        "templateInstallAbandoned": "Die Installation wurde nicht rechtzeitig abgeschlossen und wurde beendet.",
+        "templateInstallSuperseded": "Eine neuere Installation dieser Vorlage hat diese ersetzt.",
+        "workspaceOwnerBlocked": "Das Konto des Arbeitsbereich-Eigentümers ist gesperrt."
+      },
+      "uninstalledBy": "{by, select, publisher {Der Herausgeber hat diese Vorlage deinstalliert.} installer {Diese Vorlage wurde aus diesem Arbeitsbereich deinstalliert.} other {Diese Vorlage wurde deinstalliert.}}",
+      "uninstalledSummary": "{deleted} gelöscht, {kept} behalten.",
+      "lastAttemptAt": "Letzter Versuch",
+      "installedAutomatically": "Automatisch installiert (White-Label-Standard)"
     },
     "form": {
       "contents": "Vorlageninhalt",
@@ -6114,14 +7211,26 @@
       "allowDelete": "Löschen nach Installation erlauben",
       "publisherName": "Name des Herausgebers",
       "youtubeVideoId": "YouTube-Video-ID",
-      "youtubeVideoIdDescription": "Die 11-stellige ID aus der Video-URL, z. B. \"dQw4w9WgXcQ\" in youtube.com/watch?v=dQw4w9WgXcQ",
+      "youtubeVideoIdDescription": "Die 11-stellige ID aus der Video-URL, z. B. \"xxxxxxxxxxx\" in youtube.com/watch?v=xxxxxxxxxxx",
       "testLink": "Testlink",
       "imageUrl": "Titelbild",
       "installBehavior": "Installationsverhalten",
-      "createInstallFolder": "In einem eigenen Ordner installieren",
+      "createInstallFolder": "Einen Ordner im installierten Konto erstellen und die Ressourcen installieren.",
       "createInstallFolderDescription": "Verschachtelt jede installierte Ressource in einem neuen, nach dieser Vorlage benannten Ordner.",
-      "defaultAutoUpdate": "Installationen standardmäßig für Updates markieren",
-      "defaultAutoUpdateDescription": "Neue Installationen zeigen einen Update-Hinweis, sobald Sie diese Vorlage erneut veröffentlichen."
+      "defaultAutoUpdate": "Installierte Vorlagen automatisch aktualisieren",
+      "defaultAutoUpdateDescription": "Wenn Sie diese Vorlage mit geändertem Inhalt speichern, werden Installationen mit automatischer Aktualisierung mit dem neuen Inhalt überschrieben (vom Installierenden bearbeitete Kopien werden zuvor gesichert). Installierende können dies deaktivieren.",
+      "viewOnly": "Nur ansehen",
+      "viewOnlyAll": "Alle ausgewählten nur ansehen",
+      "includedAutomatically": {
+        "title": "Automatisch enthalten",
+        "hint": "Mitgenommen, weil etwas, das Sie ausgewählt haben, es benötigt. Schreibgeschützt.",
+        "rows": "{count, plural, one {# weiteres Element} other {# weitere Elemente}}",
+        "kind": {
+          "folders": "Ordner",
+          "placeCategories": "Ortskategorien"
+        }
+      },
+      "viewOnlyCopyIncluded": "Etwas, das du ausgewählt hast (oder das es benötigt), wurde aus einer schreibgeschützten Vorlage installiert und kann nicht in einer neuen Vorlage geteilt werden."
     },
     "categories": {
       "flows": "Flows",
@@ -6136,8 +7245,116 @@
       "keywords": "Schlüsselwörter",
       "entryPointLinks": "Einstiegspunkt-Links",
       "triggers": "Trigger",
-      "fbCommentAutomations": "Facebook-Kommentarautomatisierungen",
-      "settings": "Einstellungen"
+      "fbCommentAutomations": "Kommentarautomatisierungen",
+      "settings": "Bot-Felder & gespeicherte Antworten",
+      "sequences": "Sequenzen",
+      "aiMcpServers": "MCP-Server",
+      "aiFiles": "KI-Wissensdateien",
+      "questionnaires": "Questionnaires",
+      "couponTopics": "Gutscheinthemen",
+      "pipelines": "Pipelines"
+    },
+    "locked": {
+      "flowBanner": "Dieser Flow wurde aus einer Vorlage mit reiner Ansicht installiert. Du kannst ihn ansehen, aber nicht bearbeiten.",
+      "badge": "Nur Ansicht",
+      "editorBanner": "Dies wurde aus einer Vorlage mit reiner Ansicht installiert. Du kannst es ansehen, aber nicht bearbeiten.",
+      "badgeHint": "Aus einer Vorlage mit reiner Ansicht installiert"
+    },
+    "channels": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "instagramFacebook": "Instagram (Facebook login)",
+      "threads": "Threads",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "zalo": "Zalo",
+      "webchat": "Webchat",
+      "line": "LINE",
+      "email": "E-Mail"
+    },
+    "uninstall": {
+      "title": "Vorlage deinstallieren",
+      "description": "Die Vorlage entfernt alles, was sie in diesem Arbeitsbereich erstellt hat, einschließlich bearbeiteter Kopien. Geteilte Tags, Felder und Ordner, bereits vorher vorhandene Elemente und alles, was Sie auf einer Kopie aufgebaut haben, bleiben erhalten.",
+      "loading": "Es wird geprüft, was passieren wird…",
+      "previewFailed": "Die Auswirkungen einer Deinstallation konnten nicht geprüft werden.",
+      "failed": "Die Vorlage konnte nicht deinstalliert werden.",
+      "confirm": "Deinstallieren",
+      "action": "Deinstallieren",
+      "deleted": "{count, plural, one {# Element wird gelöscht} other {# Elemente werden gelöscht}}",
+      "deletedDone": "{count, plural, one {# Element wurde gelöscht} other {# Elemente wurden gelöscht}}",
+      "keptModified": "{count, plural, one {# bearbeitete oder nicht verifizierte Kopie bleibt erhalten} other {# bearbeitete oder nicht verifizierte Kopien bleiben erhalten}}",
+      "keptShared": "{count, plural, one {# geteiltes Tag oder Feld bleibt erhalten} other {# geteilte Tags und Felder bleiben erhalten}}",
+      "keptByPolicy": "{count, plural, one {# weiteres Element bleibt erhalten} other {# weitere Elemente bleiben erhalten}}",
+      "keptHasDependents": "{count, plural, one {# Kopie bleibt erhalten, weil sie noch verwendet wird} other {# Kopien bleiben erhalten, weil sie noch verwendet werden}}",
+      "deletedModified": "{count, plural, one {# davon wurde von Ihnen bearbeitet: Diese Änderungen gehen verloren und können nicht wiederhergestellt werden} other {# davon wurden von Ihnen bearbeitet: Diese Änderungen gehen verloren und können nicht wiederhergestellt werden}}",
+      "keptLockedByOther": "{count, plural, one {# Element bleibt erhalten, weil eine andere Vorlageninstallation es noch schützt} other {# Elemente bleiben erhalten, weil eine andere Vorlageninstallation sie noch schützt}}",
+      "confirmCheckbox": "Ich verstehe, dass dadurch die oben genannten Elemente gelöscht werden und dies nicht rückgängig gemacht werden kann",
+      "started": "Deinstallation gestartet",
+      "inProgress": "Wird deinstalliert…",
+      "retry": "Deinstallation wiederholen",
+      "state": {
+        "pending": "Deinstallation in Warteschlange",
+        "running": "Wird deinstalliert…",
+        "partial": "Deinstallation unvollständig, bitte wiederholen",
+        "failed": "Deinstallation fehlgeschlagen, bitte wiederholen",
+        "skipped": "Deinstallation übersprungen: Der Arbeitsbereich ist gesperrt"
+      },
+      "deletedUnverified": "{count, plural, one {# davon kann nicht auf Änderungen geprüft werden: Falls Sie sie geändert haben, gehen diese Änderungen verloren} other {# davon können nicht auf Änderungen geprüft werden: Falls Sie sie geändert haben, gehen diese Änderungen verloren}}",
+      "cancelAction": "Deinstallation abbrechen",
+      "cancelled": "Deinstallation abgebrochen: Die übrigen Elemente können Sie wieder verwenden",
+      "blockedByReference": "{count, plural, one {# Element wurde nicht gelöscht, weil etwas, das Sie erstellt haben, noch darauf verweist: Entfernen Sie diesen Verweis und wiederholen Sie dann die Deinstallation} other {# Elemente wurden nicht gelöscht, weil etwas, das Sie erstellt haben, noch darauf verweist: Entfernen Sie diese Verweise und wiederholen Sie dann die Deinstallation}}",
+      "keptPartlyRemoved": "{count, plural, one {# Kopie wurde nach einer blockierten Deinstallation behalten; Verlauf und Daten zum Duplikatschutz wurden möglicherweise entfernt, prüfen Sie sie daher, bevor Sie sie einschalten} other {# Kopien wurden nach einer blockierten Deinstallation behalten; Verlauf und Daten zum Duplikatschutz wurden möglicherweise entfernt, prüfen Sie sie daher, bevor Sie sie einschalten}}",
+      "keptInactiveForReview": "{count, plural, one {# Kopie wurde inaktiv belassen: Ihr Verlauf und die Daten zum Duplikatschutz wurden entfernt, prüfen Sie sie daher, bevor Sie sie einschalten} other {# Kopien wurden inaktiv belassen: Ihr Verlauf und die Daten zum Duplikatschutz wurden entfernt, prüfen Sie sie daher, bevor Sie sie einschalten}}",
+      "keptHistoryRemoved": "{count, plural, one {# Kopie wurde behalten, aber ihr Verlauf wurde entfernt (es gibt nichts einzuschalten): Prüfen Sie sie, bevor Sie sich darauf verlassen} other {# Kopien wurden behalten, aber ihr Verlauf wurde entfernt (es gibt nichts einzuschalten): Prüfen Sie sie, bevor Sie sich darauf verlassen}}",
+      "cancelledPartial": "{count, plural, one {# Element wird bereits gelöscht und wird abgeschlossen; der Rest wurde zurückgegeben} other {# Elemente werden bereits gelöscht und werden abgeschlossen; der Rest wurde zurückgegeben}}"
+    },
+    "warningCodes": {
+      "aiFileTooLarge": "Diese Wissensdatei ist größer, als eine Vorlageninstallation kopieren kann, und wurde daher übersprungen.",
+      "aiFileUnavailable": "Diese Wissensdatei konnte nicht kopiert werden und wurde daher übersprungen.",
+      "assigneeRequired": "Wähle aus, wem dieser Schritt die Konversation zuweist.",
+      "ambiguousSourceFieldToken": "Mehrere Quellfelder haben diesen Namen, daher wurden die Variablen, die ihn verwenden, unverändert gelassen.",
+      "backupTooLarge": "Ein lokal bearbeitetes Element war zu groß für ein Backup und wurde daher nicht überschrieben.",
+      "backupUnavailable": "Das Backup für dieses Element ist nicht mehr verfügbar.",
+      "botFieldRenamed": "Ein Bot-Feld mit diesem Namen und einem anderen Typ existiert bereits, daher wurde ein umbenanntes Feld erstellt.",
+      "categoryPermissionDenied": "Du hast keine Berechtigung für diese Kategorie, daher wurde sie übersprungen.",
+      "couponTopicExpired": "Dieses Gutscheinthema ist bereits abgelaufen.",
+      "credentialRequired": "Füge die Zugangsdaten für dieses Element hinzu, bevor du es verwendest.",
+      "custom": "Ein referenziertes Element wurde in diesem Arbeitsbereich nicht gefunden, daher wurde die Verknüpfung entfernt.",
+      "customField": "Ein referenziertes Element wurde in diesem Arbeitsbereich nicht gefunden, daher wurde die Verknüpfung entfernt.",
+      "customFieldRenamed": "Ein Feld mit diesem Namen und einem anderen Typ existiert bereits, daher wurde ein umbenanntes Feld erstellt.",
+      "enqueueFailed": "Die Hintergrundverarbeitung für dieses Element konnte nicht in die Warteschlange gestellt werden.",
+      "flow": "Ein referenziertes Element wurde in diesem Arbeitsbereich nicht gefunden, daher wurde die Verknüpfung entfernt.",
+      "flowInvalidStructure": "Die Struktur des Flows ist ungültig, daher wurde er übersprungen.",
+      "flowNotPublished": "Der Flow wurde als Entwurf installiert und ist nicht veröffentlicht.",
+      "flowSkippedRequiredReference": "Der Flow wurde übersprungen, weil eine erforderliche Referenz nicht aufgelöst werden konnte.",
+      "folder": "Ein referenziertes Element wurde in diesem Arbeitsbereich nicht gefunden, daher wurde die Verknüpfung entfernt.",
+      "inboxBindingRequired": "Wähle einen Posteingang für diesen Kanal; bis dahin bleibt das Element inaktiv.",
+      "integration": "Ein referenziertes Element wurde in diesem Arbeitsbereich nicht gefunden, daher wurde die Verknüpfung entfernt.",
+      "localModifiedOverwritten": "Ein lokal bearbeitetes Element wurde überschrieben. Ein Backup wurde gespeichert und kann wiederhergestellt werden.",
+      "name": "Für dieses Element wurde kein freier Name gefunden, daher wurde es übersprungen.",
+      "noEmbeddingProvider": "In diesem Workspace ist kein Embedding-Anbieter konfiguriert, daher wurden Wissensdateien übersprungen. Verbinde OpenAI oder Gemini und installiere erneut.",
+      "notUpdatable": "Diese Art von Element wird noch nicht automatisch aktualisiert.",
+      "pipeline": "Verwendet eine Pipeline, die nicht mehr existiert.",
+      "pipelineField": "Verwendet ein Pipeline-Feld, das nicht mehr existiert.",
+      "pipelineStage": "Verwendet eine Pipeline-Phase, die nicht mehr existiert.",
+      "postSelectionRequired": "Wähle den Beitrag erneut aus: Der ursprüngliche Beitrag konnte nicht übernommen werden.",
+      "product": "Ein referenziertes Element wurde in diesem Arbeitsbereich nicht gefunden, daher wurde die Verknüpfung entfernt.",
+      "productCategory": "Ein referenziertes Element wurde in diesem Arbeitsbereich nicht gefunden, daher wurde die Verknüpfung entfernt.",
+      "questionImage": "Ein Bild konnte nicht kopiert werden.",
+      "quota": "Ein Tarifmaximum wurde erreicht, daher wurde das Element übersprungen.",
+      "referenceRemoved": "Eine nicht auflösbare Referenz wurde entfernt.",
+      "savedReply": "Ein referenziertes Element wurde in diesem Arbeitsbereich nicht gefunden, daher wurde die Verknüpfung entfernt.",
+      "savedReplyImage": "Ein Bild konnte nicht kopiert werden.",
+      "tag": "Ein referenziertes Element wurde in diesem Arbeitsbereich nicht gefunden, daher wurde die Verknüpfung entfernt.",
+      "unlisted": "Element nicht vollständig übernommen: {code}",
+      "workspaceMember": "Einem Mitglied zugewiesen, das nicht in diesem Workspace ist.",
+      "workspaceUnavailable": "Dieser Arbeitsbereich ist nicht mehr verfügbar, daher wurde das Element übersprungen."
+    },
+    "tabs": {
+      "mine": "Meine Vorlagen",
+      "installed": "Installiert",
+      "installedEmpty": "Noch keine installierten Vorlagen. Vorlagen, die du aus einem anderen Workspace installierst, erscheinen hier."
     }
   },
   "qrCodeGenerator": {
@@ -6167,7 +7384,31 @@
       "supportOff": "Aus",
       "searchPlaceholder": "Suche nach Name, Besitzer-E-Mail oder ID",
       "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
-      "supportAccessible": "Accessible"
+      "supportAccessible": "Accessible",
+      "periodStart": "Period start",
+      "periodEnd": "Period end",
+      "requestedBy": "Requested by",
+      "workspaceId": "Workspace ID",
+      "language": "Language",
+      "planSnapshot": "Plan at deletion",
+      "ownerQuota": "Owner quota",
+      "usagePeriods": "Usage periods",
+      "deletedTitle": "Deleted workspaces",
+      "deletedDescription": "Purge evidence for deleted workspaces.",
+      "purgedAt": "Purged at",
+      "deletionRequestedAt": "Deletion requested at",
+      "scheduledDeletionAt": "Scheduled deletion at",
+      "evidence": "Evidence",
+      "usage": "Usage snapshot",
+      "members": "Members",
+      "notAvailable": "Not available",
+      "createButton": "Create workspace",
+      "createTitle": "Create workspace for an owner",
+      "createDescription": "Creates a workspace for the owner's email, adding any member emails you list. A new email gets a mailed temporary password.",
+      "ownerEmail": "Owner email",
+      "memberEmails": "Member emails",
+      "membersHint": "Every member gets the permissions selected below. New emails get a mailed temporary password.",
+      "createdSummary": "Workspace created for {ownerEmail} — {memberCount} member(s) added, {newAccountCount} new account(s) emailed a temporary password."
     },
     "admins": {
       "title": "Platform administrators",
@@ -6177,12 +7418,29 @@
       "addButton": "Add administrator",
       "role": "Role",
       "bootstrap": "Environment bootstrap administrator",
+      "roles": {
+        "superAdmin": "Super admin",
+        "support": "Support"
+      },
       "remove": "Remove administrator",
       "empty": "No platform administrators are configured.",
       "added": "Platform administrator added.",
       "removed": "Platform administrator removed.",
       "addError": "Could not add the platform administrator.",
       "removeError": "Could not remove the platform administrator."
+    },
+    "auditLogs": {
+      "title": "Plattform-Audit-Protokolle",
+      "description": "Audit-Aktivität über alle Workspaces dieser Plattform hinweg."
+    },
+    "smtp": {
+      "title": "SMTP-Einstellungen",
+      "description": "Plattform-E-Mail-Transport. Lassen Sie dies leer, um weiterhin die Umgebungsvariablen SMTP_SERVER und SMTP_FROM zu verwenden.",
+      "usingEnv": "Keine SMTP-Einstellungen gespeichert – die Plattform-E-Mail verwendet die Umgebungsvariable SMTP_SERVER.",
+      "remove": "SMTP-Einstellungen entfernen",
+      "errors": {
+        "passwordRequired": "Geben Sie das SMTP-Passwort ein."
+      }
     }
   },
   "platformCredentials": {
@@ -6218,6 +7476,23 @@
     "description": "Aktivieren Sie einen Kanal, um zu verhindern, dass Arbeitsbereiche dieses Mandanten ihn erstellen.",
     "hint": "Lassen Sie alle Kanäle deaktiviert, um sämtliche Kanäle zuzulassen.",
     "hiddenByPlatform": "Vom Plattform-Administrator ausgeblendet — Sie können diesen Kanal nicht wieder aktivieren."
+  },
+  "platformDefaultTemplate": {
+    "title": "Standardvorlage",
+    "description": "Installiert diese Vorlage in jedem neuen Arbeitsbereich, der unter diesem White-Label erstellt wird. Bestehende Arbeitsbereiche bleiben unverändert.",
+    "clearTitle": "Standardvorlage entfernen?",
+    "clearDescription": "Neue Arbeitsbereiche erhalten nicht mehr automatisch eine Vorlage. Arbeitsbereiche, die sie bereits haben, behalten sie.",
+    "status": {
+      "notConfigured": "Nicht festgelegt",
+      "ready": "Aktiv",
+      "templateUnavailable": "Vorlage nicht verfügbar",
+      "shareDisabled": "Freigabelink aus",
+      "keyRotated": "Schlüssel ungültig"
+    },
+    "errors": {
+      "unavailable": "Vorlagen-ID oder Schlüssel ist ungültig.",
+      "shareDisabled": "Aktivieren Sie zuerst den Freigabelink der Vorlage."
+    }
   },
   "platformEmailTemplates": {
     "title": "E-Mail-Vorlagen",
@@ -6261,6 +7536,7 @@
     }
   },
   "manageSidebar": {
+    "administrationGroup": "Administration",
     "platformGroup": "Plattform",
     "toolsGroup": "Tools",
     "saasGroup": "SaaS",
@@ -6301,14 +7577,39 @@
     "invalidTitle": "Dieser Link ist nicht mehr verfügbar.",
     "invalidDescription": "Dieser Vorlagen-Freigabelink ist ungültig, deaktiviert oder abgelaufen.",
     "byPublisher": "Von {publisherName}",
-    "includes": "Diese Vorlage enthält",
     "videoTitle": "Vorlagen-Vorschauvideo",
-    "tryItOut": "Ausprobieren",
-    "signInToInstall": "Zum Installieren anmelden",
+    "preview": "Vorschau",
+    "aboutTemplate": "Über diese Vorlage",
     "selectWorkspace": "Arbeitsbereich auswählen",
     "install": "Installieren",
     "installStarted": "Installation gestartet",
-    "noEligibleWorkspaces": "Sie haben keinen Arbeitsbereich, der für die Installation dieser Vorlage geeignet ist."
+    "noEligibleWorkspaces": "Sie haben keinen Arbeitsbereich, der für die Installation dieser Vorlage geeignet ist.",
+    "alreadyInstalled": "Diese Vorlage ist in diesem Arbeitsbereich bereits installiert.",
+    "viewInstall": "Installation anzeigen",
+    "installAnotherCopy": "Weitere Kopie installieren",
+    "inboxesTitle": "Posteingänge",
+    "inboxesHint": "Diese Vorlage wurde um diese Posteingänge herum aufgebaut. Wählen Sie, welche Ihrer eigenen Posteingänge verwendet werden sollen; ausgelassene werden ausgeschaltet installiert.",
+    "noInbox": "Nicht verbinden – ausgeschaltet installieren",
+    "noInboxAvailable": "Kein verbundener Posteingang in diesem Kanal",
+    "updateExisting": "Installierte Kopie aktualisieren",
+    "updateStarted": "Aktualisierung gestartet",
+    "autoUpdateLabel": "Automatisch aktualisieren, wenn sich die Vorlage ändert",
+    "collisions": {
+      "title": "Was die Installation hier bewirkt",
+      "loading": "Dieser Arbeitsbereich wird geprüft…",
+      "action": {
+        "create": "Erstellt",
+        "reuse": "Wiederverwendet",
+        "rename": "Umbenannt",
+        "bind": "Verknüpft",
+        "unbound": "Nicht verknüpft belassen"
+      },
+      "detail": {
+        "rename": "„{name}“ existiert bereits mit einem anderen Typ, daher wird die Version der Vorlage unter einem neuen Namen hinzugefügt.",
+        "unbound": "„{name}“ bleibt unverbunden, bis Sie einen Posteingang auswählen."
+      }
+    },
+    "createWorkspace": "Neuen Arbeitsbereich erstellen"
   },
   "extensionsMe": {
     "actions": {
@@ -6337,7 +7638,144 @@
     "unknown": "Unbekannt"
   },
   "orders": {
-    "title": "Bestellungen"
+    "title": "Bestellungen",
+    "empty": "Noch keine Bestellungen.",
+    "searchPlaceholder": "Nach Name, Telefon, E-Mail oder Bestellnummer suchen",
+    "orderNumber": "Bestellung #{number}",
+    "print": "Drucken",
+    "inbox": "Posteingang",
+    "statusUpdated": "Bestellstatus aktualisiert",
+    "statusUpdateError": "Der Bestellstatus konnte nicht aktualisiert werden",
+    "updateStatusTitle": "Bestellstatus aktualisieren",
+    "message": "Nachricht",
+    "messagePlaceholder": "Optional",
+    "messageDescription": "Wird dem Kunden in seiner Unterhaltung gesendet.",
+    "cancel": "Abbrechen",
+    "continue": "Weiter",
+    "delete": "Löschen",
+    "deleted": "Bestellung gelöscht",
+    "deleteError": "Die Bestellung konnte nicht gelöscht werden",
+    "deleteTitle": "Bestellung #{number} löschen?",
+    "deleteDescription": "Die Bestellung, ihre Artikel und ihr Verlauf werden entfernt. Noch gebundener Lagerbestand wird zurückgebucht.",
+    "columns": {
+      "name": "Name",
+      "total": "Gesamt",
+      "status": "Status",
+      "date": "Datum",
+      "rating": "Bewertung",
+      "quantity": "Menge",
+      "price": "Preis",
+      "vendor": "Anbieter",
+      "orderStatus": "Bestellstatus",
+      "payment": "Zahlung"
+    },
+    "fields": {
+      "name": "Name",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "country": "Land",
+      "state": "Bundesland",
+      "city": "Stadt",
+      "street": "Straße",
+      "zip": "Postleitzahl",
+      "shippingType": "Versand",
+      "orderId": "Bestell-ID",
+      "date": "Datum",
+      "subtotal": "Zwischensumme",
+      "discount": "Rabatt",
+      "deliveryCost": "Lieferkosten",
+      "otherTaxes": "Sonstige Steuern",
+      "total": "Gesamt",
+      "paymentMethod": "Zahlungsart",
+      "status": "Status",
+      "note": "Notiz",
+      "cancelReason": "Stornierungsgrund",
+      "rating": "Bewertung",
+      "ratingComment": "Kundenkommentar",
+      "coupon": "Gutschein ({code})",
+      "paymentStatus": "Zahlungsstatus",
+      "payments": "Online-Zahlungen"
+    },
+    "statuses": {
+      "pending": "Nicht bearbeitet",
+      "accepted": "Angenommen",
+      "shipped": "Versendet",
+      "concluded": "Abgeschlossen",
+      "cancelled": "Storniert"
+    },
+    "transitions": {
+      "accepted": "Annehmen",
+      "shipped": "Versenden",
+      "concluded": "Abschließen",
+      "cancelled": "Stornieren"
+    },
+    "paymentMethods": {
+      "cod": "Nachnahme",
+      "stripe": "Karte",
+      "paypal": "PayPal"
+    },
+    "shippingTypes": {
+      "delivery": "Lieferung an den Kunden",
+      "pickup": "Abholung im Geschäft"
+    },
+    "description": "Von deinen Kunden aufgegebene Bestellungen.",
+    "ratingValue": "{rating}/5 ★",
+    "paymentStatuses": {
+      "unpaid": "Unbezahlt",
+      "paid": "Bezahlt",
+      "refunded": "Erstattet"
+    },
+    "attemptStatuses": {
+      "open": "Wartet",
+      "paid": "Bezahlt",
+      "expired": "Abgelaufen",
+      "refunded": "Erstattet"
+    },
+    "testPayment": "Test",
+    "awaitingPaymentHint": "Wartet auf die Online-Zahlung des Kunden. Die Bestellung kann angenommen werden, sobald sie bezahlt ist.",
+    "refundWarning": "{amount} werden dem Kunden erstattet.",
+    "paymentStates": {
+      "paid": "Bezahlt",
+      "refunded": "Erstattet",
+      "awaitingPayment": "Wartet auf Zahlung",
+      "payOnDelivery": "Zahlung bei Lieferung",
+      "notPaid": "Nicht bezahlt"
+    },
+    "paymentUntil": "bis {time}",
+    "paymentExpiredCancelReason": "Zahlung nicht rechtzeitig eingegangen.",
+    "exportTruncated": "Der Export wurde auf die ersten {count} Bestellungen begrenzt",
+    "exportError": "Bestellungen konnten nicht exportiert werden",
+    "shopify": {
+      "syncOrders": "Bestellungen synchronisieren",
+      "orderColumn": "Bestellung",
+      "customerColumn": "Kunde",
+      "paymentPending": "Ausstehend",
+      "paymentFilter": "Zahlung",
+      "paymentFilterAll": "Zahlung: Alle",
+      "fulfillmentFilter": "Versandstatus",
+      "fulfillmentFilterAll": "Versandstatus: Alle",
+      "fulfillmentStatuses": {
+        "fulfilled": "Versendet",
+        "unfulfilled": "Nicht versendet",
+        "partial": "Teilweise"
+      },
+      "viewDetails": "Details anzeigen",
+      "viewOnStore": "In {store} ansehen",
+      "detailsTitle": "Bestellung {name}",
+      "placedOn": "Aufgegeben im {store}-Shop • {date}",
+      "customerDetails": "Kundendetails",
+      "shippingAddress": "Lieferadresse",
+      "noShippingAddress": "Keine Lieferadresse",
+      "tracking": "Sendungsverfolgung: {company} #{number}",
+      "lineItems": "Positionen",
+      "itemColumn": "Artikel",
+      "skuColumn": "SKU",
+      "shipping": "Versand",
+      "free": "Kostenlos",
+      "loading": "Wird geladen...",
+      "loadError": "Bestelldetails konnten nicht geladen werden",
+      "close": "Schließen"
+    }
   },
   "products": {
     "title": "Produkte",
@@ -6394,7 +7832,8 @@
         "label": "Kunden erlauben, dieses Produkt zu kaufen, wenn es nicht vorrätig ist"
       },
       "vendor": {
-        "label": "Anbieter"
+        "label": "Anbieter",
+        "none": "Keine"
       },
       "rank": {
         "label": "Rang"
@@ -6446,17 +7885,67 @@
       "variantsDescription": "Fügen Sie Varianten hinzu, wenn dieses Produkt in mehreren Ausführungen erhältlich ist, etwa in verschiedenen Größen oder Farben",
       "metaCatalogId": {
         "label": "Meta-Katalog-ID"
+      },
+      "status": {
+        "label": "Status",
+        "values": {
+          "active": "Aktiv",
+          "draft": "Entwurf",
+          "unlisted": "Nicht gelistet"
+        }
       }
     },
     "inventoryPolicy": {
       "dont_track": "Bestand nicht verfolgen",
       "track": "Bestand verfolgen"
+    },
+    "shopify": {
+      "openStore": "{store} öffnen",
+      "syncProducts": "Produkte synchronisieren",
+      "syncStarted": "Synchronisierung gestartet",
+      "syncError": "Synchronisierung konnte nicht gestartet werden",
+      "viewDetails": "Details anzeigen",
+      "editOnStore": "In {store} bearbeiten",
+      "copyProductLink": "Produktlink kopieren",
+      "linkCopied": "Produktlink kopiert",
+      "noProductLink": "Dieses Produkt hat keinen Storefront-Link",
+      "inStock": "{count} auf Lager",
+      "inStockWithVariants": "{count} auf Lager ({variants} Varianten)",
+      "detailsTitle": "Produktdetails — {name}",
+      "detailsSubtitle": "Synchronisiert aus dem {store}-Shop {shop}",
+      "summaryLine": "Kategorie: {category} • Gesamtbestand: {units} Einheiten in {variants, plural, one {# Variante} other {# Varianten}}",
+      "uncategorized": "Ohne Kategorie",
+      "variantsTitle": "Varianten ({count})",
+      "variantColumn": "Variante",
+      "skuColumn": "SKU",
+      "priceColumn": "Preis",
+      "inventoryColumn": "Bestand",
+      "defaultVariant": "Standard",
+      "loading": "Wird geladen...",
+      "loadError": "Produktdetails konnten nicht geladen werden",
+      "close": "Schließen"
     }
   },
   "tiktok": {
     "title": "TikTok",
     "description": "Verbinden Sie Ihr TikTok-Konto, um auf Direktnachrichten zu antworten.",
     "refreshToken": "Token aktualisieren"
+  },
+  "contactAdReferrals": {
+    "title": "Anzeigenverlauf",
+    "empty": "Für diesen Kontakt wurden noch keine Anzeigenklicks erfasst."
+  },
+  "adsReferralStats": {
+    "title": "Kontakte nach Anzeige",
+    "description": "Kontakte, die jede Anzeige erreicht hat, und die ihren Klicks zugeordneten Conversions. Gezählt werden Klicks seit Beginn der Erfassung.",
+    "ad": "Anzeige",
+    "contacts": "Kontakte",
+    "firstTouch": "Erster Kontakt",
+    "leads": "Leads",
+    "purchases": "Käufe",
+    "revenue": "Umsatz",
+    "empty": "Keine Anzeigenklicks in diesem Zeitraum.",
+    "timeout": "Dieser Bericht hat zu lange gedauert. Wählen Sie einen kürzeren Zeitraum."
   },
   "coupons": {
     "title": "Gutscheine",
@@ -6527,8 +8016,8 @@
     "loadError": "Produktkategorien konnten nicht geladen werden.",
     "all": "Alle Produkte",
     "create": "Kategorie erstellen",
-    "edit": "Kategorie umbenennen",
-    "name": "Kategoriename",
+    "edit": "Bearbeiten",
+    "name": "Name",
     "namePlaceholder": "z. B. Sommerkollektion",
     "parent": "Übergeordnete Kategorie",
     "noParent": "Keine (oberste Ebene)",
@@ -6548,12 +8037,25 @@
     "columns": {
       "name": "Name",
       "products": "Produkte",
-      "subcategories": "Unterkategorien"
+      "subcategories": "Unterkategorien",
+      "visible": "Sichtbar"
     },
     "expand": "Unterkategorien anzeigen",
     "collapse": "Unterkategorien ausblenden",
     "productCount": "{count, plural, =0 {Keine Produkte} one {# Produkt} other {# Produkte}}",
-    "deleteChildrenWarning": "{count, plural, one {Die # Unterkategorie wird ebenfalls gelöscht.} other {Die # Unterkategorien werden ebenfalls gelöscht.}}"
+    "deleteChildrenWarning": "{count, plural, one {Die # Unterkategorie wird ebenfalls gelöscht.} other {Die # Unterkategorien werden ebenfalls gelöscht.}}",
+    "add": "Hinzufügen",
+    "dialogTitle": "Kategorie",
+    "image": "Bild",
+    "continue": "Weiter",
+    "subcategories": "Unterkategorien",
+    "subcategoriesOf": "Unterkategorien von {name}",
+    "emptySub": "Noch keine Unterkategorien.",
+    "back": "Zurück zu den Kategorien",
+    "getId": "ID abrufen",
+    "idCopied": "Kategorie-ID {id} kopiert",
+    "idCopyError": "Die ID konnte nicht kopiert werden",
+    "description": "Gruppiere deine Produkte in Kategorien und Unterkategorien."
   },
   "productImport": {
     "title": "Import",
@@ -6758,6 +8260,7 @@
       "invalidTokenTitle": "Dieser Buchungslink ist nicht verfügbar.",
       "invalidTokenDescription": "Der Link ist möglicherweise ungültig oder abgelaufen. Bitte fordern Sie einen neuen Buchungslink an.",
       "staleSlot": "Diese Zeit ist nicht mehr verfügbar. Bitte wählen Sie eine andere Zeit.",
+      "alreadyScheduled": "Dieser Kontakt hat in diesem Kalender bereits einen Termin zu dieser Zeit. Bitte wählen Sie eine andere Zeit.",
       "availabilityChanged": "Die Verfügbarkeit hat sich geändert, während Sie eine Zeit ausgewählt haben. Bitte wählen Sie erneut.",
       "submitFailed": "Wir konnten diese Anfrage nicht abschließen. Bitte versuchen Sie es erneut."
     },
@@ -6847,6 +8350,15 @@
     },
     "messages": {
       "empty": "Noch keine Termine."
+    },
+    "actions": {
+      "create": "Termin erstellen"
+    },
+    "create": {
+      "title": "Termin erstellen",
+      "description": "Wähle einen Kalender und eine freie Zeit, um für diesen Kontakt zu buchen.",
+      "noConversationHint": "Keine Unterhaltung geöffnet, daher erhält der Kontakt keine Bestätigung.",
+      "success": "Termin erstellt."
     }
   },
   "appointmentManagement": {
@@ -8093,7 +9605,9 @@
       "customer_service": "Kundenservice",
       "escalation": "Eskalation",
       "marketing": "Marketing",
-      "utility": "Utility"
+      "utility": "Utility",
+      "calls": "Anrufe",
+      "other": "Sonstige"
     },
     "pill": {
       "standby": "Standby ({owner})",
@@ -8103,14 +9617,18 @@
     "release": {
       "label": "Freigeben",
       "tooltip": "Konversation freigeben, damit andere Apps antworten können",
-      "success": "Konversation freigegeben"
+      "success": "Konversation freigegeben",
+      "menu": "Freigeben oder übergeben"
     },
     "pass": {
-      "menuItem": "An Eskalation übergeben",
-      "title": "An den Eskalationspartner übergeben?",
-      "description": "Diese Unterhaltung an Ihren Eskalationspartner übergeben? Ihre Antworten pausieren, bis die Unterhaltung zurückkommt.",
+      "menuItem": "An einen Partner übergeben",
+      "title": "An einen Partner übergeben?",
+      "description": "Wähle, wer diese Unterhaltung übernimmt. Deine Antworten pausieren, bis sie zurückkommt.",
       "confirm": "Übergeben",
-      "success": "Konversation an den Eskalationspartner übergeben"
+      "success": "Konversation an den Eskalationspartner übergeben",
+      "targetLabel": "Übergeben an",
+      "noteLabel": "Notiz für den übernehmenden Partner",
+      "successTargeted": "Unterhaltung an {role} übergeben"
     },
     "aiHandover": {
       "label": "BizAI",
@@ -8129,7 +9647,10 @@
       "notEscalation": "Nur der Eskalationspartner kann übernehmen. Das Routing wird in Meta Business Suite konfiguriert.",
       "notPrimaryReceiver": "Diese App muss der primäre Empfänger der Seite sein, um übernehmen zu können. Lege das in den Handover-Protocol-Einstellungen der Seite fest.",
       "learnMore": "Mehr erfahren",
-      "dismiss": "Trotzdem senden"
+      "dismiss": "Trotzdem senden",
+      "takeOverTitle": "Unterhaltung übernehmen?",
+      "takeOverDescription": "Der Partner bearbeitet sie nicht mehr und du übernimmst die Kontrolle. Du kannst ihm eine Notiz hinterlassen.",
+      "takeOverNoteLabel": "Notiz für den aktuellen Partner"
     },
     "divider": {
       "ownerHandling": "{owner} bearbeitet diese Konversation jetzt",
@@ -8182,7 +9703,17 @@
       "adminOnly": "Nur Workspace-Admins können das Routing ändern",
       "flowNotFound": "Der ausgewählte Flow wurde nicht gefunden oder ist nicht aktiv",
       "integrationNotFound": "WhatsApp-Nummer nicht gefunden",
-      "messengerIntegrationNotFound": "Messenger-Seite nicht gefunden"
+      "messengerIntegrationNotFound": "Messenger-Seite nicht gefunden",
+      "rolesTitle": "Deine Routing-Rollen für diese Nummer",
+      "rolesDescription": "Vom Unternehmen in der Meta Business Suite zugewiesen.",
+      "rolesNone": "Dir ist für diese Nummer keine Routing-Rolle zugewiesen.",
+      "rolesNeverChecked": "Noch nicht geprüft.",
+      "rolesNotEnabled": "Konversations-Routing ist für diese Nummer nicht aktiviert.",
+      "rolesStandbyOn": "Standby-Zugriff: an (du siehst Konversationen, die dir nicht gehören)",
+      "rolesStandbyOff": "Standby-Zugriff: aus",
+      "rolesCheckedAt": "Geprüft {time}",
+      "rolesRefresh": "Erneut prüfen",
+      "rolesSyncFailed": "Die Routing-Rollen konnten nicht von Meta abgerufen werden. Versuche es erneut."
     },
     "errors": {
       "unsupported": "Konversations-Routing ist auf diesem Kanal nicht verfügbar",
@@ -8192,8 +9723,12 @@
     "step": {
       "action": "Aktion",
       "release": "Konversation freigeben",
-      "pass": "An den Eskalationspartner übergeben",
-      "helper": "Nur WhatsApp. In anderen Kanälen oder wenn die Unterhaltung nicht hier verwaltet wird, folgt der Schritt dem Fehlerpfad."
+      "pass": "An einen Partner übergeben",
+      "helper": "Nur WhatsApp. In anderen Kanälen oder wenn die Unterhaltung nicht hier verwaltet wird, folgt der Schritt dem Fehlerpfad.",
+      "targetRole": "Übergeben an",
+      "targetRoleDefault": "Eskalationspartner (Standard)",
+      "metadata": "Übergabenotiz",
+      "metadataHelper": "Optional. Wird unverändert an die App gesendet, die die Unterhaltung übernimmt. Variablen werden unterstützt. Bis zu {max} Zeichen."
     },
     "template": {
       "sent": "Vorlage gesendet"
@@ -8527,7 +10062,7 @@
       "too_many_components": "Ein Bildschirm kann höchstens {max} Komponenten enthalten.",
       "component_limit": "Ein Bildschirm kann höchstens {max} × {type} enthalten.",
       "picker_conflict": "Ein Bildschirm kann nicht gleichzeitig einen Foto-Upload und einen Dokument-Upload haben.",
-      "picker_multiple_in_complete": "Setze {property} auf 1: WhatsApp sendet beim Abschluss des Flows nur eine einzelne Datei.",
+      "picker_multiple_in_complete": "WhatsApp sendet beim Abschluss des Flows höchstens {max} Dateien. Verringere die maximale Dateianzahl der Datei-Eingaben, die zu diesem Bildschirm führen.",
       "footer_not_last": "Der Footer muss die letzte Komponente auf dem Bildschirm sein.",
       "footer_in_nested_branch": "Ein Footer kann nur direkt in einem Wenn-Zweig der ersten Ebene stehen.",
       "footer_missing_in_branch": "Wenn ein Zweig einen Footer hat, braucht der andere Zweig ebenfalls einen.",
@@ -9033,6 +10568,720 @@
       "closed": "Geschlossen"
     }
   },
+  "productVendors": {
+    "title": "Anbieter",
+    "add": "Hinzufügen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "actions": "Aktionen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "moreOptions": "Weitere Optionen",
+    "empty": "Noch keine Anbieter.",
+    "created": "Anbieter hinzugefügt",
+    "updated": "Anbieter aktualisiert",
+    "deleted": "Anbieter gelöscht",
+    "saveError": "Der Anbieter konnte nicht gespeichert werden",
+    "deleteError": "Der Anbieter konnte nicht gelöscht werden",
+    "deleteTitle": "{name} löschen?",
+    "deleteDescription": "{count, plural, =0 {Kein Produkt verwendet diesen Anbieter.} one {# Produkt bleibt ohne Anbieter.} other {# Produkte bleiben ohne Anbieter.}}",
+    "fields": {
+      "name": "Name",
+      "shortDescription": "Kurzbeschreibung",
+      "phone": "Telefon",
+      "storeAddress": "Adresse des Geschäfts",
+      "image": "Bild",
+      "optional": "Optional",
+      "discountPercent": "Rabatt (0-100%)",
+      "minimumOrderValue": "Mindestbestellwert",
+      "openHours": "Öffnungszeiten",
+      "category": "Kategorie",
+      "subcategory": "Unterkategorie",
+      "none": "Keine"
+    },
+    "columns": {
+      "name": "Name",
+      "products": "Produkte gesamt",
+      "active": "Aktiv"
+    },
+    "description": "Händler und Marken, zu denen deine Produkte gehören."
+  },
+  "ecommerceSettings": {
+    "save": "Speichern",
+    "saved": "Einstellungen gespeichert",
+    "saveError": "Die Einstellungen konnten nicht gespeichert werden",
+    "rank": {
+      "label": "Rang",
+      "default": "Standard"
+    },
+    "tabs": {
+      "general": "Allgemein",
+      "payments": "Zahlungen",
+      "shipping": "Versand",
+      "checkout": "Kasse",
+      "shopify": "Shopify",
+      "woocommerce": "WooCommerce"
+    },
+    "general": {
+      "orderingAvailable": {
+        "label": "Bestellung möglich",
+        "description": "Mit diesem Feld verhindern Sie Bestellungen, ohne Ihre Öffnungszeiten zu ändern. Auch die Öffnungszeiten steuern Ihre Verfügbarkeit."
+      },
+      "webshopProductView": {
+        "label": "Produktansicht im Webshop",
+        "description": "Legt fest, wie Produkte in Ihrem Webshop angezeigt werden.",
+        "options": {
+          "list": "Liste",
+          "listWithoutImage": "Liste ohne Bild",
+          "card": "Karte",
+          "cardSquare": "Karte mit quadratischem Bild",
+          "image": "Bild",
+          "imageSquare": "Bild (quadratisch)"
+        }
+      },
+      "openHours": {
+        "label": "Öffnungszeiten",
+        "description": "Die Zeiträume, in denen Ihre Kunden bestellen können."
+      },
+      "searchProducts": {
+        "label": "Produkte suchen",
+        "description": "Kunden erlauben, Nachrichten zu senden, um Produkte zu finden."
+      },
+      "facebookPixelId": {
+        "label": "Facebook Pixel",
+        "description": "Verfolgen Sie Conversions mit dem FB-Pixel und messen Sie die Ergebnisse Ihrer Anzeigen. Folgende Ereignisse werden erfasst: ADD_TO_CART, INITIATE_CHECKOUT, PURCHASE, VIEW_CONTENT"
+      },
+      "abandonedCart": {
+        "label": "Nachricht bei abgebrochenem Warenkorb",
+        "description": "Wartezeit, bevor eine Nachricht zum abgebrochenen Warenkorb gesendet wird, nachdem der Nutzer Ihren Bot mit einem Artikel im Warenkorb verlassen hat.",
+        "disabled": "Deaktiviert",
+        "afterMinutes": "Nach {count} Minuten",
+        "afterHours": "{count, plural, one {Nach # Stunde} other {Nach # Stunden}}"
+      },
+      "productButtons": {
+        "label": "Schaltflächen bei Produkten",
+        "description": "Legt fest, welche Schaltflächen bei Produkten in Ihrem Bot angezeigt werden.",
+        "options": {
+          "addToCart": "In den Warenkorb",
+          "share": "Teilen",
+          "similar": "Ähnliche",
+          "save": "Speichern"
+        }
+      },
+      "productImageSize": {
+        "label": "Bildgröße der Produkte",
+        "description": "Legt die Größe der Produktbilder in Ihrem Bot fest",
+        "options": {
+          "bigSquare": "Groß (quadratisch)",
+          "mediumRectangle": "Mittel (Rechteck)"
+        }
+      },
+      "allowRateOrders": {
+        "label": "Bewertung von Bestellungen erlauben",
+        "description": "Kunden erlauben, eine Bestellung zu bewerten und eine Rezension zu schreiben, wenn sie nicht zufrieden sind. Nur Bot-Admins können die Rezensionen sehen"
+      },
+      "notifyOnCartStatusChange": {
+        "label": "Benachrichtigung bei Statusänderung des Warenkorbs senden",
+        "description": "Der Kunde erhält eine Benachrichtigung, sobald Sie den Bestellstatus ändern. Benachrichtigungen bei Stornierung und Abschluss einer Bestellung können nicht deaktiviert werden."
+      },
+      "abandonedCartFlow": {
+        "label": "Flow für verlassene Warenkörbe",
+        "description": "Der Flow, den der Bot für den Kunden startet, wenn der Warenkorb so lange liegen bleibt. Nutze '{{shop_token}}' in den Buttons, um den Warenkorb zu öffnen. Trigger können auch das Ereignis \"Cart abandoned\" nutzen.",
+        "none": "Kein Flow (nur Trigger-Ereignis)"
+      },
+      "storeSource": {
+        "label": "Shop-Quelle",
+        "description": "Wählen Sie die Shop-Quelle, über die Produkte, Bestand und Bestellungen verwaltet werden. Bei Shopify / WooCommerce werden alle Produkte und Bestellungen direkt in Ihrem Shopify / WooCommerce-Shop verwaltet.",
+        "options": {
+          "chatbotx": "ChatbotX",
+          "shopify": "Shopify",
+          "woocommerce": "WooCommerce"
+        }
+      }
+    },
+    "payments": {
+      "currencyMismatch": "{count, plural, one {# Produkt hat} other {# Produkte haben}} einen Preis in einer anderen Währung als {currency}. Bestellungen berechnen den Preis in {currency}.",
+      "paymentMethods": {
+        "label": "Zahlungsarten",
+        "description": "Die Zahlungsarten, die auf der Kassenseite aktiviert sind. Die erste Zahlungsart in der Liste ist auf der Kassenseite vorausgewählt.",
+        "options": {
+          "cod": "Nachnahme",
+          "stripe": "Karte",
+          "paypal": "PayPal"
+        },
+        "connectHint": "Um {provider} anzubieten, verbinde es unter <link>Einstellungen → Integrationen</link>."
+      },
+      "currency": {
+        "label": "Währung",
+        "description": "Die Währung, in der Sie die Produktpreise festlegen. Den Kunden wird in dieser Währung berechnet."
+      },
+      "currencyPosition": {
+        "label": "Position der Währung",
+        "description": "Mit dieser Option steuern Sie die Position der Währung.",
+        "options": {
+          "left": "Links",
+          "leftSpace": "Links mit Leerzeichen",
+          "right": "Rechts",
+          "rightSpace": "Rechts mit Leerzeichen"
+        }
+      },
+      "currencySymbol": {
+        "label": "Währungssymbol",
+        "description": "Das Währungssymbol wird vor den Preisen angezeigt. Für ein Leerzeichen zwischen Symbol und Preis fügen Sie am Ende des Symbols ein Leerzeichen hinzu."
+      },
+      "serviceFeePercent": {
+        "label": "Sonstige Gebühren / Servicegebühren (0 - 100%)",
+        "description": "Sonstige Gebühren im Zusammenhang mit dem Verkauf."
+      }
+    },
+    "shipping": {
+      "shippingType": {
+        "label": "Versandart",
+        "description": "Mit dieser Option legen Sie fest, wie der Kunde seine Bestellung erhält.",
+        "options": {
+          "none": "Keine",
+          "delivery": "Lieferung an den Kunden",
+          "pickup": "Abholung im Geschäft",
+          "deliveryAndPickup": "Lieferung an den Kunden, Abholung im Geschäft"
+        }
+      },
+      "storeAddress": {
+        "label": "Adresse des Geschäfts",
+        "description": "Diese Adresse wird dem Kunden auf der Kassenseite angezeigt, wenn Sie Abholung im Geschäft erlauben."
+      },
+      "shippingCountries": {
+        "label": "Versandländer",
+        "description": "Die Länder, in die Sie Bestellungen versenden."
+      },
+      "defaultShippingCountry": {
+        "label": "Standard-Versandland",
+        "description": "Das Land, das auf der Kassenseite standardmäßig ausgewählt ist.",
+        "none": "Keines"
+      },
+      "deliveryCost": {
+        "label": "Lieferkosten",
+        "description": "Eine Pauschale für die Lieferung der Bestellung an die Adresse des Kunden."
+      },
+      "defaultCountryNotShipped": "Wähle eines der Versandländer."
+    },
+    "checkout": {
+      "checkoutMode": {
+        "label": "Kasse",
+        "description": "Legt fest, wo Ihre Kunden ihre Bestellung abschließen. Wenn die Bestellung außerhalb Ihres Bots abgeschlossen werden soll, z. B. auf Ihrer Website, bei Amazon usw., verwenden Sie nicht unsere Standard-Kassenseite.",
+        "options": {
+          "default": "Standard-Kassenseite",
+          "externalLink": "Eigene externe Kassenseite",
+          "flow": "Flow",
+          "productPage": "Externe Produktseite besuchen"
+        }
+      },
+      "checkoutLink": {
+        "label": "Link zur Kassenseite",
+        "description": "Die externe Seite, auf der Kunden ihre Bestellung abschließen."
+      },
+      "checkoutFlowId": {
+        "label": "Kassen-Flow",
+        "description": "Der Flow, der ausgeführt wird, wenn ein Kunde zur Kasse geht.",
+        "placeholder": "Flow auswählen"
+      },
+      "minimumOrderValue": {
+        "label": "Mindestbestellwert",
+        "description": "Der Mindestwert einer Bestellung, die ein Kunde aufgeben kann. Diese Bedingung wird nach Anwendung aller Rabatte geprüft."
+      },
+      "requiredFields": {
+        "requireName": {
+          "label": "Namen des Käufers verlangen",
+          "description": "Der Name des Käufers wird beim Bezahlen erfasst."
+        },
+        "requireEmail": {
+          "label": "E-Mail-Adresse verlangen",
+          "description": "Die E-Mail des Käufers wird beim Bezahlen erfasst."
+        },
+        "requirePhone": {
+          "label": "Telefonnummer verlangen",
+          "description": "Die Telefonnummer des Käufers wird beim Bezahlen erfasst."
+        },
+        "requireState": {
+          "label": "Bundesland/Provinz verlangen",
+          "description": "Das Bundesland des Käufers wird beim Bezahlen erfasst."
+        },
+        "requireZip": {
+          "label": "Postleitzahl verlangen",
+          "description": "Die Postleitzahl des Käufers wird beim Bezahlen erfasst."
+        }
+      },
+      "orderConfirmationMode": {
+        "label": "Bestellbestätigung",
+        "description": "Was der Kunde im Chat erhält, wenn seine Bestellung aufgegeben ist. Die Standardnachricht listet die Bestelldetails in der Sprache des Arbeitsbereichs auf.",
+        "options": {
+          "default": "Standardnachricht",
+          "flow": "Einen Flow ausführen",
+          "none": "Nichts senden"
+        }
+      },
+      "orderConfirmationFlowId": {
+        "label": "Flow für die Bestellbestätigung",
+        "description": "Der Flow, der dem Kunden statt der Standardnachricht gesendet wird, wenn seine Bestellung aufgegeben ist."
+      },
+      "shopifyCheckoutMethod": {
+        "label": "Checkout-Methode",
+        "description": "Legen Sie fest, ob Kunden die Zahlung auf Ihrer Shopify-Checkout-Seite abschließen oder die Bestellung direkt im Webshop aufgeben.",
+        "options": {
+          "webCheckout": "Shopify-Web-Checkout",
+          "inApp": "In-App-Checkout"
+        }
+      },
+      "shopifyAutoApplyDiscounts": {
+        "label": "Rabattcodes automatisch anwenden",
+        "description": "Kunden können Shopify-Rabattcodes direkt auf ihren Warenkorb anwenden, bevor sie zum Checkout weitergeleitet werden."
+      },
+      "wooCommerceCheckoutMethod": {
+        "description": "Wählen Sie, ob Kunden auf der Zahlungsseite Ihres WooCommerce-Shops bezahlen oder die Bestellung direkt im Webshop aufgeben (Zahlung bei Lieferung).",
+        "options": {
+          "webCheckout": "WooCommerce-Zahlungsseite",
+          "inApp": "In-App-Checkout"
+        }
+      },
+      "wooCommerceAutoApplyDiscounts": {
+        "description": "Kunden können WooCommerce-Rabattcodes direkt auf ihren Warenkorb anwenden, bevor sie zum Checkout weitergeleitet werden."
+      },
+      "inAppDeliveryCost": {
+        "label": "Lieferkosten",
+        "description": "Liefergebühr, die Bestellungen im In-App-Checkout hinzugefügt wird."
+      },
+      "wooCommerceDeliveryCost": {
+        "description": "Liefergebühr für an WooCommerce gesendete Bestellungen, bei beiden Checkout-Methoden."
+      }
+    },
+    "shopify": {
+      "shopDomain": {
+        "label": "Shop-Domain",
+        "placeholder": "your-store.myshopify.com",
+        "hint": "Geben Sie die .myshopify.com-Domain Ihres Shopify-Shops ein.",
+        "connectedHint": "Die Domain Ihres verbundenen Shopify-Shops."
+      },
+      "authKind": {
+        "label": "Authentifizierung",
+        "description": "Wie sich ChatbotX bei Ihrem Shop anmeldet: mit dem Admin-API-Zugriffstoken einer benutzerdefinierten App oder mit der Client ID und dem Secret einer im Shopify Dev Dashboard erstellten App.",
+        "options": {
+          "token": "Admin-API-Zugriffstoken",
+          "clientCredentials": "Client ID und Secret (Dev-Dashboard-App)"
+        }
+      },
+      "accessToken": {
+        "label": "Admin-API-Zugriffstoken",
+        "hint": "Das Admin-API-Zugriffstoken Ihrer benutzerdefinierten App. Gewähren Sie diese Scopes: {scopes}.",
+        "connectedHint": "Ihr Shopify-Admin-API-Zugriffstoken wird verschlüsselt gespeichert."
+      },
+      "apiSecret": {
+        "label": "API-Secret-Key",
+        "hint": "Der API-Secret-Key der App, mit dem von Shopify gesendete Webhooks verifiziert werden."
+      },
+      "clientId": {
+        "label": "Client ID",
+        "hint": "Die Client ID Ihrer Dev-Dashboard-App. Gewähren Sie diese Scopes: {scopes}."
+      },
+      "clientSecret": {
+        "label": "Client Secret",
+        "hint": "Das Client Secret der App. Es wird verschlüsselt gespeichert."
+      },
+      "webhookUrl": {
+        "label": "Webhook-URL",
+        "description": "Wird beim Verbinden automatisch bei Shopify registriert, um Produkt-, Bestands- und Bestellupdates in Echtzeit zu erhalten."
+      },
+      "syncNow": "Jetzt synchronisieren",
+      "syncStarted": "Synchronisierung gestartet",
+      "syncError": "Synchronisierung konnte nicht gestartet werden",
+      "syncStatus": {
+        "label": "Synchronisierungsstatus",
+        "description": "Produkte, Rabattcodes und Bestellungen werden aus Ihrem Shopify-Shop gespiegelt.",
+        "connectedTo": "Verbunden mit {shopDomain}",
+        "lastSynced": "Zuletzt synchronisiert: {time} ({productCount} Produkte, {orderCount} Bestellungen)",
+        "neverSynced": "Noch nicht synchronisiert",
+        "noReason": "Verbinden Sie Ihren Shop erneut, um fortzufahren.",
+        "invalid": "Die Verbindung ist nicht mehr gültig: {reason}",
+        "state": {
+          "idle": "Inaktiv",
+          "queued": "Synchronisierung in Warteschlange...",
+          "running": "Synchronisierung läuft...",
+          "succeeded": "Letzte Synchronisierung erfolgreich",
+          "failed": "Letzte Synchronisierung fehlgeschlagen"
+        }
+      }
+    },
+    "woocommerce": {
+      "siteUrl": {
+        "label": "Shop-URL",
+        "placeholder": "https://example.com",
+        "hint": "Die Adresse Ihrer WordPress-Website, beginnend mit https://. In WordPress darf Settings → Permalinks nicht auf Plain stehen.",
+        "connectedHint": "Ihr verbundener WooCommerce-Shop."
+      },
+      "consumerKey": {
+        "label": "Consumer key",
+        "hint": "Erstellen Sie unter WooCommerce → Settings → Advanced → REST API → Add key einen Schlüssel mit Read/Write-Berechtigung und fügen Sie seinen Consumer key (ck_…) ein.",
+        "connectedHint": "Der Anfang des verbundenen Schlüssels. Schlüssel werden verschlüsselt gespeichert."
+      },
+      "consumerSecret": {
+        "label": "Consumer secret",
+        "hint": "Das Consumer secret des Schlüssels (cs_…). Es wird verschlüsselt gespeichert."
+      },
+      "webhookUrl": {
+        "label": "Webhook-URL",
+        "description": "Wird beim Verbinden automatisch bei WooCommerce registriert, um Produkt-, Bestands- und Bestellupdates in Echtzeit zu erhalten."
+      },
+      "syncNow": "Jetzt synchronisieren",
+      "syncStarted": "Synchronisierung gestartet",
+      "syncError": "Synchronisierung konnte nicht gestartet werden",
+      "syncStatus": {
+        "label": "Synchronisierungsstatus",
+        "description": "Produkte, Rabattcodes und Bestellungen werden aus Ihrem WooCommerce-Shop gespiegelt.",
+        "connectedTo": "Verbunden mit {store}",
+        "lastSynced": "Zuletzt synchronisiert: {time} ({productCount} Produkte, {orderCount} Bestellungen)",
+        "neverSynced": "Noch nicht synchronisiert",
+        "noReason": "Verbinden Sie Ihren Shop erneut, um fortzufahren.",
+        "invalid": "Die Verbindung ist nicht mehr gültig: {reason}",
+        "state": {
+          "idle": "Inaktiv",
+          "queued": "Synchronisierung in Warteschlange...",
+          "running": "Synchronisierung läuft...",
+          "succeeded": "Letzte Synchronisierung erfolgreich",
+          "failed": "Letzte Synchronisierung fehlgeschlagen"
+        }
+      }
+    }
+  },
+  "openHours": {
+    "alwaysOpen": "Immer geöffnet",
+    "addNew": "Neu hinzufügen",
+    "dialogTitle": "Öffnungszeiten",
+    "name": "Name",
+    "namePlaceholder": "z. B. Werktage",
+    "day": "Tag",
+    "from": "Öffnet",
+    "to": "Schließt",
+    "add": "Zeiten hinzufügen",
+    "remove": "Entfernen",
+    "cancel": "Abbrechen",
+    "continue": "Weiter",
+    "created": "Öffnungszeiten erstellt",
+    "saveError": "Die Öffnungszeiten konnten nicht gespeichert werden",
+    "days": {
+      "0": "Sonntag",
+      "1": "Montag",
+      "2": "Dienstag",
+      "3": "Mittwoch",
+      "4": "Donnerstag",
+      "5": "Freitag",
+      "6": "Samstag"
+    },
+    "sameTimes": "Öffnungs- und Schließzeit müssen sich unterscheiden."
+  },
+  "webshop": {
+    "metadataTitle": "Shop",
+    "metadataOrderTitle": "Deine Bestellung",
+    "invalidLinkTitle": "Dieser Link funktioniert nicht",
+    "invalidLinkDescription": "Er ist möglicherweise abgelaufen. Bitte den Shop im Chat um einen neuen Link.",
+    "previewBanner": "Vorschau: So sehen Kunden die Seite. Aus der Vorschau kann nicht bestellt werden.",
+    "previewOrderingOff": "Vorschau: Bestellen ist deaktiviert",
+    "closed": {
+      "orderingUnavailable": "Der Shop nimmt gerade keine Bestellungen an.",
+      "outsideOpenHours": "Der Shop ist gerade geschlossen. Du kannst dich trotzdem umsehen."
+    },
+    "searchPlaceholder": "Produkte suchen",
+    "categories": "Kategorien",
+    "allCategories": "Alle Kategorien",
+    "vendors": "Anbieter",
+    "allVendors": "Alle Anbieter",
+    "noProducts": "Keine Produkte gefunden.",
+    "productNotFound": "Dieses Produkt ist nicht mehr verfügbar.",
+    "outOfStock": "Ausverkauft",
+    "addToCart": "In den Warenkorb",
+    "added": "Zum Warenkorb hinzugefügt",
+    "chooseOptions": "Optionen wählen",
+    "chooseOption": "{name} wählen",
+    "variantUnavailable": "Diese Kombination ist nicht verfügbar.",
+    "buy": "Kaufen",
+    "share": "Teilen",
+    "linkCopied": "Kopiert",
+    "similar": "Ähnlich",
+    "save": "Merken",
+    "saved": "Gemerkt",
+    "showImage": "Bild {number} anzeigen",
+    "increase": "Menge erhöhen",
+    "decrease": "Menge verringern",
+    "remove": "Entfernen",
+    "cart": "Warenkorb",
+    "cartEmpty": "Dein Warenkorb ist leer.",
+    "continueShopping": "Weiter einkaufen",
+    "unavailableItems": "{count, plural, one {# Artikel kann gerade nicht bestellt werden} other {# Artikel können gerade nicht bestellt werden}}",
+    "unavailableNotOrdered": "Sie werden nicht mitbestellt und bleiben im Warenkorb.",
+    "unavailable": "Nicht mehr verfügbar",
+    "unavailableHint": "Optionen erneut wählen",
+    "deletedProduct": "Gelöschtes Produkt",
+    "summary": {
+      "subtotal": "Zwischensumme",
+      "discount": "Rabatt",
+      "delivery": "Lieferung",
+      "otherFees": "Weitere Gebühren",
+      "total": "Gesamt",
+      "coupon": "Gutschein ({code})",
+      "title": "Bestellübersicht",
+      "saved": "Du sparst {amount}",
+      "deliveryAtCheckout": "Wird an der Kasse berechnet"
+    },
+    "belowMinimum": "Der Mindestbestellwert beträgt {amount}.",
+    "checkOut": "Zur Kasse",
+    "contactDetails": "Deine Angaben",
+    "optional": "(optional)",
+    "fields": {
+      "name": "Name",
+      "email": "E-Mail",
+      "phone": "Telefon",
+      "country": "Land",
+      "state": "Bundesland / Region",
+      "city": "Stadt",
+      "address1": "Adresse",
+      "address2": "Wohnung, Gebäude usw.",
+      "zip": "Postleitzahl",
+      "note": "Hinweis an den Shop"
+    },
+    "shipping": {
+      "title": "Lieferung",
+      "delivery": "An meine Adresse liefern",
+      "pickup": "Im Shop abholen",
+      "storeAddress": "Adresse des Shops: {address}"
+    },
+    "payment": {
+      "title": "Zahlung",
+      "cod": "Barzahlung bei Lieferung",
+      "stripe": "Karte",
+      "paypal": "PayPal",
+      "paid": "Bezahlt",
+      "refunded": "Erstattet",
+      "awaiting": "Wartet auf deine Zahlung",
+      "payBefore": "Zahle vor {time}, sonst wird die Bestellung storniert.",
+      "payNow": "Jetzt bezahlen",
+      "onlineHint": "Du bezahlst auf der nächsten Seite. Deine Bestellung wird 30 Minuten lang reserviert.",
+      "continueToPayment": "Weiter zur Zahlung",
+      "notYet": "Deine Zahlung ist noch nicht bei uns eingegangen. Wenn du gerade bezahlt hast, warte einen Moment und lade diese Seite neu.",
+      "leftPaymentPage": "Du hast die Zahlungsseite verlassen. Du kannst unten noch bezahlen.",
+      "paidThanks": "Zahlung erhalten. Danke für deine Bestellung!"
+    },
+    "placeOrder": "Bestellung aufgeben",
+    "orderPlaced": "Danke! Deine Bestellung ist eingegangen. Neuigkeiten bekommst du im Chat.",
+    "orderTitle": "Bestellung #{number}",
+    "orderNotFound": "Diese Bestellung wurde nicht gefunden.",
+    "placedAt": "Aufgegeben am {date}",
+    "status": {
+      "pending": "Nicht bearbeitet",
+      "accepted": "In Bearbeitung",
+      "shipped": "Versandt",
+      "concluded": "Abgeschlossen",
+      "cancelled": "Storniert"
+    },
+    "rateTitle": "Bewerte deine Bestellung",
+    "rateComment": "Sag dem Shop deine Meinung (optional)",
+    "rateSubmit": "Bewertung senden",
+    "rateThanks": "Danke für deine Bewertung!",
+    "yourRating": "Deine Bewertung",
+    "ratingValue": "{rating} von 5 Sternen",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "pageOf": "Seite {page} von {pageCount}",
+    "errors": {
+      "generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut.",
+      "checkFields": "Bitte prüfe deine Eingaben.",
+      "fieldRequired": "{field} ist erforderlich.",
+      "countryUnavailable": "Der Shop liefert nicht in dieses Land.",
+      "invalidLink": "Dieser Link funktioniert nicht mehr. Bitte den Shop um einen neuen.",
+      "webshopPreviewOnly": "Das ist eine Vorschau. Bestellt werden kann nur über den Link eines Kunden.",
+      "rateLimited": "Zu viele Versuche. Bitte warte kurz und versuche es erneut.",
+      "orderingUnavailable": "Der Shop nimmt gerade keine Bestellungen an.",
+      "orderBelowMinimum": "Der Mindestbestellwert beträgt {minimum}.",
+      "orderBelowVendorMinimum": "Artikel von {vendorName} müssen zusammen mindestens {minimum} ergeben.",
+      "orderOutOfStock": "{productName} ist ausverkauft.",
+      "orderProductUnavailable": "Einige Artikel können nicht mehr bestellt werden. Prüfe deinen Warenkorb.",
+      "orderEmpty": "Dein Warenkorb ist leer.",
+      "orderShippingTypeUnavailable": "Diese Lieferart ist nicht verfügbar.",
+      "webshopRatingNotAllowed": "Diese Bestellung kann nicht bewertet werden.",
+      "webshopCartFull": "Dein Warenkorb kann höchstens {maximum} verschiedene Artikel enthalten.",
+      "notFound": "Dieses Produkt ist nicht mehr verfügbar.",
+      "discountCodeNotFound": "Diesen Rabattcode gibt es nicht.",
+      "discountCodeInactive": "Dieser Rabattcode ist nicht aktiv.",
+      "discountCodeNotStarted": "Dieser Rabattcode gilt noch nicht.",
+      "discountCodeExpired": "Dieser Rabattcode ist abgelaufen.",
+      "discountCodeUsageLimitReached": "Dieser Rabattcode ist aufgebraucht.",
+      "discountCodeAlreadyUsed": "Du hast diesen Rabattcode schon verwendet.",
+      "discountCodeNotEligible": "Dieser Rabattcode gilt nicht für dich.",
+      "discountCodeNotApplicable": "Dieser Rabattcode gilt nicht für deinen Warenkorb.",
+      "discountCodeMinimumAmount": "Dieser Code braucht einen Einkauf von mindestens {minimum}. Noch {missing}.",
+      "discountCodeMinimumQuantity": "Dieser Code braucht mindestens {minimum} Artikel. Noch {missing}.",
+      "paymentMethodUnavailable": "Diese Zahlungsmethode ist nicht verfügbar.",
+      "paymentProviderNotConnected": "Diese Zahlungsmethode ist nicht verfügbar.",
+      "paymentProviderUnavailable": "Der Zahlungsdienst antwortet nicht. Bitte versuche es gleich noch einmal.",
+      "paymentProviderRejected": "Die Zahlung konnte nicht gestartet werden. Bitte wähle eine andere Zahlungsmethode.",
+      "paymentProviderCredentialsRejected": "Die Zahlung konnte nicht gestartet werden. Bitte wähle eine andere Zahlungsmethode.",
+      "paymentAmountUnsupported": "Diese Bestellung kann nicht online bezahlt werden. Bitte wähle eine andere Zahlungsmethode.",
+      "orderPaymentNotOpen": "Diese Bestellung kann nicht mehr online bezahlt werden."
+    },
+    "discount": {
+      "label": "Rabattcode",
+      "placeholder": "Rabattcode",
+      "apply": "Anwenden",
+      "applied": "Rabattcode angewendet",
+      "automatic": "automatisch angewendet",
+      "remove": "Rabattcode entfernen",
+      "available": "Codes, die du nutzen kannst",
+      "freeShipping": "Kostenloser Versand",
+      "bestChoice": "Beste Wahl",
+      "expiresOn": "Gültig bis {date}",
+      "noExpiry": "Unbegrenzt gültig",
+      "inUse": "In Verwendung",
+      "saves": "Spart {amount}",
+      "showMore": "{count, plural, one {# weiteren Code anzeigen} other {# weitere Codes anzeigen}}",
+      "showLess": "Weniger anzeigen",
+      "removeShort": "Entfernen",
+      "expired": "Abgelaufen",
+      "usedUp": "Aufgebraucht",
+      "notEligible": "Noch nicht berechtigt"
+    },
+    "itemCount": "{count, plural, one {# Artikel} other {# Artikel}}",
+    "relatedProducts": "Das könnte dir auch gefallen",
+    "soldOut": "Ausverkauft",
+    "sku": "SKU: {sku}",
+    "allProducts": "Alle Produkte",
+    "noCategories": "Dieser Shop hat noch keine Kategorien."
+  },
+  "webshopLinks": {
+    "preview": "Vorschau",
+    "getLink": "Link abrufen",
+    "copied": "Link kopiert. Leg ihn auf einen Bot-Button: Jeder Kontakt öffnet seinen eigenen Shop.",
+    "error": "Der Link konnte nicht abgerufen werden.",
+    "copyError": "Der Link konnte nicht kopiert werden.",
+    "shopLink": {
+      "label": "Shop-URL",
+      "hint": "Füge diesen Link in eine Schaltfläche in einem Flow, Broadcast oder einer Sequenz ein. Jeder Kontakt, der ihn erhält, öffnet seinen eigenen Shop und kann bestellen."
+    },
+    "productLink": {
+      "label": "Öffentliche URL",
+      "hint": "Kopiere die URL und füge sie in deinen Flow, Broadcast oder deine Sequenz ein. Jeder Kontakt, der sie erhält, öffnet dieses Produkt und kann bestellen."
+    },
+    "bar": "Shop teilen: Links zum Shop, zum Warenkorb und zu den Kategorien für Buttons in Flows, Broadcasts und Sequenzen.",
+    "dialog": {
+      "title": "Shop-Links",
+      "description": "Füge einen Link in einen Button in einem Flow, Broadcast oder einer Sequenz ein. Jeder Kontakt, der ihn erhält, öffnet seinen eigenen Shop.",
+      "shopHint": "Öffnet die Startseite des Shops mit allen Produkten."
+    },
+    "cartLink": {
+      "label": "Warenkorb",
+      "hint": "Öffnet den Warenkorb des Kontakts, bereit zum Bezahlen."
+    },
+    "categoriesLink": {
+      "label": "Kategorien",
+      "hint": "Öffnet die Liste der Kategorien des Shops."
+    }
+  },
+  "discountCodes": {
+    "title": "Gutscheine",
+    "description": "Rabattcodes, die Kunden an der Kasse eingeben oder die automatisch gelten.",
+    "add": "Hinzufügen",
+    "edit": "Gutschein bearbeiten",
+    "automatic": "Automatisch",
+    "never": "Nie",
+    "searchPlaceholder": "Codes suchen…",
+    "saveError": "Der Gutschein konnte nicht gespeichert werden.",
+    "created": "Gutschein erstellt",
+    "updated": "Gutschein gespeichert",
+    "deleted": "Gutschein gelöscht",
+    "deleteError": "Der Gutschein konnte nicht gelöscht werden.",
+    "deleteTitle": "Gutschein {code} löschen?",
+    "deleteDescription": "Kunden können ihn nicht mehr verwenden. Bestellungen damit behalten ihren Rabatt.",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "save": "Speichern",
+    "columns": {
+      "name": "Name",
+      "discount": "Rabatt",
+      "used": "Genutzt",
+      "end": "Endet",
+      "active": "Aktiv"
+    },
+    "discountTypes": {
+      "percentage": "Prozent",
+      "fixedAmount": "Fester Betrag",
+      "freeShipping": "Kostenloser Versand"
+    },
+    "appliesTo": {
+      "entireOrder": "Gesamte Bestellung",
+      "category": "Bestimmte Kategorie",
+      "products": "Bestimmte Produkte"
+    },
+    "minimumTypes": {
+      "none": "Keine",
+      "amount": "Mindestbestellwert",
+      "quantity": "Mindestanzahl Artikel"
+    },
+    "eligibilities": {
+      "everyone": "Alle",
+      "specificCustomers": "Bestimmte Kunden"
+    },
+    "form": {
+      "discountCode": "Rabattcode",
+      "code": "Code",
+      "generate": "Generieren",
+      "autoApply": "Diesen Gutschein automatisch auf Warenkörbe anwenden",
+      "autoApplyHint": "Warenkörbe erhalten ihn ohne Eingabe. Bei mehreren automatischen Gutscheinen gilt der mit dem höchsten Rabatt.",
+      "typedHint": "Kunden geben diesen Rabattcode an der Kasse ein.",
+      "options": "Optionen",
+      "discountType": "Rabattart",
+      "discountValuePercent": "Rabattwert (%)",
+      "discountValueAmount": "Rabattwert ({currency})",
+      "freeShippingHint": "Zieht die Lieferkosten bei gelieferten Bestellungen ab.",
+      "appliesTo": "Gilt für",
+      "category": "Kategorie",
+      "products": "Produkte",
+      "productsPlaceholder": "Produkte wählen",
+      "minimumRequirement": "Mindestanforderung",
+      "minimumAmount": "Mindestbetrag ({currency})",
+      "minimumQuantity": "Mindestanzahl Artikel",
+      "usageLimits": "Nutzungsgrenzen",
+      "limitTotal": "Gesamtzahl der Nutzungen dieses Rabatts begrenzen",
+      "usedSoFar": "{count, plural, one {Bisher # Mal genutzt} other {Bisher # Mal genutzt}}",
+      "oncePerCustomer": "Einmal pro Kunde",
+      "customerEligibility": "Berechtigte Kunden",
+      "specificCustomersHint": "Nur Kontakte, die beim Bestellen dem Filter unten entsprechen.",
+      "activeDates": "Gültigkeitszeitraum",
+      "startDate": "Startdatum",
+      "endDate": "Enddatum",
+      "isActive": "Aktiv"
+    },
+    "rules": {
+      "codeCharacters": "Verwende nur Buchstaben ohne Akzente, Ziffern, - und _.",
+      "usageBelowUsed": "Dieser Code wurde bereits {count}-mal verwendet; das Limit kann nicht niedriger sein.",
+      "customerConditionRequired": "Füge mindestens eine Bedingung hinzu.",
+      "endAfterStart": "Das Enddatum muss nach dem Startdatum liegen."
+    }
+  },
+  "ecommerceAnalytics": {
+    "title": "Analysen",
+    "lifetime": "Gesamt",
+    "sales": "Umsatz",
+    "orders": "Bestellungen",
+    "products": "Produkte",
+    "salesByDate": "Umsatz nach Datum",
+    "ordersByDate": "Bestellungen nach Datum",
+    "topProducts": "Top-Produkte",
+    "topVendors": "Top-Anbieter",
+    "columns": {
+      "name": "Name",
+      "sales": "Umsatz"
+    },
+    "noData": "Keine Daten in diesem Zeitraum",
+    "refresh": "Aktualisieren",
+    "change": "{value} %",
+    "noPrevious": "neu",
+    "otherCurrencyOrders": "{count} Bestellungen in anderen Währungen sind in diesen Zahlen nicht enthalten"
+  },
   "responseSla": {
     "label": "Antwort-SLA",
     "title": "Antwort-SLA",
@@ -9052,5 +11301,611 @@
     "metHelp": "Anteil der Antworten mit SLA, die sie einhielten.",
     "eligibleCount": "{count} Antworten hatten eine SLA",
     "enable": "Antwort-SLA aktivieren"
+  },
+  "stripe": {
+    "title": "Stripe",
+    "setting": {
+      "label": "Stripe",
+      "description": "Nimm Kartenzahlungen in deinem Webshop mit deinem eigenen Stripe-Konto entgegen. Das Geld geht direkt auf dein Stripe-Konto."
+    },
+    "connectWithStripe": "Mit Stripe verbinden",
+    "connectWithKey": "Geheimen Schlüssel verwenden",
+    "connectionType": {
+      "oauth": "Stripe Connect",
+      "apiKey": "Geheimer Schlüssel"
+    },
+    "fields": {
+      "secretKey": "Geheimer Schlüssel",
+      "secretKeyHint": "Beginnt mit sk_live_ (oder sk_test_ für den Testmodus). Ein eingeschränkter Schlüssel (rk_…) funktioniert auch, wenn er das Konto lesen und Checkout Sessions, Refunds und Webhook Endpoints schreiben darf."
+    },
+    "dialog": {
+      "description": "Kopiere deinen geheimen Schlüssel aus <link>Stripe Dashboard → Developers → API keys</link> und füge ihn hier ein. Wir prüfen ihn, richten Zahlungsbenachrichtigungen in deinem Stripe-Konto ein und speichern den Schlüssel verschlüsselt."
+    },
+    "testMode": "Testmodus",
+    "liveMode": "Live",
+    "chargesDisabled": "Dein Stripe-Konto kann noch keine Zahlungen annehmen. Schließe die Einrichtung in deinem Stripe-Dashboard ab.",
+    "outcome": {
+      "expired": "Der Stripe-Verbindungslink ist abgelaufen. Bitte versuche es erneut.",
+      "access_denied": "Die Verbindung wurde bei Stripe nicht erlaubt.",
+      "stripeAccountAlreadyConnected": "Dieses Stripe-Konto ist bereits mit einem anderen Workspace verbunden.",
+      "stripePlatformNotConfigured": "Stripe ist auf dieser Plattform noch nicht eingerichtet.",
+      "superAdminRequired": "Nur ein Workspace-Admin kann Stripe verbinden.",
+      "signInRequired": "Bitte melde dich an und versuche es erneut.",
+      "paymentProviderCredentialsRejected": "Stripe hat die Verbindung abgelehnt. Bitte versuche es erneut.",
+      "startedByAnotherUser": "Nur die Person, die auf Verbinden geklickt hat, kann den Vorgang abschließen. Bitte klicke erneut auf Verbinden.",
+      "paymentProviderInUse": "Offene Bestellungen brauchen dieses Stripe-Konto noch. Schließe sie zuerst ab oder storniere sie."
+    },
+    "platform": {
+      "connectClientId": "Connect client ID",
+      "connectClientIdHint": "Aus dem Stripe Dashboard → Settings → Connect → Onboarding options → OAuth (beginnt mit ca_). Shops verbinden darüber ihr eigenes Stripe-Konto.",
+      "redirectUri": "Redirect URI",
+      "webhookReady": "Shops können Stripe verbinden, und ihre Zahlungen werden automatisch bestätigt.",
+      "webhookMissing": "Der Zahlungs-Webhook fehlt. Speichere diese Einstellungen erneut, um ihn zu erstellen.",
+      "connectMissing": "Füge die Connect client ID hinzu, damit Shops ihr Stripe-Konto verbinden können."
+    }
+  },
+  "paypal": {
+    "title": "PayPal",
+    "setting": {
+      "label": "PayPal",
+      "description": "Nimm PayPal-Zahlungen in deinem Webshop mit deinem eigenen PayPal-Konto entgegen."
+    },
+    "sandbox": "Sandbox",
+    "liveMode": "Live",
+    "fields": {
+      "clientId": "Client ID",
+      "clientSecret": "Secret"
+    },
+    "dialog": {
+      "description": "Erstelle eine REST-App unter <link>PayPal Developer → Apps & Credentials</link> und füge deren Client ID und Secret ein. Live oder Sandbox wird anhand der Schlüssel erkannt."
+    }
+  },
+  "pipelines": {
+    "title": "Pipelines",
+    "retry": "Erneut versuchen",
+    "save": "Speichern",
+    "saveFailed": "Ihre Änderungen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    "list": {
+      "name": "Name",
+      "type": "Typ",
+      "items": "Einträge",
+      "add": "Pipeline hinzufügen",
+      "empty": "Noch keine Pipelines",
+      "emptyHint": "Erstellen Sie eine Pipeline, um Deals, Tickets oder beliebige Prozesse als Karten auf einem Board zu verfolgen.",
+      "error": "Pipelines konnten nicht geladen werden",
+      "contacts": "Kontakte",
+      "addShort": "Hinzufügen",
+      "description": "Verfolgen Sie Deals, Tickets oder beliebige Prozesse als Karten, die durch Phasen wandern."
+    },
+    "types": {
+      "opportunity": {
+        "label": "Opportunity-Center",
+        "description": "Verfolgen Sie Verkaufschancen durch die Phasen. Erste Phase: Lead."
+      },
+      "ticket": {
+        "label": "Support-Center",
+        "description": "Bearbeiten Sie Support-Anfragen. Erste Phase: Neues Anliegen."
+      },
+      "custom": {
+        "label": "Individuelles Board",
+        "description": "Bauen Sie Ihren eigenen Prozess. Erste Phase: Eingang."
+      }
+    },
+    "noun": {
+      "opportunity": {
+        "one": "Opportunity",
+        "many": "Opportunities",
+        "add": "Opportunity hinzufügen"
+      },
+      "ticket": {
+        "one": "Ticket",
+        "many": "Tickets",
+        "add": "Ticket hinzufügen"
+      },
+      "card": {
+        "one": "Karte",
+        "many": "Karten",
+        "add": "Karte hinzufügen"
+      }
+    },
+    "create": {
+      "title": "Neue Pipeline",
+      "description": "Wählen Sie aus, wofür das Board gedacht ist, und benennen Sie es dann.",
+      "type": "Typ",
+      "name": "Pipeline-Name",
+      "namePlaceholder": "z. B. Vertrieb",
+      "submit": "Pipeline erstellen",
+      "success": "Pipeline erstellt"
+    },
+    "menu": {
+      "open": "Pipeline-Aktionen",
+      "rename": "Umbenennen",
+      "duplicate": "Duplizieren",
+      "delete": "Löschen"
+    },
+    "rename": {
+      "title": "Pipeline umbenennen",
+      "submit": "Umbenennen",
+      "success": "Pipeline umbenannt"
+    },
+    "duplicate": {
+      "success": "Pipeline dupliziert"
+    },
+    "delete": {
+      "title": "Pipeline löschen",
+      "description": "{name} wird mit allen Phasen und Einträgen gelöscht. Das kann nicht rückgängig gemacht werden.",
+      "success": "Pipeline gelöscht"
+    },
+    "board": {
+      "title": "Board",
+      "count": "{count, plural, one {# Eintrag} other {# Einträge}}",
+      "total": "Gesamt {value}",
+      "search": "Nach Titel, Nummer oder Kontakt suchen",
+      "sort": "Sortieren",
+      "filter": "Filtern",
+      "analytics": "Analysen",
+      "settings": "Einstellungen",
+      "emptyStage": "Ziehen Sie eine Karte hierher, um sie in diese Phase zu verschieben.",
+      "loadMore": "Mehr laden",
+      "loadMoreFailed": "Weitere Einträge konnten nicht geladen werden",
+      "error": "Das Board konnte nicht geladen werden",
+      "processing": "Diese Phase wird verarbeitet…",
+      "moveFailed": "Die Karte konnte nicht verschoben werden",
+      "sortOptions": {
+        "createdAtDesc": "Erstellungsdatum (Neu nach Alt)",
+        "createdAtAsc": "Erstellungsdatum (Alt nach Neu)",
+        "updatedAtDesc": "Aktualisierungsdatum (Neu nach Alt)",
+        "valueDesc": "Wert der Verkaufschance (Hoch nach Niedrig)",
+        "valueAsc": "Wert der Verkaufschance (Niedrig nach Hoch)",
+        "dueDateAsc": "Fälligkeitsdatum (Frühestes zuerst)",
+        "dueDateDesc": "Fälligkeitsdatum (Spätestes zuerst)",
+        "priorityDesc": "Priorität (Hoch nach Niedrig)",
+        "priorityAsc": "Priorität (Niedrig nach Hoch)",
+        "updatedAtAsc": "Aktualisierungsdatum (Alt nach Neu)"
+      },
+      "searchAction": "Suchen",
+      "closeSearch": "Suche schließen",
+      "cardMenu": "Karten-Aktionen",
+      "moveTo": "Verschieben nach",
+      "unknownContact": "Unbekannter Kontakt",
+      "staleError": "Das Board konnte nicht aktualisiert werden. Die Anzeige ist möglicherweise veraltet."
+    },
+    "stage": {
+      "add": "Phase hinzufügen",
+      "name": "Name der Phase",
+      "namePlaceholder": "Name der Phase",
+      "menu": "Phasen-Aktionen",
+      "edit": "Phase bearbeiten",
+      "delete": "Phase löschen",
+      "deleteTitle": "Phase löschen",
+      "deleteDescription": "{name} wird mit allen Einträgen darin gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "moveItemsTo": "Einträge verschieben nach",
+      "deleteItemsToo": "Einträge ebenfalls löschen",
+      "description": "Beschreibung",
+      "textColor": "Textfarbe",
+      "backgroundColor": "Hintergrundfarbe",
+      "saved": "Phase gespeichert",
+      "deleted": "Phase gelöscht",
+      "queued": "Die Phase wird im Hintergrund geleert.",
+      "resetColor": "Standard",
+      "deleteMoveDescription": "{name} wird gelöscht. Die Einträge werden nach {target} verschoben.",
+      "rename": "Umbenennen",
+      "settings": "Einstellungen",
+      "general": "Allgemein",
+      "color": "Farbe",
+      "cancel": "Abbrechen"
+    },
+    "priority": {
+      "low": "Niedrig",
+      "medium": "Mittel",
+      "high": "Hoch"
+    },
+    "item": {
+      "loading": "Wird geladen…",
+      "error": "Dieser Eintrag konnte nicht geladen werden",
+      "title": "Titel",
+      "status": "Status",
+      "stage": "Phase",
+      "priority": "Priorität",
+      "value": "Wert",
+      "dueDate": "Fälligkeitsdatum",
+      "assignees": "Zugewiesene Administratoren",
+      "description": "Beschreibung",
+      "attachments": "Anhänge",
+      "attach": "Dateien anhängen",
+      "noAttachments": "Keine Anhänge",
+      "removeAttachment": "Anhang entfernen",
+      "removeAttachmentDescription": "Die Datei wird von diesem Element entfernt, bleibt aber in der Mediathek.",
+      "comments": "Kommentare",
+      "addComment": "Kommentar hinzufügen",
+      "commentPlaceholder": "Kommentar schreiben…",
+      "noComments": "Noch keine Kommentare",
+      "deleteComment": "Kommentar löschen",
+      "deleteCommentDescription": "Dieser Kommentar wird gelöscht. Dies kann nicht rückgängig gemacht werden.",
+      "activity": "Aktivität",
+      "noActivity": "Noch keine Aktivität",
+      "transfer": "In Pipeline übertragen",
+      "transferTitle": "In andere Pipeline übertragen",
+      "transferDescription": "Der Eintrag behält seine Nummer und sein Erstellungsdatum. Benutzerdefinierte Felder werden übernommen, wenn die andere Pipeline ein Feld mit demselben Referenznamen und Typ hat.",
+      "destinationPipeline": "Ziel-Pipeline",
+      "destinationStage": "Zielphase",
+      "firstStage": "Erste Phase",
+      "choose": "Auswählen…",
+      "transferred": "Eintrag übertragen",
+      "delete": "Löschen",
+      "deleteDescription": "Ein Eintrag wird gelöscht. Das kann nicht rückgängig gemacht werden.",
+      "deleted": "Eintrag gelöscht",
+      "number": "Nummer",
+      "createdBy": "Erstellt von",
+      "createdByValue": "{name} am {date}",
+      "inbox": "Posteingang",
+      "moreActions": "Weitere Aktionen",
+      "noDescription": "Keine Beschreibung",
+      "yes": "Ja",
+      "no": "Nein",
+      "assigneesMembers": "Agenten",
+      "assigneesTeams": "Posteingangs-Teams",
+      "assigneesSearch": "Administratoren oder Teams suchen…",
+      "assigneesEmpty": "Keine Ergebnisse",
+      "assigneesPlaceholder": "Administratoren oder Teams auswählen",
+      "olderComments": "Ältere Kommentare anzeigen",
+      "olderActivity": "Ältere Aktivitäten anzeigen",
+      "activityFilter": "Filtern",
+      "activityFilterCount": "{count, plural, one {# Filter} other {# Filter}}",
+      "activityFilterClear": "Alle anzeigen",
+      "noFilteredActivity": "Keine Aktivität entspricht diesem Filter.",
+      "activityGroup": {
+        "lifecycle": "Erstellt & übertragen",
+        "stage": "Phase",
+        "status": "Status",
+        "value": "Wert",
+        "priority": "Priorität",
+        "dueDate": "Fälligkeitsdatum",
+        "details": "Titel, Beschreibung & Felder",
+        "assignees": "Zuständige",
+        "comments": "Kommentare",
+        "attachments": "Anhänge"
+      }
+    },
+    "activity": {
+      "created": "Erstellt",
+      "stageChanged": "In andere Phase verschoben",
+      "statusChanged": "Status geändert",
+      "valueChanged": "Wert geändert",
+      "priorityChanged": "Priorität geändert",
+      "dueDateChanged": "Fälligkeitsdatum geändert",
+      "titleChanged": "Titel geändert",
+      "descriptionChanged": "Beschreibung geändert",
+      "fieldValuesChanged": "Benutzerdefinierte Felder geändert",
+      "assigneesChanged": "Zuweisungen geändert",
+      "attachmentAdded": "Anhang hinzugefügt",
+      "attachmentRemoved": "Anhang entfernt",
+      "commentAdded": "Kommentar hinzugefügt",
+      "commentDeleted": "Kommentar gelöscht",
+      "transferred": "Aus anderer Pipeline übertragen",
+      "deleted": "Gelöscht"
+    },
+    "activityActor": {
+      "flow": "Flow",
+      "trigger": "Trigger",
+      "workspaceToken": "API",
+      "system": "System",
+      "formerMember": "Ehemaliges Mitglied"
+    },
+    "add": {
+      "changeContact": "Anderen Kontakt wählen",
+      "success": "Erstellt",
+      "stepContact": "Kontakt auswählen",
+      "stepDetails": "Details zu {noun}",
+      "contact": "Kontakt",
+      "addNewContact": "Neu hinzufügen"
+    },
+    "filter": {
+      "title": "Filter",
+      "status": "Status",
+      "statusLabels": {
+        "open": "Offen",
+        "won": "Gewonnen",
+        "lost": "Verloren"
+      },
+      "priority": "Priorität",
+      "assignee": "Zugewiesene Administratoren",
+      "value": "Wert: {noun}",
+      "min": "Min.",
+      "max": "Max.",
+      "dueDate": "Fälligkeitsdatum",
+      "createdAt": "Erstellungsdatum",
+      "from": "Von",
+      "to": "Bis",
+      "clear": "Filter zurücksetzen",
+      "apply": "Anwenden",
+      "back": "Zurück",
+      "updatedAt": "Aktualisierungsdatum",
+      "resolvedOn": "{noun} abgeschlossen am",
+      "statusChangedOn": "Status geändert am",
+      "stageChangedOn": "Phase geändert am",
+      "lastCommentOn": "Letzter Kommentar am",
+      "customFields": "Benutzerdefinierte Felder",
+      "any": "Beliebig",
+      "yes": "Ja",
+      "no": "Nein",
+      "notResolvedOn": "{noun} nicht abgeschlossen am",
+      "equal": "Gleich",
+      "different": "Ungleich",
+      "reset": "Zurücksetzen",
+      "presets": {
+        "thisWeek": "Diese Woche",
+        "lastWeek": "Letzte Woche",
+        "last14": "Letzte 14 Tage",
+        "thisYear": "Dieses Jahr",
+        "lastYear": "Letztes Jahr",
+        "tomorrow": "Morgen",
+        "next7": "In 7 Tagen",
+        "next14": "In 14 Tagen",
+        "next30": "In 30 Tagen",
+        "allTime": "Gesamter Zeitraum"
+      },
+      "pickDate": "Datum auswählen",
+      "activity": "Aktivität",
+      "activityKinds": "Art der Änderung",
+      "activityActors": "Durchgeführt von",
+      "activityWhen": "Wann",
+      "activityAutomation": "Automatisierung"
+    },
+    "analytics": {
+      "title": "Analysen",
+      "loading": "Statistiken werden geladen…",
+      "error": "Statistiken konnten nicht geladen werden",
+      "created": "Erstellt",
+      "won": "Gewonnen",
+      "wonValue": "Gewonnener Wert",
+      "lost": "Verloren",
+      "lostValue": "Verlorener Wert",
+      "admin": "Administrator",
+      "automation": "Automatisierung",
+      "back": "Zurück",
+      "admins": "Administratoren",
+      "chart": {
+        "created": "Neue pro Tag",
+        "won": "Gewonnene pro Tag",
+        "lost": "Verlorene pro Tag",
+        "wonValue": "Gewonnener Wert pro Tag",
+        "lostValue": "Verlorener Wert pro Tag"
+      },
+      "pie": {
+        "created": "Erstellt nach Admin",
+        "won": "Gewonnen nach Admin",
+        "lost": "Verloren nach Admin",
+        "other": "Andere",
+        "empty": "Keine Daten"
+      }
+    },
+    "settings": {
+      "title": "Pipeline-Einstellungen",
+      "general": "Allgemein",
+      "fields": "Benutzerdefinierte Felder",
+      "display": "Anzeige",
+      "permissions": "Berechtigungen",
+      "saved": "Einstellungen gespeichert",
+      "referenceName": "Referenzname",
+      "referenceNameHint": "Wird in den Variablen pipelines.reference_name.stage_name verwendet. Eine Änderung beschädigt Nachrichten, die den alten Namen verwenden.",
+      "referenceNameFormat": "Nur Kleinbuchstaben, Ziffern und Unterstriche, beginnend mit einem Buchstaben (z. B. close_date).",
+      "currency": "Währung",
+      "currencyFollowCountry": "Land des Workspace · {country} · {currency}",
+      "currencyFollowNoCountry": "Kein Land für den Workspace · {currency}",
+      "currencyHint": "Folgt dem Zielland des Workspace (Einstellungen → Allgemein) und aktualisiert sich bei Änderungen. Ist kein Land festgelegt, gilt USD. Werte werden nie umgerechnet.",
+      "assignContact": "Kontakt einem Administrator zuweisen, wenn ein Eintrag zugewiesen wird",
+      "limit": "Offene Einträge pro Kontakt begrenzen",
+      "statusLabels": "Status-Bezeichnungen",
+      "status": {
+        "open": "Offen",
+        "won": "Gewonnen",
+        "lost": "Verloren"
+      },
+      "features": "Sichtbare Funktionen",
+      "cardElements": "Kartenelemente",
+      "card": {
+        "contactPhone": "Telefon des Kontakts",
+        "contactEmail": "E-Mail des Kontakts",
+        "createdAt": "Erstellungsdatum",
+        "updatedAt": "Aktualisierungsdatum",
+        "assignees": "Zugewiesene Administratoren",
+        "comments": "Kommentare",
+        "cardId": "Eintragsnummer",
+        "priority": "Priorität",
+        "value": "Wert",
+        "dueDate": "Fälligkeitsdatum"
+      },
+      "noFields": "Noch keine benutzerdefinierten Felder",
+      "fieldName": "Feldname",
+      "fieldReference": "Referenzname",
+      "fieldType": "Feldtyp",
+      "required": "Erforderlich",
+      "requiredShort": "erforderlich",
+      "addField": "Feld hinzufügen",
+      "fieldAdded": "Feld hinzugefügt",
+      "deleteField": "Feld löschen",
+      "permissionsHint": "Inhaber und Administratoren des Arbeitsbereichs haben immer vollen Zugriff. Legen Sie fest, was andere Mitglieder in dieser Pipeline tun dürfen.",
+      "revoke": "Entziehen",
+      "permission": {
+        "view": "Ansehen",
+        "edit": "Bearbeiten",
+        "delete": "Löschen",
+        "settings": "Einstellungen"
+      },
+      "noMembers": "Keine weiteren Mitglieder zu konfigurieren",
+      "confirmDeleteField": "Dieses Feld und alle seine Werte in jedem Eintrag löschen?",
+      "adminPermissions": "Administrator-Berechtigungen",
+      "cardVisibleElements": "Sichtbare Kartenelemente"
+    },
+    "panel": {
+      "empty": "Keine Pipeline-Einträge für diesen Kontakt",
+      "error": "Pipeline-Einträge konnten nicht geladen werden",
+      "choosePipeline": "Pipeline auswählen",
+      "add": "Neu hinzufügen"
+    },
+    "variables": {
+      "group": "Pipelines",
+      "attributes": {
+        "name": "Name des Eintrags",
+        "stageName": "Phase",
+        "status": "Status",
+        "priority": "Priorität",
+        "value": "Wert",
+        "assignedAdmins": "Zugewiesene Administratoren",
+        "createdDate": "Erstellungsdatum",
+        "dueDate": "Fälligkeitsdatum",
+        "updatedDate": "Aktualisierungsdatum",
+        "id": "Eintrags-ID"
+      }
+    }
+  },
+  "oauthConsent": {
+    "title": "Authorize {clientName}",
+    "description": "This application is requesting access to your workspace.",
+    "permissionsTitle": "Requested permissions",
+    "signedInAs": "Signed in as",
+    "approve": "Approve",
+    "deny": "Deny",
+    "failed": "Die Autorisierung konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.",
+    "workspaceLabel": "Workspace",
+    "workspacePlaceholder": "Workspace auswählen",
+    "workspaceHint": "{clientName} kann nur in diesem Workspace handeln. Zum späteren Wechseln trennen und erneut verbinden.",
+    "noWorkspaces": "Du bist in keinem Workspace Administrator und kannst diese Anwendung daher nicht autorisieren."
+  },
+  "chatbotxMcp": {
+    "title": "ChatbotX MCP",
+    "workspaceId": "Workspace ID",
+    "streamableUrl": "Streamable HTTP URL",
+    "sseUrl": "Legacy SSE URL",
+    "guide": {
+      "title": "Connect an MCP client",
+      "step1": "Copy the configuration for your MCP client.",
+      "step2": "Paste it into the client.",
+      "step3": "The client opens a browser. Sign in and approve access.",
+      "step4": "Your workspace tools appear after approval.",
+      "ownerOnly": "Only workspace owners and superAdmins can authorize MCP access."
+    },
+    "clients": {
+      "claudeCode": "Claude Code",
+      "claudeDesktop": "Claude Desktop",
+      "cursor": "Cursor",
+      "chatgpt": "ChatGPT",
+      "stdio": "stdio fallback",
+      "stdioHint": "Use a workspace token for this fallback."
+    },
+    "grants": {
+      "title": "Authorized applications",
+      "description": "Grants belong to your account and apply to every workspace you administer; revoking disconnects the client everywhere.",
+      "empty": "OAuth grants appear here after you connect an MCP client.",
+      "client": "Client",
+      "scopes": "Scopes",
+      "firstAuthorizedAt": "First authorized",
+      "lastRefreshedAt": "Last refreshed",
+      "activeUntil": "Active until",
+      "noActiveToken": "No active token",
+      "revoke": "Revoke",
+      "revokeConfirmTitle": "Revoke application access?",
+      "revokeConfirmDescription": "Revoke access for {clientName}? This disconnects the client everywhere.",
+      "revokedSuccess": "Application access revoked.",
+      "notFound": "OAuth grant no longer exists"
+    }
+  },
+  "connectionStatus": {
+    "column": "Status",
+    "reconnecting": "The provider is reconnecting this account. Messages are held until it finishes.",
+    "accessRemoved": "The provider removed access to this account. Reconnect to resume.",
+    "needsReconnect": "Reconnect required.",
+    "inactive": "This channel is inactive."
+  },
+  "inbox": {
+    "createAppointment": {
+      "title": "Termin erstellen",
+      "description": "Sende dem Kontakt einen Buchungslink für einen Kalender oder öffne ihn, um in seinem Namen zu buchen.",
+      "inactive": "Inaktiv",
+      "sendLink": "Kalenderlink senden",
+      "goToLink": "Zum Kalenderlink",
+      "sent": "Buchungslink gesendet.",
+      "failed": "Der Buchungslink konnte nicht erstellt werden.",
+      "noCalendars": "Noch keine Terminkalender.",
+      "manageCalendars": "Terminkalender verwalten"
+    }
+  },
+  "templateStore": {
+    "title": "Template-Store",
+    "description": "Für den öffentlichen Store freigegebene Templates. Jedes Template erscheint in den von Ihnen gewählten Kategorien.",
+    "add": "Hinzufügen",
+    "addCategory": "Kategorie hinzufügen",
+    "renameCategory": "Umbenennen",
+    "editCategories": "Kategorien bearbeiten",
+    "templateId": "Template-ID",
+    "template": "Template",
+    "categories": "Kategorien",
+    "categoriesPlaceholder": "Keine Kategorie",
+    "close": "Schließen",
+    "removeChip": "{name} entfernen",
+    "categoriesHint": "Optional. Ohne Kategorie erscheint das Template nur unter „Alle“.",
+    "noCategoriesYet": "Noch keine Kategorien.",
+    "added": "Template zum Store hinzugefügt",
+    "updated": "Kategorien aktualisiert",
+    "removed": "Template aus dem Store entfernt",
+    "removeError": "Template konnte nicht entfernt werden",
+    "removeTitle": "{name} entfernen?",
+    "removeDescription": "Es verschwindet aus dem Store. Das Template selbst und seine Installationen bleiben unberührt.",
+    "saveError": "Speichern nicht möglich",
+    "deleteError": "Kategorie konnte nicht gelöscht werden",
+    "categoryCreated": "Kategorie erstellt",
+    "categoryUpdated": "Kategorie aktualisiert",
+    "categoryMoved": "Kategorie verschoben",
+    "categoryDeleted": "Kategorie gelöscht",
+    "deleteCategoryTitle": "{name} löschen?",
+    "deleteCategoryDescription": "Templates in dieser Kategorie: {count}. Sie bleiben im Store und erscheinen unter „Alle“.",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten",
+    "searchPlaceholder": "Nach Name oder Template-ID suchen",
+    "emptyListings": "Noch keine freigegebenen Templates.",
+    "noMatches": "Keine Templates passen zu Suche oder Filtern.",
+    "allCategories": "Alle Kategorien",
+    "allStatuses": "Alle Status",
+    "installs": "Installationen",
+    "owner": "Eigentümer",
+    "statusLabel": "Status",
+    "openInStore": "Store öffnen",
+    "storeUnavailable": "Ihr Store öffnet sich auf Ihrer eigenen Domain. Richten Sie eine ein, um ihn zu öffnen.",
+    "openTemplatePage": "Template-Seite öffnen",
+    "remove": "Entfernen",
+    "status": {
+      "published": "Veröffentlicht",
+      "templateUnavailable": "Template nicht verfügbar",
+      "shareDisabled": "Freigabelink aus"
+    },
+    "errors": {
+      "templateUnavailable": "Kein Template mit dieser ID kann zu Ihrem Store hinzugefügt werden.",
+      "listingExists": "Dieses Template ist bereits in Ihrem Store.",
+      "listingUnavailable": "Dieser Store-Eintrag existiert nicht mehr.",
+      "listingLimit": "Ein Store kann höchstens {templateLimit} Templates enthalten.",
+      "categoryUnavailable": "Diese Kategorie existiert nicht mehr.",
+      "categoryNameTaken": "Eine Kategorie mit diesem Namen existiert bereits.",
+      "categoryLimit": "Ein Store kann höchstens {categoryLimit} Kategorien haben."
+    },
+    "store": {
+      "subtitle": "Fertige Templates, die Sie mit einem Klick installieren.",
+      "pageTitle": "{tenantName} – Template-Store",
+      "empty": "Noch keine Templates im Store.",
+      "search": "Templates suchen",
+      "all": "Alle",
+      "categories": "Store-Kategorien",
+      "noResults": "Keine Templates passen zu Ihrer Suche.",
+      "clearSearch": "Suche zurücksetzen",
+      "by": "Von {publisherName}"
+    },
+    "picker": {
+      "placeholder": "Template auswählen",
+      "search": "Nach Name oder Template-ID suchen",
+      "empty": "Kein Template zum Hinzufügen verfügbar.",
+      "error": "Templates konnten nicht geladen werden.",
+      "retry": "Erneut versuchen",
+      "meta": "ID {id} · {workspace}"
+    }
   }
 }

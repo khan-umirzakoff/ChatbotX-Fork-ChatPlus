@@ -187,6 +187,51 @@ export const resolveTenantSettings = async (args: {
   )
 }
 
+/** Resolve the platform app URL without a workspace, owner, or hostname context. */
+export const resolvePlatformAppUrl = (): string => {
+  const env = integrationContextEnv()
+  return deriveUrls(env.NEXT_PUBLIC_BUILDER_URL, undefined, {
+    forceHttps: parseEnvBool(env.FORCE_PUBLIC_HTTPS),
+  }).appUrl
+}
+
+/**
+ * Resolve the tenant and app URL currently serving a tenant's workspaces.
+ * A non-active tenant or one without an active custom domain falls back to
+ * the platform host, matching request-domain tenant resolution.
+ */
+export const resolveServingHost = async (
+  tenantId: string,
+): Promise<{ tenantId: string; appUrl: string }> => {
+  if (tenantId === ROOT_TENANT_ID) {
+    return {
+      tenantId: ROOT_TENANT_ID,
+      appUrl: resolvePlatformAppUrl(),
+    }
+  }
+
+  const tenant = await tenantService.findById(tenantId)
+  if (tenant?.status !== "active") {
+    return {
+      tenantId: ROOT_TENANT_ID,
+      appUrl: resolvePlatformAppUrl(),
+    }
+  }
+
+  const customDomain = await customDomainService.findActiveByTenantId(tenantId)
+  if (!customDomain) {
+    return {
+      tenantId: ROOT_TENANT_ID,
+      appUrl: resolvePlatformAppUrl(),
+    }
+  }
+
+  return {
+    tenantId,
+    appUrl: deriveUrls(`https://${customDomain.domain}`).appUrl,
+  }
+}
+
 /**
  * Resolve the app URL that should be embedded in workspace-generated public
  * links. Unlike `resolveTenantSettings`, this applies an active custom domain
@@ -202,17 +247,15 @@ export const resolveWorkspaceAppUrl = async (args: {
   })
 
   if (workspace.tenantId !== ROOT_TENANT_ID) {
-    const domains = await customDomainService.findByTenantId(workspace.tenantId)
-    const activeDomain = domains.find((domain) => domain.status === "active")
-    if (activeDomain) {
-      return deriveUrls(`https://${activeDomain.domain}`).appUrl
+    const customDomain = await customDomainService.findActiveByTenantId(
+      workspace.tenantId,
+    )
+    if (customDomain) {
+      return deriveUrls(`https://${customDomain.domain}`).appUrl
     }
   }
 
-  const env = integrationContextEnv()
-  return deriveUrls(env.NEXT_PUBLIC_BUILDER_URL, undefined, {
-    forceHttps: parseEnvBool(env.FORCE_PUBLIC_HTTPS),
-  }).appUrl
+  return resolvePlatformAppUrl()
 }
 
 /**
@@ -221,23 +264,13 @@ export const resolveWorkspaceAppUrl = async (args: {
 export const resolveBroadcastSecret = (): string =>
   integrationContextEnv().REALTIME_BROADCAST_SECRET
 
-/** Whether zero-interest relay responses may suppress ephemeral typing events. */
-export const resolveRealtimeDeliveryGate = (): boolean =>
-  integrationContextEnv().REALTIME_DELIVERY_GATE
-
 /**
- * Resolve the HTTP endpoint used by server-side realtime broadcasts.
- * This endpoint is deployment-wide on purpose — never tenant-specific or a
- * custom domain.
+ * Resolve the validated Redis endpoint used by realtime publishers, preferring
+ * the optional dedicated REDIS_REALTIME_URL.
  */
-export const resolveRealtimeBroadcastUrl = (): string => {
-  const env = integrationContextEnv()
-  const url =
-    env.REALTIME_INTERNAL_URL ??
-    deriveUrls(env.NEXT_PUBLIC_BUILDER_URL, undefined, {
-      forceHttps: parseEnvBool(env.FORCE_PUBLIC_HTTPS),
-    }).publicRealtimeUrl
-  return url.endsWith("/") ? url : `${url}/`
+export const resolveRealtimeRedisUrl = (): string => {
+  const environment = integrationContextEnv()
+  return environment.REDIS_REALTIME_URL ?? environment.REDIS_URL
 }
 
 /**

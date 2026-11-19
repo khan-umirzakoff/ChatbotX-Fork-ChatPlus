@@ -9,6 +9,13 @@ const mocks = vi.hoisted(() => ({
   dispatchAuditRecord: vi.fn().mockResolvedValue(undefined),
 }))
 
+// The service queues draft cleanups; these suites never reach that path.
+vi.mock("@chatbotx.io/worker-config", () => ({
+  ScheduleJobData: {},
+  broadcastDraftPurgeJobId: vi.fn(),
+  scheduleQueue: { add: vi.fn() },
+}))
+
 vi.mock("@chatbotx.io/database/client", () => ({
   and: (...conditions: unknown[]) => ({ and: conditions }),
   db: {
@@ -51,6 +58,12 @@ vi.mock("@chatbotx.io/database/utils", () => ({
   escapeLikePattern: (value: string) => value,
   getPaginationWithDefaults: vi.fn(),
   likeContains: (value: string) => `%${value}%`,
+}))
+
+// The filter extractor reads the real flow-config registry, which this file
+// mocks partially; it has its own suite (template-contact-filter-guard).
+vi.mock("../src/template/uninstall-references", () => ({
+  contactFilterParentsOf: vi.fn(() => []),
 }))
 
 vi.mock("@chatbotx.io/flow-config", () => ({

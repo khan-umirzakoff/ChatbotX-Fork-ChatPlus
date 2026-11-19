@@ -185,9 +185,141 @@
     "name": "Temsilciler"
   },
   "aiFiles": {
+    "detail": {
+      "title": "Knowledge details",
+      "details": "Details",
+      "noChunkingInfo": "No processing information is available yet."
+    },
+    "chunking": {
+      "title": "Chunking",
+      "strategyLabel": "Strategy",
+      "version": "Chunker version",
+      "chunkSize": "Chunk size",
+      "overlapSize": "Overlap size",
+      "chunkCount": "Chunks",
+      "processedAt": "Processed at",
+      "outdated": "Reindex recommended",
+      "strategy": {
+        "prose": "Prose",
+        "tabular": "Tabular",
+        "markdown": "Markdown"
+      },
+      "configDefault": "Chunking parameters: defaults ({chunkSize} characters, overlap {overlapSize}).",
+      "configCustom": "Chunking parameters: {chunkSize} characters, overlap {overlapSize}."
+    },
+    "processingRun": {
+      "title": "Processing run",
+      "noRun": "No processing run has been tracked for this file yet.",
+      "queuedAt": "Queued at",
+      "startedAt": "Started at",
+      "heartbeatAt": "Last heartbeat",
+      "finishedAt": "Finished at",
+      "stale": "Processing appears stalled",
+      "failedBadge": "Processing failed",
+      "successNote": "Chunking and embedding enqueueing completed. The file is searchable when embedding status is also complete.",
+      "status": {
+        "queued": "Queued",
+        "processing": "Processing",
+        "success": "Prepared",
+        "error": "Failed"
+      },
+      "error": {
+        "fileTooLarge": "The file is too large to process.",
+        "tooManyChunks": "The file produced too many chunks.",
+        "fileUnreadable": "The file could not be read. For CSV files, save as CSV UTF-8 and try again.",
+        "noExtractableContent": "No content could be extracted. Check the spreadsheet header row, or the file may be a scan or empty.",
+        "noEmbeddingProvider": "No embedding provider is configured.",
+        "enqueueFailed": "The file was saved but processing could not be queued. Reindex it to try again.",
+        "unknown": "Processing failed unexpectedly."
+      }
+    },
+    "reindex": {
+      "action": "Reindex",
+      "confirmTitle": "Reindex this file?",
+      "confirmDescription": "The file will be processed with the current chunker.",
+      "downtimeWarning": "Search may be temporarily unavailable while this file is reindexed.",
+      "queued": "Reindex queued",
+      "alreadyRunning": "Processing is already running for this file.",
+      "rateLimited": "Too many requests. Try again shortly.",
+      "parameters": "Chunking parameters",
+      "strategyLabel": "How to split",
+      "strategy": {
+        "auto": "Automatic (by file type)",
+        "prose": "Plain text"
+      },
+      "chunkSize": "Chunk size (characters)",
+      "overlapSize": "Overlap (characters)",
+      "overlapDisabledTabular": "Spreadsheets keep each row whole, so overlap is not used.",
+      "tabularHeaderRow": "Header row (spreadsheets)",
+      "presets": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "custom": "Custom chunk size"
+      },
+      "resetDefaults": "Restore defaults",
+      "estimate": "Estimate: about {estimate} chunks (currently {current})",
+      "reembedWarning": "Changing parameters re-embeds the whole file (about {count} chunks) with your workspace key, and the file cannot be searched until it finishes.",
+      "largeChunkWarning": "Larger chunks make every agent answer read more text and cost more tokens.",
+      "noChangeNote": "Parameters are unchanged: chunks that are already embedded are kept and not embedded again.",
+      "conflict": "This file is being processed, so the new parameters were not applied. Try again when processing finishes."
+    },
+    "chunks": {
+      "indexOutdated": "Some chunks have no position yet. Reindex the file to number them."
+    },
     "description": "Temsilcilerinize PDF'lere, Belgelere ve Daha Fazlasına Erişim Verin",
     "title": "Bilgi",
-    "noEmbeddingProvider": "Yapılandırılmış bir gömme sağlayıcısı yok. Yapay zekâ dosya gömmeleri OpenAI veya Gemini entegrasyonu gerektirir. DeepSeek ve Claude gömme modellerini desteklemez."
+    "noEmbeddingProvider": "Yapılandırılmış bir gömme sağlayıcısı yok. Yapay zekâ dosya gömmeleri OpenAI veya Gemini entegrasyonu gerektirir. DeepSeek ve Claude gömme modellerini desteklemez.",
+    "testQuery": {
+      "title": "Test query",
+      "description": "Pick files, ask a question and see which chunk answers it. Only the retrieval step is simulated; no AI answer is generated.",
+      "open": "Test query",
+      "backToKnowledge": "Back to Knowledge",
+      "run": "Run test",
+      "files": "Files",
+      "filterFiles": "Filter files by name",
+      "selectAllReady": "Select all ready files",
+      "selectedCount": "{count}/{max} selected",
+      "fileNotReady": "This file has no chunks ready for search yet.",
+      "question": "Question",
+      "expected": "Expected answer (optional)",
+      "expectedHelp": "Type the answer exactly as it appears in the document, accents included. It is matched against every chunk of the selected files.",
+      "limit": "Result limit",
+      "simulationNote": "This simulates retrieval only; an agent may phrase a question differently. Each run uses one embedding from your workspace key.",
+      "rateLimited": "Too many test requests. Try again shortly.",
+      "byFile": "By file",
+      "matches": "{count} matching chunks",
+      "bestRank": "best rank {rank}",
+      "needsReindex": "Needs reindex",
+      "openDetail": "Open details",
+      "rank": "#{rank}",
+      "chunkNumber": "chunk #{index}",
+      "chunkUnnumbered": "chunk not numbered",
+      "aiWillSee": "AI will see",
+      "belowThreshold": "Below threshold",
+      "containsExpected": "Contains the answer",
+      "thresholdLine": "Threshold {threshold}",
+      "appliedConfig": "Applied configuration",
+      "agentDefaultThreshold": "Agent default threshold",
+      "timings": "Search time",
+      "scoreNotComparable": "Similarity scores are not directly comparable across embedding models.",
+      "answerLocation": "Answer is in {file} · {chunk} · rank {rank}",
+      "splitHint": "The answer may be split between two chunks. Try a larger chunk size or overlap, or check the file was read correctly.",
+      "previousRun": "Previous run ({time}): answer rank {from} → now {to}",
+      "previousRunTop": "Previous run ({time}): {changed} of {total} top chunks changed",
+      "verdict": {
+        "inTopResults": "The AI will see the expected answer.",
+        "foundButLowRank": "The answer is in the documents but ranks too low for the AI to see it. Try a closer question, or reindex with smaller chunks.",
+        "notInAnyChunk": "No chunk of the selected files contains the answer. The document may be read or split wrongly: view the chunks or reindex with other settings."
+      },
+      "diagnosis": {
+        "ok": "Matching chunks found.",
+        "noReadyChunks": "No chunks are ready for search yet. Open the file to check its processing status.",
+        "allBelowThreshold": "Chunks were found but all are below the threshold. Try a lower trial threshold.",
+        "noMatches": "No matching chunks were found.",
+        "agentHasNoFiles": "This agent has no knowledge files."
+      }
+    }
   },
   "aiFunctions": {
     "description": "Yapay zekâ temsilcinizi daha akıllı hâle getirmek için LLM işlevlerini yapılandırın",
@@ -435,6 +567,8 @@
       "description": "Tüm kişilere bir akış gönderin."
     },
     "receiversCount": "Alıcılar: {count}",
+    "receiversCountCapped": "Alıcılar: {count}+",
+    "receiversCountUnknown": "Alıcılar: ?",
     "receiversLoading": "Alıcılar: Yükleniyor...",
     "whatsappTemplateMessage": {
       "title": "Şablon Mesajı",
@@ -625,6 +759,7 @@
       "clicked": "Tıklandı",
       "failed": "Başarısız",
       "missed": "Kaçırılan",
+      "moderated": "Denetlenen",
       "noContacts": "Kişi bulunamadı",
       "noComment": "(metin yok)",
       "pageInfo": "{pageCount} sayfadan {page}. sayfa",
@@ -644,7 +779,9 @@
       "contactNotNew": "Kişi yeni değil",
       "alreadyRepliedOnPost": "Bu gönderide zaten yanıtlandı",
       "engagedOnOtherPost": "Başka bir gönderide zaten etkileşime girdi",
-      "mentionCountNotMatched": "Bahsetme sayısı eşleşmedi"
+      "mentionCountNotMatched": "Bahsetme sayısı eşleşmedi",
+      "noImageAttachment": "Fotoğraf eklenmemiş",
+      "moderated": "Moderasyon tarafından gizlendi veya silindi"
     },
     "replyTo": {
       "mentions": "Yeterli bahsetme içeren yorumlar",
@@ -664,6 +801,10 @@
       "label": "Bir kullanıcının başka kullanıcıları etiketleyip etiketlemediğini izle",
       "descriptionText": "Her yorumda etiketlenen hesapları sayar ve tüm yorumlar boyunca kişinin toplamlarına ekler. Etiketlenen tüm hesaplar için '{{total_tagged}}', sayfanıza hiç mesaj göndermemiş veya hiç kişi olmamış hesaplar için '{{total_new_tagged}}' kullanın."
     },
+    "onlyCommentsWithImage": {
+      "label": "Yalnızca fotoğraflı yorumlara yanıt ver",
+      "descriptionText": "Yalnızca yorum bir fotoğraf içerdiğinde otomatik yanıt ver. GIF'ler ve çıkartmalar sayılmaz. Fotoğrafsız yorumlar atlanır ve sonraki otomasyon denenir."
+    },
     "card": {
       "reply": "Yanıt"
     },
@@ -681,10 +822,92 @@
       "column": "Hesap",
       "disconnected": "Bağlantısı kesilmiş hesap",
       "disconnectedDescription": "Bu otomasyon artık bağlı olmayan bir hesaba bağlı, bu yüzden hiçbir yoruma yanıt vermez. Hesabı yeniden bağlayın veya başka bir hesap seçin."
+    },
+    "aiModeration": {
+      "enabled": "Yapay zeka moderasyonu",
+      "description": "Bir yapay zeka ajanı, bot yanıt vermeden önce her yorumu okur ve aşağıdaki kategorilerdeki yorumları gizler veya siler. Moderasyona alınan yoruma asla yanıt verilmez.",
+      "aiAgentDescription": "Yalnızca ajanın yapay zeka modeli kullanılır, istemi (prompt) kullanılmaz.",
+      "categoriesLabel": "Şu yorumları engelle",
+      "categories": {
+        "hate": "Nefret söylemi",
+        "offensive": "Saldırgan",
+        "harassment": "Taciz",
+        "negative": "Markaya düşmanca",
+        "spam": "Spam veya dolandırıcılık"
+      },
+      "categoryDescriptions": {
+        "hate": "Irk, din, cinsiyet, uyruk gibi nedenlerle bir gruba saldırır",
+        "offensive": "Hakaret, küfür, kaba dil",
+        "harassment": "Tehdit, zorbalık, bir kişiye saldırı",
+        "negative": "Markaya zarar vermeyi amaçlar. Kibar şikayetler engellenmez",
+        "spam": "Dolandırıcılık, kimlik avı, alakasız tanıtım"
+      },
+      "instruction": "Yapay zeka için ek yönerge",
+      "instructionDescription": "İsteğe bağlı. Yapay zekaya neye izin vereceğini veya neyi engelleyeceğini söyleyin.",
+      "instructionPlaceholder": "örn. Fiyattan şikayet eden müşterileri engelleme",
+      "action": "Bir yorum engellendiğinde",
+      "actions": {
+        "hide": "Gizle",
+        "delete": "Sil"
+      },
+      "deleteWarning": "Silinen yorumlar kalıcı olarak kaybolur ve geri yüklenemez. Yapay zeka hata yaparsa gizlemek daha güvenlidir."
+    },
+    "moderationLog": {
+      "title": "Moderasyona alınan yorumlar",
+      "description": "Bu otomasyonun gizlediği veya sildiği yorumlar ve nedenleri.",
+      "allActions": "Tüm işlemler",
+      "allSources": "Kurallar ve yapay zeka",
+      "actions": {
+        "hide": "Gizlendi",
+        "delete": "Silindi"
+      },
+      "sources": {
+        "rule": "Gizleme kuralıyla",
+        "ai": "Yapay zeka ile"
+      },
+      "statuses": {
+        "pending": "Devam ediyor",
+        "done": "Tamamlandı",
+        "failed": "Başarısız"
+      },
+      "rules": {
+        "all": "Tüm yorumları gizle",
+        "phoneNumber": "Telefon numarası içeriyor",
+        "link": "Bağlantı içeriyor",
+        "keyword": "Anahtar kelime içeriyor",
+        "image": "Görsel içeriyor",
+        "video": "Video içeriyor",
+        "gif": "GIF içeriyor",
+        "emoji": "Emoji içeriyor"
+      },
+      "summary": {
+        "total": "{count} moderasyon",
+        "hidden": "{count} gizlendi",
+        "deleted": "{count} silindi",
+        "byAI": "{count} yapay zeka ile",
+        "byRule": "{count} kurallarla",
+        "failed": "{count} başarısız"
+      },
+      "columns": {
+        "time": "Zaman",
+        "contact": "Kişi",
+        "comment": "Yorum",
+        "action": "İşlem",
+        "reason": "Neden",
+        "status": "Durum"
+      },
+      "loading": "Yükleniyor…",
+      "empty": "Henüz gizlenen veya silinen yorum yok.",
+      "unknownContact": "Bilinmiyor",
+      "noText": "(metin yok)",
+      "previous": "Önceki",
+      "next": "Sonraki",
+      "page": "Sayfa {page} / {pageCount}"
     }
   },
   "condition": {
     "unknownValue": "Bilinmiyor",
+    "deletedValue": "Silindi (#{id})",
     "yes": "Evet",
     "no": "Hayır",
     "valuePlaceholder": "...",
@@ -799,6 +1022,7 @@
       "contactCreatedAt": "Kişinin oluşturulma zamanı",
       "fromCtwaAd": "Reklamdan",
       "fromGoogleAd": "Google Ads'ten",
+      "clickedAd": "Reklama tıkladı",
       "ctwaConversion": "Reklam dönüşümü",
       "lastUserInputTypes": {
         "text": "Metin",
@@ -814,7 +1038,8 @@
       "ctwaConversionTypes": {
         "lead": "Potansiyel Müşteri",
         "purchase": "Satın Alma"
-      }
+      },
+      "pipelineItem": "İşlem hattı öğesi"
     },
     "fieldGroups": {
       "opportunity": "Fırsat",
@@ -831,7 +1056,8 @@
       "botFields": "Bot Alanları",
       "email": "E-posta",
       "sms": "SMS",
-      "ctwaAds": "Reklamlar"
+      "ctwaAds": "Reklamlar",
+      "pipeline": "İşlem Hatları"
     },
     "languages": {
       "ar": "Arapça",
@@ -860,6 +1086,7 @@
     "sources": {
       "direct": "Doğrudan",
       "comments": "Yorumlar",
+      "liveComments": "Canlı yayın yorumları",
       "ads": "Reklamlar",
       "fbLeadAd": "FB Potansiyel Müşteri Reklamı",
       "inboundMessage": "Gelen Mesaj",
@@ -878,6 +1105,22 @@
       },
       "adPrefix": "reklam",
       "allAds": "tüm reklamlar"
+    },
+    "noTopic": "Konusuz",
+    "trackingSince": "{date} tarihinden beri izleniyor. Önceki etkinlik dahil değildir.",
+    "pipelineItem": {
+      "anyPipeline": "Herhangi bir işlem hattı",
+      "anyStatus": "Herhangi bir durum",
+      "attributes": {
+        "exists": "Öğeler",
+        "status": "Öğe durumu",
+        "stage": "Öğe aşaması",
+        "priority": "Öğe önceliği"
+      },
+      "operators": {
+        "has": "Var",
+        "hasNo": "Yok"
+      }
     }
   },
   "channels": {
@@ -946,14 +1189,22 @@
         "inProgress": "Bağlantı zaten devam ediyor.",
         "unknown": "Bir şeyler ters gitti.",
         "followUpFailed": "Kurulum tamamlanmadı — kanal ayarlarından tamamlayın.",
-        "webhookSubscribeFailed": "Bağlandı, ancak webhook aboneliği başarısız oldu — bağlantı ayarlarından tekrar deneyin."
+        "webhookSubscribeFailed": "Bağlandı, ancak webhook aboneliği başarısız oldu — bağlantı ayarlarından tekrar deneyin.",
+        "providerUnavailable": "Sağlayıcı geçici olarak kullanılamıyor. Birkaç dakika sonra tekrar deneyin."
       },
       "sessionError": {
         "sessionExpired": "Oturumunuzun süresi doldu. Lütfen yeniden bağlanın.",
         "notMember": "Artık bu çalışma alanının üyesi değilsiniz.",
         "trialExpired": "Deneme süreniz doldu.",
         "macLimitReached": "Hesap sınırınıza ulaştınız.",
-        "credentialMissing": "Kimlik bilgileri eksik. Lütfen yeniden bağlanın."
+        "credentialMissing": "Kimlik bilgileri eksik. Lütfen yeniden bağlanın.",
+        "noPages": "Bağlanacak bir Facebook Sayfası bulunamadı. Yeniden bağlanın ve yönettiğiniz en az bir Sayfaya erişim izni verin.",
+        "noInstagramAccounts": "Bağlanacak bir Instagram hesabı bulunamadı. Yeniden bağlanın ve en az bir hesaba erişim izni verin.",
+        "exchangeFailed": "Oturum açma tamamlanamadı. Lütfen yeniden bağlanın.",
+        "providerError": "Hesaplarınız şu anda yüklenemedi. Lütfen birkaç dakika sonra tekrar deneyin.",
+        "connectFailed": "Bağlanırken bir hata oluştu. Lütfen tekrar deneyin.",
+        "tooManyAttempts": "Tamamlanmamış çok fazla bağlantı denemesi var. Birkaç dakika bekleyip tekrar deneyin.",
+        "notAllowed": "Şu anda burada kanal bağlayamazsınız. Nedenini görmek için sayfayı yenileyin."
       },
       "cancelRemaining": "Kalanları iptal et",
       "retryFailed": "Yeniden dene ({count})",
@@ -1019,7 +1270,8 @@
   "workspaces": {
     "list": {
       "title": "Çalışma Alanları Listesi"
-    }
+    },
+    "defaultName": "{name} çalışma alanı"
   },
   "workspaceToken": {
     "title": "Çalışma alanı token'ı"
@@ -1224,6 +1476,13 @@
     "bot": {
       "label": "Bot"
     },
+    "botCategory": {
+      "options": {
+        "all": "Tümü",
+        "human": "İnsan",
+        "bot": "Bot"
+      }
+    },
     "botResponse": {
       "label": "Bot Yanıtı"
     },
@@ -1242,7 +1501,8 @@
     },
     "button": {
       "label": "Düğme",
-      "whenPressed": "Bu düğmeye basıldığında"
+      "whenPressed": "Bu düğmeye basıldığında",
+      "callToThisNumber": "Bu numarayı ara"
     },
     "buttonLabel": {
       "label": "Düğme Etiketi"
@@ -1313,6 +1573,15 @@
       "prepend": "Başa ekle",
       "increase": "Şu kadar artır",
       "decrease": "Şu kadar azalt",
+      "clear": "Clear value",
+      "formula": "Use custom formula",
+      "set_now": "Set to now",
+      "date_expression": "Free-form date (with math)",
+      "add_minutes": "Add minutes",
+      "add_hours": "Add hours",
+      "add_days": "Add days",
+      "formulaHint": "Math where value is the current number, e.g. round(value * 1.1). Functions: abs, ceil, floor, round, min, max, pow, sqrt, log, sin, cos.",
+      "dateExpressionHint": "e.g. now + 2 days - 3 hours. Units: min, h, d, w, mo, y.",
       "groupSystemFields": "Sistem Alanları",
       "groupCustomFields": "Özel Alanlar",
       "groupAccountFields": "Bot Alanları"
@@ -1428,7 +1697,8 @@
       "label": "Akışlar",
       "placeholder": "Akış seçin",
       "aiGenerateTextAgent": "{aiName}: Metin Temsilcisi Oluştur",
-      "aiDeleteMessageHistory": "{aiName}: Mesaj Geçmişini Sil"
+      "aiDeleteMessageHistory": "{aiName}: Mesaj Geçmişini Sil",
+      "aiSegmentImage": "{aiName}: Görüntüyü segmentlere ayır"
     },
     "steps": {
       "label": "Düğüm",
@@ -1807,7 +2077,8 @@
       "processing": "İşleniyor",
       "installing": "Installing",
       "completed": "Tamamlandı",
-      "partial": "Partial",
+      "partial": "Kısmi",
+      "uninstalled": "Uninstalled",
       "failed": "Başarısız",
       "success": "Başarılı",
       "error": "Hata"
@@ -1840,6 +2111,7 @@
       "label": "Tıklandı (%)"
     },
     "targetCountry": {
+      "currencyHint": "Kendi para birimi olmayan işlem hatlarının varsayılan para birimini de belirler.",
       "description": "Kişilerinizin çoğunun yaşadığı ülke.",
       "label": "Hedef Ülke"
     },
@@ -2239,6 +2511,10 @@
       "label": "Gönderen Adresi",
       "placeholder": "noreply@example.com"
     },
+    "fromName": {
+      "label": "Gönderen adı",
+      "placeholder": "ChatbotX"
+    },
     "messageTemplate": {
       "label": "Mesaj Şablonu"
     },
@@ -2345,7 +2621,13 @@
       "commentToMessage": "Comment-to-Message",
       "commentToMessageDescription": "Lets this account answer high-intent comments with a direct message. Required for TikTok comment automations that use a private reply.",
       "commentToMessageEligibility": "Only available to Business Accounts registered in Vietnam, Indonesia or Thailand, owned by someone over 18, that are registered businesses or have run Messaging Ads, with messaging permissions set to \"Requests\".",
-      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting."
+      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting.",
+      "features": "Özellikler",
+      "featureMessaging": "Mesajlaşma",
+      "featureMessagingDescription": "Doğrudan mesaj alın ve gönderin. TikTok, AEA, İsviçre veya Birleşik Krallık'ta kayıtlı hesaplara mesajlaşma sunmaz — bu hesaplar için kapatın.",
+      "featureComments": "Yorumlar",
+      "featureCommentsDescription": "Yorum otomasyonu için yorumları alın: herkese açık yanıt, beğenme ve gizleme.",
+      "featuresReconnectHint": "Değişiklikler bundan sonra bağlanan hesaplar için geçerlidir. İzinlerini güncellemek için mevcut hesapları yeniden bağlayın."
     },
     "drip": {
       "label": "Damla"
@@ -2383,6 +2665,12 @@
     },
     "lastAd": {
       "label": "Son Reklam"
+    },
+    "adIds": {
+      "label": "Tüm Reklam Kimlikleri"
+    },
+    "adId": {
+      "label": "İlk Reklam Kimliği"
     },
     "lastAdSourcePlatform": {
       "label": "Son Reklam Kaynağı Platformu"
@@ -2529,7 +2817,11 @@
       "ads": "Reklamlar",
       "settings": "Ayarlar",
       "miniApps": "Mini Apps",
-      "leaderboards": "Liderlik tabloları"
+      "leaderboards": "Liderlik tabloları",
+      "pipelines": "İşlem Hatları",
+      "places": "Yerler",
+      "templates": "Şablonlar",
+      "polls": "Polls"
     },
     "adReferral": {
       "label": "Ads",
@@ -2538,7 +2830,8 @@
       "ctid": "CTID",
       "googleAds": "Google Ads",
       "googleAdsWhatsapp": "GA CCWA",
-      "googleAdsMessenger": "GA CCTM"
+      "googleAdsMessenger": "GA CCTM",
+      "googleAdsZalo": "GA Zalo"
     },
     "adSource": {
       "label": "Ad source"
@@ -2586,11 +2879,87 @@
     },
     "miniApp": {
       "label": "Mini Uygulama"
+    },
+    "lastOpportunityId": {
+      "label": "Son Fırsat Kimliği"
+    },
+    "adminName": {
+      "label": "Gönderen yönetici adı"
+    },
+    "adminTeamName": {
+      "label": "Gönderen yöneticinin ekipleri"
+    },
+    "bookingId": {
+      "label": "Rezervasyon kimliği"
+    },
+    "lastPoints": {
+      "label": "Son anket puanı"
+    },
+    "lastAdHeadline": {
+      "label": "Son reklam başlığı"
+    },
+    "lastAdBody": {
+      "label": "Son reklam metni"
+    },
+    "lastStoryId": {
+      "label": "Son hikaye kimliği"
+    },
+    "lastLeadId": {
+      "label": "Son potansiyel müşteri kimliği"
+    },
+    "lastFormId": {
+      "label": "Son form kimliği"
+    },
+    "lastFormName": {
+      "label": "Son form adı"
+    },
+    "lastAdgroupId": {
+      "label": "Son reklam grubu kimliği"
+    },
+    "lastTextInput": {
+      "label": "Son metin girişi"
+    },
+    "empty": {
+      "label": "Boş"
+    },
+    "aiSegmentImage": {
+      "description": "SAM 3.1 ile görüntüde bir nesne bulur ve kırpılmış görüntüsünü kaydeder.",
+      "inputFieldId": {
+        "label": "Kaynak görüntü"
+      },
+      "target": {
+        "label": "Bulunacak nesne",
+        "description": "\"kırmızı araba\" veya \"ürün kutusu\" gibi kısa bir isim öbeği. Soru veya komut değil.",
+        "placeholder": "ürün kutusu"
+      },
+      "matchSelection": {
+        "label": "Eşleşmeler",
+        "options": {
+          "largest": "Yalnızca en büyük nesne",
+          "all": "Tüm eşleşen nesneler (hepsini kapsayan tek bir kırpma)"
+        }
+      },
+      "outputFieldId": {
+        "label": "Görüntüyü şuraya kaydet"
+      },
+      "detailsOutputFieldId": {
+        "label": "Ayrıntıları şuraya kaydet",
+        "description": "İsteğe bağlı. Eşleşme sayısı ve kutuları içeren JSON alır.",
+        "sameAsOutput": "Çıktı görüntüsünden farklı bir alan seçin.",
+        "sameAsInput": "Kaynak görüntüden farklı bir alan seçin."
+      },
+      "overwriteWarning": "Sonuç bu alandaki kaynak görüntünün yerini alacak.",
+      "states": {
+        "success": "Bulundu",
+        "skip": "Bulunamadı",
+        "error": "Başarısız"
+      }
     }
   },
   "flows": {
     "export": {
       "notPublished": "Bu akış hiç yayınlanmadı. Dışa aktarmadan önce yayınlayın.",
+      "viewOnly": "Bu akış salt görüntüleme şablonundan yüklendiği için dışa aktarılamaz.",
       "failed": "Dışa aktarma başarısız oldu. Lütfen tekrar deneyin."
     },
     "title": "Akışlar",
@@ -2760,7 +3129,18 @@
       "sendGoogleAdsConversion": "Google Ads dönüşümü gönder",
       "changeGamificationScore": "Oyunlaştırma puanlarını değiştir",
       "sendViewCatalog": "Kataloğu görüntüle",
-      "sendProducts": "Ürün gönder"
+      "sendProducts": "Ürün gönder",
+      "sendCollection": "Koleksiyon",
+      "pipeline": "İşlem Hatları",
+      "moreOptions": "Daha fazla seçenek",
+      "findPlacesNearMe": "Yakınımdaki yerleri bul",
+      "callPhoneNumber": "Telefon numarasını ara",
+      "copyText": "Metni kopyala"
+    },
+    "externalRequest": {
+      "errors": {
+        "requestFailed": "Harici istek test edilemedi. İstek yapılandırmasını doğrulayın ve yeniden deneyin."
+      }
     },
     "splitTraffic": {
       "balanceHint": "Toplam %100 olmalıdır.",
@@ -2791,7 +3171,12 @@
       "customField": "Özel Alan",
       "selectCustomFieldPlaceholder": "Özel alan seçin",
       "addMapping": "Eşleme Ekle",
-      "addCustomField": "Yeni Ekle"
+      "addCustomField": "Yeni Ekle",
+      "fileBadge": "Dosya",
+      "fileFormat": "Dosya bağlantıları",
+      "fileFormatAllUrls": "Tüm bağlantılar, virgülle ayrılmış",
+      "fileFormatFirstUrl": "Yalnızca ilk bağlantı",
+      "fileFormatHint": "Özel alan, yüklenen dosyaların bağlantılarını burada seçildiği şekilde saklar."
     },
     "sendCarousel": {
       "addSlide": "Kart ekle",
@@ -2941,6 +3326,156 @@
       "productsSelected": "{count, plural, one {# ürün} other {# ürün}}",
       "noneSelected": "Henüz ürün yok",
       "sendFailed": "Ürünler gönderilemedi."
+    },
+    "sendCollection": {
+      "title": "Koleksiyon",
+      "dataType": "Veri türü",
+      "dataTypes": {
+        "products": "Ürünler"
+      },
+      "collectionType": "Koleksiyon türü",
+      "collectionTypes": {
+        "automated": {
+          "label": "Otomatik",
+          "description": "Koşullara uyan mevcut ve gelecekteki ürünler otomatik eklenir."
+        },
+        "manual": {
+          "label": "Manuel",
+          "description": "Ürünleri tek tek ekleyin."
+        }
+      },
+      "condition": "Koşul",
+      "name": "Ad",
+      "optional": "(İsteğe bağlı)",
+      "category": "Kategori",
+      "subcategory": "Alt kategori",
+      "vendor": "Satıcı",
+      "all": "Tümü",
+      "items": "Ürünler",
+      "select": "Seç",
+      "selectPlaceholder": "1 veya daha fazla ürün seçin",
+      "selectAll": "Tümünü seç",
+      "deselectAll": "Tümünün seçimini kaldır",
+      "maxProducts": "En fazla {count} ürün; mağazanın artık göstermediği ürün atlanır.",
+      "automatedHint": "Eşleşen en fazla {count} ürünü, ürünü mağazada açan kartlar olarak gönderir.",
+      "summaryAll": "Mağazanın tüm ürünleri",
+      "summaryAutomated": "Ürünler: {filters}",
+      "summaryManual": "{count, plural, one {# ürün} other {# ürün}}",
+      "cancel": "İptal",
+      "save": "Kaydet"
+    },
+    "pipelineStep": {
+      "action": "Eylem",
+      "pipeline": "İşlem hattı",
+      "targetHint": "Kişinin bu işlem hattındaki en son açık öğesi üzerinde işlem yapar. Hiç yoksa Atla yolu çalışır.",
+      "noPipelines": "İşlem hattı bulunamadı",
+      "actions": {
+        "addToPipeline": "Kişiyi işlem hattına ekle",
+        "moveToStage": "Bir aşamaya taşı",
+        "changeValue": "Değeri değiştir",
+        "assign": "Yöneticilere ata",
+        "changeStatus": "Durumu değiştir",
+        "changePriority": "Önceliği değiştir",
+        "changeDueDate": "Son tarihi değiştir",
+        "changeTitle": "Başlığı değiştir",
+        "setCustomField": "Özel alan ayarla",
+        "clearCustomField": "Özel alanları temizle",
+        "changeDescription": "Açıklamayı değiştir",
+        "removeFromPipeline": "Kişiyi işlem hattından kaldır",
+        "addComment": "Yorum ekle",
+        "transfer": "Başka bir işlem hattına aktar"
+      },
+      "title": "Başlık",
+      "description": "Açıklama",
+      "stage": "Aşama",
+      "firstStage": "İlk aşama",
+      "status": "Durum",
+      "assigneeMembers": "Atanan yöneticiler",
+      "assigneeTeams": "Atanan ekipler",
+      "value": "Değer",
+      "priority": "Öncelik",
+      "dueDate": "Son tarih",
+      "dueNone": "Yok",
+      "dueNoneHint": "Öğenin son tarihi yok.",
+      "dueCustomField": "Tarih özel alanından",
+      "dueFixed": "Sabit tarih ve saat",
+      "dueField": "Tarih veya tarih-saat özel alanı",
+      "fieldValues": "Özel alanlar",
+      "field": "Alan",
+      "fieldValue": "Değer",
+      "fields": "Alanlar",
+      "addField": "Alan değeri ekle",
+      "removeHint": "Kişinin bu işlem hattındaki en son açık öğesini siler.",
+      "comment": "Yorum",
+      "destinationPipeline": "Hedef işlem hattı",
+      "destinationStage": "Hedef aşama",
+      "missingRequiredFields": "Değeri olmayan zorunlu alanlar: {names}. Her birinin değeri olana kadar öğe oluşturulamaz.",
+      "addRequiredFields": "Zorunlu alanları ekle"
+    },
+    "aiSegmentImage": {
+      "label": "{name}: Görüntüyü segmentlere ayır"
+    },
+    "aiSpeechToText": {
+      "muse": {
+        "formatHint": "Yalnızca WAV dosyaları kabul edilir: PCM 16 bit, mono, 16 kHz veya 24 kHz, en fazla 10 dakika. Diğer dosyalar (örneğin sesli mesajlar) Hata dalına gider.",
+        "languageBias": {
+          "label": "Dil tercihi",
+          "description": "Sesin muhtemel dilleri. Otomatik algılama için boş bırakın.",
+          "placeholder": "Otomatik algıla"
+        },
+        "keywords": {
+          "label": "Anahtar kelimeler",
+          "description": "Muse'un kelimeleri doğru yazmasına yardımcı olan adlar veya alan terimleri.",
+          "placeholder": "Bir anahtar kelime ekleyip Enter'a basın"
+        }
+      },
+      "languages": {
+        "Arabic": "Arapça",
+        "Bengali": "Bengalce",
+        "Dutch": "Felemenkçe",
+        "English": "İngilizce",
+        "French": "Fransızca",
+        "German": "Almanca",
+        "Hebrew": "İbranice",
+        "Hindi": "Hintçe",
+        "Indonesian": "Endonezce",
+        "Italian": "İtalyanca",
+        "Japanese": "Japonca",
+        "Kannada": "Kannada dili",
+        "Korean": "Korece",
+        "Malay": "Malayca",
+        "MandarinChinese": "Mandarin Çincesi",
+        "Marathi": "Marathi dili",
+        "Polish": "Lehçe",
+        "Portuguese": "Portekizce",
+        "Spanish": "İspanyolca",
+        "Tagalog": "Tagalogca",
+        "Tamil": "Tamilce",
+        "Telugu": "Telugu dili",
+        "Thai": "Tayca",
+        "Turkish": "Türkçe",
+        "Vietnamese": "Vietnamca"
+      }
+    },
+    "findPlacesNearMe": {
+      "category": "Konum kategorisi",
+      "allLocations": "Tüm konumlar",
+      "whatsappOnly": "Yalnızca WhatsApp kişilerine gönderilir.",
+      "noLocationSource": "Konum bu akışta toplanmalıdır: bu işlemden önce yanıt biçimi Konum olan bir Kullanıcı Verisi Al adımı ekleyin. Başka bir akışın kaydettiği konum kullanılmaz. Bu adım olmadan işlem atlanır."
+    },
+    "callPhoneNumber": {
+      "fallbackHint": "Arama başlatamayan kanallarda kişi bu numarayı yanıt olarak alır.",
+      "countryLabel": "Ülke kodu",
+      "noCountry": "Ülke yok",
+      "invalidForCountry": "Bu, {country} için geçerli bir telefon numarası değil.",
+      "needsCountry": "Ülkeyi seçin veya numarayı + ve ülke koduyla başlatın.",
+      "invalidInternational": "Bu geçerli bir uluslararası telefon numarası değil."
+    },
+    "copyText": {
+      "textLabel": "Kopyalanacak metin",
+      "limitHint": "Değişkenler doldurulduktan sonra en fazla {max} karakter.",
+      "fallbackHint": "Metin kopyalayamayan kanallarda kişi bu metni yanıt olarak alır.",
+      "viewerTitle": "Bu metni kopyalar"
     }
   },
   "folders": {
@@ -2965,7 +3500,7 @@
     "title": "Genel"
   },
   "facebookMarketingMessages": {
-    "deleteWarning": "Bu, kampanyayı yalnızca ChatbotX'ten kaldırır. Meta mesaj kampanyası çalışmaya devam eder — Reklam Yöneticisi'nde duraklatın veya silin.",
+    "deleteWarning": "Bu işlem Meta mesaj kampanyasını siler ve kampanyayı ChatbotX'ten kaldırır. Meta silmeyi reddederse kampanya korunur.",
     "title": "Facebook Pazarlama Mesajları",
     "description": "Messenger'da kişiselleştirilmiş tanıtım mesajlarıyla etkileşimi ve satışları artırın.",
     "create": "Yeni Oluştur",
@@ -2990,13 +3525,197 @@
       "generic": "Genel",
       "greeting": "Karşılama",
       "quickReplies": "Hızlı yanıtlar",
-      "elements": "Kartlar"
+      "elements": "Kartlar",
+      "targetMessaging": "Mesaj hedefleme",
+      "targetOptIn": "Opt-in",
+      "targetOptInDescription": "Sayfada pazarlama mesajı almayı kabul eden müşteriler",
+      "targetCustomAudience": "Özel hedef kitle",
+      "targetCustomAudienceDescription": "Dosyadan yüklenen hedef kitlelere mesaj gönder",
+      "audience": "Özel hedef kitle"
     },
+    "noReadyAudiences": "Bu Sayfa ve reklam hesabı için hazır özel hedef kitle yok.",
+    "manageAudiences": "Hedef kitleleri yönet",
     "errors": {
       "notConfigured": "Facebook Pazarlama Mesajları yapılandırılmadı. Yöneticinizden Pazarlama Mesajları Yapılandırma Kimliği'ni ayarlamasını isteyin.",
       "notGranted": "Pazarlama Mesajları özelliğini kullanmak için lütfen erişim izni verin.",
       "tosNotAccepted": "Bu özelliği kullanmak için {url} adresinde özel nesne koşullarını kabul edin",
-      "notFound": "Pazarlama mesajı bulunamadı."
+      "notFound": "Pazarlama mesajı bulunamadı.",
+      "audienceNotTargetable": "Seçilen özel hedef kitle hazır değil veya bu Sayfa ve reklam hesabına ait değil.",
+      "connectFirst": "Önce ChatbotX uygulamasında Marketing Messages'ı bağlayın.",
+      "mmInvalidState": "Bu işlem kampanyanın mevcut durumunda kullanılamaz.",
+      "mmCampaignEnded": "Meta mesaj kampanyası sona erdi, bu nedenle gönderilemez veya devam ettirilemez.",
+      "mmPageNotConnected": "Bu kampanyanın Sayfası bu çalışma alanına bağlı değil.",
+      "mmContentLocked": "İlk mesaj gönderildikten sonra içerik değiştirilemez.",
+      "metaDeleteFailed": "Meta bu kampanyayı silemedi, bu nedenle kampanya korundu. {message}",
+      "statisticsUnknownAdAccount": "Bu çalışma alanının o reklam hesabında Pazarlama Mesajları kampanyası yok.",
+      "statisticsInvalidRange": "Son 37 ay içinde, bitiş tarihiyle aynı veya ondan önce bir başlangıç tarihi seçin."
+    },
+    "tabs": {
+      "campaigns": "Kampanyalar",
+      "audiences": "Hedef kitleler",
+      "statistics": "İstatistikler"
+    },
+    "audiences": {
+      "title": "Özel hedef kitleler",
+      "create": "Yeni oluştur",
+      "uploadMore": "Daha fazla satır yükle",
+      "empty": "Henüz özel hedef kitle yok.",
+      "deleteTitle": "Özel hedef kitleyi sil",
+      "deleteWarning": "Bu işlem \"{name}\" özel hedef kitlesini Meta'dan ve ChatbotX'ten siler. Geri alınamaz.",
+      "deleted": "Özel hedef kitle silindi.",
+      "pageDisconnected": "Sayfa bağlantısı kesildi",
+      "status": {
+        "ready": "Hazır",
+        "missing": "Meta'da silindi"
+      },
+      "fields": {
+        "customAudienceId": "Özel hedef kitle kimliği",
+        "approximateCount": "Yaklaşık sayı",
+        "status": "Durum",
+        "file": "Dosya yükle"
+      },
+      "wizard": {
+        "title": "Özel hedef kitle oluştur",
+        "uploadMoreTitle": "Daha fazla satır yükle",
+        "steps": {
+          "prepare": "Listeyi hazırla",
+          "upload": "Yükle",
+          "confirm": "Onayla"
+        },
+        "prepareDescription": "Abone listesi, pazarlama mesajları için hedef kitlenizi oluşturmakta kullanılan bilgileri içeren bir CSV veya TXT dosyasıdır. Abonelerinizi Facebook ve Instagram kullanıcılarıyla eşleştirmek için telefon numarasını kullanırız. Bilgiler bize gönderilmeden önce tanımlayıcı listeniz rastgele bir koda dönüştürülür (hash).",
+        "aboutHashing": "Hash'leme hakkında",
+        "downloadTemplate": "Dosya şablonunu indir",
+        "mainIdentifiers": "En az bir ana tanımlayıcı ekleyin",
+        "moreIdentifiers": "Daha fazla tanımlayıcı ekleyin",
+        "identifiers": {
+          "email": "E-posta",
+          "phone": "Telefon numarası",
+          "madid": "Mobil reklam kimliği",
+          "fn": "Ad",
+          "ln": "Soyad",
+          "ct": "Şehir",
+          "st": "Eyalet/İl",
+          "country": "Ülke",
+          "zip": "Posta kodu",
+          "dob": "Doğum tarihi",
+          "doby": "Doğum yılı",
+          "gen": "Cinsiyet"
+        },
+        "uploadNote": "Listeyi yüklemeden önce tanımlayıcıların eksiksiz ve doğru biçimde olduğundan emin olun. Liste .csv, .txt veya .xlsx biçiminde olmalıdır.",
+        "namePlaceholder": "Hedef kitle adını girin...",
+        "descriptionPlaceholder": "Kısa açıklama (varsa)",
+        "dropzone": "Yüklemek için tıklayın veya sürükleyip bırakın",
+        "maxFileSize": "Maksimum dosya boyutu: 20MB",
+        "fileRequired": "Yüklenecek bir dosya seçin.",
+        "fileTooLarge": "Dosya 20MB'tan büyük.",
+        "fileType": "Dosya .csv, .txt veya .xlsx olmalıdır.",
+        "next": "İleri",
+        "back": "Geri",
+        "upload": "Yükle",
+        "done": "Bitti",
+        "successTitle": "Yükleme başarılı",
+        "successRows": "Messenger abone listeniz yüklendi: {count, plural, one {# satır} other {# satır}}",
+        "skippedRows": "{count, plural, one {# satır atlandı} other {# satır atlandı}} (geçerli e-posta veya telefon yok).",
+        "invalidRows": "{count, plural, one {# satır Meta tarafından reddedildi} other {# satır Meta tarafından reddedildi}}.",
+        "matchingNote": "Abonelerinizin Facebook'taki kişilerle eşleştirilmesinin tamamlanması birkaç dakika sürebilir. Durumu Hedef kitle listesinden kontrol edebilirsiniz."
+      },
+      "errors": {
+        "audienceInvalidFile": "Dosya okunamadı. Başlık satırı olan bir .csv, .txt veya .xlsx dosyası kullanın.",
+        "audienceTooManyRows": "Dosyada {max, number} satırdan fazla var.",
+        "audienceNoIdentifier": "Dosyada bir e-posta veya telefon sütunu olmalıdır.",
+        "audienceNoValidRows": "Hiçbir satırda geçerli bir e-posta veya telefon numarası yok.",
+        "audiencePartialUpload": "Hedef kitle oluşturuldu ancak yükleme {received, number} satırdan sonra durdu. Yeniden denemek için \"Daha fazla satır yükle\" seçeneğini kullanın.",
+        "audienceNotFound": "Özel hedef kitle bulunamadı.",
+        "audienceCreateRejected": "Meta kitleyi reddetti: {reason}",
+        "uploadUncertain": "Yükleme tamamlanmamış olabilir. Bu pencereyi kapatın ve kitle listesini kontrol edin; kitle oluşturulduysa \"Daha fazla satır yükle\" seçeneğini kullanın.",
+        "pageNotConnected": "Seçilen Sayfa bu çalışma alanına bağlı değil.",
+        "audienceInUse": "Bu özel hedef kitle {count, plural, one {# pazarlama mesajı} other {# pazarlama mesajı}} tarafından kullanılıyor ve silinemez."
+      }
+    },
+    "delivery": {
+      "title": "Gönderim",
+      "contentLocked": "Mesajlar zaten gönderildiği için içerik kilitli.",
+      "topicsReturned": "Meta'nın döndürdüğü konular: {topics}",
+      "recipients": "{count} alıcı",
+      "startsAt": "Başlangıç: {date}",
+      "completedAt": "Tamamlandı: {date}",
+      "errorBreakdown": "Hatalar",
+      "retrying": "Meta şu anda gönderim kabul etmiyor; otomatik olarak yeniden deneniyor.",
+      "counts": {
+        "sent": "Gönderildi",
+        "delivered": "Teslim edildi",
+        "unconfirmed": "Onaylanmadı"
+      },
+      "status": {
+        "notSent": "Gönderilmedi",
+        "scheduled": "Zamanlandı",
+        "sending": "Gönderiliyor",
+        "waitingNextDay": "Ertesi günü bekliyor",
+        "paused": "Duraklatıldı",
+        "stopped": "Durduruldu"
+      },
+      "reason": {
+        "pageNotConnected": "Sayfa bu çalışma alanına bağlı değil.",
+        "quotaReached": "Duraklatıldı: mesaj kotanıza ulaşıldı.",
+        "workspaceBlocked": "Duraklatıldı: bu çalışma alanı engellendi.",
+        "grantInvalid": "Duraklatıldı: Facebook bağlantısının süresi doldu. Marketing Messages'ı yeniden bağlayın.",
+        "metaBlocker": "Meta bu kampanyayı engelliyor.",
+        "contentRejected": "Meta mesaj içeriğini reddetti.",
+        "noTokens": "Bu kampanya için alıcı bulunamadı.",
+        "noMatchingTopic": "İzin vermiş hiçbir alıcı \"Updates and promotions\" konusuyla eşleşmiyor.",
+        "tokenFetchFailed": "Alıcılar Meta'dan alınamadı.",
+        "campaignEnded": "Meta kampanyası sona erdi.",
+        "lifetimeBudgetReached": "Toplam bütçe tükendi."
+      },
+      "errors": {
+        "grantInvalid": "Facebook bağlantısının süresi doldu.",
+        "campaignInactive": "Meta kampanyası etkin değil.",
+        "budgetReached": "Bütçe tükendi.",
+        "dailyBudgetReached": "Günlük bütçeye ulaşıldı.",
+        "optedOut": "Alıcı abonelikten çıktı.",
+        "frequencyLimit": "Alıcının sıklık sınırına ulaşıldı.",
+        "contentRejected": "Mesaj içeriği Meta tarafından reddedildi.",
+        "deliveryFailed": "Teslimat başarısız oldu.",
+        "outcomeUnknown": "Teslimat sonucu bilinmiyor."
+      }
+    },
+    "statistics": {
+      "searchPlaceholder": "ID veya ada göre ara",
+      "adAccount": "Reklam hesabı",
+      "dateRange": "Tarih aralığı",
+      "timezoneHint": "Tarihler {timezone} saat diliminde",
+      "presets": {
+        "last7": "Son 7 gün",
+        "last30": "Son 30 gün",
+        "last90": "Son 90 gün",
+        "thisMonth": "Bu ay",
+        "lastMonth": "Geçen ay"
+      },
+      "columns": {
+        "id": "ID",
+        "name": "Ad",
+        "page": "Facebook Sayfası",
+        "delivered": "Teslim edilen mesajlar",
+        "readRate": "Okunma oranı",
+        "linkClicks": "Bağlantı tıklamaları",
+        "linkClickRate": "Bağlantı tıklama oranı",
+        "costPerClick": "Tıklama başına maliyet",
+        "costPerDelivery": "Teslimat başına maliyet",
+        "spend": "Harcanan tutar"
+      },
+      "notes": {
+        "delivery": "Meta bunu Avrupa veya Japonya'daki alıcılar için raporlamaz; bu kampanyalar - gösterir.",
+        "clicks": "Meta bunu Avrupa, Arjantin, Türkiye, Güney Kore veya Japonya'daki alıcılar için raporlamaz; bu kampanyalar - gösterir."
+      },
+      "footer": {
+        "label": "Toplam: {count, plural, one {# kampanya} other {# kampanya}}",
+        "total": "Toplam",
+        "average": "Ortalama"
+      },
+      "totalsUnavailable": "Toplamlar şu anda kullanılamıyor. Birazdan tekrar deneyin.",
+      "readOnly": "İstatistikleri görmek için Pazarlama Mesajları'nı yeniden bağlayın.",
+      "empty": "Henüz Pazarlama Mesajları kampanyası yok. Kampanyalar sekmesinde bir tane oluşturun.",
+      "noResults": "Aramanızla eşleşen kampanya yok."
     }
   },
   "facebookAds": {
@@ -3641,6 +4360,7 @@
       "months": "{count} ay",
       "years": "{count} yıl"
     },
+    "realtimeRevokeWarning": "Erişim iptali hemen onaylanamadı - üyenin bir sonraki yeniden bağlanmasında geçerli olacak.",
     "moveFeature": "{feature} Taşı",
     "poweredBy": "{name} tarafından desteklenmektedir",
     "noGiphyApiKey": "GIPHY API anahtarı bulunamadı. Lütfen Platform Ayarları'na bir tane ekleyin.",
@@ -3778,6 +4498,9 @@
     "waTemplateMpmTooManySections": "Çoklu ürün butonunda en fazla 10 bölüm olabilir. Yayınlamadan önce bazı bölümleri kaldırın.",
     "waTemplateMpmTooManyProducts": "Çoklu ürün butonunda toplamda en fazla 30 ürün olabilir. Yayınlamadan önce bazı ürünleri kaldırın.",
     "waTemplateLtoExpirationRequired": "Göndermeden önce sınırlı süreli teklif için bir bitiş tarihi seçin.",
+    "waTemplatePaymentRequestIncomplete": "Yayınlamadan önce bu düğmenin ödeme bilgilerini doldurun.",
+    "waTemplatePaymentRequestInvalid": "Bir ödeme bilgisinin biçimi geçersiz. Tutarı, bağlantıyı ve kart hanelerini kontrol edin.",
+    "waTemplatePaymentRequestMisplaced": "Ödeme bilgileri yalnızca normal (carousel olmayan) bir şablonun ödeme düğmesinde ayarlanabilir.",
     "waTemplateMpmIncompleteProducts": "Her bölümde en az bir seçili ürün olmalı — boş satırları silin veya onlara ürün seçin.",
     "unsupportedBlock": "Bu kanal bu bloğu desteklemiyor.",
     "constraintExceeded": "Bu kanalın sınırı aşıldı.",
@@ -3804,7 +4527,15 @@
       "noAnswer": "Yanıt yok",
       "labelsUnavailable": "Flow'un soruları yüklenemedi, bu yüzden alan adları gösteriliyor.",
       "yes": "Evet",
-      "no": "Hayır"
+      "no": "Hayır",
+      "fileNotSaved": "Dosya kaydedilmedi",
+      "filesNotSaved": "{count, plural, one {# dosya kaydedilmedi} other {# dosya kaydedilmedi}}",
+      "filesAttached": "{count, plural, one {# dosya eklendi} other {# dosya eklendi}}",
+      "fileFailure": {
+        "too_large": "Dosya çok büyük",
+        "unsupported_type": "Desteklenmeyen dosya türü",
+        "download_failed": "İndirilemedi"
+      }
     },
     "sendViewCatalogBodyTooLong": "Mesaj metni bir katalog mesajı için çok uzun. Kısaltın.",
     "sendViewCatalogFooterTooLong": "Alt bilgi bir katalog mesajı için çok uzun. Kısaltın.",
@@ -3831,7 +4562,24 @@
     "savedReplyImagesRemoved": "Burada gönderilemeyen görseller kaldırıldı",
     "onlyImagesAllowed": "Yalnızca görsel eklenebilir",
     "tooManySavedReplyImages": "Kayıtlı bir yanıtta en fazla {max} görsel olabilir",
-    "savedReplyImagesNotSentHere": "Görseller burada gönderilmeyecek"
+    "savedReplyImagesNotSentHere": "Görseller burada gönderilmeyecek",
+    "invalidPhoneNumber": "Bu geçerli bir telefon numarası değil. Ülke kodunu ekleyin, örneğin +1.",
+    "buttonCallPhoneNumberUnsupported": "Bu düğme burada bir telefon numarasını arayamaz. Başka bir eylem seçin.",
+    "buttonCopyTextUnsupported": "Bu düğme burada metin kopyalayamaz. Başka bir eylem seçin.",
+    "paymentRequest": {
+      "title": "Ödeme talebi",
+      "cardEnding": "{lastFourDigits} ile biten kart",
+      "status": "WhatsApp ödemeyi bildirmez. Ödeme sağlayıcınızdan kontrol edin.",
+      "cardStatus": "Müşterinin onayı karttan tahsilat yapmaz. Ödeme sağlayıcınız üzerinden tahsil edin.",
+      "sentFromTemplate": "Şablon: {name}"
+    },
+    "paymentConfirmation": {
+      "title": "Müşteri ödemeyi onayladı",
+      "cardTitle": "Müşteri kartla ödemeyi onayladı",
+      "cardEnding": "{lastFourDigits} ile biten kart",
+      "notCharged": "Henüz tahsil edilmedi. Ödeme sağlayıcınız üzerinden tahsil edin.",
+      "reference": "Referans {referenceId}"
+    }
   },
   "instagram": {
     "description": "Bu entegrasyon, Instagram botları oluşturmanızı sağlar.",
@@ -3928,6 +4676,7 @@
         "buttonText": "Buton Metni",
         "buttonType": "Buton Türü",
         "visitWebsite": "Web Sitesini Ziyaret Et",
+        "openMiniApp": "Mini Uygulamayı aç",
         "callPhoneNumber": "Telefon Numarasını Ara",
         "postback": "Buton"
       },
@@ -3989,6 +4738,18 @@
       "label": "DeepSeek"
     },
     "title": "DeepSeek"
+  },
+  "muse": {
+    "autoReply": {
+      "description": "İşletme verilerinizle desteklenen yapay zeka ile kullanıcılara doğal bir şekilde yanıt vermek için AI otomatik yanıtı etkinleştirin.",
+      "label": "AI Otomatik Yanıt"
+    },
+    "connect": {
+      "description": "İşletme verilerinizle desteklenen yapay zeka ile kullanıcılara doğal bir şekilde yanıt verin.",
+      "embeddingHint": "Muse gömme (embedding) modelleri sunmaz. Bilgi Bankası ve AI dosyaları için yine de OpenAI veya Gemini entegrasyonu gerekir.",
+      "label": "Muse"
+    },
+    "title": "Muse"
   },
   "decision": {
     "addConnection": "Add AI Router connection",
@@ -4125,12 +4886,17 @@
     "deepseek": {
       "description": "DeepSeek entegrasyonu açıklaması",
       "title": "DeepSeek Entegrasyonu"
+    },
+    "muse": {
+      "description": "Muse entegrasyonu açıklaması",
+      "title": "Muse Entegrasyonu"
     }
   },
   "auth": {
     "orContinueWith": "Veya şununla devam et",
     "continueWithFacebook": "Facebook ile devam et",
     "continueWithGoogle": "Google ile devam et",
+    "continueWithProvider": "{name} ile devam et",
     "continueWithEmail": "E-posta ile devam et",
     "continueWithMagicLink": "Sihirli Bağlantıyla devam et",
     "dontHaveAnAccount": "Hesabınız yok mu?",
@@ -4161,11 +4927,15 @@
     "changePasswordTitle": "Şifrenizi değiştirin",
     "changePasswordDescription": "Devam etmeden önce yeni bir şifre belirleyin.",
     "passwordChangeSuccess": "Şifre değiştirildi",
+    "signUpDisabledTitle": "Kayıt olma devre dışı",
+    "signUpDisabledDescription": "Yeni hesaplar yalnızca bir yönetici tarafından veya davet bağlantısı aracılığıyla oluşturulabilir.",
     "oauthError": {
       "accountNotLinked": "Bu e-postaya sahip bir hesap zaten var ve bağlanamadı. Daha önce kullandığınız yöntemle giriş yapın veya destekle iletişime geçin.",
       "unableToLinkAccount": "Bu girişi mevcut hesapla bağlayamadık. Daha önce kullandığınız yöntemle giriş yapın veya destekle iletişime geçin.",
       "sessionExpired": "Giriş denemesinin süresi doldu. Lütfen tekrar deneyin.",
       "accessDenied": "Giriş iptal edildi.",
+      "signUpDisabled": "Bu hesap henüz mevcut değil ve kayıt olma devre dışı. Bir yöneticiden sizin için oluşturmasını isteyin.",
+      "invalidInvitation": "Bu davet geçersiz veya süresi dolmuş.",
       "generic": "Giriş başarısız oldu. Lütfen tekrar deneyin."
     }
   },
@@ -4189,6 +4959,9 @@
     "maxCharacters": "En fazla {max} karakter.",
     "invalidApiKey": "Geçersiz API anahtarı",
     "maxMustBeGreaterThanMin": "{maxField}, {minField} değerinden büyük veya ona eşit olmalıdır",
+    "trigger": {
+      "actionReferenceNotFound": "An action refers to a record that no longer exists. Re-select it in the action and save again."
+    },
     "inboundWebhook": {
       "inboxRequired": "Bir gelen kutusu seçin.",
       "inboxNotFound": "Seçilen gelen kutusu bulunamadı.",
@@ -4198,11 +4971,31 @@
       "unknownFieldTarget": "Eşlenen bir kişi alanı artık mevcut değil.",
       "actionReferenceNotFound": "Bir eylem, artık mevcut olmayan bir akışa, etikete veya alana başvuruyor.",
       "fieldMappingRequired": "En az bir alan eşlemesi ekleyin."
+    },
+    "form": {
+      "required": "Bu alan zorunludur.",
+      "minLength": "En az {minimum} karakter girin.",
+      "maxLength": "En fazla {maximum} karakter girin.",
+      "minNumber": "En az {minimum} olan bir sayı girin.",
+      "moreThan": "{minimum} değerinden büyük bir sayı girin.",
+      "maxNumber": "En fazla {maximum} olan bir sayı girin.",
+      "lessThan": "{maximum} değerinden küçük bir sayı girin.",
+      "number": "Bir sayı girin.",
+      "wholeNumber": "Tam sayı girin.",
+      "minItems": "En az {minimum} seçin.",
+      "maxItems": "En fazla {maximum} seçin.",
+      "email": "Geçerli bir e-posta adresi girin.",
+      "url": "https:// ile başlayan geçerli bir bağlantı girin.",
+      "format": "Bu değer doğru biçimde değil.",
+      "option": "Seçeneklerden birini seçin.",
+      "invalid": "Bu değer geçerli değil.",
+      "checkFields": "Düzeltilmesi gereken alanlar var. Kırmızı işaretlileri kontrol edin."
     }
   },
   "webchat": {
     "chatUnavailable": "Bu sohbet şu anda kullanılamıyor.",
     "description": "Müşterilerinizin web sitenizden doğrudan işletmenizden anında otomatik yanıtlar almasını sağlayın",
+    "loadMessagesError": "Mesajlar yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.",
     "rateLimitExceeded": "Çok fazla istek. Lütfen bir süre sonra tekrar deneyin.",
     "title": "Web Sohbeti",
     "workspaceUnavailable": "Bu çalışma alanı artık kullanılamıyor.",
@@ -4358,7 +5151,28 @@
         "mpmSectionLimitReached": "En fazla 10 bölüm sınırına ulaşıldı.",
         "mpmProductLimitReached": "En fazla 30 ürün sınırına ulaşıldı.",
         "mpmProductsSummary": "{sectionCount} bölümde {productCount} ürün",
-        "unsupportedButtonParam": "Bu buton türü henüz desteklenmiyor."
+        "unsupportedButtonParam": "Bu buton türü henüz desteklenmiyor.",
+        "payment": {
+          "method": {
+            "pix": "Pix",
+            "boleto": "Boleto",
+            "payment_link": "Ödeme bağlantısı",
+            "card_on_file": "Tek tıkla kartlı ödeme"
+          },
+          "field": {
+            "code": "Pix kodu",
+            "digitableLine": "Boleto satırı",
+            "url": "Ödeme bağlantısı URL'si",
+            "lastFourDigits": "Kartın son 4 hanesi",
+            "credentialId": "Kart kimlik bilgisi ID'si (isteğe bağlı)",
+            "amount": "BRL cinsinden tutar, ör. 12.34"
+          },
+          "notice": {
+            "general": "Her müşterinin kendi ödeme bilgilerini alması için bir değişken kullanın.",
+            "cardOnFile": "Tek tıkla kartlı ödeme yalnızca Meta'nın etkinleştirdiği işletmelerde çalışır."
+          },
+          "unsupportedButton": "Bu şablonda gönderilemeyen bir ödeme düğmesi var: ödeme türü belirlenemedi. Şablonları yeniden senkronize edin veya başka bir şablon seçin."
+        }
       }
     },
     "sampleBodyCardContent": {
@@ -4515,7 +5329,6 @@
     "templateHeader": {
       "label": "Şablon Üst Bilgisi"
     },
-    "transferPhoneNumber": "Telefonu başka bir WhatsApp sağlayıcısından aktar",
     "selectPage": {
       "tryAgain": "Yeniden bağlanmayı dene"
     },
@@ -4772,7 +5585,18 @@
         "callInformation": "Çağrı bilgisi"
       }
     },
-    "credentialSecretsRequired": "Uygulama sırrını ve sistem kullanıcısı jetonunu girin. Henüz kaydedilmediler."
+    "credentialSecretsRequired": "Uygulama sırrını ve sistem kullanıcısı jetonunu girin. Henüz kaydedilmediler.",
+    "embeddedSignupCancelled": "Kayıt iptal edildi — bu sekmeyi kapatabilirsiniz.",
+    "embeddedSignupFailed": "Kayıt tamamlanmadı — bu sekmeyi kapatıp tekrar deneyin.",
+    "payment": {
+      "settings": {
+        "title": "Ödemeler",
+        "description": "Bu numaranın ödeme isteği düğmelerini nasıl gönderdiği.",
+        "pixRedirectLabel": "Pix'i yönlendirmeyle gönder",
+        "pixRedirectDescription": "Alıcılar ödemek için banka uygulamasını açar ve WhatsApp'a döner. Yalnızca Meta işletmenizi kaydettikten sonra açın; yönlendirilemeyen alıcılar yine kopyala-yapıştır alır.",
+        "adminOnly": "Ödeme ayarlarını yalnızca çalışma alanı yöneticileri değiştirebilir."
+      }
+    }
   },
   "zalo": {
     "title": "Zalo OA",
@@ -4795,7 +5619,8 @@
     "chatbotInvitationDescription1": "{chatbotName}'a katılın",
     "chatbotInvitationDescription2": "{userName}, sizi {chatbotName}'a katılmaya davet etti.",
     "invalidInvitation": "Bu davet geçersiz veya süresi dolmuş.",
-    "workspaceUnavailable": "Bu çalışma alanı artık kullanılamıyor."
+    "workspaceUnavailable": "Bu çalışma alanı artık kullanılamıyor.",
+    "signUpToJoin": "Katılmak için hesap oluşturun"
   },
   "inboxes": {
     "markReadOnOutbound": {
@@ -5160,11 +5985,11 @@
       "incomingCall": "Gelen Arama",
       "missedAudioCall": "Cevapsız Sesli Arama",
       "callEnded": "Arama Sona Erdi",
-      "ticketCreated": "Talep Oluşturuldu",
-      "ticketMovedToStage": "Talep Aşamaya Taşındı",
-      "ticketValueChanged": "Talep Değeri Değiştirildi",
-      "ticketStatusChanged": "Talep Durumu Değiştirildi",
-      "ticketPriorityChanged": "Talep Önceliği Değiştirildi",
+      "pipelineItemCreated": "Talep Oluşturuldu",
+      "pipelineItemMovedToStage": "Talep Aşamaya Taşındı",
+      "pipelineItemValueChanged": "Talep Değeri Değiştirildi",
+      "pipelineItemStatusChanged": "Talep Durumu Değiştirildi",
+      "pipelineItemPriorityChanged": "Talep Önceliği Değiştirildi",
       "subscribedToSequence": "Sıraya Abone Olundu",
       "unsubscribedFromSequence": "Sıra Aboneliğinden Çıkıldı",
       "shoppingCartSent": "Kişi Alışveriş Sepeti Gönderdi",
@@ -5175,15 +6000,24 @@
       "orderShipped": "Sipariş Kargoya Verildi",
       "orderConcluded": "Sipariş Tamamlandı",
       "orderCancelled": "Sipariş İptal Edildi",
+      "orderPaid": "Sipariş Ödendi",
+      "orderRefunded": "Sipariş İade Edildi",
       "categoryAddedToCart": "Kategori Sepete Eklendi",
       "productAddedToCart": "Ürün Sepete Eklendi",
       "productRemovedFromCart": "Ürün Sepetten Kaldırıldı",
       "productOrdered": "Ürün Sipariş Edildi",
       "contactReferredANewContact": "Kişi Yeni Bir Kişi Yönlendirdi",
       "contactReferredExistingContact": "Kişi Mevcut Bir Kişiyi Yönlendirdi",
+      "contactBlockedBot": "Kişi Botu Engelledi",
+      "contactUnblockedBot": "Kişi Botun Engelini Kaldırdı",
       "callRecorded": "Arama kaydedildi",
       "callTranscribed": "Arama yazıya döküldü",
-      "anyProduct": "Herhangi bir ürün"
+      "anyProduct": "Herhangi bir ürün",
+      "anyCategory": "Herhangi bir kategori",
+      "anyPipeline": "Herhangi bir işlem hattı",
+      "anyStage": "Herhangi bir aşama",
+      "unavailablePipeline": "Silinmiş veya kullanılamayan pipeline",
+      "unavailableStage": "Silinmiş veya kullanılamayan aşama"
     },
     "actions": {
       "addTag": "Etiket Ekle",
@@ -5191,6 +6025,7 @@
       "setCustomField": "Özel Alan Belirle",
       "clearCustomField": "Özel Alanı Temizle",
       "startAnotherFlow": "Başka Bir Akış Başlat",
+      "startExternalStep": "Start External Step",
       "notifyAdmins": "Yöneticileri Bilgilendir",
       "transferConversationToHuman": "Görüşmeyi İnsana Aktar",
       "sendMetaCapiEvent": "Meta CAPI Etkinliği Gönder",
@@ -5232,7 +6067,26 @@
     "countCapped": "{count}+ kişi",
     "exportAllNotice": "Geçerli filtreyle eşleşen tüm kişiler dışa aktarılacaktır.",
     "exportTakingLong": "Dışa aktarma beklenenden uzun sürüyor",
-    "exportTakingLongDescription": "Dışa aktarma hâlâ işleniyor. Bu iletişim kutusunu kapatıp birkaç dakika sonra dışa aktarma geçmişinden tekrar kontrol edebilirsiniz."
+    "exportTakingLongDescription": "Dışa aktarma hâlâ işleniyor. Bu iletişim kutusunu kapatıp birkaç dakika sonra dışa aktarma geçmişinden tekrar kontrol edebilirsiniz.",
+    "search": {
+      "placeholder": "Ara (ad, e-posta, telefon, kişi kimliği)",
+      "searching": "Aranıyor…",
+      "error": "Kişiler aranamadı",
+      "empty": "Kişi bulunamadı"
+    },
+    "exportHistory": {
+      "title": "Dışa aktarma geçmişi",
+      "description": "Son {days} gündeki kişi dışa aktarımları. Sonrasında dosyalar silinir.",
+      "empty": "Henüz dışa aktarma yok.",
+      "requestedBy": "{name} tarafından",
+      "deletesOn": "{date} tarihinde silinir",
+      "rows": "{count, plural, one {# kişi} other {# kişi}}",
+      "status": {
+        "pending": "İşleniyor",
+        "uploaded": "Hazır",
+        "failed": "Başarısız"
+      }
+    }
   },
   "contactScan": {
     "menu": {
@@ -5304,7 +6158,8 @@
       "userPlaceholder": "Kullanıcı Kimliği",
       "keyword": "Anahtar kelime",
       "keywordPlaceholder": "İşlem veya detay",
-      "allAdmins": "Tüm Adminler"
+      "allAdmins": "Tüm Adminler",
+      "allWorkspaces": "Tüm çalışma alanları"
     }
   },
   "customFields": {
@@ -5325,7 +6180,36 @@
       "pageTitle": "Sayfa anahtar kelimeleri",
       "page": "Siz bir kişiye anahtar kelime içeren bir mesaj gönderdiğinizde otomatik olarak yanıtla."
     },
-    "pageWarning": "Sayfa anahtar kelimesi içeren mesaj içeriği, müşteriye sonsuz döngüde mesaj gönderilmesine neden olabilir. Bu durumla karşılaşırsanız Sayfa anahtar kelimesini hemen devre dışı bırakın!"
+    "pageWarning": "Sayfa anahtar kelimesi içeren mesaj içeriği, müşteriye sonsuz döngüde mesaj gönderilmesine neden olabilir. Bu durumla karşılaşırsanız Sayfa anahtar kelimesini hemen devre dışı bırakın!",
+    "conditions": {
+      "operators": {
+        "is": "Mesaj şudur",
+        "similarTo": "Mesaj şuna benzer",
+        "contains": "Mesaj şunu içerir",
+        "containsPhone": "Mesaj telefon içerir",
+        "containsEmail": "Mesaj e-posta içerir",
+        "containsImage": "Mesaj görsel içerir",
+        "containsVideo": "Mesaj video içerir",
+        "containsLink": "Mesaj bağlantı içerir",
+        "containsWholeWord": "Mesaj tam kelimeyi içerir",
+        "beginsWith": "Mesaj şununla başlar",
+        "endsWith": "Mesaj şununla biter",
+        "isThumbsUp": "Mesaj 👍",
+        "notContains": "Mesaj şunu içermez",
+        "matchesRegex": "Mesaj regex ile eşleşir"
+      },
+      "and": "ve",
+      "addCondition": "Mesaj koşulu",
+      "removeCondition": "Koşulu kaldır",
+      "note": "Anahtar kelimeler büyük/küçük harf ve aksan ayırt etmez, ör. \"Tư vấn\" ve \"tu van\" aynı kabul edilir.",
+      "keywordPlaceholder": "+ Anahtar kelime",
+      "regexPlaceholder": "+ Regex",
+      "errors": {
+        "keywordConditionValuesRequired": "En az bir anahtar kelime ekleyin.",
+        "keywordConditionTakesNoValues": "Bu koşul anahtar kelime kullanmaz.",
+        "invalidKeywordRegex": "Geçersiz düzenli ifade."
+      }
+    }
   },
   "triggers": {
     "title": "Tetikleyiciler"
@@ -5428,6 +6312,7 @@
     "gemini": "Gemini",
     "claude": "Claude",
     "deepseek": "DeepSeek",
+    "muse": "Muse",
     "openrouter": "OpenRouter",
     "openaiCompatible": "OpenAI Uyumlu"
   },
@@ -5465,11 +6350,99 @@
   },
   "pollManager": {
     "title": "Anket Yöneticisi",
-    "description": "Kişileriniz için anketler oluşturun ve yönetin."
+    "description": "Anket veya oylama sistemleri yürütün. Müşteri görüşlerini toplamak için de kullanabilirsiniz.",
+    "feature": "Poll",
+    "deleteDescription": "Deleting a poll also deletes its candidates and votes. This cannot be undone.",
+    "list": {
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "votes": "Votes",
+      "getLink": "Get Link"
+    },
+    "getLink": {
+      "title": "Get Link",
+      "description": "Share a link that opens a chat and starts the poll.",
+      "omnichannel": "Omnichannel",
+      "noInboxes": "No connected channels can open this poll yet.",
+      "loadError": "Could not load the links."
+    },
+    "form": {
+      "createTitle": "Create poll",
+      "editTitle": "Edit poll",
+      "votingPeriod": "Voting period",
+      "imageRequired": "An image is required.",
+      "dateRangeInvalid": "Bitiş tarihi başlangıç tarihinden sonra olmalıdır.",
+      "candidatesTitle": "Candidates or Options",
+      "candidateNumber": "Candidate {number}",
+      "moreOptions": "More Options",
+      "afterVoteFlow": "Flow to be sent after the user votes",
+      "afterVoteFlowNone": "None",
+      "removeVotesTitle": "Remove candidates?",
+      "removeVotesDescription": "Deleting candidates also deletes their votes."
+    },
+    "analytics": {
+      "title": "Analytics",
+      "results": "Results",
+      "votesPerGender": "Votes per gender",
+      "totalVotes": "Total votes",
+      "noVotes": "No votes yet",
+      "other": "Other",
+      "male": "Male",
+      "female": "Female",
+      "unknown": "Unknown",
+      "loadError": "Could not load the analytics.",
+      "columns": {
+        "name": "Name",
+        "totalVotes": "Total votes",
+        "totalPercent": "T%",
+        "maleVotes": "Male votes",
+        "malePercent": "M%",
+        "femaleVotes": "Female votes",
+        "femalePercent": "F%"
+      }
+    }
   },
   "placesNearMe": {
     "title": "Yakınımdaki Yerler",
-    "description": "Kişilerinize yakın yerleri bulun."
+    "description": "Müşterilerinizin yakınlarındaki işletme konumlarınızı kolayca bulmasını sağlayın.",
+    "tabs": {
+      "locations": "Konumlar",
+      "categories": "Kategoriler"
+    },
+    "categories": {
+      "columns": {
+        "locations": "Konumlar"
+      },
+      "add": "Kategori ekle",
+      "edit": "Kategoriyi düzenle",
+      "empty": "Henüz kategori yok.",
+      "created": "Kategori eklendi",
+      "updated": "Kategori güncellendi",
+      "deleted": "Kategori silindi",
+      "saveError": "Kategori kaydedilemedi",
+      "deleteError": "Kategori silinemedi",
+      "deleteTitle": "{name} silinsin mi?",
+      "deleteDescription": "{count, plural, =0 {Bu kategoriyi kullanan konum yok.} one {# konum kategorisiz olacak.} other {# konum kategorisiz olacak.}}"
+    },
+    "locations": {
+      "columns": {
+        "coordinates": "Koordinatlar"
+      },
+      "preview": "Önizleme",
+      "add": "Konum ekle",
+      "edit": "Konumu düzenle",
+      "empty": "Henüz konum yok.",
+      "created": "Konum eklendi",
+      "updated": "Konum güncellendi",
+      "deleted": "Konum silindi",
+      "saveError": "Konum kaydedilemedi",
+      "deleteError": "Konum silinemedi",
+      "deleteTitle": "{name} silinsin mi?",
+      "deleteDescription": "Bu konum kalıcı olarak silinecek.",
+      "noCategory": "Kategori yok",
+      "latitude": "Enlem",
+      "longitude": "Boylam"
+    }
   },
   "questionnaires": {
     "title": "Anketler",
@@ -6086,6 +7059,9 @@
   "templates": {
     "title": "Şablonlar",
     "description": "Şablonlarınızı oluşturun ve yönetin.",
+    "createDialog": {
+      "title": "Yeni şablon"
+    },
     "share": {
       "label": "Paylaş",
       "enabled": "Paylaşıldı",
@@ -6094,14 +7070,135 @@
       "dialogDescription": "Bu bağlantıya sahip herkes, bu şablonun bir kopyasını kendi kuruluşunuzdaki bir çalışma alanına yükleyebilir.",
       "enableLabel": "Paylaşım bağlantısını etkinleştir",
       "linkLabel": "Paylaşım bağlantısı",
-      "description": "Bağlantıya sahip olan herkes bu şablonu kendi çalışma alanına yükleyebilir."
+      "rotateLabel": "Bağlantıyı yenile",
+      "rotateTitle": "Paylaşım bağlantısı yenilensin mi?",
+      "rotateDescription": "Mevcut bağlantı hemen çalışmayı durdurur. Bu şablonu yüklemesi gereken herkesin yeni bağlantıya ihtiyacı olur.",
+      "rotated": "Paylaşım bağlantısı yenilendi",
+      "expiryLabel": "Bağlantının sona erme tarihi",
+      "expiryHint": "Hiç sona ermeyen bir bağlantı için boş bırakın.",
+      "clearExpiry": "Sona erme tarihini kaldır",
+      "expiredNotice": "Bu bağlantının süresi doldu. Yeniden paylaşmak için daha ileri bir tarih belirleyin veya sona erme tarihini kaldırın.",
+      "templateId": "Şablon kimliği",
+      "templateKey": "Şablon anahtarı",
+      "showKey": "Anahtarı göster",
+      "hideKey": "Anahtarı gizle",
+      "copyField": "{field} öğesini kopyala"
+    },
+    "sync": {
+      "title": "Güncellemeler",
+      "updateAvailable": "Güncelleme mevcut",
+      "upToDate": "Güncel",
+      "sourceDeleted": "Şablon silindi",
+      "sourceDeletedHint": "Yayıncı bu şablonu sildi. Kopyanız çalışmaya devam eder ancak artık güncellenemez.",
+      "updateNow": "Şimdi güncelle",
+      "updating": "Güncelleniyor…",
+      "version": "Şablon sürümü {version}",
+      "lastSynced": "son güncelleme {date}",
+      "autoUpdateLabel": "Şablon değiştiğinde otomatik olarak güncelle",
+      "noHistory": "Henüz güncelleme yok.",
+      "countAdded": "{count} eklendi",
+      "countUpdated": "{count} güncellendi",
+      "countDetached": "{count} artık şablonu takip etmiyor",
+      "notUpdatable": "{count} henüz güncellenemiyor",
+      "overwritten": "{name} düzenlendi ve güncellemeyle değiştirildi",
+      "restore": "Sürümümü geri yükle",
+      "restored": "Sürümünüz geri yüklendi",
+      "status": {
+        "pending": "Sırada",
+        "running": "Çalışıyor",
+        "completed": "Tamamlandı",
+        "partial": "Kısmi",
+        "failed": "Başarısız",
+        "skipped": "Atlandı",
+        "cancelled": "İptal edildi"
+      },
+      "trigger": {
+        "autoUpdate": "Otomatik",
+        "manual": "Manuel",
+        "reinstall": "Yeniden yükleme"
+      },
+      "requestedVersion": "istenen v{version}",
+      "errors": {
+        "unknown": "Güncelleme başarısız oldu. Tekrar deneyin veya başarısızlık sürerse destekle iletişime geçin.",
+        "templateSyncFailed": "Güncelleme başarısız oldu. Tekrar deneyin.",
+        "templateSyncSuperseded": "Daha yeni bir güncelleme bunun yerini aldı.",
+        "templateSyncAbandoned": "Güncelleme zamanında tamamlanmadı ve kapatıldı.",
+        "templateInstallationInactive": "Bu kurulum artık etkin değil.",
+        "workspaceOwnerBlocked": "Çalışma alanı sahibinin hesabı engellendi.",
+        "templateUninstallInProgress": "Şablon kaldırılıyor.",
+        "templateAutoUpdateOff": "Otomatik güncellemeler kapalı.",
+        "templateUpToDate": "Kopya zaten güncel.",
+        "templateInstallerAccessLost": "Kuran kişinin bu kopyayı güncelleme izni artık yok.",
+        "templateInstallationSourceMissing": "Şablon, güncelleme çalışmadan önce silindi.",
+        "templateCategoryPermissionDenied": "Bu şablondaki her şeyi güncelleme izniniz artık yok.",
+        "templatePayloadIncompatible": "Bu şablon, bu sunucunun yükleyebileceğinden daha yeni bir biçimde kaydedildi.",
+        "templateCrossTenantInstall": "Bu şablon çalışma alanınız için kullanılamıyor.",
+        "templateInvalidInboxBinding": "Seçilen bir gelen kutusu şablonla eşleşmiyor."
+      }
+    },
+    "versions": {
+      "detailsTab": "Ayrıntılar",
+      "tab": "Sürümler",
+      "versionNumber": "Sürüm {version}",
+      "current": "Geçerli",
+      "first": "İlk sürüm",
+      "noDetail": "Bu sürüm için ayrıntı kaydedilmedi.",
+      "added": "Eklendi",
+      "changed": "Değiştirildi",
+      "removed": "Kaldırıldı"
+    },
+    "installers": {
+      "title": "Analizleri görüntüle",
+      "workspace": "Çalışma alanı",
+      "lastInstalled": "Son yükleme",
+      "version": "Sürüm",
+      "autoUpdate": "Otomatik güncelleme",
+      "uninstalled": "Kaldırıldı",
+      "hidden": "Çalışma alanı paylaşılmıyor",
+      "uninstallNotAllowed": "Kurulumu yapan, yayıncıların bu kopyayı kaldırmasına izin vermedi.",
+      "loadError": "Kurulum yapanlar yüklenemedi. Tekrar deneyin.",
+      "automatic": "Otomatik",
+      "details": "Ayrıntılar",
+      "noIssues": "Uyarı veya hata yok."
     },
     "installs": {
       "title": "Yüklemeler",
       "resources": "Kaynaklar",
       "warnings": "Uyarılar",
       "completedAt": "Tamamlanma tarihi",
-      "autoUpdate": "Otomatik güncelleme"
+      "autoUpdate": "Otomatik güncelleme",
+      "installedBy": "Yükleyen",
+      "viaApi": "API belirteci",
+      "attempts": "Deneme",
+      "autoUpdateOn": "Açık",
+      "autoUpdateOff": "Kapalı",
+      "retry": "Yüklemeyi yeniden dene",
+      "resourcesTitle": "Yüklenen kaynaklar",
+      "noResources": "Henüz hiçbir şey oluşturulmadı.",
+      "deletedResource": "Silinmiş kaynak",
+      "viewOnly": "Salt görüntüleme",
+      "created": "Oluşturuldu",
+      "reused": "Yeniden kullanıldı",
+      "loadMore": "Daha fazla yükle",
+      "statusFilter": "Durum",
+      "allStatuses": "Tüm durumlar",
+      "errors": {
+        "unknown": "Yükleme başarısız oldu. Tekrar deneyin veya sorun devam ederse destekle iletişime geçin.",
+        "templatePayloadIncompatible": "Bu şablon, bu sunucunun yükleyebileceğinden daha yeni bir biçimde kaydedildi.",
+        "templateInstallationSourceMissing": "Şablon, yükleme çalışmadan önce silindi.",
+        "templateCrossTenantInstall": "Bu şablon çalışma alanınız için kullanılamıyor.",
+        "templateCategoryPermissionDenied": "Bu şablondaki her şeyi yükleme izniniz artık yok.",
+        "templateInvalidInboxBinding": "Seçilen bir gelen kutusu şablonla eşleşmiyor.",
+        "templateInstallEnqueueFailed": "Yükleme sıraya alınamadı.",
+        "templateInstallFailed": "Yükleme başarısız oldu. Tekrar deneyin.",
+        "templateInstallAbandoned": "Yükleme zamanında tamamlanmadı ve kapatıldı.",
+        "templateInstallSuperseded": "Bu şablonun daha yeni bir yüklemesi bunun yerini aldı.",
+        "workspaceOwnerBlocked": "Çalışma alanı sahibinin hesabı engellendi."
+      },
+      "uninstalledBy": "{by, select, publisher {Yayıncı bu şablonu kaldırdı.} installer {Bu şablon bu çalışma alanından kaldırıldı.} other {Bu şablon kaldırıldı.}}",
+      "uninstalledSummary": "{deleted} silindi, {kept} korundu.",
+      "lastAttemptAt": "Son deneme",
+      "installedAutomatically": "Otomatik yüklendi (white-label varsayılanı)"
     },
     "form": {
       "contents": "Şablon içeriği",
@@ -6114,14 +7211,26 @@
       "allowDelete": "Yüklemeden sonra silmeye izin ver",
       "publisherName": "Yayıncı adı",
       "youtubeVideoId": "YouTube video kimliği",
-      "youtubeVideoIdDescription": "Video URL'sindeki 11 karakterli kimlik, ör. youtube.com/watch?v=dQw4w9WgXcQ içindeki \"dQw4w9WgXcQ\"",
+      "youtubeVideoIdDescription": "Video URL'sindeki 11 karakterli kimlik, ör. youtube.com/watch?v=xxxxxxxxxxx içindeki \"xxxxxxxxxxx\"",
       "testLink": "Test bağlantısı",
       "imageUrl": "Kapak görseli",
       "installBehavior": "Yükleme davranışı",
-      "createInstallFolder": "Ayrılmış bir klasöre yükle",
+      "createInstallFolder": "Yüklenen hesapta bir klasör oluşturun ve kaynakları yükleyin.",
       "createInstallFolderDescription": "Yüklenen her kaynağı bu şablonun adını taşıyan tek bir yeni klasörün altına yerleştirir.",
-      "defaultAutoUpdate": "Yüklemeleri varsayılan olarak güncelleme için işaretle",
-      "defaultAutoUpdateDescription": "Bu şablonu her yeniden yayınladığınızda, yeni yüklemelerde güncelleme bildirimi gösterilir."
+      "defaultAutoUpdate": "Yüklü şablonları otomatik güncelle",
+      "defaultAutoUpdateDescription": "Bu şablonu değiştirilmiş içerikle her kaydettiğinizde, otomatik güncellemeyi izleyen yüklemelerin üzerine yeni içerik yazılır (yükleyenin düzenlediği kopyalar önce yedeklenir). Yükleyenler bunu kapatabilir.",
+      "viewOnly": "Salt görüntüleme",
+      "viewOnlyAll": "Seçilenlerin tümünü salt görüntüleme yap",
+      "includedAutomatically": {
+        "title": "Otomatik olarak dahil edilenler",
+        "hint": "Seçtiğiniz bir öğe gerektirdiği için birlikte alındı. Salt okunur.",
+        "rows": "{count, plural, one {# öğe daha} other {# öğe daha}}",
+        "kind": {
+          "folders": "Klasörler",
+          "placeCategories": "Yer kategorileri"
+        }
+      },
+      "viewOnlyCopyIncluded": "Seçtiğiniz bir öğe (veya ihtiyaç duyduğu bir öğe) salt görüntüleme şablonundan yüklendiği için yeni bir şablonda paylaşılamaz."
     },
     "categories": {
       "flows": "Akışlar",
@@ -6136,8 +7245,116 @@
       "keywords": "Anahtar Kelimeler",
       "entryPointLinks": "Giriş Noktası Bağlantıları",
       "triggers": "Tetikleyiciler",
-      "fbCommentAutomations": "Facebook yorum otomasyonları",
-      "settings": "Ayarlar"
+      "fbCommentAutomations": "Yorum otomasyonları",
+      "settings": "Bot alanları ve kayıtlı yanıtlar",
+      "sequences": "Sekanslar",
+      "aiMcpServers": "MCP sunucuları",
+      "aiFiles": "Yapay zekâ bilgi dosyaları",
+      "questionnaires": "Anketler",
+      "couponTopics": "Kupon konuları",
+      "pipelines": "İşlem Hatları"
+    },
+    "locked": {
+      "flowBanner": "Bu akış salt görüntüleme şablonundan yüklendi. Görebilirsiniz ancak düzenleyemezsiniz.",
+      "badge": "Salt görüntüleme",
+      "editorBanner": "Bu, salt görüntüleme şablonundan yüklendi. Görebilirsiniz ancak düzenleyemezsiniz.",
+      "badgeHint": "Salt görüntülenebilir bir şablondan yüklendi"
+    },
+    "channels": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "instagramFacebook": "Instagram (Facebook girişi)",
+      "threads": "Threads",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "zalo": "Zalo",
+      "webchat": "Web Sohbeti",
+      "line": "LINE",
+      "email": "E-posta"
+    },
+    "uninstall": {
+      "title": "Şablonu kaldır",
+      "description": "Şablon, bu çalışma alanında oluşturduğu her şeyi, düzenlenmiş kopyalar dahil, kaldırır. Paylaşılan etiketler, alanlar ve klasörler, daha önce var olan öğeler ve bir kopyanın üzerine inşa ettiğiniz her şey korunur.",
+      "loading": "Ne olacağı kontrol ediliyor…",
+      "previewFailed": "Kaldırma işleminin ne yapacağı kontrol edilemedi.",
+      "failed": "Şablon kaldırılamadı.",
+      "confirm": "Kaldır",
+      "action": "Kaldır",
+      "deleted": "{count, plural, one {# öğe silinecek} other {# öğe silinecek}}",
+      "deletedDone": "{count, plural, one {# öğe silindi} other {# öğe silindi}}",
+      "keptModified": "{count, plural, one {# düzenlenmiş veya doğrulanmamış kopya korunuyor} other {# düzenlenmiş veya doğrulanmamış kopya korunuyor}}",
+      "keptShared": "{count, plural, one {# paylaşılan etiket veya alan korunuyor} other {# paylaşılan etiket ve alan korunuyor}}",
+      "keptByPolicy": "{count, plural, one {# diğer öğe korunuyor} other {# diğer öğe korunuyor}}",
+      "keptHasDependents": "{count, plural, one {# kopya, hâlâ bir şey onu kullandığı için korunuyor} other {# kopya, hâlâ bir şey onları kullandığı için korunuyor}}",
+      "deletedModified": "{count, plural, one {Bunlardan # tanesini siz düzenlediniz: bu düzenlemeler kaybolur ve geri yüklenemez} other {Bunlardan # tanesini siz düzenlediniz: bu düzenlemeler kaybolur ve geri yüklenemez}}",
+      "keptLockedByOther": "{count, plural, one {# öğe, başka bir şablon yüklemesi hâlâ onu koruduğu için korunuyor} other {# öğe, başka bir şablon yüklemesi hâlâ onları koruduğu için korunuyor}}",
+      "confirmCheckbox": "Yukarıdaki öğelerin silineceğini ve bunun geri alınamayacağını anlıyorum",
+      "started": "Kaldırma başlatıldı",
+      "inProgress": "Kaldırılıyor…",
+      "retry": "Kaldırmayı yeniden dene",
+      "state": {
+        "pending": "Kaldırma sıraya alındı",
+        "running": "Kaldırılıyor…",
+        "partial": "Kaldırma tamamlanmadı, yeniden deneyin",
+        "failed": "Kaldırma başarısız oldu, yeniden deneyin",
+        "skipped": "Kaldırma atlandı: çalışma alanı engellendi"
+      },
+      "deletedUnverified": "{count, plural, one {Bunlardan #, düzenlemeler için kontrol edilemiyor: değiştirdiyseniz bu değişiklikler kaybolur} other {Bunlardan #, düzenlemeler için kontrol edilemiyor: değiştirdiyseniz bu değişiklikler kaybolur}}",
+      "cancelAction": "Kaldırmayı iptal et",
+      "cancelled": "Kaldırma iptal edildi: kalan öğeleri yeniden kullanabilirsiniz",
+      "blockedByReference": "{count, plural, one {# öğe silinmedi çünkü oluşturduğunuz bir şey hâlâ ona işaret ediyor: bu referansı kaldırın, ardından kaldırmayı yeniden deneyin} other {# öğe silinmedi çünkü oluşturduğunuz bir şey hâlâ onlara işaret ediyor: bu referansları kaldırın, ardından kaldırmayı yeniden deneyin}}",
+      "keptPartlyRemoved": "{count, plural, one {Engellenen bir kaldırmadan sonra # kopya korundu; geçmiş ve mükerrer koruma verileri kaldırılmış olabilir, bu yüzden açmadan önce inceleyin} other {Engellenen bir kaldırmadan sonra # kopya korundu; geçmiş ve mükerrer koruma verileri kaldırılmış olabilir, bu yüzden açmadan önce inceleyin}}",
+      "keptInactiveForReview": "{count, plural, one {# kopya devre dışı bırakıldı: geçmişi ve mükerrer koruma verileri kaldırıldı, bu yüzden açmadan önce inceleyin} other {# kopya devre dışı bırakıldı: geçmişleri ve mükerrer koruma verileri kaldırıldı, bu yüzden açmadan önce inceleyin}}",
+      "keptHistoryRemoved": "{count, plural, one {# kopya korundu ancak geçmişi kaldırıldı (açılacak bir şey yok): güvenmeden önce inceleyin} other {# kopya korundu ancak geçmişleri kaldırıldı (açılacak bir şey yok): güvenmeden önce inceleyin}}",
+      "cancelledPartial": "{count, plural, one {# öğe zaten siliniyor ve tamamlanacak; geri kalanı iade edildi} other {# öğe zaten siliniyor ve tamamlanacak; geri kalanı iade edildi}}"
+    },
+    "warningCodes": {
+      "aiFileTooLarge": "Bu bilgi dosyası bir şablon kurulumunun kopyalayabileceğinden büyük olduğu için atlandı.",
+      "aiFileUnavailable": "Bu bilgi dosyası kopyalanamadığı için atlandı.",
+      "assigneeRequired": "Bu adımın konuşmayı kime atayacağını seçin.",
+      "ambiguousSourceFieldToken": "Birden fazla kaynak alanı bu adı taşıyor, bu yüzden onu kullanan değişkenler değiştirilmedi.",
+      "backupTooLarge": "Yerel olarak düzenlenmiş bir öğe yedeklenemeyecek kadar büyüktü, bu yüzden üzerine yazılmadı.",
+      "backupUnavailable": "Bu öğenin yedeği artık kullanılamıyor.",
+      "botFieldRenamed": "Bu ada sahip başka türde bir bot alanı zaten var, bu yüzden yeniden adlandırılmış bir alan oluşturuldu.",
+      "categoryPermissionDenied": "Bu kategori için iznin yok, bu yüzden atlandı.",
+      "couponTopicExpired": "Bu kupon konusunun süresi zaten doldu.",
+      "credentialRequired": "Kullanmadan önce bu öğe için kimlik bilgilerini ekle.",
+      "custom": "Başvurulan bir öğe bu çalışma alanında bulunamadı, bu yüzden bağlantı kaldırıldı.",
+      "customField": "Başvurulan bir öğe bu çalışma alanında bulunamadı, bu yüzden bağlantı kaldırıldı.",
+      "customFieldRenamed": "Bu ada sahip ve farklı türde bir alan zaten var, bu yüzden yeniden adlandırılmış bir alan oluşturuldu.",
+      "enqueueFailed": "Bu öğe için arka plan işlemi kuyruğa alınamadı.",
+      "flow": "Başvurulan bir öğe bu çalışma alanında bulunamadı, bu yüzden bağlantı kaldırıldı.",
+      "flowInvalidStructure": "Flow yapısı geçersiz, bu yüzden atlandı.",
+      "flowNotPublished": "Flow taslak olarak yüklendi ve yayınlanmadı.",
+      "flowSkippedRequiredReference": "Gerekli bir başvuru çözülemediği için Flow atlandı.",
+      "folder": "Başvurulan bir öğe bu çalışma alanında bulunamadı, bu yüzden bağlantı kaldırıldı.",
+      "inboxBindingRequired": "Bu kanal için bir gelen kutusu seç; o zamana kadar öğe etkin olmaz.",
+      "integration": "Başvurulan bir öğe bu çalışma alanında bulunamadı, bu yüzden bağlantı kaldırıldı.",
+      "localModifiedOverwritten": "Yerel olarak düzenlenmiş bir öğenin üzerine yazıldı. Bir yedek kaydedildi ve geri yüklenebilir.",
+      "name": "Bu öğe için boş bir ad bulunamadı, bu yüzden atlandı.",
+      "noEmbeddingProvider": "Bu çalışma alanında yapılandırılmış bir embedding sağlayıcısı olmadığından bilgi dosyaları atlandı. OpenAI veya Gemini'yi bağlayıp yeniden kurun.",
+      "notUpdatable": "Bu tür öğe henüz otomatik olarak güncellenmiyor.",
+      "pipeline": "Artık var olmayan bir pipeline kullanıyor.",
+      "pipelineField": "Artık var olmayan bir pipeline alanı kullanıyor.",
+      "pipelineStage": "Artık var olmayan bir pipeline aşaması kullanıyor.",
+      "postSelectionRequired": "Gönderiyi yeniden seç: orijinal gönderi aktarılamadı.",
+      "product": "Başvurulan bir öğe bu çalışma alanında bulunamadı, bu yüzden bağlantı kaldırıldı.",
+      "productCategory": "Başvurulan bir öğe bu çalışma alanında bulunamadı, bu yüzden bağlantı kaldırıldı.",
+      "questionImage": "Bir görsel kopyalanamadı.",
+      "quota": "Bir plan sınırına ulaşıldı, bu yüzden öğe atlandı.",
+      "referenceRemoved": "Çözülemeyen bir başvuru kaldırıldı.",
+      "savedReply": "Başvurulan bir öğe bu çalışma alanında bulunamadı, bu yüzden bağlantı kaldırıldı.",
+      "savedReplyImage": "Bir görsel kopyalanamadı.",
+      "tag": "Başvurulan bir öğe bu çalışma alanında bulunamadı, bu yüzden bağlantı kaldırıldı.",
+      "unlisted": "Öğe tam olarak aktarılamadı: {code}",
+      "workspaceMember": "Bu çalışma alanında olmayan bir üyeye atanmış.",
+      "workspaceUnavailable": "Bu çalışma alanı artık kullanılamıyor, bu yüzden öğe atlandı."
+    },
+    "tabs": {
+      "mine": "Şablonlarım",
+      "installed": "Yüklü",
+      "installedEmpty": "Henüz yüklü şablon yok. Başka bir çalışma alanından yüklediğiniz şablonlar burada görünür."
     }
   },
   "qrCodeGenerator": {
@@ -6167,7 +7384,31 @@
       "supportOff": "Kapalı",
       "searchPlaceholder": "Ada, sahibinin e-postasına veya kimliğe göre ara",
       "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
-      "supportAccessible": "Accessible"
+      "supportAccessible": "Accessible",
+      "periodStart": "Period start",
+      "periodEnd": "Period end",
+      "requestedBy": "Requested by",
+      "workspaceId": "Workspace ID",
+      "language": "Language",
+      "planSnapshot": "Plan at deletion",
+      "ownerQuota": "Owner quota",
+      "usagePeriods": "Usage periods",
+      "deletedTitle": "Deleted workspaces",
+      "deletedDescription": "Purge evidence for deleted workspaces.",
+      "purgedAt": "Purged at",
+      "deletionRequestedAt": "Deletion requested at",
+      "scheduledDeletionAt": "Scheduled deletion at",
+      "evidence": "Evidence",
+      "usage": "Usage snapshot",
+      "members": "Members",
+      "notAvailable": "Not available",
+      "createButton": "Create workspace",
+      "createTitle": "Create workspace for an owner",
+      "createDescription": "Creates a workspace for the owner's email, adding any member emails you list. A new email gets a mailed temporary password.",
+      "ownerEmail": "Owner email",
+      "memberEmails": "Member emails",
+      "membersHint": "Every member gets the permissions selected below. New emails get a mailed temporary password.",
+      "createdSummary": "Workspace created for {ownerEmail} — {memberCount} member(s) added, {newAccountCount} new account(s) emailed a temporary password."
     },
     "admins": {
       "title": "Platform administrators",
@@ -6177,12 +7418,29 @@
       "addButton": "Add administrator",
       "role": "Role",
       "bootstrap": "Environment bootstrap administrator",
+      "roles": {
+        "superAdmin": "Super admin",
+        "support": "Support"
+      },
       "remove": "Remove administrator",
       "empty": "No platform administrators are configured.",
       "added": "Platform administrator added.",
       "removed": "Platform administrator removed.",
       "addError": "Could not add the platform administrator.",
       "removeError": "Could not remove the platform administrator."
+    },
+    "auditLogs": {
+      "title": "Platform denetim günlükleri",
+      "description": "Bu platformdaki tüm çalışma alanlarındaki denetim etkinliği."
+    },
+    "smtp": {
+      "title": "SMTP ayarları",
+      "description": "Platform e-posta aktarımı. SMTP_SERVER ve SMTP_FROM ortam değişkenlerini kullanmaya devam etmek için bunu boş bırakın.",
+      "usingEnv": "Kaydedilmiş SMTP ayarı yok — platform e-postası SMTP_SERVER ortam değişkenini kullanır.",
+      "remove": "SMTP ayarlarını kaldır",
+      "errors": {
+        "passwordRequired": "SMTP şifresini girin."
+      }
     }
   },
   "platformCredentials": {
@@ -6218,6 +7476,23 @@
     "description": "Bu kiracıdaki çalışma alanlarının bir kanalı oluşturmasını engellemek için işaretleyin.",
     "hint": "Tüm kanalların izin verilmesi için hiçbirini işaretlemeyin.",
     "hiddenByPlatform": "Platform yöneticisi tarafından gizlendi — bu kanalı yeniden etkinleştiremezsiniz."
+  },
+  "platformDefaultTemplate": {
+    "title": "Varsayılan şablon",
+    "description": "Bu white-label altında oluşturulan her yeni çalışma alanına bu şablonu yükler. Mevcut çalışma alanları değişmez.",
+    "clearTitle": "Varsayılan şablon kaldırılsın mı?",
+    "clearDescription": "Yeni çalışma alanları artık otomatik olarak şablon almaz. Şablonu zaten olanlar onu korur.",
+    "status": {
+      "notConfigured": "Ayarlanmadı",
+      "ready": "Etkin",
+      "templateUnavailable": "Şablon kullanılamıyor",
+      "shareDisabled": "Paylaşım bağlantısı kapalı",
+      "keyRotated": "Anahtar geçersiz"
+    },
+    "errors": {
+      "unavailable": "Şablon kimliği veya anahtarı geçersiz.",
+      "shareDisabled": "Önce şablonun paylaşım bağlantısını açın."
+    }
   },
   "platformEmailTemplates": {
     "title": "E-posta Şablonları",
@@ -6261,6 +7536,7 @@
     }
   },
   "manageSidebar": {
+    "administrationGroup": "Yönetim",
     "platformGroup": "Platform",
     "toolsGroup": "Araçlar",
     "saasGroup": "SaaS",
@@ -6301,14 +7577,39 @@
     "invalidTitle": "Bu bağlantı artık kullanılamıyor.",
     "invalidDescription": "Bu şablon paylaşım bağlantısı geçersiz, devre dışı bırakılmış veya süresi dolmuş.",
     "byPublisher": "{publisherName} tarafından",
-    "includes": "Bu şablon şunları içerir",
     "videoTitle": "Şablon önizleme videosu",
-    "tryItOut": "Deneyin",
-    "signInToInstall": "Yüklemek için oturum açın",
+    "preview": "Önizleme",
+    "aboutTemplate": "Bu şablon hakkında",
     "selectWorkspace": "Bir çalışma alanı seçin",
     "install": "Yükle",
     "installStarted": "Yükleme başladı",
-    "noEligibleWorkspaces": "Bu şablonu yüklemeye uygun bir çalışma alanınız yok."
+    "noEligibleWorkspaces": "Bu şablonu yüklemeye uygun bir çalışma alanınız yok.",
+    "alreadyInstalled": "Bu şablon bu çalışma alanında zaten yüklü.",
+    "viewInstall": "Yüklemeyi görüntüle",
+    "installAnotherCopy": "Bir kopya daha yükle",
+    "inboxesTitle": "Gelen kutuları",
+    "inboxesHint": "Bu şablon şu gelen kutuları etrafında oluşturuldu. Kendi gelen kutularınızdan hangilerini kullanacağınızı seçin; dışarıda bırakılanlar kapalı olarak yüklenir.",
+    "noInbox": "Bağlama — kapalı olarak yükle",
+    "noInboxAvailable": "Bu kanalda bağlı gelen kutusu yok",
+    "updateExisting": "Yüklü kopyayı güncelle",
+    "updateStarted": "Güncelleme başlatıldı",
+    "autoUpdateLabel": "Şablon değiştiğinde otomatik olarak güncelle",
+    "collisions": {
+      "title": "Yüklemenin burada yapacakları",
+      "loading": "Bu çalışma alanı kontrol ediliyor…",
+      "action": {
+        "create": "Oluşturulur",
+        "reuse": "Yeniden kullanılır",
+        "rename": "Yeniden adlandırılır",
+        "bind": "Bağlanır",
+        "unbound": "Bağlanmadan bırakılır"
+      },
+      "detail": {
+        "rename": "“{name}” zaten başka bir türle mevcut, bu yüzden şablondaki öğe yeni bir adla eklenir.",
+        "unbound": "Bir gelen kutusu seçene kadar “{name}” bağlanmadan bırakılır."
+      }
+    },
+    "createWorkspace": "Yeni çalışma alanı oluştur"
   },
   "extensionsMe": {
     "actions": {
@@ -6337,7 +7638,144 @@
     "unknown": "Bilinmiyor"
   },
   "orders": {
-    "title": "Siparişler"
+    "title": "Siparişler",
+    "empty": "Henüz sipariş yok.",
+    "searchPlaceholder": "Ad, telefon, e-posta veya sipariş numarasına göre ara",
+    "orderNumber": "Sipariş #{number}",
+    "print": "Yazdır",
+    "inbox": "Gelen kutusu",
+    "statusUpdated": "Sipariş durumu güncellendi",
+    "statusUpdateError": "Sipariş durumu güncellenemedi",
+    "updateStatusTitle": "Sipariş durumunu güncelle",
+    "message": "Mesaj",
+    "messagePlaceholder": "İsteğe bağlı",
+    "messageDescription": "Müşteriye kendi konuşmasında gönderilir.",
+    "cancel": "İptal",
+    "continue": "Devam",
+    "delete": "Sil",
+    "deleted": "Sipariş silindi",
+    "deleteError": "Sipariş silinemedi",
+    "deleteTitle": "#{number} numaralı sipariş silinsin mi?",
+    "deleteDescription": "Sipariş, ürünleri ve geçmişi kaldırılır. Hâlâ tuttuğu stok geri eklenir.",
+    "columns": {
+      "name": "Ad",
+      "total": "Toplam",
+      "status": "Durum",
+      "date": "Tarih",
+      "rating": "Puan",
+      "quantity": "Adet",
+      "price": "Fiyat",
+      "vendor": "Satıcı",
+      "orderStatus": "Sipariş durumu",
+      "payment": "Ödeme"
+    },
+    "fields": {
+      "name": "Ad",
+      "email": "E-posta",
+      "phone": "Telefon",
+      "country": "Ülke",
+      "state": "İl",
+      "city": "Şehir",
+      "street": "Sokak",
+      "zip": "Posta kodu",
+      "shippingType": "Gönderim",
+      "orderId": "Sipariş ID",
+      "date": "Tarih",
+      "subtotal": "Ara toplam",
+      "discount": "İndirim",
+      "deliveryCost": "Teslimat ücreti",
+      "otherTaxes": "Diğer vergiler",
+      "total": "Toplam",
+      "paymentMethod": "Ödeme yöntemi",
+      "status": "Durum",
+      "note": "Not",
+      "cancelReason": "İptal nedeni",
+      "rating": "Değerlendirme",
+      "ratingComment": "Müşteri yorumu",
+      "coupon": "Kupon ({code})",
+      "paymentStatus": "Ödeme durumu",
+      "payments": "Online ödemeler"
+    },
+    "statuses": {
+      "pending": "İşlenmedi",
+      "accepted": "Kabul edildi",
+      "shipped": "Kargoya verildi",
+      "concluded": "Tamamlandı",
+      "cancelled": "İptal edildi"
+    },
+    "transitions": {
+      "accepted": "Kabul et",
+      "shipped": "Kargola",
+      "concluded": "Tamamla",
+      "cancelled": "İptal et"
+    },
+    "paymentMethods": {
+      "cod": "Kapıda ödeme",
+      "stripe": "Kart",
+      "paypal": "PayPal"
+    },
+    "shippingTypes": {
+      "delivery": "Müşteriye teslim et",
+      "pickup": "Mağazadan teslim alma"
+    },
+    "description": "Müşterilerinizin verdiği siparişler.",
+    "ratingValue": "{rating}/5 ★",
+    "paymentStatuses": {
+      "unpaid": "Ödenmedi",
+      "paid": "Ödendi",
+      "refunded": "İade edildi"
+    },
+    "attemptStatuses": {
+      "open": "Bekliyor",
+      "paid": "Ödendi",
+      "expired": "Süresi doldu",
+      "refunded": "İade edildi"
+    },
+    "testPayment": "test",
+    "awaitingPaymentHint": "Müşterinin online ödemesi bekleniyor. Sipariş ödendikten sonra kabul edilebilir.",
+    "refundWarning": "{amount} müşteriye iade edilecek.",
+    "paymentStates": {
+      "paid": "Ödendi",
+      "refunded": "İade edildi",
+      "awaitingPayment": "Ödeme bekleniyor",
+      "payOnDelivery": "Kapıda ödeme",
+      "notPaid": "Ödenmedi"
+    },
+    "paymentUntil": "{time} saatine kadar",
+    "paymentExpiredCancelReason": "Ödeme zamanında alınmadı.",
+    "exportTruncated": "Dışa aktarma ilk {count} siparişle sınırlandı",
+    "exportError": "Siparişler dışa aktarılamadı",
+    "shopify": {
+      "syncOrders": "Siparişleri senkronize et",
+      "orderColumn": "Sipariş",
+      "customerColumn": "Müşteri",
+      "paymentPending": "Beklemede",
+      "paymentFilter": "Ödeme",
+      "paymentFilterAll": "Ödeme: Tümü",
+      "fulfillmentFilter": "Karşılama",
+      "fulfillmentFilterAll": "Karşılama: Tümü",
+      "fulfillmentStatuses": {
+        "fulfilled": "Karşılandı",
+        "unfulfilled": "Karşılanmadı",
+        "partial": "Kısmi"
+      },
+      "viewDetails": "Ayrıntıları görüntüle",
+      "viewOnStore": "{store}'da görüntüle",
+      "detailsTitle": "Sipariş {name}",
+      "placedOn": "{store} mağazasında verildi • {date}",
+      "customerDetails": "Müşteri ayrıntıları",
+      "shippingAddress": "Teslimat adresi",
+      "noShippingAddress": "Teslimat adresi yok",
+      "tracking": "Takip: {company} #{number}",
+      "lineItems": "Sipariş kalemleri",
+      "itemColumn": "Ürün",
+      "skuColumn": "SKU",
+      "shipping": "Kargo",
+      "free": "Ücretsiz",
+      "loading": "Yükleniyor...",
+      "loadError": "Sipariş ayrıntıları yüklenemedi",
+      "close": "Kapat"
+    }
   },
   "products": {
     "title": "Ürünler",
@@ -6394,7 +7832,8 @@
         "label": "Stokta yokken müşterilerin bu ürünü satın almasına izin ver"
       },
       "vendor": {
-        "label": "Tedarikçi"
+        "label": "Tedarikçi",
+        "none": "Yok"
       },
       "rank": {
         "label": "Sıralama"
@@ -6446,17 +7885,67 @@
       "variantsDescription": "Bu ürün farklı boyut veya renk gibi birden fazla versiyonda geliyorsa varyant ekleyin",
       "metaCatalogId": {
         "label": "Meta Katalog ID"
+      },
+      "status": {
+        "label": "Durum",
+        "values": {
+          "active": "Aktif",
+          "draft": "Taslak",
+          "unlisted": "Listelenmemiş"
+        }
       }
     },
     "inventoryPolicy": {
       "dont_track": "Stok takibi yapma",
       "track": "Stok takibi yap"
+    },
+    "shopify": {
+      "openStore": "{store}'ı aç",
+      "syncProducts": "Ürünleri senkronize et",
+      "syncStarted": "Senkronizasyon başladı",
+      "syncError": "Senkronizasyon başlatılamadı",
+      "viewDetails": "Ayrıntıları görüntüle",
+      "editOnStore": "{store}'da düzenle",
+      "copyProductLink": "Ürün bağlantısını kopyala",
+      "linkCopied": "Ürün bağlantısı kopyalandı",
+      "noProductLink": "Bu ürünün mağaza bağlantısı yok",
+      "inStock": "{count} stokta",
+      "inStockWithVariants": "{count} stokta ({variants} varyant)",
+      "detailsTitle": "Ürün ayrıntıları — {name}",
+      "detailsSubtitle": "{shop} {store} mağazasından senkronize edildi",
+      "summaryLine": "Kategori: {category} • Toplam stok: {variants, plural, one {# varyantta} other {# varyantta}} {units} adet",
+      "uncategorized": "Kategorisiz",
+      "variantsTitle": "Varyantlar ({count})",
+      "variantColumn": "Varyant",
+      "skuColumn": "SKU",
+      "priceColumn": "Fiyat",
+      "inventoryColumn": "Envanter",
+      "defaultVariant": "Varsayılan",
+      "loading": "Yükleniyor...",
+      "loadError": "Ürün ayrıntıları yüklenemedi",
+      "close": "Kapat"
     }
   },
   "tiktok": {
     "title": "TikTok",
     "description": "Doğrudan mesajlara yanıt vermek için TikTok hesabınızı bağlayın.",
     "refreshToken": "Yenileme Belirteci"
+  },
+  "contactAdReferrals": {
+    "title": "Reklam geçmişi",
+    "empty": "Bu kişi için henüz reklam tıklaması kaydedilmedi."
+  },
+  "adsReferralStats": {
+    "title": "Reklama göre kişiler",
+    "description": "Her reklamın ulaştığı kişiler ve tıklamalarına atfedilen dönüşümler. Tıklamalar izlemenin başladığı andan itibaren sayılır.",
+    "ad": "Reklam",
+    "contacts": "Kişiler",
+    "firstTouch": "İlk temas",
+    "leads": "Potansiyel müşteriler",
+    "purchases": "Satın almalar",
+    "revenue": "Gelir",
+    "empty": "Bu dönemde reklam tıklaması yok.",
+    "timeout": "Bu rapor çok uzun sürdü. Daha kısa bir tarih aralığı seçin."
   },
   "coupons": {
     "title": "Kuponlar",
@@ -6527,8 +8016,8 @@
     "loadError": "Ürün kategorileri yüklenemedi.",
     "all": "Tüm ürünler",
     "create": "Kategori oluştur",
-    "edit": "Kategoriyi yeniden adlandır",
-    "name": "Kategori adı",
+    "edit": "Düzenle",
+    "name": "Ad",
     "namePlaceholder": "örn. Yaz koleksiyonu",
     "parent": "Üst kategori",
     "noParent": "Yok (üst düzey)",
@@ -6548,12 +8037,25 @@
     "columns": {
       "name": "Ad",
       "products": "Ürünler",
-      "subcategories": "Alt kategoriler"
+      "subcategories": "Alt kategoriler",
+      "visible": "Görünür"
     },
     "expand": "Alt kategorileri göster",
     "collapse": "Alt kategorileri gizle",
     "productCount": "{count, plural, =0 {Ürün yok} one {# ürün} other {# ürün}}",
-    "deleteChildrenWarning": "{count, plural, one {# alt kategorisi de silinecek.} other {# alt kategorisi de silinecek.}}"
+    "deleteChildrenWarning": "{count, plural, one {# alt kategorisi de silinecek.} other {# alt kategorisi de silinecek.}}",
+    "add": "Ekle",
+    "dialogTitle": "Kategori",
+    "image": "Görsel",
+    "continue": "Devam",
+    "subcategories": "Alt kategoriler",
+    "subcategoriesOf": "{name} alt kategorileri",
+    "emptySub": "Henüz alt kategori yok.",
+    "back": "Kategorilere dön",
+    "getId": "ID al",
+    "idCopied": "{id} kategori ID'si kopyalandı",
+    "idCopyError": "ID kopyalanamadı",
+    "description": "Ürünlerinizi kategori ve alt kategorilere ayırın."
   },
   "productImport": {
     "title": "İçe Aktar",
@@ -6758,6 +8260,7 @@
       "invalidTokenTitle": "Bu randevu bağlantısı kullanılamıyor.",
       "invalidTokenDescription": "Bağlantı geçersiz veya süresi dolmuş olabilir. Lütfen yeni bir randevu bağlantısı isteyin.",
       "staleSlot": "Bu saat artık uygun değil. Lütfen başka bir saat seçin.",
+      "alreadyScheduled": "Bu kişinin bu takvimde bu saatte zaten bir randevusu var. Lütfen başka bir saat seçin.",
       "availabilityChanged": "Saat seçerken uygunluk değişti. Lütfen tekrar seçin.",
       "submitFailed": "Bu isteği tamamlayamadık. Lütfen tekrar deneyin."
     },
@@ -6847,6 +8350,15 @@
     },
     "messages": {
       "empty": "Henüz randevu yok."
+    },
+    "actions": {
+      "create": "Randevu oluştur"
+    },
+    "create": {
+      "title": "Randevu oluştur",
+      "description": "Bu kişi için randevu almak üzere bir takvim ve uygun bir saat seçin.",
+      "noConversationHint": "Açık bir konuşma olmadığından kişi onay mesajı almayacak.",
+      "success": "Randevu oluşturuldu."
     }
   },
   "appointmentManagement": {
@@ -8093,7 +9605,9 @@
       "customer_service": "Müşteri hizmetleri",
       "escalation": "Yükseltme",
       "marketing": "Pazarlama",
-      "utility": "Yardımcı"
+      "utility": "Yardımcı",
+      "calls": "Aramalar",
+      "other": "Diğer"
     },
     "pill": {
       "standby": "Beklemede ({owner})",
@@ -8103,14 +9617,18 @@
     "release": {
       "label": "Bırak",
       "tooltip": "Diğer uygulamaların yanıtlayabilmesi için bu konuşmayı bırakın",
-      "success": "Konuşma bırakıldı"
+      "success": "Konuşma bırakıldı",
+      "menu": "Bırak veya devret"
     },
     "pass": {
-      "menuItem": "Yükseltmeye aktar",
-      "title": "Yükseltme ortağına aktarılsın mı?",
-      "description": "Bu görüşme yükseltme ortağınıza devredilsin mi? Görüşme geri dönene kadar yanıtlarınız duraklatılır.",
+      "menuItem": "Bir ortağa devret",
+      "title": "Bir ortağa devredilsin mi?",
+      "description": "Bu görüşmeyi kimin devralacağını seçin. Görüşme geri dönene kadar yanıtlarınız duraklatılır.",
       "confirm": "Aktar",
-      "success": "Konuşma yükseltme ortağına aktarıldı"
+      "success": "Konuşma yükseltme ortağına aktarıldı",
+      "targetLabel": "Devret",
+      "noteLabel": "Devralan ortak için not",
+      "successTargeted": "Görüşme {role} ortağına devredildi"
     },
     "aiHandover": {
       "label": "BizAI",
@@ -8129,7 +9647,10 @@
       "notEscalation": "Yalnızca yükseltme ortağı devralabilir. Yönlendirme Meta Business Suite'te yapılandırılır.",
       "notPrimaryReceiver": "Devralabilmesi için bu uygulamanın Sayfa'nın birincil alıcısı olması gerekir. Bunu Sayfa'nın Handover Protocol ayarlarından yapın.",
       "learnMore": "Daha fazla bilgi",
-      "dismiss": "Yine de gönder"
+      "dismiss": "Yine de gönder",
+      "takeOverTitle": "Bu görüşme devralınsın mı?",
+      "takeOverDescription": "Ortak görüşmeyi yönetmeyi bırakır ve kontrol sizde olur. Ona bir not bırakabilirsiniz.",
+      "takeOverNoteLabel": "Mevcut ortak için not"
     },
     "divider": {
       "ownerHandling": "{owner} artık bu konuşmayla ilgileniyor",
@@ -8182,7 +9703,17 @@
       "adminOnly": "Yönlendirmeyi yalnızca çalışma alanı yöneticileri değiştirebilir",
       "flowNotFound": "Seçilen akış bulunamadı veya etkin değil",
       "integrationNotFound": "WhatsApp numarası bulunamadı",
-      "messengerIntegrationNotFound": "Messenger sayfası bulunamadı"
+      "messengerIntegrationNotFound": "Messenger sayfası bulunamadı",
+      "rolesTitle": "Bu numaradaki yönlendirme rolleriniz",
+      "rolesDescription": "İşletme tarafından Meta Business Suite'te atanır.",
+      "rolesNone": "Bu numarada size atanmış bir yönlendirme rolü yok.",
+      "rolesNeverChecked": "Henüz kontrol edilmedi.",
+      "rolesNotEnabled": "Bu numara için konuşma yönlendirmesi etkin değil.",
+      "rolesStandbyOn": "Bekleme erişimi: açık (size ait olmayan konuşmaları görebilirsiniz)",
+      "rolesStandbyOff": "Bekleme erişimi: kapalı",
+      "rolesCheckedAt": "Kontrol edildi {time}",
+      "rolesRefresh": "Tekrar kontrol et",
+      "rolesSyncFailed": "Yönlendirme rolleri Meta'dan alınamadı. Tekrar deneyin."
     },
     "errors": {
       "unsupported": "Konuşma yönlendirme bu kanalda kullanılamıyor",
@@ -8192,8 +9723,12 @@
     "step": {
       "action": "Eylem",
       "release": "Konuşmayı bırak",
-      "pass": "Yükseltme ortağına aktar",
-      "helper": "Yalnızca WhatsApp. Diğer kanallarda veya görüşme burada yönetilmiyorsa adım Hata yolunu izler."
+      "pass": "Bir ortağa devret",
+      "helper": "Yalnızca WhatsApp. Diğer kanallarda veya görüşme burada yönetilmiyorsa adım Hata yolunu izler.",
+      "targetRole": "Devret",
+      "targetRoleDefault": "Yükseltme ortağı (varsayılan)",
+      "metadata": "Devir notu",
+      "metadataHelper": "İsteğe bağlı. Görüşmeyi alan uygulamaya olduğu gibi gönderilir. Değişkenler desteklenir. En fazla {max} karakter."
     },
     "template": {
       "sent": "Şablon gönderildi"
@@ -8527,7 +10062,7 @@
       "too_many_components": "Bir ekranda en fazla {max} bileşen olabilir.",
       "component_limit": "Bir ekranda en fazla {max} × {type} olabilir.",
       "picker_conflict": "Bir ekranda hem fotoğraf yükleme hem belge yükleme bulunamaz.",
-      "picker_multiple_in_complete": "{property} değerini 1 yapın: WhatsApp akış tamamlandığında yalnızca tek bir dosya gönderir.",
+      "picker_multiple_in_complete": "WhatsApp, akış tamamlandığında en fazla {max} dosya gönderir. Bu ekrana giden dosya alanlarının en yüksek dosya sayısını azaltın.",
       "footer_not_last": "Footer ekrandaki son bileşen olmalıdır.",
       "footer_in_nested_branch": "Footer yalnızca birinci düzey bir If dalının doğrudan içinde olabilir.",
       "footer_missing_in_branch": "Bir dalda Footer varsa diğer dalda da olmalıdır.",
@@ -9033,6 +10568,720 @@
       "closed": "Kapalı"
     }
   },
+  "productVendors": {
+    "title": "Satıcılar",
+    "add": "Ekle",
+    "edit": "Düzenle",
+    "delete": "Sil",
+    "actions": "İşlemler",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "moreOptions": "Diğer seçenekler",
+    "empty": "Henüz satıcı yok.",
+    "created": "Satıcı eklendi",
+    "updated": "Satıcı güncellendi",
+    "deleted": "Satıcı silindi",
+    "saveError": "Satıcı kaydedilemedi",
+    "deleteError": "Satıcı silinemedi",
+    "deleteTitle": "{name} silinsin mi?",
+    "deleteDescription": "{count, plural, =0 {Hiçbir ürün bu satıcıyı kullanmıyor.} one {# ürün satıcısız kalacak.} other {# ürün satıcısız kalacak.}}",
+    "fields": {
+      "name": "Ad",
+      "shortDescription": "Kısa açıklama",
+      "phone": "Telefon",
+      "storeAddress": "Mağaza adresi",
+      "image": "Görsel",
+      "optional": "İsteğe bağlı",
+      "discountPercent": "İndirim (0-100%)",
+      "minimumOrderValue": "Minimum sipariş tutarı",
+      "openHours": "Çalışma saatleri",
+      "category": "Kategori",
+      "subcategory": "Alt kategori",
+      "none": "Yok"
+    },
+    "columns": {
+      "name": "Ad",
+      "products": "Toplam ürün",
+      "active": "Aktif"
+    },
+    "description": "Ürünlerinizin ait olduğu satıcılar ve markalar."
+  },
+  "ecommerceSettings": {
+    "save": "Kaydet",
+    "saved": "Ayarlar kaydedildi",
+    "saveError": "Ayarlar kaydedilemedi",
+    "rank": {
+      "label": "Sıra",
+      "default": "Varsayılan"
+    },
+    "tabs": {
+      "general": "Genel",
+      "payments": "Ödemeler",
+      "shipping": "Gönderim",
+      "checkout": "Ödeme sayfası",
+      "shopify": "Shopify",
+      "woocommerce": "WooCommerce"
+    },
+    "general": {
+      "orderingAvailable": {
+        "label": "Sipariş verilebilir",
+        "description": "Çalışma saatlerinizi değiştirmeden müşterilerin sipariş vermesini engellemek için bu alanı kullanın. Çalışma saatleri de uygunluğunuzu belirler."
+      },
+      "webshopProductView": {
+        "label": "Web mağazası ürün görünümü",
+        "description": "Ürünlerin web mağazanızda nasıl gösterileceğini belirleyin.",
+        "options": {
+          "list": "Liste",
+          "listWithoutImage": "Görselsiz liste",
+          "card": "Kart",
+          "cardSquare": "Kare görselli kart",
+          "image": "Görsel",
+          "imageSquare": "Görsel (kare)"
+        }
+      },
+      "openHours": {
+        "label": "Çalışma saatleri",
+        "description": "Müşterilerinizin sipariş verebileceği zaman aralıkları."
+      },
+      "searchProducts": {
+        "label": "Ürün ara",
+        "description": "Müşterilerin ürün bulmak için mesaj göndermesine izin verin."
+      },
+      "facebookPixelId": {
+        "label": "Facebook Pixel",
+        "description": "Facebook Pixel ile dönüşümleri izleyin ve reklamlarınızın sonuçlarını ölçün. Şu olaylar izlenir: ADD_TO_CART, INITIATE_CHECKOUT, PURCHASE, VIEW_CONTENT"
+      },
+      "abandonedCart": {
+        "label": "Terk edilen sepet mesajı",
+        "description": "Kullanıcı sepetinde ürün varken botunuzdan ayrıldıktan sonra terk edilen sepet mesajı göndermeden önce beklenecek süre.",
+        "disabled": "Kapalı",
+        "afterMinutes": "{count} dakika sonra",
+        "afterHours": "{count, plural, one {# saat sonra} other {# saat sonra}}"
+      },
+      "productButtons": {
+        "label": "Ürünlerdeki düğmeler",
+        "description": "Bu ayar, botunuzdaki ürünlerde hangi düğmelerin gösterileceğini belirler.",
+        "options": {
+          "addToCart": "Sepete ekle",
+          "share": "Paylaş",
+          "similar": "Benzer",
+          "save": "Kaydet"
+        }
+      },
+      "productImageSize": {
+        "label": "Ürün görseli boyutu",
+        "description": "Bu ayar, botunuzdaki ürün görsellerinin boyutunu belirler",
+        "options": {
+          "bigSquare": "Büyük (kare)",
+          "mediumRectangle": "Orta (dikdörtgen)"
+        }
+      },
+      "allowRateOrders": {
+        "label": "Siparişi puanlamaya izin ver",
+        "description": "Memnun kalmayan müşterilerin siparişi puanlamasına ve yorum yazmasına izin verin. Yorumları yalnızca bot yöneticileri görebilir"
+      },
+      "notifyOnCartStatusChange": {
+        "label": "Sepet durumu değişince bildirim gönder",
+        "description": "Sipariş durumunu her değiştirdiğinizde müşteri bildirim alır. Sipariş iptali ve tamamlanma bildirimlerini kapatamazsınız."
+      },
+      "abandonedCartFlow": {
+        "label": "Terk edilmiş sepet akışı",
+        "description": "Sepet bu kadar süre terk edildiğinde botun müşteri için çalıştırdığı akış. Sepeti açmak için butonlarda '{{shop_token}}' kullanın. Tetikleyiciler \"Cart abandoned\" olayını da kullanabilir.",
+        "none": "Akış yok (yalnızca tetikleyici olayı)"
+      },
+      "storeSource": {
+        "label": "Mağaza kaynağı",
+        "description": "Ürünlerinizi, stokunuzu ve siparişlerinizi yönetmek için kullanılan mağaza kaynağını seçin. Shopify / WooCommerce seçildiğinde tüm ürünler ve siparişler doğrudan Shopify / WooCommerce mağazanızdan yönetilir.",
+        "options": {
+          "chatbotx": "ChatbotX",
+          "shopify": "Shopify",
+          "woocommerce": "WooCommerce"
+        }
+      }
+    },
+    "payments": {
+      "currencyMismatch": "{count, plural, one {# ürünün fiyatı} other {# ürünün fiyatı}} {currency} dışında başka bir para biriminde. Siparişlerde fiyat {currency} olarak tahsil edilir.",
+      "paymentMethods": {
+        "label": "Ödeme yöntemleri",
+        "description": "Ödeme sayfasında etkin olan ödeme yöntemleri. Listedeki ilk yöntem ödeme sayfasında seçili olur.",
+        "options": {
+          "cod": "Kapıda ödeme",
+          "stripe": "Kart",
+          "paypal": "PayPal"
+        },
+        "connectHint": "{provider} sunmak için onu <link>Ayarlar → Entegrasyonlar</link> bölümünde bağlayın."
+      },
+      "currency": {
+        "label": "Para birimi",
+        "description": "Ürün fiyatlarını belirlediğiniz para birimi. Müşterilerden bu para biriminde tahsilat yapılır."
+      },
+      "currencyPosition": {
+        "label": "Para birimi konumu",
+        "description": "Bu seçenek para biriminin konumunu belirlemenizi sağlar.",
+        "options": {
+          "left": "Sol",
+          "leftSpace": "Solda boşluklu",
+          "right": "Sağ",
+          "rightSpace": "Sağda boşluklu"
+        }
+      },
+      "currencySymbol": {
+        "label": "Para sembolü",
+        "description": "Para sembolü fiyatların önünde gösterilir. Sembol ile fiyat arasında boşluk istiyorsanız sembolün sonuna bir boşluk ekleyin."
+      },
+      "serviceFeePercent": {
+        "label": "Diğer ücretler / hizmet ücretleri (0 - 100%)",
+        "description": "Satışla ilgili diğer ücretler."
+      }
+    },
+    "shipping": {
+      "shippingType": {
+        "label": "Gönderim türü",
+        "description": "Bu seçenek, müşterinin siparişini nasıl alacağını belirlemenizi sağlar.",
+        "options": {
+          "none": "Yok",
+          "delivery": "Müşteriye teslim et",
+          "pickup": "Mağazadan teslim alma",
+          "deliveryAndPickup": "Müşteriye teslim et, Mağazadan teslim alma"
+        }
+      },
+      "storeAddress": {
+        "label": "Mağaza adresi",
+        "description": "Mağazadan teslim almaya izin verirseniz bu adres ödeme sayfasında müşteriye gösterilir."
+      },
+      "shippingCountries": {
+        "label": "Gönderim ülkeleri",
+        "description": "Sipariş gönderdiğiniz ülkeler."
+      },
+      "defaultShippingCountry": {
+        "label": "Varsayılan gönderim ülkesi",
+        "description": "Ödeme sayfasında varsayılan olarak seçilecek ülke.",
+        "none": "Yok"
+      },
+      "deliveryCost": {
+        "label": "Teslimat ücreti",
+        "description": "Siparişi müşterinin adresine teslim etmek için sabit ücret."
+      },
+      "defaultCountryNotShipped": "Gönderim ülkelerinden birini seçin."
+    },
+    "checkout": {
+      "checkoutMode": {
+        "label": "Ödeme sayfası",
+        "description": "Bu ayar, müşterilerinizin siparişlerini nerede tamamlayacağını belirler. Kullanıcının siparişi botunuzun dışında, örneğin web siteniz veya Amazon üzerinde tamamlamasını istiyorsanız varsayılan ödeme sayfamızı kullanmayın.",
+        "options": {
+          "default": "Varsayılan ödeme sayfası",
+          "externalLink": "Özel harici ödeme sayfası",
+          "flow": "Akış",
+          "productPage": "Harici ürün sayfasını ziyaret et"
+        }
+      },
+      "checkoutLink": {
+        "label": "Ödeme sayfası bağlantısı",
+        "description": "Müşterilerin siparişlerini tamamladığı harici sayfa."
+      },
+      "checkoutFlowId": {
+        "label": "Ödeme akışı",
+        "description": "Müşteri ödemeye geçtiğinde çalışan akış.",
+        "placeholder": "Bir akış seçin"
+      },
+      "minimumOrderValue": {
+        "label": "Minimum sipariş tutarı",
+        "description": "Müşterinin verebileceği en düşük sipariş tutarı. Bu koşul tüm indirimler uygulandıktan sonra kontrol edilir."
+      },
+      "requiredFields": {
+        "requireName": {
+          "label": "Alıcı adını zorunlu tut",
+          "description": "Alıcı adı ödeme sırasında toplanır."
+        },
+        "requireEmail": {
+          "label": "E-posta adresini zorunlu tut",
+          "description": "Alıcı e-postası ödeme sırasında toplanır."
+        },
+        "requirePhone": {
+          "label": "Telefon numarasını zorunlu tut",
+          "description": "Alıcı telefonu ödeme sırasında toplanır."
+        },
+        "requireState": {
+          "label": "İl/eyaleti zorunlu tut",
+          "description": "Alıcının ili ödeme sırasında toplanır."
+        },
+        "requireZip": {
+          "label": "Posta kodunu zorunlu tut",
+          "description": "Alıcının posta kodu ödeme sırasında toplanır."
+        }
+      },
+      "orderConfirmationMode": {
+        "label": "Sipariş onay mesajı",
+        "description": "Sipariş verildiğinde müşterinin sohbette aldığı mesaj. Varsayılan mesaj sipariş ayrıntılarını çalışma alanının dilinde gösterir.",
+        "options": {
+          "default": "Varsayılan mesaj",
+          "flow": "Bir akış çalıştır",
+          "none": "Hiçbir şey gönderme"
+        }
+      },
+      "orderConfirmationFlowId": {
+        "label": "Sipariş onay akışı",
+        "description": "Sipariş verildiğinde varsayılan mesaj yerine müşteriye gönderilen akış."
+      },
+      "shopifyCheckoutMethod": {
+        "label": "Ödeme yöntemi",
+        "description": "Müşterilerin ödemeyi Shopify ödeme sayfanızda mı tamamlayacağını yoksa siparişi doğrudan web mağazasında mı vereceğini seçin.",
+        "options": {
+          "webCheckout": "Shopify Web Ödeme",
+          "inApp": "Uygulama içi ödeme"
+        }
+      },
+      "shopifyAutoApplyDiscounts": {
+        "label": "İndirim kodlarını otomatik uygula",
+        "description": "Müşterilerin ödemeye yönlendirilmeden önce Shopify indirim kodlarını doğrudan sepetlerine uygulamasına izin verin."
+      },
+      "wooCommerceCheckoutMethod": {
+        "description": "Müşterilerin WooCommerce mağazanızın ödeme sayfasında mı ödeyeceğini yoksa siparişi doğrudan web mağazasında mı vereceğini (kapıda ödeme) seçin.",
+        "options": {
+          "webCheckout": "WooCommerce ödeme sayfası",
+          "inApp": "Uygulama içi ödeme"
+        }
+      },
+      "wooCommerceAutoApplyDiscounts": {
+        "description": "Müşterilerin ödemeye yönlendirilmeden önce WooCommerce indirim kodlarını doğrudan sepetlerine uygulamasına izin verin."
+      },
+      "inAppDeliveryCost": {
+        "label": "Teslimat ücreti",
+        "description": "Uygulama içi ödeme siparişlerine eklenen teslimat ücreti."
+      },
+      "wooCommerceDeliveryCost": {
+        "description": "WooCommerce'e gönderilen siparişlere her iki ödeme yönteminde de eklenen teslimat ücreti."
+      }
+    },
+    "shopify": {
+      "shopDomain": {
+        "label": "Mağaza alan adı",
+        "placeholder": "your-store.myshopify.com",
+        "hint": "Shopify mağazanızın .myshopify.com alan adını girin.",
+        "connectedHint": "Bağlı Shopify mağazanızın alan adı."
+      },
+      "authKind": {
+        "label": "Kimlik doğrulama",
+        "description": "ChatbotX'in mağazanıza nasıl giriş yaptığı: özel bir uygulamanın Admin API erişim belirteci ile ya da Shopify Dev Dashboard'da oluşturulan bir uygulamanın Client ID ve secret bilgisiyle.",
+        "options": {
+          "token": "Admin API erişim belirteci",
+          "clientCredentials": "Client ID ve secret (Dev Dashboard uygulaması)"
+        }
+      },
+      "accessToken": {
+        "label": "Admin API erişim belirteci",
+        "hint": "Özel uygulamanızın Admin API erişim belirteci. Ona şu izinleri verin: {scopes}.",
+        "connectedHint": "Shopify Admin API erişim belirteciniz şifrelenmiş olarak saklanır."
+      },
+      "apiSecret": {
+        "label": "API gizli anahtarı",
+        "hint": "Shopify tarafından gönderilen webhook'ları doğrulamak için kullanılan uygulamanın API gizli anahtarı."
+      },
+      "clientId": {
+        "label": "Client ID",
+        "hint": "Dev Dashboard uygulamanızın Client ID değeri. Ona şu izinleri verin: {scopes}."
+      },
+      "clientSecret": {
+        "label": "Client Secret",
+        "hint": "Uygulamanın Client Secret değeri. Şifrelenmiş olarak saklanır."
+      },
+      "webhookUrl": {
+        "label": "Webhook URL'si",
+        "description": "Ürün, stok ve sipariş güncellemelerini gerçek zamanlı almak için bağlantı sırasında Shopify'a otomatik olarak kaydedilir."
+      },
+      "syncNow": "Şimdi senkronize et",
+      "syncStarted": "Senkronizasyon başladı",
+      "syncError": "Senkronizasyon başlatılamadı",
+      "syncStatus": {
+        "label": "Senkronizasyon durumu",
+        "description": "Ürünler, indirim kodları ve siparişler Shopify mağazanızdan yansıtılır.",
+        "connectedTo": "{shopDomain} mağazasına bağlı",
+        "lastSynced": "Son senkronizasyon: {time} ({productCount} ürün, {orderCount} sipariş)",
+        "neverSynced": "Henüz senkronize edilmedi",
+        "noReason": "Devam etmek için mağazanızı yeniden bağlayın.",
+        "invalid": "Bağlantı artık geçerli değil: {reason}",
+        "state": {
+          "idle": "Beklemede",
+          "queued": "Senkronizasyon sırada...",
+          "running": "Senkronize ediliyor...",
+          "succeeded": "Son senkronizasyon başarılı",
+          "failed": "Son senkronizasyon başarısız"
+        }
+      }
+    },
+    "woocommerce": {
+      "siteUrl": {
+        "label": "Mağaza URL'si",
+        "placeholder": "https://example.com",
+        "hint": "WordPress sitenizin https:// ile başlayan adresi. WordPress'te Settings → Permalinks ayarı Plain olmamalıdır.",
+        "connectedHint": "Bağlı WooCommerce mağazanız."
+      },
+      "consumerKey": {
+        "label": "Consumer key",
+        "hint": "WooCommerce → Settings → Advanced → REST API → Add key bölümünde Read/Write izniyle bir anahtar oluşturun ve Consumer key değerini (ck_…) yapıştırın.",
+        "connectedHint": "Bağlı anahtarın başlangıcı. Anahtarlar şifrelenmiş olarak saklanır."
+      },
+      "consumerSecret": {
+        "label": "Consumer secret",
+        "hint": "Anahtarın Consumer secret değeri (cs_…). Şifrelenmiş olarak saklanır."
+      },
+      "webhookUrl": {
+        "label": "Webhook URL'si",
+        "description": "Ürün, stok ve sipariş güncellemelerini gerçek zamanlı almak için bağlantı sırasında WooCommerce'a otomatik olarak kaydedilir."
+      },
+      "syncNow": "Şimdi senkronize et",
+      "syncStarted": "Senkronizasyon başladı",
+      "syncError": "Senkronizasyon başlatılamadı",
+      "syncStatus": {
+        "label": "Senkronizasyon durumu",
+        "description": "Ürünler, indirim kodları ve siparişler WooCommerce mağazanızdan yansıtılır.",
+        "connectedTo": "{store} mağazasına bağlı",
+        "lastSynced": "Son senkronizasyon: {time} ({productCount} ürün, {orderCount} sipariş)",
+        "neverSynced": "Henüz senkronize edilmedi",
+        "noReason": "Devam etmek için mağazanızı yeniden bağlayın.",
+        "invalid": "Bağlantı artık geçerli değil: {reason}",
+        "state": {
+          "idle": "Beklemede",
+          "queued": "Senkronizasyon sırada...",
+          "running": "Senkronize ediliyor...",
+          "succeeded": "Son senkronizasyon başarılı",
+          "failed": "Son senkronizasyon başarısız"
+        }
+      }
+    }
+  },
+  "openHours": {
+    "alwaysOpen": "Her zaman açık",
+    "addNew": "Yeni ekle",
+    "dialogTitle": "Çalışma saatleri",
+    "name": "Ad",
+    "namePlaceholder": "ör. Hafta içi",
+    "day": "Gün",
+    "from": "Açılış",
+    "to": "Kapanış",
+    "add": "Saat ekle",
+    "remove": "Kaldır",
+    "cancel": "İptal",
+    "continue": "Devam",
+    "created": "Çalışma saatleri oluşturuldu",
+    "saveError": "Çalışma saatleri kaydedilemedi",
+    "days": {
+      "0": "Pazar",
+      "1": "Pazartesi",
+      "2": "Salı",
+      "3": "Çarşamba",
+      "4": "Perşembe",
+      "5": "Cuma",
+      "6": "Cumartesi"
+    },
+    "sameTimes": "Açılış ve kapanış saati farklı olmalıdır."
+  },
+  "webshop": {
+    "metadataTitle": "Mağaza",
+    "metadataOrderTitle": "Siparişiniz",
+    "invalidLinkTitle": "Bu bağlantı çalışmıyor",
+    "invalidLinkDescription": "Süresi dolmuş olabilir. Sohbette mağazadan yeni bir bağlantı isteyin.",
+    "previewBanner": "Önizleme: müşteriler bunu görür. Önizlemeden sipariş verilemez.",
+    "previewOrderingOff": "Önizleme: sipariş verilemez",
+    "closed": {
+      "orderingUnavailable": "Mağaza şu anda sipariş almıyor.",
+      "outsideOpenHours": "Mağaza şu anda kapalı. Yine de göz atabilirsiniz."
+    },
+    "searchPlaceholder": "Ürün ara",
+    "categories": "Kategoriler",
+    "allCategories": "Tüm kategoriler",
+    "vendors": "Satıcılar",
+    "allVendors": "Tüm satıcılar",
+    "noProducts": "Ürün bulunamadı.",
+    "productNotFound": "Bu ürün artık mevcut değil.",
+    "outOfStock": "Stokta yok",
+    "addToCart": "Sepete ekle",
+    "added": "Sepete eklendi",
+    "chooseOptions": "Seçenekleri seç",
+    "chooseOption": "{name} seçin",
+    "variantUnavailable": "Bu kombinasyon mevcut değil.",
+    "buy": "Satın al",
+    "share": "Paylaş",
+    "linkCopied": "Kopyalandı",
+    "similar": "Benzer",
+    "save": "Kaydet",
+    "saved": "Kaydedildi",
+    "showImage": "{number}. görseli göster",
+    "increase": "Miktarı artır",
+    "decrease": "Miktarı azalt",
+    "remove": "Kaldır",
+    "cart": "Sepet",
+    "cartEmpty": "Sepetiniz boş.",
+    "continueShopping": "Alışverişe devam et",
+    "unavailableItems": "{count, plural, one {# ürün şu anda sipariş edilemiyor} other {# ürün şu anda sipariş edilemiyor}}",
+    "unavailableNotOrdered": "Bunlar siparişe eklenmez ve sepette kalır.",
+    "unavailable": "Artık mevcut değil",
+    "unavailableHint": "Seçenekleri yeniden seçin",
+    "deletedProduct": "Silinmiş ürün",
+    "summary": {
+      "subtotal": "Ara toplam",
+      "discount": "İndirim",
+      "delivery": "Teslimat",
+      "otherFees": "Diğer ücretler",
+      "total": "Toplam",
+      "coupon": "Kupon ({code})",
+      "title": "Sipariş özeti",
+      "saved": "{amount} tasarruf ediyorsunuz",
+      "deliveryAtCheckout": "Ödeme sırasında hesaplanır"
+    },
+    "belowMinimum": "Minimum sipariş tutarı {amount}.",
+    "checkOut": "Ödemeye geç",
+    "contactDetails": "Bilgileriniz",
+    "optional": "(isteğe bağlı)",
+    "fields": {
+      "name": "Ad",
+      "email": "E-posta",
+      "phone": "Telefon",
+      "country": "Ülke",
+      "state": "İl",
+      "city": "Şehir",
+      "address1": "Adres",
+      "address2": "Daire, bina vb.",
+      "zip": "Posta kodu",
+      "note": "Mağaza için not"
+    },
+    "shipping": {
+      "title": "Teslimat",
+      "delivery": "Adresime teslim",
+      "pickup": "Mağazadan teslim al",
+      "storeAddress": "Mağaza adresi: {address}"
+    },
+    "payment": {
+      "title": "Ödeme",
+      "cod": "Kapıda ödeme",
+      "stripe": "Kart",
+      "paypal": "PayPal",
+      "paid": "Ödendi",
+      "refunded": "İade edildi",
+      "awaiting": "Ödemeniz bekleniyor",
+      "payBefore": "{time} öncesinde ödeyin, aksi halde sipariş iptal edilir.",
+      "payNow": "Şimdi öde",
+      "onlineHint": "Ödemeyi bir sonraki sayfada yapacaksınız. Siparişiniz 30 dakika boyunca ayrılır.",
+      "continueToPayment": "Ödemeye devam et",
+      "notYet": "Ödemenizi henüz almadık. Az önce ödediyseniz biraz bekleyin ve bu sayfayı yenileyin.",
+      "leftPaymentPage": "Ödeme sayfasından ayrıldınız. Aşağıdan hâlâ ödeyebilirsiniz.",
+      "paidThanks": "Ödeme alındı. Siparişiniz için teşekkürler!"
+    },
+    "placeOrder": "Siparişi ver",
+    "orderPlaced": "Teşekkürler! Siparişiniz alındı. Güncellemeleri sohbetten göndereceğiz.",
+    "orderTitle": "Sipariş #{number}",
+    "orderNotFound": "Bu sipariş bulunamadı.",
+    "placedAt": "{date} tarihinde verildi",
+    "status": {
+      "pending": "İşlenmedi",
+      "accepted": "Hazırlanıyor",
+      "shipped": "Kargoya verildi",
+      "concluded": "Tamamlandı",
+      "cancelled": "İptal edildi"
+    },
+    "rateTitle": "Siparişinizi değerlendirin",
+    "rateComment": "Mağazaya düşüncelerinizi yazın (isteğe bağlı)",
+    "rateSubmit": "Değerlendirmeyi gönder",
+    "rateThanks": "Değerlendirmeniz için teşekkürler!",
+    "yourRating": "Değerlendirmeniz",
+    "ratingValue": "5 üzerinden {rating} yıldız",
+    "previous": "Önceki",
+    "next": "Sonraki",
+    "pageOf": "Sayfa {page}/{pageCount}",
+    "errors": {
+      "generic": "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+      "checkFields": "Lütfen alanları kontrol edin.",
+      "fieldRequired": "{field} zorunludur.",
+      "countryUnavailable": "Mağaza bu ülkeye teslimat yapmıyor.",
+      "invalidLink": "Bu bağlantı artık çalışmıyor. Mağazadan yenisini isteyin.",
+      "webshopPreviewOnly": "Bu bir önizleme. Sipariş yalnızca müşteri bağlantısından verilebilir.",
+      "rateLimited": "Çok fazla deneme. Biraz bekleyip tekrar deneyin.",
+      "orderingUnavailable": "Mağaza şu anda sipariş almıyor.",
+      "orderBelowMinimum": "Minimum sipariş tutarı {minimum}.",
+      "orderBelowVendorMinimum": "{vendorName} ürünlerinin toplamı en az {minimum} olmalıdır.",
+      "orderOutOfStock": "{productName} stokta kalmadı.",
+      "orderProductUnavailable": "Bazı ürünler artık sipariş edilemiyor. Sepetinizi kontrol edin.",
+      "orderEmpty": "Sepetiniz boş.",
+      "orderShippingTypeUnavailable": "Bu teslimat seçeneği mevcut değil.",
+      "webshopRatingNotAllowed": "Bu sipariş değerlendirilemez.",
+      "webshopCartFull": "Sepetiniz en fazla {maximum} farklı ürün içerebilir.",
+      "notFound": "Bu ürün artık mevcut değil.",
+      "discountCodeNotFound": "Bu indirim kodu yok.",
+      "discountCodeInactive": "Bu indirim kodu aktif değil.",
+      "discountCodeNotStarted": "Bu indirim kodu henüz geçerli değil.",
+      "discountCodeExpired": "Bu indirim kodunun süresi doldu.",
+      "discountCodeUsageLimitReached": "Bu indirim kodunun kullanım hakkı doldu.",
+      "discountCodeAlreadyUsed": "Bu indirim kodunu zaten kullandınız.",
+      "discountCodeNotEligible": "Bu indirim kodu sizin için geçerli değil.",
+      "discountCodeNotApplicable": "Bu indirim kodu sepetinizdekilere uygulanmıyor.",
+      "discountCodeMinimumAmount": "Bu kod en az {minimum} alışveriş gerektirir. {missing} daha ekleyin.",
+      "discountCodeMinimumQuantity": "Bu kod en az {minimum} ürün gerektirir. {missing} daha ekleyin.",
+      "paymentMethodUnavailable": "Bu ödeme yöntemi kullanılamıyor.",
+      "paymentProviderNotConnected": "Bu ödeme yöntemi kullanılamıyor.",
+      "paymentProviderUnavailable": "Ödeme hizmeti yanıt vermiyor. Lütfen birazdan tekrar deneyin.",
+      "paymentProviderRejected": "Ödeme başlatılamadı. Lütfen başka bir ödeme yöntemi seçin.",
+      "paymentProviderCredentialsRejected": "Ödeme başlatılamadı. Lütfen başka bir ödeme yöntemi seçin.",
+      "paymentAmountUnsupported": "Bu sipariş online ödenemez. Lütfen başka bir ödeme yöntemi seçin.",
+      "orderPaymentNotOpen": "Bu sipariş artık online ödenemez."
+    },
+    "discount": {
+      "label": "İndirim kodu",
+      "placeholder": "İndirim kodu",
+      "apply": "Uygula",
+      "applied": "İndirim kodu uygulandı",
+      "automatic": "otomatik uygulandı",
+      "remove": "İndirim kodunu kaldır",
+      "available": "Kullanabileceğiniz kodlar",
+      "freeShipping": "Ücretsiz kargo",
+      "bestChoice": "En iyi seçim",
+      "expiresOn": "Son kullanma: {date}",
+      "noExpiry": "Süresiz",
+      "inUse": "Kullanımda",
+      "saves": "{amount} indirim",
+      "showMore": "{count, plural, one {# kod daha göster} other {# kod daha göster}}",
+      "showLess": "Daha az göster",
+      "removeShort": "Kaldır",
+      "expired": "Süresi doldu",
+      "usedUp": "Tükendi",
+      "notEligible": "Henüz uygun değil"
+    },
+    "itemCount": "{count, plural, one {# ürün} other {# ürün}}",
+    "relatedProducts": "Bunları da beğenebilirsiniz",
+    "soldOut": "Tükendi",
+    "sku": "SKU: {sku}",
+    "allProducts": "Tüm ürünler",
+    "noCategories": "Bu mağazada henüz kategori yok."
+  },
+  "webshopLinks": {
+    "preview": "Önizle",
+    "getLink": "Bağlantıyı al",
+    "copied": "Bağlantı kopyalandı. Bir bot düğmesine ekleyin: her kişi kendi mağazasını açar.",
+    "error": "Bağlantı alınamadı.",
+    "copyError": "Bağlantı kopyalanamadı.",
+    "shopLink": {
+      "label": "Mağaza URL'si",
+      "hint": "Bu bağlantıyı bir akış, yayın veya dizideki bir düğmeye yapıştırın. Bağlantıyı alan her kişi kendi mağazasını açar ve sipariş verebilir."
+    },
+    "productLink": {
+      "label": "Genel URL",
+      "hint": "URL'yi kopyalayıp akışınıza, yayınınıza veya dizinize yapıştırın. Bağlantıyı alan her kişi bu ürünü açar ve sipariş verebilir."
+    },
+    "bar": "Mağazayı paylaşın: akış, yayın ve dizi düğmeleri için mağaza, sepet ve kategori bağlantılarını alın.",
+    "dialog": {
+      "title": "Mağaza bağlantıları",
+      "description": "Bağlantıyı bir akış, yayın veya dizideki düğmeye yapıştırın. Alan her kişi kendi mağazasını açar.",
+      "shopHint": "Mağazanın tüm ürünlerini içeren ana sayfasını açar."
+    },
+    "cartLink": {
+      "label": "Sepet",
+      "hint": "Kişinin sepetini ödemeye hazır şekilde açar."
+    },
+    "categoriesLink": {
+      "label": "Kategoriler",
+      "hint": "Mağazanın kategori listesini açar."
+    }
+  },
+  "discountCodes": {
+    "title": "Kuponlar",
+    "description": "Müşterilerin ödemede kullandığı veya kendiliğinden uygulanan indirim kodları.",
+    "add": "Ekle",
+    "edit": "Kuponu düzenle",
+    "automatic": "Otomatik",
+    "never": "Hiçbir zaman",
+    "searchPlaceholder": "Kod ara…",
+    "saveError": "Kupon kaydedilemedi.",
+    "created": "Kupon oluşturuldu",
+    "updated": "Kupon kaydedildi",
+    "deleted": "Kupon silindi",
+    "deleteError": "Kupon silinemedi.",
+    "deleteTitle": "{code} kuponu silinsin mi?",
+    "deleteDescription": "Müşteriler artık kullanamaz. Onu kullanan siparişler indirimini korur.",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "save": "Kaydet",
+    "columns": {
+      "name": "Ad",
+      "discount": "İndirim",
+      "used": "Kullanılan",
+      "end": "Bitiş",
+      "active": "Aktif"
+    },
+    "discountTypes": {
+      "percentage": "Yüzde",
+      "fixedAmount": "Sabit tutar",
+      "freeShipping": "Ücretsiz kargo"
+    },
+    "appliesTo": {
+      "entireOrder": "Tüm sipariş",
+      "category": "Belirli kategori",
+      "products": "Belirli ürünler"
+    },
+    "minimumTypes": {
+      "none": "Yok",
+      "amount": "Minimum alışveriş tutarı",
+      "quantity": "Minimum ürün adedi"
+    },
+    "eligibilities": {
+      "everyone": "Herkes",
+      "specificCustomers": "Belirli müşteriler"
+    },
+    "form": {
+      "discountCode": "İndirim kodu",
+      "code": "Kod",
+      "generate": "Oluştur",
+      "autoApply": "Bu kuponu sepetlere otomatik uygula",
+      "autoApplyHint": "Sepetler müşteri yazmadan alır. Birden çok otomatik kupon varsa en çok indirim yapan uygulanır.",
+      "typedHint": "Müşteriler bu indirim kodunu ödemede girecek.",
+      "options": "Seçenekler",
+      "discountType": "İndirim türü",
+      "discountValuePercent": "İndirim değeri (%)",
+      "discountValueAmount": "İndirim değeri ({currency})",
+      "freeShippingHint": "Teslim edilen siparişlerin kargo ücretini kaldırır.",
+      "appliesTo": "Uygulandığı yer",
+      "category": "Kategori",
+      "products": "Ürünler",
+      "productsPlaceholder": "Ürün seçin",
+      "minimumRequirement": "Minimum şart",
+      "minimumAmount": "Minimum tutar ({currency})",
+      "minimumQuantity": "Minimum ürün sayısı",
+      "usageLimits": "Kullanım sınırları",
+      "limitTotal": "Bu indirimin toplam kullanım sayısını sınırla",
+      "usedSoFar": "{count, plural, one {Şimdiye kadar # kez kullanıldı} other {Şimdiye kadar # kez kullanıldı}}",
+      "oncePerCustomer": "Müşteri başına bir kullanım",
+      "customerEligibility": "Uygun müşteriler",
+      "specificCustomersHint": "Yalnızca sipariş anında aşağıdaki filtreye uyan kişiler.",
+      "activeDates": "Geçerlilik tarihleri",
+      "startDate": "Başlangıç tarihi",
+      "endDate": "Bitiş tarihi",
+      "isActive": "Aktif"
+    },
+    "rules": {
+      "codeCharacters": "Yalnızca aksansız harfler, rakamlar, - ve _ kullanın.",
+      "usageBelowUsed": "Bu kod zaten {count} kez kullanıldı; sınır daha düşük olamaz.",
+      "customerConditionRequired": "En az bir koşul ekleyin.",
+      "endAfterStart": "Bitiş tarihi başlangıç tarihinden sonra olmalıdır."
+    }
+  },
+  "ecommerceAnalytics": {
+    "title": "Analitik",
+    "lifetime": "Tüm zamanlar",
+    "sales": "Satışlar",
+    "orders": "Siparişler",
+    "products": "Ürünler",
+    "salesByDate": "Tarihe göre satışlar",
+    "ordersByDate": "Tarihe göre siparişler",
+    "topProducts": "En çok satan ürünler",
+    "topVendors": "En iyi satıcılar",
+    "columns": {
+      "name": "Ad",
+      "sales": "Satışlar"
+    },
+    "noData": "Bu dönemde veri yok",
+    "refresh": "Yenile",
+    "change": "%{value}",
+    "noPrevious": "yeni",
+    "otherCurrencyOrders": "Diğer para birimlerindeki {count} sipariş bu rakamlara dahil değildir"
+  },
   "responseSla": {
     "label": "Yanıt SLA'sı",
     "title": "Yanıt SLA'sı",
@@ -9052,5 +11301,611 @@
     "metHelp": "SLA'sı olan yanıtlardan SLA'yı karşılayanların oranı.",
     "eligibleCount": "{count} yanıtın SLA'sı vardı",
     "enable": "Yanıt SLA'sını etkinleştir"
+  },
+  "stripe": {
+    "title": "Stripe",
+    "setting": {
+      "label": "Stripe",
+      "description": "Web mağazanızda kendi Stripe hesabınızla kart ödemeleri alın. Para doğrudan Stripe hesabınıza geçer."
+    },
+    "connectWithStripe": "Stripe ile bağlan",
+    "connectWithKey": "Gizli anahtar kullan",
+    "connectionType": {
+      "oauth": "Stripe Connect",
+      "apiKey": "Gizli anahtar"
+    },
+    "fields": {
+      "secretKey": "Gizli anahtar",
+      "secretKeyHint": "sk_live_ ile başlar (test modu için sk_test_). Hesabı okuyabilen ve Checkout Sessions, Refunds ve Webhook Endpoints yazabilen kısıtlı anahtar (rk_…) da çalışır."
+    },
+    "dialog": {
+      "description": "Gizli anahtarınızı <link>Stripe Dashboard → Developers → API keys</link> bölümünden kopyalayıp buraya yapıştırın. Anahtarı kontrol eder, Stripe hesabınızda ödeme bildirimlerini kurar ve anahtarı şifreli olarak saklarız."
+    },
+    "testMode": "Test modu",
+    "liveMode": "Canlı",
+    "chargesDisabled": "Stripe hesabınız henüz ödeme alamıyor. Kurulumu Stripe panonuzda tamamlayın.",
+    "outcome": {
+      "expired": "Stripe bağlantı bağlantısının süresi doldu. Lütfen tekrar deneyin.",
+      "access_denied": "Bağlantıya Stripe'ta izin verilmedi.",
+      "stripeAccountAlreadyConnected": "Bu Stripe hesabı zaten başka bir çalışma alanına bağlı.",
+      "stripePlatformNotConfigured": "Stripe bu platformda henüz kurulmamış.",
+      "superAdminRequired": "Stripe'ı yalnızca çalışma alanı yöneticisi bağlayabilir.",
+      "signInRequired": "Lütfen oturum açıp tekrar deneyin.",
+      "paymentProviderCredentialsRejected": "Stripe bağlantıyı reddetti. Lütfen tekrar deneyin.",
+      "startedByAnotherUser": "Yalnızca Bağlan'a basan kişi bunu tamamlayabilir. Lütfen tekrar Bağlan'a basın.",
+      "paymentProviderInUse": "Açık siparişler hâlâ bu Stripe hesabına ihtiyaç duyuyor. Önce bunları tamamlayın veya iptal edin."
+    },
+    "platform": {
+      "connectClientId": "Connect client ID",
+      "connectClientIdHint": "Stripe Dashboard → Settings → Connect → Onboarding options → OAuth bölümünden (ca_ ile başlar). Mağazalar kendi Stripe hesaplarını bunun üzerinden bağlar.",
+      "redirectUri": "Redirect URI",
+      "webhookReady": "Mağazalar Stripe'ı bağlayabilir ve ödemeleri otomatik olarak onaylanır.",
+      "webhookMissing": "Ödeme webhook'u eksik. Oluşturmak için bu ayarları tekrar kaydedin.",
+      "connectMissing": "Mağazaların Stripe hesabını bağlayabilmesi için Connect client ID ekleyin."
+    }
+  },
+  "paypal": {
+    "title": "PayPal",
+    "setting": {
+      "label": "PayPal",
+      "description": "Web mağazanızda kendi PayPal hesabınızla PayPal ödemeleri alın."
+    },
+    "sandbox": "Sandbox",
+    "liveMode": "Canlı",
+    "fields": {
+      "clientId": "Client ID",
+      "clientSecret": "Secret"
+    },
+    "dialog": {
+      "description": "<link>PayPal Developer → Apps & Credentials</link> bölümünde bir REST uygulaması oluşturun ve Client ID ile Secret değerlerini yapıştırın. Canlı veya sandbox modu anahtarlardan algılanır."
+    }
+  },
+  "pipelines": {
+    "title": "İşlem Hatları",
+    "retry": "Tekrar dene",
+    "save": "Kaydet",
+    "saveFailed": "Değişiklikleriniz kaydedilemedi. Lütfen tekrar deneyin.",
+    "list": {
+      "name": "Ad",
+      "type": "Tür",
+      "items": "Öğeler",
+      "add": "İşlem hattı ekle",
+      "empty": "Henüz işlem hattı yok",
+      "emptyHint": "Anlaşmaları, destek taleplerini veya herhangi bir süreci pano üzerinde kartlar olarak takip etmek için bir işlem hattı oluşturun.",
+      "error": "İşlem hatları yüklenemedi",
+      "contacts": "Kişiler",
+      "addShort": "Ekle",
+      "description": "Fırsatları, talepleri veya herhangi bir süreci aşamalar arasında ilerleyen kartlar olarak takip edin."
+    },
+    "types": {
+      "opportunity": {
+        "label": "Fırsat Merkezi",
+        "description": "Satış anlaşmalarını aşamalar boyunca takip edin. İlk aşama: Potansiyel müşteri."
+      },
+      "ticket": {
+        "label": "Destek Merkezi",
+        "description": "Destek taleplerini yönetin. İlk aşama: Yeni Sorun."
+      },
+      "custom": {
+        "label": "Özel pano",
+        "description": "Kendi sürecinizi oluşturun. İlk aşama: Alım."
+      }
+    },
+    "noun": {
+      "opportunity": {
+        "one": "Fırsat",
+        "many": "Fırsatlar",
+        "add": "Fırsat ekle"
+      },
+      "ticket": {
+        "one": "Talep",
+        "many": "Talepler",
+        "add": "Talep ekle"
+      },
+      "card": {
+        "one": "Kart",
+        "many": "Kartlar",
+        "add": "Kart ekle"
+      }
+    },
+    "create": {
+      "title": "Yeni işlem hattı",
+      "description": "Panonun ne için kullanılacağını seçin, ardından adlandırın.",
+      "type": "Tür",
+      "name": "İşlem hattı adı",
+      "namePlaceholder": "örn. Satış",
+      "submit": "İşlem hattı oluştur",
+      "success": "İşlem hattı oluşturuldu"
+    },
+    "menu": {
+      "open": "İşlem hattı işlemleri",
+      "rename": "Yeniden adlandır",
+      "duplicate": "Çoğalt",
+      "delete": "Sil"
+    },
+    "rename": {
+      "title": "İşlem hattını yeniden adlandır",
+      "submit": "Yeniden adlandır",
+      "success": "İşlem hattı yeniden adlandırıldı"
+    },
+    "duplicate": {
+      "success": "İşlem hattı çoğaltıldı"
+    },
+    "delete": {
+      "title": "İşlem hattını sil",
+      "description": "{name} ve tüm aşamaları ile öğeleri silinecek. Bu işlem geri alınamaz.",
+      "success": "İşlem hattı silindi"
+    },
+    "board": {
+      "title": "Pano",
+      "count": "{count, plural, one {# öğe} other {# öğe}}",
+      "total": "Toplam {value}",
+      "search": "Başlığa, numaraya veya kişiye göre ara",
+      "sort": "Sırala",
+      "filter": "Filtrele",
+      "analytics": "Analiz",
+      "settings": "Ayarlar",
+      "emptyStage": "Bir kartı bu aşamaya taşımak için buraya sürükleyip bırakın.",
+      "loadMore": "Daha fazla yükle",
+      "loadMoreFailed": "Daha fazla öğe yüklenemedi",
+      "error": "Pano yüklenemedi",
+      "processing": "Bu aşama işleniyor…",
+      "moveFailed": "Kart taşınamadı",
+      "sortOptions": {
+        "createdAtDesc": "Oluşturulma tarihi (Yeniden Eskiye)",
+        "createdAtAsc": "Oluşturulma tarihi (Eskiden Yeniye)",
+        "updatedAtDesc": "Güncellenme tarihi (Yeniden Eskiye)",
+        "valueDesc": "Fırsat değeri (Yüksekten Düşüğe)",
+        "valueAsc": "Fırsat değeri (Düşükten Yükseğe)",
+        "dueDateAsc": "Bitiş tarihi (En yakından En uzağa)",
+        "dueDateDesc": "Bitiş tarihi (En uzaktan En yakına)",
+        "priorityDesc": "Öncelik (Yüksekten Düşüğe)",
+        "priorityAsc": "Öncelik (Düşükten Yükseğe)",
+        "updatedAtAsc": "Güncellenme tarihi (Eskiden Yeniye)"
+      },
+      "searchAction": "Ara",
+      "closeSearch": "Aramayı kapat",
+      "cardMenu": "Kart işlemleri",
+      "moveTo": "Şuraya taşı",
+      "unknownContact": "Bilinmeyen kişi",
+      "staleError": "Pano yenilenemedi. Gördükleriniz güncel olmayabilir."
+    },
+    "stage": {
+      "add": "Aşama ekle",
+      "name": "Aşama adı",
+      "namePlaceholder": "Aşama adı",
+      "menu": "Aşama işlemleri",
+      "edit": "Aşamayı düzenle",
+      "delete": "Aşamayı sil",
+      "deleteTitle": "Aşamayı sil",
+      "deleteDescription": "{name} ve üzerindeki tüm öğeler silinecek. Bu işlem geri alınamaz.",
+      "moveItemsTo": "Öğeleri şuraya taşı",
+      "deleteItemsToo": "Öğeleri de sil",
+      "description": "Açıklama",
+      "textColor": "Metin rengi",
+      "backgroundColor": "Arka plan rengi",
+      "saved": "Aşama kaydedildi",
+      "deleted": "Aşama silindi",
+      "queued": "Aşama arka planda temizleniyor.",
+      "resetColor": "Varsayılan",
+      "deleteMoveDescription": "{name} silinecek. Öğeleri {target} aşamasına taşınacak.",
+      "rename": "Yeniden adlandır",
+      "settings": "Ayarlar",
+      "general": "Genel",
+      "color": "Renk",
+      "cancel": "İptal"
+    },
+    "priority": {
+      "low": "Düşük",
+      "medium": "Orta",
+      "high": "Yüksek"
+    },
+    "item": {
+      "loading": "Yükleniyor…",
+      "error": "Bu öğe yüklenemedi",
+      "title": "Başlık",
+      "status": "Durum",
+      "stage": "Aşama",
+      "priority": "Öncelik",
+      "value": "Değer",
+      "dueDate": "Son tarih",
+      "assignees": "Atanan yöneticiler",
+      "description": "Açıklama",
+      "attachments": "Ekler",
+      "attach": "Dosya ekle",
+      "noAttachments": "Ek yok",
+      "removeAttachment": "Eki kaldır",
+      "removeAttachmentDescription": "Dosya bu öğeden kaldırılır ancak medya kitaplığında kalır.",
+      "comments": "Yorumlar",
+      "addComment": "Yorum ekle",
+      "commentPlaceholder": "Bir yorum yazın…",
+      "noComments": "Henüz yorum yok",
+      "deleteComment": "Yorumu sil",
+      "deleteCommentDescription": "Bu yorum silinecek. Bu işlem geri alınamaz.",
+      "activity": "Etkinlik",
+      "noActivity": "Henüz etkinlik yok",
+      "transfer": "İşlem hattına aktar",
+      "transferTitle": "Başka bir işlem hattına aktar",
+      "transferDescription": "Öğe numarasını ve oluşturulma tarihini korur. Diğer işlem hattında aynı referans adına ve türe sahip bir alan varsa özel alanlar da aktarılır.",
+      "destinationPipeline": "Hedef işlem hattı",
+      "destinationStage": "Hedef aşama",
+      "firstStage": "İlk aşama",
+      "choose": "Seçin…",
+      "transferred": "Öğe aktarıldı",
+      "delete": "Sil",
+      "deleteDescription": "Bir öğe silinecek. Bu işlem geri alınamaz.",
+      "deleted": "Öğe silindi",
+      "number": "Numara",
+      "createdBy": "Oluşturan",
+      "createdByValue": "{name}, {date}",
+      "inbox": "Gelen kutusu",
+      "moreActions": "Diğer işlemler",
+      "noDescription": "Açıklama yok",
+      "yes": "Evet",
+      "no": "Hayır",
+      "assigneesMembers": "Temsilciler",
+      "assigneesTeams": "Gelen kutusu ekipleri",
+      "assigneesSearch": "Yönetici veya ekip ara…",
+      "assigneesEmpty": "Sonuç yok",
+      "assigneesPlaceholder": "Yönetici veya ekip seçin",
+      "olderComments": "Eski yorumları göster",
+      "olderActivity": "Daha eski etkinlikleri göster",
+      "activityFilter": "Filtrele",
+      "activityFilterCount": "{count, plural, one {# filtre} other {# filtre}}",
+      "activityFilterClear": "Tümünü göster",
+      "noFilteredActivity": "Bu filtreyle eşleşen etkinlik yok.",
+      "activityGroup": {
+        "lifecycle": "Oluşturma ve aktarma",
+        "stage": "Aşama",
+        "status": "Durum",
+        "value": "Değer",
+        "priority": "Öncelik",
+        "dueDate": "Son tarih",
+        "details": "Başlık, açıklama ve alanlar",
+        "assignees": "Atananlar",
+        "comments": "Yorumlar",
+        "attachments": "Ekler"
+      }
+    },
+    "activity": {
+      "created": "Oluşturuldu",
+      "stageChanged": "Başka bir aşamaya taşındı",
+      "statusChanged": "Durum değişti",
+      "valueChanged": "Değer değişti",
+      "priorityChanged": "Öncelik değişti",
+      "dueDateChanged": "Son tarih değişti",
+      "titleChanged": "Başlık değişti",
+      "descriptionChanged": "Açıklama değişti",
+      "fieldValuesChanged": "Özel alanlar değişti",
+      "assigneesChanged": "Atananlar değişti",
+      "attachmentAdded": "Ek eklendi",
+      "attachmentRemoved": "Ek kaldırıldı",
+      "commentAdded": "Yorum eklendi",
+      "commentDeleted": "Yorum silindi",
+      "transferred": "Başka bir işlem hattından aktarıldı",
+      "deleted": "Silindi"
+    },
+    "activityActor": {
+      "flow": "Akış",
+      "trigger": "Tetikleyici",
+      "workspaceToken": "API",
+      "system": "Sistem",
+      "formerMember": "Eski üye"
+    },
+    "add": {
+      "changeContact": "Başka bir kişi seçin",
+      "success": "Oluşturuldu",
+      "stepContact": "Bir kişi seçin",
+      "stepDetails": "{noun} ayrıntıları",
+      "contact": "Kişi",
+      "addNewContact": "Yeni ekle"
+    },
+    "filter": {
+      "title": "Filtrele",
+      "status": "Durum",
+      "statusLabels": {
+        "open": "Açık",
+        "won": "Kazanıldı",
+        "lost": "Kaybedildi"
+      },
+      "priority": "Öncelik",
+      "assignee": "Atanan yöneticiler",
+      "value": "{noun} değeri",
+      "min": "Min",
+      "max": "Maks",
+      "dueDate": "Son tarih",
+      "createdAt": "Oluşturulma tarihi",
+      "from": "Başlangıç",
+      "to": "Bitiş",
+      "clear": "Filtreleri temizle",
+      "apply": "Uygula",
+      "back": "Geri",
+      "updatedAt": "Güncellenme tarihi",
+      "resolvedOn": "{noun} çözümlenme tarihi",
+      "statusChangedOn": "Durum değişikliği tarihi",
+      "stageChangedOn": "Aşama değişikliği tarihi",
+      "lastCommentOn": "Son yorum tarihi",
+      "customFields": "Özel alanlar",
+      "any": "Herhangi biri",
+      "yes": "Evet",
+      "no": "Hayır",
+      "notResolvedOn": "{noun} çözümlenmeme tarihi",
+      "equal": "Eşittir",
+      "different": "Farklıdır",
+      "reset": "Sıfırla",
+      "presets": {
+        "thisWeek": "Bu hafta",
+        "lastWeek": "Geçen hafta",
+        "last14": "Son 14 gün",
+        "thisYear": "Bu yıl",
+        "lastYear": "Geçen yıl",
+        "tomorrow": "Yarın",
+        "next7": "7 gün içinde",
+        "next14": "14 gün içinde",
+        "next30": "30 gün içinde",
+        "allTime": "Tüm zamanlar"
+      },
+      "pickDate": "Bir tarih seçin",
+      "activity": "Etkinlik",
+      "activityKinds": "Değişiklik türü",
+      "activityActors": "Yapan",
+      "activityWhen": "Ne zaman",
+      "activityAutomation": "Otomasyon"
+    },
+    "analytics": {
+      "title": "Analiz",
+      "loading": "İstatistikler yükleniyor…",
+      "error": "İstatistikler yüklenemedi",
+      "created": "Oluşturulan",
+      "won": "Kazanılan",
+      "wonValue": "Kazanılan değer",
+      "lost": "Kaybedilen",
+      "lostValue": "Kaybedilen değer",
+      "admin": "Yönetici",
+      "automation": "Otomasyon",
+      "back": "Geri",
+      "admins": "Yöneticiler",
+      "chart": {
+        "created": "Günlük yeni",
+        "won": "Günlük kazanılan",
+        "lost": "Günlük kaybedilen",
+        "wonValue": "Günlük kazanılan değer",
+        "lostValue": "Günlük kaybedilen değer"
+      },
+      "pie": {
+        "created": "Yöneticiye göre oluşturulan",
+        "won": "Yöneticiye göre kazanılan",
+        "lost": "Yöneticiye göre kaybedilen",
+        "other": "Diğer",
+        "empty": "Veri yok"
+      }
+    },
+    "settings": {
+      "title": "İşlem hattı ayarları",
+      "general": "Genel",
+      "fields": "Özel alanlar",
+      "display": "Görünüm",
+      "permissions": "İzinler",
+      "saved": "Ayarlar kaydedildi",
+      "referenceName": "Referans adı",
+      "referenceNameHint": "pipelines.reference_name.stage_name değişkenlerinde kullanılır. Değiştirmek, eski adı kullanan mesajları bozar.",
+      "referenceNameFormat": "Küçük harf, rakam ve alt çizgi kullanın, harfle başlayın (örn. close_date).",
+      "currency": "Para birimi",
+      "currencyFollowCountry": "Çalışma alanının ülkesi · {country} · {currency}",
+      "currencyFollowNoCountry": "Çalışma alanı ülkesi yok · {currency}",
+      "currencyHint": "Çalışma alanının Hedef Ülkesini (Ayarlar → Genel) izler ve o değiştiğinde güncellenir. Ülke ayarlanmamışsa USD kullanılır. Değerler asla dönüştürülmez.",
+      "assignContact": "Bir öğe atandığında kişiyi bir yöneticiye ata",
+      "limit": "Kişi başına açık öğe sayısını sınırla",
+      "statusLabels": "Durum etiketleri",
+      "status": {
+        "open": "Açık",
+        "won": "Kazanıldı",
+        "lost": "Kaybedildi"
+      },
+      "features": "Görünür özellikler",
+      "cardElements": "Kart öğeleri",
+      "card": {
+        "contactPhone": "Kişi telefonu",
+        "contactEmail": "Kişi e-postası",
+        "createdAt": "Oluşturulma tarihi",
+        "updatedAt": "Güncellenme tarihi",
+        "assignees": "Atanan yöneticiler",
+        "comments": "Yorumlar",
+        "cardId": "Öğe numarası",
+        "priority": "Öncelik",
+        "value": "Değer",
+        "dueDate": "Son tarih"
+      },
+      "noFields": "Henüz özel alan yok",
+      "fieldName": "Alan adı",
+      "fieldReference": "Referans adı",
+      "fieldType": "Alan türü",
+      "required": "Zorunlu",
+      "requiredShort": "zorunlu",
+      "addField": "Alan ekle",
+      "fieldAdded": "Alan eklendi",
+      "deleteField": "Alanı sil",
+      "permissionsHint": "Çalışma alanı sahipleri ve yöneticileri her zaman tam erişime sahiptir. Diğer üyelere bu işlem hattında neler yapabileceklerini belirleyin.",
+      "revoke": "İptal et",
+      "permission": {
+        "view": "Görüntüle",
+        "edit": "Düzenle",
+        "delete": "Sil",
+        "settings": "Ayarlar"
+      },
+      "noMembers": "Yapılandırılacak başka üye yok",
+      "confirmDeleteField": "Bu alan ve tüm öğelerdeki değerleri silinsin mi?",
+      "adminPermissions": "Yönetici izinleri",
+      "cardVisibleElements": "Kartta görünen öğeler"
+    },
+    "panel": {
+      "empty": "Bu kişi için işlem hattı öğesi yok",
+      "error": "İşlem hattı öğeleri yüklenemedi",
+      "choosePipeline": "Bir işlem hattı seçin",
+      "add": "Yeni ekle"
+    },
+    "variables": {
+      "group": "İşlem Hatları",
+      "attributes": {
+        "name": "Öğe adı",
+        "stageName": "Aşama",
+        "status": "Durum",
+        "priority": "Öncelik",
+        "value": "Değer",
+        "assignedAdmins": "Atanan yöneticiler",
+        "createdDate": "Oluşturulma tarihi",
+        "dueDate": "Son tarih",
+        "updatedDate": "Güncellenme tarihi",
+        "id": "Öğe kimliği"
+      }
+    }
+  },
+  "oauthConsent": {
+    "title": "Authorize {clientName}",
+    "description": "This application is requesting access to your workspace.",
+    "permissionsTitle": "Requested permissions",
+    "signedInAs": "Signed in as",
+    "approve": "Approve",
+    "deny": "Deny",
+    "failed": "Yetkilendirme tamamlanamadı. Lütfen tekrar deneyin.",
+    "workspaceLabel": "Çalışma alanı",
+    "workspacePlaceholder": "Bir çalışma alanı seçin",
+    "workspaceHint": "{clientName} yalnızca bu çalışma alanında işlem yapabilir. Daha sonra değiştirmek için bağlantıyı kesip yeniden bağlanın.",
+    "noWorkspaces": "Hiçbir çalışma alanında yönetici değilsiniz, bu nedenle bu uygulamayı yetkilendiremezsiniz."
+  },
+  "chatbotxMcp": {
+    "title": "ChatbotX MCP",
+    "workspaceId": "Workspace ID",
+    "streamableUrl": "Streamable HTTP URL",
+    "sseUrl": "Legacy SSE URL",
+    "guide": {
+      "title": "Connect an MCP client",
+      "step1": "Copy the configuration for your MCP client.",
+      "step2": "Paste it into the client.",
+      "step3": "The client opens a browser. Sign in and approve access.",
+      "step4": "Your workspace tools appear after approval.",
+      "ownerOnly": "Only workspace owners and superAdmins can authorize MCP access."
+    },
+    "clients": {
+      "claudeCode": "Claude Code",
+      "claudeDesktop": "Claude Desktop",
+      "cursor": "Cursor",
+      "chatgpt": "ChatGPT",
+      "stdio": "stdio fallback",
+      "stdioHint": "Use a workspace token for this fallback."
+    },
+    "grants": {
+      "title": "Authorized applications",
+      "description": "Grants belong to your account and apply to every workspace you administer; revoking disconnects the client everywhere.",
+      "empty": "OAuth grants appear here after you connect an MCP client.",
+      "client": "Client",
+      "scopes": "Scopes",
+      "firstAuthorizedAt": "First authorized",
+      "lastRefreshedAt": "Last refreshed",
+      "activeUntil": "Active until",
+      "noActiveToken": "No active token",
+      "revoke": "Revoke",
+      "revokeConfirmTitle": "Revoke application access?",
+      "revokeConfirmDescription": "Revoke access for {clientName}? This disconnects the client everywhere.",
+      "revokedSuccess": "Application access revoked.",
+      "notFound": "OAuth grant no longer exists"
+    }
+  },
+  "connectionStatus": {
+    "column": "Status",
+    "reconnecting": "The provider is reconnecting this account. Messages are held until it finishes.",
+    "accessRemoved": "The provider removed access to this account. Reconnect to resume.",
+    "needsReconnect": "Reconnect required.",
+    "inactive": "This channel is inactive."
+  },
+  "inbox": {
+    "createAppointment": {
+      "title": "Randevu oluştur",
+      "description": "Kişiye bir takvim için rezervasyon bağlantısı gönderin veya onun adına rezervasyon yapmak için açın.",
+      "inactive": "Pasif",
+      "sendLink": "Takvim bağlantısını gönder",
+      "goToLink": "Takvim bağlantısına git",
+      "sent": "Rezervasyon bağlantısı gönderildi.",
+      "failed": "Rezervasyon bağlantısı oluşturulamadı.",
+      "noCalendars": "Henüz randevu takvimi yok.",
+      "manageCalendars": "Randevu takvimlerini yönet"
+    }
+  },
+  "templateStore": {
+    "title": "Şablon mağazası",
+    "description": "Herkese açık mağaza için onaylanan şablonlar. Her şablon seçtiğiniz kategorilerde görünür.",
+    "add": "Ekle",
+    "addCategory": "Kategori ekle",
+    "renameCategory": "Yeniden adlandır",
+    "editCategories": "Kategorileri düzenle",
+    "templateId": "Şablon kimliği",
+    "template": "Şablon",
+    "categories": "Kategoriler",
+    "categoriesPlaceholder": "Kategori yok",
+    "close": "Kapat",
+    "removeChip": "{name} kaldır",
+    "categoriesHint": "İsteğe bağlı. Kategori yoksa şablon yalnızca “Tümü” altında görünür.",
+    "noCategoriesYet": "Henüz kategori yok.",
+    "added": "Şablon mağazaya eklendi",
+    "updated": "Kategoriler güncellendi",
+    "removed": "Şablon mağazadan kaldırıldı",
+    "removeError": "Şablon kaldırılamadı",
+    "removeTitle": "{name} kaldırılsın mı?",
+    "removeDescription": "Mağazadan kaybolur. Şablonun kendisi ve kurulumları etkilenmez.",
+    "saveError": "Kaydedilemedi",
+    "deleteError": "Kategori silinemedi",
+    "categoryCreated": "Kategori oluşturuldu",
+    "categoryUpdated": "Kategori güncellendi",
+    "categoryMoved": "Kategori taşındı",
+    "categoryDeleted": "Kategori silindi",
+    "deleteCategoryTitle": "{name} silinsin mi?",
+    "deleteCategoryDescription": "Bu kategorideki şablonlar: {count}. Mağazada kalır ve “Tümü” altında görünür.",
+    "moveUp": "Yukarı taşı",
+    "moveDown": "Aşağı taşı",
+    "searchPlaceholder": "Ada veya şablon kimliğine göre ara",
+    "emptyListings": "Henüz onaylanmış şablon yok.",
+    "noMatches": "Aramanız veya filtrelerinizle eşleşen şablon yok.",
+    "allCategories": "Tüm kategoriler",
+    "allStatuses": "Tüm durumlar",
+    "installs": "Kurulumlar",
+    "owner": "Sahip",
+    "statusLabel": "Durum",
+    "openInStore": "Mağazayı aç",
+    "storeUnavailable": "Mağazanız kendi alan adınızda açılır. Açmak için bir tane ayarlayın.",
+    "openTemplatePage": "Şablon sayfasını aç",
+    "remove": "Kaldır",
+    "status": {
+      "published": "Yayında",
+      "templateUnavailable": "Şablon kullanılamıyor",
+      "shareDisabled": "Paylaşım bağlantısı kapalı"
+    },
+    "errors": {
+      "templateUnavailable": "Bu kimliğe sahip hiçbir şablon mağazanıza eklenemez.",
+      "listingExists": "Bu şablon zaten mağazanızda.",
+      "listingUnavailable": "Bu mağaza kaydı artık yok.",
+      "listingLimit": "Bir mağaza en fazla {templateLimit} şablon içerebilir.",
+      "categoryUnavailable": "Bu kategori artık yok.",
+      "categoryNameTaken": "Bu ada sahip bir kategori zaten var.",
+      "categoryLimit": "Bir mağazada en fazla {categoryLimit} kategori olabilir."
+    },
+    "store": {
+      "subtitle": "Tek tıkla kurabileceğiniz hazır şablonlar.",
+      "pageTitle": "{tenantName} – Şablon mağazası",
+      "empty": "Mağazada henüz şablon yok.",
+      "search": "Şablon ara",
+      "all": "Tümü",
+      "categories": "Mağaza kategorileri",
+      "noResults": "Aramanızla eşleşen şablon yok.",
+      "clearSearch": "Aramayı temizle",
+      "by": "Yayıncı: {publisherName}"
+    },
+    "picker": {
+      "placeholder": "Bir şablon seçin",
+      "search": "Ada veya şablon kimliğine göre ara",
+      "empty": "Eklenebilecek şablon yok.",
+      "error": "Şablonlar yüklenemedi.",
+      "retry": "Tekrar dene",
+      "meta": "ID {id} · {workspace}"
+    }
   }
 }

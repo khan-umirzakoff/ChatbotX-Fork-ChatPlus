@@ -5,16 +5,47 @@ const editionRule = z
   .enum(["community", "enterprise", "cloud"])
   .default("community")
 
+export const DEFAULT_SCHEDULER_TICK_INTERVAL_MS = 5000
+export const MIN_SCHEDULER_TICK_INTERVAL_MS = 100
+export const MAX_SCHEDULER_TICK_INTERVAL_MS = 10_000
+
 export const env = createEnv({
   server: {
     NEXT_PUBLIC_EDITION: editionRule,
     QUOTA_SYNC_INTERVAL_SECONDS: z.coerce.number().int().min(10).default(60),
+    // How often the sequence producer polls each of its buckets. Idle Redis
+    // cost is `buckets x 2 x 1000 / interval` ZRANGEBYSCORE per second (256
+    // buckets: ~102/s at 5000ms). Without backlog a due dispatch waits up to
+    // one interval plus the tick time, once per step: every step goes back
+    // through the bucket, so consecutive zero-delay steps each add one wait.
+    // Backlog, lock contention or event-loop delay add more. Each tick claims
+    // at most `claimLimit` (100) dispatches per bucket from each of the
+    // schedule and retry sets, so a bucket sustains at most
+    // `claimLimit x 1000 / interval` per set.
+    SCHEDULER_TICK_INTERVAL_MS: z.coerce
+      .number()
+      .int()
+      .min(MIN_SCHEDULER_TICK_INTERVAL_MS)
+      .max(MAX_SCHEDULER_TICK_INTERVAL_MS)
+      .default(DEFAULT_SCHEDULER_TICK_INTERVAL_MS),
+    // Optional upper bound for draining every worker in the process on SIGTERM
+    // (lib/shutdown). Consolidated Docker modes default below the 10s stop
+    // timeout; for other modes, set this with the orchestrator grace period.
+    WORKER_SHUTDOWN_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1000)
+      .max(600_000)
+      .optional(),
     WEBHOOK_WORKER_CONCURRENCY: z.coerce
       .number()
       .int()
       .min(1)
       .max(200)
       .default(50),
+    // A slot is mostly idle I/O: a message step holds it while the `chat` queue
+    // sends. Raise together with CHAT_WORKER_CONCURRENCY (keep chat at least half
+    // of this) and DATABASE_POOL_MAX; see docs/scaling-messaging.md.
     INTEGRATION_WORKER_CONCURRENCY: z.coerce
       .number()
       .int()
@@ -30,9 +61,26 @@ export const env = createEnv({
     // starves the latency-sensitive integration queue. I/O-bound → higher
     // default than integration; tune per node bandwidth / Graph rate limits.
     LOW_WORKER_CONCURRENCY: z.coerce.number().int().min(1).max(200).default(30),
+    // Template install / sync / uninstall jobs: each is one long transaction,
+    // and saving a widely installed template fans out a sync per installation.
+    // Kept small so that burst queues up instead of flooding Postgres.
+    TEMPLATE_WORKER_CONCURRENCY: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(20)
+      .default(2),
     // Leaderboard scoring jobs; bounded so a livestream comment burst queues
     // up instead of flooding Postgres.
     LEADERBOARD_WORKER_CONCURRENCY: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .default(10),
+    // FB Marketing Messages campaign steps (token snapshot, day start, send
+    // batches). Each dispatch job is capped at ~45s of Meta calls.
+    MARKETING_MESSAGE_WORKER_CONCURRENCY: z.coerce
       .number()
       .int()
       .min(1)
@@ -69,6 +117,24 @@ export const env = createEnv({
       .min(1)
       .max(100 * 1024 * 1024)
       .default(25 * 1024 * 1024),
+    // Muse needs its own cap: a 10-minute 24 kHz mono WAV (~28.8 MB) is over
+    // HEAVY_MAX_AUDIO_BYTES. Bounded by the client's 32 MiB request limit
+    // minus multipart overhead (`MUSE_TRANSCRIBE_MAX_REQUEST_BYTES` and
+    // `MUSE_TRANSCRIBE_MULTIPART_OVERHEAD_BYTES` in @chatbotx.io/ai/server).
+    MUSE_TRANSCRIBE_MAX_AUDIO_BYTES: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(32 * 1024 * 1024 - 64 * 1024)
+      .default(32 * 1024 * 1024 - 64 * 1024),
+    // One Muse Speech to Text attempt (download + upload + transcription).
+    // Also sizes the step's completion deadline and the worker locks.
+    MUSE_TRANSCRIBE_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(5000)
+      .max(9 * 60 * 1000)
+      .default(9 * 60 * 1000),
     HEAVY_MAX_IMAGE_BYTES: z.coerce
       .number()
       .int()

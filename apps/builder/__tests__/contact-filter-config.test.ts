@@ -585,6 +585,7 @@ describe("contact filter field config helpers", () => {
             label: "condition.fields.fromGoogleAd",
             value: "fromGoogleAd",
           },
+          { label: "condition.fields.clickedAd", value: "clickedAd" },
           {
             label: "condition.fields.ctwaConversion",
             value: "ctwaConversion",
@@ -833,6 +834,21 @@ describe("contact filter field config helpers", () => {
       ).toBe("VIP, Late tag, condition.unknownValue")
     })
 
+    test("formatFilterConditionValue labels a deleted activity reference with its id", () => {
+      const fieldConfig: FieldConfig = {
+        name: "executedFlow",
+        formField: "multiSelect",
+        group: "analytics",
+        valueLabels: [{ label: "Welcome", value: "1" }],
+      }
+      const tWithParams = (key: string, params?: Record<string, string>) =>
+        params ? `${key}:${params.id}` : key
+
+      expect(
+        formatFilterConditionValue(["1", "42"], fieldConfig, tWithParams),
+      ).toBe("Welcome, condition.deletedValue:42")
+    })
+
     test("formatFilterConditionValue falls back to picker options until labels load", () => {
       const fieldConfig: FieldConfig = {
         name: "tags",
@@ -863,6 +879,14 @@ describe("contact filter field config helpers", () => {
           inboxes: [],
           members: [{ id: "7", name: "Alice" }],
           inboxTeams: [{ id: "3", name: "Sales" }],
+          flows: [],
+          flowNodes: [],
+          keywords: [],
+          whatsappFlows: [],
+          emailTopics: [],
+          pipelines: [],
+          pipelineStages: [],
+          ads: [],
         },
       })
       const byName = (name: string) =>

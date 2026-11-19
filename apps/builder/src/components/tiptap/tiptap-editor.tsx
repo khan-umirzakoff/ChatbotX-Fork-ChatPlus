@@ -1,6 +1,5 @@
 "use client"
 
-import Emoji, { gitHubEmojis } from "@tiptap/extension-emoji"
 import Mention from "@tiptap/extension-mention"
 import Placeholder from "@tiptap/extension-placeholder"
 import { EditorContent, useEditor } from "@tiptap/react"
@@ -13,6 +12,7 @@ import {
   toVariableMentionAttrs,
 } from "./extensions/variable-injection/mention"
 import variableInjectionSuggestion from "./extensions/variable-injection/suggestion"
+import { configureFlowEditorEmoji } from "./fully-qualified-github-emojis"
 import { htmlToPlainTextWithBlocks } from "./html-to-plain-text"
 import "./tiptap-editor.css"
 import type { ChannelType } from "@chatbotx.io/database/partials"
@@ -26,6 +26,7 @@ import EmojiPicker, { type EmojiClickData } from "emoji-picker-react"
 import { CodeXml, Smile } from "lucide-react"
 import { type ReactNode, useEffect, useRef, useState } from "react"
 import { usePromptVariableOptions } from "./use-prompt-variable-options"
+import { useReadOnlyWhenLocked } from "./use-read-only-when-locked"
 
 type TiptapEditorProps = {
   initValue?: string
@@ -34,6 +35,7 @@ type TiptapEditorProps = {
   enableEmoji?: boolean
   channels?: ChannelType[]
   includeCouponVariables?: boolean
+  includePipelineVariables?: boolean
   includeRawCustomFieldVariables?: boolean
   includeBotFieldVariables?: boolean
   onChange?: (content: string) => void
@@ -50,6 +52,7 @@ export const TiptapEditor = ({
   onChange,
   channels,
   includeCouponVariables = false,
+  includePipelineVariables = false,
   includeRawCustomFieldVariables = false,
   includeBotFieldVariables = false,
   placeholder = "Type a message...",
@@ -63,6 +66,7 @@ export const TiptapEditor = ({
   const promptVariableOptions = usePromptVariableOptions({
     channels,
     includeCouponVariables,
+    includePipelineVariables,
     includeRawCustomFieldVariables,
     includeBotFieldVariables,
   })
@@ -82,15 +86,7 @@ export const TiptapEditor = ({
           listOfPromptVariables: () => promptVariableOptionsRef.current,
         }),
       }),
-      ...(enableEmoji
-        ? [
-            Emoji.configure({
-              emojis: gitHubEmojis,
-              enableEmoticons: true,
-              suggestion: emojiSuggestion,
-            }),
-          ]
-        : []),
+      ...(enableEmoji ? [configureFlowEditorEmoji(emojiSuggestion)] : []),
       Placeholder.configure({
         placeholder,
       }),
@@ -133,6 +129,8 @@ export const TiptapEditor = ({
       tiptapEditor.commands.focus()
     }
   }
+
+  useReadOnlyWhenLocked(tiptapEditor)
 
   useEffect(() => {
     if (tiptapEditor && initValue) {

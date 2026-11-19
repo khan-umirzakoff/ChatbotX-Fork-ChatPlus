@@ -6,12 +6,14 @@ import {
 } from "@chatbotx.io/analytics"
 import {
   appointmentCalendarService,
-  broadcastToGuestParty,
   contactInboxService,
   conversationService,
+  messageService,
   type PreparedProductMessage,
   productMessageService,
-  publishToWorkspaceParty,
+  publishGuestRealtimeEvent,
+  queueMessageCreatedEvent,
+  resolveCollectionStep,
   resolveMediaUrl,
   resolveTenantSettings,
 } from "@chatbotx.io/business"
@@ -23,10 +25,7 @@ import {
   messageTypes,
   senderTypes,
 } from "@chatbotx.io/database/partials"
-import {
-  createMessageRepository,
-  type MessageWithAttachments,
-} from "@chatbotx.io/database/repositories"
+import type { MessageWithAttachments } from "@chatbotx.io/database/repositories"
 import type { messageModel } from "@chatbotx.io/database/schema"
 import type {
   AttachmentModel,
@@ -47,14 +46,16 @@ import {
   extractMetadata,
   getChannelFlowPolicy,
   isBulkOutboundMetadata,
+  isNativeButtonType,
   isProactiveOutboundMetadata,
   messageEventTypeSchema,
   type SendCardStepSchema,
+  sendsAsNativeCopyButton,
   stepSupport,
   stepTypes,
 } from "@chatbotx.io/flow-config"
 import { logDiagnostic } from "@chatbotx.io/logger"
-import { RealtimeEventType } from "@chatbotx.io/partysocket-config"
+import { RealtimeEventType } from "@chatbotx.io/realtime-protocol"
 import {
   IntegrationException,
   type MessageButtonTemplate,
@@ -76,6 +77,8 @@ import {
   settleCommentAutomationFailure,
 } from "../../lib/comment-automation-anchor"
 import { logger } from "../../lib/logger"
+import { resolveCallPhoneButtons } from "../utils/call-phone-buttons"
+import { warnUncopyableCopyTextButtons } from "../utils/copy-text-buttons"
 import { resolveMiniAppLinks } from "../utils/mini-app-buttons"
 import { mapStepButtons } from "../utils/step-buttons"
 import { resolveStoredStepContent } from "../utils/stored-step-content"
@@ -171,13 +174,21 @@ const findTargetContactInbox = ({
 }
 
 export const convertButtonsToTemplate = (props: {
+  channel: string
   flowId: string
   flowVersionId?: string
   buttons: ButtonStepProps[]
   metadata?: MetadataPayload
   contactInboxId?: string
 }): MessageButtonTemplate[] => {
-  const { flowId, flowVersionId, buttons, metadata, contactInboxId } = props
+  const { channel, flowId, flowVersionId, buttons, metadata, contactInboxId } =
+    props
+  // A channel that cannot dial sends a call button as a reply button (see
+  // `resolveCallPhoneButtons`), so it is stored as one too.
+  const dialsCallButtons = isNativeButtonType(
+    channel,
+    buttonTypes.enum.callPhoneNumber,
+  )
   const broadcastId = extractMetadata("broadcastId", metadata)
   const sequenceStepId = extractMetadata("sequenceStepId", metadata)
   // Read the same way as the two above, and — critically — the same way each
@@ -203,6 +214,31 @@ export const convertButtonsToTemplate = (props: {
         label: button.label,
         buttonType: "url",
         url: appendCodeToMagicLink(button.beforeStep.url, buttonPayload),
+        postback: buttonPayload,
+      }
+    }
+
+    if (
+      button.buttonType === buttonTypes.enum.callPhoneNumber &&
+      dialsCallButtons
+    ) {
+      return {
+        id: button.id,
+        label: button.label,
+        buttonType: "phoneNumber",
+        phoneNumber: button.beforeStep.phoneNumber,
+        postback: buttonPayload,
+      }
+    }
+
+    // A Copy Text button the channel does not copy natively is sent — and so
+    // stored — as a reply button (see `sendsAsNativeCopyButton`).
+    if (sendsAsNativeCopyButton(channel, button)) {
+      return {
+        id: button.id,
+        label: button.label,
+        buttonType: "copyText",
+        copyText: button.beforeStep.text,
         postback: buttonPayload,
       }
     }
@@ -252,6 +288,7 @@ const signBookingButtonIfNeeded = async (props: {
   }
 
   const token = await signAppointmentWebviewToken({
+    source: "flow",
     mode: "book",
     workspaceId: props.workspaceId,
     calendarId: calendar.id,
@@ -386,13 +423,14 @@ const wrapOpenLinksInStep = async (props: {
   )
 
 const convertCardsToTemplate = (props: {
+  channel: string
   flowId: string
   flowVersionId?: string
   cards: SendCardStepSchema[]
   metadata?: MetadataPayload
   contactInboxId?: string
 }): MessageCardTemplate[] => {
-  const { flowId, flowVersionId, cards, metadata, contactInboxId } = props
+  const { cards, ...buttonProps } = props
 
   return cards.map((card) => ({
     id: card.id,
@@ -401,13 +439,7 @@ const convertCardsToTemplate = (props: {
     imageUrl: "image" in card ? card.image?.url : undefined,
     buttons:
       "buttons" in card
-        ? convertButtonsToTemplate({
-            flowId,
-            flowVersionId,
-            buttons: card.buttons,
-            metadata,
-            contactInboxId,
-          })
+        ? convertButtonsToTemplate({ ...buttonProps, buttons: card.buttons })
         : undefined,
   }))
 }
@@ -471,9 +503,12 @@ export async function sendFlowStep({
   isBulkBroadcast,
   richResponse,
   quickReplies,
+  presetQuickReplies,
   sendFrom,
+  sentByUserId,
   commentAnchor,
   appointmentId,
+  statusBranches,
 }: ChatJobSendFlowStep["data"]) {
   const conversation = await conversationService.findByIdWithContactUnscoped({
     id: conversationId,
@@ -559,6 +594,8 @@ export async function sendFlowStep({
         trackingContext,
         metadata,
         isBulkBroadcast,
+        sentByUserId,
+        statusBranches,
       })
     } catch (error) {
       logger.error(
@@ -594,6 +631,7 @@ export async function sendFlowStep({
         trackingContext,
         metadata,
         isBulkBroadcast,
+        sentByUserId,
       })
     } catch (error) {
       logger.error(
@@ -644,16 +682,38 @@ export async function sendFlowStep({
   // point — every string leaf is copy an author wrote for a contact to read.
   // Code- or data-carrying steps (external request, execute JavaScript) resolve
   // through their own handlers and deliberately leave it off.
-  const resolvedStep = await resolveContactVariablesDeep(
+  const authoredStep = await resolveContactVariablesDeep(
     conversation.contactId,
     step,
     {
       contactInbox: targetContactInbox,
       conversation,
       ...(appointmentId ? { appointmentId } : {}),
+      ...(sentByUserId ? { sentByUserId } : {}),
     },
     { spintax: true },
   )
+
+  // A collection becomes its product cards for this contact only now, after
+  // the variable pass: product names are the store's data, not authored
+  // copy, so "{Sale|Hot}" in a name is sent as written. The card links are
+  // signed for the contact by the resolver itself.
+  const resolvedStep =
+    authoredStep.stepType === stepTypes.enum.sendCollection
+      ? await resolveCollectionStep({
+          workspaceId: conversation.workspaceId,
+          contactId: conversation.contactId,
+          contactInboxId: targetContactInbox.id,
+          step: authoredStep,
+        })
+      : authoredStep
+  if (!resolvedStep) {
+    logger.debug(
+      { conversationId, flowId, stepId: step.id },
+      "Skipping a product collection that matched no product",
+    )
+    return
+  }
 
   if (isBlankTextCarrierStep(resolvedStep as SendFlowStepData)) {
     logger.warn(
@@ -683,11 +743,24 @@ export async function sendFlowStep({
       flowId,
       metadata,
     })
-    const [repository, tenantSettings] = await Promise.all([
-      createMessageRepository(),
-      resolveTenantSettings({ workspaceId: conversation.workspaceId }),
-    ])
+    const tenantSettings = await resolveTenantSettings({
+      workspaceId: conversation.workspaceId,
+    })
     const { appUrl, storageUrl } = tenantSettings
+    // Call Phone Number buttons get a validated E.164 number (or become inert)
+    // and, on channels that cannot dial, the number in their title.
+    const stepWithCallButtons = await resolveCallPhoneButtons({
+      workspaceId: conversation.workspaceId,
+      flowId,
+      channel: targetContactInbox.channel,
+      step: resolvedStep as SendFlowStepData,
+    })
+    warnUncopyableCopyTextButtons({
+      workspaceId: conversation.workspaceId,
+      flowId,
+      channel: targetContactInbox.channel,
+      step: stepWithCallButtons,
+    })
     // Open Mini App buttons become link buttons first, so everything below
     // (booking signing, the `/go` wrap, every channel encoder) only ever sees
     // `openWebsite`. The Mini App URL is same-origin, so `/go` leaves it alone.
@@ -703,7 +776,7 @@ export async function sendFlowStep({
       flowVersionId,
       metadata,
       appUrl,
-      step: resolvedStep as SendFlowStepData,
+      step: stepWithCallButtons,
       quickReplies,
     })
     const stepWithSignedBookingLinks = await signBookingLinksInStep({
@@ -762,20 +835,28 @@ export async function sendFlowStep({
         flowVersionId,
       }
 
-    const canonicalQuickReplies =
-      quickRepliesForSend && quickRepliesForSend.length > 0
+    // The caller's own quick replies (their payloads are not flow buttons) go
+    // after the step's, through the same send path as every other quick reply.
+    const allQuickReplies = [
+      ...(quickRepliesForSend && quickRepliesForSend.length > 0
         ? convertButtonsToTemplate({
+            channel: targetContactInbox.channel,
             flowId,
             flowVersionId,
             buttons: quickRepliesForSend,
             metadata,
             contactInboxId: targetContactInbox.id,
           })
-        : undefined
+        : []),
+      ...(presetQuickReplies ?? []),
+    ]
+    const canonicalQuickReplies =
+      allQuickReplies.length > 0 ? allQuickReplies : undefined
 
     const canonicalStepButtons =
       "buttons" in stepForSend && stepForSend.buttons.length > 0
         ? convertButtonsToTemplate({
+            channel: targetContactInbox.channel,
             flowId,
             flowVersionId,
             buttons: stepForSend.buttons,
@@ -812,6 +893,7 @@ export async function sendFlowStep({
         payload: {
           templateType: "carousel",
           cards: convertCardsToTemplate({
+            channel: targetContactInbox.channel,
             flowId,
             flowVersionId,
             cards: stepForSend.cards,
@@ -871,8 +953,8 @@ export async function sendFlowStep({
 
     // Upload file(s) if any
     const attachmentInputs: Parameters<
-      typeof repository.createWithAttachments
-    >[1][0][] = []
+      typeof messageService.createWithAttachments
+    >[0]["attachments"] = []
     if ("url" in stepForSend) {
       const uploadedFile = await uploadFileFromUrl(
         stepForSend.url,
@@ -898,8 +980,11 @@ export async function sendFlowStep({
     }
 
     message = attachmentInputs.length
-      ? await repository.createWithAttachments(messageInput, attachmentInputs)
-      : await repository.create(messageInput)
+      ? await messageService.createWithAttachments({
+          message: messageInput,
+          attachments: attachmentInputs,
+        })
+      : await messageService.create(messageInput)
 
     message = await resolveMessageAttachmentUrls(message, {
       workspaceId: conversation.workspaceId,
@@ -985,10 +1070,7 @@ export async function sendFlowStep({
         })
 
     if (!isBulkOutbound) {
-      publishToWorkspaceParty(conversation.workspaceId, {
-        eventType: RealtimeEventType.messageCreated,
-        data: message,
-      })
+      queueMessageCreatedEvent(conversation.workspaceId, message, conversation)
     }
 
     // The guest webchat widget still needs bulk messages, so this send is
@@ -996,7 +1078,7 @@ export async function sendFlowStep({
     const broadcasts: Promise<unknown>[] = []
     if (targetContactInbox.channel === channelTypes.enum.webchat) {
       broadcasts.push(
-        broadcastToGuestParty(
+        publishGuestRealtimeEvent(
           {
             workspaceId: conversation.workspaceId,
             guestConversationId: targetContactInbox.sourceId,
@@ -1005,7 +1087,12 @@ export async function sendFlowStep({
             eventType: RealtimeEventType.messageCreated,
             data: message,
           },
-        ),
+        ).catch((error) => {
+          logger.error(
+            { err: error, workspaceId: conversation.workspaceId },
+            "Failed to publish guest realtime event for flow step",
+          )
+        }),
       )
     }
 
@@ -1100,7 +1187,7 @@ export async function sendFlowStep({
       conversation.workspaceId,
       message?.createdAt,
       parsedError.message,
-      isBulkOutbound,
+      { conversationId: conversation.id, silent: isBulkOutbound },
     )
 
     // Always terminal here, for the same reason the `message:failed` emit above
@@ -1176,13 +1263,14 @@ export const sendChatMessage = async (
   }
 
   try {
-    const [repository, { storageUrl }] = await Promise.all([
-      createMessageRepository(),
-      resolveTenantSettings({ workspaceId: conversation.workspaceId }),
-    ])
+    const { storageUrl } = await resolveTenantSettings({
+      workspaceId: conversation.workspaceId,
+    })
 
     let attachmentInput:
-      | Parameters<typeof repository.createWithAttachments>[1][0]
+      | Parameters<
+          typeof messageService.createWithAttachments
+        >[0]["attachments"][0]
       | undefined
     let messageText = text
 
@@ -1236,8 +1324,11 @@ export const sendChatMessage = async (
     }
 
     const persistedMessage = attachmentInput
-      ? await repository.createWithAttachments(messageInput, [attachmentInput])
-      : await repository.create(messageInput)
+      ? await messageService.createWithAttachments({
+          message: messageInput,
+          attachments: [attachmentInput],
+        })
+      : await messageService.create(messageInput)
 
     const message = await resolveMessageAttachmentUrls(persistedMessage, {
       workspaceId: conversation.workspaceId,
@@ -1267,16 +1358,19 @@ export const sendChatMessage = async (
           message,
           quickReplies,
           metadata,
+          isBulkBroadcast,
         },
         0,
         willRetryOnThrow,
       ),
     ]
     if (!isBulkOutbound) {
-      publishToWorkspaceParty(conversation.workspaceId, {
-        eventType: RealtimeEventType.messageCreated,
-        data: message,
-      })
+      queueMessageCreatedEvent(
+        conversation.workspaceId,
+        message,
+        conversation,
+        contactInbox.inboxId,
+      )
     }
 
     await Promise.all(promises)

@@ -19,6 +19,7 @@ import {
   type DisableBotStepSchema,
   type EnableBotStepSchema,
   type FollowConversationStepSchema,
+  isBulkOutboundMetadata,
   isProactiveOutboundMetadata,
   type MarkConversationAsReadStepSchema,
   type MarkConversationAsUnreadStepSchema,
@@ -28,6 +29,7 @@ import {
   type UnassignConversationStepSchema,
   type UnfollowConversationStepSchema,
 } from "@chatbotx.io/flow-config"
+import { resolveContactVariablesDeep } from "@chatbotx.io/variables"
 import { subHours } from "date-fns"
 import {
   resolveWhatsappMessageSourceId,
@@ -37,6 +39,25 @@ import { logger } from "../../lib/logger"
 import { resolveIntegrationContextFromContactInbox } from "../../services/integrations"
 import type { ExecuteStepProps } from "./flow"
 import type { ExecuteStepResult } from "./step"
+
+/** Resolves `{{variables}}` in the step's note; a plain note costs no query. */
+const resolveHandoverNote = async (
+  note: string | undefined,
+  source: Pick<
+    ExecuteStepProps<ThreadControlStepSchema>,
+    "conversation" | "contactInbox"
+  >,
+): Promise<string | undefined> => {
+  if (!note) {
+    return
+  }
+  const { text } = await resolveContactVariablesDeep(
+    source.conversation.contactId,
+    { text: note },
+    source,
+  )
+  return text.trim() || undefined
+}
 
 /**
  * Releases or passes the conversation's routing thread. A channel with no
@@ -50,11 +71,19 @@ export async function stepThreadControl({
   step,
 }: ExecuteStepProps<ThreadControlStepSchema>): Promise<ExecuteStepResult> {
   try {
+    // The target role and the note only exist for a pass; a step switched back
+    // to release may still carry them, so they are never forwarded then.
+    const isPass = step.action === "pass"
+    const metadata = isPass
+      ? await resolveHandoverNote(step.metadata, { conversation, contactInbox })
+      : undefined
     await requestThreadControlAction({
       workspaceId: conversation.workspaceId,
       contactInboxId: contactInbox.id,
       conversationId: conversation.id,
       action: step.action,
+      targetRole: isPass ? step.targetRole : undefined,
+      metadata,
     })
     return { status: "success", result: undefined }
   } catch (err) {
@@ -114,12 +143,15 @@ export async function stepUnarchiveConversation({
 
 export async function stepAssignConversation({
   conversation,
+  isBulkBroadcast,
+  metadata,
   step,
 }: ExecuteStepProps<AssignConversationStepSchema>) {
   await conversationService.assignOneOrSkip({
     workspaceId: conversation.workspaceId,
     conversation,
     assignedId: step.assignedId,
+    silent: isBulkOutboundMetadata(metadata, isBulkBroadcast),
     triggerContext: {
       triggerSource: "worker",
       triggerHandler: "stepAssignConversation",
@@ -311,12 +343,15 @@ export async function stepAutoAssignConversation({
 
 export async function stepUnassignConversation({
   conversation,
+  isBulkBroadcast,
+  metadata,
 }: ExecuteStepProps<UnassignConversationStepSchema>) {
   await conversationService.updateAssignment({
     workspaceId: conversation.workspaceId,
     conversations: [conversation],
     assignedUserId: null,
     assignedInboxTeamId: null,
+    silent: isBulkOutboundMetadata(metadata, isBulkBroadcast),
     triggerContext: {
       triggerSource: "worker",
       triggerHandler: "stepUnassignConversation",
@@ -327,10 +362,13 @@ export async function stepUnassignConversation({
 
 export async function stepMarkConversationAsUnread({
   conversation,
+  isBulkBroadcast,
+  metadata,
 }: ExecuteStepProps<MarkConversationAsUnreadStepSchema>) {
   await conversationService.markUnread({
     workspaceId: conversation.workspaceId,
     id: conversation.id,
+    silent: isBulkOutboundMetadata(metadata, isBulkBroadcast),
   })
 }
 

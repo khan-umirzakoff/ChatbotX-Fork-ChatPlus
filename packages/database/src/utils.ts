@@ -24,6 +24,15 @@ export const escapeLikePattern = (value: string): string =>
 export const likeContains = (value: string): string =>
   `%${escapeLikePattern(value)}%`
 
+const DIGITS_PATTERN = /^\d+$/
+const MAX_BIGINT = 9_223_372_036_854_775_807n
+
+/** Whether `value` fits a signed bigint id, so a `::bigint` cast or id compare cannot fail in SQL. */
+export const isBigintId = (value: string): boolean =>
+  DIGITS_PATTERN.test(value) &&
+  value.length <= 19 &&
+  BigInt(value) <= MAX_BIGINT
+
 export const parsePagination = (
   input: PaginationInput,
 ): PaginationOutput | null => {
@@ -135,6 +144,17 @@ export const parseOrderByAsObject = (
     {} as Record<string, unknown>,
   )
 }
+
+/**
+ * Rows written in one statement share `createdAt`, and ties come back in no
+ * set order: ids grow in creation order, so they settle it the same way.
+ */
+export const withIdTieBreak = (
+  orderBy: Record<string, unknown>,
+): Record<string, unknown> =>
+  "id" in orderBy
+    ? orderBy
+    : { ...orderBy, id: Object.values(orderBy)[0] ?? "desc" }
 
 type ChunkByIdOptions<T> = {
   chunkSize?: number

@@ -7,9 +7,11 @@ import {
   eq,
   or,
 } from "@chatbotx.io/database/client"
+import type { StoreSource } from "@chatbotx.io/database/partials"
 import {
   productCategoryModel,
   productModel,
+  vendorModel,
 } from "@chatbotx.io/database/schema"
 import { createId } from "@chatbotx.io/utils"
 
@@ -26,12 +28,18 @@ const productInCategory = (
   )
 
 export const productCategoryRepository = {
-  async listWithProductCount(workspaceId: string, tx: DatabaseClient = db) {
+  async listWithProductCount(
+    workspaceId: string,
+    tx: DatabaseClient = db,
+    source: StoreSource = "chatbotx",
+  ) {
     return await tx
       .select({
         id: productCategoryModel.id,
         parentId: productCategoryModel.parentId,
         name: productCategoryModel.name,
+        imageUrl: productCategoryModel.imageUrl,
+        isVisible: productCategoryModel.isVisible,
         rank: productCategoryModel.rank,
         productCount: count(productModel.id),
       })
@@ -43,7 +51,12 @@ export const productCategoryRepository = {
           eq(productModel.workspaceId, workspaceId),
         ),
       )
-      .where(eq(productCategoryModel.workspaceId, workspaceId))
+      .where(
+        and(
+          eq(productCategoryModel.workspaceId, workspaceId),
+          eq(productCategoryModel.source, source),
+        ),
+      )
       .groupBy(productCategoryModel.id)
       .orderBy(asc(productCategoryModel.rank), asc(productCategoryModel.name))
   },
@@ -58,9 +71,13 @@ export const productCategoryRepository = {
     })
   },
 
-  async list(workspaceId: string, tx: DatabaseClient = db) {
+  async list(
+    workspaceId: string,
+    tx: DatabaseClient = db,
+    source: StoreSource = "chatbotx",
+  ) {
     return await tx.query.productCategoryModel.findMany({
-      where: { workspaceId },
+      where: { workspaceId, source },
       orderBy: { rank: "asc", name: "asc" },
     })
   },
@@ -83,6 +100,8 @@ export const productCategoryRepository = {
       name: string
       rank?: number
       parentId?: string | null
+      imageUrl?: string | null
+      isVisible?: boolean
     },
     tx: DatabaseClient = db,
   ) {
@@ -94,6 +113,8 @@ export const productCategoryRepository = {
         name: input.name,
         rank: input.rank ?? 10,
         parentId: input.parentId ?? null,
+        imageUrl: input.imageUrl ?? null,
+        isVisible: input.isVisible ?? true,
       })
       .returning()
     return row
@@ -103,15 +124,24 @@ export const productCategoryRepository = {
     input: {
       workspaceId: string
       categoryId: string
-      name: string
+      name?: string
       parentId?: string | null
+      imageUrl?: string | null
+      isVisible?: boolean
+      rank?: number
     },
     tx: DatabaseClient = db,
   ) {
     const [row] = await tx
       .update(productCategoryModel)
       .set({
-        name: input.name,
+        // `undefined` leaves a column as it is.
+        ...(input.name === undefined ? {} : { name: input.name }),
+        ...(input.imageUrl === undefined ? {} : { imageUrl: input.imageUrl }),
+        ...(input.isVisible === undefined
+          ? {}
+          : { isVisible: input.isVisible }),
+        ...(input.rank === undefined ? {} : { rank: input.rank }),
         // `undefined` leaves the row where it is; an explicit `null` promotes a
         // sub-category back to the top level.
         ...(input.parentId === undefined ? {} : { parentId: input.parentId }),
@@ -124,6 +154,74 @@ export const productCategoryRepository = {
       )
       .returning()
     return row
+  },
+
+  /**
+   * Re-files every product and vendor that points at `categoryId` after the
+   * category moved under `parentId`, so the category column keeps naming a
+   * top-level category and the sub-category column names the moved one.
+   */
+  async fileUnderParent(
+    input: { workspaceId: string; categoryId: string; parentId: string },
+    tx: DatabaseClient = db,
+  ) {
+    const values = {
+      categoryId: input.parentId,
+      subcategoryId: input.categoryId,
+    }
+    await tx
+      .update(productModel)
+      .set(values)
+      .where(
+        and(
+          eq(productModel.workspaceId, input.workspaceId),
+          or(
+            eq(productModel.categoryId, input.categoryId),
+            eq(productModel.subcategoryId, input.categoryId),
+          ),
+        ),
+      )
+    await tx
+      .update(vendorModel)
+      .set(values)
+      .where(
+        and(
+          eq(vendorModel.workspaceId, input.workspaceId),
+          or(
+            eq(vendorModel.categoryId, input.categoryId),
+            eq(vendorModel.subcategoryId, input.categoryId),
+          ),
+        ),
+      )
+  },
+
+  /**
+   * Mirror of `fileUnderParent` for a sub-category promoted to the top level:
+   * what was filed under it is filed directly under it as a category.
+   */
+  async fileAsTopLevel(
+    input: { workspaceId: string; categoryId: string },
+    tx: DatabaseClient = db,
+  ) {
+    const values = { categoryId: input.categoryId, subcategoryId: null }
+    await tx
+      .update(productModel)
+      .set(values)
+      .where(
+        and(
+          eq(productModel.workspaceId, input.workspaceId),
+          eq(productModel.subcategoryId, input.categoryId),
+        ),
+      )
+    await tx
+      .update(vendorModel)
+      .set(values)
+      .where(
+        and(
+          eq(vendorModel.workspaceId, input.workspaceId),
+          eq(vendorModel.subcategoryId, input.categoryId),
+        ),
+      )
   },
 
   async delete(
@@ -156,7 +254,7 @@ export const productCategoryRepository = {
   },
 
   async createMissingByName(
-    input: { workspaceId: string; names: string[] },
+    input: { workspaceId: string; names: string[]; source?: StoreSource },
     tx: DatabaseClient = db,
   ) {
     const names = Array.from(
@@ -173,11 +271,13 @@ export const productCategoryRepository = {
           id: createId(),
           workspaceId: input.workspaceId,
           name,
+          source: input.source ?? "chatbotx",
         })),
       )
       .onConflictDoNothing({
         target: [
           productCategoryModel.workspaceId,
+          productCategoryModel.source,
           productCategoryModel.parentId,
           productCategoryModel.name,
         ],
@@ -186,7 +286,7 @@ export const productCategoryRepository = {
     // Read back through the same lookup the importer uses, so "which rows do
     // these names mean" is answered in exactly one place.
     return await productCategoryRepository.findByNames(
-      { workspaceId: input.workspaceId, names },
+      { workspaceId: input.workspaceId, names, source: input.source },
       tx,
     )
   },
@@ -226,6 +326,7 @@ export const productCategoryRepository = {
       .onConflictDoNothing({
         target: [
           productCategoryModel.workspaceId,
+          productCategoryModel.source,
           productCategoryModel.parentId,
           productCategoryModel.name,
         ],
@@ -233,7 +334,7 @@ export const productCategoryRepository = {
   },
 
   async findByNames(
-    input: { workspaceId: string; names: string[] },
+    input: { workspaceId: string; names: string[]; source?: StoreSource },
     tx: DatabaseClient = db,
   ) {
     if (input.names.length === 0) {
@@ -246,6 +347,7 @@ export const productCategoryRepository = {
         // top-level one — a sub-category name is unique only under its parent.
         parentId: { isNull: true },
         name: { in: input.names },
+        source: input.source ?? "chatbotx",
       },
     })
   },

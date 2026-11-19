@@ -2,6 +2,7 @@
   "flows": {
     "export": {
       "notPublished": "Acest flux nu a fost niciodată publicat. Publicați-l înainte de a-l exporta.",
+      "viewOnly": "Acest flux a fost instalat dintr-un șablon doar pentru vizualizare, deci nu poate fi exportat.",
       "failed": "Exportul a eșuat. Vă rugăm să încercați din nou."
     },
     "title": "Fluxuri",
@@ -171,7 +172,18 @@
       "sendGoogleAdsConversion": "Trimite conversie Google Ads",
       "changeGamificationScore": "Modifică punctele de gamificare",
       "sendViewCatalog": "Vezi catalogul",
-      "sendProducts": "Trimite produse"
+      "sendProducts": "Trimite produse",
+      "sendCollection": "Colecție",
+      "pipeline": "Pipeline-uri",
+      "moreOptions": "Mai multe opțiuni",
+      "findPlacesNearMe": "Găsește locuri în apropiere",
+      "callPhoneNumber": "Apelează un număr de telefon",
+      "copyText": "Copiază textul"
+    },
+    "externalRequest": {
+      "errors": {
+        "requestFailed": "Nu s-a putut testa cererea externă. Verifică configurația cererii și încearcă din nou."
+      }
     },
     "splitTraffic": {
       "balanceHint": "Suma totală trebuie să fie egală cu 100%.",
@@ -202,7 +214,12 @@
       "customField": "Câmp personalizat",
       "selectCustomFieldPlaceholder": "Selectați câmpul personalizat",
       "addMapping": "Adaugă o asociere",
-      "addCustomField": "Adaugă"
+      "addCustomField": "Adaugă",
+      "fileBadge": "Fișier",
+      "fileFormat": "Linkurile fișierelor",
+      "fileFormatAllUrls": "Toate linkurile, separate prin virgulă",
+      "fileFormatFirstUrl": "Doar primul link",
+      "fileFormatHint": "Câmpul personalizat salvează linkurile fișierelor încărcate, așa cum alegi aici."
     },
     "sendCarousel": {
       "addSlide": "Adaugă cardul",
@@ -352,6 +369,156 @@
       "productsSelected": "{count, plural, one {# produs} other {# produse}}",
       "noneSelected": "Încă nu există produse",
       "sendFailed": "Produsele nu au putut fi trimise."
+    },
+    "sendCollection": {
+      "title": "Colecție",
+      "dataType": "Tip de date",
+      "dataTypes": {
+        "products": "Produse"
+      },
+      "collectionType": "Tip de colecție",
+      "collectionTypes": {
+        "automated": {
+          "label": "Automată",
+          "description": "Produsele actuale și viitoare care îndeplinesc condițiile se adaugă automat."
+        },
+        "manual": {
+          "label": "Manuală",
+          "description": "Adaugă produsele unul câte unul."
+        }
+      },
+      "condition": "Condiție",
+      "name": "Nume",
+      "optional": "(Opțional)",
+      "category": "Categorie",
+      "subcategory": "Subcategorie",
+      "vendor": "Furnizor",
+      "all": "Toate",
+      "items": "Produse",
+      "select": "Selectează",
+      "selectPlaceholder": "Selectează 1 sau mai multe produse",
+      "selectAll": "Selectează tot",
+      "deselectAll": "Deselectează tot",
+      "maxProducts": "Până la {count} produse; un produs pe care magazinul nu-l mai afișează e omis.",
+      "automatedHint": "Trimite până la {count} produse potrivite ca carduri care deschid produsul în magazin.",
+      "summaryAll": "Toate produsele magazinului",
+      "summaryAutomated": "Produse: {filters}",
+      "summaryManual": "{count, plural, one {# produs} other {# produse}}",
+      "cancel": "Anulează",
+      "save": "Salvează"
+    },
+    "pipelineStep": {
+      "action": "Acțiune",
+      "pipeline": "Pipeline",
+      "targetHint": "Acționează asupra celui mai recent element deschis al contactului din acest pipeline. Calea Omite se execută când nu există niciunul.",
+      "noPipelines": "Nu s-a găsit niciun pipeline",
+      "actions": {
+        "addToPipeline": "Adaugă contactul în pipeline",
+        "moveToStage": "Mută într-o etapă",
+        "changeValue": "Schimbă valoarea",
+        "assign": "Atribuie administratorilor",
+        "changeStatus": "Schimbă starea",
+        "changePriority": "Schimbă prioritatea",
+        "changeDueDate": "Schimbă termenul limită",
+        "changeTitle": "Schimbă titlul",
+        "setCustomField": "Setează câmp personalizat",
+        "clearCustomField": "Șterge câmpurile personalizate",
+        "changeDescription": "Schimbă descrierea",
+        "removeFromPipeline": "Elimină contactul din pipeline",
+        "addComment": "Adaugă comentariu",
+        "transfer": "Transferă în alt pipeline"
+      },
+      "title": "Titlu",
+      "description": "Descriere",
+      "stage": "Etapă",
+      "firstStage": "Prima etapă",
+      "status": "Stare",
+      "assigneeMembers": "Administratori atribuiți",
+      "assigneeTeams": "Echipe atribuite",
+      "value": "Valoare",
+      "priority": "Prioritate",
+      "dueDate": "Termen limită",
+      "dueNone": "Niciunul",
+      "dueNoneHint": "Elementul nu are termen limită.",
+      "dueCustomField": "Dintr-un câmp personalizat de tip dată",
+      "dueFixed": "Dată și oră fixe",
+      "dueField": "Câmp personalizat de tip dată sau dată și oră",
+      "fieldValues": "Câmpuri personalizate",
+      "field": "Câmp",
+      "fieldValue": "Valoare",
+      "fields": "Câmpuri",
+      "addField": "Adaugă valoare de câmp",
+      "removeHint": "Șterge cel mai recent element deschis al contactului din acest pipeline.",
+      "comment": "Comentariu",
+      "destinationPipeline": "Pipeline de destinație",
+      "destinationStage": "Etapă de destinație",
+      "missingRequiredFields": "Câmpuri obligatorii fără valoare: {names}. Elementul nu poate fi creat până când fiecare are o valoare.",
+      "addRequiredFields": "Adaugă câmpurile obligatorii"
+    },
+    "aiSegmentImage": {
+      "label": "{name}: Segmentează imaginea"
+    },
+    "aiSpeechToText": {
+      "muse": {
+        "formatHint": "Sunt acceptate doar fișiere WAV: PCM 16 biți, mono, 16 kHz sau 24 kHz, maximum 10 minute. Orice alt fișier (de exemplu, mesajele vocale) merge pe ramura de eroare.",
+        "languageBias": {
+          "label": "Preferință de limbă",
+          "description": "Limbile probabile ale înregistrării. Lăsați gol pentru detectare automată.",
+          "placeholder": "Detectare automată"
+        },
+        "keywords": {
+          "label": "Cuvinte-cheie",
+          "description": "Nume sau termeni de specialitate care ajută Muse să scrie corect cuvintele.",
+          "placeholder": "Adăugați un cuvânt-cheie și apăsați Enter"
+        }
+      },
+      "languages": {
+        "Arabic": "Arabă",
+        "Bengali": "Bengaleză",
+        "Dutch": "Neerlandeză",
+        "English": "Engleză",
+        "French": "Franceză",
+        "German": "Germană",
+        "Hebrew": "Ebraică",
+        "Hindi": "Hindi",
+        "Indonesian": "Indoneziană",
+        "Italian": "Italiană",
+        "Japanese": "Japoneză",
+        "Kannada": "Kannada",
+        "Korean": "Coreeană",
+        "Malay": "Malaeză",
+        "MandarinChinese": "Chineză mandarină",
+        "Marathi": "Marathi",
+        "Polish": "Poloneză",
+        "Portuguese": "Portugheză",
+        "Spanish": "Spaniolă",
+        "Tagalog": "Tagalog",
+        "Tamil": "Tamilă",
+        "Telugu": "Telugu",
+        "Thai": "Thailandeză",
+        "Turkish": "Turcă",
+        "Vietnamese": "Vietnameză"
+      }
+    },
+    "findPlacesNearMe": {
+      "category": "Categoria locației",
+      "allLocations": "Toate locațiile",
+      "whatsappOnly": "Trimis doar contactelor WhatsApp.",
+      "noLocationSource": "Locația trebuie colectată în acest flux: adaugă înainte de această acțiune un pas Obține datele utilizatorului cu formatul de răspuns Locație. O locație salvată de alt flux nu este folosită. Fără el, această acțiune este omisă."
+    },
+    "callPhoneNumber": {
+      "fallbackHint": "Pe canalele care nu pot iniția un apel, contactul primește în schimb acest număr ca răspuns.",
+      "countryLabel": "Prefix de țară",
+      "noCountry": "Nicio țară",
+      "invalidForCountry": "Acesta nu este un număr de telefon valid pentru {country}.",
+      "needsCountry": "Alege țara sau începe numărul cu + și prefixul țării.",
+      "invalidInternational": "Acesta nu este un număr de telefon internațional valid."
+    },
+    "copyText": {
+      "textLabel": "Text de copiat",
+      "limitHint": "Până la {max} caractere după completarea variabilelor.",
+      "fallbackHint": "Pe canalele care nu pot copia text, contactul primește acest text ca răspuns.",
+      "viewerTitle": "Copiază acest text"
     }
   },
   "folders": {
@@ -376,7 +543,7 @@
     "title": "General"
   },
   "facebookMarketingMessages": {
-    "deleteWarning": "Aceasta elimină campania doar din ChatbotX. Campania de mesaje Meta continuă — pune-o pe pauză sau șterge-o în Ads Manager.",
+    "deleteWarning": "Aceasta șterge campania de mesaje Meta și elimină campania din ChatbotX. Dacă Meta refuză ștergerea, campania este păstrată.",
     "title": "Facebook Marketing Messages",
     "description": "Crește implicarea și vânzările cu mesaje promoționale personalizate pe Messenger.",
     "create": "Creează",
@@ -401,13 +568,197 @@
       "generic": "Generic",
       "greeting": "Salut",
       "quickReplies": "Răspunsuri rapide",
-      "elements": "Carduri"
+      "elements": "Carduri",
+      "targetMessaging": "Țintirea mesajelor",
+      "targetOptIn": "Opt-in",
+      "targetOptInDescription": "Clienții paginii care au acceptat să primească mesaje de marketing",
+      "targetCustomAudience": "Audiență personalizată",
+      "targetCustomAudienceDescription": "Trimite mesaje către audiențele încărcate dintr-un fișier",
+      "audience": "Audiență personalizată"
     },
+    "noReadyAudiences": "Nu există audiențe personalizate pregătite pentru această Pagină și acest cont de publicitate.",
+    "manageAudiences": "Gestionează audiențele",
     "errors": {
       "notConfigured": "Facebook Marketing Messages nu este configurat. Cere administratorului să seteze ID-ul de configurare pentru Mesaje de marketing.",
       "notGranted": "Acordă accesul pentru a folosi funcția Mesaje de marketing.",
       "tosNotAccepted": "Pentru a folosi această funcție, acceptă termenii pentru obiecte personalizate la {url}",
-      "notFound": "Mesajul de marketing nu a fost găsit."
+      "notFound": "Mesajul de marketing nu a fost găsit.",
+      "audienceNotTargetable": "Audiența personalizată selectată nu este pregătită sau nu aparține acestei Pagini și acestui cont de publicitate.",
+      "connectFirst": "Conectează mai întâi Marketing Messages în aplicația ChatbotX.",
+      "mmInvalidState": "Această acțiune nu este disponibilă în starea curentă a campaniei.",
+      "mmCampaignEnded": "Campania de mesaje Meta s-a încheiat, deci nu poate fi trimisă sau reluată.",
+      "mmPageNotConnected": "Pagina acestei campanii nu este conectată la acest spațiu de lucru.",
+      "mmContentLocked": "Conținutul nu mai poate fi modificat după trimiterea primului mesaj.",
+      "metaDeleteFailed": "Meta nu a putut șterge această campanie, așa că a fost păstrată. {message}",
+      "statisticsUnknownAdAccount": "Acest spațiu de lucru nu are campanii Marketing Messages în acel cont de publicitate.",
+      "statisticsInvalidRange": "Alege o dată de început egală cu sau înaintea datei de sfârșit, în ultimele 37 de luni."
+    },
+    "tabs": {
+      "campaigns": "Campanii",
+      "audiences": "Audiențe",
+      "statistics": "Statistici"
+    },
+    "audiences": {
+      "title": "Audiențe personalizate",
+      "create": "Creează nou",
+      "uploadMore": "Încarcă mai multe rânduri",
+      "empty": "Nu există încă audiențe personalizate.",
+      "deleteTitle": "Șterge audiența personalizată",
+      "deleteWarning": "Această acțiune șterge audiența personalizată \"{name}\" de pe Meta și din ChatbotX. Nu poate fi anulată.",
+      "deleted": "Audiență personalizată ștearsă.",
+      "pageDisconnected": "Pagină deconectată",
+      "status": {
+        "ready": "Gata",
+        "missing": "Ștearsă pe Meta"
+      },
+      "fields": {
+        "customAudienceId": "ID audiență personalizată",
+        "approximateCount": "Număr aproximativ",
+        "status": "Stare",
+        "file": "Încarcă fișier"
+      },
+      "wizard": {
+        "title": "Creează audiență personalizată",
+        "uploadMoreTitle": "Încarcă mai multe rânduri",
+        "steps": {
+          "prepare": "Pregătește lista",
+          "upload": "Încarcă",
+          "confirm": "Confirmă"
+        },
+        "prepareDescription": "O listă de abonați este un fișier CSV sau TXT care conține informații folosite pentru a-ți construi audiența pentru mesaje de marketing. Folosim numărul de telefon pentru a potrivi abonații tăi cu utilizatorii Facebook și Instagram. Înainte ca informațiile să ne fie trimise, lista ta de identificatori este transformată prin hashing într-un cod aleatoriu.",
+        "aboutHashing": "Despre hashing",
+        "downloadTemplate": "Descarcă șablonul de fișier",
+        "mainIdentifiers": "Include cel puțin un identificator principal",
+        "moreIdentifiers": "Include mai mulți identificatori",
+        "identifiers": {
+          "email": "E-mail",
+          "phone": "Număr de telefon",
+          "madid": "ID de publicitate mobil",
+          "fn": "Prenume",
+          "ln": "Nume de familie",
+          "ct": "Oraș",
+          "st": "Stat/Provincie",
+          "country": "Țară",
+          "zip": "Cod poștal",
+          "dob": "Data nașterii",
+          "doby": "Anul nașterii",
+          "gen": "Gen"
+        },
+        "uploadNote": "Înainte de a încărca lista, asigură-te că identificatorii sunt completi și în formatul corect. Lista trebuie să fie în format .csv, .txt sau .xlsx.",
+        "namePlaceholder": "Introdu numele audienței...",
+        "descriptionPlaceholder": "Scurtă descriere (dacă există)",
+        "dropzone": "Fă clic pentru a încărca sau trage și plasează",
+        "maxFileSize": "Dimensiunea maximă a fișierului: 20 MB",
+        "fileRequired": "Selectează un fișier de încărcat.",
+        "fileTooLarge": "Fișierul este mai mare de 20 MB.",
+        "fileType": "Fișierul trebuie să fie .csv, .txt sau .xlsx.",
+        "next": "Înainte",
+        "back": "Înapoi",
+        "upload": "Încarcă",
+        "done": "Gata",
+        "successTitle": "Încărcare reușită",
+        "successRows": "Lista ta de abonați Messenger a fost încărcată: {count, plural, one {# rând} other {# de rânduri}}",
+        "skippedRows": "{count, plural, one {# rând a fost omis} other {# de rânduri au fost omise}} (fără e-mail sau telefon valid).",
+        "invalidRows": "{count, plural, one {# rând a fost respins} other {# de rânduri au fost respinse}} de Meta.",
+        "matchingNote": "Ar putea dura câteva minute pentru a finaliza potrivirea abonaților tăi cu persoane de pe Facebook. Poți verifica starea în lista de audiențe."
+      },
+      "errors": {
+        "audienceInvalidFile": "Fișierul nu a putut fi citit. Folosește un fișier .csv, .txt sau .xlsx cu rând de antet.",
+        "audienceTooManyRows": "Fișierul are mai mult de {max, number} rânduri.",
+        "audienceNoIdentifier": "Fișierul are nevoie de o coloană de e-mail sau telefon.",
+        "audienceNoValidRows": "Niciun rând nu are un e-mail sau un număr de telefon valid.",
+        "audiencePartialUpload": "Audiența a fost creată, dar încărcarea s-a oprit după {received, number} rânduri. Folosește \"Încarcă mai multe rânduri\" pentru a reîncerca.",
+        "audienceNotFound": "Audiența personalizată nu a fost găsită.",
+        "audienceCreateRejected": "Meta a respins audiența: {reason}",
+        "uploadUncertain": "Încărcarea poate să nu fi fost finalizată. Închide această fereastră și verifică lista de audiențe; folosește „Încarcă mai multe rânduri” dacă audiența a fost creată.",
+        "pageNotConnected": "Pagina selectată nu este conectată la acest spațiu de lucru.",
+        "audienceInUse": "Această audiență personalizată este folosită de {count, plural, one {# mesaj de marketing} other {# mesaje de marketing}} și nu poate fi ștearsă."
+      }
+    },
+    "delivery": {
+      "title": "Livrare",
+      "contentLocked": "Conținutul este blocat deoarece au fost deja trimise mesaje.",
+      "topicsReturned": "Subiecte returnate de Meta: {topics}",
+      "recipients": "{count} destinatari",
+      "startsAt": "Început: {date}",
+      "completedAt": "Finalizat: {date}",
+      "errorBreakdown": "Erori",
+      "retrying": "Meta nu acceptă trimiteri momentan; se reîncearcă automat.",
+      "counts": {
+        "sent": "Trimise",
+        "delivered": "Livrate",
+        "unconfirmed": "Neconfirmate"
+      },
+      "status": {
+        "notSent": "Netrimis",
+        "scheduled": "Programat",
+        "sending": "Se trimite",
+        "waitingNextDay": "Așteaptă ziua următoare",
+        "paused": "În pauză",
+        "stopped": "Oprit"
+      },
+      "reason": {
+        "pageNotConnected": "Pagina nu este conectată la acest spațiu de lucru.",
+        "quotaReached": "În pauză: cota de mesaje a fost atinsă.",
+        "workspaceBlocked": "În pauză: acest spațiu de lucru este blocat.",
+        "grantInvalid": "În pauză: conexiunea Facebook a expirat. Reconectați Marketing Messages.",
+        "metaBlocker": "Meta blochează această campanie.",
+        "contentRejected": "Meta a respins conținutul mesajului.",
+        "noTokens": "Nu au fost găsiți destinatari pentru această campanie.",
+        "noMatchingTopic": "Niciun destinatar cu consimțământ nu corespunde subiectului \"Updates and promotions\".",
+        "tokenFetchFailed": "Nu s-au putut obține destinatarii de la Meta.",
+        "campaignEnded": "Campania Meta s-a încheiat.",
+        "lifetimeBudgetReached": "Bugetul total a fost epuizat."
+      },
+      "errors": {
+        "grantInvalid": "Conexiunea Facebook a expirat.",
+        "campaignInactive": "Campania Meta nu este activă.",
+        "budgetReached": "Buget epuizat.",
+        "dailyBudgetReached": "Bugetul zilnic a fost atins.",
+        "optedOut": "Destinatarul s-a dezabonat.",
+        "frequencyLimit": "Limita de frecvență a destinatarului a fost atinsă.",
+        "contentRejected": "Conținutul mesajului a fost respins de Meta.",
+        "deliveryFailed": "Livrarea a eșuat.",
+        "outcomeUnknown": "Rezultatul livrării este necunoscut."
+      }
+    },
+    "statistics": {
+      "searchPlaceholder": "Caută după ID sau nume",
+      "adAccount": "Cont de publicitate",
+      "dateRange": "Interval de date",
+      "timezoneHint": "Date în {timezone}",
+      "presets": {
+        "last7": "Ultimele 7 zile",
+        "last30": "Ultimele 30 de zile",
+        "last90": "Ultimele 90 de zile",
+        "thisMonth": "Luna aceasta",
+        "lastMonth": "Luna trecută"
+      },
+      "columns": {
+        "id": "ID",
+        "name": "Nume",
+        "page": "Pagină Facebook",
+        "delivered": "Mesaje livrate",
+        "readRate": "Rată de citire",
+        "linkClicks": "Clicuri pe link",
+        "linkClickRate": "Rată de clic pe link",
+        "costPerClick": "Cost per clic",
+        "costPerDelivery": "Cost per livrare",
+        "spend": "Sumă cheltuită"
+      },
+      "notes": {
+        "delivery": "Meta nu raportează acest indicator pentru destinatarii din Europa sau Japonia; acele campanii afișează -.",
+        "clicks": "Meta nu raportează acest indicator pentru destinatarii din Europa, Argentina, Turcia, Coreea de Sud sau Japonia; acele campanii afișează -."
+      },
+      "footer": {
+        "label": "Total: {count, plural, one {# campanie} other {# campanii}}",
+        "total": "Total",
+        "average": "Medie"
+      },
+      "totalsUnavailable": "Totalurile nu sunt disponibile acum. Încearcă din nou în curând.",
+      "readOnly": "Reconectează Marketing Messages pentru a vedea statisticile.",
+      "empty": "Nu există încă campanii Marketing Messages. Creează una în fila Campanii.",
+      "noResults": "Nicio campanie nu corespunde căutării."
     }
   },
   "facebookAds": {
@@ -1229,9 +1580,141 @@
     "name": "Agenți"
   },
   "aiFiles": {
+    "detail": {
+      "title": "Knowledge details",
+      "details": "Details",
+      "noChunkingInfo": "No processing information is available yet."
+    },
+    "chunking": {
+      "title": "Chunking",
+      "strategyLabel": "Strategy",
+      "version": "Chunker version",
+      "chunkSize": "Chunk size",
+      "overlapSize": "Overlap size",
+      "chunkCount": "Chunks",
+      "processedAt": "Processed at",
+      "outdated": "Reindex recommended",
+      "strategy": {
+        "prose": "Prose",
+        "tabular": "Tabular",
+        "markdown": "Markdown"
+      },
+      "configDefault": "Chunking parameters: defaults ({chunkSize} characters, overlap {overlapSize}).",
+      "configCustom": "Chunking parameters: {chunkSize} characters, overlap {overlapSize}."
+    },
+    "processingRun": {
+      "title": "Processing run",
+      "noRun": "No processing run has been tracked for this file yet.",
+      "queuedAt": "Queued at",
+      "startedAt": "Started at",
+      "heartbeatAt": "Last heartbeat",
+      "finishedAt": "Finished at",
+      "stale": "Processing appears stalled",
+      "failedBadge": "Processing failed",
+      "successNote": "Chunking and embedding enqueueing completed. The file is searchable when embedding status is also complete.",
+      "status": {
+        "queued": "Queued",
+        "processing": "Processing",
+        "success": "Prepared",
+        "error": "Failed"
+      },
+      "error": {
+        "fileTooLarge": "The file is too large to process.",
+        "tooManyChunks": "The file produced too many chunks.",
+        "fileUnreadable": "The file could not be read. For CSV files, save as CSV UTF-8 and try again.",
+        "noExtractableContent": "No content could be extracted. Check the spreadsheet header row, or the file may be a scan or empty.",
+        "noEmbeddingProvider": "No embedding provider is configured.",
+        "enqueueFailed": "The file was saved but processing could not be queued. Reindex it to try again.",
+        "unknown": "Processing failed unexpectedly."
+      }
+    },
+    "reindex": {
+      "action": "Reindex",
+      "confirmTitle": "Reindex this file?",
+      "confirmDescription": "The file will be processed with the current chunker.",
+      "downtimeWarning": "Search may be temporarily unavailable while this file is reindexed.",
+      "queued": "Reindex queued",
+      "alreadyRunning": "Processing is already running for this file.",
+      "rateLimited": "Too many requests. Try again shortly.",
+      "parameters": "Chunking parameters",
+      "strategyLabel": "How to split",
+      "strategy": {
+        "auto": "Automatic (by file type)",
+        "prose": "Plain text"
+      },
+      "chunkSize": "Chunk size (characters)",
+      "overlapSize": "Overlap (characters)",
+      "overlapDisabledTabular": "Spreadsheets keep each row whole, so overlap is not used.",
+      "tabularHeaderRow": "Header row (spreadsheets)",
+      "presets": {
+        "small": "Small",
+        "medium": "Medium",
+        "large": "Large",
+        "custom": "Custom chunk size"
+      },
+      "resetDefaults": "Restore defaults",
+      "estimate": "Estimate: about {estimate} chunks (currently {current})",
+      "reembedWarning": "Changing parameters re-embeds the whole file (about {count} chunks) with your workspace key, and the file cannot be searched until it finishes.",
+      "largeChunkWarning": "Larger chunks make every agent answer read more text and cost more tokens.",
+      "noChangeNote": "Parameters are unchanged: chunks that are already embedded are kept and not embedded again.",
+      "conflict": "This file is being processed, so the new parameters were not applied. Try again when processing finishes."
+    },
+    "chunks": {
+      "indexOutdated": "Some chunks have no position yet. Reindex the file to number them."
+    },
     "description": "Oferă agenților acces la PDF-uri, documente și altele",
     "title": "Cunoștințe",
-    "noEmbeddingProvider": "Nu este configurat niciun furnizor de încorporări. Încorporările fișierelor AI necesită integrarea OpenAI sau Gemini. DeepSeek și Claude nu acceptă modele de încorporare."
+    "noEmbeddingProvider": "Nu este configurat niciun furnizor de încorporări. Încorporările fișierelor AI necesită integrarea OpenAI sau Gemini. DeepSeek și Claude nu acceptă modele de încorporare.",
+    "testQuery": {
+      "title": "Test query",
+      "description": "Pick files, ask a question and see which chunk answers it. Only the retrieval step is simulated; no AI answer is generated.",
+      "open": "Test query",
+      "backToKnowledge": "Back to Knowledge",
+      "run": "Run test",
+      "files": "Files",
+      "filterFiles": "Filter files by name",
+      "selectAllReady": "Select all ready files",
+      "selectedCount": "{count}/{max} selected",
+      "fileNotReady": "This file has no chunks ready for search yet.",
+      "question": "Question",
+      "expected": "Expected answer (optional)",
+      "expectedHelp": "Type the answer exactly as it appears in the document, accents included. It is matched against every chunk of the selected files.",
+      "limit": "Result limit",
+      "simulationNote": "This simulates retrieval only; an agent may phrase a question differently. Each run uses one embedding from your workspace key.",
+      "rateLimited": "Too many test requests. Try again shortly.",
+      "byFile": "By file",
+      "matches": "{count} matching chunks",
+      "bestRank": "best rank {rank}",
+      "needsReindex": "Needs reindex",
+      "openDetail": "Open details",
+      "rank": "#{rank}",
+      "chunkNumber": "chunk #{index}",
+      "chunkUnnumbered": "chunk not numbered",
+      "aiWillSee": "AI will see",
+      "belowThreshold": "Below threshold",
+      "containsExpected": "Contains the answer",
+      "thresholdLine": "Threshold {threshold}",
+      "appliedConfig": "Applied configuration",
+      "agentDefaultThreshold": "Agent default threshold",
+      "timings": "Search time",
+      "scoreNotComparable": "Similarity scores are not directly comparable across embedding models.",
+      "answerLocation": "Answer is in {file} · {chunk} · rank {rank}",
+      "splitHint": "The answer may be split between two chunks. Try a larger chunk size or overlap, or check the file was read correctly.",
+      "previousRun": "Previous run ({time}): answer rank {from} → now {to}",
+      "previousRunTop": "Previous run ({time}): {changed} of {total} top chunks changed",
+      "verdict": {
+        "inTopResults": "The AI will see the expected answer.",
+        "foundButLowRank": "The answer is in the documents but ranks too low for the AI to see it. Try a closer question, or reindex with smaller chunks.",
+        "notInAnyChunk": "No chunk of the selected files contains the answer. The document may be read or split wrongly: view the chunks or reindex with other settings."
+      },
+      "diagnosis": {
+        "ok": "Matching chunks found.",
+        "noReadyChunks": "No chunks are ready for search yet. Open the file to check its processing status.",
+        "allBelowThreshold": "Chunks were found but all are below the threshold. Try a lower trial threshold.",
+        "noMatches": "No matching chunks were found.",
+        "agentHasNoFiles": "This agent has no knowledge files."
+      }
+    }
   },
   "aiFunctions": {
     "description": "Configurează funcții LLM pentru a face agentul AI mai inteligent",
@@ -1479,6 +1962,8 @@
       "description": "Trimite un flux tuturor contactelor."
     },
     "receiversCount": "Destinatari: {count}",
+    "receiversCountCapped": "Destinatari: {count}+",
+    "receiversCountUnknown": "Destinatari: ?",
     "receiversLoading": "Destinatari: se încarcă...",
     "whatsappTemplateMessage": {
       "title": "Mesaj șablon",
@@ -1669,6 +2154,7 @@
       "clicked": "Accesat",
       "failed": "Eșuat",
       "missed": "Ratate",
+      "moderated": "Moderate",
       "noContacts": "Nu au fost găsite contacte",
       "noComment": "(fără text)",
       "pageInfo": "Pagina {page} din {pageCount}",
@@ -1688,7 +2174,9 @@
       "contactNotNew": "Contactul nu este nou",
       "alreadyRepliedOnPost": "Deja s-a răspuns la această postare",
       "engagedOnOtherPost": "A interacționat deja la altă postare",
-      "mentionCountNotMatched": "Numărul de mențiuni nu s-a potrivit"
+      "mentionCountNotMatched": "Numărul de mențiuni nu s-a potrivit",
+      "noImageAttachment": "Nicio fotografie atașată",
+      "moderated": "Ascuns sau șters de moderare"
     },
     "replyTo": {
       "mentions": "Comentarii cu suficiente mențiuni",
@@ -1708,6 +2196,10 @@
       "label": "Urmărește dacă un utilizator etichetează alți utilizatori",
       "descriptionText": "Numără conturile etichetate în fiecare comentariu și le adaugă la totalurile contactului pentru toate comentariile. Folosește '{{total_tagged}}' pentru toate conturile etichetate și '{{total_new_tagged}}' pentru conturile care nu au trimis niciodată mesaj paginii tale și nu au fost contacte."
     },
+    "onlyCommentsWithImage": {
+      "label": "Răspunde doar la comentariile cu fotografie",
+      "descriptionText": "Răspunde automat doar când comentariul include o fotografie. GIF-urile și stickerele nu contează. Comentariile fără fotografie sunt omise și se încearcă următoarea automatizare."
+    },
     "card": {
       "reply": "Răspuns"
     },
@@ -1725,10 +2217,92 @@
       "column": "Cont",
       "disconnected": "Cont deconectat",
       "disconnectedDescription": "Această automatizare este legată de un cont care nu mai este conectat, deci nu răspunde la niciun comentariu. Reconectează contul sau alege altul."
+    },
+    "aiModeration": {
+      "enabled": "Moderare cu AI",
+      "description": "Un agent AI citește fiecare comentariu înainte ca botul să răspundă și le ascunde sau le șterge pe cele din categoriile de mai jos. La un comentariu moderat nu se răspunde niciodată.",
+      "aiAgentDescription": "Se folosește doar modelul AI al agentului, nu și promptul acestuia.",
+      "categoriesLabel": "Blochează comentariile care sunt",
+      "categories": {
+        "hate": "Discurs de ură",
+        "offensive": "Ofensatoare",
+        "harassment": "Hărțuire",
+        "negative": "Ostile față de brand",
+        "spam": "Spam sau înșelătorie"
+      },
+      "categoryDescriptions": {
+        "hate": "Atacă un grup pe motive de rasă, religie, gen, naționalitate și similare",
+        "offensive": "Insulte, înjurături, limbaj vulgar",
+        "harassment": "Amenințări, bullying, atacuri la adresa unei persoane",
+        "negative": "Menit să afecteze brandul. Reclamațiile politicoase nu sunt blocate",
+        "spam": "Înșelătorii, phishing, promovare fără legătură"
+      },
+      "instruction": "Indicații suplimentare pentru AI",
+      "instructionDescription": "Opțional. Spune-i AI-ului ce să permită sau să blocheze.",
+      "instructionPlaceholder": "ex. Nu bloca clienții care se plâng de preț",
+      "action": "Când un comentariu este blocat",
+      "actions": {
+        "hide": "Ascunde-l",
+        "delete": "Șterge-l"
+      },
+      "deleteWarning": "Comentariile șterse dispar definitiv și nu pot fi restaurate. Ascunderea este mai sigură dacă AI-ul greșește."
+    },
+    "moderationLog": {
+      "title": "Comentarii moderate",
+      "description": "Comentarii pe care această automatizare le-a ascuns sau le-a șters, și motivul.",
+      "allActions": "Toate acțiunile",
+      "allSources": "Reguli și AI",
+      "actions": {
+        "hide": "Ascuns",
+        "delete": "Șters"
+      },
+      "sources": {
+        "rule": "De o regulă de ascundere",
+        "ai": "De AI"
+      },
+      "statuses": {
+        "pending": "În curs",
+        "done": "Finalizat",
+        "failed": "Eșuat"
+      },
+      "rules": {
+        "all": "Ascunde toate comentariile",
+        "phoneNumber": "Conține număr de telefon",
+        "link": "Conține link",
+        "keyword": "Conține cuvânt cheie",
+        "image": "Conține imagine",
+        "video": "Conține video",
+        "gif": "Conține GIF",
+        "emoji": "Conține emoji"
+      },
+      "summary": {
+        "total": "{count} moderate",
+        "hidden": "{count} ascunse",
+        "deleted": "{count} șterse",
+        "byAI": "{count} de AI",
+        "byRule": "{count} de reguli",
+        "failed": "{count} eșuate"
+      },
+      "columns": {
+        "time": "Ora",
+        "contact": "Contact",
+        "comment": "Comentariu",
+        "action": "Acțiune",
+        "reason": "Motiv",
+        "status": "Stare"
+      },
+      "loading": "Se încarcă…",
+      "empty": "Încă nu a fost ascuns sau șters niciun comentariu.",
+      "unknownContact": "Necunoscut",
+      "noText": "(fără text)",
+      "previous": "Înapoi",
+      "next": "Înainte",
+      "page": "Pagina {page} din {pageCount}"
     }
   },
   "condition": {
     "unknownValue": "Necunoscut",
+    "deletedValue": "Șters (#{id})",
     "yes": "Da",
     "no": "Nu",
     "valuePlaceholder": "...",
@@ -1843,6 +2417,7 @@
       "contactCreatedAt": "Contact creat la",
       "fromCtwaAd": "Din anunț",
       "fromGoogleAd": "Din Google Ads",
+      "clickedAd": "A dat clic pe reclamă",
       "ctwaConversion": "Conversie anunț",
       "lastUserInputTypes": {
         "text": "Text",
@@ -1858,7 +2433,8 @@
       "ctwaConversionTypes": {
         "lead": "Lead",
         "purchase": "Achiziție"
-      }
+      },
+      "pipelineItem": "Element din pipeline"
     },
     "fieldGroups": {
       "opportunity": "Oportunitate",
@@ -1875,7 +2451,8 @@
       "botFields": "Câmpurile botului",
       "email": "E-mail",
       "sms": "SMS",
-      "ctwaAds": "Anunțuri"
+      "ctwaAds": "Anunțuri",
+      "pipeline": "Pipeline-uri"
     },
     "languages": {
       "ar": "Arabă",
@@ -1904,6 +2481,7 @@
     "sources": {
       "direct": "Direct",
       "comments": "Comentarii",
+      "liveComments": "Comentarii la transmisiunea live",
       "ads": "Reclame",
       "fbLeadAd": "Reclamă FB pentru clienți potențiali",
       "inboundMessage": "Mesaj primit",
@@ -1922,6 +2500,22 @@
       },
       "adPrefix": "anunț",
       "allAds": "toate anunțurile"
+    },
+    "noTopic": "Fără subiect",
+    "trackingSince": "Urmărit din {date}. Activitatea anterioară nu este inclusă.",
+    "pipelineItem": {
+      "anyPipeline": "Orice pipeline",
+      "anyStatus": "Orice stare",
+      "attributes": {
+        "exists": "Elemente",
+        "status": "Starea elementului",
+        "stage": "Etapa elementului",
+        "priority": "Prioritatea elementului"
+      },
+      "operators": {
+        "has": "Are",
+        "hasNo": "Nu are"
+      }
     }
   },
   "fields": {
@@ -2121,6 +2715,13 @@
     "bot": {
       "label": "Bot"
     },
+    "botCategory": {
+      "options": {
+        "all": "Toate",
+        "human": "Om",
+        "bot": "Bot"
+      }
+    },
     "botResponse": {
       "label": "Răspunsul botului"
     },
@@ -2139,7 +2740,8 @@
     },
     "button": {
       "label": "Buton",
-      "whenPressed": "Când este apăsat acest buton"
+      "whenPressed": "Când este apăsat acest buton",
+      "callToThisNumber": "Apelează acest număr"
     },
     "buttonLabel": {
       "label": "Eticheta butonului"
@@ -2206,6 +2808,15 @@
       "label": "Câmp personalizat",
       "savePayloadTo": "Salvează răspunsul în câmpul personalizat",
       "set_value": "Setează valoarea",
+      "clear": "Clear value",
+      "formula": "Use custom formula",
+      "set_now": "Set to now",
+      "date_expression": "Free-form date (with math)",
+      "add_minutes": "Add minutes",
+      "add_hours": "Add hours",
+      "add_days": "Add days",
+      "formulaHint": "Math where value is the current number, e.g. round(value * 1.1). Functions: abs, ceil, floor, round, min, max, pow, sqrt, log, sin, cos.",
+      "dateExpressionHint": "e.g. now + 2 days - 3 hours. Units: min, h, d, w, mo, y.",
       "append": "Adaugă la sfârșit",
       "prepend": "Adaugă la început",
       "increase": "Mărește cu",
@@ -2325,7 +2936,8 @@
       "label": "Fluxuri",
       "placeholder": "Selectează fluxul",
       "aiGenerateTextAgent": "{aiName}: Generează agent text",
-      "aiDeleteMessageHistory": "{aiName}: Șterge istoricul mesajelor"
+      "aiDeleteMessageHistory": "{aiName}: Șterge istoricul mesajelor",
+      "aiSegmentImage": "{aiName}: Segmentează imaginea"
     },
     "steps": {
       "label": "Nod",
@@ -2704,10 +3316,11 @@
       "processing": "În curs de procesare",
       "installing": "Installing",
       "completed": "Finalizat",
-      "partial": "Partial",
+      "partial": "Parțial",
       "failed": "Eșuat",
       "success": "Succes",
-      "error": "Eroare"
+      "error": "Eroare",
+      "uninstalled": "Uninstalled"
     },
     "subtitle": {
       "placeholder": "Introduceți subtitlul"
@@ -2737,6 +3350,7 @@
       "label": "Accesate(%)"
     },
     "targetCountry": {
+      "currencyHint": "Stabilește și moneda implicită a pipeline-urilor care nu au una proprie.",
       "description": "Țara în care locuiesc majoritatea contactelor dvs.",
       "label": "Țara vizată"
     },
@@ -3136,6 +3750,10 @@
       "label": "Adresa expeditorului",
       "placeholder": "noreply@exemplu.ro"
     },
+    "fromName": {
+      "label": "Nume expeditor",
+      "placeholder": "ChatbotX"
+    },
     "messageTemplate": {
       "label": "Șablon de mesaj"
     },
@@ -3242,7 +3860,13 @@
       "commentToMessage": "Comment-to-Message",
       "commentToMessageDescription": "Lets this account answer high-intent comments with a direct message. Required for TikTok comment automations that use a private reply.",
       "commentToMessageEligibility": "Only available to Business Accounts registered in Vietnam, Indonesia or Thailand, owned by someone over 18, that are registered businesses or have run Messaging Ads, with messaging permissions set to \"Requests\".",
-      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting."
+      "commentToMessageUnknown": "Not checked with TikTok yet — refresh to read the current setting.",
+      "features": "Funcționalități",
+      "featureMessaging": "Mesaje",
+      "featureMessagingDescription": "Primește și trimite mesaje directe. TikTok nu oferă mesageria conturilor înregistrate în SEE, Elveția sau Regatul Unit — dezactiveaz-o pentru acestea.",
+      "featureComments": "Comentarii",
+      "featureCommentsDescription": "Primește comentarii pentru automatizarea comentariilor: răspuns public, apreciere și ascundere.",
+      "featuresReconnectHint": "Modificările se aplică conturilor conectate de acum înainte. Reconectează conturile existente pentru a le actualiza permisiunile."
     },
     "drip": {
       "label": "Campanie progresivă"
@@ -3280,6 +3904,12 @@
     },
     "lastAd": {
       "label": "Ultima reclamă"
+    },
+    "adIds": {
+      "label": "Toate ID-urile reclamelor"
+    },
+    "adId": {
+      "label": "ID-ul primei reclame"
     },
     "lastAdSourcePlatform": {
       "label": "Platforma sursă a ultimei reclame"
@@ -3426,7 +4056,11 @@
       "ads": "Reclame",
       "settings": "Setări",
       "miniApps": "Mini Apps",
-      "leaderboards": "Clasamente"
+      "leaderboards": "Clasamente",
+      "pipelines": "Canale de vânzări",
+      "places": "Locuri",
+      "templates": "Șabloane",
+      "polls": "Polls"
     },
     "adReferral": {
       "label": "Ads",
@@ -3435,7 +4069,8 @@
       "ctid": "CTID",
       "googleAds": "Google Ads",
       "googleAdsWhatsapp": "GA CCWA",
-      "googleAdsMessenger": "GA CCTM"
+      "googleAdsMessenger": "GA CCTM",
+      "googleAdsZalo": "GA Zalo"
     },
     "adSource": {
       "label": "Ad source"
@@ -3483,6 +4118,81 @@
     },
     "miniApp": {
       "label": "Mini App"
+    },
+    "lastOpportunityId": {
+      "label": "ID-ul ultimei oportunități"
+    },
+    "adminName": {
+      "label": "Numele adminului care trimite"
+    },
+    "adminTeamName": {
+      "label": "Echipele adminului care trimite"
+    },
+    "bookingId": {
+      "label": "ID rezervare"
+    },
+    "lastPoints": {
+      "label": "Ultimele puncte din chestionar"
+    },
+    "lastAdHeadline": {
+      "label": "Ultimul titlu al anunțului"
+    },
+    "lastAdBody": {
+      "label": "Ultimul text al anunțului"
+    },
+    "lastStoryId": {
+      "label": "Ultimul ID de story"
+    },
+    "lastLeadId": {
+      "label": "Ultimul ID de lead"
+    },
+    "lastFormId": {
+      "label": "Ultimul ID de formular"
+    },
+    "lastFormName": {
+      "label": "Ultimul nume de formular"
+    },
+    "lastAdgroupId": {
+      "label": "Ultimul ID de grup de anunțuri"
+    },
+    "lastTextInput": {
+      "label": "Ultimul text introdus"
+    },
+    "empty": {
+      "label": "Gol"
+    },
+    "aiSegmentImage": {
+      "description": "Găsește un obiect într-o imagine cu SAM 3.1 și salvează o decupare a acestuia.",
+      "inputFieldId": {
+        "label": "Imagine sursă"
+      },
+      "target": {
+        "label": "Obiect de găsit",
+        "description": "O expresie nominală scurtă, de exemplu \"mașină roșie\" sau \"cutie de produs\". Nu o întrebare sau o comandă.",
+        "placeholder": "cutie de produs"
+      },
+      "matchSelection": {
+        "label": "Potriviri",
+        "options": {
+          "largest": "Doar cel mai mare obiect",
+          "all": "Toate obiectele potrivite (o singură decupare care le cuprinde)"
+        }
+      },
+      "outputFieldId": {
+        "label": "Salvează imaginea în"
+      },
+      "detailsOutputFieldId": {
+        "label": "Salvează detaliile în",
+        "description": "Opțional. Primește JSON cu numărul de potriviri și casetele.",
+        "sameAsOutput": "Alege un câmp diferit de imaginea rezultată.",
+        "sameAsInput": "Alege un câmp diferit de imaginea sursă."
+      },
+      "overwriteWarning": "Rezultatul va înlocui imaginea sursă din acest câmp.",
+      "states": {
+        "success": "Găsit",
+        "skip": "Negăsit",
+        "error": "Eșuat"
+      }
     }
   },
   "channels": {
@@ -3551,14 +4261,22 @@
         "inProgress": "Conexiunea este deja în curs.",
         "unknown": "Ceva nu a funcționat corect.",
         "followUpFailed": "Configurare incompletă — finalizeaz-o din setările canalului.",
-        "webhookSubscribeFailed": "Conectat, dar abonarea la webhook a eșuat — încearcă din nou din setările conexiunii."
+        "webhookSubscribeFailed": "Conectat, dar abonarea la webhook a eșuat — încearcă din nou din setările conexiunii.",
+        "providerUnavailable": "Furnizorul este temporar indisponibil. Încearcă din nou în câteva minute."
       },
       "sessionError": {
         "sessionExpired": "Sesiunea ta a expirat. Te rugăm să te reconectezi.",
         "notMember": "Nu mai ești membru al acestui spațiu de lucru.",
         "trialExpired": "Perioada de probă a expirat.",
         "macLimitReached": "Ai atins limita contului tău.",
-        "credentialMissing": "Lipsesc datele de autentificare. Te rugăm să te reconectezi."
+        "credentialMissing": "Lipsesc datele de autentificare. Te rugăm să te reconectezi.",
+        "noPages": "Nu am găsit nicio Pagină de Facebook de conectat. Conectează-te din nou și permite accesul la cel puțin o Pagină pe care o administrezi.",
+        "noInstagramAccounts": "Nu am găsit niciun cont de Instagram de conectat. Conectează-te din nou și permite accesul la cel puțin un cont.",
+        "exchangeFailed": "Autentificarea nu a putut fi finalizată. Te rugăm să te conectezi din nou.",
+        "providerError": "Nu am putut încărca acum conturile tale. Încearcă din nou în câteva minute.",
+        "connectFailed": "A apărut o eroare la conectare. Încearcă din nou.",
+        "tooManyAttempts": "Sunt prea multe încercări de conectare nefinalizate. Așteaptă câteva minute, apoi încearcă din nou.",
+        "notAllowed": "Momentan nu poți conecta canale aici. Reîncarcă pagina pentru a vedea motivul."
       },
       "cancelRemaining": "Anulează restul",
       "retryFailed": "Reîncearcă ({count})",
@@ -3624,7 +4342,8 @@
   "workspaces": {
     "list": {
       "title": "Lista spațiilor de lucru"
-    }
+    },
+    "defaultName": "Spațiul de lucru al lui {name}"
   },
   "workspaceToken": {
     "title": "Token spațiu de lucru"
@@ -3641,6 +4360,7 @@
       "months": "{count} luni",
       "years": "{count} ani"
     },
+    "realtimeRevokeWarning": "Revocarea accesului nu a putut fi confirmată imediat - va intra în vigoare la următoarea reconectare a membrului.",
     "moveFeature": "Mută {feature}",
     "poweredBy": "Susținut de {name}",
     "noGiphyApiKey": "Nu a fost găsită nicio cheie API GIPHY. Te rugăm să adaugi una în Setările platformei.",
@@ -3778,6 +4498,9 @@
     "waTemplateMpmTooManySections": "Un buton multi-produs poate avea cel mult 10 secțiuni. Elimină câteva secțiuni înainte de publicare.",
     "waTemplateMpmTooManyProducts": "Un buton multi-produs poate avea în total cel mult 30 de produse. Elimină câteva produse înainte de publicare.",
     "waTemplateLtoExpirationRequired": "Alege o dată de expirare pentru oferta pe timp limitat înainte de a trimite.",
+    "waTemplatePaymentRequestIncomplete": "Completează datele de plată ale acestui buton înainte de publicare.",
+    "waTemplatePaymentRequestInvalid": "O dată de plată are un format nevalid. Verifică suma, linkul și cifrele cardului.",
+    "waTemplatePaymentRequestMisplaced": "Datele de plată pot fi setate doar pe un buton de plată al unui șablon obișnuit (nu carusel).",
     "waTemplateMpmIncompleteProducts": "Fiecare secțiune are nevoie de cel puțin un produs selectat — elimină rândurile goale sau alege un produs.",
     "unsupportedBlock": "Acest canal nu acceptă acest bloc.",
     "constraintExceeded": "Limita acestui canal a fost depășită.",
@@ -3804,7 +4527,15 @@
       "noAnswer": "Fără răspuns",
       "labelsUnavailable": "Întrebările Flow-ului nu au putut fi încărcate, așa că sunt afișate numele câmpurilor.",
       "yes": "Da",
-      "no": "Nu"
+      "no": "Nu",
+      "fileNotSaved": "Fișier nesalvat",
+      "filesNotSaved": "{count, plural, one {# fișier nu a fost salvat} other {# fișiere nu au fost salvate}}",
+      "filesAttached": "{count, plural, one {# fișier atașat} other {# fișiere atașate}}",
+      "fileFailure": {
+        "too_large": "Fișier prea mare",
+        "unsupported_type": "Tip de fișier neacceptat",
+        "download_failed": "Nu s-a putut descărca"
+      }
     },
     "sendViewCatalogBodyTooLong": "Textul mesajului este prea lung pentru un mesaj de catalog. Scurtează-l.",
     "sendViewCatalogFooterTooLong": "Subsolul este prea lung pentru un mesaj de catalog. Scurtează-l.",
@@ -3831,7 +4562,24 @@
     "savedReplyImagesRemoved": "Imaginile care nu pot fi trimise aici au fost eliminate",
     "onlyImagesAllowed": "Se pot adăuga doar imagini",
     "tooManySavedReplyImages": "Un răspuns salvat poate avea cel mult {max} imagini",
-    "savedReplyImagesNotSentHere": "Imaginile nu vor fi trimise aici"
+    "savedReplyImagesNotSentHere": "Imaginile nu vor fi trimise aici",
+    "invalidPhoneNumber": "Acesta nu este un număr de telefon valid. Include prefixul țării, de exemplu +1.",
+    "buttonCallPhoneNumberUnsupported": "Acest buton nu poate apela un număr de telefon aici. Alege altă acțiune.",
+    "buttonCopyTextUnsupported": "Acest buton nu poate copia text aici. Alege altă acțiune.",
+    "paymentRequest": {
+      "title": "Cerere de plată",
+      "cardEnding": "Card care se termină în {lastFourDigits}",
+      "status": "WhatsApp nu raportează plata. Verificați la furnizorul de plăți.",
+      "cardStatus": "Confirmarea clientului nu debitează cardul. Debitați prin furnizorul de plăți.",
+      "sentFromTemplate": "Șablon: {name}"
+    },
+    "paymentConfirmation": {
+      "title": "Clientul a confirmat plata",
+      "cardTitle": "Clientul a confirmat plata cu cardul",
+      "cardEnding": "Card care se termină în {lastFourDigits}",
+      "notCharged": "Nedebitat încă. Debitați prin furnizorul de plăți.",
+      "reference": "Referință {referenceId}"
+    }
   },
   "instagram": {
     "description": "Această integrare îți permite să creezi boți Instagram.",
@@ -3928,6 +4676,7 @@
         "buttonText": "Text buton",
         "buttonType": "Tip buton",
         "visitWebsite": "Vizitează site-ul web",
+        "openMiniApp": "Deschide Mini App",
         "callPhoneNumber": "Apelează numărul de telefon",
         "postback": "Buton"
       },
@@ -3989,6 +4738,18 @@
       "label": "DeepSeek"
     },
     "title": "DeepSeek"
+  },
+  "muse": {
+    "autoReply": {
+      "description": "Activează răspunsul automat cu IA pentru a răspunde utilizatorilor în mod natural, folosind IA alimentată de datele afacerii tale.",
+      "label": "Răspuns automat IA"
+    },
+    "connect": {
+      "description": "Răspunde utilizatorilor în mod natural cu IA alimentată de datele afacerii tale.",
+      "embeddingHint": "Muse nu oferă modele de embedding. Baza de cunoștințe și fișierele AI necesită în continuare o integrare OpenAI sau Gemini.",
+      "label": "Muse"
+    },
+    "title": "Muse"
   },
   "decision": {
     "addConnection": "Add AI Router connection",
@@ -4125,12 +4886,17 @@
     "deepseek": {
       "description": "Descrierea integrării DeepSeek",
       "title": "Integrare DeepSeek"
+    },
+    "muse": {
+      "description": "Descrierea integrării Muse",
+      "title": "Integrare Muse"
     }
   },
   "auth": {
     "orContinueWith": "Sau continuă cu",
     "continueWithFacebook": "Continuă cu Facebook",
     "continueWithGoogle": "Continuă cu Google",
+    "continueWithProvider": "Continuă cu {name}",
     "continueWithEmail": "Continuă cu e-mail",
     "continueWithMagicLink": "Continuă cu link magic",
     "dontHaveAnAccount": "Nu ai un cont?",
@@ -4161,11 +4927,15 @@
     "changePasswordTitle": "Schimbă-ți parola",
     "changePasswordDescription": "Setează o parolă nouă înainte de a continua.",
     "passwordChangeSuccess": "Parolă schimbată",
+    "signUpDisabledTitle": "Înregistrarea este dezactivată",
+    "signUpDisabledDescription": "Conturile noi pot fi create doar de un administrator sau printr-un link de invitație.",
     "oauthError": {
       "accountNotLinked": "Există deja un cont cu acest e-mail și nu a putut fi asociat. Autentifică-te la fel ca înainte sau contactează asistența.",
       "unableToLinkAccount": "Nu am putut asocia această autentificare cu contul existent. Autentifică-te în modul în care ai făcut-o înainte sau contactează asistența.",
       "sessionExpired": "Încercarea de autentificare a expirat. Încearcă din nou.",
       "accessDenied": "Autentificarea a fost anulată.",
+      "signUpDisabled": "Acest cont nu există încă, iar înregistrarea este dezactivată. Cere unui administrator să îl creeze pentru tine.",
+      "invalidInvitation": "Această invitație este invalidă sau a expirat.",
       "generic": "Autentificarea a eșuat. Încearcă din nou."
     }
   },
@@ -4189,6 +4959,9 @@
     "maxCharacters": "Maximum {max} caractere.",
     "invalidApiKey": "Cheie API invalidă",
     "maxMustBeGreaterThanMin": "{maxField} trebuie să fie mai mare sau egal cu {minField}",
+    "trigger": {
+      "actionReferenceNotFound": "An action refers to a record that no longer exists. Re-select it in the action and save again."
+    },
     "inboundWebhook": {
       "inboxRequired": "Alege o căsuță de mesaje.",
       "inboxNotFound": "Căsuța de mesaje selectată nu a fost găsită.",
@@ -4198,11 +4971,31 @@
       "unknownFieldTarget": "Un câmp de contact mapat nu mai există.",
       "actionReferenceNotFound": "O acțiune face referire la un flux, o etichetă sau un câmp care nu mai există.",
       "fieldMappingRequired": "Adaugă cel puțin o mapare de câmp."
+    },
+    "form": {
+      "required": "Acest câmp este obligatoriu.",
+      "minLength": "Introdu cel puțin {minimum} caractere.",
+      "maxLength": "Introdu cel mult {maximum} caractere.",
+      "minNumber": "Introdu un număr de cel puțin {minimum}.",
+      "moreThan": "Introdu un număr mai mare decât {minimum}.",
+      "maxNumber": "Introdu un număr de cel mult {maximum}.",
+      "lessThan": "Introdu un număr mai mic decât {maximum}.",
+      "number": "Introdu un număr.",
+      "wholeNumber": "Introdu un număr întreg.",
+      "minItems": "Alege cel puțin {minimum}.",
+      "maxItems": "Alege cel mult {maximum}.",
+      "email": "Introdu o adresă de e-mail validă.",
+      "url": "Introdu un link valid care începe cu https://.",
+      "format": "Această valoare nu are formatul corect.",
+      "option": "Alege una dintre opțiuni.",
+      "invalid": "Această valoare nu este validă.",
+      "checkFields": "Unele câmpuri trebuie corectate. Verifică-le pe cele marcate cu roșu."
     }
   },
   "webchat": {
     "chatUnavailable": "Acest chat este momentan indisponibil.",
     "description": "Oferă-le clienților tăi răspunsuri automate instant din partea afacerii tale direct de pe site-ul tău web",
+    "loadMessagesError": "Mesajele nu au putut fi încărcate. Verifică-ți conexiunea și încearcă din nou.",
     "rateLimitExceeded": "Prea multe cereri. Te rugăm să încerci din nou peste puțin timp.",
     "title": "Chat web",
     "workspaceUnavailable": "Acest spațiu de lucru nu mai este disponibil.",
@@ -4358,7 +5151,28 @@
         "mpmSectionLimitReached": "S-a atins maximul de 10 secțiuni.",
         "mpmProductLimitReached": "S-a atins maximul de 30 de produse.",
         "mpmProductsSummary": "{productCount} produse în {sectionCount} secțiuni",
-        "unsupportedButtonParam": "Acest tip de buton nu este încă acceptat."
+        "unsupportedButtonParam": "Acest tip de buton nu este încă acceptat.",
+        "payment": {
+          "method": {
+            "pix": "Pix",
+            "boleto": "Boleto",
+            "payment_link": "Link de plată",
+            "card_on_file": "Plată cu cardul dintr-un clic"
+          },
+          "field": {
+            "code": "Cod Pix",
+            "digitableLine": "Linie digitabilă Boleto",
+            "url": "URL-ul linkului de plată",
+            "lastFourDigits": "Ultimele 4 cifre ale cardului",
+            "credentialId": "ID credențial card (opțional)",
+            "amount": "Suma în BRL, ex. 12.34"
+          },
+          "notice": {
+            "general": "Folosiți o variabilă ca fiecare client să primească propriile date de plată.",
+            "cardOnFile": "Plata cu cardul dintr-un clic funcționează doar pentru firmele activate de Meta."
+          },
+          "unsupportedButton": "Acest șablon are un buton de plată care nu poate fi trimis: tipul de plată nu a putut fi determinat. Resincronizează șabloanele sau alege altul."
+        }
       }
     },
     "sampleBodyCardContent": {
@@ -4515,7 +5329,6 @@
     "templateHeader": {
       "label": "Antet șablon"
     },
-    "transferPhoneNumber": "Transferă numărul de telefon de la un alt furnizor WhatsApp",
     "selectPage": {
       "tryAgain": "Încearcă să te reconectezi"
     },
@@ -4772,7 +5585,18 @@
         "callInformation": "Informații despre apel"
       }
     },
-    "credentialSecretsRequired": "Introdu secretul aplicației și tokenul utilizatorului de sistem. Nu sunt încă salvate."
+    "credentialSecretsRequired": "Introdu secretul aplicației și tokenul utilizatorului de sistem. Nu sunt încă salvate.",
+    "embeddedSignupCancelled": "Înregistrarea a fost anulată — poți închide această filă.",
+    "embeddedSignupFailed": "Înregistrarea nu s-a finalizat — închide această filă și încearcă din nou.",
+    "payment": {
+      "settings": {
+        "title": "Plăți",
+        "description": "Cum trimite acest număr butoanele de cerere de plată.",
+        "pixRedirectLabel": "Trimite Pix cu redirecționare",
+        "pixRedirectDescription": "Cumpărătorii deschid aplicația băncii pentru a plăti și revin în WhatsApp. Activează doar după ce Meta a înscris firma ta; cei care nu pot fi redirecționați primesc în continuare copiere și lipire.",
+        "adminOnly": "Doar administratorii spațiului de lucru pot schimba setările de plată."
+      }
+    }
   },
   "zalo": {
     "title": "Zalo OA",
@@ -4795,7 +5619,8 @@
     "chatbotInvitationDescription1": "Alătură-te lui {chatbotName}",
     "chatbotInvitationDescription2": "{userName} te-a invitat să te alături lui {chatbotName}.",
     "invalidInvitation": "Această invitație este invalidă sau a expirat.",
-    "workspaceUnavailable": "Acest spațiu de lucru nu mai este disponibil."
+    "workspaceUnavailable": "Acest spațiu de lucru nu mai este disponibil.",
+    "signUpToJoin": "Creează un cont pentru a te alătura"
   },
   "inboxes": {
     "markReadOnOutbound": {
@@ -5160,11 +5985,11 @@
       "incomingCall": "Apel primit",
       "missedAudioCall": "Apel audio pierdut",
       "callEnded": "Apel încheiat",
-      "ticketCreated": "Tichet creat",
-      "ticketMovedToStage": "Tichet mutat în etapă",
-      "ticketValueChanged": "Valoare tichet schimbată",
-      "ticketStatusChanged": "Status tichet schimbat",
-      "ticketPriorityChanged": "Prioritate tichet schimbată",
+      "pipelineItemCreated": "Tichet creat",
+      "pipelineItemMovedToStage": "Tichet mutat în etapă",
+      "pipelineItemValueChanged": "Valoare tichet schimbată",
+      "pipelineItemStatusChanged": "Status tichet schimbat",
+      "pipelineItemPriorityChanged": "Prioritate tichet schimbată",
       "subscribedToSequence": "Abonat la secvență",
       "unsubscribedFromSequence": "Dezabonat de la secvență",
       "shoppingCartSent": "Contactul a trimis coșul de cumpărături",
@@ -5175,15 +6000,24 @@
       "orderShipped": "Comandă expediată",
       "orderConcluded": "Comandă finalizată",
       "orderCancelled": "Comandă anulată",
+      "orderPaid": "Comandă plătită",
+      "orderRefunded": "Comandă rambursată",
       "categoryAddedToCart": "Categorie adăugată în coș",
       "productAddedToCart": "Produs adăugat în coș",
       "productRemovedFromCart": "Produs eliminat din coș",
       "productOrdered": "Produs comandat",
       "contactReferredANewContact": "Contactul a recomandat un contact nou",
       "contactReferredExistingContact": "Contactul a recomandat un contact existent",
+      "contactBlockedBot": "Contactul a blocat botul",
+      "contactUnblockedBot": "Contactul a deblocat botul",
       "callRecorded": "Apel înregistrat",
       "callTranscribed": "Apel transcris",
-      "anyProduct": "Orice produs"
+      "anyProduct": "Orice produs",
+      "anyCategory": "Orice categorie",
+      "anyPipeline": "Orice pipeline",
+      "anyStage": "Orice etapă",
+      "unavailablePipeline": "Pipeline șters sau indisponibil",
+      "unavailableStage": "Etapă ștearsă sau indisponibilă"
     },
     "actions": {
       "addTag": "Adaugă etichetă",
@@ -5191,6 +6025,7 @@
       "setCustomField": "Setează câmpul personalizat",
       "clearCustomField": "Golește câmpul personalizat",
       "startAnotherFlow": "Pornește alt flux",
+      "startExternalStep": "Start External Step",
       "notifyAdmins": "Notifică administratorii",
       "transferConversationToHuman": "Transferă conversația către un operator",
       "sendMetaCapiEvent": "Trimite eveniment Meta CAPI",
@@ -5232,7 +6067,26 @@
     "countCapped": "{count}+ contacte",
     "exportAllNotice": "Toate contactele care corespund filtrului curent vor fi exportate.",
     "exportTakingLong": "Exportul durează mai mult decât era de așteptat",
-    "exportTakingLongDescription": "Exportul este încă în curs de procesare. Poți închide acest dialog și poți reveni peste câteva minute din istoricul exporturilor."
+    "exportTakingLongDescription": "Exportul este încă în curs de procesare. Poți închide acest dialog și poți reveni peste câteva minute din istoricul exporturilor.",
+    "search": {
+      "placeholder": "Caută (nume, e-mail, telefon, ID contact)",
+      "searching": "Se caută…",
+      "error": "Nu s-au putut căuta contactele",
+      "empty": "Niciun contact găsit"
+    },
+    "exportHistory": {
+      "title": "Istoric exporturi",
+      "description": "Exporturile de contacte din ultimele {days} zile. După aceea, fișierele sunt șterse.",
+      "empty": "Încă nu există exporturi.",
+      "requestedBy": "De {name}",
+      "deletesOn": "Se șterge pe {date}",
+      "rows": "{count, plural, one {# contact} other {# de contacte}}",
+      "status": {
+        "pending": "Se procesează",
+        "uploaded": "Gata",
+        "failed": "Eșuat"
+      }
+    }
   },
   "contactScan": {
     "menu": {
@@ -5304,7 +6158,8 @@
       "userPlaceholder": "ID utilizator",
       "keyword": "Cuvânt cheie",
       "keywordPlaceholder": "Acțiune sau detaliu",
-      "allAdmins": "Toți administratorii"
+      "allAdmins": "Toți administratorii",
+      "allWorkspaces": "Toate spațiile de lucru"
     }
   },
   "customFields": {
@@ -5325,7 +6180,36 @@
       "pageTitle": "Cuvinte-cheie de pagină",
       "page": "Răspunde automat atunci când trimiteți un mesaj care conține un cuvânt-cheie unui contact."
     },
-    "pageWarning": "Conținutul unui mesaj care conține un cuvânt-cheie de Pagină poate duce la trimiterea de mesaje către client într-o buclă infinită. Dezactivați imediat cuvântul-cheie de Pagină dacă întâmpinați această situație!"
+    "pageWarning": "Conținutul unui mesaj care conține un cuvânt-cheie de Pagină poate duce la trimiterea de mesaje către client într-o buclă infinită. Dezactivați imediat cuvântul-cheie de Pagină dacă întâmpinați această situație!",
+    "conditions": {
+      "operators": {
+        "is": "Mesajul este",
+        "similarTo": "Mesajul seamănă cu",
+        "contains": "Mesajul conține",
+        "containsPhone": "Mesajul conține telefon",
+        "containsEmail": "Mesajul conține e-mail",
+        "containsImage": "Mesajul conține imagine",
+        "containsVideo": "Mesajul conține video",
+        "containsLink": "Mesajul conține link",
+        "containsWholeWord": "Mesajul conține cuvântul întreg",
+        "beginsWith": "Mesajul începe cu",
+        "endsWith": "Mesajul se termină cu",
+        "isThumbsUp": "Mesajul este 👍",
+        "notContains": "Mesajul nu conține",
+        "matchesRegex": "Mesajul corespunde regex-ului"
+      },
+      "and": "și",
+      "addCondition": "Condiție mesaj",
+      "removeCondition": "Elimină condiția",
+      "note": "Cuvintele cheie nu țin cont de majuscule și ignoră diacriticele, de ex. \"Tư vấn\" și \"tu van\" sunt recunoscute la fel.",
+      "keywordPlaceholder": "+ Cuvânt cheie",
+      "regexPlaceholder": "+ Regex",
+      "errors": {
+        "keywordConditionValuesRequired": "Adaugă cel puțin un cuvânt cheie.",
+        "keywordConditionTakesNoValues": "Această condiție nu folosește cuvinte cheie.",
+        "invalidKeywordRegex": "Expresie regulată invalidă."
+      }
+    }
   },
   "triggers": {
     "title": "Declanșatoare"
@@ -5428,6 +6312,7 @@
     "gemini": "Gemini",
     "claude": "Claude",
     "deepseek": "DeepSeek",
+    "muse": "Muse",
     "openrouter": "OpenRouter",
     "openaiCompatible": "Compatibil cu OpenAI"
   },
@@ -5465,11 +6350,99 @@
   },
   "pollManager": {
     "title": "Manager de sondaje",
-    "description": "Creează și gestionează sondaje pentru contactele tale."
+    "description": "Desfășoară sisteme de sondaj sau de vot. Le poți folosi și pentru a colecta opiniile clienților.",
+    "feature": "Poll",
+    "deleteDescription": "Deleting a poll also deletes its candidates and votes. This cannot be undone.",
+    "list": {
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "votes": "Votes",
+      "getLink": "Get Link"
+    },
+    "getLink": {
+      "title": "Get Link",
+      "description": "Share a link that opens a chat and starts the poll.",
+      "omnichannel": "Omnichannel",
+      "noInboxes": "No connected channels can open this poll yet.",
+      "loadError": "Could not load the links."
+    },
+    "form": {
+      "createTitle": "Create poll",
+      "editTitle": "Edit poll",
+      "votingPeriod": "Voting period",
+      "imageRequired": "An image is required.",
+      "dateRangeInvalid": "Data de sfârșit trebuie să fie după data de început.",
+      "candidatesTitle": "Candidates or Options",
+      "candidateNumber": "Candidate {number}",
+      "moreOptions": "More Options",
+      "afterVoteFlow": "Flow to be sent after the user votes",
+      "afterVoteFlowNone": "None",
+      "removeVotesTitle": "Remove candidates?",
+      "removeVotesDescription": "Deleting candidates also deletes their votes."
+    },
+    "analytics": {
+      "title": "Analytics",
+      "results": "Results",
+      "votesPerGender": "Votes per gender",
+      "totalVotes": "Total votes",
+      "noVotes": "No votes yet",
+      "other": "Other",
+      "male": "Male",
+      "female": "Female",
+      "unknown": "Unknown",
+      "loadError": "Could not load the analytics.",
+      "columns": {
+        "name": "Name",
+        "totalVotes": "Total votes",
+        "totalPercent": "T%",
+        "maleVotes": "Male votes",
+        "malePercent": "M%",
+        "femaleVotes": "Female votes",
+        "femalePercent": "F%"
+      }
+    }
   },
   "placesNearMe": {
     "title": "Locuri din apropiere",
-    "description": "Găsește locuri lângă contactele tale."
+    "description": "Permite clienților tăi să găsească ușor locațiile afacerii tale din apropierea lor.",
+    "tabs": {
+      "locations": "Locații",
+      "categories": "Categorii"
+    },
+    "categories": {
+      "columns": {
+        "locations": "Locații"
+      },
+      "add": "Adaugă categorie",
+      "edit": "Editează categoria",
+      "empty": "Încă nu există categorii.",
+      "created": "Categorie adăugată",
+      "updated": "Categorie actualizată",
+      "deleted": "Categorie ștearsă",
+      "saveError": "Categoria nu a putut fi salvată",
+      "deleteError": "Categoria nu a putut fi ștearsă",
+      "deleteTitle": "Ștergi {name}?",
+      "deleteDescription": "{count, plural, =0 {Nicio locație nu folosește această categorie.} one {# locație va rămâne fără categorie.} other {# locații vor rămâne fără categorie.}}"
+    },
+    "locations": {
+      "columns": {
+        "coordinates": "Coordonate"
+      },
+      "preview": "Previzualizare",
+      "add": "Adaugă locație",
+      "edit": "Editează locația",
+      "empty": "Încă nu există locații.",
+      "created": "Locație adăugată",
+      "updated": "Locație actualizată",
+      "deleted": "Locație ștearsă",
+      "saveError": "Locația nu a putut fi salvată",
+      "deleteError": "Locația nu a putut fi ștearsă",
+      "deleteTitle": "Ștergi {name}?",
+      "deleteDescription": "Această locație va fi ștearsă definitiv.",
+      "noCategory": "Fără categorie",
+      "latitude": "Latitudine",
+      "longitude": "Longitudine"
+    }
   },
   "questionnaires": {
     "title": "Chestionare",
@@ -5555,6 +6528,22 @@
     "dialogDescriptions": {
       "flowStep": "Alege cum programează întâlniri acest pas al fluxului."
     }
+  },
+  "contactAdReferrals": {
+    "title": "Istoric reclame",
+    "empty": "Nu a fost înregistrat încă niciun clic pe reclame pentru acest contact."
+  },
+  "adsReferralStats": {
+    "title": "Contacte după reclamă",
+    "description": "Contactele la care a ajuns fiecare reclamă și conversiile atribuite clicurilor sale. Clicurile se numără de la începutul urmăririi.",
+    "ad": "Reclamă",
+    "contacts": "Contacte",
+    "firstTouch": "Prima atingere",
+    "leads": "Lead-uri",
+    "purchases": "Achiziții",
+    "revenue": "Venituri",
+    "empty": "Niciun clic pe reclame în această perioadă.",
+    "timeout": "Acest raport a durat prea mult. Alege un interval de date mai scurt."
   },
   "coupons": {
     "actions": {
@@ -6195,6 +7184,7 @@
     }
   },
   "manageSidebar": {
+    "administrationGroup": "Administrare",
     "platformGroup": "Platformă",
     "portalCustomDomain": "Domeniu personalizat",
     "portalPaymentProcessor": "Procesator de plăți",
@@ -6328,7 +7318,144 @@
     "title": "Sincronizează catalogul Meta"
   },
   "orders": {
-    "title": "Comenzi"
+    "title": "Comenzi",
+    "empty": "Nicio comandă încă.",
+    "searchPlaceholder": "Caută după nume, telefon, e-mail sau număr de comandă",
+    "orderNumber": "Comanda nr. {number}",
+    "print": "Tipărește",
+    "inbox": "Mesaje primite",
+    "statusUpdated": "Starea comenzii a fost actualizată",
+    "statusUpdateError": "Nu s-a putut actualiza starea comenzii",
+    "updateStatusTitle": "Actualizează starea comenzii",
+    "message": "Mesaj",
+    "messagePlaceholder": "Opțional",
+    "messageDescription": "Trimis clientului în conversația sa.",
+    "cancel": "Anulează",
+    "continue": "Continuă",
+    "delete": "Șterge",
+    "deleted": "Comandă ștearsă",
+    "deleteError": "Nu s-a putut șterge comanda",
+    "deleteTitle": "Ștergi comanda nr. {number}?",
+    "deleteDescription": "Comanda, articolele și istoricul ei sunt eliminate. Stocul pe care îl mai ține este readus.",
+    "columns": {
+      "name": "Nume",
+      "total": "Total",
+      "status": "Stare",
+      "date": "Dată",
+      "rating": "Evaluare",
+      "quantity": "Cantitate",
+      "price": "Preț",
+      "vendor": "Furnizor",
+      "orderStatus": "Starea comenzii",
+      "payment": "Plată"
+    },
+    "fields": {
+      "name": "Nume",
+      "email": "E-mail",
+      "phone": "Telefon",
+      "country": "Țară",
+      "state": "Județ",
+      "city": "Oraș",
+      "street": "Stradă",
+      "zip": "Cod poștal",
+      "shippingType": "Livrare",
+      "orderId": "ID comandă",
+      "date": "Dată",
+      "subtotal": "Subtotal",
+      "discount": "Reducere",
+      "deliveryCost": "Cost livrare",
+      "otherTaxes": "Alte taxe",
+      "total": "Total",
+      "paymentMethod": "Metodă de plată",
+      "status": "Stare",
+      "note": "Notă",
+      "cancelReason": "Motivul anulării",
+      "rating": "Evaluare",
+      "ratingComment": "Comentariul clientului",
+      "coupon": "Cupon ({code})",
+      "paymentStatus": "Starea plății",
+      "payments": "Plăți online"
+    },
+    "statuses": {
+      "pending": "Neprocesată",
+      "accepted": "Acceptată",
+      "shipped": "Expediată",
+      "concluded": "Finalizată",
+      "cancelled": "Anulată"
+    },
+    "transitions": {
+      "accepted": "Acceptă",
+      "shipped": "Expediază",
+      "concluded": "Finalizează",
+      "cancelled": "Anulează"
+    },
+    "paymentMethods": {
+      "cod": "Plata la livrare",
+      "stripe": "Card",
+      "paypal": "PayPal"
+    },
+    "shippingTypes": {
+      "delivery": "Livrare la client",
+      "pickup": "Ridicare din magazin"
+    },
+    "description": "Comenzi plasate de clienții tăi.",
+    "ratingValue": "{rating}/5 ★",
+    "paymentStatuses": {
+      "unpaid": "Neplătită",
+      "paid": "Plătită",
+      "refunded": "Rambursată"
+    },
+    "attemptStatuses": {
+      "open": "În așteptare",
+      "paid": "Plătită",
+      "expired": "Expirată",
+      "refunded": "Rambursată"
+    },
+    "testPayment": "test",
+    "awaitingPaymentHint": "Se așteaptă plata online a clientului. Comanda poate fi acceptată după ce este plătită.",
+    "refundWarning": "{amount} vor fi rambursați clientului.",
+    "paymentStates": {
+      "paid": "Plătit",
+      "refunded": "Rambursat",
+      "awaitingPayment": "Se așteaptă plata",
+      "payOnDelivery": "Plata la livrare",
+      "notPaid": "Neplătit"
+    },
+    "paymentUntil": "până la {time}",
+    "paymentExpiredCancelReason": "Plata nu a fost primită la timp.",
+    "exportTruncated": "Exportul a fost limitat la primele {count} comenzi",
+    "exportError": "Nu s-au putut exporta comenzile",
+    "shopify": {
+      "syncOrders": "Sincronizează comenzile",
+      "orderColumn": "Comandă",
+      "customerColumn": "Client",
+      "paymentPending": "În așteptare",
+      "paymentFilter": "Plată",
+      "paymentFilterAll": "Plată: Toate",
+      "fulfillmentFilter": "Onorare",
+      "fulfillmentFilterAll": "Onorare: Toate",
+      "fulfillmentStatuses": {
+        "fulfilled": "Onorată",
+        "unfulfilled": "Neonorată",
+        "partial": "Parțială"
+      },
+      "viewDetails": "Vezi detalii",
+      "viewOnStore": "Vezi în {store}",
+      "detailsTitle": "Comanda {name}",
+      "placedOn": "Plasată în magazinul {store} • {date}",
+      "customerDetails": "Detalii client",
+      "shippingAddress": "Adresa de livrare",
+      "noShippingAddress": "Nicio adresă de livrare",
+      "tracking": "Urmărire: {company} #{number}",
+      "lineItems": "Produse comandate",
+      "itemColumn": "Articol",
+      "skuColumn": "SKU",
+      "shipping": "Livrare",
+      "free": "Gratuit",
+      "loading": "Se încarcă...",
+      "loadError": "Nu s-au putut încărca detaliile comenzii",
+      "close": "Închide"
+    }
   },
   "platformAdmin": {
     "helpItems": {
@@ -6353,7 +7480,31 @@
       "supportOff": "Dezactivat",
       "searchPlaceholder": "Căutați după nume, e-mailul proprietarului sau ID",
       "descriptionConsentDisabled": "All workspaces can be opened by platform administrators.",
-      "supportAccessible": "Accessible"
+      "supportAccessible": "Accessible",
+      "periodStart": "Period start",
+      "periodEnd": "Period end",
+      "requestedBy": "Requested by",
+      "workspaceId": "Workspace ID",
+      "language": "Language",
+      "planSnapshot": "Plan at deletion",
+      "ownerQuota": "Owner quota",
+      "usagePeriods": "Usage periods",
+      "deletedTitle": "Deleted workspaces",
+      "deletedDescription": "Purge evidence for deleted workspaces.",
+      "purgedAt": "Purged at",
+      "deletionRequestedAt": "Deletion requested at",
+      "scheduledDeletionAt": "Scheduled deletion at",
+      "evidence": "Evidence",
+      "usage": "Usage snapshot",
+      "members": "Members",
+      "notAvailable": "Not available",
+      "createButton": "Create workspace",
+      "createTitle": "Create workspace for an owner",
+      "createDescription": "Creates a workspace for the owner's email, adding any member emails you list. A new email gets a mailed temporary password.",
+      "ownerEmail": "Owner email",
+      "memberEmails": "Member emails",
+      "membersHint": "Every member gets the permissions selected below. New emails get a mailed temporary password.",
+      "createdSummary": "Workspace created for {ownerEmail} — {memberCount} member(s) added, {newAccountCount} new account(s) emailed a temporary password."
     },
     "admins": {
       "title": "Platform administrators",
@@ -6363,12 +7514,29 @@
       "addButton": "Add administrator",
       "role": "Role",
       "bootstrap": "Environment bootstrap administrator",
+      "roles": {
+        "superAdmin": "Super admin",
+        "support": "Support"
+      },
       "remove": "Remove administrator",
       "empty": "No platform administrators are configured.",
       "added": "Platform administrator added.",
       "removed": "Platform administrator removed.",
       "addError": "Could not add the platform administrator.",
       "removeError": "Could not remove the platform administrator."
+    },
+    "auditLogs": {
+      "title": "Jurnale de audit ale platformei",
+      "description": "Activitate de audit în toate spațiile de lucru de pe această platformă."
+    },
+    "smtp": {
+      "title": "Setări SMTP",
+      "description": "Transportul de e-mail al platformei. Lăsați necompletat pentru a continua să utilizați variabilele de mediu SMTP_SERVER și SMTP_FROM.",
+      "usingEnv": "Nu există setări SMTP salvate — e-mailul platformei folosește variabila de mediu SMTP_SERVER.",
+      "remove": "Elimină setările SMTP",
+      "errors": {
+        "passwordRequired": "Introduceți parola SMTP."
+      }
     }
   },
   "platformBranding": {
@@ -6397,6 +7565,23 @@
     "hint": "Lasă toate canalele nebifate pentru a permite toate canalele.",
     "title": "Canale ascunse",
     "hiddenByPlatform": "Ascuns de administratorul platformei — nu poți reactiva acest canal."
+  },
+  "platformDefaultTemplate": {
+    "title": "Șablon implicit",
+    "description": "Instalează acest șablon în fiecare spațiu de lucru nou creat sub acest white-label. Spațiile existente nu se modifică.",
+    "clearTitle": "Elimini șablonul implicit?",
+    "clearDescription": "Spațiile de lucru noi nu vor mai primi automat un șablon. Cele care îl au deja îl păstrează.",
+    "status": {
+      "notConfigured": "Nesetat",
+      "ready": "Activ",
+      "templateUnavailable": "Șablon indisponibil",
+      "shareDisabled": "Link de partajare dezactivat",
+      "keyRotated": "Cheie nevalidă"
+    },
+    "errors": {
+      "unavailable": "ID-ul sau cheia șablonului nu este validă.",
+      "shareDisabled": "Activează mai întâi linkul de partajare al șablonului."
+    }
   },
   "platformCredentials": {
     "notConfigured": "Nu este configurat încă",
@@ -6454,7 +7639,8 @@
     "columns": {
       "name": "Nume",
       "products": "Produse",
-      "subcategories": "Subcategorii"
+      "subcategories": "Subcategorii",
+      "visible": "Vizibil"
     },
     "create": "Creează categorie",
     "createSub": "Creează subcategorie",
@@ -6465,11 +7651,11 @@
     "deleteError": "Nu s-a putut șterge această categorie.",
     "deleteTitle": "Ștergi „{name}”?",
     "deleted": "Categorie ștearsă.",
-    "edit": "Redenumește categoria",
+    "edit": "Editează",
     "empty": "Nicio categorie încă. Creează una pentru a-ți grupa produsele.",
     "expand": "Afișează subcategoriile",
     "loadError": "Nu s-au putut încărca categoriile de produse.",
-    "name": "Nume categorie",
+    "name": "Nume",
     "namePlaceholder": "de ex. Colecția de vară",
     "noParent": "Niciuna (nivel de bază)",
     "parent": "Categorie părinte",
@@ -6477,7 +7663,19 @@
     "save": "Salvează",
     "saveError": "Nu s-a putut salva această categorie.",
     "title": "Categorii",
-    "updated": "Categorie actualizată."
+    "updated": "Categorie actualizată.",
+    "add": "Adaugă",
+    "dialogTitle": "Categorie",
+    "image": "Imagine",
+    "continue": "Continuă",
+    "subcategories": "Subcategorii",
+    "subcategoriesOf": "Subcategorii din {name}",
+    "emptySub": "Nicio subcategorie încă.",
+    "back": "Înapoi la categorii",
+    "getId": "Obține ID",
+    "idCopied": "ID-ul categoriei {id} a fost copiat",
+    "idCopyError": "Nu s-a putut copia ID-ul",
+    "description": "Grupează-ți produsele în categorii și subcategorii."
   },
   "productImport": {
     "confirm": "Începe importul",
@@ -6624,7 +7822,16 @@
       },
       "variantsDescription": "Adaugă variante dacă acest produs vine în mai multe versiuni, precum dimensiuni sau culori diferite",
       "vendor": {
-        "label": "Furnizor"
+        "label": "Furnizor",
+        "none": "Niciunul"
+      },
+      "status": {
+        "label": "Stare",
+        "values": {
+          "active": "Activ",
+          "draft": "Ciornă",
+          "unlisted": "Nelistat"
+        }
       }
     },
     "inventoryPolicy": {
@@ -6640,7 +7847,33 @@
       "tags": "Etichete",
       "variants": "Variante"
     },
-    "title": "Produse"
+    "title": "Produse",
+    "shopify": {
+      "openStore": "Deschide {store}",
+      "syncProducts": "Sincronizează produsele",
+      "syncStarted": "Sincronizarea a început",
+      "syncError": "Nu s-a putut porni sincronizarea",
+      "viewDetails": "Vezi detalii",
+      "editOnStore": "Editează în {store}",
+      "copyProductLink": "Copiază linkul produsului",
+      "linkCopied": "Linkul produsului a fost copiat",
+      "noProductLink": "Acest produs nu are link în magazin",
+      "inStock": "{count} în stoc",
+      "inStockWithVariants": "{count} în stoc ({variants} variante)",
+      "detailsTitle": "Detalii produs — {name}",
+      "detailsSubtitle": "Sincronizat din magazinul {store} {shop}",
+      "summaryLine": "Categorie: {category} • Stoc total: {units} unități în {variants, plural, one {# variantă} other {# de variante}}",
+      "uncategorized": "Fără categorie",
+      "variantsTitle": "Variante ({count})",
+      "variantColumn": "Variantă",
+      "skuColumn": "SKU",
+      "priceColumn": "Preț",
+      "inventoryColumn": "Stoc",
+      "defaultVariant": "Implicită",
+      "loading": "Se încarcă...",
+      "loadError": "Nu s-au putut încărca detaliile produsului",
+      "close": "Închide"
+    }
   },
   "qrCodeGenerator": {
     "description": "Creează și gestionează codurile tale QR.",
@@ -6648,6 +7881,9 @@
   },
   "templates": {
     "description": "Creează și gestionează șabloanele tale.",
+    "createDialog": {
+      "title": "Șablon nou"
+    },
     "title": "Șabloane",
     "share": {
       "label": "Distribuie",
@@ -6657,14 +7893,135 @@
       "dialogDescription": "Oricine are acest link poate instala o copie a acestui șablon într-un spațiu de lucru din organizația ta.",
       "enableLabel": "Activează linkul de distribuire",
       "linkLabel": "Link de distribuire",
-      "description": "Oricine are linkul poate instala acest șablon în propriul spațiu de lucru."
+      "rotateLabel": "Regenerează linkul",
+      "rotateTitle": "Regenerezi linkul de distribuire?",
+      "rotateDescription": "Linkul actual nu mai funcționează imediat. Oricine mai trebuie să instaleze acest șablon are nevoie de linkul nou.",
+      "rotated": "Linkul de distribuire a fost regenerat",
+      "expiryLabel": "Linkul expiră",
+      "expiryHint": "Lasă gol pentru un link care nu expiră niciodată.",
+      "clearExpiry": "Elimină expirarea",
+      "expiredNotice": "Acest link a expirat. Setează o dată ulterioară sau elimină expirarea pentru a-l distribui din nou.",
+      "templateId": "ID șablon",
+      "templateKey": "Cheie șablon",
+      "showKey": "Arată cheia",
+      "hideKey": "Ascunde cheia",
+      "copyField": "Copiază {field}"
+    },
+    "sync": {
+      "title": "Actualizări",
+      "updateAvailable": "Actualizare disponibilă",
+      "upToDate": "La zi",
+      "sourceDeleted": "Șablon șters",
+      "sourceDeletedHint": "Editorul a șters acest șablon. Copia ta funcționează în continuare, dar nu mai poate fi actualizată.",
+      "updateNow": "Actualizează acum",
+      "updating": "Se actualizează…",
+      "version": "Versiunea șablonului {version}",
+      "lastSynced": "actualizat ultima dată {date}",
+      "autoUpdateLabel": "Actualizează automat când șablonul se modifică",
+      "noHistory": "Nicio actualizare încă.",
+      "countAdded": "{count} adăugate",
+      "countUpdated": "{count} actualizate",
+      "countDetached": "{count} nu mai urmează șablonul",
+      "notUpdatable": "{count} nu pot fi actualizate încă",
+      "overwritten": "{name} a fost editat și înlocuit de actualizare",
+      "restore": "Restaurează versiunea mea",
+      "restored": "Versiunea ta a fost restaurată",
+      "status": {
+        "pending": "În coadă",
+        "running": "În desfășurare",
+        "completed": "Finalizat",
+        "partial": "Parțial",
+        "failed": "Eșuat",
+        "skipped": "Omis",
+        "cancelled": "Anulat"
+      },
+      "trigger": {
+        "autoUpdate": "Automat",
+        "manual": "Manual",
+        "reinstall": "Reinstalare"
+      },
+      "requestedVersion": "solicitată v{version}",
+      "errors": {
+        "unknown": "Actualizarea a eșuat. Încearcă din nou sau contactează asistența dacă eșuează în continuare.",
+        "templateSyncFailed": "Actualizarea a eșuat. Încearcă din nou.",
+        "templateSyncSuperseded": "O actualizare mai nouă a înlocuit-o pe aceasta.",
+        "templateSyncAbandoned": "Actualizarea nu s-a terminat la timp și a fost închisă.",
+        "templateInstallationInactive": "Această instalare nu mai este activă.",
+        "workspaceOwnerBlocked": "Contul proprietarului spațiului de lucru este blocat.",
+        "templateUninstallInProgress": "Șablonul este dezinstalat.",
+        "templateAutoUpdateOff": "Actualizările automate sunt dezactivate.",
+        "templateUpToDate": "Copia este deja actualizată.",
+        "templateInstallerAccessLost": "Cine a instalat șablonul nu mai are permisiunea de a actualiza această copie.",
+        "templateInstallationSourceMissing": "Șablonul a fost șters înainte de rularea actualizării.",
+        "templateCategoryPermissionDenied": "Nu mai ai permisiunea de a actualiza tot conținutul acestui șablon.",
+        "templatePayloadIncompatible": "Acest șablon a fost salvat într-un format mai nou decât poate instala acest server.",
+        "templateCrossTenantInstall": "Acest șablon nu este disponibil pentru spațiul tău de lucru.",
+        "templateInvalidInboxBinding": "O căsuță de mesaje selectată nu se potrivește cu șablonul."
+      }
+    },
+    "versions": {
+      "detailsTab": "Detalii",
+      "tab": "Versiuni",
+      "versionNumber": "Versiunea {version}",
+      "current": "Curentă",
+      "first": "Prima versiune",
+      "noDetail": "Nu au fost înregistrate detalii pentru această versiune.",
+      "added": "Adăugat",
+      "changed": "Modificat",
+      "removed": "Eliminat"
+    },
+    "installers": {
+      "title": "Vezi analizele",
+      "workspace": "Spațiu de lucru",
+      "lastInstalled": "Ultima instalare",
+      "version": "Version",
+      "autoUpdate": "Actualizare automată",
+      "uninstalled": "Dezinstalat",
+      "hidden": "Spațiu de lucru nedistribuit",
+      "uninstallNotAllowed": "Cel care a instalat nu a permis editorilor să dezinstaleze această copie.",
+      "loadError": "Nu s-au putut încărca instalatorii. Încearcă din nou.",
+      "automatic": "Automată",
+      "details": "Detalii",
+      "noIssues": "Nu există avertismente sau erori."
     },
     "installs": {
       "title": "Instalări",
       "resources": "Resurse",
       "warnings": "Avertismente",
       "completedAt": "Finalizat la",
-      "autoUpdate": "Actualizare automată"
+      "autoUpdate": "Actualizare automată",
+      "installedBy": "Instalat de",
+      "viaApi": "Token API",
+      "attempts": "Încercări",
+      "autoUpdateOn": "Activat",
+      "autoUpdateOff": "Dezactivat",
+      "retry": "Reîncearcă instalarea",
+      "resourcesTitle": "Resurse instalate",
+      "noResources": "Nu s-a creat nimic încă.",
+      "deletedResource": "Resursă ștearsă",
+      "viewOnly": "Doar vizualizare",
+      "created": "Creat",
+      "reused": "Reutilizat",
+      "loadMore": "Încarcă mai multe",
+      "statusFilter": "Stare",
+      "allStatuses": "Toate stările",
+      "errors": {
+        "unknown": "Instalarea a eșuat. Încearcă din nou sau contactează asistența dacă eșuează în continuare.",
+        "templatePayloadIncompatible": "Acest șablon a fost salvat într-un format mai nou decât poate instala acest server.",
+        "templateInstallationSourceMissing": "Șablonul a fost șters înainte de rularea instalării.",
+        "templateCrossTenantInstall": "Acest șablon nu este disponibil pentru spațiul tău de lucru.",
+        "templateCategoryPermissionDenied": "Nu mai ai permisiunea de a instala tot conținutul acestui șablon.",
+        "templateInvalidInboxBinding": "O căsuță de mesaje selectată nu se potrivește cu șablonul.",
+        "templateInstallEnqueueFailed": "Instalarea nu a putut fi pusă în coadă.",
+        "templateInstallFailed": "Instalarea a eșuat. Încearcă din nou.",
+        "templateInstallAbandoned": "Instalarea nu s-a finalizat la timp și a fost închisă.",
+        "templateInstallSuperseded": "O instalare mai nouă a acestui șablon a înlocuit-o pe aceasta.",
+        "workspaceOwnerBlocked": "Contul proprietarului spațiului de lucru este blocat."
+      },
+      "uninstalledBy": "{by, select, publisher {Editorul a dezinstalat acest șablon.} installer {Acest șablon a fost dezinstalat din acest spațiu de lucru.} other {Acest șablon a fost dezinstalat.}}",
+      "uninstalledSummary": "{deleted} șterse, {kept} păstrate.",
+      "lastAttemptAt": "Ultima încercare",
+      "installedAutomatically": "Instalat automat (implicit white-label)"
     },
     "form": {
       "contents": "Conținutul șablonului",
@@ -6677,14 +8034,26 @@
       "allowDelete": "Permite ștergerea după instalare",
       "publisherName": "Numele editorului",
       "youtubeVideoId": "ID-ul videoclipului YouTube",
-      "youtubeVideoIdDescription": "ID-ul de 11 caractere din URL-ul videoclipului, de ex. \"dQw4w9WgXcQ\" în youtube.com/watch?v=dQw4w9WgXcQ",
+      "youtubeVideoIdDescription": "ID-ul de 11 caractere din URL-ul videoclipului, de ex. \"xxxxxxxxxxx\" în youtube.com/watch?v=xxxxxxxxxxx",
       "testLink": "Link de test",
       "imageUrl": "Imagine de copertă",
       "installBehavior": "Comportament la instalare",
-      "createInstallFolder": "Instalează într-un folder dedicat",
+      "createInstallFolder": "Creează un folder în contul instalat și instalează resursele.",
       "createInstallFolderDescription": "Grupează fiecare resursă instalată într-un singur folder nou, denumit după acest șablon.",
-      "defaultAutoUpdate": "Marchează instalările pentru actualizări în mod implicit",
-      "defaultAutoUpdateDescription": "Instalările noi vor afișa o notificare de actualizare disponibilă de fiecare dată când republici acest șablon."
+      "defaultAutoUpdate": "Actualizează automat șabloanele instalate",
+      "defaultAutoUpdateDescription": "De fiecare dată când salvezi acest șablon cu conținut modificat, instalările cu actualizare automată sunt suprascrise cu noul conținut (copiile editate de cel care a instalat sunt salvate mai întâi). Cei care instalează o pot dezactiva.",
+      "viewOnly": "Doar vizualizare",
+      "viewOnlyAll": "Setează toate cele selectate doar pentru vizualizare",
+      "includedAutomatically": {
+        "title": "Incluse automat",
+        "hint": "Preluate deoarece un element selectat de tine are nevoie de ele. Doar citire.",
+        "rows": "{count, plural, one {încă # element} other {încă # elemente}}",
+        "kind": {
+          "folders": "Foldere",
+          "placeCategories": "Categorii de locații"
+        }
+      },
+      "viewOnlyCopyIncluded": "Un element selectat (sau un element de care are nevoie) a fost instalat dintr-un șablon doar pentru vizualizare, deci nu poate fi partajat într-un șablon nou."
     },
     "categories": {
       "flows": "Fluxuri",
@@ -6699,8 +8068,116 @@
       "keywords": "Cuvinte cheie",
       "entryPointLinks": "Linkuri de intrare",
       "triggers": "Declanșatoare",
-      "fbCommentAutomations": "Automatizări comentarii Facebook",
-      "settings": "Setări"
+      "fbCommentAutomations": "Automatizări comentarii",
+      "settings": "Câmpuri bot și răspunsuri salvate",
+      "sequences": "Secvențe",
+      "aiMcpServers": "Servere MCP",
+      "aiFiles": "Fișiere de cunoștințe AI",
+      "questionnaires": "Questionnaires",
+      "couponTopics": "Subiecte cupoane",
+      "pipelines": "Pipeline-uri"
+    },
+    "locked": {
+      "flowBanner": "Acest flux a fost instalat dintr-un șablon doar pentru vizualizare. Îl poți vedea, dar nu îl poți edita.",
+      "badge": "Doar vizualizare",
+      "editorBanner": "Acesta a fost instalat dintr-un șablon doar pentru vizualizare. Îl poți vedea, dar nu îl poți edita.",
+      "badgeHint": "Instalat dintr-un șablon doar pentru vizualizare"
+    },
+    "channels": {
+      "messenger": "Messenger",
+      "instagram": "Instagram",
+      "instagramFacebook": "Instagram (Facebook login)",
+      "threads": "Threads",
+      "tiktok": "TikTok",
+      "whatsapp": "WhatsApp",
+      "telegram": "Telegram",
+      "zalo": "Zalo",
+      "webchat": "Webchat",
+      "line": "LINE",
+      "email": "Email"
+    },
+    "uninstall": {
+      "title": "Dezinstalează șablonul",
+      "description": "Șablonul elimină tot ce a creat în acest spațiu de lucru, inclusiv copiile editate. Etichetele, câmpurile și folderele partajate, elementele care existau deja și tot ce ai construit pe baza unei copii sunt păstrate.",
+      "loading": "Se verifică ce se va întâmpla…",
+      "previewFailed": "Nu s-a putut verifica efectul dezinstalării.",
+      "failed": "Șablonul nu a putut fi dezinstalat.",
+      "confirm": "Dezinstalează",
+      "action": "Dezinstalează",
+      "deleted": "{count, plural, one {# element va fi șters} other {# elemente vor fi șterse}}",
+      "deletedDone": "{count, plural, one {# element a fost șters} other {# elemente au fost șterse}}",
+      "keptModified": "{count, plural, one {# copie editată sau neverificată este păstrată} other {# copii editate sau neverificate sunt păstrate}}",
+      "keptShared": "{count, plural, one {# etichetă sau câmp partajat este păstrat} other {# etichete și câmpuri partajate sunt păstrate}}",
+      "keptByPolicy": "{count, plural, one {# alt element este păstrat} other {# alte elemente sunt păstrate}}",
+      "keptHasDependents": "{count, plural, one {# copie este păstrată deoarece ceva încă o folosește} other {# copii sunt păstrate deoarece ceva încă le folosește}}",
+      "deletedModified": "{count, plural, one {# dintre ele a fost editat de tine: acele modificări se pierd și nu pot fi restaurate} other {# dintre ele au fost editate de tine: acele modificări se pierd și nu pot fi restaurate}}",
+      "keptLockedByOther": "{count, plural, one {# element este păstrat deoarece o altă instalare de șablon încă îl protejează} other {# elemente sunt păstrate deoarece o altă instalare de șablon încă le protejează}}",
+      "confirmCheckbox": "Înțeleg că acest lucru șterge elementele de mai sus și nu poate fi anulat",
+      "started": "Dezinstalarea a început",
+      "inProgress": "Se dezinstalează…",
+      "retry": "Reîncearcă dezinstalarea",
+      "state": {
+        "pending": "Dezinstalare în coadă",
+        "running": "Se dezinstalează…",
+        "partial": "Dezinstalare incompletă, reîncearc-o",
+        "failed": "Dezinstalarea a eșuat, reîncearc-o",
+        "skipped": "Dezinstalare omisă: spațiul de lucru este blocat"
+      },
+      "deletedUnverified": "{count, plural, one {# dintre ele nu poate fi verificat pentru modificări: dacă l-ai schimbat, acele modificări se pierd} other {# dintre ele nu pot fi verificate pentru modificări: dacă le-ai schimbat, acele modificări se pierd}}",
+      "cancelAction": "Anulează dezinstalarea",
+      "cancelled": "Dezinstalare anulată: elementele rămase pot fi folosite din nou de tine",
+      "blockedByReference": "{count, plural, one {# element nu a fost șters deoarece ceva creat de tine încă face referire la el: elimină acea referință, apoi reîncearcă dezinstalarea} other {# elemente nu au fost șterse deoarece ceva creat de tine încă face referire la ele: elimină acele referințe, apoi reîncearcă dezinstalarea}}",
+      "keptPartlyRemoved": "{count, plural, one {# copie a fost păstrată după o dezinstalare blocată; istoricul și datele de protecție împotriva duplicatelor ar fi putut fi eliminate, deci verific-o înainte de a o activa} other {# copii au fost păstrate după o dezinstalare blocată; istoricul și datele de protecție împotriva duplicatelor ar fi putut fi eliminate, deci verifică-le înainte de a le activa}}",
+      "keptInactiveForReview": "{count, plural, one {# copie a fost lăsată inactivă: istoricul și datele de protecție împotriva duplicatelor au fost eliminate, deci verific-o înainte de a o activa} other {# copii au fost lăsate inactive: istoricul și datele de protecție împotriva duplicatelor au fost eliminate, deci verifică-le înainte de a le activa}}",
+      "keptHistoryRemoved": "{count, plural, one {# copie a fost păstrată, dar istoricul ei a fost eliminat (nu are nimic de activat): verific-o înainte de a te baza pe ea} other {# copii au fost păstrate, dar istoricul lor a fost eliminat (nu au nimic de activat): verifică-le înainte de a te baza pe ele}}",
+      "cancelledPartial": "{count, plural, one {# element este deja în curs de ștergere și se va finaliza; restul a fost redat} other {# elemente sunt deja în curs de ștergere și se vor finaliza; restul a fost redat}}"
+    },
+    "warningCodes": {
+      "aiFileTooLarge": "Acest fișier de cunoștințe este mai mare decât poate copia o instalare de șablon, așa că a fost omis.",
+      "aiFileUnavailable": "Acest fișier de cunoștințe nu a putut fi copiat, așa că a fost omis.",
+      "assigneeRequired": "Alege cui îi atribuie acest pas conversația.",
+      "ambiguousSourceFieldToken": "Mai multe câmpuri sursă au acest nume, așa că variabilele care îl folosesc au fost lăsate neschimbate.",
+      "backupTooLarge": "Un element editat local era prea mare pentru backup, așa că nu a fost suprascris.",
+      "backupUnavailable": "Backup-ul pentru acest element nu mai este disponibil.",
+      "botFieldRenamed": "Există deja un câmp de bot cu acest nume și alt tip, așa că a fost creat un câmp redenumit.",
+      "categoryPermissionDenied": "Nu ai permisiunea pentru această categorie, așa că a fost omisă.",
+      "couponTopicExpired": "Acest subiect de cupon a expirat deja.",
+      "credentialRequired": "Adaugă datele de autentificare pentru acest element înainte de a-l folosi.",
+      "custom": "Un element referit nu a fost găsit în acest spațiu de lucru, așa că legătura a fost eliminată.",
+      "customField": "Un element referit nu a fost găsit în acest spațiu de lucru, așa că legătura a fost eliminată.",
+      "customFieldRenamed": "Există deja un câmp cu acest nume și alt tip, așa că a fost creat un câmp redenumit.",
+      "enqueueFailed": "Procesarea în fundal nu a putut fi pusă în coadă pentru acest element.",
+      "flow": "Un element referit nu a fost găsit în acest spațiu de lucru, așa că legătura a fost eliminată.",
+      "flowInvalidStructure": "Structura Flow-ului este invalidă, așa că a fost omis.",
+      "flowNotPublished": "Flow-ul a fost instalat ca ciornă și nu este publicat.",
+      "flowSkippedRequiredReference": "Flow-ul a fost omis deoarece o referință obligatorie nu a putut fi rezolvată.",
+      "folder": "Un element referit nu a fost găsit în acest spațiu de lucru, așa că legătura a fost eliminată.",
+      "inboxBindingRequired": "Alege o căsuță de mesaje pentru acest canal; până atunci elementul rămâne inactiv.",
+      "integration": "Un element referit nu a fost găsit în acest spațiu de lucru, așa că legătura a fost eliminată.",
+      "localModifiedOverwritten": "Un element editat local a fost suprascris. A fost salvat un backup care poate fi restaurat.",
+      "name": "Nu a fost găsit un nume liber pentru acest element, așa că a fost omis.",
+      "noEmbeddingProvider": "În acest spațiu de lucru nu este configurat niciun furnizor de embedding, așa că fișierele de cunoștințe au fost omise. Conectează OpenAI sau Gemini, apoi reinstalează.",
+      "notUpdatable": "Acest tip de element nu este încă actualizat automat.",
+      "pipeline": "Folosește un pipeline care nu mai există.",
+      "pipelineField": "Folosește un câmp de pipeline care nu mai există.",
+      "pipelineStage": "Folosește o etapă de pipeline care nu mai există.",
+      "postSelectionRequired": "Selectează din nou postarea: postarea originală nu a putut fi preluată.",
+      "product": "Un element referit nu a fost găsit în acest spațiu de lucru, așa că legătura a fost eliminată.",
+      "productCategory": "Un element referit nu a fost găsit în acest spațiu de lucru, așa că legătura a fost eliminată.",
+      "questionImage": "O imagine nu a putut fi copiată.",
+      "quota": "A fost atinsă o limită a planului, așa că elementul a fost omis.",
+      "referenceRemoved": "O referință care nu a putut fi rezolvată a fost eliminată.",
+      "savedReply": "Un element referit nu a fost găsit în acest spațiu de lucru, așa că legătura a fost eliminată.",
+      "savedReplyImage": "O imagine nu a putut fi copiată.",
+      "tag": "Un element referit nu a fost găsit în acest spațiu de lucru, așa că legătura a fost eliminată.",
+      "unlisted": "Element neadus complet: {code}",
+      "workspaceMember": "Atribuit unui membru care nu este în acest spațiu de lucru.",
+      "workspaceUnavailable": "Acest spațiu de lucru nu mai este disponibil, așa că elementul a fost omis."
+    },
+    "tabs": {
+      "mine": "Șabloanele mele",
+      "installed": "Instalate",
+      "installedEmpty": "Încă nu există șabloane instalate. Șabloanele pe care le instalezi dintr-un alt spațiu de lucru vor apărea aici."
     }
   },
   "tiktok": {
@@ -6735,14 +8212,39 @@
     "invalidTitle": "Acest link nu mai este disponibil.",
     "invalidDescription": "Acest link de distribuire a șablonului este invalid, dezactivat sau expirat.",
     "byPublisher": "De {publisherName}",
-    "includes": "Acest șablon include",
     "videoTitle": "Videoclip de previzualizare a șablonului",
-    "tryItOut": "Încearcă-l",
-    "signInToInstall": "Autentifică-te pentru a instala",
+    "preview": "Previzualizare",
+    "aboutTemplate": "Despre acest șablon",
     "selectWorkspace": "Selectează un spațiu de lucru",
     "install": "Instalează",
     "installStarted": "Instalarea a început",
-    "noEligibleWorkspaces": "Nu ai niciun spațiu de lucru eligibil pentru a instala acest șablon."
+    "noEligibleWorkspaces": "Nu ai niciun spațiu de lucru eligibil pentru a instala acest șablon.",
+    "alreadyInstalled": "Acest șablon este deja instalat în acest spațiu de lucru.",
+    "viewInstall": "Vezi instalarea",
+    "installAnotherCopy": "Instalează încă o copie",
+    "inboxesTitle": "Căsuțe de mesaje",
+    "inboxesHint": "Acest șablon a fost construit pentru aceste căsuțe de mesaje. Alege ce căsuțe proprii să folosești; orice rămâne neales este instalat dezactivat.",
+    "noInbox": "Nu conecta — instalează dezactivat",
+    "noInboxAvailable": "Nicio căsuță de mesaje conectată pe acest canal",
+    "updateExisting": "Actualizează copia instalată",
+    "updateStarted": "Actualizarea a început",
+    "autoUpdateLabel": "Actualizează automat când șablonul se modifică",
+    "collisions": {
+      "title": "Ce va face instalarea aici",
+      "loading": "Se verifică acest spațiu de lucru…",
+      "action": {
+        "create": "Creat",
+        "reuse": "Reutilizat",
+        "rename": "Redenumit",
+        "bind": "Asociat",
+        "unbound": "Lăsat neasociat"
+      },
+      "detail": {
+        "rename": "„{name}” există deja cu alt tip, așa că cel din șablon este adăugat sub un nume nou.",
+        "unbound": "„{name}” rămâne neconectat până când alegi o căsuță de mesaje."
+      }
+    },
+    "createWorkspace": "Creează un spațiu de lucru nou"
   },
   "bookingWebview": {
     "metadataTitle": "Programează o întâlnire",
@@ -6758,6 +8260,7 @@
       "invalidTokenTitle": "Acest link de programare nu este disponibil.",
       "invalidTokenDescription": "Linkul poate fi invalid sau expirat. Solicită un nou link de programare.",
       "staleSlot": "Această oră nu mai este disponibilă. Te rugăm să alegi o altă oră.",
+      "alreadyScheduled": "Acest contact are deja o programare la această oră în acest calendar. Te rugăm să alegi o altă oră.",
       "availabilityChanged": "Disponibilitatea s-a schimbat în timp ce alegeai o oră. Te rugăm să alegi din nou.",
       "submitFailed": "Nu am putut finaliza această solicitare. Te rugăm să încerci din nou."
     },
@@ -6847,6 +8350,15 @@
     },
     "messages": {
       "empty": "Nicio programare încă."
+    },
+    "actions": {
+      "create": "Creează programare"
+    },
+    "create": {
+      "title": "Creează programare",
+      "description": "Alege un calendar și o oră disponibilă pentru a face o programare acestui contact.",
+      "noConversationHint": "Nicio conversație nu este deschisă, așa că contactul nu va primi un mesaj de confirmare.",
+      "success": "Programare creată."
     }
   },
   "appointmentManagement": {
@@ -8093,7 +9605,9 @@
       "customer_service": "Servicii clienți",
       "escalation": "Escaladare",
       "marketing": "Marketing",
-      "utility": "Utilitar"
+      "utility": "Utilitar",
+      "calls": "Apeluri",
+      "other": "Altele"
     },
     "pill": {
       "standby": "Standby ({owner})",
@@ -8103,14 +9617,18 @@
     "release": {
       "label": "Eliberează",
       "tooltip": "Eliberează această conversație pentru ca alte aplicații să poată răspunde",
-      "success": "Conversație eliberată"
+      "success": "Conversație eliberată",
+      "menu": "Eliberează sau predă"
     },
     "pass": {
-      "menuItem": "Transferă la escaladare",
-      "title": "Transferi către partenerul de escaladare?",
-      "description": "Predai această conversație partenerului tău de escaladare? Răspunsurile tale vor fi suspendate până când conversația revine.",
+      "menuItem": "Predă către un partener",
+      "title": "Predai către un partener?",
+      "description": "Alege cine preia această conversație. Răspunsurile tale sunt puse în pauză până când conversația revine.",
       "confirm": "Transferă",
-      "success": "Conversație transferată partenerului de escaladare"
+      "success": "Conversație transferată partenerului de escaladare",
+      "targetLabel": "Predă către",
+      "noteLabel": "Notă pentru partenerul care preia",
+      "successTargeted": "Conversație predată către {role}"
     },
     "aiHandover": {
       "label": "BizAI",
@@ -8129,7 +9647,10 @@
       "notEscalation": "Doar partenerul de escaladare poate prelua. Rutarea se configurează în Meta Business Suite.",
       "notPrimaryReceiver": "Această aplicație trebuie să fie destinatarul principal al Paginii pentru a prelua. Setează acest lucru în setările Handover Protocol ale Paginii.",
       "learnMore": "Află mai multe",
-      "dismiss": "Trimite oricum"
+      "dismiss": "Trimite oricum",
+      "takeOverTitle": "Preiei această conversație?",
+      "takeOverDescription": "Partenerul nu o mai gestionează, iar tu preiei controlul. Îi poți lăsa o notă.",
+      "takeOverNoteLabel": "Notă pentru partenerul curent"
     },
     "divider": {
       "ownerHandling": "{owner} gestionează acum această conversație",
@@ -8182,7 +9703,17 @@
       "adminOnly": "Doar administratorii spațiului de lucru pot modifica rutarea",
       "flowNotFound": "Fluxul selectat nu a fost găsit sau nu este activ",
       "integrationNotFound": "Numărul WhatsApp nu a fost găsit",
-      "messengerIntegrationNotFound": "Pagina Messenger nu a fost găsită"
+      "messengerIntegrationNotFound": "Pagina Messenger nu a fost găsită",
+      "rolesTitle": "Rolurile tale de rutare pe acest număr",
+      "rolesDescription": "Atribuite de companie în Meta Business Suite.",
+      "rolesNone": "Nu ai niciun rol de rutare pe acest număr.",
+      "rolesNeverChecked": "Neverificat încă.",
+      "rolesNotEnabled": "Rutarea conversațiilor nu este activată pentru acest număr.",
+      "rolesStandbyOn": "Acces în așteptare: activ (vezi conversațiile care nu îți aparțin)",
+      "rolesStandbyOff": "Acces în așteptare: inactiv",
+      "rolesCheckedAt": "Verificat {time}",
+      "rolesRefresh": "Verifică din nou",
+      "rolesSyncFailed": "Nu s-au putut obține rolurile de rutare de la Meta. Încearcă din nou."
     },
     "errors": {
       "unsupported": "Rutarea conversațiilor nu este disponibilă pe acest canal",
@@ -8192,8 +9723,12 @@
     "step": {
       "action": "Acțiune",
       "release": "Eliberează conversația",
-      "pass": "Transferă către partenerul de escaladare",
-      "helper": "Doar WhatsApp. Pe alte canale, sau când conversația nu este gestionată aici, pasul urmează calea de eroare."
+      "pass": "Predă către un partener",
+      "helper": "Doar WhatsApp. Pe alte canale, sau când conversația nu este gestionată aici, pasul urmează calea de eroare.",
+      "targetRole": "Predă către",
+      "targetRoleDefault": "Partener de escaladare (implicit)",
+      "metadata": "Notă de predare",
+      "metadataHelper": "Opțional. Trimisă ca atare aplicației care primește conversația. Variabilele sunt acceptate. Până la {max} de caractere."
     },
     "template": {
       "sent": "Șablon trimis"
@@ -8527,7 +10062,7 @@
       "too_many_components": "Un ecran poate conține cel mult {max} componente.",
       "component_limit": "Un ecran poate conține cel mult {max} × {type}.",
       "picker_conflict": "Un ecran nu poate avea și încărcare de fotografii, și încărcare de documente.",
-      "picker_multiple_in_complete": "Setează {property} la 1: WhatsApp trimite un singur fișier la finalizarea flow-ului.",
+      "picker_multiple_in_complete": "WhatsApp trimite cel mult {max} fișiere la finalizarea fluxului. Reduceți numărul maxim de fișiere al câmpurilor de fișier care duc la acest ecran.",
       "footer_not_last": "Footer-ul trebuie să fie ultima componentă de pe ecran.",
       "footer_in_nested_branch": "Un Footer poate fi doar direct într-o ramură If de primul nivel.",
       "footer_missing_in_branch": "Dacă o ramură are Footer, și cealaltă ramură are nevoie de unul.",
@@ -9033,6 +10568,720 @@
       "closed": "Închis"
     }
   },
+  "productVendors": {
+    "title": "Furnizori",
+    "add": "Adaugă",
+    "edit": "Editează",
+    "delete": "Șterge",
+    "actions": "Acțiuni",
+    "save": "Salvează",
+    "cancel": "Anulează",
+    "moreOptions": "Mai multe opțiuni",
+    "empty": "Niciun furnizor încă.",
+    "created": "Furnizor adăugat",
+    "updated": "Furnizor actualizat",
+    "deleted": "Furnizor șters",
+    "saveError": "Nu s-a putut salva furnizorul",
+    "deleteError": "Nu s-a putut șterge furnizorul",
+    "deleteTitle": "Ștergi {name}?",
+    "deleteDescription": "{count, plural, =0 {Niciun produs nu folosește acest furnizor.} one {# produs va rămâne fără furnizor.} other {# produse vor rămâne fără furnizor.}}",
+    "fields": {
+      "name": "Nume",
+      "shortDescription": "Descriere scurtă",
+      "phone": "Telefon",
+      "storeAddress": "Adresa magazinului",
+      "image": "Imagine",
+      "optional": "Opțional",
+      "discountPercent": "Reducere (0-100%)",
+      "minimumOrderValue": "Valoare minimă a comenzii",
+      "openHours": "Program de funcționare",
+      "category": "Categorie",
+      "subcategory": "Subcategorie",
+      "none": "Niciuna"
+    },
+    "columns": {
+      "name": "Nume",
+      "products": "Total produse",
+      "active": "Activ"
+    },
+    "description": "Vânzătorii și mărcile cărora le aparțin produsele tale."
+  },
+  "ecommerceSettings": {
+    "save": "Salvează",
+    "saved": "Setări salvate",
+    "saveError": "Nu s-au putut salva setările",
+    "rank": {
+      "label": "Poziție",
+      "default": "Implicită"
+    },
+    "tabs": {
+      "general": "General",
+      "payments": "Plăți",
+      "shipping": "Livrare",
+      "checkout": "Finalizare comandă",
+      "shopify": "Shopify",
+      "woocommerce": "WooCommerce"
+    },
+    "general": {
+      "orderingAvailable": {
+        "label": "Comenzile sunt disponibile",
+        "description": "Folosește acest câmp pentru a nu permite clienților să plaseze comenzi fără a modifica programul de funcționare. Programul de funcționare controlează și disponibilitatea ta."
+      },
+      "webshopProductView": {
+        "label": "Afișarea produselor în magazinul web",
+        "description": "Controlează modul în care sunt afișate produsele în magazinul tău web.",
+        "options": {
+          "list": "Listă",
+          "listWithoutImage": "Listă fără imagine",
+          "card": "Card",
+          "cardSquare": "Card cu imagine pătrată",
+          "image": "Imagine",
+          "imageSquare": "Imagine (pătrată)"
+        }
+      },
+      "openHours": {
+        "label": "Program de funcționare",
+        "description": "Intervalele de timp în care clienții pot plasa o comandă."
+      },
+      "searchProducts": {
+        "label": "Căutare produse",
+        "description": "Permite clienților să trimită mesaje pentru a găsi produse."
+      },
+      "facebookPixelId": {
+        "label": "Facebook Pixel",
+        "description": "Urmărește conversiile cu Facebook Pixel și măsoară rezultatele reclamelor tale. Sunt urmărite evenimentele ADD_TO_CART, INITIATE_CHECKOUT, PURCHASE, VIEW_CONTENT"
+      },
+      "abandonedCart": {
+        "label": "Mesaj pentru coș abandonat",
+        "description": "Timpul de așteptare înainte de a trimite un mesaj pentru coș abandonat, după ce utilizatorul părăsește botul tău cu un articol în coș.",
+        "disabled": "Dezactivat",
+        "afterMinutes": "După {count} minute",
+        "afterHours": "{count, plural, one {După # oră} other {După # ore}}"
+      },
+      "productButtons": {
+        "label": "Butoane la produse",
+        "description": "Această setare controlează ce butoane sunt afișate pentru produsele din bot.",
+        "options": {
+          "addToCart": "Adaugă în coș",
+          "share": "Distribuie",
+          "similar": "Similare",
+          "save": "Salvează"
+        }
+      },
+      "productImageSize": {
+        "label": "Dimensiunea imaginii produselor",
+        "description": "Această setare controlează dimensiunea imaginii produselor din bot",
+        "options": {
+          "bigSquare": "Mare (pătrată)",
+          "mediumRectangle": "Medie (dreptunghiulară)"
+        }
+      },
+      "allowRateOrders": {
+        "label": "Permite evaluarea comenzilor",
+        "description": "Permite clienților să evalueze o comandă și să scrie o recenzie dacă nu sunt mulțumiți. Doar administratorii botului pot vedea recenziile"
+      },
+      "notifyOnCartStatusChange": {
+        "label": "Trimite notificare la schimbarea stării coșului",
+        "description": "Clientul va primi notificări ori de câte ori schimbi starea comenzii. Nu poți dezactiva notificarea pentru anularea și finalizarea comenzii."
+      },
+      "abandonedCartFlow": {
+        "label": "Flux pentru coș abandonat",
+        "description": "Fluxul pe care botul îl rulează pentru client când coșul e abandonat atât timp. Folosește '{{shop_token}}' în butoane pentru a deschide coșul. Triggerele pot folosi și evenimentul \"Cart abandoned\".",
+        "none": "Fără flux (doar eveniment de trigger)"
+      },
+      "storeSource": {
+        "label": "Sursa magazinului",
+        "description": "Selectează sursa magazinului folosită pentru gestionarea produselor, stocului și comenzilor. Când este setat Shopify / WooCommerce, toate produsele și comenzile sunt gestionate direct din magazinul tău Shopify / WooCommerce.",
+        "options": {
+          "chatbotx": "ChatbotX",
+          "shopify": "Shopify",
+          "woocommerce": "WooCommerce"
+        }
+      }
+    },
+    "payments": {
+      "currencyMismatch": "{count, plural, one {# produs are prețul} other {# produse au prețul}} într-o altă monedă decât {currency}. Comenzile percep prețul în {currency}.",
+      "paymentMethods": {
+        "label": "Metode de plată",
+        "description": "Metodele de plată activate în pagina de finalizare a comenzii. Prima metodă din listă va fi cea selectată în pagina de finalizare.",
+        "options": {
+          "cod": "Plata la livrare",
+          "stripe": "Card",
+          "paypal": "PayPal"
+        },
+        "connectHint": "Pentru a oferi {provider}, conectează-l în <link>Setări → Integrări</link>."
+      },
+      "currency": {
+        "label": "Monedă",
+        "description": "Aceasta este moneda în care stabilești prețurile produselor. Clienții vor fi taxați în această monedă."
+      },
+      "currencyPosition": {
+        "label": "Poziția monedei",
+        "description": "Această opțiune îți permite să controlezi poziția monedei.",
+        "options": {
+          "left": "Stânga",
+          "leftSpace": "Stânga cu spațiu",
+          "right": "Dreapta",
+          "rightSpace": "Dreapta cu spațiu"
+        }
+      },
+      "currencySymbol": {
+        "label": "Simbolul monedei",
+        "description": "Simbolul monedei este afișat înaintea prețurilor. Dacă vrei un spațiu între simbol și prețuri, adaugă un spațiu la sfârșitul simbolului."
+      },
+      "serviceFeePercent": {
+        "label": "Alte taxe / taxe de servicii (0 - 100%)",
+        "description": "Alte taxe legate de vânzare."
+      }
+    },
+    "shipping": {
+      "shippingType": {
+        "label": "Tip de livrare",
+        "description": "Această opțiune îți permite să controlezi cum primește clientul comanda.",
+        "options": {
+          "none": "Niciuna",
+          "delivery": "Livrare la client",
+          "pickup": "Ridicare din magazin",
+          "deliveryAndPickup": "Livrare la client, Ridicare din magazin"
+        }
+      },
+      "storeAddress": {
+        "label": "Adresa magazinului",
+        "description": "Această adresă este afișată clientului în pagina de finalizare a comenzii dacă permiți ridicarea din magazin."
+      },
+      "shippingCountries": {
+        "label": "Țări de livrare",
+        "description": "Țările în care livrezi comenzi."
+      },
+      "defaultShippingCountry": {
+        "label": "Țara de livrare implicită",
+        "description": "Țara care va fi selectată implicit în pagina de finalizare a comenzii.",
+        "none": "Niciuna"
+      },
+      "deliveryCost": {
+        "label": "Cost livrare",
+        "description": "Un cost fix pentru livrarea comenzii la adresa clientului."
+      },
+      "defaultCountryNotShipped": "Alege una dintre țările de livrare."
+    },
+    "checkout": {
+      "checkoutMode": {
+        "label": "Finalizare comandă",
+        "description": "Această setare controlează unde își finalizează clienții comenzile. Dacă vrei ca utilizatorul să finalizeze comanda în afara botului, de exemplu pe site-ul tău, Amazon,.. nu folosi pagina noastră implicită de finalizare.",
+        "options": {
+          "default": "Pagina implicită de finalizare",
+          "externalLink": "Pagină externă personalizată de finalizare",
+          "flow": "Flux",
+          "productPage": "Vizitează pagina externă a produsului"
+        }
+      },
+      "checkoutLink": {
+        "label": "Link pagină de finalizare",
+        "description": "Pagina externă unde clienții își finalizează comenzile."
+      },
+      "checkoutFlowId": {
+        "label": "Flux de finalizare",
+        "description": "Fluxul care rulează când un client finalizează comanda.",
+        "placeholder": "Selectează un flux"
+      },
+      "minimumOrderValue": {
+        "label": "Valoare minimă a comenzii",
+        "description": "Valoarea minimă a comenzii pe care o poate plasa un client. Condiția este verificată după aplicarea tuturor reducerilor."
+      },
+      "requiredFields": {
+        "requireName": {
+          "label": "Solicită numele cumpărătorului",
+          "description": "Numele cumpărătorului va fi colectat la finalizarea comenzii."
+        },
+        "requireEmail": {
+          "label": "Solicită adresa de e-mail",
+          "description": "E-mailul cumpărătorului va fi colectat la finalizarea comenzii."
+        },
+        "requirePhone": {
+          "label": "Solicită numărul de telefon",
+          "description": "Telefonul cumpărătorului va fi colectat la finalizarea comenzii."
+        },
+        "requireState": {
+          "label": "Solicită județul/provincia",
+          "description": "Județul cumpărătorului va fi colectat la finalizarea comenzii."
+        },
+        "requireZip": {
+          "label": "Solicită codul poștal",
+          "description": "Codul poștal al cumpărătorului va fi colectat la finalizarea comenzii."
+        }
+      },
+      "orderConfirmationMode": {
+        "label": "Mesaj de confirmare a comenzii",
+        "description": "Ce primește clientul în conversație când plasează comanda. Mesajul implicit afișează detaliile comenzii în limba spațiului de lucru.",
+        "options": {
+          "default": "Mesaj implicit",
+          "flow": "Rulează un flux",
+          "none": "Nu trimite nimic"
+        }
+      },
+      "orderConfirmationFlowId": {
+        "label": "Flux de confirmare a comenzii",
+        "description": "Fluxul trimis clientului în locul mesajului implicit când plasează comanda."
+      },
+      "shopifyCheckoutMethod": {
+        "label": "Metoda de finalizare a comenzii",
+        "description": "Alege dacă clienții finalizează plata pe pagina de checkout Shopify sau plasează comanda direct în magazinul web.",
+        "options": {
+          "webCheckout": "Checkout web Shopify",
+          "inApp": "Checkout în aplicație"
+        }
+      },
+      "shopifyAutoApplyDiscounts": {
+        "label": "Aplică automat codurile de reducere",
+        "description": "Permite clienților să aplice codurile de reducere Shopify direct în coș înainte de redirecționarea către checkout."
+      },
+      "wooCommerceCheckoutMethod": {
+        "description": "Alege dacă clienții plătesc pe pagina de plată a magazinului tău WooCommerce sau plasează comanda direct în magazinul online (plată la livrare).",
+        "options": {
+          "webCheckout": "Pagina de plată WooCommerce",
+          "inApp": "Checkout în aplicație"
+        }
+      },
+      "wooCommerceAutoApplyDiscounts": {
+        "description": "Permite clienților să aplice codurile de reducere WooCommerce direct în coș înainte de redirecționarea către checkout."
+      },
+      "inAppDeliveryCost": {
+        "label": "Cost de livrare",
+        "description": "Taxa de livrare adăugată comenzilor din checkout-ul în aplicație."
+      },
+      "wooCommerceDeliveryCost": {
+        "description": "Taxa de livrare adăugată comenzilor trimise către WooCommerce, pentru ambele metode de checkout."
+      }
+    },
+    "shopify": {
+      "shopDomain": {
+        "label": "Domeniul magazinului",
+        "placeholder": "your-store.myshopify.com",
+        "hint": "Introdu domeniul .myshopify.com al magazinului tău Shopify.",
+        "connectedHint": "Domeniul magazinului tău Shopify conectat."
+      },
+      "authKind": {
+        "label": "Autentificare",
+        "description": "Cum se conectează ChatbotX la magazinul tău: cu tokenul de acces Admin API al unei aplicații personalizate sau cu Client ID și secretul unei aplicații create în Shopify Dev Dashboard.",
+        "options": {
+          "token": "Token de acces Admin API",
+          "clientCredentials": "Client ID și secret (aplicație Dev Dashboard)"
+        }
+      },
+      "accessToken": {
+        "label": "Token de acces Admin API",
+        "hint": "Tokenul de acces Admin API al aplicației tale personalizate. Acordă-i aceste permisiuni: {scopes}.",
+        "connectedHint": "Tokenul tău de acces Shopify Admin API este stocat criptat."
+      },
+      "apiSecret": {
+        "label": "Cheia secretă API",
+        "hint": "Cheia secretă API a aplicației, folosită pentru verificarea webhook-urilor trimise de Shopify."
+      },
+      "clientId": {
+        "label": "Client ID",
+        "hint": "Client ID al aplicației tale Dev Dashboard. Acordă-i aceste permisiuni: {scopes}."
+      },
+      "clientSecret": {
+        "label": "Client Secret",
+        "hint": "Client Secret al aplicației. Este stocat criptat."
+      },
+      "webhookUrl": {
+        "label": "URL webhook",
+        "description": "Înregistrat automat în Shopify la conectare pentru a primi în timp real actualizări despre produse, stoc și comenzi."
+      },
+      "syncNow": "Sincronizează acum",
+      "syncStarted": "Sincronizarea a început",
+      "syncError": "Nu s-a putut porni sincronizarea",
+      "syncStatus": {
+        "label": "Starea sincronizării",
+        "description": "Produsele, codurile de reducere și comenzile sunt oglindite din magazinul tău Shopify.",
+        "connectedTo": "Conectat la {shopDomain}",
+        "lastSynced": "Ultima sincronizare: {time} ({productCount} produse, {orderCount} comenzi)",
+        "neverSynced": "Nesincronizat încă",
+        "noReason": "Reconectează magazinul pentru a continua.",
+        "invalid": "Conexiunea nu mai este validă: {reason}",
+        "state": {
+          "idle": "Inactiv",
+          "queued": "Sincronizare în coadă...",
+          "running": "Se sincronizează...",
+          "succeeded": "Ultima sincronizare a reușit",
+          "failed": "Ultima sincronizare a eșuat"
+        }
+      }
+    },
+    "woocommerce": {
+      "siteUrl": {
+        "label": "URL-ul magazinului",
+        "placeholder": "https://example.com",
+        "hint": "Adresa site-ului tău WordPress, care începe cu https://. În WordPress, Settings → Permalinks nu trebuie să fie setat pe Plain.",
+        "connectedHint": "Magazinul tău WooCommerce conectat."
+      },
+      "consumerKey": {
+        "label": "Consumer key",
+        "hint": "Creează o cheie în WooCommerce → Settings → Advanced → REST API → Add key cu permisiunea Read/Write și lipește Consumer key-ul ei (ck_…).",
+        "connectedHint": "Începutul cheii conectate. Cheile sunt stocate criptat."
+      },
+      "consumerSecret": {
+        "label": "Consumer secret",
+        "hint": "Consumer secret-ul cheii (cs_…). Este stocat criptat."
+      },
+      "webhookUrl": {
+        "label": "URL webhook",
+        "description": "Înregistrat automat în WooCommerce la conectare pentru a primi în timp real actualizări despre produse, stoc și comenzi."
+      },
+      "syncNow": "Sincronizează acum",
+      "syncStarted": "Sincronizarea a început",
+      "syncError": "Nu s-a putut porni sincronizarea",
+      "syncStatus": {
+        "label": "Starea sincronizării",
+        "description": "Produsele, codurile de reducere și comenzile sunt oglindite din magazinul tău WooCommerce.",
+        "connectedTo": "Conectat la {store}",
+        "lastSynced": "Ultima sincronizare: {time} ({productCount} produse, {orderCount} comenzi)",
+        "neverSynced": "Nesincronizat încă",
+        "noReason": "Reconectează magazinul pentru a continua.",
+        "invalid": "Conexiunea nu mai este validă: {reason}",
+        "state": {
+          "idle": "Inactiv",
+          "queued": "Sincronizare în coadă...",
+          "running": "Se sincronizează...",
+          "succeeded": "Ultima sincronizare a reușit",
+          "failed": "Ultima sincronizare a eșuat"
+        }
+      }
+    }
+  },
+  "openHours": {
+    "alwaysOpen": "Mereu deschis",
+    "addNew": "Adaugă nou",
+    "dialogTitle": "Program de funcționare",
+    "name": "Nume",
+    "namePlaceholder": "ex. Zile lucrătoare",
+    "day": "Zi",
+    "from": "Deschide",
+    "to": "Închide",
+    "add": "Adaugă interval",
+    "remove": "Elimină",
+    "cancel": "Anulează",
+    "continue": "Continuă",
+    "created": "Program de funcționare creat",
+    "saveError": "Nu s-a putut salva programul de funcționare",
+    "days": {
+      "0": "Duminică",
+      "1": "Luni",
+      "2": "Marți",
+      "3": "Miercuri",
+      "4": "Joi",
+      "5": "Vineri",
+      "6": "Sâmbătă"
+    },
+    "sameTimes": "Ora de deschidere și cea de închidere trebuie să difere."
+  },
+  "webshop": {
+    "metadataTitle": "Magazin",
+    "metadataOrderTitle": "Comanda ta",
+    "invalidLinkTitle": "Acest link nu funcționează",
+    "invalidLinkDescription": "Poate a expirat. Cere magazinului un link nou în chat.",
+    "previewBanner": "Previzualizare: așa văd clienții. Nu se pot plasa comenzi din previzualizare.",
+    "previewOrderingOff": "Previzualizare: comenzile sunt dezactivate",
+    "closed": {
+      "orderingUnavailable": "Magazinul nu primește comenzi acum.",
+      "outsideOpenHours": "Magazinul este închis acum. Poți totuși să te uiți."
+    },
+    "searchPlaceholder": "Caută produse",
+    "categories": "Categorii",
+    "allCategories": "Toate categoriile",
+    "vendors": "Furnizori",
+    "allVendors": "Toți furnizorii",
+    "noProducts": "Nu s-au găsit produse.",
+    "productNotFound": "Acest produs nu mai este disponibil.",
+    "outOfStock": "Stoc epuizat",
+    "addToCart": "Adaugă în coș",
+    "added": "Adăugat în coș",
+    "chooseOptions": "Alege opțiunile",
+    "chooseOption": "Alege {name}",
+    "variantUnavailable": "Această combinație nu este disponibilă.",
+    "buy": "Cumpără",
+    "share": "Distribuie",
+    "linkCopied": "Copiat",
+    "similar": "Similare",
+    "save": "Salvează",
+    "saved": "Salvat",
+    "showImage": "Arată imaginea {number}",
+    "increase": "Mărește cantitatea",
+    "decrease": "Micșorează cantitatea",
+    "remove": "Elimină",
+    "cart": "Coș",
+    "cartEmpty": "Coșul tău este gol.",
+    "continueShopping": "Continuă cumpărăturile",
+    "unavailableItems": "{count, plural, one {# produs nu poate fi comandat acum} other {# produse nu pot fi comandate acum}}",
+    "unavailableNotOrdered": "Nu vor fi incluse în comandă și rămân în coș.",
+    "unavailable": "Nu mai este disponibil",
+    "unavailableHint": "Alege din nou opțiunile",
+    "deletedProduct": "Produs șters",
+    "summary": {
+      "subtotal": "Subtotal",
+      "discount": "Reducere",
+      "delivery": "Livrare",
+      "otherFees": "Alte taxe",
+      "total": "Total",
+      "coupon": "Cupon ({code})",
+      "title": "Sumarul comenzii",
+      "saved": "Economisești {amount}",
+      "deliveryAtCheckout": "Calculat la finalizarea comenzii"
+    },
+    "belowMinimum": "Comanda minimă este {amount}.",
+    "checkOut": "Finalizează comanda",
+    "contactDetails": "Datele tale",
+    "optional": "(opțional)",
+    "fields": {
+      "name": "Nume",
+      "email": "E-mail",
+      "phone": "Telefon",
+      "country": "Țară",
+      "state": "Județ",
+      "city": "Oraș",
+      "address1": "Adresă",
+      "address2": "Apartament, clădire etc.",
+      "zip": "Cod poștal",
+      "note": "Notă pentru magazin"
+    },
+    "shipping": {
+      "title": "Livrare",
+      "delivery": "Livrare la adresa mea",
+      "pickup": "Ridicare din magazin",
+      "storeAddress": "Adresa magazinului: {address}"
+    },
+    "payment": {
+      "title": "Plată",
+      "cod": "Plata la livrare",
+      "stripe": "Card",
+      "paypal": "PayPal",
+      "paid": "Plătită",
+      "refunded": "Rambursată",
+      "awaiting": "Se așteaptă plata ta",
+      "payBefore": "Plătește înainte de {time}, altfel comanda va fi anulată.",
+      "payNow": "Plătește acum",
+      "onlineHint": "Vei plăti pe pagina următoare. Comanda ta este rezervată timp de 30 de minute.",
+      "continueToPayment": "Continuă spre plată",
+      "notYet": "Nu am primit încă plata ta. Dacă tocmai ai plătit, așteaptă un moment și reîncarcă pagina.",
+      "leftPaymentPage": "Ai părăsit pagina de plată. Încă poți plăti mai jos.",
+      "paidThanks": "Plată primită. Mulțumim pentru comandă!"
+    },
+    "placeOrder": "Plasează comanda",
+    "orderPlaced": "Mulțumim! Comanda ta a fost plasată. Îți trimitem noutăți în chat.",
+    "orderTitle": "Comanda #{number}",
+    "orderNotFound": "Comanda nu a fost găsită.",
+    "placedAt": "Plasată pe {date}",
+    "status": {
+      "pending": "Neprocesată",
+      "accepted": "În procesare",
+      "shipped": "Expediată",
+      "concluded": "Finalizată",
+      "cancelled": "Anulată"
+    },
+    "rateTitle": "Evaluează comanda",
+    "rateComment": "Spune-i magazinului ce părere ai (opțional)",
+    "rateSubmit": "Trimite evaluarea",
+    "rateThanks": "Mulțumim pentru evaluare!",
+    "yourRating": "Evaluarea ta",
+    "ratingValue": "{rating} din 5 stele",
+    "previous": "Anterior",
+    "next": "Următor",
+    "pageOf": "Pagina {page} din {pageCount}",
+    "errors": {
+      "generic": "Ceva n-a mers. Încearcă din nou.",
+      "checkFields": "Verifică câmpurile.",
+      "fieldRequired": "{field} este obligatoriu.",
+      "countryUnavailable": "Magazinul nu livrează în această țară.",
+      "invalidLink": "Linkul nu mai funcționează. Cere unul nou magazinului.",
+      "webshopPreviewOnly": "Aceasta este o previzualizare. Se poate comanda doar din linkul unui client.",
+      "rateLimited": "Prea multe încercări. Așteaptă puțin și încearcă din nou.",
+      "orderingUnavailable": "Magazinul nu primește comenzi acum.",
+      "orderBelowMinimum": "Comanda minimă este {minimum}.",
+      "orderBelowVendorMinimum": "Produsele de la {vendorName} trebuie să însumeze cel puțin {minimum}.",
+      "orderOutOfStock": "{productName} nu mai este în stoc.",
+      "orderProductUnavailable": "Unele produse nu mai pot fi comandate. Verifică-ți coșul.",
+      "orderEmpty": "Coșul tău este gol.",
+      "orderShippingTypeUnavailable": "Această opțiune de livrare nu este disponibilă.",
+      "webshopRatingNotAllowed": "Această comandă nu poate fi evaluată.",
+      "webshopCartFull": "Coșul tău poate conține cel mult {maximum} articole diferite.",
+      "notFound": "Acest produs nu mai este disponibil.",
+      "discountCodeNotFound": "Acest cod de reducere nu există.",
+      "discountCodeInactive": "Acest cod nu este activ.",
+      "discountCodeNotStarted": "Acest cod nu este încă valabil.",
+      "discountCodeExpired": "Acest cod a expirat.",
+      "discountCodeUsageLimitReached": "Acest cod s-a epuizat.",
+      "discountCodeAlreadyUsed": "Ai folosit deja acest cod.",
+      "discountCodeNotEligible": "Acest cod nu este disponibil pentru tine.",
+      "discountCodeNotApplicable": "Acest cod nu se aplică produselor din coș.",
+      "discountCodeMinimumAmount": "Codul cere o achiziție de cel puțin {minimum}. Mai adaugă {missing}.",
+      "discountCodeMinimumQuantity": "Codul cere cel puțin {minimum} produse. Mai adaugă {missing}.",
+      "paymentMethodUnavailable": "Această metodă de plată nu este disponibilă.",
+      "paymentProviderNotConnected": "Această metodă de plată nu este disponibilă.",
+      "paymentProviderUnavailable": "Serviciul de plată nu răspunde. Încearcă din nou peste un moment.",
+      "paymentProviderRejected": "Plata nu a putut fi inițiată. Alege altă metodă de plată.",
+      "paymentProviderCredentialsRejected": "Plata nu a putut fi inițiată. Alege altă metodă de plată.",
+      "paymentAmountUnsupported": "Această comandă nu poate fi plătită online. Alege altă metodă de plată.",
+      "orderPaymentNotOpen": "Această comandă nu mai poate fi plătită online."
+    },
+    "discount": {
+      "label": "Cod de reducere",
+      "placeholder": "Cod de reducere",
+      "apply": "Aplică",
+      "applied": "Cod de reducere aplicat",
+      "automatic": "aplicat automat",
+      "remove": "Elimină codul",
+      "available": "Coduri pe care le poți folosi",
+      "freeShipping": "Livrare gratuită",
+      "bestChoice": "Cea mai bună alegere",
+      "expiresOn": "Expiră pe {date}",
+      "noExpiry": "Fără expirare",
+      "inUse": "Folosit",
+      "saves": "Economisești {amount}",
+      "showMore": "{count, plural, one {Arată încă # cod} other {Arată încă # de coduri}}",
+      "showLess": "Arată mai puțin",
+      "removeShort": "Elimină",
+      "expired": "Expirat",
+      "usedUp": "Epuizat",
+      "notEligible": "Încă nu ești eligibil"
+    },
+    "itemCount": "{count, plural, one {# produs} other {# de produse}}",
+    "relatedProducts": "S-ar putea să-ți placă și",
+    "soldOut": "Stoc epuizat",
+    "sku": "SKU: {sku}",
+    "allProducts": "Toate produsele",
+    "noCategories": "Acest magazin nu are încă categorii."
+  },
+  "webshopLinks": {
+    "preview": "Previzualizare",
+    "getLink": "Obține linkul",
+    "copied": "Link copiat. Pune-l pe un buton al botului: fiecare contact își deschide propriul magazin.",
+    "error": "Linkul nu a putut fi obținut.",
+    "copyError": "Linkul nu a putut fi copiat.",
+    "shopLink": {
+      "label": "URL magazin",
+      "hint": "Lipește acest link într-un buton dintr-un flux, o difuzare sau o secvență. Fiecare contact care îl primește își deschide propriul magazin și poate comanda."
+    },
+    "productLink": {
+      "label": "URL public",
+      "hint": "Copiază și lipește URL-ul în fluxul, difuzarea sau secvența ta. Fiecare contact care îl primește deschide acest produs și poate comanda."
+    },
+    "bar": "Distribuie magazinul: obține linkuri către magazin, coș și categorii pentru butoanele din fluxuri, difuzări și secvențe.",
+    "dialog": {
+      "title": "Linkurile magazinului",
+      "description": "Lipește un link într-un buton dintr-un flux, o difuzare sau o secvență. Fiecare contact care îl primește își deschide propriul magazin.",
+      "shopHint": "Deschide pagina principală a magazinului cu toate produsele."
+    },
+    "cartLink": {
+      "label": "Coș",
+      "hint": "Deschide coșul contactului, gata de plată."
+    },
+    "categoriesLink": {
+      "label": "Categorii",
+      "hint": "Deschide lista categoriilor magazinului."
+    }
+  },
+  "discountCodes": {
+    "title": "Cupoane",
+    "description": "Coduri de reducere folosite de clienți la plată sau aplicate automat.",
+    "add": "Adaugă",
+    "edit": "Editează cuponul",
+    "automatic": "Automat",
+    "never": "Niciodată",
+    "searchPlaceholder": "Caută coduri…",
+    "saveError": "Cuponul nu a putut fi salvat.",
+    "created": "Cupon creat",
+    "updated": "Cupon salvat",
+    "deleted": "Cupon șters",
+    "deleteError": "Cuponul nu a putut fi șters.",
+    "deleteTitle": "Ștergi cuponul {code}?",
+    "deleteDescription": "Clienții nu îl mai pot folosi. Comenzile care l-au folosit își păstrează reducerea.",
+    "cancel": "Anulează",
+    "delete": "Șterge",
+    "save": "Salvează",
+    "columns": {
+      "name": "Nume",
+      "discount": "Reducere",
+      "used": "Folosit",
+      "end": "Sfârșit",
+      "active": "Activ"
+    },
+    "discountTypes": {
+      "percentage": "Procent",
+      "fixedAmount": "Sumă fixă",
+      "freeShipping": "Livrare gratuită"
+    },
+    "appliesTo": {
+      "entireOrder": "Întreaga comandă",
+      "category": "O anumită categorie",
+      "products": "Anumite produse"
+    },
+    "minimumTypes": {
+      "none": "Niciuna",
+      "amount": "Sumă minimă de achiziție",
+      "quantity": "Număr minim de produse"
+    },
+    "eligibilities": {
+      "everyone": "Toată lumea",
+      "specificCustomers": "Anumiți clienți"
+    },
+    "form": {
+      "discountCode": "Cod de reducere",
+      "code": "Cod",
+      "generate": "Generează",
+      "autoApply": "Aplică automat acest cupon pe coșuri",
+      "autoApplyHint": "Coșurile îl primesc fără ca clientul să-l scrie. Dintre mai multe cupoane automate câștigă cel cu reducerea cea mai mare.",
+      "typedHint": "Clienții vor introduce acest cod la plată.",
+      "options": "Opțiuni",
+      "discountType": "Tip de reducere",
+      "discountValuePercent": "Valoarea reducerii (%)",
+      "discountValueAmount": "Valoarea reducerii ({currency})",
+      "freeShippingHint": "Elimină costul livrării pentru comenzile livrate clientului.",
+      "appliesTo": "Se aplică la",
+      "category": "Categorie",
+      "products": "Produse",
+      "productsPlaceholder": "Alege produse",
+      "minimumRequirement": "Cerință minimă",
+      "minimumAmount": "Sumă minimă ({currency})",
+      "minimumQuantity": "Număr minim de produse",
+      "usageLimits": "Limite de utilizare",
+      "limitTotal": "Limitează de câte ori poate fi folosită reducerea în total",
+      "usedSoFar": "{count, plural, one {Folosit de # dată până acum} other {Folosit de # ori până acum}}",
+      "oncePerCustomer": "O utilizare per client",
+      "customerEligibility": "Clienți eligibili",
+      "specificCustomersHint": "Doar contactele care corespund filtrului de mai jos la comandă.",
+      "activeDates": "Perioada de valabilitate",
+      "startDate": "Data de început",
+      "endDate": "Data de sfârșit",
+      "isActive": "Activ"
+    },
+    "rules": {
+      "codeCharacters": "Folosește doar litere fără diacritice, cifre, - și _.",
+      "usageBelowUsed": "Acest cod a fost deja folosit de {count} ori; limita nu poate fi mai mică.",
+      "customerConditionRequired": "Adaugă cel puțin o condiție.",
+      "endAfterStart": "Data de sfârșit trebuie să fie după data de început."
+    }
+  },
+  "ecommerceAnalytics": {
+    "title": "Analiză",
+    "lifetime": "Total",
+    "sales": "Vânzări",
+    "orders": "Comenzi",
+    "products": "Produse",
+    "salesByDate": "Vânzări pe dată",
+    "ordersByDate": "Comenzi pe dată",
+    "topProducts": "Produse de top",
+    "topVendors": "Furnizori de top",
+    "columns": {
+      "name": "Nume",
+      "sales": "Vânzări"
+    },
+    "noData": "Nu există date în această perioadă",
+    "refresh": "Reîmprospătează",
+    "change": "{value}%",
+    "noPrevious": "nou",
+    "otherCurrencyOrders": "{count} comenzi în alte monede nu sunt incluse în aceste cifre"
+  },
   "responseSla": {
     "label": "SLA de răspuns",
     "title": "SLA de răspuns",
@@ -9052,5 +11301,611 @@
     "metHelp": "Ponderea răspunsurilor cu SLA care l-au respectat.",
     "eligibleCount": "{count} răspunsuri aveau SLA",
     "enable": "Activează SLA de răspuns"
+  },
+  "stripe": {
+    "title": "Stripe",
+    "setting": {
+      "label": "Stripe",
+      "description": "Primește plăți cu cardul în magazinul tău web folosind propriul cont Stripe. Banii ajung direct în contul tău Stripe."
+    },
+    "connectWithStripe": "Conectează cu Stripe",
+    "connectWithKey": "Folosește cheia secretă",
+    "connectionType": {
+      "oauth": "Stripe Connect",
+      "apiKey": "Cheie secretă"
+    },
+    "fields": {
+      "secretKey": "Cheie secretă",
+      "secretKeyHint": "Începe cu sk_live_ (sau sk_test_ pentru modul de test). Funcționează și o cheie restricționată (rk_…) dacă poate citi contul și scrie Checkout Sessions, Refunds și Webhook Endpoints."
+    },
+    "dialog": {
+      "description": "Copiază cheia secretă din <link>Stripe Dashboard → Developers → API keys</link> și lipește-o aici. O verificăm, configurăm notificările de plată în contul tău Stripe și păstrăm cheia criptată."
+    },
+    "testMode": "Mod test",
+    "liveMode": "Live",
+    "chargesDisabled": "Contul tău Stripe nu poate încă primi plăți. Termină configurarea în tabloul de bord Stripe.",
+    "outcome": {
+      "expired": "Linkul de conectare Stripe a expirat. Încearcă din nou.",
+      "access_denied": "Conexiunea nu a fost permisă în Stripe.",
+      "stripeAccountAlreadyConnected": "Acest cont Stripe este deja conectat la un alt spațiu de lucru.",
+      "stripePlatformNotConfigured": "Stripe nu este încă configurat pe această platformă.",
+      "superAdminRequired": "Doar un administrator al spațiului de lucru poate conecta Stripe.",
+      "signInRequired": "Autentifică-te și încearcă din nou.",
+      "paymentProviderCredentialsRejected": "Stripe a refuzat conexiunea. Încearcă din nou.",
+      "startedByAnotherUser": "Doar persoana care a apăsat Conectează poate finaliza. Apasă din nou Conectează.",
+      "paymentProviderInUse": "Comenzile deschise încă au nevoie de acest cont Stripe. Finalizează-le sau anulează-le mai întâi."
+    },
+    "platform": {
+      "connectClientId": "Connect client ID",
+      "connectClientIdHint": "Din Stripe Dashboard → Settings → Connect → Onboarding options → OAuth (începe cu ca_). Magazinele își conectează propriul cont Stripe prin el.",
+      "redirectUri": "Redirect URI",
+      "webhookReady": "Magazinele pot conecta Stripe, iar plățile lor sunt confirmate automat.",
+      "webhookMissing": "Webhook-ul de plată lipsește. Salvează din nou aceste setări pentru a-l crea.",
+      "connectMissing": "Adaugă Connect client ID pentru ca magazinele să-și poată conecta contul Stripe."
+    }
+  },
+  "paypal": {
+    "title": "PayPal",
+    "setting": {
+      "label": "PayPal",
+      "description": "Primește plăți PayPal în magazinul tău web folosind propriul cont PayPal."
+    },
+    "sandbox": "Sandbox",
+    "liveMode": "Live",
+    "fields": {
+      "clientId": "Client ID",
+      "clientSecret": "Secret"
+    },
+    "dialog": {
+      "description": "Creează o aplicație REST în <link>PayPal Developer → Apps & Credentials</link> și lipește Client ID și Secret. Modul live sau sandbox este detectat din chei."
+    }
+  },
+  "pipelines": {
+    "title": "Pipeline-uri",
+    "retry": "Încearcă din nou",
+    "save": "Salvează",
+    "saveFailed": "Nu am putut salva modificările. Încearcă din nou.",
+    "list": {
+      "name": "Nume",
+      "type": "Tip",
+      "items": "Elemente",
+      "add": "Adaugă pipeline",
+      "empty": "Niciun pipeline încă",
+      "emptyHint": "Creează un pipeline pentru a urmări tranzacții, tichete sau orice proces sub formă de carduri pe o tablă.",
+      "error": "Nu s-au putut încărca pipeline-urile",
+      "contacts": "Contacte",
+      "addShort": "Adaugă",
+      "description": "Urmăriți oportunități, tichete sau orice proces sub formă de carduri care trec prin etape."
+    },
+    "types": {
+      "opportunity": {
+        "label": "Centrul de oportunități",
+        "description": "Urmărește tranzacțiile de vânzare pe etape. Prima etapă: Lead."
+      },
+      "ticket": {
+        "label": "Centrul de suport",
+        "description": "Gestionează solicitările de suport. Prima etapă: Problemă nouă."
+      },
+      "custom": {
+        "label": "Tablă personalizată",
+        "description": "Construiește-ți propriul proces. Prima etapă: Preluare."
+      }
+    },
+    "noun": {
+      "opportunity": {
+        "one": "Oportunitate",
+        "many": "Oportunități",
+        "add": "Adaugă oportunitate"
+      },
+      "ticket": {
+        "one": "Tichet",
+        "many": "Tichete",
+        "add": "Adaugă tichet"
+      },
+      "card": {
+        "one": "Card",
+        "many": "Carduri",
+        "add": "Adaugă card"
+      }
+    },
+    "create": {
+      "title": "Pipeline nou",
+      "description": "Alege pentru ce folosești tabla, apoi dă-i un nume.",
+      "type": "Tip",
+      "name": "Numele pipeline-ului",
+      "namePlaceholder": "ex. Vânzări",
+      "submit": "Creează pipeline-ul",
+      "success": "Pipeline creat"
+    },
+    "menu": {
+      "open": "Acțiuni pipeline",
+      "rename": "Redenumește",
+      "duplicate": "Duplică",
+      "delete": "Șterge"
+    },
+    "rename": {
+      "title": "Redenumește pipeline-ul",
+      "submit": "Redenumește",
+      "success": "Pipeline redenumit"
+    },
+    "duplicate": {
+      "success": "Pipeline duplicat"
+    },
+    "delete": {
+      "title": "Șterge pipeline-ul",
+      "description": "{name}, împreună cu toate etapele și elementele sale, va fi șters. Această acțiune nu poate fi anulată.",
+      "success": "Pipeline șters"
+    },
+    "board": {
+      "title": "Tablă",
+      "count": "{count, plural, one {# element} other {# elemente}}",
+      "total": "Total {value}",
+      "search": "Caută după titlu, număr sau contact",
+      "sort": "Sortează",
+      "filter": "Filtrează",
+      "analytics": "Analize",
+      "settings": "Setări",
+      "emptyStage": "Trage și plasează aici un card pentru a-l muta în această etapă.",
+      "loadMore": "Încarcă mai multe",
+      "loadMoreFailed": "Nu s-au putut încărca mai multe elemente",
+      "error": "Nu s-a putut încărca tabla",
+      "processing": "Se procesează această etapă…",
+      "moveFailed": "Nu s-a putut muta cardul",
+      "sortOptions": {
+        "createdAtDesc": "Data creării (Nou la Vechi)",
+        "createdAtAsc": "Data creării (Vechi la Nou)",
+        "updatedAtDesc": "Data actualizării (Nou la Vechi)",
+        "valueDesc": "Valoarea oportunității (Mare la Mic)",
+        "valueAsc": "Valoarea oportunității (Mic la Mare)",
+        "dueDateAsc": "Data scadentă (Cea mai apropiată la Cea mai îndepărtată)",
+        "dueDateDesc": "Data scadentă (Cea mai îndepărtată la Cea mai apropiată)",
+        "priorityDesc": "Prioritate (Mare la Mic)",
+        "priorityAsc": "Prioritate (Mic la Mare)",
+        "updatedAtAsc": "Data actualizării (Vechi la Nou)"
+      },
+      "searchAction": "Caută",
+      "closeSearch": "Închide căutarea",
+      "cardMenu": "Acțiuni card",
+      "moveTo": "Mută în",
+      "unknownContact": "Contact necunoscut",
+      "staleError": "Tabla nu a putut fi reîmprospătată. Ce vedeți poate fi învechit."
+    },
+    "stage": {
+      "add": "Adaugă etapă",
+      "name": "Numele etapei",
+      "namePlaceholder": "Numele etapei",
+      "menu": "Acțiuni etapă",
+      "edit": "Editează etapa",
+      "delete": "Șterge etapa",
+      "deleteTitle": "Șterge etapa",
+      "deleteDescription": "{name} și toate elementele din ea vor fi șterse. Această acțiune nu poate fi anulată.",
+      "moveItemsTo": "Mută elementele în",
+      "deleteItemsToo": "Șterge și elementele",
+      "description": "Descriere",
+      "textColor": "Culoarea textului",
+      "backgroundColor": "Culoarea de fundal",
+      "saved": "Etapă salvată",
+      "deleted": "Etapă ștearsă",
+      "queued": "Etapa este golită în fundal.",
+      "resetColor": "Implicit",
+      "deleteMoveDescription": "{name} va fi ștearsă. Elementele ei se mută în {target}.",
+      "rename": "Redenumește",
+      "settings": "Setări",
+      "general": "General",
+      "color": "Culoare",
+      "cancel": "Anulează"
+    },
+    "priority": {
+      "low": "Scăzută",
+      "medium": "Medie",
+      "high": "Ridicată"
+    },
+    "item": {
+      "loading": "Se încarcă…",
+      "error": "Nu s-a putut încărca acest element",
+      "title": "Titlu",
+      "status": "Stare",
+      "stage": "Etapă",
+      "priority": "Prioritate",
+      "value": "Valoare",
+      "dueDate": "Termen limită",
+      "assignees": "Administratori atribuiți",
+      "description": "Descriere",
+      "attachments": "Atașamente",
+      "attach": "Atașează fișiere",
+      "noAttachments": "Niciun atașament",
+      "removeAttachment": "Elimină atașamentul",
+      "removeAttachmentDescription": "Fișierul este eliminat din acest element, dar rămâne în biblioteca media.",
+      "comments": "Comentarii",
+      "addComment": "Adaugă comentariu",
+      "commentPlaceholder": "Scrie un comentariu…",
+      "noComments": "Niciun comentariu încă",
+      "deleteComment": "Șterge comentariul",
+      "deleteCommentDescription": "Acest comentariu va fi șters. Acțiunea nu poate fi anulată.",
+      "activity": "Activitate",
+      "noActivity": "Nicio activitate încă",
+      "transfer": "Transferă în pipeline",
+      "transferTitle": "Transferă în alt pipeline",
+      "transferDescription": "Elementul își păstrează numărul și data creării. Câmpurile personalizate se transferă dacă celălalt pipeline are un câmp cu același nume de referință și același tip.",
+      "destinationPipeline": "Pipeline de destinație",
+      "destinationStage": "Etapă de destinație",
+      "firstStage": "Prima etapă",
+      "choose": "Alege…",
+      "transferred": "Element transferat",
+      "delete": "Șterge",
+      "deleteDescription": "Un element va fi șters. Această acțiune nu poate fi anulată.",
+      "deleted": "Element șters",
+      "number": "Număr",
+      "createdBy": "Creat de",
+      "createdByValue": "{name} la {date}",
+      "inbox": "Căsuță de mesaje",
+      "moreActions": "Mai multe acțiuni",
+      "noDescription": "Fără descriere",
+      "yes": "Da",
+      "no": "Nu",
+      "assigneesMembers": "Agenți",
+      "assigneesTeams": "Echipe din căsuța de mesaje",
+      "assigneesSearch": "Caută administratori sau echipe…",
+      "assigneesEmpty": "Niciun rezultat",
+      "assigneesPlaceholder": "Selectează administratori sau echipe",
+      "olderComments": "Afișează comentariile mai vechi",
+      "olderActivity": "Afișează activitatea mai veche",
+      "activityFilter": "Filtrează",
+      "activityFilterCount": "{count, plural, one {# filtru} other {# filtre}}",
+      "activityFilterClear": "Afișează tot",
+      "noFilteredActivity": "Nicio activitate nu corespunde acestui filtru.",
+      "activityGroup": {
+        "lifecycle": "Creare și transfer",
+        "stage": "Etapă",
+        "status": "Stare",
+        "value": "Valoare",
+        "priority": "Prioritate",
+        "dueDate": "Termen",
+        "details": "Titlu, descriere și câmpuri",
+        "assignees": "Responsabili",
+        "comments": "Comentarii",
+        "attachments": "Atașamente"
+      }
+    },
+    "activity": {
+      "created": "Creat",
+      "stageChanged": "Mutat în altă etapă",
+      "statusChanged": "Stare schimbată",
+      "valueChanged": "Valoare schimbată",
+      "priorityChanged": "Prioritate schimbată",
+      "dueDateChanged": "Termen limită schimbat",
+      "titleChanged": "Titlu schimbat",
+      "descriptionChanged": "Descriere schimbată",
+      "fieldValuesChanged": "Câmpuri personalizate schimbate",
+      "assigneesChanged": "Responsabili schimbați",
+      "attachmentAdded": "Atașament adăugat",
+      "attachmentRemoved": "Atașament eliminat",
+      "commentAdded": "Comentariu adăugat",
+      "commentDeleted": "Comentariu șters",
+      "transferred": "Transferat din alt pipeline",
+      "deleted": "Șters"
+    },
+    "activityActor": {
+      "flow": "Flux",
+      "trigger": "Declanșator",
+      "workspaceToken": "API",
+      "system": "Sistem",
+      "formerMember": "Fost membru"
+    },
+    "add": {
+      "changeContact": "Alege alt contact",
+      "success": "Creat",
+      "stepContact": "Selectează un contact",
+      "stepDetails": "Detalii {noun}",
+      "contact": "Contact",
+      "addNewContact": "Adaugă nou"
+    },
+    "filter": {
+      "title": "Filtrează",
+      "status": "Stare",
+      "statusLabels": {
+        "open": "Deschis",
+        "won": "Câștigat",
+        "lost": "Pierdut"
+      },
+      "priority": "Prioritate",
+      "assignee": "Administratori atribuiți",
+      "value": "Valoarea {noun}",
+      "min": "Min.",
+      "max": "Max.",
+      "dueDate": "Termen limită",
+      "createdAt": "Data creării",
+      "from": "De la",
+      "to": "Până la",
+      "clear": "Șterge filtrele",
+      "apply": "Aplică",
+      "back": "Înapoi",
+      "updatedAt": "Data actualizării",
+      "resolvedOn": "{noun} rezolvat la",
+      "statusChangedOn": "Stare schimbată la",
+      "stageChangedOn": "Etapă schimbată la",
+      "lastCommentOn": "Ultimul comentariu la",
+      "customFields": "Câmpuri personalizate",
+      "any": "Oricare",
+      "yes": "Da",
+      "no": "Nu",
+      "notResolvedOn": "{noun} nerezolvat la",
+      "equal": "Egal cu",
+      "different": "Diferit de",
+      "reset": "Resetează",
+      "presets": {
+        "thisWeek": "Săptămâna aceasta",
+        "lastWeek": "Săptămâna trecută",
+        "last14": "Ultimele 14 zile",
+        "thisYear": "Anul acesta",
+        "lastYear": "Anul trecut",
+        "tomorrow": "Mâine",
+        "next7": "În 7 zile",
+        "next14": "În 14 zile",
+        "next30": "În 30 zile",
+        "allTime": "Tot timpul"
+      },
+      "pickDate": "Alege o dată",
+      "activity": "Activitate",
+      "activityKinds": "Tipul modificării",
+      "activityActors": "Efectuat de",
+      "activityWhen": "Când",
+      "activityAutomation": "Automatizare"
+    },
+    "analytics": {
+      "title": "Analize",
+      "loading": "Se încarcă statisticile…",
+      "error": "Nu s-au putut încărca statisticile",
+      "created": "Create",
+      "won": "Câștigate",
+      "wonValue": "Valoare câștigată",
+      "lost": "Pierdute",
+      "lostValue": "Valoare pierdută",
+      "admin": "Administrator",
+      "automation": "Automatizare",
+      "back": "Înapoi",
+      "admins": "Administratori",
+      "chart": {
+        "created": "Noi pe zi",
+        "won": "Câștigate pe zi",
+        "lost": "Pierdute pe zi",
+        "wonValue": "Valoare câștigată pe zi",
+        "lostValue": "Valoare pierdută pe zi"
+      },
+      "pie": {
+        "created": "Create pe admin",
+        "won": "Câștigate pe admin",
+        "lost": "Pierdute pe admin",
+        "other": "Altele",
+        "empty": "Nu există date"
+      }
+    },
+    "settings": {
+      "title": "Setările pipeline-ului",
+      "general": "General",
+      "fields": "Câmpuri personalizate",
+      "display": "Afișare",
+      "permissions": "Permisiuni",
+      "saved": "Setări salvate",
+      "referenceName": "Nume de referință",
+      "referenceNameHint": "Folosit în variabilele pipelines.reference_name.stage_name. Schimbarea lui strică mesajele care folosesc numele vechi.",
+      "referenceNameFormat": "Folosește litere mici, cifre și liniuțe de subliniere, începând cu o literă (ex. close_date).",
+      "currency": "Monedă",
+      "currencyFollowCountry": "Țara spațiului de lucru · {country} · {currency}",
+      "currencyFollowNoCountry": "Spațiul de lucru nu are țară · {currency}",
+      "currencyHint": "Urmează țara-țintă a spațiului de lucru (Setări → General) și se actualizează când aceasta se schimbă. Dacă nu e setată nicio țară, se folosește USD. Valorile nu sunt niciodată convertite.",
+      "assignContact": "Atribuie contactul unui administrator când un element este atribuit",
+      "limit": "Limitează elementele deschise per contact",
+      "statusLabels": "Etichete de stare",
+      "status": {
+        "open": "Deschis",
+        "won": "Câștigat",
+        "lost": "Pierdut"
+      },
+      "features": "Funcții vizibile",
+      "cardElements": "Elemente ale cardului",
+      "card": {
+        "contactPhone": "Telefon contact",
+        "contactEmail": "E-mail contact",
+        "createdAt": "Data creării",
+        "updatedAt": "Data actualizării",
+        "assignees": "Administratori atribuiți",
+        "comments": "Comentarii",
+        "cardId": "Număr element",
+        "priority": "Prioritate",
+        "value": "Valoare",
+        "dueDate": "Termen limită"
+      },
+      "noFields": "Niciun câmp personalizat încă",
+      "fieldName": "Numele câmpului",
+      "fieldReference": "Nume de referință",
+      "fieldType": "Tipul câmpului",
+      "required": "Obligatoriu",
+      "requiredShort": "obligatoriu",
+      "addField": "Adaugă câmp",
+      "fieldAdded": "Câmp adăugat",
+      "deleteField": "Șterge câmpul",
+      "permissionsHint": "Proprietarii și administratorii workspace-ului au mereu acces complet. Acordă celorlalți membri ce pot face în acest pipeline.",
+      "revoke": "Revocă",
+      "permission": {
+        "view": "Vizualizare",
+        "edit": "Editare",
+        "delete": "Ștergere",
+        "settings": "Setări"
+      },
+      "noMembers": "Niciun alt membru de configurat",
+      "confirmDeleteField": "Ștergi acest câmp și toate valorile lui din fiecare element?",
+      "adminPermissions": "Permisiuni de administrator",
+      "cardVisibleElements": "Elemente vizibile ale cardului"
+    },
+    "panel": {
+      "empty": "Niciun element de pipeline pentru acest contact",
+      "error": "Nu s-au putut încărca elementele din pipeline",
+      "choosePipeline": "Alege un pipeline",
+      "add": "Adaugă nou"
+    },
+    "variables": {
+      "group": "Pipeline-uri",
+      "attributes": {
+        "name": "Numele elementului",
+        "stageName": "Etapă",
+        "status": "Stare",
+        "priority": "Prioritate",
+        "value": "Valoare",
+        "assignedAdmins": "Administratori atribuiți",
+        "createdDate": "Data creării",
+        "dueDate": "Termen limită",
+        "updatedDate": "Data actualizării",
+        "id": "ID element"
+      }
+    }
+  },
+  "oauthConsent": {
+    "title": "Authorize {clientName}",
+    "description": "This application is requesting access to your workspace.",
+    "permissionsTitle": "Requested permissions",
+    "signedInAs": "Signed in as",
+    "approve": "Approve",
+    "deny": "Deny",
+    "failed": "Autorizarea nu a putut fi finalizată. Încercați din nou.",
+    "workspaceLabel": "Spațiu de lucru",
+    "workspacePlaceholder": "Selectează un spațiu de lucru",
+    "workspaceHint": "{clientName} poate acționa doar în acest spațiu de lucru. Pentru a schimba mai târziu, deconectează-te și conectează-te din nou.",
+    "noWorkspaces": "Nu ești administrator în niciun spațiu de lucru, deci nu poți autoriza această aplicație."
+  },
+  "chatbotxMcp": {
+    "title": "ChatbotX MCP",
+    "workspaceId": "Workspace ID",
+    "streamableUrl": "Streamable HTTP URL",
+    "sseUrl": "Legacy SSE URL",
+    "guide": {
+      "title": "Connect an MCP client",
+      "step1": "Copy the configuration for your MCP client.",
+      "step2": "Paste it into the client.",
+      "step3": "The client opens a browser. Sign in and approve access.",
+      "step4": "Your workspace tools appear after approval.",
+      "ownerOnly": "Only workspace owners and superAdmins can authorize MCP access."
+    },
+    "clients": {
+      "claudeCode": "Claude Code",
+      "claudeDesktop": "Claude Desktop",
+      "cursor": "Cursor",
+      "chatgpt": "ChatGPT",
+      "stdio": "stdio fallback",
+      "stdioHint": "Use a workspace token for this fallback."
+    },
+    "grants": {
+      "title": "Authorized applications",
+      "description": "Grants belong to your account and apply to every workspace you administer; revoking disconnects the client everywhere.",
+      "empty": "OAuth grants appear here after you connect an MCP client.",
+      "client": "Client",
+      "scopes": "Scopes",
+      "firstAuthorizedAt": "First authorized",
+      "lastRefreshedAt": "Last refreshed",
+      "activeUntil": "Active until",
+      "noActiveToken": "No active token",
+      "revoke": "Revoke",
+      "revokeConfirmTitle": "Revoke application access?",
+      "revokeConfirmDescription": "Revoke access for {clientName}? This disconnects the client everywhere.",
+      "revokedSuccess": "Application access revoked.",
+      "notFound": "OAuth grant no longer exists"
+    }
+  },
+  "connectionStatus": {
+    "column": "Status",
+    "reconnecting": "The provider is reconnecting this account. Messages are held until it finishes.",
+    "accessRemoved": "The provider removed access to this account. Reconnect to resume.",
+    "needsReconnect": "Reconnect required.",
+    "inactive": "This channel is inactive."
+  },
+  "inbox": {
+    "createAppointment": {
+      "title": "Creează programare",
+      "description": "Trimite contactului un link de rezervare pentru un calendar sau deschide-l pentru a rezerva în numele lui.",
+      "inactive": "Inactiv",
+      "sendLink": "Trimite linkul calendarului",
+      "goToLink": "Mergi la linkul calendarului",
+      "sent": "Linkul de rezervare a fost trimis.",
+      "failed": "Linkul de rezervare nu a putut fi creat.",
+      "noCalendars": "Nu există încă calendare de programări.",
+      "manageCalendars": "Gestionează calendarele de programări"
+    }
+  },
+  "templateStore": {
+    "title": "Magazin de șabloane",
+    "description": "Șabloane aprobate pentru magazinul public. Fiecare șablon apare în categoriile alese de tine.",
+    "add": "Adaugă",
+    "addCategory": "Adaugă categorie",
+    "renameCategory": "Redenumește",
+    "editCategories": "Editează categoriile",
+    "templateId": "ID șablon",
+    "template": "Șablon",
+    "categories": "Categorii",
+    "categoriesPlaceholder": "Fără categorie",
+    "close": "Închide",
+    "removeChip": "Elimină {name}",
+    "categoriesHint": "Opțional. Fără categorie, șablonul apare doar la „Toate”.",
+    "noCategoriesYet": "Încă nu există categorii.",
+    "added": "Șablon adăugat în magazin",
+    "updated": "Categorii actualizate",
+    "removed": "Șablon eliminat din magazin",
+    "removeError": "Șablonul nu a putut fi eliminat",
+    "removeTitle": "Elimini {name}?",
+    "removeDescription": "Dispare din magazin. Șablonul în sine și instalările lui nu sunt afectate.",
+    "saveError": "Nu s-a putut salva",
+    "deleteError": "Categoria nu a putut fi ștearsă",
+    "categoryCreated": "Categorie creată",
+    "categoryUpdated": "Categorie actualizată",
+    "categoryMoved": "Categorie mutată",
+    "categoryDeleted": "Categorie ștearsă",
+    "deleteCategoryTitle": "Ștergi {name}?",
+    "deleteCategoryDescription": "Șabloane în această categorie: {count}. Rămân în magazin și apar la „Toate”.",
+    "moveUp": "Mută în sus",
+    "moveDown": "Mută în jos",
+    "searchPlaceholder": "Caută după nume sau ID șablon",
+    "emptyListings": "Încă nu există șabloane aprobate.",
+    "noMatches": "Niciun șablon nu corespunde căutării sau filtrelor.",
+    "allCategories": "Toate categoriile",
+    "allStatuses": "Toate stările",
+    "installs": "Instalări",
+    "owner": "Proprietar",
+    "statusLabel": "Stare",
+    "openInStore": "Deschide magazinul",
+    "storeUnavailable": "Magazinul tău se deschide pe domeniul tău personalizat. Configurează unul pentru a-l deschide.",
+    "openTemplatePage": "Deschide pagina șablonului",
+    "remove": "Elimină",
+    "status": {
+      "published": "Publicat",
+      "templateUnavailable": "Șablon indisponibil",
+      "shareDisabled": "Link de partajare dezactivat"
+    },
+    "errors": {
+      "templateUnavailable": "Niciun șablon cu acest ID nu poate fi adăugat în magazinul tău.",
+      "listingExists": "Acest șablon este deja în magazinul tău.",
+      "listingUnavailable": "Această intrare din magazin nu mai există.",
+      "listingLimit": "Un magazin poate conține cel mult {templateLimit} șabloane.",
+      "categoryUnavailable": "Această categorie nu mai există.",
+      "categoryNameTaken": "Există deja o categorie cu acest nume.",
+      "categoryLimit": "Un magazin poate avea cel mult {categoryLimit} categorii."
+    },
+    "store": {
+      "subtitle": "Șabloane gata făcute, instalate dintr-un clic.",
+      "pageTitle": "{tenantName} – Magazin de șabloane",
+      "empty": "Încă nu există șabloane în magazin.",
+      "search": "Caută șabloane",
+      "all": "Toate",
+      "categories": "Categoriile magazinului",
+      "noResults": "Niciun șablon nu corespunde căutării.",
+      "clearSearch": "Șterge căutarea",
+      "by": "De {publisherName}"
+    },
+    "picker": {
+      "placeholder": "Alege un șablon",
+      "search": "Caută după nume sau ID șablon",
+      "empty": "Niciun șablon disponibil de adăugat.",
+      "error": "Șabloanele nu au putut fi încărcate.",
+      "retry": "Reîncearcă",
+      "meta": "ID {id} · {workspace}"
+    }
   }
 }
